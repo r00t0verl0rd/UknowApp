@@ -92,7 +92,7 @@ def claim_connection_code(
     raw_code: str,
     telegram_id: int,
 ) -> tuple[Optional[User], str]:
-    normalized = re.sub(r"[\\s-]", "", raw_code).upper()
+    normalized = re.sub(r"[\s-]", "", raw_code).upper()
     if not CONNECTION_CODE_RE.fullmatch(normalized):
         return None, "invalid_format"
 
@@ -229,7 +229,7 @@ async def route_message(message: TgMessage, bot: Bot):
         sender = get_linked_user(db, message.from_user.id)
         if not sender:
             text = (message.text or "").strip()
-            normalized = re.sub(r"[\\s-]", "", text).upper()
+            normalized = re.sub(r"[\s-]", "", text).upper()
             if CONNECTION_CODE_RE.fullmatch(normalized):
                 linked_user, result = claim_connection_code(db, normalized, message.from_user.id)
                 if result == "ok" and linked_user:
@@ -245,7 +245,7 @@ async def route_message(message: TgMessage, bot: Bot):
                         + linked_user.full_name
                         + "» ("
                         + ("ученик" if linked_user.role == "student" else "учитель")
-                        + ").\\n\\n"
+                        + ").\n\n"
                         + next_step
                     )
                 elif result == "expired":
