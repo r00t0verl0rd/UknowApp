@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Activity, ArrowDownLeft, ArrowUpRight, BookOpen, Check, ChevronRight,
-  CircleHelp, GraduationCap, LayoutDashboard, Link2, LockKeyhole, LogOut,
+  Activity, ArrowDownLeft, ArrowUpRight, BookOpen, Check, ChevronRight, Copy,
+  CircleHelp, Clock3, GraduationCap, KeyRound, LayoutDashboard, Link2, LockKeyhole, LogOut,
   MessageCircle, Plus, RefreshCw, Search, ShieldCheck, Users, X
 } from "lucide-react";
 
@@ -35,6 +35,8 @@ function App() {
   const [editingUser, setEditingUser] = useState(null);
   const [editName, setEditName] = useState("");
   const [editTelegram, setEditTelegram] = useState("");
+  const [connectionCode, setConnectionCode] = useState(null);
+  const [generatingCodeUserId, setGeneratingCodeUserId] = useState(null);
 
   const request = useCallback(async (path, options = {}) => {
     const response = await fetch(API + path, {
@@ -185,6 +187,31 @@ function App() {
     } catch (e) { setError(e.message); }
   }
 
+  async function generateConnectionCode(user) {
+    setGeneratingCodeUserId(user.id);
+    try {
+      const result = await request("/api/admin/users/" + user.id + "/connection-code", {
+        method: "POST"
+      });
+      setConnectionCode({ ...result, full_name: user.full_name });
+      showToast("Одноразовый код создан");
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setGeneratingCodeUserId(null);
+    }
+  }
+
+  async function copyConnectionCode() {
+    if (!connectionCode) return;
+    try {
+      await navigator.clipboard.writeText(connectionCode.code);
+      showToast("Код скопирован");
+    } catch (e) {
+      setError("Не удалось скопировать автоматически. Выделите код и скопируйте его вручную.");
+    }
+  }
+
   const filteredUsers = useMemo(() => users.filter((item) =>
     (item.full_name + " " + (item.telegram_id || "")).toLowerCase().includes(search.toLowerCase())
   ), [users, search]);
@@ -308,7 +335,7 @@ function App() {
               <div className="users-layout">
                 <section className="panel users-panel"><div className="panel-heading compact"><div><h2>Все участники</h2><p>Управление доступом к школьной системе</p></div><div className="search-box"><Search size={16} /><input placeholder="Поиск по имени или ID" value={search} onChange={(e) => setSearch(e.target.value)} /></div></div>
                   <div className="table-wrap"><table><thead><tr><th>УЧАСТНИК</th><th>РОЛЬ</th><th>TELEGRAM ID</th><th>СТАТУС</th><th></th></tr></thead><tbody>
-                    {filteredUsers.map((user) => <tr key={user.id}><td><div className="user-cell"><div className={"user-table-avatar " + user.role}>{user.full_name.slice(0, 1).toUpperCase()}</div><div><strong>{user.full_name}</strong><small>UID-{String(user.id).padStart(4, "0")}</small></div></div></td><td><span className={"role-pill " + user.role}>{ROLE[user.role]}</span></td><td className="id-cell">{user.telegram_id || <span className="not-linked">Не подключён</span>}</td><td><span className={"status-pill " + (user.active ? "active" : "inactive")}><i />{user.active ? "Активен" : "Отключён"}</span></td><td><div className="row-actions"><button className="text-btn" onClick={() => beginEdit(user)}>Изменить</button><button className="text-btn" onClick={() => toggleActive(user)}>{user.active ? "Отключить" : "Включить"}</button></div></td></tr>)}
+                    {filteredUsers.map((user) => <tr key={user.id}><td><div className="user-cell"><div className={"user-table-avatar " + user.role}>{user.full_name.slice(0, 1).toUpperCase()}</div><div><strong>{user.full_name}</strong><small>UID-{String(user.id).padStart(4, "0")}</small></div></div></td><td><span className={"role-pill " + user.role}>{ROLE[user.role]}</span></td><td className="id-cell">{user.telegram_id || <span className="not-linked">Не подключён</span>}</td><td><span className={"status-pill " + (user.active ? "active" : "inactive")}><i />{user.active ? "Активен" : "Отключён"}</span></td><td><div className="row-actions">{user.active && !user.telegram_id && <button className="text-btn code-action" disabled={generatingCodeUserId === user.id} onClick={() => generateConnectionCode(user)}><KeyRound size={13} />{generatingCodeUserId === user.id ? "Создаём…" : "Код подключения"}</button>}<button className="text-btn" onClick={() => beginEdit(user)}>Изменить</button><button className="text-btn" onClick={() => toggleActive(user)}>{user.active ? "Отключить" : "Включить"}</button></div></td></tr>)}
                   </tbody></table>{!filteredUsers.length && <div className="small-empty">Ничего не найдено.</div>}</div>
                   <div className="table-foot">Управление участниками доступно только администратору.</div>
                 </section>
@@ -354,6 +381,28 @@ function App() {
           <footer className="app-footer"><span>UKNOWAPP <b>0.1 MVP</b></span><span>Локальная база данных · SQLite</span></footer>
         </div>
       </main>
+      {connectionCode && <div className="modal-backdrop" onMouseDown={() => setConnectionCode(null)}>
+        <section className="edit-modal connection-modal" onMouseDown={(event) => event.stopPropagation()}>
+          <div className="modal-heading">
+            <div><div className="eyebrow">ПРИВЯЗКА TELEGRAM</div><h2>Код подключения готов</h2></div>
+            <button className="icon-btn" onClick={() => setConnectionCode(null)}><X size={18} /></button>
+          </div>
+          <p className="modal-description">{connectionCode.full_name} · {ROLE[connectionCode.role]}</p>
+          <div className="invite-code">{connectionCode.code}</div>
+          <div className="code-expiry"><Clock3 size={14} /> Действует 15 минут · до {new Date(connectionCode.expires_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</div>
+          <div className="connection-steps">
+            <strong>Передай этот код участнику:</strong>
+            <span>1. Открыть твоего Telegram-бота и отправить /start.</span>
+            <span>2. Отправить код отдельным сообщением.</span>
+            <span>3. После успешной привязки бот подтвердит подключение.</span>
+          </div>
+          <div className="modal-actions">
+            <button type="button" className="secondary-btn" onClick={() => setConnectionCode(null)}>Закрыть</button>
+            <button type="button" className="primary-btn" onClick={copyConnectionCode}><Copy size={15} /> Скопировать код</button>
+          </div>
+          <p className="code-security-note"><LockKeyhole size={13} /> Код одноразовый. После использования его нельзя применить повторно.</p>
+        </section>
+      </div>}
       {editingUser && <div className="modal-backdrop" onMouseDown={() => setEditingUser(null)}>
         <section className="edit-modal" onMouseDown={(event) => event.stopPropagation()}>
           <div className="modal-heading"><div><div className="eyebrow">УПРАВЛЕНИЕ УЧАСТНИКОМ</div><h2>Редактировать профиль</h2></div><button className="icon-btn" onClick={() => setEditingUser(null)}><X size={18} /></button></div>
