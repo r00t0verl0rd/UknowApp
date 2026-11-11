@@ -1,5 +1,7 @@
+import hashlib
 import json
-from datetime import datetime, timezone
+import secrets
+from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -8,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .database import SessionLocal
-from .models import Assignment, Conversation, Message, User
+from .models import Assignment, ConnectionCode, Conversation, Message, User
 from .schemas import AssignmentCreate, LoginRequest, UserCreate, UserUpdate
 from .security import require_admin, verify_admin
 
@@ -147,6 +149,52 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
         db.rollback()
         raise HTTPException(status_code=409, detail="Этот Telegram ID уже используется")
     return user_dict(user)
+
+
+@router.post("/admin/users/{user_id}/connection-code")
+def generate_connection_code(user_id: int, _: Admin, db: Db):
+    user = db.get(User, user_id)
+    if not user or user.role not in {"teacher", "student"}:
+        raise HTTPException(status_code=404, detail="Учитель или ученик не найден")
+    if not user.active:
+        raise HTTPException(status_code=400, detail="Нельзя подключить отключённого пользователя")
+    if user.telegram_id:
+        raise HTTPException(
+            status_code=409,
+            detail="Telegram уже подключён. Сначала очистите Telegram ID в профиле пользователя.",
+        )
+
+    now = datetime.now(timezone.utc)
+    # New code invalidates every previous unused code for this account.
+    previous_codes = db.scalars(
+        select(ConnectionCode).where(
+            ConnectionCode.user_id == user.id,
+            ConnectionCode.used_at.is_(None),
+        )
+    ).all()
+    for previous in previous_codes:
+        previous.used_at = now
+
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    raw_code = "".join(secrets.choice(alphabet) for _ in range(8))
+    code_hash = hashlib.sha256(raw_code.encode("utf-8")).hexdigest()
+    expires_at = now + timedelta(minutes=15)
+
+    db.add(ConnectionCode(
+        user_id=user.id,
+        code_hash=code_hash,
+        created_at=now,
+        expires_at=expires_at,
+    ))
+    db.commit()
+
+    return {
+        "code": raw_code[:4] + "-" + raw_code[4:],
+        "expires_at": expires_at.isoformat(),
+        "lifetime_minutes": 15,
+        "user": user.full_name,
+        "role": user.role,
+    }
 
 
 @router.post("/admin/assignments", status_code=201)
