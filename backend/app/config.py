@@ -1,0 +1,23 @@
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+load_dotenv(ROOT_DIR / ".env")
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "change-me-now")
+SEED_DEMO_DATA = os.getenv("SEED_DEMO_DATA", "false").lower() in {"1", "true", "yes"}
+
+_database_url = os.getenv("DATABASE_URL", "").strip()
+if _database_url:
+    DATABASE_URL = _database_url
+else:
+    (ROOT_DIR / "data").mkdir(parents=True, exist_ok=True)
+    DATABASE_URL = "sqlite:///" + str(ROOT_DIR / "data" / "uknowapp.db")
+
+if ADMIN_PASSWORD == "change-me-now":
+    import warnings
+    warnings.warn("Using the default admin password. Set ADMIN_PASSWORD in .env before testing.", stacklevel=1)

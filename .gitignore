@@ -1,21 +1,15 @@
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-._*
-.Spotlight-V100
-.Trashes
-.fseventsd
-
-# Python caches
 __pycache__/
 *.py[cod]
-*$py.class
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.pyre/
-
-# Virtual environments
 .venv/
 venv/
+.pytest_cache/
+.env
+data/
+*.db
+*.sqlite3
+node_modules/
+frontend/dist/
+frontend/.vite/
+.DS_Store
+.idea/
+.vscode/
