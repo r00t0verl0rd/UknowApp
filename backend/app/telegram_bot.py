@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 import re
 from datetime import datetime, timezone
 from typing import Optional
@@ -15,6 +16,7 @@ from .database import SessionLocal
 from .models import Assignment, ConnectionCode, Conversation, Message, TeacherSession, User
 
 router = Router()
+logger = logging.getLogger(__name__)
 EMAIL_RE = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.I)
 USERNAME_RE = re.compile(r"(?<!\w)@[A-Za-z][A-Za-z0-9_]{4,}")
 TG_LINK_RE = re.compile(r"(?:https?://)?(?:t\.me|telegram\.me)/[A-Za-z0-9_]+", re.I)
@@ -225,13 +227,36 @@ async def choose_conversation(callback: CallbackQuery):
 async def route_message(message: TgMessage, bot: Bot):
     if not message.from_user:
         return
+    logger.info(
+        "Received Telegram message: telegram_id=%s content_type=%s text_length=%s",
+        message.from_user.id,
+        message.content_type,
+        len(message.text or message.caption or ""),
+    )
     with SessionLocal() as db:
         sender = get_linked_user(db, message.from_user.id)
         if not sender:
             text = (message.text or "").strip()
             normalized = re.sub(r"[\s-]", "", text).upper()
             if CONNECTION_CODE_RE.fullmatch(normalized):
-                linked_user, result = claim_connection_code(db, normalized, message.from_user.id)
+                try:
+                    linked_user, result = claim_connection_code(db, normalized, message.from_user.id)
+                except Exception:
+                    db.rollback()
+                    logger.exception(
+                        "Failed to process Telegram connection code for telegram_id=%s",
+                        message.from_user.id,
+                    )
+                    await message.answer(
+                        "Не удалось обработать код из-за внутренней ошибки. "
+                        "Попробуйте ещё раз через минуту; администратор может посмотреть ошибку в терминале backend."
+                    )
+                    return
+                logger.info(
+                    "Telegram connection code processed: telegram_id=%s result=%s",
+                    message.from_user.id,
+                    result,
+                )
                 if result == "ok" and linked_user:
                     if linked_user.role == "student":
                         next_step = "Теперь отправьте сообщение — оно попадёт назначенному учителю."
