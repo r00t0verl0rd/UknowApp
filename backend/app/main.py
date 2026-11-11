@@ -39,6 +39,7 @@ async def lifespan(_: FastAPI):
         from .telegram_bot import create_dispatcher
 
         bot = Bot(token=TELEGRAM_BOT_TOKEN)
+        await bot.delete_webhook(drop_pending_updates=False)
         dispatcher = create_dispatcher()
         bot_task = asyncio.create_task(
             dispatcher.start_polling(bot, handle_signals=False),
