@@ -1,5 +1,6 @@
 import json
 import re
+from typing import Optional
 
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.filters import CommandStart
@@ -60,7 +61,7 @@ def persist_message(
     sender: User,
     message: TgMessage,
     status: str,
-    safe_text: str | None = None,
+    safe_text: Optional[str] = None,
 ) -> Message:
     body = safe_text if safe_text is not None else (message.text or message.caption or "")
     content_type = message.content_type.value if hasattr(message.content_type, "value") else str(message.content_type)
@@ -80,11 +81,11 @@ def persist_message(
     return row
 
 
-def get_linked_user(db: Session, telegram_id: int) -> User | None:
+def get_linked_user(db: Session, telegram_id: int) -> Optional[User]:
     return db.scalar(select(User).where(User.telegram_id == telegram_id, User.active.is_(True)))
 
 
-def current_student_conversation(db: Session, student_id: int) -> Conversation | None:
+def current_student_conversation(db: Session, student_id: int) -> Optional[Conversation]:
     assignment = db.scalar(
         select(Assignment).where(Assignment.student_id == student_id, Assignment.active.is_(True))
         .order_by(Assignment.created_at.desc())
