@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
@@ -8,6 +9,8 @@ from .api import router
 from .config import SEED_DEMO_DATA, TELEGRAM_BOT_TOKEN
 from .database import SessionLocal, create_tables
 from .models import Assignment, Conversation, User
+
+logger = logging.getLogger(__name__)
 
 
 def seed_demo_data() -> None:
@@ -25,6 +28,28 @@ def seed_demo_data() -> None:
         db.commit()
 
 
+async def run_telegram_bot(bot, dispatcher) -> None:
+    """Run polling in the background; Telegram outages must not stop the web API."""
+    retry_delay = 5
+    while True:
+        try:
+            # This call can time out when Telegram is unreachable. It must never
+            # run directly in the FastAPI startup path.
+            await bot.delete_webhook(drop_pending_updates=False)
+            await dispatcher.start_polling(bot, handle_signals=False)
+            return
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception(
+                "Telegram bot could not connect. Retrying in %s seconds; "
+                "the admin panel remains available.",
+                retry_delay,
+            )
+            await asyncio.sleep(retry_delay)
+            retry_delay = min(retry_delay * 2, 60)
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     create_tables()
@@ -39,10 +64,9 @@ async def lifespan(_: FastAPI):
         from .telegram_bot import create_dispatcher
 
         bot = Bot(token=TELEGRAM_BOT_TOKEN)
-        await bot.delete_webhook(drop_pending_updates=False)
         dispatcher = create_dispatcher()
         bot_task = asyncio.create_task(
-            dispatcher.start_polling(bot, handle_signals=False),
+            run_telegram_bot(bot, dispatcher),
             name="uknowapp-telegram-polling",
         )
     try:
