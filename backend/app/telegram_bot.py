@@ -1,15 +1,18 @@
+import hashlib
 import json
 import re
+from datetime import datetime, timezone
 from typing import Optional
 
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.filters import CommandStart
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message as TgMessage
-from sqlalchemy import select
+from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .database import SessionLocal
-from .models import Assignment, Conversation, Message, TeacherSession, User
+from .models import Assignment, ConnectionCode, Conversation, Message, TeacherSession, User
 
 router = Router()
 EMAIL_RE = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.I)
@@ -81,6 +84,73 @@ def persist_message(
     return row
 
 
+CONNECTION_CODE_RE = re.compile(r"^[A-HJ-NP-Z2-9]{8}$")
+
+
+def claim_connection_code(
+    db: Session,
+    raw_code: str,
+    telegram_id: int,
+) -> tuple[Optional[User], str]:
+    normalized = re.sub(r"[\\s-]", "", raw_code).upper()
+    if not CONNECTION_CODE_RE.fullmatch(normalized):
+        return None, "invalid_format"
+
+    code_hash = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+    connection_code = db.scalar(
+        select(ConnectionCode).where(ConnectionCode.code_hash == code_hash)
+    )
+    if not connection_code:
+        return None, "invalid"
+    if connection_code.used_at is not None:
+        return None, "used"
+
+    now = datetime.now(timezone.utc)
+    expires_at = connection_code.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at <= now:
+        connection_code.used_at = now
+        db.commit()
+        return None, "expired"
+
+    user = db.get(User, connection_code.user_id)
+    if not user or not user.active or user.role not in {"teacher", "student"}:
+        connection_code.used_at = now
+        db.commit()
+        return None, "inactive"
+
+    existing_user = db.scalar(
+        select(User).where(User.telegram_id == telegram_id)
+    )
+    if existing_user and existing_user.id != user.id:
+        return None, "telegram_already_linked"
+    if user.telegram_id and user.telegram_id != telegram_id:
+        return None, "account_already_linked"
+
+    # Atomically mark the code as used and bind the Telegram ID in one transaction.
+    result = db.execute(
+        update(ConnectionCode)
+        .where(
+            ConnectionCode.id == connection_code.id,
+            ConnectionCode.used_at.is_(None),
+        )
+        .values(used_at=now)
+    )
+    if result.rowcount != 1:
+        db.rollback()
+        return None, "used"
+
+    user.telegram_id = telegram_id
+    try:
+        db.commit()
+        db.refresh(user)
+    except IntegrityError:
+        db.rollback()
+        return None, "telegram_already_linked"
+    return user, "ok"
+
+
 def get_linked_user(db: Session, telegram_id: int) -> Optional[User]:
     return db.scalar(select(User).where(User.telegram_id == telegram_id, User.active.is_(True)))
 
@@ -103,7 +173,9 @@ async def start(message: TgMessage):
         user = get_linked_user(db, message.from_user.id)
         if not user:
             await message.answer(
-                "Ваш аккаунт ещё не подключён к UknowApp. Попросите администратора добавить ваш Telegram ID."
+                "Добро пожаловать в UknowApp!\n\n"
+                "Для подключения попросите администратора сгенерировать для вас одноразовый код.\n"
+                "Затем отправьте этот код сюда отдельным сообщением. Код действует 15 минут."
             )
             return
         if user.role == "student":
@@ -156,7 +228,43 @@ async def route_message(message: TgMessage, bot: Bot):
     with SessionLocal() as db:
         sender = get_linked_user(db, message.from_user.id)
         if not sender:
-            await message.answer("Ваш Telegram ID не найден. Попросите администратора подключить аккаунт.")
+            text = (message.text or "").strip()
+            normalized = re.sub(r"[\\s-]", "", text).upper()
+            if CONNECTION_CODE_RE.fullmatch(normalized):
+                linked_user, result = claim_connection_code(db, normalized, message.from_user.id)
+                if result == "ok" and linked_user:
+                    if linked_user.role == "student":
+                        next_step = "Теперь отправьте сообщение — оно попадёт назначенному учителю."
+                    else:
+                        next_step = (
+                            "Когда ученик напишет вам, нажмите «Ответить» под его сообщением, "
+                            "чтобы выбрать переписку."
+                        )
+                    await message.answer(
+                        "Готово! Telegram подключён к аккаунту «"
+                        + linked_user.full_name
+                        + "» ("
+                        + ("ученик" if linked_user.role == "student" else "учитель")
+                        + ").\\n\\n"
+                        + next_step
+                    )
+                elif result == "expired":
+                    await message.answer("Срок действия кода истёк. Попросите администратора создать новый код.")
+                elif result == "used":
+                    await message.answer("Этот код уже использован. Попросите администратора создать новый.")
+                elif result == "telegram_already_linked":
+                    await message.answer("Этот Telegram-аккаунт уже привязан к другому пользователю UknowApp.")
+                elif result == "account_already_linked":
+                    await message.answer("К аккаунту уже привязан другой Telegram. Обратитесь к администратору.")
+                elif result == "inactive":
+                    await message.answer("Этот аккаунт UknowApp отключён. Обратитесь к администратору.")
+                else:
+                    await message.answer("Код не найден или был заменён. Проверьте его или запросите новый у администратора.")
+            else:
+                await message.answer(
+                    "Аккаунт ещё не подключён. Попросите администратора сгенерировать код в UknowApp, "
+                    "затем отправьте сюда 8 символов кода (можно с дефисом)."
+                )
             return
         if sender.role == "admin":
             await message.answer("Администратор управляет пользователями и переписками через веб-панель.")
