@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .database import SessionLocal
-from .models import Assignment, ConnectionCode, Conversation, Message, User
+from .models import Assignment, ConnectionCode, Conversation, Message, TeacherSession, User
 from .schemas import AssignmentCreate, LoginRequest, UserCreate, UserUpdate
 from .security import require_admin, verify_admin
 
@@ -126,6 +126,16 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     changes = payload.model_dump(exclude_unset=True)
+    role_changed = "role" in changes and changes["role"] != user.role
+    if role_changed:
+        assignments = db.scalars(select(Assignment).where(Assignment.active.is_(True), (Assignment.teacher_id == user.id) | (Assignment.student_id == user.id))).all()
+        now = datetime.now(timezone.utc)
+        for assignment in assignments:
+            assignment.active = False
+            assignment.closed_at = now
+            if assignment.conversation:
+                assignment.conversation.status = "closed"
+        db.query(TeacherSession).filter(TeacherSession.teacher_id == user.id).delete(synchronize_session=False)
     for field, value in changes.items():
         if field == "full_name" and value is not None:
             value = value.strip()
