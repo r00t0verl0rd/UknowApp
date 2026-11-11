@@ -121,7 +121,7 @@ export default function App() {
 
   if (!auth) return <div className="login-screen">
     <div className="login-card">
-      <img src="/logo.png" alt="UknowApp" className="login-logo" />
+      <img src="/logo.svg" alt="UknowApp" className="login-logo" />
       <div className="eyebrow">ПАНЕЛЬ АДМИНИСТРАТОРА</div><h1>UknowApp</h1>
       <p className="muted">Управление учителями, учениками и переписками.</p>
       <form onSubmit={signIn} className="stack">
@@ -135,7 +135,7 @@ export default function App() {
 
   return <div className="shell">
     <aside className="sidebar">
-      <div className="brand"><img src="/logo.png" alt="" /><span>Uknow<span>App</span></span></div>
+      <div className="brand"><img src="/logo.svg" alt="" /><span>Uknow<span>App</span></span></div>
       <div className="school-label">УПРАВЛЕНИЕ ШКОЛОЙ</div>
       <nav>
         <button className={page === "graph" ? "active" : ""} onClick={() => setPage("graph")}><Activity/>Структура</button>
@@ -159,7 +159,7 @@ export default function App() {
           </div>
           <section className="graph-panel">
             <div className="section-head"><div><h2>Карта связей</h2><p>Действия доступны на карточках участников.</p></div><div className="legend"><span className="teacher-dot"/> Учителя <span className="student-dot"/> Ученики</div></div>
-            <div className="root-node"><img src="/logo.png" alt=""/><div><b>Администратор</b><small>Полное управление</small></div><span>ADMIN</span></div>
+            <div className="root-node"><img src="/logo.svg" alt=""/><div><b>Администратор</b><small>Полное управление</small></div><span>ADMIN</span></div>
             <div className="tree-line"/>
             <div className="teacher-grid">
               {activeTeachers.map(teacher => <section className="teacher-branch" key={teacher.id}>
