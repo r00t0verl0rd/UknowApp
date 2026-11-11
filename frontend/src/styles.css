@@ -25,3 +25,14 @@
 .modal-form input{height:39px;width:100%;border:1px solid #e8ebf2;border-radius:7px;padding:0 10px;background:#fcfcfd;color:#39465d;font-size:11px}
 .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
 .modal-actions button{font-size:10px}
+
+.code-action{color:#5b8dca}
+.code-action:disabled{opacity:.55;cursor:wait}
+.row-actions{flex-wrap:wrap}
+.connection-modal{max-width:460px}
+.invite-code{margin:7px 0 8px;padding:19px 12px;border:1px dashed #c8c1f2;border-radius:11px;background:#f7f6ff;text-align:center;color:#5148a9;font:800 30px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:4px}
+.code-expiry{display:flex;align-items:center;justify-content:center;gap:7px;color:#9a8a58;font-size:10px;margin:0 0 18px}
+.connection-steps{display:grid;gap:8px;padding:14px;background:#f8fafc;border:1px solid #edf0f5;border-radius:9px;color:#6f7c8f;font-size:10px;line-height:1.45}
+.connection-steps strong{color:#39465d;font-size:11px;margin-bottom:2px}
+.code-security-note{display:flex;align-items:center;justify-content:center;gap:6px;color:#9aa4b4;font-size:9px;margin:13px 0 0}
+@media(max-width:600px){.invite-code{font-size:25px;letter-spacing:3px}.connection-modal{padding:18px}}
