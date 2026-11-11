@@ -32,6 +32,9 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
+  const [editingUser, setEditingUser] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [editTelegram, setEditTelegram] = useState("");
 
   const request = useCallback(async (path, options = {}) => {
     const response = await fetch(API + path, {
@@ -160,6 +163,28 @@ function App() {
     } catch (e) { setError(e.message); }
   }
 
+  function beginEdit(user) {
+    setEditingUser(user);
+    setEditName(user.full_name);
+    setEditTelegram(user.telegram_id ? String(user.telegram_id) : "");
+  }
+
+  async function saveUser(event) {
+    event.preventDefault();
+    try {
+      await request("/api/admin/users/" + editingUser.id, {
+        method: "PATCH",
+        body: JSON.stringify({
+          full_name: editName,
+          telegram_id: editTelegram.trim() ? Number(editTelegram) : null
+        })
+      });
+      setEditingUser(null);
+      await refresh();
+      showToast("Данные пользователя обновлены");
+    } catch (e) { setError(e.message); }
+  }
+
   const filteredUsers = useMemo(() => users.filter((item) =>
     (item.full_name + " " + (item.telegram_id || "")).toLowerCase().includes(search.toLowerCase())
   ), [users, search]);
@@ -283,7 +308,7 @@ function App() {
               <div className="users-layout">
                 <section className="panel users-panel"><div className="panel-heading compact"><div><h2>Все участники</h2><p>Управление доступом к школьной системе</p></div><div className="search-box"><Search size={16} /><input placeholder="Поиск по имени или ID" value={search} onChange={(e) => setSearch(e.target.value)} /></div></div>
                   <div className="table-wrap"><table><thead><tr><th>УЧАСТНИК</th><th>РОЛЬ</th><th>TELEGRAM ID</th><th>СТАТУС</th><th></th></tr></thead><tbody>
-                    {filteredUsers.map((user) => <tr key={user.id}><td><div className="user-cell"><div className={"user-table-avatar " + user.role}>{user.full_name.slice(0, 1).toUpperCase()}</div><div><strong>{user.full_name}</strong><small>UID-{String(user.id).padStart(4, "0")}</small></div></div></td><td><span className={"role-pill " + user.role}>{ROLE[user.role]}</span></td><td className="id-cell">{user.telegram_id || <span className="not-linked">Не подключён</span>}</td><td><span className={"status-pill " + (user.active ? "active" : "inactive")}><i />{user.active ? "Активен" : "Отключён"}</span></td><td><button className="text-btn" onClick={() => toggleActive(user)}>{user.active ? "Отключить" : "Включить"}</button></td></tr>)}
+                    {filteredUsers.map((user) => <tr key={user.id}><td><div className="user-cell"><div className={"user-table-avatar " + user.role}>{user.full_name.slice(0, 1).toUpperCase()}</div><div><strong>{user.full_name}</strong><small>UID-{String(user.id).padStart(4, "0")}</small></div></div></td><td><span className={"role-pill " + user.role}>{ROLE[user.role]}</span></td><td className="id-cell">{user.telegram_id || <span className="not-linked">Не подключён</span>}</td><td><span className={"status-pill " + (user.active ? "active" : "inactive")}><i />{user.active ? "Активен" : "Отключён"}</span></td><td><div className="row-actions"><button className="text-btn" onClick={() => beginEdit(user)}>Изменить</button><button className="text-btn" onClick={() => toggleActive(user)}>{user.active ? "Отключить" : "Включить"}</button></div></td></tr>)}
                   </tbody></table>{!filteredUsers.length && <div className="small-empty">Ничего не найдено.</div>}</div>
                   <div className="table-foot">Управление участниками доступно только администратору.</div>
                 </section>
@@ -329,6 +354,18 @@ function App() {
           <footer className="app-footer"><span>UKNOWAPP <b>0.1 MVP</b></span><span>Локальная база данных · SQLite</span></footer>
         </div>
       </main>
+      {editingUser && <div className="modal-backdrop" onMouseDown={() => setEditingUser(null)}>
+        <section className="edit-modal" onMouseDown={(event) => event.stopPropagation()}>
+          <div className="modal-heading"><div><div className="eyebrow">УПРАВЛЕНИЕ УЧАСТНИКОМ</div><h2>Редактировать профиль</h2></div><button className="icon-btn" onClick={() => setEditingUser(null)}><X size={18} /></button></div>
+          <p className="modal-description">{ROLE[editingUser.role]} · UID-{String(editingUser.id).padStart(4, "0")}</p>
+          <form onSubmit={saveUser} className="modal-form">
+            <label>Имя и фамилия<input value={editName} onChange={(event) => setEditName(event.target.value)} required minLength="2" /></label>
+            <label>Telegram ID<input type="number" value={editTelegram} onChange={(event) => setEditTelegram(event.target.value)} placeholder="Не подключён" /></label>
+            <div className="form-hint"><CircleHelp size={14} /> Участник должен запустить бота командой /start после привязки ID.</div>
+            <div className="modal-actions"><button type="button" className="secondary-btn" onClick={() => setEditingUser(null)}>Отмена</button><button className="primary-btn" type="submit">Сохранить изменения <Check size={15} /></button></div>
+          </form>
+        </section>
+      </div>}
       {toast && <div className="toast"><Check size={16} /> {toast}</div>}
     </div>
   );
