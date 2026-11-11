@@ -161,6 +161,44 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
     return user_dict(user)
 
 
+@router.delete("/admin/users/{user_id}")
+def delete_user(user_id: int, _: Admin, db: Db):
+    user = db.get(User, user_id)
+    if not user or user.role not in {"teacher", "student"}:
+        raise HTTPException(status_code=404, detail="Учитель или ученик не найден")
+
+    assignments = db.scalars(
+        select(Assignment).where(
+            (Assignment.teacher_id == user.id) | (Assignment.student_id == user.id)
+        )
+    ).all()
+    conversation_ids = [item.conversation.id for item in assignments if item.conversation]
+    if conversation_ids:
+        db.query(TeacherSession).filter(
+            TeacherSession.conversation_id.in_(conversation_ids)
+        ).delete(synchronize_session=False)
+        db.query(Message).filter(
+            Message.conversation_id.in_(conversation_ids)
+        ).delete(synchronize_session=False)
+        db.query(Conversation).filter(
+            Conversation.id.in_(conversation_ids)
+        ).delete(synchronize_session=False)
+
+    db.query(TeacherSession).filter(
+        TeacherSession.teacher_id == user.id
+    ).delete(synchronize_session=False)
+    if assignments:
+        db.query(Assignment).filter(
+            Assignment.id.in_([item.id for item in assignments])
+        ).delete(synchronize_session=False)
+    db.query(ConnectionCode).filter(
+        ConnectionCode.user_id == user.id
+    ).delete(synchronize_session=False)
+    db.delete(user)
+    db.commit()
+    return {"ok": True, "deleted_user_id": user_id, "deleted_conversations": len(conversation_ids)}
+
+
 @router.post("/admin/users/{user_id}/connection-code")
 def generate_connection_code(user_id: int, _: Admin, db: Db):
     user = db.get(User, user_id)
