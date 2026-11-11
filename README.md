@@ -16,7 +16,7 @@ UknowApp — веб-панель администратора и Telegram-бот
 
 ## Требования
 
-- Python 3.10+
+- Python 3.9+
 - Node.js 18+
 - Telegram bot token от BotFather (необязательно для запуска веб-панели; требуется для переписки через Telegram)
 
