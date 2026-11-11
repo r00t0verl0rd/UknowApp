@@ -344,7 +344,7 @@ function App() {
                     <label>Имя и фамилия<input name="full_name" required minLength="2" placeholder="Например, Анна Смирнова" /></label>
                     <label>Роль<select name="role"><option value="teacher">Учитель</option><option value="student">Ученик</option></select></label>
                     <label>Telegram ID <span className="optional">необязательно</span><input name="telegram_id" type="number" placeholder="Например, 123456789" /></label>
-                    <div className="form-hint"><CircleHelp size={14} /> Пользователь должен запустить бота командой /start после добавления.</div>
+                    <div className="form-hint"><CircleHelp size={14} /> После добавления нажмите «Код подключения» в списке. Участник отправит код боту после команды /start.</div>
                     <button className="primary-btn full-btn" type="submit">Добавить участника <Plus size={16} /></button>
                   </form></section>
                   <section className="panel form-panel assign-panel"><div className="form-title"><div className="mini-icon mint-bg"><Link2 size={17} /></div><div><h3>Назначить ученика</h3><p>Создать приватную переписку</p></div></div><form onSubmit={assign}>
