@@ -10,7 +10,7 @@ basic = HTTPBasic()
 
 
 def verify_admin(username: str, password: str) -> bool:
-    return secrets.compare_digest(username, ADMIN_USERNAME) and secrets.compare_digest(password, ADMIN_PASSWORD)
+    return secrets.compare_digest(username.encode("utf-8"), ADMIN_USERNAME.encode("utf-8")) and secrets.compare_digest(password.encode("utf-8"), ADMIN_PASSWORD.encode("utf-8"))
 
 
 def require_admin(
