@@ -123,10 +123,23 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    changes = payload.model_dump(exclude_unset=True)
+    for field, value in changes.items():
         if field == "full_name" and value is not None:
             value = value.strip()
         setattr(user, field, value)
+    if changes.get("active") is False:
+        related = db.scalars(
+            select(Assignment).where(
+                Assignment.active.is_(True),
+                (Assignment.teacher_id == user.id) | (Assignment.student_id == user.id),
+            )
+        ).all()
+        for assignment in related:
+            assignment.active = False
+            assignment.closed_at = datetime.now(timezone.utc)
+            if assignment.conversation:
+                assignment.conversation.status = "closed"
     try:
         db.commit()
         db.refresh(user)
