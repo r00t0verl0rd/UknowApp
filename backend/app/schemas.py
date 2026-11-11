@@ -16,7 +16,7 @@ class UserCreate(BaseModel):
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(default=None, min_length=2, max_length=160)
-    telegram_id: int | None = None
+    telegram_id: Optional[int] = None
     active: Optional[bool] = None
 
 
