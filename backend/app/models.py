@@ -67,8 +67,8 @@ class Message(Base):
     text: Mapped[str] = mapped_column(Text, default="", nullable=False)
     metadata_json: Mapped[str] = mapped_column(Text, default="{}", nullable=False)
     delivery_status: Mapped[str] = mapped_column(String(30), default="received", nullable=False)
-    source_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
-    destination_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    source_message_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    destination_message_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
     sender: Mapped[User] = relationship()
