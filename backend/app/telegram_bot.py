@@ -533,7 +533,8 @@ async def handle_panel_callback(callback: CallbackQuery):
                 await callback.answer()
                 await show_role_panel(callback.message, user, db, edit=True)
             elif action == "student" and len(parts) > 2 and parts[2] == "write":
-                if user.role != "student" or not current_student_conversation(db, user.id):
+                student_conversation = current_student_conversation(db, user.id) if user.role == "student" else None
+                if not student_conversation or student_conversation.status != "active":
                     await callback.answer("Сейчас нет активного учителя.", show_alert=True)
                     return
                 await callback.answer("Можно отправить сообщение")
