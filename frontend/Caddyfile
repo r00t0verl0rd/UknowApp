@@ -1,0 +1,16 @@
+{$DOMAIN:localhost} {
+    encode zstd gzip
+
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy strict-origin-when-cross-origin
+        X-Frame-Options DENY
+    }
+
+    @backend path /api/* /docs /docs/* /openapi.json /redoc
+    reverse_proxy @backend backend:8000
+
+    root * /srv
+    try_files {path} /index.html
+    file_server
+}
