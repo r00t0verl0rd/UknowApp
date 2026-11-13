@@ -630,3 +630,121 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     gap: 13px;
   }
 }
+
+
+/* Mobile layout: prevent horizontal overflow and turn dense rows into touch-friendly cards. */
+html, body, #root { width: 100%; min-height: 100%; }
+body { overflow-x: hidden; }
+.shell, .main, .content { min-width: 0; max-width: 100%; }
+img, video, audio { max-width: 100%; }
+
+@media (max-width: 760px) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+    inset: auto;
+    z-index: 30;
+    display: block;
+    width: 100%;
+    height: auto;
+    padding: 10px 12px 9px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 5px 18px rgba(47,31,84,.07);
+  }
+  .brand { padding: 0 42px 9px 2px; font-size: 19px; gap: 8px; }
+  .brand img { width: 32px; height: 32px; }
+  .school-label, .secure { display: none; }
+  .sidebar nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .sidebar nav button {
+    min-width: 0;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 5px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .sidebar nav button svg { width: 16px; height: 16px; flex: none; }
+  .sidebar nav button i { display: none; }
+  .sidebar-bottom { display: block; position: absolute; top: 8px; right: 10px; margin: 0; }
+  .logout { width: 34px; height: 34px; justify-content: center; padding: 7px; margin: 0; font-size: 0; }
+  .logout svg { width: 17px; height: 17px; }
+  .main { margin: 0; width: 100%; min-width: 0; }
+  .topbar { height: 48px; padding: 0 14px; }
+  .topbar > div { min-width: 0; gap: 5px; font-size: 11px; }
+  .topbar > div span { display: none; }
+  .content { width: 100%; padding: 18px 12px 24px; }
+  .page-title { align-items: stretch; flex-direction: column; gap: 12px; margin-bottom: 17px; }
+  .page-title > div { min-width: 0; }
+  .page-title h1 { font-size: clamp(23px, 6vw, 28px); line-height: 1.15; overflow-wrap: anywhere; }
+  .page-title p { font-size: 12px; line-height: 1.5; }
+  .page-title > .btn { width: 100%; min-height: 42px; }
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .metric { min-width: 0; padding: 11px 9px; grid-template-columns: 25px minmax(0, 1fr); column-gap: 7px; }
+  .metric span { overflow-wrap: anywhere; }
+  .metric b { font-size: 19px; }
+  .graph-panel, .user-list, .chat-layout { min-width: 0; width: 100%; padding: 13px; border-radius: 15px; }
+  .graph-panel { overflow: hidden; }
+  .graph-panel .section-head { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .graph-panel .legend { max-width: 100%; flex-wrap: wrap; }
+  .graph-panel .teacher-grid { grid-template-columns: minmax(0, 1fr); gap: 11px; }
+  .graph-panel .teacher-branch { min-width: 0; padding: 10px; }
+  .graph-panel .person-card { min-width: 0; }
+  .graph-panel .person-main { min-width: 0; flex: 1; }
+  .graph-panel .person-info { min-width: 0; }
+  .graph-panel .person-info b { overflow-wrap: anywhere; white-space: normal; }
+  .graph-panel .person-actions { flex: none; }
+  .graph-panel .root-node { width: 100%; max-width: 100%; }
+  .unassigned-grid { grid-template-columns: minmax(0, 1fr); }
+  .toolbar { align-items: stretch; flex-direction: column; gap: 9px; }
+  .search { width: 100%; min-width: 0; }
+  .search input { min-width: 0; width: 100%; }
+  .user-list { padding: 5px 12px; }
+  .user-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    padding: 13px 0;
+  }
+  .user-row > .avatar { flex: 0 0 36px; }
+  .user-row > .person-info { flex: 1 1 calc(100% - 50px); min-width: 0; }
+  .user-row .person-info b { white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
+  .user-row .person-info small { white-space: normal; overflow-wrap: anywhere; line-height: 1.5; }
+  .user-row > .role-tag { margin: 0 0 0 45px; }
+  .user-row > .btn { flex: 1 1 auto; min-height: 38px; padding: 8px 9px; white-space: normal; }
+  .user-row > .icon-btn { flex: 0 0 38px; }
+  .chat-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .chat-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; max-height: 220px; min-width: 0; overflow-y: auto; overflow-x: hidden; border-right: 0; border-bottom: 1px solid var(--line); padding: 0 0 10px; }
+  .chat-item { min-width: 0; width: 100%; padding: 11px; text-align: left; }
+  .chat-item b, .chat-item small { display: block; max-width: 100%; overflow-wrap: anywhere; white-space: normal; }
+  .chat-detail { min-width: 0; width: 100%; }
+  .chat-head { min-width: 0; padding: 12px 2px; }
+  .chat-head b { overflow-wrap: anywhere; }
+  .messages { min-width: 0; padding: 12px 2px; }
+  .message { max-width: 100%; min-width: 0; overflow-wrap: anywhere; }
+  .message p { overflow-wrap: anywhere; white-space: pre-wrap; }
+  .chat-media-video, .chat-media-player { width: 100%; max-width: 100%; }
+  .overlay { align-items: flex-end; padding: 10px; }
+  .modal { width: 100%; max-width: 100%; max-height: calc(100dvh - 20px); overflow-y: auto; padding: 18px; border-radius: 18px; }
+  .modal-head { gap: 10px; }
+  .modal-head h2 { font-size: 20px; overflow-wrap: anywhere; }
+  .modal-actions { flex-wrap: wrap; }
+  .modal-actions .btn { flex: 1 1 120px; }
+  .stack input, .stack select { width: 100%; min-width: 0; }
+  .main footer { padding: 0 12px 16px; }
+}
+
+@media (max-width: 380px) {
+  .sidebar nav button { font-size: 10px; gap: 4px; }
+  .sidebar nav button svg { width: 14px; height: 14px; }
+  .content { padding-right: 9px; padding-left: 9px; }
+  .graph-panel, .user-list, .chat-layout { padding: 10px; }
+  .graph-panel .teacher-branch { padding: 8px; }
+  .graph-panel .person-card { padding: 8px; gap: 5px; }
+  .graph-panel .avatar { width: 32px; height: 32px; }
+  .graph-panel .person-actions button { width: 28px; height: 28px; }
+  .metric { grid-template-columns: 21px minmax(0, 1fr); padding: 9px 7px; }
+  .metric svg { width: 17px; }
+}
