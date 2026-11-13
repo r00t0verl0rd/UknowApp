@@ -32,7 +32,7 @@ npm run dev
 
 Open the admin panel at http://127.0.0.1:5173. The Vite development server proxies `/api` requests to the backend at http://127.0.0.1:8000. API documentation is at http://127.0.0.1:8000/docs.
 
-The local SQLite database is created at `data/uknowapp.db`. Keep the `.env` file and `data/` directory private; both are excluded from Git.
+The local SQLite database is created at `data/uknowapp.db`. Telegram attachments are archived under `data/media/` and shown in the admin conversation view (voice playback, video notes, photos, video and downloadable documents). Keep the `.env` file and the entire `data/` directory private; both are excluded from Git. The hosted Telegram Bot API currently allows downloads up to 20 MB; larger attachments are still forwarded by Telegram but cannot be archived locally by this version.
 
 ## VPS deployment with Docker Compose
 
@@ -95,14 +95,14 @@ docker compose logs -f backend frontend
 
 ### 5. Database backup
 
-Create a consistent SQLite backup from the running container, then copy it to the VPS host:
+Create a consistent SQLite backup from the running container, then copy both the database and archived attachments to the VPS host:
 
 ```bash
 docker compose exec backend python -c "import sqlite3; source=sqlite3.connect('/app/data/uknowapp.db'); target=sqlite3.connect('/tmp/uknowapp-backup.db'); source.backup(target); target.close(); source.close()"
 docker compose cp backend:/tmp/uknowapp-backup.db ./uknowapp-backup.db
 ```
 
-The backup file contains student and teacher data and must be stored securely. The `app_data`, `caddy_data` and `caddy_config` volumes must not be removed when updating the containers.
+The database backup contains student and teacher data; the media backup contains private voice messages, videos, photos and documents. Store both securely and protect access to them. Restore the database to `data/uknowapp.db` and media files to `data/media/` together so message references remain valid. The `app_data`, `caddy_data` and `caddy_config` volumes must not be removed when updating the containers.
 
 ## Deployment notes
 
