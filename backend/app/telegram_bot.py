@@ -459,7 +459,6 @@ def teacher_chat_view(
         lines.insert(3, "Показаны последние " + str(len(visible_rows)) + " из " + str(len(rows)) + " сообщений.")
     markup = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="← К списку учеников", callback_data="ui:teacher:page:0")],
-        [InlineKeyboardButton(text="↻ Обновить", callback_data="ui:home")],
     ])
     return "\n".join(lines)[:3900], markup
 
