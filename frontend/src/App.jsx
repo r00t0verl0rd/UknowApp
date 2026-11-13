@@ -5,6 +5,42 @@ const API = import.meta.env.VITE_API_BASE_URL || "";
 const ROLE = { teacher: "Учитель", student: "Ученик" };
 const initialAuth = () => sessionStorage.getItem("uknowapp-auth") || "";
 
+function MessageBubble({ message, auth }) {
+  const [mediaUrl, setMediaUrl] = useState("");
+  const media = message.metadata?.media;
+  useEffect(() => {
+    if (!media || media.archive_status !== "stored") return undefined;
+    let objectUrl = "";
+    let cancelled = false;
+    fetch(API + "/api/admin/messages/" + message.id + "/media", {
+      headers: { Authorization: "Basic " + auth }
+    }).then(response => {
+      if (!response.ok) throw new Error("media unavailable");
+      return response.blob();
+    }).then(blob => {
+      if (cancelled) return;
+      objectUrl = URL.createObjectURL(blob);
+      setMediaUrl(objectUrl);
+    }).catch(() => setMediaUrl(""));
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [message.id, auth, media?.archive_status]);
+  const kind = media?.kind || message.content_type;
+  const label = media?.file_name || ({ voice: "Голосовое сообщение", video_note: "Видеокружочек", photo: "Фотография", video: "Видео", audio: "Аудио", document: "Документ", sticker: "Стикер", animation: "Анимация" }[kind] || "Вложение");
+  return <div className={"message " + message.sender_role}>
+    <b>{message.sender} <small>{ROLE[message.sender_role] || message.sender_role}</small></b>
+    {message.text && <p>{message.text}</p>}
+    {mediaUrl && kind === "photo" && <img className="chat-media-image" src={mediaUrl} alt={label} />}
+    {mediaUrl && ["voice", "audio"].includes(kind) && <audio className="chat-media-player" controls preload="metadata" src={mediaUrl} />}
+    {mediaUrl && ["video", "video_note", "animation"].includes(kind) && <video className="chat-media-video" controls playsInline preload="metadata" src={mediaUrl} />}
+    {mediaUrl && !["photo", "voice", "audio", "video", "video_note", "animation"].includes(kind) && <a className="chat-media-download" href={mediaUrl} download={label}>Скачать: {label}</a>}
+    {!mediaUrl && media && <small className="chat-media-status">{media.archive_status === "too_large_for_telegram_download" ? "Файл больше 20 МБ — Telegram Bot API не разрешил архивировать его" : media.archive_status === "download_failed" ? "Не удалось сохранить копию вложения" : "Загрузка вложения…"}</small>}
+    {!media && !message.text && <p>Вложение: {message.content_type}</p>}
+  </div>;
+}
+
 export default function App() {
   const [auth, setAuth] = useState(initialAuth);
   const [login, setLogin] = useState("admin");
@@ -211,7 +247,7 @@ export default function App() {
         {page === "chats" && <>
           <div className="page-title"><div><div className="eyebrow">ИСТОРИЯ ОБЩЕНИЯ</div><h1>Переписки</h1><p>Просмотр сообщений между учениками и учителями.</p></div></div>
           <div className="chat-layout"><div className="chat-list">{chats.map(chat => <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected" : "")} onClick={() => openChat(chat)}><b>{chat.student.full_name} ↔ {chat.teacher.full_name}</b><small>{chat.last_message}</small><span>{chat.status === "active" ? "Активна" : "Закрыта"}</span></button>)}{!chats.length && <div className="empty-state">Переписок пока нет</div>}</div>
-            <div className="chat-detail">{selectedChat ? <><div className="chat-head"><b>{selectedChat.student.full_name} ↔ {selectedChat.teacher.full_name}</b><small>Переписка #{selectedChat.id}</small></div><div className="messages">{messages.map(message => <div className={"message " + message.sender_role} key={message.id}><b>{message.sender} <small>{ROLE[message.sender_role] || message.sender_role}</small></b><p>{message.text || "Вложение: " + message.content_type}</p></div>)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}</div></> : <div className="empty-state">Выберите переписку слева</div>}</div>
+            <div className="chat-detail">{selectedChat ? <><div className="chat-head"><b>{selectedChat.student.full_name} ↔ {selectedChat.teacher.full_name}</b><small>Переписка #{selectedChat.id}</small></div><div className="messages">{messages.map(message => <MessageBubble message={message} auth={auth} key={message.id} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}</div></> : <div className="empty-state">Выберите переписку слева</div>}</div>
           </div>
         </>}
       </div>
