@@ -210,9 +210,8 @@ def teacher_panel_view(
     else:
         for item in visible:
             student_name = item["student"].full_name
-            lines.append("👤 " + student_name + " · " + (
-                str(item["unanswered"]) + " новых" if item["unanswered"] else "нет новых сообщений"
-            ))
+            notice = " · " + str(item["unanswered"]) + " новых" if item["unanswered"] else ""
+            lines.append("👤 " + student_name + notice)
             for row in item["unread"][-3:]:
                 lines.append("   " + message_preview(row))
             if item["unanswered"] > 3:
@@ -257,13 +256,9 @@ def teacher_chat_view(
 ) -> str:
     student = conversation.assignment.student
     rows = conversation_messages(db, conversation.id)
-    unread_count = len(pending_student_messages(rows))
     visible_rows = rows[-12:]
     lines = [
         "💬 " + student.full_name,
-        "Новых сообщений: " + str(unread_count),
-        "Ответы будут отправлены этому ученику.",
-        "Выберите другого ученика на клавиатуре или нажмите «" + TEACHER_BACK_LABEL + "».",
         "",
     ]
     if not visible_rows:
@@ -273,7 +268,7 @@ def teacher_chat_view(
             sender_label = "Ученик" if row.sender_role == "student" else "Вы"
             lines.append(sender_label + ": " + message_preview(row))
     if len(rows) > len(visible_rows):
-        lines.insert(4, "Показаны последние " + str(len(visible_rows)) + " из " + str(len(rows)) + " сообщений.")
+        lines.insert(1, "Показаны последние " + str(len(visible_rows)) + " из " + str(len(rows)) + " сообщений.")
     return "\n".join(lines)[:3900]
 
 
