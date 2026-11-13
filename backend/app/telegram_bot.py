@@ -287,6 +287,15 @@ def set_teacher_session(db: Session, teacher: User, conversation: Conversation) 
     db.commit()
 
 
+def clear_teacher_session(db: Session, teacher: User) -> None:
+    if teacher.role != "teacher":
+        return
+    db.query(TeacherSession).filter(
+        TeacherSession.teacher_id == teacher.id
+    ).delete(synchronize_session=False)
+    db.commit()
+
+
 def role_panel_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(text="↻ Обновить", callback_data="ui:home")
@@ -318,7 +327,7 @@ async def show_student_panel(target: TgMessage, student: User, db: Session, edit
             [InlineKeyboardButton(text="↻ Обновить", callback_data="ui:home")],
         ])
     if edit:
-        await target.edit_text(text, reply_markup=markup)
+        await edit_inline_message(target, text, markup)
     else:
         await target.answer(text, reply_markup=markup)
 
@@ -366,7 +375,7 @@ async def show_teacher_panel(target: TgMessage, teacher: User, db: Session, page
         nav = []
         if page > 0:
             nav.append(InlineKeyboardButton(text="← Назад", callback_data="ui:teacher:page:" + str(page - 1)))
-        nav.append(InlineKeyboardButton(text=str(page + 1) + "/" + str(total_pages), callback_data="ui:home"))
+        nav.append(InlineKeyboardButton(text=str(page + 1) + "/" + str(total_pages), callback_data="ui:teacher:page:" + str(page)))
         if page + 1 < total_pages:
             nav.append(InlineKeyboardButton(text="Вперёд →", callback_data="ui:teacher:page:" + str(page + 1)))
         keyboard.append(nav)
@@ -374,7 +383,7 @@ async def show_teacher_panel(target: TgMessage, teacher: User, db: Session, page
     markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
     text = "\n".join(lines)
     if edit:
-        await target.edit_text(text, reply_markup=markup)
+        await edit_inline_message(target, text, markup)
     else:
         await target.answer(text, reply_markup=markup)
 
@@ -432,7 +441,7 @@ async def show_teacher_chat(target: TgMessage, teacher: User, db: Session, conve
     markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
     text = "\n".join(lines)[:3900]
     if edit:
-        await target.edit_text(text, reply_markup=markup)
+        await edit_inline_message(target, text, markup)
     else:
         await target.answer(text, reply_markup=markup)
 
@@ -486,6 +495,7 @@ async def start(message: TgMessage):
                 "Затем отправьте этот код сюда отдельным сообщением. Код действует 15 минут."
             )
             return
+        clear_teacher_session(db, user)
         await show_role_panel(message, user, db)
 
 
@@ -498,6 +508,7 @@ async def open_menu(message: TgMessage):
         if not user:
             await message.answer("Сначала подключите аккаунт UknowApp с помощью кода администратора.")
             return
+        clear_teacher_session(db, user)
         await show_role_panel(message, user, db)
 
 
@@ -518,6 +529,7 @@ async def handle_panel_callback(callback: CallbackQuery):
         action = parts[1] if len(parts) > 1 else ""
         try:
             if action == "home":
+                clear_teacher_session(db, user)
                 await callback.answer()
                 await show_role_panel(callback.message, user, db, edit=True)
             elif action == "student" and len(parts) > 2 and parts[2] == "write":
@@ -538,6 +550,7 @@ async def handle_panel_callback(callback: CallbackQuery):
                     await callback.answer("Эта панель доступна только учителю.", show_alert=True)
                     return
                 page = max(0, int(parts[3]))
+                clear_teacher_session(db, user)
                 await callback.answer()
                 await show_teacher_panel(callback.message, user, db, page=page, edit=True)
             elif action == "chat" and len(parts) > 3:
@@ -546,6 +559,7 @@ async def handle_panel_callback(callback: CallbackQuery):
                     return
                 conversation_id = int(parts[2])
                 page = max(0, int(parts[3]))
+                clear_teacher_session(db, user)
                 conversation = get_teacher_conversation(db, user, conversation_id)
                 if not conversation:
                     await callback.answer("Эта переписка больше недоступна.", show_alert=True)
