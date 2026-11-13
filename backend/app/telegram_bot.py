@@ -603,21 +603,10 @@ async def route_message(message: TgMessage, bot: Bot):
                     result,
                 )
                 if result == "ok" and linked_user:
-                    if linked_user.role == "student":
-                        next_step = "Теперь отправьте сообщение — оно попадёт назначенному учителю."
-                    else:
-                        next_step = (
-                            "Когда ученик напишет вам, нажмите «Ответить» под его сообщением, "
-                            "чтобы выбрать переписку."
-                        )
                     await message.answer(
-                        "Готово! Telegram подключён к аккаунту «"
-                        + linked_user.full_name
-                        + "» ("
-                        + ("ученик" if linked_user.role == "student" else "учитель")
-                        + ").\n\n"
-                        + next_step
+                        "✅ Telegram подключён к аккаунту «" + linked_user.full_name + "»."
                     )
+                    await show_role_panel(message, linked_user, db)
                 elif result == "expired":
                     await message.answer("Срок действия кода истёк. Попросите администратора создать новый код.")
                 elif result == "used":
@@ -642,25 +631,25 @@ async def route_message(message: TgMessage, bot: Bot):
 
         if sender.role == "student":
             conversation = current_student_conversation(db, sender.id)
-            if not conversation:
-                await message.answer("Пока вам не назначен учитель. Обратитесь к администратору.")
+            if not conversation or conversation.status != "active":
+                await message.answer(
+                    "Пока вам не назначен активный учитель. Обратитесь к администратору.",
+                    reply_markup=role_panel_keyboard(),
+                )
                 return
             recipient = conversation.assignment.teacher
-            reply_markup = InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(text="Ответить", callback_data="reply:" + str(conversation.id))
-            ]])
         else:
             session = db.get(TeacherSession, sender.id)
-            conversation = db.get(Conversation, session.conversation_id) if session else None
-            if (
-                not conversation or conversation.status != "active"
-                or not conversation.assignment.active
-                or conversation.assignment.teacher_id != sender.id
-            ):
-                await message.answer("Сначала выберите переписку: нажмите «Ответить» под сообщением ученика.")
+            conversation = get_teacher_conversation(db, sender, session.conversation_id) if session else None
+            if not conversation:
+                await message.answer(
+                    "Сначала выберите ученика в панели учителя.",
+                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+                        InlineKeyboardButton(text="Открыть панель учителя", callback_data="ui:home")
+                    ]]),
+                )
                 return
             recipient = conversation.assignment.student
-            reply_markup = None
 
         if contact_would_be_exposed(message):
             persist_message(
@@ -685,13 +674,35 @@ async def route_message(message: TgMessage, bot: Bot):
                 chat_id=recipient.telegram_id,
                 from_chat_id=message.chat.id,
                 message_id=message.message_id,
-                reply_markup=reply_markup,
             )
             row.destination_message_id = copied.message_id
             row.delivery_status = "delivered"
             db.commit()
             if sender.role == "student":
-                await message.answer("Сообщение доставлено учителю.")
+                # Keep the copied content intact, then show the sender's name and inline actions.
+                try:
+                    await bot.send_message(
+                        chat_id=recipient.telegram_id,
+                        text="📨 Новое сообщение от: " + sender.full_name,
+                        reply_markup=notification_keyboard(conversation.id, sender.full_name),
+                    )
+                except Exception:
+                    logger.exception("Could not send inline teacher notification for conversation_id=%s", conversation.id)
+                await message.answer(
+                    "✅ Сообщение доставлено учителю.",
+                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                        [InlineKeyboardButton(text="✉️ Написать ещё", callback_data="ui:student:write")],
+                        [InlineKeyboardButton(text="Главное меню", callback_data="ui:home")],
+                    ]),
+                )
+            else:
+                await message.answer(
+                    "✅ Ответ доставлен ученику " + recipient.full_name + ".",
+                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                        [InlineKeyboardButton(text="Открыть диалог", callback_data="ui:chat:" + str(conversation.id) + ":0")],
+                        [InlineKeyboardButton(text="Панель учителя", callback_data="ui:home")],
+                    ]),
+                )
         except Exception:
             row.delivery_status = "failed"
             db.commit()
