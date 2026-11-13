@@ -3,12 +3,18 @@ import hashlib
 import json
 import logging
 import re
+from collections import Counter
 from datetime import datetime, timezone
 from typing import Optional
 
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.filters import Command, CommandStart
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message as TgMessage
+from aiogram.types import (
+    CallbackQuery,
+    KeyboardButton,
+    Message as TgMessage,
+    ReplyKeyboardMarkup,
+)
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -174,6 +180,11 @@ def current_student_conversation(db: Session, student_id: int) -> Optional[Conve
 
 
 TEACHER_PAGE_SIZE = 6
+TEACHER_KEYBOARD_VERSION = 2
+TEACHER_BACK_LABEL = "← К списку учеников"
+TEACHER_REFRESH_LABEL = "↻ Обновить"
+TEACHER_PREVIOUS_PAGE_LABEL = "← Предыдущая"
+TEACHER_NEXT_PAGE_LABEL = "Следующая →"
 
 
 def message_preview(row: Optional[Message]) -> str:
@@ -205,21 +216,6 @@ def conversation_messages(db: Session, conversation_id: int) -> list[Message]:
         .where(Message.conversation_id == conversation_id)
         .order_by(Message.created_at, Message.id)
     ).all()
-
-
-async def edit_inline_message(target: TgMessage, text: str, markup: Optional[InlineKeyboardMarkup] = None) -> None:
-    """Update the current inline screen in place; never create a duplicate as fallback."""
-    try:
-        await target.edit_text(text, reply_markup=markup)
-    except Exception as exc:
-        if "message is not modified" in str(exc).lower():
-            return
-        logger.warning(
-            "Could not edit inline screen in place (chat_id=%s message_id=%s): %s",
-            target.chat.id,
-            target.message_id,
-            exc,
-        )
 
 
 def pending_student_messages(rows: list[Message]) -> list[Message]:
@@ -304,14 +300,70 @@ def clear_teacher_session(db: Session, teacher: User) -> None:
     db.commit()
 
 
-def teacher_panel_view(db: Session, teacher: User, page: int = 0) -> tuple[str, InlineKeyboardMarkup]:
+def _teacher_page(items: list[dict], page: int) -> tuple[int, int, list[dict]]:
+    total_pages = max(1, (len(items) + TEACHER_PAGE_SIZE - 1) // TEACHER_PAGE_SIZE)
+    current_page = max(0, min(page, total_pages - 1))
+    start = current_page * TEACHER_PAGE_SIZE
+    return total_pages, current_page, items[start:start + TEACHER_PAGE_SIZE]
+
+
+def _teacher_button_labels(items: list[dict]) -> list[str]:
+    name_counts = Counter(item["student"].full_name.strip() for item in items)
+    labels = []
+    for item in items:
+        student = item["student"]
+        name = student.full_name.strip()
+        prefix = "Написать · "
+        needs_id = name_counts[name] > 1 or len(prefix + name) > 64
+        suffix = " · #" + str(student.id) if needs_id else ""
+        max_name_length = max(1, 64 - len(prefix) - len(suffix))
+        labels.append(prefix + name[:max_name_length].rstrip() + suffix)
+    return labels
+
+
+def _teacher_keyboard(visible: list[dict], page: int, total_pages: int) -> ReplyKeyboardMarkup:
+    labels = _teacher_button_labels(visible)
+    rows = []
+    for index in range(0, len(labels), 2):
+        row = [KeyboardButton(text=label) for label in labels[index:index + 2]]
+        rows.append(row)
+
+    if total_pages > 1:
+        navigation = []
+        if page > 0:
+            navigation.append(KeyboardButton(text=TEACHER_PREVIOUS_PAGE_LABEL))
+        if page + 1 < total_pages:
+            navigation.append(KeyboardButton(text=TEACHER_NEXT_PAGE_LABEL))
+        if navigation:
+            rows.append(navigation)
+
+    rows.append([
+        KeyboardButton(text=TEACHER_BACK_LABEL),
+        KeyboardButton(text=TEACHER_REFRESH_LABEL),
+    ])
+    return ReplyKeyboardMarkup(
+        keyboard=rows,
+        resize_keyboard=True,
+        is_persistent=True,
+        one_time_keyboard=False,
+        input_field_placeholder="Выберите ученика или напишите сообщение",
+    )
+
+
+def teacher_panel_view(
+    db: Session,
+    teacher: User,
+    page: int = 0,
+) -> tuple[str, ReplyKeyboardMarkup, int]:
     items = teacher_conversations(db, teacher)
     total_unread = sum(item["unanswered"] for item in items)
-    total_pages = max(1, (len(items) + TEACHER_PAGE_SIZE - 1) // TEACHER_PAGE_SIZE)
-    page = max(0, min(page, total_pages - 1))
-    visible = items[page * TEACHER_PAGE_SIZE:(page + 1) * TEACHER_PAGE_SIZE]
-    lines = ["👩‍🏫 Панель учителя", "Новых сообщений: " + str(total_unread), "Выберите ученика, чтобы открыть отправку сообщения.", ""]
-    keyboard = []
+    total_pages, page, visible = _teacher_page(items, page)
+    lines = [
+        "👩‍🏫 Панель учителя",
+        "Новых сообщений: " + str(total_unread),
+        "Выберите ученика на клавиатуре ниже.",
+        "",
+    ]
     if not visible:
         lines.append("Пока нет назначенных учеников.")
     else:
@@ -325,48 +377,94 @@ def teacher_panel_view(db: Session, teacher: User, page: int = 0) -> tuple[str, 
             if item["unanswered"] > 3:
                 lines.append("   …ещё " + str(item["unanswered"] - 3) + " сообщений")
             lines.append("")
-            keyboard.append([InlineKeyboardButton(
-                text=(("Ответить · " if item["unanswered"] else "Написать · ") + student_name)[:60],
-                callback_data="ui:chat:" + str(item["conversation"].id),
-            )])
-    if total_pages > 1:
-        nav = []
-        if page > 0:
-            nav.append(InlineKeyboardButton(text="← Назад", callback_data="ui:teacher:page:" + str(page - 1)))
-        nav.append(InlineKeyboardButton(text=str(page + 1) + "/" + str(total_pages), callback_data="ui:teacher:page:" + str(page)))
-        if page + 1 < total_pages:
-            nav.append(InlineKeyboardButton(text="Вперёд →", callback_data="ui:teacher:page:" + str(page + 1)))
-        keyboard.append(nav)
-    keyboard.append([InlineKeyboardButton(text="↻ Обновить", callback_data="ui:home")])
-    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=keyboard)
+        if total_pages > 1:
+            lines.append("Страница " + str(page + 1) + " из " + str(total_pages) + ".")
+    return "\n".join(lines), _teacher_keyboard(visible, page, total_pages), page
+
+
+def teacher_keyboard_actions(
+    db: Session,
+    teacher: User,
+    page: int,
+) -> tuple[dict[str, Conversation], int, int]:
+    items = teacher_conversations(db, teacher)
+    total_pages, page, visible = _teacher_page(items, page)
+    labels = _teacher_button_labels(visible)
+    actions = {
+        label: item["conversation"]
+        for label, item in zip(labels, visible)
+    }
+    return actions, page, total_pages
+
+
+def teacher_keyboard_signature(markup: ReplyKeyboardMarkup) -> str:
+    layout = [[button.text for button in row] for row in markup.keyboard]
+    payload = json.dumps(layout, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def teacher_chat_view(
+    db: Session,
+    teacher: User,
+    conversation: Conversation,
+) -> str:
+    student = conversation.assignment.student
+    rows = conversation_messages(db, conversation.id)
+    unread_count = len(pending_student_messages(rows))
+    visible_rows = rows[-12:]
+    lines = [
+        "💬 " + student.full_name,
+        "Новых сообщений: " + str(unread_count),
+        "Ответы будут отправлены этому ученику.",
+        "Выберите другого ученика на клавиатуре или нажмите «" + TEACHER_BACK_LABEL + "».",
+        "",
+    ]
+    if not visible_rows:
+        lines.append("История пока пуста.")
+    else:
+        for row in visible_rows:
+            sender_label = "Ученик" if row.sender_role == "student" else "Вы"
+            lines.append(sender_label + ": " + message_preview(row))
+    if len(rows) > len(visible_rows):
+        lines.insert(4, "Показаны последние " + str(len(visible_rows)) + " из " + str(len(rows)) + " сообщений.")
+    return "\n".join(lines)[:3900]
 
 
 async def _update_teacher_panel_locked(bot: Bot, db: Session, teacher: User) -> bool:
-    """Keep exactly one persistent teacher panel and edit it when inbox data changes."""
+    """Edit the teacher panel in place and replace its keyboard only when layout changes."""
     if not teacher.telegram_id:
         return False
+
+    panel = db.get(TeacherPanel, teacher.id)
+    page = panel.page_index if panel else 0
+    list_text, markup, page = teacher_panel_view(db, teacher, page)
+    if panel and panel.page_index != page:
+        panel.page_index = page
+        db.commit()
+
     session = db.get(TeacherSession, teacher.id)
     conversation = get_teacher_conversation(db, teacher, session.conversation_id) if session else None
-    if conversation:
-        text, markup = teacher_chat_view(db, teacher, conversation)
-    else:
-        text, markup = teacher_panel_view(db, teacher)
-    panel = db.get(TeacherPanel, teacher.id)
-    if panel:
+    text = teacher_chat_view(db, teacher, conversation) if conversation else list_text
+    signature = teacher_keyboard_signature(markup)
+
+    if (
+        panel
+        and panel.keyboard_version >= TEACHER_KEYBOARD_VERSION
+        and panel.keyboard_signature == signature
+    ):
         try:
+            # Reply keyboards belong to the chat, not to an editable message.
+            # The persistent keyboard remains active while only the panel text changes.
             await bot.edit_message_text(
                 chat_id=panel.chat_id,
                 message_id=panel.message_id,
                 text=text,
-                reply_markup=markup,
             )
             return True
         except Exception as exc:
             error_text = str(exc).lower()
             if "message is not modified" in error_text:
                 return True
-            # Do not create another panel for transient/API errors. Only replace a
-            # panel that Telegram confirms can no longer be edited or found.
             permanent_panel_errors = (
                 "message to edit not found",
                 "message can't be edited",
@@ -380,36 +478,50 @@ async def _update_teacher_panel_locked(bot: Bot, db: Session, teacher: User) -> 
                     teacher.id, panel.message_id, exc,
                 )
                 return False
-            try:
-                await bot.delete_message(chat_id=panel.chat_id, message_id=panel.message_id)
-            except Exception:
-                # The message may already be gone or too old to delete. In either
-                # case, the stale id is discarded before creating its replacement.
-                pass
             logger.info(
                 "Replacing unavailable teacher panel (teacher_id=%s message_id=%s)",
                 teacher.id, panel.message_id,
             )
-            db.delete(panel)
-            db.commit()
 
+    old_chat_id = panel.chat_id if panel else None
+    old_message_id = panel.message_id if panel else None
     sent = await bot.send_message(
         chat_id=teacher.telegram_id,
         text=text,
         reply_markup=markup,
     )
-    db.add(TeacherPanel(
-        teacher_id=teacher.id,
-        message_id=sent.message_id,
-        chat_id=teacher.telegram_id,
-    ))
+
+    if panel:
+        panel.chat_id = teacher.telegram_id
+        panel.message_id = sent.message_id
+        panel.keyboard_version = TEACHER_KEYBOARD_VERSION
+        panel.keyboard_signature = signature
+        panel.page_index = page
+    else:
+        db.add(TeacherPanel(
+            teacher_id=teacher.id,
+            message_id=sent.message_id,
+            chat_id=teacher.telegram_id,
+            keyboard_version=TEACHER_KEYBOARD_VERSION,
+            keyboard_signature=signature,
+            page_index=page,
+        ))
     db.commit()
+
+    if old_chat_id and old_message_id and old_message_id != sent.message_id:
+        try:
+            await bot.delete_message(chat_id=old_chat_id, message_id=old_message_id)
+        except Exception:
+            logger.info(
+                "Could not remove the previous teacher panel (teacher_id=%s message_id=%s)",
+                teacher.id,
+                old_message_id,
+            )
     return True
 
 
 # Telegram may process several updates for the same teacher concurrently.
-# Serialize panel edits/creation so two handlers cannot both insert the
-# unique teacher_panels row after observing it as absent.
+# Serialize panel edits/creation so two handlers cannot create competing panels.
 _teacher_panel_locks: dict[int, asyncio.Lock] = {}
 
 
@@ -419,70 +531,64 @@ async def update_teacher_panel(bot: Bot, db: Session, teacher: User) -> bool:
         try:
             return await _update_teacher_panel_locked(bot, db, teacher)
         except Exception:
-            # A failed flush/commit leaves SQLAlchemy's Session unusable until
-            # rollback. Restore it before the caller continues handling updates.
             db.rollback()
             raise
 
 
-async def show_teacher_panel(target: TgMessage, teacher: User, db: Session, page: int = 0, edit: bool = False) -> None:
-    text, markup = teacher_panel_view(db, teacher, page)
-    if edit:
-        await edit_inline_message(target, text, markup)
-    else:
-        await target.answer(text, reply_markup=markup)
-
-
-def teacher_chat_view(
+async def handle_teacher_keyboard_message(
+    message: TgMessage,
+    bot: Bot,
     db: Session,
     teacher: User,
-    conversation: Conversation,
-) -> tuple[str, InlineKeyboardMarkup]:
-    student = conversation.assignment.student
-    rows = conversation_messages(db, conversation.id)
-    unread_count = len(pending_student_messages(rows))
-    # Keep the screen compact; the complete conversation remains in SQLite.
-    visible_rows = rows[-12:]
-    lines = [
-        "💬 " + student.full_name,
-        "Новых сообщений: " + str(unread_count),
-        "Ответы будут отправлены этому ученику.",
-        "",
-    ]
-    if not visible_rows:
-        lines.append("История пока пуста.")
-    else:
-        for row in visible_rows:
-            sender_label = "Ученик" if row.sender_role == "student" else "Вы"
-            preview = message_preview(row)
-            lines.append(sender_label + ": " + preview)
-    if len(rows) > len(visible_rows):
-        lines.insert(3, "Показаны последние " + str(len(visible_rows)) + " из " + str(len(rows)) + " сообщений.")
-    markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="← К списку учеников", callback_data="ui:teacher:page:0")],
-    ])
-    return "\n".join(lines)[:3900], markup
+) -> bool:
+    body = (message.text or "").strip()
+    panel = db.get(TeacherPanel, teacher.id)
+    page = panel.page_index if panel else 0
+    actions, page, total_pages = teacher_keyboard_actions(db, teacher, page)
 
-
-async def show_teacher_pending(target: TgMessage, teacher: User, db: Session, conversation: Conversation, edit: bool = False) -> None:
-    text, markup = teacher_chat_view(db, teacher, conversation)
-    if edit:
-        await edit_inline_message(target, text, markup)
-    else:
-        await target.answer(text, reply_markup=markup)
-
-
-async def show_role_panel(target: TgMessage, user: User, db: Session, edit: bool = False) -> None:
-    if user.role == "teacher":
-        await show_teacher_panel(target, user, db, page=0, edit=edit)
-    elif user.role == "admin":
-        text = "Администратор управляет системой через веб-панель."
-        if edit:
-            await edit_inline_message(target, text)
+    if body in actions:
+        conversation = actions[body]
+        valid = get_teacher_conversation(db, teacher, conversation.id)
+        if valid:
+            set_teacher_session(db, teacher, valid)
         else:
-            await target.answer(text)
-    # Student accounts intentionally have no bot menu: the private chat itself
-    # is the conversation, with only messages from the teacher appearing here.
+            clear_teacher_session(db, teacher)
+    elif body == TEACHER_BACK_LABEL:
+        clear_teacher_session(db, teacher)
+    elif body == TEACHER_REFRESH_LABEL:
+        pass
+    elif body == TEACHER_PREVIOUS_PAGE_LABEL:
+        clear_teacher_session(db, teacher)
+        if panel:
+            panel.page_index = max(0, page - 1)
+            db.commit()
+    elif body == TEACHER_NEXT_PAGE_LABEL:
+        clear_teacher_session(db, teacher)
+        if panel:
+            panel.page_index = min(total_pages - 1, page + 1)
+            db.commit()
+    elif body.startswith("Написать · "):
+        # A stale button from a previous keyboard layout must never be forwarded
+        # as a message to whichever student happened to be selected earlier.
+        try:
+            await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+        except Exception:
+            pass
+        await update_teacher_panel(bot, db, teacher)
+        return True
+    else:
+        return False
+
+    try:
+        # Reply-keyboard taps arrive as ordinary user messages; remove them so
+        # the teacher's chat stays focused on the persistent panel.
+        await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+    except Exception:
+        logger.debug("Could not remove teacher keyboard selection message_id=%s", message.message_id)
+
+    await update_teacher_panel(bot, db, teacher)
+    return True
+
 
 
 @router.message(CommandStart())
@@ -543,67 +649,53 @@ async def open_menu(message: TgMessage, bot: Bot):
 
 
 @router.callback_query(F.data.startswith("ui:"))
-async def handle_panel_callback(callback: CallbackQuery):
+async def handle_panel_callback(callback: CallbackQuery, bot: Bot):
     if not callback.from_user or not callback.data:
         return
-    parts = callback.data.split(":")
     with SessionLocal() as db:
         user = get_linked_user(db, callback.from_user.id)
-        if not user:
-            await callback.answer("Аккаунт не подключён или отключён.", show_alert=True)
-            return
-        if not callback.message:
-            await callback.answer()
+        if not user or user.role != "teacher":
+            await callback.answer("Панель доступна только подключённому учителю.", show_alert=True)
             return
 
+        parts = callback.data.split(":")
         action = parts[1] if len(parts) > 1 else ""
         try:
             if action == "home":
                 clear_teacher_session(db, user)
-                await callback.answer()
-                await show_role_panel(callback.message, user, db, edit=True)
             elif action == "teacher" and len(parts) > 3 and parts[2] == "page":
-                if user.role != "teacher":
-                    await callback.answer("Эта панель доступна только учителю.", show_alert=True)
-                    return
                 page = max(0, int(parts[3]))
+                panel = db.get(TeacherPanel, user.id)
+                if panel:
+                    panel.page_index = page
+                    db.commit()
                 clear_teacher_session(db, user)
-                await callback.answer()
-                await show_teacher_panel(callback.message, user, db, page=page, edit=True)
             elif action == "chat" and len(parts) >= 3:
-                if user.role != "teacher":
-                    await callback.answer("Эта панель доступна только учителю.", show_alert=True)
-                    return
-                conversation_id = int(parts[2])
-                conversation = get_teacher_conversation(db, user, conversation_id)
+                conversation = get_teacher_conversation(db, user, int(parts[2]))
                 if not conversation:
                     await callback.answer("Ученик больше не назначен вам.", show_alert=True)
                     return
-                # Selecting a student with the "Ответить" button immediately
-                # activates the reply session. The teacher can send the next
-                # message without pressing a second inline button.
                 set_teacher_session(db, user, conversation)
-                await callback.answer("Ученик выбран. Отправьте сообщение.")
-                await show_teacher_pending(callback.message, user, db, conversation, edit=True)
             elif action == "reply" and len(parts) > 2:
-                if user.role != "teacher":
-                    await callback.answer("Отвечать может только учитель.", show_alert=True)
-                    return
-                conversation_id = int(parts[2])
-                conversation = get_teacher_conversation(db, user, conversation_id)
+                conversation = get_teacher_conversation(db, user, int(parts[2]))
                 if not conversation:
                     await callback.answer("Эта переписка больше недоступна.", show_alert=True)
                     return
                 set_teacher_session(db, user, conversation)
-                await callback.answer("Отправьте ответ сообщением")
             else:
-                await callback.answer("Неизвестная команда.", show_alert=True)
+                await callback.answer("Старая кнопка больше не действует. Панель обновлена.")
+                await update_teacher_panel(bot, db, user)
+                return
         except (ValueError, IndexError):
             await callback.answer("Некорректная команда.", show_alert=True)
+            return
+
+        await callback.answer()
+        await update_teacher_panel(bot, db, user)
 
 
 @router.callback_query(F.data.startswith("reply:"))
-async def choose_conversation(callback: CallbackQuery):
+async def choose_conversation(callback: CallbackQuery, bot: Bot):
     if not callback.from_user or not callback.data:
         return
     try:
@@ -619,7 +711,8 @@ async def choose_conversation(callback: CallbackQuery):
             await callback.answer("У вас нет доступа к этой переписке", show_alert=True)
             return
         set_teacher_session(db, teacher, conversation)
-        await callback.answer("Отправьте ответ сообщением")
+        await callback.answer()
+        await update_teacher_panel(bot, db, teacher)
 
 
 @router.message()
@@ -684,6 +777,9 @@ async def route_message(message: TgMessage, bot: Bot):
             await message.answer("Администратор управляет пользователями и переписками через веб-панель.")
             return
 
+        if sender.role == "teacher" and await handle_teacher_keyboard_message(message, bot, db, sender):
+            return
+
         if sender.role == "student":
             conversation = current_student_conversation(db, sender.id)
             if not conversation or conversation.status != "active":
@@ -694,12 +790,7 @@ async def route_message(message: TgMessage, bot: Bot):
             session = db.get(TeacherSession, sender.id)
             conversation = get_teacher_conversation(db, sender, session.conversation_id) if session else None
             if not conversation:
-                await message.answer(
-                    "Сначала выберите ученика в панели учителя.",
-                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
-                        InlineKeyboardButton(text="Открыть панель учителя", callback_data="ui:home")
-                    ]]),
-                )
+                await update_teacher_panel(bot, db, sender)
                 return
             recipient = conversation.assignment.student
 
