@@ -748,3 +748,54 @@ img, video, audio { max-width: 100%; }
   .metric { grid-template-columns: 21px minmax(0, 1fr); padding: 9px 7px; }
   .metric svg { width: 17px; }
 }
+
+/* Mobile browsers may render buttons with a transparent native appearance.
+   Set explicit surfaces so controls keep the same soft-grey treatment as desktop. */
+@media (max-width: 760px) {
+  button,
+  .btn,
+  .sidebar nav button,
+  .logout,
+  .person-actions button,
+  .icon-btn,
+  .add-student {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .btn:not(.primary):not(.disconnect) {
+    background: #f0eef3;
+    border-color: #e2dce9;
+    color: #393149;
+  }
+  .btn.ghost {
+    background: #eae7ef;
+    border-color: #ded8e6;
+  }
+  .btn.outline {
+    background: #f1edf7;
+    border-color: #d8c9ed;
+    color: var(--purple);
+  }
+  .sidebar nav button {
+    background: #f0eef3;
+    border: 1px solid #e4deea;
+    color: #625b70;
+    border-radius: 11px;
+  }
+  .sidebar nav button.active {
+    background: linear-gradient(105deg, #573e99, #7856bd);
+    border-color: transparent;
+    color: #fff;
+  }
+  .person-actions button,
+  .icon-btn {
+    background: #f0eef3;
+    border: 1px solid #e4deea;
+    color: #716981;
+  }
+  .add-student {
+    background: #f3eff8;
+    border-color: #e2d8ef;
+  }
+}
+
