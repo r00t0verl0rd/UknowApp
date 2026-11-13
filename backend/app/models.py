@@ -93,4 +93,7 @@ class TeacherPanel(Base):
     teacher_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
     message_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    keyboard_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    keyboard_signature: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    page_index: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
