@@ -501,17 +501,11 @@ async def start(message: TgMessage, bot: Bot):
         if user.role == "teacher":
             clear_teacher_session(db, user)
             try:
-                panel_ready = await update_teacher_panel(bot, db, user)
+                # Open the persistent teacher panel directly; do not send a
+                # separate confirmation message after /start.
+                await update_teacher_panel(bot, db, user)
             except Exception:
                 logger.exception("Could not open teacher panel from /start for user_id=%s", user.id)
-                panel_ready = False
-            if panel_ready:
-                await message.answer("Бот запущен. Панель учителя готова.")
-            else:
-                await message.answer(
-                    "Бот запущен, но панель учителя пока не удалось обновить. "
-                    "Попробуйте отправить /start ещё раз через несколько секунд."
-                )
             return
 
         if user.role == "student":
