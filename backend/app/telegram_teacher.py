@@ -3,16 +3,17 @@
 import asyncio
 import hashlib
 import json
+import logging
 from collections import Counter
 from typing import Optional
 
 from aiogram import Bot
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+from aiogram.types import KeyboardButton, Message as TgMessage, ReplyKeyboardMarkup
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .models import Assignment, Conversation, Message, TeacherPanel, TeacherSession, User
-from .telegram_common import conversation_messages, message_preview, pending_student_messages
+logger = logging.getLogger(__name__)
 
 
 TEACHER_PAGE_SIZE = 6
