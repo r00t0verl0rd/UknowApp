@@ -100,6 +100,7 @@ Create a consistent SQLite backup from the running container, then copy both the
 ```bash
 docker compose exec backend python -c "import sqlite3; source=sqlite3.connect('/app/data/uknowapp.db'); target=sqlite3.connect('/tmp/uknowapp-backup.db'); source.backup(target); target.close(); source.close()"
 docker compose cp backend:/tmp/uknowapp-backup.db ./uknowapp-backup.db
+docker compose cp backend:/app/data/media ./media-backup
 ```
 
 The database backup contains student and teacher data; the media backup contains private voice messages, videos, photos and documents. Store both securely and protect access to them. Restore the database to `data/uknowapp.db` and media files to `data/media/` together so message references remain valid. The `app_data`, `caddy_data` and `caddy_config` volumes must not be removed when updating the containers.
