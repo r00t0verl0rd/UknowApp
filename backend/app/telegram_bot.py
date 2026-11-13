@@ -173,7 +173,6 @@ def current_student_conversation(db: Session, student_id: int) -> Optional[Conve
 
 
 TEACHER_PAGE_SIZE = 6
-CHAT_PAGE_SIZE = 8
 
 
 def message_preview(row: Optional[Message]) -> str:
@@ -298,12 +297,6 @@ def clear_teacher_session(db: Session, teacher: User) -> None:
         TeacherSession.teacher_id == teacher.id
     ).delete(synchronize_session=False)
     db.commit()
-
-
-def role_panel_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(text="↻ Обновить", callback_data="ui:home")
-    ]])
 
 
 def teacher_panel_view(db: Session, teacher: User, page: int = 0) -> tuple[str, InlineKeyboardMarkup]:
