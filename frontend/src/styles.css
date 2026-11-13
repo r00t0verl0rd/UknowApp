@@ -799,3 +799,42 @@ img, video, audio { max-width: 100%; }
   }
 }
 
+
+
+/* Final mobile control surfaces: placed after every theme rule. */
+@media screen and (max-width: 900px) {
+  button:not(.primary):not(.disconnect):not(.danger-icon),
+  .btn:not(.primary):not(.disconnect),
+  .sidebar nav button,
+  .person-actions button:not(.danger-icon),
+  .icon-btn:not(.danger-icon),
+  .add-student,
+  .chat-item,
+  .alert-row button,
+  .modal-head button {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    background-color: #f0eef3 !important;
+    border: 1px solid #e2dce9 !important;
+    color: #393149 !important;
+    box-shadow: none !important;
+  }
+  .btn.ghost { background-color: #eae7ef !important; }
+  .btn.outline, .add-student { background-color: #f1edf7 !important; color: var(--purple) !important; }
+  .sidebar nav button.active {
+    background: linear-gradient(105deg, #573e99, #7856bd) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+  }
+  .chat-item.selected { background-color: #eae4f4 !important; color: var(--purple) !important; }
+  .btn.primary {
+    background: linear-gradient(105deg, #573e99, #7856bd) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+  }
+  .btn.disconnect {
+    background-color: #fff0f1 !important;
+    border-color: #f2d5d9 !important;
+    color: #b82c3b !important;
+  }
+}
