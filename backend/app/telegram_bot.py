@@ -71,13 +71,16 @@ def persist_message(
 ) -> Message:
     body = safe_text if safe_text is not None else (message.text or message.caption or "")
     content_type = message.content_type.value if hasattr(message.content_type, "value") else str(message.content_type)
+    metadata = message_metadata(message)
+    if sender.role == "student":
+        metadata["teacher_read_at"] = None
     row = Message(
         conversation_id=conversation_id,
         sender_id=sender.id,
         sender_role=sender.role,
         content_type=content_type,
         text=body[:12000],
-        metadata_json=json.dumps(message_metadata(message), ensure_ascii=False),
+        metadata_json=json.dumps(metadata, ensure_ascii=False),
         delivery_status=status,
         source_message_id=message.message_id,
     )
@@ -214,24 +217,25 @@ async def edit_inline_message(target: TgMessage, text: str, markup: Optional[Inl
         await target.answer(text, reply_markup=markup)
 
 
-def conversation_status(rows: list[Message]) -> dict:
-    unanswered = 0
-    latest_student = None
-    latest_teacher = None
-    for row in rows:
-        if row.delivery_status != "delivered":
+def pending_student_messages(rows: list[Message]) -> list[Message]:
+    """Return only delivered student messages not yet handled by the teacher.
+
+    Older rows do not have a read marker, so the latest teacher reply is used
+    as a compatibility boundary for messages created before this feature.
+    """
+    last_teacher_index = -1
+    for index, row in enumerate(rows):
+        if row.sender_role == "teacher" and row.delivery_status == "delivered":
+            last_teacher_index = index
+
+    pending = []
+    for index, row in enumerate(rows):
+        if index <= last_teacher_index or row.sender_role != "student" or row.delivery_status != "delivered":
             continue
-        if row.sender_role == "student":
-            unanswered += 1
-            latest_student = row
-        elif row.sender_role == "teacher":
-            unanswered = 0
-            latest_teacher = row
-    return {
-        "unanswered": unanswered,
-        "latest_student": latest_student,
-        "latest_teacher": latest_teacher,
-    }
+        metadata = json.loads(row.metadata_json or "{}")
+        if metadata.get("teacher_read_at") is None:
+            pending.append(row)
+    return pending
 
 
 def teacher_conversations(db: Session, teacher: User) -> list[dict]:
@@ -250,18 +254,18 @@ def teacher_conversations(db: Session, teacher: User) -> list[dict]:
         ):
             continue
         rows = conversation_messages(db, conversation.id)
-        status = conversation_status(rows)
-        last_student = status["latest_student"]
+        unread = pending_student_messages(rows)
+        if not unread:
+            continue
         items.append({
             "student": student,
             "conversation": conversation,
-            "rows": rows,
-            "unanswered": status["unanswered"],
-            "latest_student": last_student,
-            "preview": message_preview(last_student),
-            "last_at": last_student.created_at.isoformat() if last_student else "",
+            "unread": unread,
+            "unanswered": len(unread),
+            "preview": message_preview(unread[-1]),
+            "last_at": unread[-1].created_at.isoformat(),
         })
-    items.sort(key=lambda item: (item["unanswered"] > 0, item["last_at"]), reverse=True)
+    items.sort(key=lambda item: item["last_at"], reverse=True)
     return items
 
 
@@ -302,75 +306,29 @@ def role_panel_keyboard() -> InlineKeyboardMarkup:
     ]])
 
 
-async def show_student_panel(target: TgMessage, student: User, db: Session, edit: bool = False) -> None:
-    conversation = current_student_conversation(db, student.id)
-    if not conversation or conversation.status != "active":
-        text = (
-            "👋 Здравствуйте, " + student.full_name + "!\n\n"
-            "Пока вам не назначен учитель. Когда администратор создаст связь, "
-            "здесь появится его имя и кнопка для отправки сообщения."
-        )
-        markup = role_panel_keyboard()
-    else:
-        teacher = conversation.assignment.teacher
-        rows = conversation_messages(db, conversation.id)
-        latest_teacher = next((row for row in reversed(rows) if row.sender_role == "teacher" and row.delivery_status == "delivered"), None)
-        text = (
-            "👋 Личный кабинет ученика\n\n"
-            "Здравствуйте, " + student.full_name + "!\n\n"
-            "👩‍🏫 Ваш учитель:\n" + teacher.full_name + "\n\n"
-            "Последний ответ учителя:\n" + message_preview(latest_teacher) + "\n\n"
-            "Нажмите кнопку ниже и отправьте сообщение — оно попадёт вашему учителю."
-        )
-        markup = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="✉️ Написать учителю", callback_data="ui:student:write")],
-            [InlineKeyboardButton(text="↻ Обновить", callback_data="ui:home")],
-        ])
-    if edit:
-        await edit_inline_message(target, text, markup)
-    else:
-        await target.answer(text, reply_markup=markup)
-
-
-async def show_teacher_panel(target: TgMessage, teacher: User, db: Session, page: int = 0, edit: bool = False) -> None:
+def teacher_panel_view(db: Session, teacher: User, page: int = 0) -> tuple[str, InlineKeyboardMarkup]:
     items = teacher_conversations(db, teacher)
-    total_unanswered = sum(item["unanswered"] for item in items)
+    total_unread = sum(item["unanswered"] for item in items)
     total_pages = max(1, (len(items) + TEACHER_PAGE_SIZE - 1) // TEACHER_PAGE_SIZE)
     page = max(0, min(page, total_pages - 1))
-    start = page * TEACHER_PAGE_SIZE
-    visible = items[start:start + TEACHER_PAGE_SIZE]
-
-    lines = [
-        "👩‍🏫 Панель учителя",
-        "",
-        "Здравствуйте, " + teacher.full_name + "!",
-        "Учеников: " + str(len(items)),
-        "Сообщений ждут ответа: " + str(total_unanswered),
-        "",
-    ]
+    visible = items[page * TEACHER_PAGE_SIZE:(page + 1) * TEACHER_PAGE_SIZE]
+    lines = ["👩‍🏫 Панель учителя", "Новых сообщений: " + str(total_unread), ""]
     keyboard = []
-    if not items:
-        lines.append("Пока нет активных учеников. Они появятся здесь после назначения администратором.")
+    if not visible:
+        lines.append("Пока нет сообщений, ожидающих ответа.")
     else:
-        lines.append("Входящие сообщения:")
         for item in visible:
             student_name = item["student"].full_name
-            count = item["unanswered"]
-            if count:
-                lines.append("🔴 " + student_name + " — " + str(count) + " без ответа")
-            else:
-                lines.append("🟢 " + student_name + " — нет ожидающих ответов")
-            lines.append("   " + item["preview"])
-            label = ("🔴 " if count else "🟢 ") + student_name
-            if count:
-                label += " · " + str(count)
-            keyboard.append([
-                InlineKeyboardButton(
-                    text=label[:60],
-                    callback_data="ui:chat:" + str(item["conversation"].id) + ":0",
-                )
-            ])
-
+            lines.append("👤 " + student_name + " · " + str(item["unanswered"]) + " новых")
+            for row in item["unread"][-3:]:
+                lines.append("   " + message_preview(row))
+            if item["unanswered"] > 3:
+                lines.append("   …ещё " + str(item["unanswered"] - 3) + " сообщений")
+            lines.append("")
+            keyboard.append([InlineKeyboardButton(
+                text=("Ответить · " + student_name)[:60],
+                callback_data="ui:chat:" + str(item["conversation"].id),
+            )])
     if total_pages > 1:
         nav = []
         if page > 0:
@@ -379,66 +337,33 @@ async def show_teacher_panel(target: TgMessage, teacher: User, db: Session, page
         if page + 1 < total_pages:
             nav.append(InlineKeyboardButton(text="Вперёд →", callback_data="ui:teacher:page:" + str(page + 1)))
         keyboard.append(nav)
-    keyboard.append([InlineKeyboardButton(text="↻ Обновить список", callback_data="ui:home")])
-    markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
-    text = "\n".join(lines)
+    keyboard.append([InlineKeyboardButton(text="↻ Обновить", callback_data="ui:home")])
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+async def show_teacher_panel(target: TgMessage, teacher: User, db: Session, page: int = 0, edit: bool = False) -> None:
+    text, markup = teacher_panel_view(db, teacher, page)
     if edit:
         await edit_inline_message(target, text, markup)
     else:
         await target.answer(text, reply_markup=markup)
 
 
-async def show_teacher_chat(target: TgMessage, teacher: User, db: Session, conversation: Conversation, page: int = 0, edit: bool = False) -> None:
+async def show_teacher_pending(target: TgMessage, teacher: User, db: Session, conversation: Conversation, edit: bool = False) -> None:
     rows = conversation_messages(db, conversation.id)
+    unread = pending_student_messages(rows)
     student = conversation.assignment.student
-    status = conversation_status(rows)
-    total_pages = max(1, (len(rows) + CHAT_PAGE_SIZE - 1) // CHAT_PAGE_SIZE)
-    page = max(0, min(page, total_pages - 1))
-    end = max(0, len(rows) - page * CHAT_PAGE_SIZE)
-    start = max(0, end - CHAT_PAGE_SIZE)
-    visible = rows[start:end]
-
-    lines = [
-        "💬 Диалог с учеником",
-        student.full_name,
-        "Ожидают ответа: " + str(status["unanswered"]),
-        "",
-    ]
-    pending_ids = set()
-    for row in rows:
-        if row.delivery_status != "delivered":
-            continue
-        if row.sender_role == "student":
-            pending_ids.add(row.id)
-        elif row.sender_role == "teacher":
-            pending_ids.clear()
-
-    if not rows:
-        lines.append("Сообщений пока нет.")
-    else:
-        for row in visible:
-            sender_name = student.full_name if row.sender_role == "student" else "Вы"
-            if row.sender_role == "student":
-                marker = " · 🔴 без ответа" if row.id in pending_ids else " · ✅ отвечено"
-                lines.append("📨 " + sender_name + marker + ":")
-            else:
-                lines.append("↩️ " + sender_name + ":")
+    lines = ["👤 " + student.full_name, "Непрочитанные сообщения: " + str(len(unread)), ""]
+    if unread:
+        for row in unread:
             lines.append(message_preview(row))
             lines.append("")
-        if page == 0 and len(rows) > CHAT_PAGE_SIZE:
-            lines.append("Показаны последние сообщения.")
-    keyboard = [[
-        InlineKeyboardButton(text="✉️ Ответить", callback_data="ui:reply:" + str(conversation.id)),
-        InlineKeyboardButton(text="← К ученикам", callback_data="ui:teacher:page:0"),
-    ]]
-    if total_pages > 1:
-        nav = []
-        if page + 1 < total_pages:
-            nav.append(InlineKeyboardButton(text="← Старее", callback_data="ui:chat:" + str(conversation.id) + ":" + str(page + 1)))
-        if page > 0:
-            nav.append(InlineKeyboardButton(text="Новее →", callback_data="ui:chat:" + str(conversation.id) + ":" + str(page - 1)))
-        keyboard.insert(0, nav)
-    markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
+    else:
+        lines.append("Новых сообщений нет.")
+    markup = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="↩️ Ответить", callback_data="ui:reply:" + str(conversation.id))],
+        [InlineKeyboardButton(text="← К списку учеников", callback_data="ui:teacher:page:0")],
+    ])
     text = "\n".join(lines)[:3900]
     if edit:
         await edit_inline_message(target, text, markup)
@@ -447,38 +372,22 @@ async def show_teacher_chat(target: TgMessage, teacher: User, db: Session, conve
 
 
 async def show_role_panel(target: TgMessage, user: User, db: Session, edit: bool = False) -> None:
-    if user.role == "student":
-        await show_student_panel(target, user, db, edit=edit)
-    elif user.role == "teacher":
+    if user.role == "teacher":
         await show_teacher_panel(target, user, db, page=0, edit=edit)
-    else:
-        text = "UknowApp: управление пользователями и переписками доступно в веб-панели администратора."
+    elif user.role == "admin":
+        text = "Администратор управляет системой через веб-панель."
         if edit:
             await edit_inline_message(target, text)
         else:
             await target.answer(text)
-
-
-def notification_keyboard(conversation_id: int, student_name: str) -> InlineKeyboardMarkup:
-    short_name = student_name if len(student_name) <= 22 else student_name[:21] + "…"
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="Ответить · " + short_name, callback_data="reply:" + str(conversation_id)),
-            InlineKeyboardButton(text="Открыть диалог", callback_data="ui:chat:" + str(conversation_id) + ":0"),
-        ],
-        [InlineKeyboardButton(text="Панель учителя", callback_data="ui:home")],
-    ])
+    # Student accounts intentionally have no bot menu: the private chat itself
+    # is the conversation, with only messages from the teacher appearing here.
 
 
 async def show_reply_prompt(target: TgMessage, teacher: User, conversation: Conversation) -> None:
-    student_name = conversation.assignment.student.full_name
     await target.answer(
-        "Вы выбрали ученика: " + student_name + "\n\n"
-        "Отправьте следующее сообщение или вложение — я доставлю его этому ученику.",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="← Панель учителя", callback_data="ui:home"),
-            InlineKeyboardButton(text="Открыть диалог", callback_data="ui:chat:" + str(conversation.id) + ":0"),
-        ]]),
+        "Ответ выбранному ученику: " + conversation.assignment.student.full_name + ".\n"
+        "Отправьте сообщение или вложение."
     )
 
 
@@ -495,8 +404,9 @@ async def start(message: TgMessage):
                 "Затем отправьте этот код сюда отдельным сообщением. Код действует 15 минут."
             )
             return
-        clear_teacher_session(db, user)
-        await show_role_panel(message, user, db)
+        if user.role == "teacher":
+            clear_teacher_session(db, user)
+            await show_role_panel(message, user, db)
 
 
 @router.message(Command("menu"))
@@ -508,8 +418,9 @@ async def open_menu(message: TgMessage):
         if not user:
             await message.answer("Сначала подключите аккаунт UknowApp с помощью кода администратора.")
             return
-        clear_teacher_session(db, user)
-        await show_role_panel(message, user, db)
+        if user.role == "teacher":
+            clear_teacher_session(db, user)
+            await show_role_panel(message, user, db)
 
 
 @router.callback_query(F.data.startswith("ui:"))
@@ -554,19 +465,18 @@ async def handle_panel_callback(callback: CallbackQuery):
                 clear_teacher_session(db, user)
                 await callback.answer()
                 await show_teacher_panel(callback.message, user, db, page=page, edit=True)
-            elif action == "chat" and len(parts) > 3:
+            elif action == "chat" and len(parts) >= 3:
                 if user.role != "teacher":
-                    await callback.answer("Просмотр доступен только учителю.", show_alert=True)
+                    await callback.answer("Эта панель доступна только учителю.", show_alert=True)
                     return
                 conversation_id = int(parts[2])
-                page = max(0, int(parts[3]))
                 clear_teacher_session(db, user)
                 conversation = get_teacher_conversation(db, user, conversation_id)
                 if not conversation:
-                    await callback.answer("Эта переписка больше недоступна.", show_alert=True)
+                    await callback.answer("Ученик больше не назначен вам.", show_alert=True)
                     return
                 await callback.answer()
-                await show_teacher_chat(callback.message, user, db, conversation, page=page, edit=True)
+                await show_teacher_pending(callback.message, user, db, conversation, edit=True)
             elif action == "reply" and len(parts) > 2:
                 if user.role != "teacher":
                     await callback.answer("Отвечать может только учитель.", show_alert=True)
@@ -577,7 +487,7 @@ async def handle_panel_callback(callback: CallbackQuery):
                     await callback.answer("Эта переписка больше недоступна.", show_alert=True)
                     return
                 set_teacher_session(db, user, conversation)
-                await callback.answer("Режим ответа включён")
+                await callback.answer()
                 await show_reply_prompt(callback.message, user, conversation)
             else:
                 await callback.answer("Неизвестная команда.", show_alert=True)
@@ -671,10 +581,7 @@ async def route_message(message: TgMessage, bot: Bot):
         if sender.role == "student":
             conversation = current_student_conversation(db, sender.id)
             if not conversation or conversation.status != "active":
-                await message.answer(
-                    "Пока вам не назначен активный учитель. Обратитесь к администратору.",
-                    reply_markup=role_panel_keyboard(),
-                )
+                await message.answer("Пока вам не назначен активный учитель. Обратитесь к администратору.")
                 return
             recipient = conversation.assignment.teacher
         else:
@@ -706,7 +613,10 @@ async def route_message(message: TgMessage, bot: Bot):
         if not recipient.telegram_id or not recipient.active:
             row.delivery_status = "failed"
             db.commit()
-            await message.answer("Не удалось доставить сообщение: аккаунт собеседника не подключён.")
+            if sender.role == "teacher":
+                await message.answer("Не удалось доставить сообщение: аккаунт ученика не подключён.")
+            else:
+                await message.answer("Не удалось отправить сообщение. Попробуйте позже.")
             return
         try:
             copied = await bot.copy_message(
@@ -718,14 +628,37 @@ async def route_message(message: TgMessage, bot: Bot):
             row.delivery_status = "delivered"
             db.commit()
             if sender.role == "student":
-                # Keep the copied content intact, then show the sender's name and inline actions.
+                # The student sees only their own outgoing message; the teacher
+                # receives the message and an updated inbox containing unread items.
+                panel_text, panel_markup = teacher_panel_view(db, recipient)
                 try:
                     await bot.send_message(
                         chat_id=recipient.telegram_id,
-                        text="📨 Новое сообщение от: " + sender.full_name,
-                        reply_markup=notification_keyboard(conversation.id, sender.full_name),
+                        text=panel_text,
+                        reply_markup=panel_markup,
                     )
                 except Exception:
+                    logger.exception("Could not refresh teacher inbox for conversation_id=%s", conversation.id)
+            else:
+                # A successful teacher reply marks all currently pending messages
+                # in this student's thread as handled. Failed deliveries stay unread.
+                now = datetime.now(timezone.utc).isoformat()
+                for pending in pending_student_messages(conversation_messages(db, conversation.id)):
+                    metadata = json.loads(pending.metadata_json or "{}")
+                    metadata["teacher_read_at"] = now
+                    pending.metadata_json = json.dumps(metadata, ensure_ascii=False)
+                db.commit()
+                clear_teacher_session(db, sender)
+                panel_text, panel_markup = teacher_panel_view(db, sender)
+                try:
+                    await bot.send_message(
+                        chat_id=sender.telegram_id,
+                        text=panel_text,
+                        reply_markup=panel_markup,
+                    )
+                except Exception:
+                    logger.exception("Could not refresh teacher inbox after reply for conversation_id=%s", conversation.id)
+        except Exception:
                     logger.exception("Could not send inline teacher notification for conversation_id=%s", conversation.id)
                 await message.answer(
                     "✅ Сообщение доставлено учителю.",
