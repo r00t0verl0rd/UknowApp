@@ -35,10 +35,10 @@
 
 /* Statistics are intentionally compact to give the hierarchy more space. */
 .metrics { gap: 11px; margin-bottom: 16px; }
-.metric { min-height: 76px; padding: 10px 14px; grid-template-columns: 27px 1fr; column-gap: 9px; border-radius: 12px; }
-.metric svg { width: 18px; }
+.metric { min-height: 64px; padding: 8px 12px; grid-template-columns: 25px 1fr; column-gap: 8px; border-radius: 12px; }
+.metric svg { width: 17px; }
 .metric span { font-size: 10px; }
-.metric b { font-size: 19px; line-height: 1.15; }
+.metric b { font-size: 18px; line-height: 1.1; }
 
 /* The hierarchy graph is the main workspace. */
 .graph-panel { padding: 30px; border-radius: 20px; }
@@ -90,6 +90,6 @@
   .page-title h1 { font-size: 29px; }
   .graph-panel { padding: 17px; }
   .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
-  .metric { min-height: 67px; }
+  .metric { min-height: 60px; }
   .root-node { max-width: 100%; }
 }
