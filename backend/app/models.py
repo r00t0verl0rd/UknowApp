@@ -85,3 +85,12 @@ class ConnectionCode(Base):
     used_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user: Mapped[User] = relationship()
+
+
+class TeacherPanel(Base):
+    __tablename__ = "teacher_panels"
+
+    teacher_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    message_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
