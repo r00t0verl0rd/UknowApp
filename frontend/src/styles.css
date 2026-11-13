@@ -95,3 +95,9 @@
 }
 /* Connected Telegram accounts are highlighted; the disconnected label stays neutral. */
 .telegram-connected { color: #16834a; font-weight: 700; }
+
+/* User list role colors: students green, teachers purple. */
+.user-row .avatar.student { background: #e8f7ee; color: #16834a; }
+.user-row .avatar.teacher { background: #eee8f8; color: var(--purple); }
+.user-row .role-tag.student { background: #e8f7ee; color: #16834a; }
+.user-row .role-tag.teacher { background: #eee8f8; color: var(--purple); }
