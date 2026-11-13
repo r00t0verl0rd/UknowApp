@@ -401,3 +401,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   background: #fff0ed;
   box-shadow: 0 0 13px rgba(231, 37, 48, .10);
 }
+
+.chat-media-image { display: block; max-width: min(100%, 360px); max-height: 360px; object-fit: contain; border-radius: 10px; margin-top: 9px; }
+.chat-media-player { display: block; width: min(100%, 340px); margin-top: 9px; }
+.chat-media-video { display: block; width: min(100%, 340px); max-height: 420px; background: #17131f; border-radius: 12px; margin-top: 9px; }
+.chat-media-download { display: inline-block; margin-top: 9px; color: var(--purple); font-weight: 650; overflow-wrap: anywhere; }
+.chat-media-status { display: block; margin-top: 8px; color: #8a6b3c; }
