@@ -209,10 +209,9 @@ export default function App() {
             <div className="metric"><Link2/><span>Связи</span><b>{overview?.counts.assignments || 0}</b></div>
             <div className="metric"><MessageCircle/><span>Переписки</span><b>{overview?.counts.conversations || 0}</b></div>
           </div>
-          <section className="graph-panel">\n            
+          <section className="graph-panel">
             <div className="section-head"><div><h2>Карта связей</h2><p>Действия доступны на карточках участников.</p></div><div className="legend"><span className="teacher-dot"/> Учителя <span className="student-dot"/> Ученики</div></div>
-            <div className="root-node"><img src="/logo.svg" alt=""/><div><b>Администратор</b><small>Полное управление</small></div><span>ADMIN</span></div>
-            
+            <div className="root-node"><img src="/logo.svg" alt=""/><div><b>Администратор</b><small>Полное управление</small></div>
             <div className="teacher-grid">
               {activeTeachers.map(teacher => <section className="teacher-branch" key={teacher.id}>
                 <div className="person-card teacher-card">
