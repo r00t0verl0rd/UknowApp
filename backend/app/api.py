@@ -131,6 +131,7 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
     changes = payload.model_dump(exclude_unset=True)
     role_changed = "role" in changes and changes["role"] != user.role
     if role_changed:
+        db.query(TeacherPanel).filter(TeacherPanel.teacher_id == user.id).delete(synchronize_session=False)
         assignments = db.scalars(select(Assignment).where(Assignment.active.is_(True), (Assignment.teacher_id == user.id) | (Assignment.student_id == user.id))).all()
         now = datetime.now(timezone.utc)
         for assignment in assignments:
