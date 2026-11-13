@@ -227,7 +227,7 @@ def teacher_keyboard_actions(
     db: Session,
     teacher: User,
     page: int,
-) -> tuple[dict[str, Conversation], int, int]:
+) -> tuple[dict[str, Optional[Conversation]], int, int]:
     items = teacher_conversations(db, teacher)
     total_pages, page, visible = _teacher_page(items, page)
     all_labels = _teacher_button_labels(items)
@@ -395,7 +395,7 @@ async def handle_teacher_keyboard_message(
         TEACHER_PREVIOUS_PAGE_LABEL,
         TEACHER_NEXT_PAGE_LABEL,
     }
-    if not body or (body not in keyboard_controls and not body.startswith("Написать · ")):
+    if not body:
         return False
 
     panel = db.get(TeacherPanel, teacher.id)
