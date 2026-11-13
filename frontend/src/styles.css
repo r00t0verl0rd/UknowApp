@@ -410,111 +410,56 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
 
 
-/* Blender-inspired node editor for the school relationship graph. */
-.node-editor {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  padding: 28px;
-  color: #e8edf5;
-  border: 1px solid #283344;
-  border-radius: 20px;
-  background-color: #111720;
-  background-image:
-    radial-gradient(circle at 50% 0%, rgba(103, 85, 174, .19), transparent 38%),
-    radial-gradient(circle, rgba(135, 157, 183, .15) 1px, transparent 1.2px),
-    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
-  background-size: auto, 22px 22px, 88px 88px, 88px 88px;
-  box-shadow: inset 0 1px rgba(255,255,255,.04), 0 16px 38px rgba(21, 17, 39, .14);
-}
-.node-editor .section-head { position: relative; z-index: 2; margin-bottom: 28px; }
-.node-editor .section-head h2 { color: #f0f2fa; font-size: 18px; letter-spacing: -.3px; }
-.node-editor .section-head p { color: #8793a5; }
-.node-editor-meta { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; justify-content: flex-end; }
-.node-editor-label { display: inline-flex; align-items: center; gap: 7px; padding: 6px 9px; border: 1px solid #344153; border-radius: 7px; background: #1a2431; color: #9dacc0; font: 800 9px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 1px; }
-.node-editor-label i { width: 7px; height: 7px; border-radius: 50%; background: #55d6a5; box-shadow: 0 0 9px #55d6a5; }
-.node-editor .legend { color: #a4afbf; }
-.node-editor .teacher-dot { background: #aa91fb; box-shadow: 0 0 9px rgba(170,145,251,.65); }
-.node-editor .student-dot { background: #f0b35e; box-shadow: 0 0 9px rgba(240,179,94,.65); }
-.node-editor .root-node {
-  position: relative;
-  z-index: 2;
-  width: min(300px, 100%);
-  padding: 15px 17px;
-  gap: 13px;
-  border: 1px solid #6c5b9c;
-  border-radius: 12px;
-  color: #f2efff;
-  background: linear-gradient(145deg, #30294a, #202b3a 72%);
-  box-shadow: 0 8px 22px rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.09), 0 0 22px rgba(135,104,217,.12);
-}
-.node-editor .root-node img { width: 46px; height: 46px; padding: 3px; border-radius: 9px; background: rgba(255,255,255,.07); }
-.node-editor .root-node b { color: #f5f2ff; font-size: 13px; }
-.node-editor .root-node small { color: #aaa5c3; }
-.node-editor .root-node > span { color: #d8c9ff; background: #493d68; border: 1px solid #65538f; }
-.node-editor .tree-line { position: relative; z-index: 1; height: 42px; width: 2px; background: linear-gradient(#a28be9, #59657d); box-shadow: 0 0 10px rgba(162,139,233,.5); }
-.node-editor .teacher-grid { position: relative; z-index: 1; grid-template-columns: repeat(auto-fit, minmax(285px, 1fr)); gap: 32px 25px; align-items: start; }
-.node-editor .teacher-branch { position: relative; min-width: 0; padding: 0 5px 12px; }
-.node-editor .teacher-branch:before { display: none; }
-.node-wires { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.node-wire-glow { fill: none; stroke: #76bce0; stroke-width: 13; stroke-linecap: round; opacity: .15; filter: blur(5px); }
-.node-wire { fill: none; stroke-width: 3.5; stroke-linecap: round; opacity: .88; }
-.node-wire-end { fill: #e9ad62; stroke: #fff0d8; stroke-width: 2; filter: drop-shadow(0 0 5px rgba(240,179,94,.9)); }
-.node-editor .node-card {
-  position: relative;
-  z-index: 2;
-  display: block;
-  min-width: 0;
-  border-radius: 11px;
-  padding: 12px 14px 13px;
-  color: #e8edf5;
-  box-shadow: 0 8px 18px rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.055);
-  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
-}
-.node-editor .node-card:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(0,0,0,.30), 0 0 18px rgba(150,130,220,.12); }
-.node-editor .node-teacher { min-height: 82px; border: 1px solid #7461a9; background: linear-gradient(145deg, #30294a, #202a3a); }
-.node-editor .node-student { min-height: 68px; border: 1px solid #8e704a; background: linear-gradient(145deg, #3b3028, #252d38 78%); }
-.node-editor .person-info b { color: #f3f5fb; font-size: 12px; }
-.node-editor .person-info small { color: #a1adbf; font-size: 9px; }
-.node-editor .teacher-avatar { background: #473b66; color: #d2c2ff; }
-.node-editor .student-avatar { background: #5a4330; color: #ffd59b; }
-.node-editor .avatar { border: 1px solid rgba(255,255,255,.07); border-radius: 9px; }
-.node-type { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; color: #bbaaf4; font: 800 8px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 1.1px; }
-.node-type span { color: #78879b; letter-spacing: .3px; }
-.node-students { position: relative; z-index: 2; display: grid; gap: 12px; margin: 52px 0 0; padding: 0; border: 0; }
-.node-editor .person-actions button { color: #a7b1c1; border: 1px solid transparent; }
-.node-editor .person-actions button:hover { background: rgba(255,255,255,.09); color: white; border-color: rgba(255,255,255,.08); }
-.node-editor .person-actions .danger-icon:hover { background: rgba(232,80,95,.16); color: #ff9ba5; }
-.node-socket { position: absolute; z-index: 3; display: block; width: 13px; height: 13px; border: 3px solid #d9ccff; border-radius: 50%; background: #584a80; box-shadow: 0 0 0 3px rgba(172,149,246,.12), 0 0 10px rgba(172,149,246,.55); }
-.node-socket-output { bottom: -8px; left: calc(50% - 6px); }
-.node-socket-input { top: calc(50% - 6px); left: -7px; border-color: #ffe0af; background: #946b3d; box-shadow: 0 0 0 3px rgba(240,179,94,.12), 0 0 10px rgba(240,179,94,.55); }
-.node-socket-root { bottom: -8px; left: calc(50% - 6px); }
-.node-editor .empty-students { position: relative; z-index: 2; margin-top: 0; border: 1px dashed #465263; background: rgba(28,38,51,.88); color: #9aa7b8; }
-.node-editor .add-student { position: relative; z-index: 2; margin: 18px 0 0 8px; padding: 8px 11px; border: 1px dashed #53627a; border-radius: 8px; color: #b6a6ef; background: rgba(39,43,62,.72); font-size: 10px; transition: border-color .18s ease, background .18s ease; }
-.node-editor .add-student:hover { border-color: #9d89e4; background: rgba(83,66,126,.35); }
-.node-editor .unassigned { position: relative; z-index: 2; margin-top: 30px; padding-top: 22px; border-top: 1px solid #354153; }
-.node-editor .unassigned .section-head h2 { color: #edf1f8; }
-.node-editor .unassigned .section-head p { color: #9aa7b8; }
-.node-editor .unassigned-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
-.node-editor .unassigned-grid .person-card { background: #252d39; border-color: #465262; color: #eef1f7; }
-.node-editor .unassigned-grid .person-info b { color: #f3f5fb; }
-.node-editor .unassigned-grid .person-info small { color: #a1adbf; }
-.node-editor .unassigned-grid .btn.outline { background: #353047; border-color: #65558f; color: #d7caff; }
-.node-editor .empty-state { color: #9aa7b8; }
-.node-editor .empty-state b { color: #edf1f8; }
-.node-editor .empty-state > svg { color: #b6a6ef; }
-@media(max-width:700px) {
-  .node-editor { padding: 18px 13px; }
-  .node-editor .section-head { align-items: flex-start; flex-direction: column; }
-  .node-editor-meta { justify-content: flex-start; gap: 10px; }
-  .node-editor .teacher-grid { grid-template-columns: minmax(0,1fr); gap: 28px; }
-}
-@media(prefers-reduced-motion:reduce) {
-  .node-editor .node-card { transition: none; }
-}
 
-/* Keep node title and controls on one horizontal node body. */
-.node-editor .node-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; column-gap: 8px; }
-.node-editor .node-card .node-type { flex: 0 0 100%; width: 100%; }
-.node-editor .node-card .person-main { flex: 1 1 150px; }
+/* Refined relationship lines only. The graph panel background and cards stay unchanged. */
+.graph-panel .tree-line {
+  width: 2px;
+  background: linear-gradient(to bottom, #c8b8e6, #aa9bd0);
+  border-radius: 2px;
+  box-shadow: 0 0 5px rgba(132, 103, 184, .14);
+}
+.graph-panel .teacher-branch:before {
+  width: 2px;
+  background: linear-gradient(to bottom, #aa9bd0, #c6b7df);
+  border-radius: 2px;
+}
+.graph-panel .student-list {
+  position: relative;
+  border-left: 0;
+  padding-left: 16px;
+}
+.graph-panel .student-list:before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 15px;
+  bottom: 15px;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, #b8a8dc, #dfc99e);
+}
+.graph-panel .student-card {
+  position: relative;
+}
+.graph-panel .student-card:before {
+  content: "";
+  position: absolute;
+  left: -16px;
+  top: 50%;
+  width: 16px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #b8a8dc, #dfc99e);
+}
+.graph-panel .student-card:after {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: calc(50% - 3px);
+  width: 6px;
+  height: 6px;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  background: #c5a6d5;
+  box-shadow: 0 0 0 1px rgba(142, 116, 178, .18);
+}
