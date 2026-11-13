@@ -62,14 +62,14 @@ Edit `.env`:
 ```dotenv
 TELEGRAM_BOT_TOKEN=your_botfather_token
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD=use-a-long-unique-random-password
+ADMIN_PASSWORD=paste-a-long-random-value-here
 DATABASE_URL=
 ALLOWED_ORIGINS=
 DOMAIN=admin.example.com
 SEED_DEMO_DATA=false
 ```
 
-Replace `admin.example.com` with the real DNS name pointing to the VPS. Do not use the example domain. Keep `DATABASE_URL` empty in this file: Docker Compose supplies the SQLite path inside the persistent `app_data` volume. For the same-origin Caddy deployment, `ALLOWED_ORIGINS` can remain empty. Restrict the file:
+Generate a password with `openssl rand -hex 32` and paste it into `ADMIN_PASSWORD`. Replace `admin.example.com` with the real DNS name pointing to the VPS. Do not use the example domain. Keep `DATABASE_URL` empty in this file: Docker Compose supplies the SQLite path inside the persistent `app_data` volume. For the same-origin Caddy deployment, `ALLOWED_ORIGINS` can remain empty. Restrict the file:
 
 ```bash
 chmod 600 .env
