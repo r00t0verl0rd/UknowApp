@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2, Users, X, Link2, Copy } from "lucide-react";
+import { Activity, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2, Users, X, Link2, Copy, Unlink } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 const ROLE = { teacher: "Учитель", student: "Ученик" };
@@ -108,6 +108,20 @@ export default function App() {
     } catch (e) { setError(e.message); }
   }
 
+  async function disconnectTelegram(user) {
+    const ok = window.confirm(
+      "Отключить Telegram у «" + user.full_name + "»?\n\n" +
+      "Пользователь и история переписки останутся в системе. " +
+      "Отправлять и получать сообщения через бота он не сможет до повторного подключения."
+    );
+    if (!ok) return;
+    try {
+      await request("/api/admin/users/" + user.id + "/disconnect-telegram", { method: "POST" });
+      await refresh();
+      notify("Telegram отключён");
+    } catch (e) { setError(e.message); }
+  }
+
   async function makeCode(user) {
     try {
       const result = await request("/api/admin/users/" + user.id + "/connection-code", { method: "POST" });
@@ -189,7 +203,7 @@ export default function App() {
           <div className="toolbar"><div className="search"><Search/><input placeholder="Поиск по имени или Telegram ID" value={search} onChange={e => setSearch(e.target.value)}/></div><span>{visibleUsers.length} пользователей</span></div>
           <div className="user-list">{visibleUsers.map(user => <div className="user-row" key={user.id}>
             <div className={"avatar " + user.role}><Users/></div><div className="person-info"><b>{user.full_name}</b><small>#{user.id} · {user.telegram_id ? <span className="telegram-connected">Telegram ID {user.telegram_id}</span> : "Telegram не подключён"} · {user.active ? "Активен" : "Отключён"}</small></div><span className={"role-tag " + user.role}>{ROLE[user.role]}</span>
-            <button className="btn small" onClick={() => openEdit(user)}><Pencil/>Изменить</button><button className="icon-btn danger-icon" onClick={() => removeUser(user)} title="Удалить"><Trash2/></button>
+            <button className="btn small" onClick={() => openEdit(user)}><Pencil/>Изменить</button>{user.telegram_id && <button className="btn small disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram"><Unlink/>Отключить Telegram</button>}<button className="icon-btn danger-icon" onClick={() => removeUser(user)} title="Удалить"><Trash2/></button>
             {user.active && !user.telegram_id && <button className="btn small outline" onClick={() => makeCode(user)}><Copy/>Код</button>}
           </div>)}</div>
         </>}
