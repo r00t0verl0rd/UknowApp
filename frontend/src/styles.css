@@ -838,3 +838,25 @@ img, video, audio { max-width: 100%; }
     color: #b82c3b !important;
   }
 }
+
+
+/* Preserve selected/variant states against the general mobile button rule. */
+@media screen and (max-width: 900px) {
+  .sidebar nav button.active:not(.primary):not(.disconnect):not(.danger-icon) {
+    background: linear-gradient(105deg, #573e99, #7856bd) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+  }
+  .btn.ghost:not(.primary):not(.disconnect):not(.danger-icon) {
+    background-color: #eae7ef !important;
+  }
+  .btn.outline:not(.primary):not(.disconnect):not(.danger-icon),
+  button.add-student:not(.primary):not(.disconnect):not(.danger-icon) {
+    background-color: #f1edf7 !important;
+    color: var(--purple) !important;
+  }
+  button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) {
+    background-color: #eae4f4 !important;
+    color: var(--purple) !important;
+  }
+}
