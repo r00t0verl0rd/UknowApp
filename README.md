@@ -32,6 +32,8 @@ npm run dev
 
 Open the admin panel at http://127.0.0.1:22222. The Vite development server proxies `/api` requests to the backend at http://127.0.0.1:8000. API documentation is at http://127.0.0.1:8000/docs.
 
+In Telegram, use `/start` or `/menu` to open the role-based inline panel. Students see their assigned teacher and can start a message from the panel. Teachers see their active students, the latest incoming message from each student, and the number of messages still awaiting a reply. Open a student's conversation to browse its recent history, then tap **Ответить** to choose where the next message or attachment will be delivered.
+
 The local SQLite database is created at `data/uknowapp.db`. Telegram attachments are archived under `data/media/` and shown in the admin conversation view (voice playback, video notes, photos, video and downloadable documents). Keep the `.env` file and the entire `data/` directory private; both are excluded from Git. The hosted Telegram Bot API currently allows downloads up to 20 MB; larger attachments are still forwarded by Telegram but cannot be archived locally by this version.
 
 ## VPS deployment with Docker Compose
