@@ -52,7 +52,7 @@ async def start(message: TgMessage, bot: Bot):
             try:
                 # Open the persistent teacher panel directly; do not send a
                 # separate confirmation message after /start.
-                await update_teacher_panel(bot, db, user)
+                await update_teacher_panel(bot, db, user, force_keyboard_refresh=True)
             except Exception:
                 logger.exception("Could not open teacher panel from /start for user_id=%s", user.id)
             return
@@ -88,7 +88,7 @@ async def open_menu(message: TgMessage, bot: Bot):
             return
         if user.role == "teacher":
             clear_teacher_session(db, user)
-            await update_teacher_panel(bot, db, user)
+            await update_teacher_panel(bot, db, user, force_keyboard_refresh=True)
 
 
 @router.callback_query(F.data.startswith("ui:"))
