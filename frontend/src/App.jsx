@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, BookOpen, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2, Users, X, Link2, Copy } from "lucide-react";
+import { Activity, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2, Users, X, Link2, Copy } from "lucide-react";
 
-const API = "http://127.0.0.1:8000";
+const API = import.meta.env.VITE_API_BASE_URL || "";
 const ROLE = { teacher: "Учитель", student: "Ученик" };
 const initialAuth = () => sessionStorage.getItem("uknowapp-auth") || "";
 
