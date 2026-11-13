@@ -2,6 +2,7 @@
 
 import asyncio
 import hashlib
+from html import escape
 import json
 import logging
 from typing import Optional
@@ -199,19 +200,18 @@ def teacher_panel_view(
     items = teacher_conversations(db, teacher)
     total_pages, page, visible = _teacher_page(items, page)
     lines = [
-        "👩‍🏫 Ваша группа:",
-        "- - - - - - -",
+        "<b><u>👩‍🏫 Ваша группа:</u></b>",
         "",
     ]
     if not visible:
         lines.append("Пока нет назначенных учеников.")
     else:
         for item in visible:
-            student_name = item["student"].full_name
+            student_name = escape(item["student"].full_name)
             notice = " · " + str(item["unanswered"]) + " новых" if item["unanswered"] else ""
             lines.append("👤 " + student_name + notice)
             for row in item["unread"][-3:]:
-                lines.append("   " + message_preview(row))
+                lines.append("   " + escape(message_preview(row)))
             if item["unanswered"] > 3:
                 lines.append("   …ещё " + str(item["unanswered"] - 3) + " сообщений")
             lines.append("")
@@ -256,7 +256,7 @@ def teacher_chat_view(
     rows = conversation_messages(db, conversation.id)
     visible_rows = rows[-12:]
     lines = [
-        "💬 " + student.full_name,
+        "💬 " + escape(student.full_name),
         "",
     ]
     if not visible_rows:
@@ -264,7 +264,7 @@ def teacher_chat_view(
     else:
         for row in visible_rows:
             sender_label = "Ученик" if row.sender_role == "student" else "Вы"
-            lines.append(sender_label + ": " + message_preview(row))
+            lines.append(sender_label + ": " + escape(message_preview(row)))
     if len(rows) > len(visible_rows):
         lines.insert(1, "Показаны последние " + str(len(visible_rows)) + " из " + str(len(rows)) + " сообщений.")
     return "\n".join(lines)[:3900]
@@ -305,6 +305,7 @@ async def _update_teacher_panel_locked(
                 chat_id=panel.chat_id,
                 message_id=panel.message_id,
                 text=text,
+                parse_mode="HTML",
             )
             return True
         except Exception as exc:
@@ -354,6 +355,7 @@ async def _update_teacher_panel_locked(
         chat_id=teacher.telegram_id,
         text=text,
         reply_markup=markup,
+        parse_mode="HTML",
     )
 
     if panel:
