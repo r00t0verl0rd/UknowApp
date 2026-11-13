@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 TEACHER_PAGE_SIZE = 6
-TEACHER_KEYBOARD_VERSION = 2
+TEACHER_KEYBOARD_VERSION = 3
 TEACHER_BACK_LABEL = "← К списку учеников"
 TEACHER_REFRESH_LABEL = "↻ Обновить"
 TEACHER_PREVIOUS_PAGE_LABEL = "← Предыдущая"
@@ -146,16 +146,15 @@ def _teacher_page(items: list[dict], page: int) -> tuple[int, int, list[dict]]:
 
 
 def _teacher_button_labels(items: list[dict]) -> list[str]:
+    """Use complete names; only add an ID when names are identical."""
     name_counts = Counter(item["student"].full_name.strip() for item in items)
     labels = []
     for item in items:
         student = item["student"]
         name = student.full_name.strip()
-        prefix = "Написать · "
-        needs_id = name_counts[name] > 1 or len(prefix + name) > 64
-        suffix = " · #" + str(student.id) if needs_id else ""
-        max_name_length = max(1, 64 - len(prefix) - len(suffix))
-        labels.append(prefix + name[:max_name_length].rstrip() + suffix)
+        if name_counts[name] > 1:
+            name += " · #" + str(student.id)
+        labels.append(name)
     return labels
 
 
