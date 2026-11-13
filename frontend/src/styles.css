@@ -412,56 +412,25 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
 
 
-/* Relationship connectors follow the actual card positions at every screen size. */
-.graph-panel { position: relative; }
-.graph-panel > .graph-connections {
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-}
-.graph-panel > .section-head,
-.graph-panel > .root-node,
-.graph-panel > .teacher-grid,
-.graph-panel > .unassigned {
-  position: relative;
-  z-index: 1;
+
+/* Light decorative background for the school graph. No connector lines are drawn. */
+.graph-panel {
+  background-color: #fff;
+  background-image:
+    radial-gradient(ellipse at 10% 0%, rgba(194, 153, 255, .19), transparent 38%),
+    radial-gradient(ellipse at 100% 100%, rgba(231, 37, 48, .055), transparent 34%),
+    radial-gradient(circle, rgba(118, 84, 189, .075) .8px, transparent 1px);
+  background-size: auto, auto, 20px 20px;
 }
 .graph-panel .tree-line,
 .graph-panel .teacher-branch:before {
   display: none;
 }
 .graph-panel .student-list {
-  border-left-color: transparent;
+  border-left: 0;
 }
-.graph-connection-glow {
-  fill: none;
-  stroke: #9c83c7;
-  stroke-width: 7;
-  stroke-linecap: round;
-  opacity: .16;
-  filter: blur(2px);
-}
-.graph-connection {
-  fill: none;
-  stroke-width: 2.4;
-  stroke-linecap: round;
-  opacity: .9;
-}
-.graph-connection.teacher { stroke: #a996d2; }
-.graph-connection.student { stroke: #c5ad83; }
-.graph-connection-dot {
-  stroke: #fff;
-  stroke-width: 1.5;
-}
-.graph-connection-dot.teacher { fill: #a996d2; }
-.graph-connection-dot.student { fill: #c5ad83; }
 
-/* The admin role tag is neutral, not the warning red used elsewhere. */
+/* Keep the administrator role tag neutral. */
 .root-node > span {
   color: var(--purple);
   background: #eee8f7;
