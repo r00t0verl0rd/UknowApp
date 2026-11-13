@@ -464,20 +464,6 @@ async def handle_panel_callback(callback: CallbackQuery):
                 clear_teacher_session(db, user)
                 await callback.answer()
                 await show_role_panel(callback.message, user, db, edit=True)
-            elif action == "student" and len(parts) > 2 and parts[2] == "write":
-                student_conversation = current_student_conversation(db, user.id) if user.role == "student" else None
-                if not student_conversation or student_conversation.status != "active":
-                    await callback.answer("Сейчас нет активного учителя.", show_alert=True)
-                    return
-                await callback.answer("Можно отправить сообщение")
-                await edit_inline_message(
-                    callback.message,
-                    "✉️ Напишите сообщение или отправьте вложение следующим сообщением. "
-                    "Оно будет доставлено вашему учителю.",
-                    InlineKeyboardMarkup(inline_keyboard=[[
-                        InlineKeyboardButton(text="← Главное меню", callback_data="ui:home")
-                    ]]),
-                )
             elif action == "teacher" and len(parts) > 3 and parts[2] == "page":
                 if user.role != "teacher":
                     await callback.answer("Эта панель доступна только учителю.", show_alert=True)
