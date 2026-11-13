@@ -209,50 +209,25 @@ export default function App() {
             <div className="metric"><Link2/><span>Связи</span><b>{overview?.counts.assignments || 0}</b></div>
             <div className="metric"><MessageCircle/><span>Переписки</span><b>{overview?.counts.conversations || 0}</b></div>
           </div>
-          <section className="graph-panel node-editor">
-            <div className="section-head"><div><h2>Карта связей</h2><p>Соединения показывают реальные назначения. Действия доступны на карточках.</p></div><div className="node-editor-meta"><span className="node-editor-label"><i/> NODE EDITOR</span><div className="legend"><span className="teacher-dot"/> Учителя <span className="student-dot"/> Ученики</div></div></div>
-            <div className="root-node node-root"><img src="/logo.svg" alt=""/><div><b>Администратор</b><small>Полное управление</small></div><span>ADMIN</span><i className="node-socket node-socket-root" aria-hidden="true"/></div>
+          <section className="graph-panel">
+            <div className="section-head"><div><h2>Карта связей</h2><p>Действия доступны на карточках участников.</p></div><div className="legend"><span className="teacher-dot"/> Учителя <span className="student-dot"/> Ученики</div></div>
+            <div className="root-node"><img src="/logo.svg" alt=""/><div><b>Администратор</b><small>Полное управление</small></div><span>ADMIN</span></div>
             <div className="tree-line"/>
             <div className="teacher-grid">
-              {activeTeachers.map(teacher => {
-                const studentsForTeacher = overview?.teachers.find(t => t.id === teacher.id)?.students || [];
-                const wireHeight = 182 + studentsForTeacher.length * 89;
-                return <section className="teacher-branch" key={teacher.id}>
-                  <svg className="node-wires" viewBox={`0 0 1000 ${wireHeight}`} preserveAspectRatio="none" aria-hidden="true">
-                    <defs>
-                      <linearGradient id={`teacher-wire-${teacher.id}`} x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="#a78bfa"/>
-                        <stop offset="100%" stopColor="#45d6c8"/>
-                      </linearGradient>
-                    </defs>
-                    {studentsForTeacher.map((student, index) => {
-                      const targetY = 173 + index * 89;
-                      const path = `M 500 83 C 500 ${targetY - 48}, 0 ${targetY - 48}, 0 ${targetY}`;
-                      return <g key={student.id}>
-                        <path className="node-wire-glow" d={path}/>
-                        <path className="node-wire" d={path} stroke={`url(#teacher-wire-${teacher.id})`}/>
-                        <circle className="node-wire-end" cx="8" cy={targetY} r="5"/>
-                      </g>;
-                    })}
-                  </svg>
-                  <div className="person-card teacher-card node-card node-teacher">
-                    <div className="node-type">TEACHER NODE <span>#{teacher.id}</span></div>
-                    <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap/></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель · активный узел</small></div></div>
-                    <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(teacher)}><Trash2/></button></div>
-                    <i className="node-socket node-socket-output" aria-hidden="true"/>
-                  </div>
-                  <div className="student-list node-students">
-                    {studentsForTeacher.map(student => <div className="person-card student-card node-card node-student" key={student.id}>
-                      <i className="node-socket node-socket-input" aria-hidden="true"/>
-                      <div className="node-type">STUDENT NODE <span>#{student.id}</span></div>
-                      <div className="person-main"><div className="avatar student-avatar"><Users/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик · подключён</small></div></div>
-                      <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div>
-                    </div>)}
-                    {!studentsForTeacher.length && <div className="empty-students">Нет подключённых учеников</div>}
-                  </div>
-                  <button className="add-student" onClick={() => { setTeacherId(String(teacher.id)); setStudentId(activeStudents[0]?.id ? String(activeStudents[0].id) : ""); setModal({ mode: "assign" }); }}><Plus/>Назначить ученика</button>
-                </section>;
-              })}
+              {activeTeachers.map(teacher => <section className="teacher-branch" key={teacher.id}>
+                <div className="person-card teacher-card">
+                  <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap/></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель · #{teacher.id}</small></div></div>
+                  <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(teacher)}><Trash2/></button></div>
+                </div>
+                <div className="student-list">
+                  {(overview?.teachers.find(t => t.id === teacher.id)?.students || []).map(student => <div className="person-card student-card" key={student.id}>
+                    <div className="person-main"><div className="avatar student-avatar"><Users/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик · #{student.id}</small></div></div>
+                    <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div>
+                  </div>)}
+                  {!(overview?.teachers.find(t => t.id === teacher.id)?.students || []).length && <div className="empty-students">Нет назначенных учеников</div>}
+                </div>
+                <button className="add-student" onClick={() => { setTeacherId(String(teacher.id)); setStudentId(activeStudents[0]?.id ? String(activeStudents[0].id) : ""); setModal({ mode: "assign" }); }}><Plus/>Назначить ученика</button>
+              </section>)}
             </div>
             {!activeTeachers.length && <div className="empty-state"><GraduationCap/><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span><button className="btn primary" onClick={() => openCreate("teacher")}><Plus/>Добавить учителя</button></div>}
             {!!unassignedStudents.length && <section className="unassigned"><div className="section-head"><div><h2>Ученики без назначения</h2><p>Их можно назначить учителю прямо отсюда.</p></div></div><div className="unassigned-grid">{unassignedStudents.map(student => <div className="person-card student-card" key={student.id}><div className="person-main"><div className="avatar student-avatar"><Users/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик · #{student.id}</small></div></div><div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div><button className="btn small outline" disabled={!activeTeachers.length} onClick={() => { setStudentId(String(student.id)); setTeacherId(String(activeTeachers[0]?.id || "")); setModal({ mode: "assign" }); }}>Назначить</button></div>)}</div></section>}
