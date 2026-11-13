@@ -204,6 +204,16 @@ def conversation_messages(db: Session, conversation_id: int) -> list[Message]:
     ).all()
 
 
+async def edit_inline_message(target: TgMessage, text: str, markup: Optional[InlineKeyboardMarkup] = None) -> None:
+    try:
+        await edit_inline_message(target, text, markup)
+    except Exception as exc:
+        if "message is not modified" in str(exc).lower():
+            return
+        logger.info("Could not edit Telegram panel message; sending a new one: %s", exc)
+        await target.answer(text, reply_markup=markup)
+
+
 def conversation_status(rows: list[Message]) -> dict:
     unanswered = 0
     latest_student = None
@@ -385,12 +395,25 @@ async def show_teacher_chat(target: TgMessage, teacher: User, db: Session, conve
         "Ожидают ответа: " + str(status["unanswered"]),
         "",
     ]
+    pending_ids = set()
+    for row in rows:
+        if row.delivery_status != "delivered":
+            continue
+        if row.sender_role == "student":
+            pending_ids.add(row.id)
+        elif row.sender_role == "teacher":
+            pending_ids.clear()
+
     if not rows:
         lines.append("Сообщений пока нет.")
     else:
         for row in visible:
             sender_name = student.full_name if row.sender_role == "student" else "Вы"
-            lines.append(("📨 " if row.sender_role == "student" else "↩️ ") + sender_name + ":")
+            if row.sender_role == "student":
+                marker = " · 🔴 без ответа" if row.id in pending_ids else " · ✅ отвечено"
+                lines.append("📨 " + sender_name + marker + ":")
+            else:
+                lines.append("↩️ " + sender_name + ":")
             lines.append(message_preview(row))
             lines.append("")
         if page == 0 and len(rows) > CHAT_PAGE_SIZE:
@@ -422,7 +445,7 @@ async def show_role_panel(target: TgMessage, user: User, db: Session, edit: bool
     else:
         text = "UknowApp: управление пользователями и переписками доступно в веб-панели администратора."
         if edit:
-            await target.edit_text(text)
+            await edit_inline_message(target, text)
         else:
             await target.answer(text)
 
@@ -502,10 +525,11 @@ async def handle_panel_callback(callback: CallbackQuery):
                     await callback.answer("Сейчас нет активного учителя.", show_alert=True)
                     return
                 await callback.answer("Можно отправить сообщение")
-                await callback.message.edit_text(
+                await edit_inline_message(
+                    callback.message,
                     "✉️ Напишите сообщение или отправьте вложение следующим сообщением. "
                     "Оно будет доставлено вашему учителю.",
-                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+                    InlineKeyboardMarkup(inline_keyboard=[[
                         InlineKeyboardButton(text="← Главное меню", callback_data="ui:home")
                     ]]),
                 )
