@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Activity, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2, Users, X, Link2, Copy, Unlink } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
@@ -41,6 +41,104 @@ function MessageBubble({ message, auth }) {
   </div>;
 }
 
+function RelationshipConnections({ graphRef, rootRef, nodeRefs, teachers, revision }) {
+  const [layout, setLayout] = useState({ width: 0, height: 0, paths: [] });
+
+  useEffect(() => {
+    const graph = graphRef.current;
+    if (!graph) return undefined;
+
+    const measure = () => {
+      const bounds = graph.getBoundingClientRect();
+      const relativeRect = (element) => {
+        if (!element) return null;
+        const rect = element.getBoundingClientRect();
+        return {
+          left: rect.left - bounds.left,
+          top: rect.top - bounds.top,
+          right: rect.right - bounds.left,
+          bottom: rect.bottom - bounds.top,
+          width: rect.width,
+          height: rect.height,
+        };
+      };
+
+      const paths = [];
+      const root = relativeRect(rootRef.current);
+      if (root) {
+        for (const teacher of teachers || []) {
+          const teacherRect = relativeRect(nodeRefs.current["teacher-" + teacher.id]);
+          if (!teacherRect) continue;
+
+          const sx = root.left + root.width / 2;
+          const sy = root.bottom;
+          const ex = teacherRect.left + teacherRect.width / 2;
+          const ey = teacherRect.top;
+          const distance = Math.max(28, (ey - sy) * 0.52);
+          paths.push({
+            key: "teacher-" + teacher.id,
+            kind: "teacher",
+            d: `M ${sx} ${sy} C ${sx} ${sy + distance}, ${ex} ${ey - distance}, ${ex} ${ey}`,
+            x: ex,
+            y: ey,
+          });
+
+          for (const student of teacher.students || []) {
+            const studentRect = relativeRect(nodeRefs.current["student-" + student.id]);
+            if (!studentRect) continue;
+            const childX = teacherRect.left + teacherRect.width / 2;
+            const childY = teacherRect.bottom;
+            const targetX = studentRect.left;
+            const targetY = studentRect.top + studentRect.height / 2;
+            const bend = Math.max(24, Math.abs(targetY - childY) * 0.45);
+            paths.push({
+              key: "student-" + student.id,
+              kind: "student",
+              d: `M ${childX} ${childY} C ${childX} ${childY + bend}, ${targetX - bend} ${targetY}, ${targetX} ${targetY}`,
+              x: targetX,
+              y: targetY,
+            });
+          }
+        }
+      }
+
+      setLayout({
+        width: Math.max(1, bounds.width),
+        height: Math.max(1, bounds.height),
+        paths,
+      });
+    };
+
+    measure();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    if (observer) {
+      observer.observe(graph);
+      if (rootRef.current) observer.observe(rootRef.current);
+      Object.values(nodeRefs.current).forEach((element) => {
+        if (element) observer.observe(element);
+      });
+    }
+    window.addEventListener("resize", measure);
+    return () => {
+      if (observer) observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [graphRef, rootRef, nodeRefs, teachers, revision]);
+
+  return <svg
+    className="graph-connections"
+    viewBox={`0 0 ${layout.width} ${layout.height}`}
+    preserveAspectRatio="none"
+    aria-hidden="true"
+  >
+    {layout.paths.map((path) => <g key={path.key}>
+      <path className="graph-connection-glow" d={path.d}/>
+      <path className={`graph-connection ${path.kind}`} d={path.d}/>
+      <circle className={`graph-connection-dot ${path.kind}`} cx={path.x} cy={path.y} r="3.5"/>
+    </g>)}
+  </svg>;
+}
+
 export default function App() {
   const [auth, setAuth] = useState(initialAuth);
   const [login, setLogin] = useState("admin");
@@ -62,6 +160,12 @@ export default function App() {
   const [teacherId, setTeacherId] = useState("");
   const [studentId, setStudentId] = useState("");
   const [code, setCode] = useState(null);
+  const graphRef = useRef(null);
+  const rootNodeRef = useRef(null);
+  const graphNodeRefs = useRef({});
+  const graphRevision = (overview?.teachers || []).map(teacher =>
+    teacher.id + ":" + teacher.students.map(student => student.id).join(",")
+  ).join("|");
 
   const request = useCallback(async (path, options = {}) => {
     const response = await fetch(API + path, {
@@ -209,18 +313,18 @@ export default function App() {
             <div className="metric"><Link2/><span>Связи</span><b>{overview?.counts.assignments || 0}</b></div>
             <div className="metric"><MessageCircle/><span>Переписки</span><b>{overview?.counts.conversations || 0}</b></div>
           </div>
-          <section className="graph-panel">
+          <section className="graph-panel" ref={graphRef}>\n            <RelationshipConnections graphRef={graphRef} rootRef={rootNodeRef} nodeRefs={graphNodeRefs} teachers={overview?.teachers || []} revision={graphRevision}/>
             <div className="section-head"><div><h2>Карта связей</h2><p>Действия доступны на карточках участников.</p></div><div className="legend"><span className="teacher-dot"/> Учителя <span className="student-dot"/> Ученики</div></div>
-            <div className="root-node"><img src="/logo.svg" alt=""/><div><b>Администратор</b><small>Полное управление</small></div><span>ADMIN</span></div>
+            <div className="root-node" ref={rootNodeRef}><img src="/logo.svg" alt=""/><div><b>Администратор</b><small>Полное управление</small></div><span>ADMIN</span></div>
             <div className="tree-line"/>
             <div className="teacher-grid">
               {activeTeachers.map(teacher => <section className="teacher-branch" key={teacher.id}>
-                <div className="person-card teacher-card">
+                <div className="person-card teacher-card" ref={element => { if (element) graphNodeRefs.current["teacher-" + teacher.id] = element; else delete graphNodeRefs.current["teacher-" + teacher.id]; }}>
                   <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap/></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель · #{teacher.id}</small></div></div>
                   <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(teacher)}><Trash2/></button></div>
                 </div>
                 <div className="student-list">
-                  {(overview?.teachers.find(t => t.id === teacher.id)?.students || []).map(student => <div className="person-card student-card" key={student.id}>
+                  {(overview?.teachers.find(t => t.id === teacher.id)?.students || []).map(student => <div className="person-card student-card" key={student.id} ref={element => { if (element) graphNodeRefs.current["student-" + student.id] = element; else delete graphNodeRefs.current["student-" + student.id]; }}>
                     <div className="person-main"><div className="avatar student-avatar"><Users/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик · #{student.id}</small></div></div>
                     <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div>
                   </div>)}
