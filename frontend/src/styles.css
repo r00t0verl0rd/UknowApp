@@ -436,3 +436,197 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   background: #eee8f7;
   border: 1px solid #dfd5ed;
 }
+
+
+/* Graph polish: retain the light UknowApp palette, remove visual clutter. */
+.graph-panel {
+  position: relative;
+  overflow: hidden;
+  padding: 27px;
+  border: 1px solid #e8e0f2;
+  background:
+    radial-gradient(ellipse at 4% 2%, rgba(194, 153, 255, .22), transparent 34%),
+    radial-gradient(ellipse at 96% 98%, rgba(255, 220, 176, .23), transparent 31%),
+    radial-gradient(ellipse at 86% 0%, rgba(231, 37, 48, .045), transparent 25%),
+    linear-gradient(145deg, #fff 0%, #fdfbff 54%, #fffdfa 100%);
+  box-shadow: 0 12px 34px rgba(66, 45, 105, .055), inset 0 1px rgba(255,255,255,.95);
+}
+.graph-panel .section-head {
+  align-items: center;
+  margin-bottom: 23px;
+}
+.graph-panel .section-head h2 {
+  font-size: 21px;
+  letter-spacing: -.55px;
+}
+.graph-panel .section-head p {
+  margin-top: 4px;
+  color: #89819a;
+}
+.graph-panel .legend {
+  padding: 8px 11px;
+  border: 1px solid rgba(226, 218, 239, .9);
+  border-radius: 999px;
+  background: rgba(255,255,255,.76);
+}
+.graph-panel .legend span {
+  width: 9px;
+  height: 9px;
+}
+.graph-panel .root-node {
+  position: relative;
+  overflow: hidden;
+  width: min(330px, 100%);
+  min-height: 82px;
+  margin: 0 auto 24px;
+  padding: 14px 17px;
+  border: 1px solid #ded2f0;
+  border-radius: 17px;
+  background: linear-gradient(112deg, rgba(243,236,255,.97), rgba(255,255,255,.98) 62%, rgba(255,247,246,.96));
+  box-shadow: 0 8px 22px rgba(86, 61, 139, .09), inset 0 1px 0 rgba(255,255,255,.95);
+}
+.graph-panel .root-node:before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, #8b6bc7, #d1b4ee 58%, #e8a5a8);
+}
+.graph-panel .root-node img {
+  width: 48px;
+  height: 48px;
+  padding: 3px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.8);
+  box-shadow: 0 3px 10px rgba(87,62,153,.09);
+}
+.graph-panel .root-node b {
+  font-size: 14px;
+  letter-spacing: -.2px;
+}
+.graph-panel .root-node small {
+  color: #89809b;
+}
+.graph-panel .root-node > span {
+  color: #654b98;
+  background: #f0eafa;
+  border: 1px solid #dfd3ef;
+  border-radius: 999px;
+  padding: 6px 9px;
+  letter-spacing: .7px;
+}
+.graph-panel .teacher-grid {
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  align-items: stretch;
+  gap: 17px;
+}
+.graph-panel .teacher-branch {
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid #e9e2f2;
+  border-radius: 17px;
+  background: linear-gradient(155deg, rgba(250,247,255,.96), rgba(255,255,255,.97) 54%, rgba(255,252,248,.94));
+  box-shadow: 0 5px 18px rgba(67,47,105,.045), inset 0 1px 0 rgba(255,255,255,.95);
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.graph-panel .teacher-branch:hover {
+  border-color: #d8c9ed;
+  box-shadow: 0 9px 24px rgba(87,62,153,.085);
+  transform: translateY(-1px);
+}
+.graph-panel .teacher-branch:before,
+.graph-panel .tree-line {
+  display: none;
+}
+.graph-panel .teacher-card {
+  min-height: 76px;
+  padding: 12px 13px;
+  border: 1px solid #e3d8f1;
+  border-radius: 13px;
+  background: linear-gradient(110deg, #f0e9fb, #fff 78%);
+  box-shadow: 0 3px 10px rgba(87,62,153,.045);
+}
+.graph-panel .teacher-card .avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #e7dcf7;
+  color: #62459b;
+}
+.graph-panel .teacher-card .person-info b,
+.graph-panel .student-card .person-info b {
+  font-size: 13px;
+}
+.graph-panel .teacher-card .person-info small,
+.graph-panel .student-card .person-info small {
+  margin-top: 5px;
+  font-size: 10px;
+}
+.graph-panel .student-list {
+  display: grid;
+  gap: 8px;
+  margin: 11px 0 0;
+  padding: 0;
+  border: 0;
+}
+.graph-panel .student-card {
+  min-height: 61px;
+  padding: 9px 11px;
+  border: 1px solid #f0e5ce;
+  border-radius: 12px;
+  background: linear-gradient(105deg, #fff8e9, #fff 78%);
+  box-shadow: 0 2px 8px rgba(155,113,43,.035);
+}
+.graph-panel .student-card .avatar {
+  width: 37px;
+  height: 37px;
+  border-radius: 11px;
+  background: #fff0ce;
+  color: #a76d16;
+}
+.graph-panel .empty-students {
+  margin-top: 11px;
+  padding: 17px 12px;
+  border: 1px dashed #e8dcbf;
+  border-radius: 12px;
+  background: rgba(255,251,241,.82);
+  color: #9b896a;
+}
+.graph-panel .add-student {
+  align-self: flex-start;
+  margin: 11px 0 0 3px;
+  padding: 8px 10px;
+  border: 1px solid #e5daf2;
+  border-radius: 9px;
+  background: rgba(255,255,255,.76);
+  color: #7052a9;
+  transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+.graph-panel .add-student:hover {
+  border-color: #cdb9eb;
+  background: #f4effb;
+  transform: translateY(-1px);
+}
+.graph-panel .unassigned {
+  margin-top: 23px;
+  padding-top: 19px;
+  border-top: 1px solid #e9e1f1;
+}
+.graph-panel .unassigned .section-head {
+  margin-bottom: 11px;
+}
+@media(max-width:700px) {
+  .graph-panel {
+    padding: 17px;
+  }
+  .graph-panel .section-head {
+    margin-bottom: 17px;
+  }
+  .graph-panel .legend {
+    border-radius: 11px;
+  }
+  .graph-panel .teacher-grid {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+}
