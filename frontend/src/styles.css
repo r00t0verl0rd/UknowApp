@@ -388,3 +388,16 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+/* Telegram disconnect action stays clear but visually secondary to delete. */
+.btn.disconnect {
+  color: #a34b43;
+  border-color: #f0d2cd;
+  background: #fff8f6;
+}
+.btn.disconnect:hover {
+  color: #923b35;
+  border-color: #e7b6ad;
+  background: #fff0ed;
+  box-shadow: 0 0 13px rgba(231, 37, 48, .10);
+}
