@@ -419,13 +419,6 @@ async def show_role_panel(target: TgMessage, user: User, db: Session, edit: bool
     # is the conversation, with only messages from the teacher appearing here.
 
 
-async def show_reply_prompt(target: TgMessage, teacher: User, conversation: Conversation) -> None:
-    await target.answer(
-        "Ответ выбранному ученику: " + conversation.assignment.student.full_name + ".\n"
-        "Отправьте сообщение или вложение."
-    )
-
-
 @router.message(CommandStart())
 async def start(message: TgMessage, bot: Bot):
     if not message.from_user:
@@ -522,8 +515,7 @@ async def handle_panel_callback(callback: CallbackQuery):
                     await callback.answer("Эта переписка больше недоступна.", show_alert=True)
                     return
                 set_teacher_session(db, user, conversation)
-                await callback.answer()
-                await show_reply_prompt(callback.message, user, conversation)
+                await callback.answer("Отправьте ответ сообщением")
             else:
                 await callback.answer("Неизвестная команда.", show_alert=True)
         except (ValueError, IndexError):
@@ -547,9 +539,7 @@ async def choose_conversation(callback: CallbackQuery):
             await callback.answer("У вас нет доступа к этой переписке", show_alert=True)
             return
         set_teacher_session(db, teacher, conversation)
-        await callback.answer("Диалог выбран")
-        if callback.message:
-            await show_reply_prompt(callback.message, teacher, conversation)
+        await callback.answer("Отправьте ответ сообщением")
 
 
 @router.message()
@@ -667,6 +657,13 @@ async def route_message(message: TgMessage, bot: Bot):
             row.destination_message_id = copied.message_id
             row.delivery_status = "delivered"
             db.commit()
+
+            if sender.role == "teacher":
+                # Keep the teacher's bot chat focused on the inbox panel, not a reply history.
+                try:
+                    await bot.delete_message(chat_id=sender.telegram_id, message_id=message.message_id)
+                except Exception:
+                    logger.info("Could not remove teacher's sent message from the bot chat")
 
             if sender.role == "student":
                 # The student sees their own outgoing message in Telegram.
