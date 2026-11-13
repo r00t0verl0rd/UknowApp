@@ -723,30 +723,31 @@ async def route_message(message: TgMessage, bot: Bot):
                 await message.answer("Не удалось отправить сообщение. Попробуйте позже.")
             return
         try:
-            copied = await bot.copy_message(
-                chat_id=recipient.telegram_id,
-                from_chat_id=message.chat.id,
-                message_id=message.message_id,
-            )
-            row.destination_message_id = copied.message_id
-            row.delivery_status = "delivered"
-            db.commit()
+            if sender.role == "student":
+                # Student messages are rendered from SQLite inside the single
+                # persistent teacher panel; do not create extra Telegram messages.
+                row.delivery_status = "delivered"
+                db.commit()
+                try:
+                    await update_teacher_panel(bot, db, recipient)
+                except Exception:
+                    logger.exception("Could not refresh teacher panel for conversation_id=%s", conversation.id)
+            else:
+                copied = await bot.copy_message(
+                    chat_id=recipient.telegram_id,
+                    from_chat_id=message.chat.id,
+                    message_id=message.message_id,
+                )
+                row.destination_message_id = copied.message_id
+                row.delivery_status = "delivered"
+                db.commit()
 
-            if sender.role == "teacher":
-                # Keep the teacher's bot chat focused on the inbox panel, not a reply history.
+                # Keep the teacher's bot chat focused on the persistent panel.
                 try:
                     await bot.delete_message(chat_id=sender.telegram_id, message_id=message.message_id)
                 except Exception:
                     logger.info("Could not remove teacher's sent message from the bot chat")
 
-            if sender.role == "student":
-                # The student sees their own outgoing message in Telegram.
-                # The teacher receives the copied message and an unread inbox.
-                try:
-                    await update_teacher_panel(bot, db, recipient)
-                except Exception:
-                    logger.exception("Could not refresh teacher inbox for conversation_id=%s", conversation.id)
-            else:
                 # A successful teacher reply closes the pending batch.
                 pending_rows = pending_before_reply
                 for pending in pending_rows:
@@ -764,9 +765,7 @@ async def route_message(message: TgMessage, bot: Bot):
                     metadata["teacher_read_at"] = now
                     pending.metadata_json = json.dumps(metadata, ensure_ascii=False)
                 db.commit()
-                # Keep the selected conversation active. The persistent panel
-                # now shows the updated SQLite history and remains ready for
-                # the next reply to this same student.
+                # Keep the selected conversation active after replying.
                 try:
                     await update_teacher_panel(bot, db, sender)
                 except Exception:
