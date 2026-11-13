@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from aiogram import Bot, Dispatcher, F, Router
-from aiogram.filters import CommandStart
+from aiogram.filters import Command, CommandStart
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message as TgMessage
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
@@ -168,6 +168,288 @@ def current_student_conversation(db: Session, student_id: int) -> Optional[Conve
     return assignment.conversation
 
 
+
+TEACHER_PAGE_SIZE = 6
+CHAT_PAGE_SIZE = 8
+
+
+def message_preview(row: Optional[Message]) -> str:
+    if not row:
+        return "Сообщений пока нет"
+    body = (row.text or "").strip()
+    if body:
+        body = " ".join(body.split())
+        return body if len(body) <= 115 else body[:112] + "…"
+    labels = {
+        "voice": "🎤 Голосовое сообщение",
+        "video_note": "⭕ Видеокружочек",
+        "photo": "🖼 Фотография",
+        "video": "🎬 Видео",
+        "audio": "🎵 Аудио",
+        "document": "📎 Документ",
+        "sticker": "Стикер",
+        "animation": "GIF-анимация",
+        "location": "Геопозиция",
+        "contact": "Контакт",
+        "poll": "Опрос",
+    }
+    return labels.get(row.content_type, "Вложение: " + (row.content_type or "файл"))
+
+
+def conversation_messages(db: Session, conversation_id: int) -> list[Message]:
+    return db.scalars(
+        select(Message)
+        .where(Message.conversation_id == conversation_id)
+        .order_by(Message.created_at, Message.id)
+    ).all()
+
+
+def conversation_status(rows: list[Message]) -> dict:
+    unanswered = 0
+    latest_student = None
+    latest_teacher = None
+    for row in rows:
+        if row.delivery_status != "delivered":
+            continue
+        if row.sender_role == "student":
+            unanswered += 1
+            latest_student = row
+        elif row.sender_role == "teacher":
+            unanswered = 0
+            latest_teacher = row
+    return {
+        "unanswered": unanswered,
+        "latest_student": latest_student,
+        "latest_teacher": latest_teacher,
+    }
+
+
+def teacher_conversations(db: Session, teacher: User) -> list[dict]:
+    assignments = db.scalars(
+        select(Assignment)
+        .where(Assignment.teacher_id == teacher.id, Assignment.active.is_(True))
+        .order_by(Assignment.created_at.desc())
+    ).all()
+    items = []
+    for assignment in assignments:
+        student = assignment.student
+        conversation = assignment.conversation
+        if (
+            not student or not student.active or not conversation
+            or conversation.status != "active"
+        ):
+            continue
+        rows = conversation_messages(db, conversation.id)
+        status = conversation_status(rows)
+        last_student = status["latest_student"]
+        items.append({
+            "student": student,
+            "conversation": conversation,
+            "rows": rows,
+            "unanswered": status["unanswered"],
+            "latest_student": last_student,
+            "preview": message_preview(last_student),
+            "last_at": last_student.created_at.isoformat() if last_student else "",
+        })
+    items.sort(key=lambda item: (item["unanswered"] > 0, item["last_at"]), reverse=True)
+    return items
+
+
+def get_teacher_conversation(db: Session, teacher: User, conversation_id: int) -> Optional[Conversation]:
+    conversation = db.get(Conversation, conversation_id)
+    if (
+        not teacher or teacher.role != "teacher" or not teacher.active
+        or not conversation or conversation.status != "active"
+        or not conversation.assignment.active
+        or conversation.assignment.teacher_id != teacher.id
+        or not conversation.assignment.student.active
+    ):
+        return None
+    return conversation
+
+
+def set_teacher_session(db: Session, teacher: User, conversation: Conversation) -> None:
+    session = db.get(TeacherSession, teacher.id)
+    if session:
+        session.conversation_id = conversation.id
+    else:
+        db.add(TeacherSession(teacher_id=teacher.id, conversation_id=conversation.id))
+    db.commit()
+
+
+def role_panel_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="↻ Обновить", callback_data="ui:home")
+    ]])
+
+
+async def show_student_panel(target: TgMessage, student: User, db: Session, edit: bool = False) -> None:
+    conversation = current_student_conversation(db, student.id)
+    if not conversation or conversation.status != "active":
+        text = (
+            "👋 Здравствуйте, " + student.full_name + "!\n\n"
+            "Пока вам не назначен учитель. Когда администратор создаст связь, "
+            "здесь появится его имя и кнопка для отправки сообщения."
+        )
+        markup = role_panel_keyboard()
+    else:
+        teacher = conversation.assignment.teacher
+        rows = conversation_messages(db, conversation.id)
+        latest_teacher = next((row for row in reversed(rows) if row.sender_role == "teacher" and row.delivery_status == "delivered"), None)
+        text = (
+            "👋 Личный кабинет ученика\n\n"
+            "Здравствуйте, " + student.full_name + "!\n\n"
+            "👩‍🏫 Ваш учитель:\n" + teacher.full_name + "\n\n"
+            "Последний ответ учителя:\n" + message_preview(latest_teacher) + "\n\n"
+            "Нажмите кнопку ниже и отправьте сообщение — оно попадёт вашему учителю."
+        )
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="✉️ Написать учителю", callback_data="ui:student:write")],
+            [InlineKeyboardButton(text="↻ Обновить", callback_data="ui:home")],
+        ])
+    if edit:
+        await target.edit_text(text, reply_markup=markup)
+    else:
+        await target.answer(text, reply_markup=markup)
+
+
+async def show_teacher_panel(target: TgMessage, teacher: User, db: Session, page: int = 0, edit: bool = False) -> None:
+    items = teacher_conversations(db, teacher)
+    total_unanswered = sum(item["unanswered"] for item in items)
+    total_pages = max(1, (len(items) + TEACHER_PAGE_SIZE - 1) // TEACHER_PAGE_SIZE)
+    page = max(0, min(page, total_pages - 1))
+    start = page * TEACHER_PAGE_SIZE
+    visible = items[start:start + TEACHER_PAGE_SIZE]
+
+    lines = [
+        "👩‍🏫 Панель учителя",
+        "",
+        "Здравствуйте, " + teacher.full_name + "!",
+        "Учеников: " + str(len(items)),
+        "Сообщений ждут ответа: " + str(total_unanswered),
+        "",
+    ]
+    keyboard = []
+    if not items:
+        lines.append("Пока нет активных учеников. Они появятся здесь после назначения администратором.")
+    else:
+        lines.append("Входящие сообщения:")
+        for item in visible:
+            student_name = item["student"].full_name
+            count = item["unanswered"]
+            if count:
+                lines.append("🔴 " + student_name + " — " + str(count) + " без ответа")
+            else:
+                lines.append("🟢 " + student_name + " — нет ожидающих ответов")
+            lines.append("   " + item["preview"])
+            label = ("🔴 " if count else "🟢 ") + student_name
+            if count:
+                label += " · " + str(count)
+            keyboard.append([
+                InlineKeyboardButton(
+                    text=label[:60],
+                    callback_data="ui:chat:" + str(item["conversation"].id) + ":0",
+                )
+            ])
+
+    if total_pages > 1:
+        nav = []
+        if page > 0:
+            nav.append(InlineKeyboardButton(text="← Назад", callback_data="ui:teacher:page:" + str(page - 1)))
+        nav.append(InlineKeyboardButton(text=str(page + 1) + "/" + str(total_pages), callback_data="ui:home"))
+        if page + 1 < total_pages:
+            nav.append(InlineKeyboardButton(text="Вперёд →", callback_data="ui:teacher:page:" + str(page + 1)))
+        keyboard.append(nav)
+    keyboard.append([InlineKeyboardButton(text="↻ Обновить список", callback_data="ui:home")])
+    markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
+    text = "\n".join(lines)
+    if edit:
+        await target.edit_text(text, reply_markup=markup)
+    else:
+        await target.answer(text, reply_markup=markup)
+
+
+async def show_teacher_chat(target: TgMessage, teacher: User, db: Session, conversation: Conversation, page: int = 0, edit: bool = False) -> None:
+    rows = conversation_messages(db, conversation.id)
+    student = conversation.assignment.student
+    status = conversation_status(rows)
+    total_pages = max(1, (len(rows) + CHAT_PAGE_SIZE - 1) // CHAT_PAGE_SIZE)
+    page = max(0, min(page, total_pages - 1))
+    end = max(0, len(rows) - page * CHAT_PAGE_SIZE)
+    start = max(0, end - CHAT_PAGE_SIZE)
+    visible = rows[start:end]
+
+    lines = [
+        "💬 Диалог с учеником",
+        student.full_name,
+        "Ожидают ответа: " + str(status["unanswered"]),
+        "",
+    ]
+    if not rows:
+        lines.append("Сообщений пока нет.")
+    else:
+        for row in visible:
+            sender_name = student.full_name if row.sender_role == "student" else "Вы"
+            lines.append(("📨 " if row.sender_role == "student" else "↩️ ") + sender_name + ":")
+            lines.append(message_preview(row))
+            lines.append("")
+        if page == 0 and len(rows) > CHAT_PAGE_SIZE:
+            lines.append("Показаны последние сообщения.")
+    keyboard = [[
+        InlineKeyboardButton(text="✉️ Ответить", callback_data="ui:reply:" + str(conversation.id)),
+        InlineKeyboardButton(text="← К ученикам", callback_data="ui:teacher:page:0"),
+    ]]
+    if total_pages > 1:
+        nav = []
+        if page + 1 < total_pages:
+            nav.append(InlineKeyboardButton(text="← Старее", callback_data="ui:chat:" + str(conversation.id) + ":" + str(page + 1)))
+        if page > 0:
+            nav.append(InlineKeyboardButton(text="Новее →", callback_data="ui:chat:" + str(conversation.id) + ":" + str(page - 1)))
+        keyboard.insert(0, nav)
+    markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
+    text = "\n".join(lines)[:3900]
+    if edit:
+        await target.edit_text(text, reply_markup=markup)
+    else:
+        await target.answer(text, reply_markup=markup)
+
+
+async def show_role_panel(target: TgMessage, user: User, db: Session, edit: bool = False) -> None:
+    if user.role == "student":
+        await show_student_panel(target, user, db, edit=edit)
+    elif user.role == "teacher":
+        await show_teacher_panel(target, user, db, page=0, edit=edit)
+    else:
+        text = "UknowApp: управление пользователями и переписками доступно в веб-панели администратора."
+        if edit:
+            await target.edit_text(text)
+        else:
+            await target.answer(text)
+
+
+def notification_keyboard(conversation_id: int, student_name: str) -> InlineKeyboardMarkup:
+    short_name = student_name if len(student_name) <= 22 else student_name[:21] + "…"
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Ответить · " + short_name, callback_data="reply:" + str(conversation_id)),
+            InlineKeyboardButton(text="Открыть диалог", callback_data="ui:chat:" + str(conversation_id) + ":0"),
+        ],
+        [InlineKeyboardButton(text="Панель учителя", callback_data="ui:home")],
+    ])
+
+
+async def show_reply_prompt(target: TgMessage, teacher: User, conversation: Conversation) -> None:
+    student_name = conversation.assignment.student.full_name
+    await target.answer(
+        "Вы выбрали ученика: " + student_name + "\n\n"
+        "Отправьте следующее сообщение или вложение — я доставлю его этому ученику.",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="← Панель учителя", callback_data="ui:home"),
+            InlineKeyboardButton(text="Открыть диалог", callback_data="ui:chat:" + str(conversation.id) + ":0"),
+        ]]),
+    )
+
+
 @router.message(CommandStart())
 async def start(message: TgMessage):
     if not message.from_user:
@@ -181,15 +463,87 @@ async def start(message: TgMessage):
                 "Затем отправьте этот код сюда отдельным сообщением. Код действует 15 минут."
             )
             return
-        if user.role == "student":
-            await message.answer("Здравствуйте! Напишите сообщение здесь — оно попадёт вашему учителю через бота.")
-        elif user.role == "teacher":
-            await message.answer(
-                "Здравствуйте! Сообщения учеников будут приходить сюда. Нажмите «Ответить» под нужным сообщением, "
-                "затем отправляйте ответ в этот чат с ботом."
-            )
-        else:
-            await message.answer("Этот Telegram-аккаунт имеет роль администратора.")
+        await show_role_panel(message, user, db)
+
+
+@router.message(Command("menu"))
+async def open_menu(message: TgMessage):
+    if not message.from_user:
+        return
+    with SessionLocal() as db:
+        user = get_linked_user(db, message.from_user.id)
+        if not user:
+            await message.answer("Сначала подключите аккаунт UknowApp с помощью кода администратора.")
+            return
+        await show_role_panel(message, user, db)
+
+
+@router.callback_query(F.data.startswith("ui:"))
+async def handle_panel_callback(callback: CallbackQuery):
+    if not callback.from_user or not callback.data:
+        return
+    parts = callback.data.split(":")
+    with SessionLocal() as db:
+        user = get_linked_user(db, callback.from_user.id)
+        if not user:
+            await callback.answer("Аккаунт не подключён или отключён.", show_alert=True)
+            return
+        if not callback.message:
+            await callback.answer()
+            return
+
+        action = parts[1] if len(parts) > 1 else ""
+        try:
+            if action == "home":
+                await callback.answer()
+                await show_role_panel(callback.message, user, db, edit=True)
+            elif action == "student" and len(parts) > 2 and parts[2] == "write":
+                if user.role != "student" or not current_student_conversation(db, user.id):
+                    await callback.answer("Сейчас нет активного учителя.", show_alert=True)
+                    return
+                await callback.answer("Можно отправить сообщение")
+                await callback.message.edit_text(
+                    "✉️ Напишите сообщение или отправьте вложение следующим сообщением. "
+                    "Оно будет доставлено вашему учителю.",
+                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+                        InlineKeyboardButton(text="← Главное меню", callback_data="ui:home")
+                    ]]),
+                )
+            elif action == "teacher" and len(parts) > 3 and parts[2] == "page":
+                if user.role != "teacher":
+                    await callback.answer("Эта панель доступна только учителю.", show_alert=True)
+                    return
+                page = max(0, int(parts[3]))
+                await callback.answer()
+                await show_teacher_panel(callback.message, user, db, page=page, edit=True)
+            elif action == "chat" and len(parts) > 3:
+                if user.role != "teacher":
+                    await callback.answer("Просмотр доступен только учителю.", show_alert=True)
+                    return
+                conversation_id = int(parts[2])
+                page = max(0, int(parts[3]))
+                conversation = get_teacher_conversation(db, user, conversation_id)
+                if not conversation:
+                    await callback.answer("Эта переписка больше недоступна.", show_alert=True)
+                    return
+                await callback.answer()
+                await show_teacher_chat(callback.message, user, db, conversation, page=page, edit=True)
+            elif action == "reply" and len(parts) > 2:
+                if user.role != "teacher":
+                    await callback.answer("Отвечать может только учитель.", show_alert=True)
+                    return
+                conversation_id = int(parts[2])
+                conversation = get_teacher_conversation(db, user, conversation_id)
+                if not conversation:
+                    await callback.answer("Эта переписка больше недоступна.", show_alert=True)
+                    return
+                set_teacher_session(db, user, conversation)
+                await callback.answer("Режим ответа включён")
+                await show_reply_prompt(callback.message, user, conversation)
+            else:
+                await callback.answer("Неизвестная команда.", show_alert=True)
+        except (ValueError, IndexError):
+            await callback.answer("Некорректная команда.", show_alert=True)
 
 
 @router.callback_query(F.data.startswith("reply:"))
@@ -204,24 +558,14 @@ async def choose_conversation(callback: CallbackQuery):
 
     with SessionLocal() as db:
         teacher = get_linked_user(db, callback.from_user.id)
-        conversation = db.get(Conversation, conversation_id)
-        if (
-            not teacher or teacher.role != "teacher" or not conversation
-            or conversation.status != "active"
-            or conversation.assignment.teacher_id != teacher.id
-            or not conversation.assignment.active
-        ):
+        conversation = get_teacher_conversation(db, teacher, conversation_id) if teacher else None
+        if not conversation:
             await callback.answer("У вас нет доступа к этой переписке", show_alert=True)
             return
-        session = db.get(TeacherSession, teacher.id)
-        if session:
-            session.conversation_id = conversation.id
-        else:
-            db.add(TeacherSession(teacher_id=teacher.id, conversation_id=conversation.id))
-        db.commit()
-    await callback.answer("Диалог выбран")
-    if callback.message:
-        await callback.message.answer("Выбран диалог с учеником. Следующее сообщение будет отправлено ему.")
+        set_teacher_session(db, teacher, conversation)
+        await callback.answer("Диалог выбран")
+        if callback.message:
+            await show_reply_prompt(callback.message, teacher, conversation)
 
 
 @router.message()
