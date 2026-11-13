@@ -419,11 +419,11 @@ async def show_teacher_pending(target: TgMessage, teacher: User, db: Session, co
             lines.append("")
     else:
         lines.append("Новых сообщений нет.")
+    lines.extend([
+        "Режим ответа активен.",
+        "Отправьте следующее сообщение — оно будет доставлено этому ученику.",
+    ])
     markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(
-            text="↩️ Ответить" if unread else "✉️ Написать ученику",
-            callback_data="ui:reply:" + str(conversation.id),
-        )],
         [InlineKeyboardButton(text="← К списку учеников", callback_data="ui:teacher:page:0")],
     ])
     text = "\n".join(lines)[:3900]
@@ -511,12 +511,15 @@ async def handle_panel_callback(callback: CallbackQuery):
                     await callback.answer("Эта панель доступна только учителю.", show_alert=True)
                     return
                 conversation_id = int(parts[2])
-                clear_teacher_session(db, user)
                 conversation = get_teacher_conversation(db, user, conversation_id)
                 if not conversation:
                     await callback.answer("Ученик больше не назначен вам.", show_alert=True)
                     return
-                await callback.answer()
+                # Selecting a student with the "Ответить" button immediately
+                # activates the reply session. The teacher can send the next
+                # message without pressing a second inline button.
+                set_teacher_session(db, user, conversation)
+                await callback.answer("Ученик выбран. Отправьте сообщение.")
                 await show_teacher_pending(callback.message, user, db, conversation, edit=True)
             elif action == "reply" and len(parts) > 2:
                 if user.role != "teacher":
