@@ -10,6 +10,8 @@ services:
       PYTHONPATH: /app/backend
     volumes:
       - app_data:/app/data
+    init: true
+    stop_grace_period: 30s
     restart: unless-stopped
     healthcheck:
       test:
