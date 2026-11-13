@@ -254,17 +254,16 @@ def teacher_conversations(db: Session, teacher: User) -> list[dict]:
             continue
         rows = conversation_messages(db, conversation.id)
         unread = pending_student_messages(rows)
-        if not unread:
-            continue
         items.append({
             "student": student,
             "conversation": conversation,
             "unread": unread,
             "unanswered": len(unread),
-            "preview": message_preview(unread[-1]),
-            "last_at": unread[-1].created_at.isoformat(),
+            "preview": message_preview(unread[-1]) if unread else "",
+            "last_at": unread[-1].created_at.isoformat() if unread else assignment.created_at.isoformat(),
         })
-    items.sort(key=lambda item: item["last_at"], reverse=True)
+    # Keep all assigned students visible; students with unread messages come first.
+    items.sort(key=lambda item: (item["unanswered"] > 0, item["last_at"]), reverse=True)
     return items
 
 
@@ -305,21 +304,23 @@ def teacher_panel_view(db: Session, teacher: User, page: int = 0) -> tuple[str, 
     total_pages = max(1, (len(items) + TEACHER_PAGE_SIZE - 1) // TEACHER_PAGE_SIZE)
     page = max(0, min(page, total_pages - 1))
     visible = items[page * TEACHER_PAGE_SIZE:(page + 1) * TEACHER_PAGE_SIZE]
-    lines = ["👩‍🏫 Панель учителя", "Новых сообщений: " + str(total_unread), ""]
+    lines = ["👩‍🏫 Панель учителя", "Новых сообщений: " + str(total_unread), "Выберите ученика, чтобы открыть отправку сообщения.", ""]
     keyboard = []
     if not visible:
-        lines.append("Пока нет сообщений, ожидающих ответа.")
+        lines.append("Пока нет назначенных учеников.")
     else:
         for item in visible:
             student_name = item["student"].full_name
-            lines.append("👤 " + student_name + " · " + str(item["unanswered"]) + " новых")
+            lines.append("👤 " + student_name + " · " + (
+                str(item["unanswered"]) + " новых" if item["unanswered"] else "нет новых сообщений"
+            ))
             for row in item["unread"][-3:]:
                 lines.append("   " + message_preview(row))
             if item["unanswered"] > 3:
                 lines.append("   …ещё " + str(item["unanswered"] - 3) + " сообщений")
             lines.append("")
             keyboard.append([InlineKeyboardButton(
-                text=("Ответить · " + student_name)[:60],
+                text=(("Ответить · " if item["unanswered"] else "Написать · ") + student_name)[:60],
                 callback_data="ui:chat:" + str(item["conversation"].id),
             )])
     if total_pages > 1:
