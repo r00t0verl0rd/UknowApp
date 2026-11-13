@@ -860,3 +860,70 @@ img, video, audio { max-width: 100%; }
     color: var(--purple) !important;
   }
 }
+
+
+/* Touch devices: give every interactive control a visible surface.
+   Use pointer capability as well as viewport width because mobile browsers
+   can report a wider CSS viewport when desktop-site mode is enabled. */
+@media (hover: none), (pointer: coarse) {
+  button,
+  button.btn,
+  .sidebar nav button,
+  .logout,
+  .person-actions button,
+  .icon-btn,
+  .add-student,
+  .chat-item,
+  .alert-row button,
+  .modal-head button {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    background: #f0eef3 !important;
+    border: 1px solid #e2dce9 !important;
+    color: #393149 !important;
+    box-shadow: 0 2px 5px rgba(41, 34, 63, .06) !important;
+  }
+
+  .sidebar nav button.active,
+  .btn.primary {
+    background: linear-gradient(105deg, #573e99, #7856bd) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(87, 62, 153, .2) !important;
+  }
+
+  .btn.ghost {
+    background: #eae7ef !important;
+    border-color: #ded8e6 !important;
+  }
+
+  .btn.outline,
+  .add-student {
+    background: #f1edf7 !important;
+    border-color: #d8c9ed !important;
+    color: #573e99 !important;
+  }
+
+  .btn.disconnect {
+    background: #fff0f1 !important;
+    border-color: #f2d5d9 !important;
+    color: #b82c3b !important;
+  }
+
+  .person-actions button.danger-icon,
+  .icon-btn.danger-icon {
+    background: #fff0f1 !important;
+    border-color: #f2d5d9 !important;
+    color: #b82c3b !important;
+  }
+
+  .chat-item.selected {
+    background: #eae4f4 !important;
+    border-color: #d8c9ed !important;
+    color: #573e99 !important;
+  }
+
+  button:disabled {
+    opacity: .5 !important;
+  }
+}
