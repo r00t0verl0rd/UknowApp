@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .database import SessionLocal
+from .media_storage import archive_telegram_media
 from .models import Assignment, ConnectionCode, Conversation, Message, TeacherSession, User
 
 router = Router()
@@ -329,6 +330,7 @@ async def route_message(message: TgMessage, bot: Bot):
             return
 
         row = persist_message(db, conversation.id, sender, message, "pending")
+        await archive_telegram_media(bot, message, row)
         if not recipient.telegram_id or not recipient.active:
             row.delivery_status = "failed"
             db.commit()
