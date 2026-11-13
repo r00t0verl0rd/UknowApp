@@ -18,9 +18,13 @@ else:
     (ROOT_DIR / "data").mkdir(parents=True, exist_ok=True)
     DATABASE_URL = "sqlite:///" + str(ROOT_DIR / "data" / "uknowapp.db")
 
-if ADMIN_PASSWORD == "change-me-now":
+if ADMIN_PASSWORD in {"change-me-now", "replace-with-a-long-random-password"}:
     import warnings
-    warnings.warn("Using the default admin password. Set ADMIN_PASSWORD in .env before testing.", stacklevel=1)
+
+    warnings.warn(
+        "Using a placeholder admin password. Set a unique ADMIN_PASSWORD in .env before exposing UknowApp.",
+        stacklevel=1,
+    )
 
 
 ALLOWED_ORIGINS = [
