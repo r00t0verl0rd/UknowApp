@@ -513,3 +513,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 @media(prefers-reduced-motion:reduce) {
   .node-editor .node-card { transition: none; }
 }
+
+/* Keep node title and controls on one horizontal node body. */
+.node-editor .node-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; column-gap: 8px; }
+.node-editor .node-card .node-type { flex: 0 0 100%; width: 100%; }
+.node-editor .node-card .person-main { flex: 1 1 150px; }
