@@ -390,6 +390,20 @@ async def _update_teacher_panel_locked(
             logger.debug("Could not remove temporary keyboard refresh notice")
 
     if old_chat_id and old_message_id and old_message_id != sent.message_id:
+        # Old panel versions used InlineKeyboardMarkup. Remove those buttons
+        # explicitly before attempting to delete the old message.
+        try:
+            await bot.edit_message_reply_markup(
+                chat_id=old_chat_id,
+                message_id=old_message_id,
+                reply_markup=None,
+            )
+        except Exception:
+            logger.debug(
+                "Could not remove old inline keyboard (teacher_id=%s message_id=%s)",
+                teacher.id,
+                old_message_id,
+            )
         try:
             await bot.delete_message(chat_id=old_chat_id, message_id=old_message_id)
         except Exception:
