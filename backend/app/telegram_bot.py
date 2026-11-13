@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import json
 import logging
@@ -340,7 +341,7 @@ def teacher_panel_view(db: Session, teacher: User, page: int = 0) -> tuple[str, 
     return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
-async def update_teacher_panel(bot: Bot, db: Session, teacher: User) -> None:
+async def _update_teacher_panel_locked(bot: Bot, db: Session, teacher: User) -> None:
     """Keep exactly one persistent teacher panel and edit it when inbox data changes."""
     if not teacher.telegram_id:
         return
@@ -398,6 +399,24 @@ async def update_teacher_panel(bot: Bot, db: Session, teacher: User) -> None:
         chat_id=teacher.telegram_id,
     ))
     db.commit()
+
+
+# Telegram may process several updates for the same teacher concurrently.
+# Serialize panel edits/creation so two handlers cannot both insert the
+# unique teacher_panels row after observing it as absent.
+_teacher_panel_locks: dict[int, asyncio.Lock] = {}
+
+
+async def update_teacher_panel(bot: Bot, db: Session, teacher: User) -> None:
+    lock = _teacher_panel_locks.setdefault(teacher.id, asyncio.Lock())
+    async with lock:
+        try:
+            await _update_teacher_panel_locked(bot, db, teacher)
+        except Exception:
+            # A failed flush/commit leaves SQLAlchemy's Session unusable until
+            # rollback. Restore it before the caller continues handling updates.
+            db.rollback()
+            raise
 
 
 async def show_teacher_panel(target: TgMessage, teacher: User, db: Session, page: int = 0, edit: bool = False) -> None:
