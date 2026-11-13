@@ -24,8 +24,3 @@ class UserUpdate(BaseModel):
 class AssignmentCreate(BaseModel):
     teacher_id: int
     student_id: int
-
-
-class TestMessageCreate(BaseModel):
-    sender_id: int
-    text: str = Field(min_length=1, max_length=12000)
