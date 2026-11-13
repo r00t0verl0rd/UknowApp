@@ -10,8 +10,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .database import SessionLocal
-from .models import Assignment, ConnectionCode, Conversation, Message, TeacherSession, TestMessage, User
-from .schemas import AssignmentCreate, LoginRequest, TestMessageCreate, UserCreate, UserUpdate
+from .models import Assignment, ConnectionCode, Conversation, Message, TeacherSession, User
+from .schemas import AssignmentCreate, LoginRequest, UserCreate, UserUpdate
 from .security import require_admin, verify_admin
 
 router = APIRouter(prefix="/api")
@@ -172,9 +172,6 @@ def delete_user(user_id: int, _: Admin, db: Db):
             (Assignment.teacher_id == user.id) | (Assignment.student_id == user.id)
         )
     ).all()
-    assignment_ids = [item.id for item in assignments]
-    if assignment_ids:
-        db.query(TestMessage).filter(TestMessage.assignment_id.in_(assignment_ids)).delete(synchronize_session=False)
     conversation_ids = [item.conversation.id for item in assignments if item.conversation]
     if conversation_ids:
         db.query(TeacherSession).filter(
@@ -275,114 +272,6 @@ def assign_student(payload: AssignmentCreate, _: Admin, db: Db):
     db.commit()
     db.refresh(conversation)
     return conversation_dict(db, conversation)
-
-
-@router.get("/admin/test/assignments")
-def list_test_assignments(_: Admin, db: Db):
-    """List active teacher/student pairs available in the isolated simulator."""
-    assignments = db.scalars(
-        select(Assignment)
-        .where(Assignment.active.is_(True))
-        .order_by(Assignment.created_at.desc(), Assignment.id.desc())
-    ).all()
-
-    result = []
-    for assignment in assignments:
-        teacher = assignment.teacher
-        student = assignment.student
-        if not teacher.active or not student.active or teacher.role != "teacher" or student.role != "student":
-            continue
-        last_message = db.scalar(
-            select(TestMessage)
-            .where(TestMessage.assignment_id == assignment.id)
-            .order_by(TestMessage.created_at.desc(), TestMessage.id.desc())
-            .limit(1)
-        )
-        message_count = db.scalar(
-            select(TestMessage.id).where(TestMessage.assignment_id == assignment.id)
-        )
-        result.append({
-            "id": assignment.id,
-            "teacher": user_dict(teacher),
-            "student": user_dict(student),
-            "message_count": db.query(TestMessage).filter(TestMessage.assignment_id == assignment.id).count(),
-            "last_message": last_message.text if last_message else "Тестовый диалог пока пуст",
-            "last_message_at": last_message.created_at.isoformat() if last_message else None,
-        })
-    return result
-
-
-@router.get("/admin/test/assignments/{assignment_id}/messages")
-def list_test_messages(assignment_id: int, _: Admin, db: Db):
-    assignment = db.get(Assignment, assignment_id)
-    if (
-        not assignment or not assignment.active
-        or not assignment.teacher.active or not assignment.student.active
-        or assignment.teacher.role != "teacher" or assignment.student.role != "student"
-    ):
-        raise HTTPException(status_code=404, detail="Активная связь учителя и ученика не найдена")
-
-    rows = db.scalars(
-        select(TestMessage)
-        .where(TestMessage.assignment_id == assignment_id)
-        .order_by(TestMessage.created_at, TestMessage.id)
-    ).all()
-    return [{
-        "id": item.id,
-        "sender_id": item.sender_id,
-        "sender": item.sender.full_name,
-        "sender_role": item.sender_role,
-        "text": item.text,
-        "created_at": item.created_at.isoformat(),
-    } for item in rows]
-
-
-@router.post("/admin/test/assignments/{assignment_id}/messages", status_code=201)
-def create_test_message(
-    assignment_id: int,
-    payload: TestMessageCreate,
-    _: Admin,
-    db: Db,
-):
-    """Simulate one side of a chat. This endpoint never touches Telegram or real messages."""
-    assignment = db.get(Assignment, assignment_id)
-    if (
-        not assignment or not assignment.active
-        or not assignment.teacher.active or not assignment.student.active
-        or assignment.teacher.role != "teacher" or assignment.student.role != "student"
-    ):
-        raise HTTPException(status_code=404, detail="Активная связь учителя и ученика не найдена")
-
-    if payload.sender_id == assignment.teacher_id:
-        sender = assignment.teacher
-        expected_role = "teacher"
-    elif payload.sender_id == assignment.student_id:
-        sender = assignment.student
-        expected_role = "student"
-    else:
-        raise HTTPException(status_code=400, detail="Отправитель не участвует в этой переписке")
-
-    text_value = payload.text.strip()
-    if not text_value:
-        raise HTTPException(status_code=422, detail="Сообщение не может быть пустым")
-
-    item = TestMessage(
-        assignment_id=assignment.id,
-        sender_id=sender.id,
-        sender_role=expected_role,
-        text=text_value,
-    )
-    db.add(item)
-    db.commit()
-    db.refresh(item)
-    return {
-        "id": item.id,
-        "sender_id": item.sender_id,
-        "sender": sender.full_name,
-        "sender_role": item.sender_role,
-        "text": item.text,
-        "created_at": item.created_at.isoformat(),
-    }
 
 
 @router.get("/admin/conversations")
