@@ -21,3 +21,13 @@ else:
 if ADMIN_PASSWORD == "change-me-now":
     import warnings
     warnings.warn("Using the default admin password. Set ADMIN_PASSWORD in .env before testing.", stacklevel=1)
+
+
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "ALLOWED_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    ).split(",")
+    if origin.strip()
+]
