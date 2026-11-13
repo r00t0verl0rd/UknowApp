@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from .database import SessionLocal
 from .media_storage import MEDIA_DIR, delete_message_media
-from .models import Assignment, ConnectionCode, Conversation, Message, TeacherSession, User
+from .models import Assignment, ConnectionCode, Conversation, Message, TeacherPanel, TeacherSession, User
 from .schemas import AssignmentCreate, LoginRequest, UserCreate, UserUpdate
 from .security import require_admin, verify_admin
 
@@ -228,6 +228,7 @@ def delete_user(user_id: int, _: Admin, db: Db):
     db.query(TeacherSession).filter(
         TeacherSession.teacher_id == user.id
     ).delete(synchronize_session=False)
+    db.query(TeacherPanel).filter(TeacherPanel.teacher_id == user.id).delete(synchronize_session=False)
     if assignments:
         db.query(Assignment).filter(
             Assignment.id.in_([item.id for item in assignments])
