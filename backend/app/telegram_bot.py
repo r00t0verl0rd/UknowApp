@@ -341,10 +341,10 @@ def teacher_panel_view(db: Session, teacher: User, page: int = 0) -> tuple[str, 
     return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
-async def _update_teacher_panel_locked(bot: Bot, db: Session, teacher: User) -> None:
+async def _update_teacher_panel_locked(bot: Bot, db: Session, teacher: User) -> bool:
     """Keep exactly one persistent teacher panel and edit it when inbox data changes."""
     if not teacher.telegram_id:
-        return
+        return False
     session = db.get(TeacherSession, teacher.id)
     conversation = get_teacher_conversation(db, teacher, session.conversation_id) if session else None
     if conversation:
@@ -360,11 +360,11 @@ async def _update_teacher_panel_locked(bot: Bot, db: Session, teacher: User) -> 
                 text=text,
                 reply_markup=markup,
             )
-            return
+            return True
         except Exception as exc:
             error_text = str(exc).lower()
             if "message is not modified" in error_text:
-                return
+                return True
             # Do not create another panel for transient/API errors. Only replace a
             # panel that Telegram confirms can no longer be edited or found.
             permanent_panel_errors = (
@@ -379,7 +379,7 @@ async def _update_teacher_panel_locked(bot: Bot, db: Session, teacher: User) -> 
                     "(teacher_id=%s message_id=%s): %s",
                     teacher.id, panel.message_id, exc,
                 )
-                return
+                return False
             try:
                 await bot.delete_message(chat_id=panel.chat_id, message_id=panel.message_id)
             except Exception:
@@ -404,6 +404,7 @@ async def _update_teacher_panel_locked(bot: Bot, db: Session, teacher: User) -> 
         chat_id=teacher.telegram_id,
     ))
     db.commit()
+    return True
 
 
 # Telegram may process several updates for the same teacher concurrently.
@@ -412,11 +413,11 @@ async def _update_teacher_panel_locked(bot: Bot, db: Session, teacher: User) -> 
 _teacher_panel_locks: dict[int, asyncio.Lock] = {}
 
 
-async def update_teacher_panel(bot: Bot, db: Session, teacher: User) -> None:
+async def update_teacher_panel(bot: Bot, db: Session, teacher: User) -> bool:
     lock = _teacher_panel_locks.setdefault(teacher.id, asyncio.Lock())
     async with lock:
         try:
-            await _update_teacher_panel_locked(bot, db, teacher)
+            return await _update_teacher_panel_locked(bot, db, teacher)
         except Exception:
             # A failed flush/commit leaves SQLAlchemy's Session unusable until
             # rollback. Restore it before the caller continues handling updates.
@@ -499,7 +500,18 @@ async def start(message: TgMessage, bot: Bot):
             return
         if user.role == "teacher":
             clear_teacher_session(db, user)
-            await update_teacher_panel(bot, db, user)
+            try:
+                panel_ready = await update_teacher_panel(bot, db, user)
+            except Exception:
+                logger.exception("Could not open teacher panel from /start for user_id=%s", user.id)
+                panel_ready = False
+            if panel_ready:
+                await message.answer("Бот запущен. Панель учителя готова.")
+            else:
+                await message.answer(
+                    "Бот запущен, но панель учителя пока не удалось обновить. "
+                    "Попробуйте отправить /start ещё раз через несколько секунд."
+                )
             return
 
         if user.role == "student":
