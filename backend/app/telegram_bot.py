@@ -390,7 +390,10 @@ async def show_teacher_pending(target: TgMessage, teacher: User, db: Session, co
     else:
         lines.append("Новых сообщений нет.")
     markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="↩️ Ответить", callback_data="ui:reply:" + str(conversation.id))],
+        [InlineKeyboardButton(
+            text="↩️ Ответить" if unread else "✉️ Написать ученику",
+            callback_data="ui:reply:" + str(conversation.id),
+        )],
         [InlineKeyboardButton(text="← К списку учеников", callback_data="ui:teacher:page:0")],
     ])
     text = "\n".join(lines)[:3900]
