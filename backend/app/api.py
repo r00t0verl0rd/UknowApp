@@ -161,6 +161,41 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
     return user_dict(user)
 
 
+@router.post("/admin/users/{user_id}/disconnect-telegram")
+def disconnect_telegram(user_id: int, _: Admin, db: Db):
+    user = db.get(User, user_id)
+    if not user or user.role not in {"teacher", "student"}:
+        raise HTTPException(status_code=404, detail="Учитель или ученик не найден")
+    if not user.telegram_id:
+        raise HTTPException(status_code=409, detail="Telegram уже отключён")
+
+    disconnected_telegram_id = user.telegram_id
+    now = datetime.now(timezone.utc)
+
+    # Remove the binding without deleting the account, assignments or chat history.
+    user.telegram_id = None
+
+    # A disconnected teacher must select a conversation again after reconnecting.
+    if user.role == "teacher":
+        db.query(TeacherSession).filter(
+            TeacherSession.teacher_id == user.id
+        ).delete(synchronize_session=False)
+
+    # Prevent any previously generated, unused code from being reused.
+    db.query(ConnectionCode).filter(
+        ConnectionCode.user_id == user.id,
+        ConnectionCode.used_at.is_(None),
+    ).update({ConnectionCode.used_at: now}, synchronize_session=False)
+
+    db.commit()
+    db.refresh(user)
+    return {
+        "ok": True,
+        "user": user_dict(user),
+        "disconnected_telegram_id": disconnected_telegram_id,
+    }
+
+
 @router.delete("/admin/users/{user_id}")
 def delete_user(user_id: int, _: Admin, db: Db):
     user = db.get(User, user_id)
