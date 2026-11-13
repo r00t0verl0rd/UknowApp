@@ -627,9 +627,10 @@ async def route_message(message: TgMessage, bot: Bot):
             row.destination_message_id = copied.message_id
             row.delivery_status = "delivered"
             db.commit()
+
             if sender.role == "student":
-                # The student sees only their own outgoing message; the teacher
-                # receives the message and an updated inbox containing unread items.
+                # The student sees their own outgoing message in Telegram.
+                # The teacher receives the copied message and an unread inbox.
                 panel_text, panel_markup = teacher_panel_view(db, recipient)
                 try:
                     await bot.send_message(
@@ -640,8 +641,7 @@ async def route_message(message: TgMessage, bot: Bot):
                 except Exception:
                     logger.exception("Could not refresh teacher inbox for conversation_id=%s", conversation.id)
             else:
-                # A successful teacher reply marks all currently pending messages
-                # in this student's thread as handled. Failed deliveries stay unread.
+                # A successful teacher reply closes the pending batch.
                 now = datetime.now(timezone.utc).isoformat()
                 for pending in pending_student_messages(conversation_messages(db, conversation.id)):
                     metadata = json.loads(pending.metadata_json or "{}")
@@ -659,27 +659,13 @@ async def route_message(message: TgMessage, bot: Bot):
                 except Exception:
                     logger.exception("Could not refresh teacher inbox after reply for conversation_id=%s", conversation.id)
         except Exception:
-                    logger.exception("Could not send inline teacher notification for conversation_id=%s", conversation.id)
-                await message.answer(
-                    "✅ Сообщение доставлено учителю.",
-                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                        [InlineKeyboardButton(text="✉️ Написать ещё", callback_data="ui:student:write")],
-                        [InlineKeyboardButton(text="Главное меню", callback_data="ui:home")],
-                    ]),
-                )
-            else:
-                await message.answer(
-                    "✅ Ответ доставлен ученику " + recipient.full_name + ".",
-                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                        [InlineKeyboardButton(text="Открыть диалог", callback_data="ui:chat:" + str(conversation.id) + ":0")],
-                        [InlineKeyboardButton(text="Панель учителя", callback_data="ui:home")],
-                    ]),
-                )
-        except Exception:
             row.delivery_status = "failed"
             db.commit()
-            await message.answer("Не удалось доставить сообщение. Попробуйте ещё раз позже.")
-
+            logger.exception("Could not forward Telegram message for conversation_id=%s", conversation.id)
+            if sender.role == "teacher":
+                await message.answer("Не удалось доставить сообщение. Попробуйте ещё раз позже.")
+            else:
+                await message.answer("Не удалось отправить сообщение. Попробуйте ещё раз позже.")
 
 def create_dispatcher() -> Dispatcher:
     dispatcher = Dispatcher()
