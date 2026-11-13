@@ -7,7 +7,7 @@ import logging
 from typing import Optional
 
 from aiogram import Bot
-from aiogram.types import KeyboardButton, Message as TgMessage, ReplyKeyboardMarkup
+from aiogram.types import KeyboardButton, Message as TgMessage, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 TEACHER_PAGE_SIZE = 6
-TEACHER_KEYBOARD_VERSION = 4
+TEACHER_KEYBOARD_VERSION = 5
 TEACHER_BACK_LABEL = "← К списку учеников"
 TEACHER_REFRESH_LABEL = "↻ Обновить"
 TEACHER_PREVIOUS_PAGE_LABEL = "← Предыдущая"
@@ -277,7 +277,12 @@ def teacher_chat_view(
     return "\n".join(lines)[:3900]
 
 
-async def _update_teacher_panel_locked(bot: Bot, db: Session, teacher: User) -> bool:
+async def _update_teacher_panel_locked(
+    bot: Bot,
+    db: Session,
+    teacher: User,
+    force_keyboard_refresh: bool = False,
+) -> bool:
     """Edit the teacher panel in place and replace its keyboard only when layout changes."""
     if not teacher.telegram_id:
         return False
@@ -295,7 +300,8 @@ async def _update_teacher_panel_locked(bot: Bot, db: Session, teacher: User) -> 
     signature = teacher_keyboard_signature(markup)
 
     if (
-        panel
+        not force_keyboard_refresh
+        and panel
         and panel.keyboard_version >= TEACHER_KEYBOARD_VERSION
         and panel.keyboard_signature == signature
     ):
@@ -332,6 +338,25 @@ async def _update_teacher_panel_locked(bot: Bot, db: Session, teacher: User) -> 
 
     old_chat_id = panel.chat_id if panel else None
     old_message_id = panel.message_id if panel else None
+
+    # Explicitly clear the previous chat-level keyboard on /start and /menu.
+    # A fresh ReplyKeyboardMarkup is then sent, so Telegram clients cannot keep
+    # rendering cached buttons from an earlier version of the bot.
+    reset_message = None
+    if force_keyboard_refresh:
+        try:
+            reset_message = await bot.send_message(
+                chat_id=teacher.telegram_id,
+                text="Обновляю список учеников…",
+                reply_markup=ReplyKeyboardRemove(),
+            )
+        except Exception:
+            logger.warning(
+                "Could not remove the previous teacher keyboard (teacher_id=%s)",
+                teacher.id,
+                exc_info=True,
+            )
+
     sent = await bot.send_message(
         chat_id=teacher.telegram_id,
         text=text,
@@ -355,6 +380,15 @@ async def _update_teacher_panel_locked(bot: Bot, db: Session, teacher: User) -> 
         ))
     db.commit()
 
+    if reset_message:
+        try:
+            await bot.delete_message(
+                chat_id=teacher.telegram_id,
+                message_id=reset_message.message_id,
+            )
+        except Exception:
+            logger.debug("Could not remove temporary keyboard refresh notice")
+
     if old_chat_id and old_message_id and old_message_id != sent.message_id:
         try:
             await bot.delete_message(chat_id=old_chat_id, message_id=old_message_id)
@@ -372,11 +406,18 @@ async def _update_teacher_panel_locked(bot: Bot, db: Session, teacher: User) -> 
 _teacher_panel_locks: dict[int, asyncio.Lock] = {}
 
 
-async def update_teacher_panel(bot: Bot, db: Session, teacher: User) -> bool:
+async def update_teacher_panel(
+    bot: Bot,
+    db: Session,
+    teacher: User,
+    force_keyboard_refresh: bool = False,
+) -> bool:
     lock = _teacher_panel_locks.setdefault(teacher.id, asyncio.Lock())
     async with lock:
         try:
-            return await _update_teacher_panel_locked(bot, db, teacher)
+            return await _update_teacher_panel_locked(
+                bot, db, teacher, force_keyboard_refresh=force_keyboard_refresh
+            )
         except Exception:
             db.rollback()
             raise
