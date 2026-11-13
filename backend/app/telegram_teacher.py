@@ -235,10 +235,13 @@ def teacher_keyboard_actions(
         item["conversation"].id: label
         for item, label in zip(items, all_labels)
     }
-    actions = {
-        labels_by_conversation[item["conversation"].id]: item["conversation"]
-        for item in visible
-    }
+    actions: dict[str, Optional[Conversation]] = {}
+    for item in visible:
+        label = labels_by_conversation[item["conversation"].id]
+        if label in actions:
+            actions[label] = None
+        else:
+            actions[label] = item["conversation"]
     return actions, page, total_pages
 
 
@@ -401,6 +404,17 @@ async def handle_teacher_keyboard_message(
 
     if body in actions:
         conversation = actions[body]
+        if conversation is None:
+            await message.answer(
+                "У нескольких учеников одинаковое ФИО. Попросите администратора "
+                "различить их в списке пользователей."
+            )
+            try:
+                await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+            except Exception:
+                pass
+            await update_teacher_panel(bot, db, teacher)
+            return True
         valid = get_teacher_conversation(db, teacher, conversation.id)
         if valid:
             set_teacher_session(db, teacher, valid)
