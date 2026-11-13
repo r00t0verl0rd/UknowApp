@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2, Users, X, Link2, Copy, Unlink } from "lucide-react";
+import { Activity, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, Trash2, Users, X, Link2, Copy, Unlink } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 const ROLE = { teacher: "Учитель", student: "Ученик" };
@@ -194,7 +194,7 @@ export default function App() {
         <button className={page === "users" ? "active" : ""} onClick={() => setPage("users")}><Users/>Пользователи</button>
         <button className={page === "chats" ? "active" : ""} onClick={() => setPage("chats")}><MessageCircle/>Переписки <i>{chats.length}</i></button>
       </nav>
-      <div className="sidebar-bottom"><div className="secure"><ShieldCheck/><span>Локальная база данных<br/>Контакты скрыты ботом</span></div><button className="logout" onClick={signOut}><LogOut/>Выйти</button></div>
+      <div className="sidebar-bottom"><button className="logout" onClick={signOut}><LogOut/>Выйти</button></div>
     </aside>
 
     <main className="main">
@@ -215,12 +215,12 @@ export default function App() {
             <div className="teacher-grid">
               {activeTeachers.map(teacher => <section className="teacher-branch" key={teacher.id}>
                 <div className="person-card teacher-card">
-                  <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap/></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель · #{teacher.id}</small></div></div>
+                  <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap/></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель</small></div></div>
                   <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(teacher)}><Trash2/></button></div>
                 </div>
                 <div className="student-list">
                   {(overview?.teachers.find(t => t.id === teacher.id)?.students || []).map(student => <div className="person-card student-card" key={student.id}>
-                    <div className="person-main"><div className="avatar student-avatar"><Users/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик · #{student.id}</small></div></div>
+                    <div className="person-main"><div className="avatar student-avatar"><Users/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small></div></div>
                     <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div>
                   </div>)}
                   {!(overview?.teachers.find(t => t.id === teacher.id)?.students || []).length && <div className="empty-students">Нет назначенных учеников</div>}
@@ -229,7 +229,7 @@ export default function App() {
               </section>)}
             </div>
             {!activeTeachers.length && <div className="empty-state"><GraduationCap/><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span><button className="btn primary" onClick={() => openCreate("teacher")}><Plus/>Добавить учителя</button></div>}
-            {!!unassignedStudents.length && <section className="unassigned"><div className="section-head"><div><h2>Ученики без назначения</h2><p>Их можно назначить учителю прямо отсюда.</p></div></div><div className="unassigned-grid">{unassignedStudents.map(student => <div className="person-card student-card" key={student.id}><div className="person-main"><div className="avatar student-avatar"><Users/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик · #{student.id}</small></div></div><div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div><button className="btn small outline" disabled={!activeTeachers.length} onClick={() => { setStudentId(String(student.id)); setTeacherId(String(activeTeachers[0]?.id || "")); setModal({ mode: "assign" }); }}>Назначить</button></div>)}</div></section>}
+            {!!unassignedStudents.length && <section className="unassigned"><div className="section-head"><div><h2>Ученики без назначения</h2><p>Их можно назначить учителю прямо отсюда.</p></div></div><div className="unassigned-grid">{unassignedStudents.map(student => <div className="person-card student-card" key={student.id}><div className="person-main"><div className="avatar student-avatar"><Users/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small></div></div><div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div><button className="btn small outline" disabled={!activeTeachers.length} onClick={() => { setStudentId(String(student.id)); setTeacherId(String(activeTeachers[0]?.id || "")); setModal({ mode: "assign" }); }}>Назначить</button></div>)}</div></section>}
           </section>
         </>}
 
