@@ -427,7 +427,7 @@ async def show_reply_prompt(target: TgMessage, teacher: User, conversation: Conv
 
 
 @router.message(CommandStart())
-async def start(message: TgMessage):
+async def start(message: TgMessage, bot: Bot):
     if not message.from_user:
         return
     with SessionLocal() as db:
@@ -441,11 +441,11 @@ async def start(message: TgMessage):
             return
         if user.role == "teacher":
             clear_teacher_session(db, user)
-            await show_role_panel(message, user, db)
+            await update_teacher_panel(bot, db, user)
 
 
 @router.message(Command("menu"))
-async def open_menu(message: TgMessage):
+async def open_menu(message: TgMessage, bot: Bot):
     if not message.from_user:
         return
     with SessionLocal() as db:
@@ -455,7 +455,7 @@ async def open_menu(message: TgMessage):
             return
         if user.role == "teacher":
             clear_teacher_session(db, user)
-            await show_role_panel(message, user, db)
+            await update_teacher_panel(bot, db, user)
 
 
 @router.callback_query(F.data.startswith("ui:"))
@@ -590,7 +590,8 @@ async def route_message(message: TgMessage, bot: Bot):
                     await message.answer(
                         "✅ Telegram подключён к аккаунту «" + linked_user.full_name + "»."
                     )
-                    await show_role_panel(message, linked_user, db)
+                    if linked_user.role == "teacher":
+                        await update_teacher_panel(bot, db, linked_user)
                 elif result == "expired":
                     await message.answer("Срок действия кода истёк. Попросите администратора создать новый код.")
                 elif result == "used":
@@ -643,6 +644,10 @@ async def route_message(message: TgMessage, bot: Bot):
             )
             return
 
+        pending_before_reply = (
+            pending_student_messages(conversation_messages(db, conversation.id))
+            if sender.role == "teacher" else []
+        )
         row = persist_message(db, conversation.id, sender, message, "pending")
         await archive_telegram_media(bot, message, row)
         if not recipient.telegram_id or not recipient.active:
@@ -672,7 +677,7 @@ async def route_message(message: TgMessage, bot: Bot):
                     logger.exception("Could not refresh teacher inbox for conversation_id=%s", conversation.id)
             else:
                 # A successful teacher reply closes the pending batch.
-                pending_rows = pending_student_messages(conversation_messages(db, conversation.id))
+                pending_rows = pending_before_reply
                 for pending in pending_rows:
                     if pending.destination_message_id:
                         try:
