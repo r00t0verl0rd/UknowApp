@@ -405,7 +405,6 @@ def teacher_keyboard_signature(markup: ReplyKeyboardMarkup) -> str:
 
 def teacher_chat_view(
     db: Session,
-    teacher: User,
     conversation: Conversation,
 ) -> str:
     student = conversation.assignment.student
@@ -444,7 +443,7 @@ async def _update_teacher_panel_locked(bot: Bot, db: Session, teacher: User) -> 
 
     session = db.get(TeacherSession, teacher.id)
     conversation = get_teacher_conversation(db, teacher, session.conversation_id) if session else None
-    text = teacher_chat_view(db, teacher, conversation) if conversation else list_text
+    text = teacher_chat_view(db, conversation) if conversation else list_text
     signature = teacher_keyboard_signature(markup)
 
     if (
@@ -542,6 +541,15 @@ async def handle_teacher_keyboard_message(
     teacher: User,
 ) -> bool:
     body = (message.text or "").strip()
+    keyboard_controls = {
+        TEACHER_BACK_LABEL,
+        TEACHER_REFRESH_LABEL,
+        TEACHER_PREVIOUS_PAGE_LABEL,
+        TEACHER_NEXT_PAGE_LABEL,
+    }
+    if not body or (body not in keyboard_controls and not body.startswith("Написать · ")):
+        return False
+
     panel = db.get(TeacherPanel, teacher.id)
     page = panel.page_index if panel else 0
     actions, page, total_pages = teacher_keyboard_actions(db, teacher, page)
