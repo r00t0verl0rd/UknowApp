@@ -101,3 +101,158 @@
 .user-row .avatar.teacher { background: #eee8f8; color: var(--purple); }
 .user-row .role-tag.student { background: #e8f7ee; color: #16834a; }
 .user-row .role-tag.teacher { background: #eee8f8; color: var(--purple); }
+
+
+/* Warm, friendly visual system — cream, leafy green, apricot and soft plum. */
+:root {
+  color-scheme: light;
+  --purple: #7652a2;
+  --purple2: #9270bb;
+  --red: #c96b52;
+  --ink: #302d27;
+  --muted: #827d70;
+  --line: #eee6d8;
+  --surface: #fffdf8;
+  --green: #39845c;
+  --green-dark: #2e704d;
+  --green-soft: #eaf4e9;
+  --amber: #d58a3c;
+  --amber-soft: #fff1dc;
+  --plum-soft: #f2ebf7;
+  --peach-soft: #fff0e7;
+}
+body { background: #f8f5ed; color: var(--ink); }
+.login-screen {
+  background:
+    radial-gradient(circle at 12% 16%, #fce4cf 0, transparent 34%),
+    radial-gradient(circle at 88% 82%, #e5efdf 0, transparent 36%),
+    #f8f5ed;
+}
+.login-card, .sidebar, .topbar, .graph-panel, .user-list, .chat-layout, .modal {
+  background: var(--surface);
+  border-color: var(--line);
+  box-shadow: 0 10px 35px rgba(76, 59, 34, .045);
+}
+.login-card { border-radius: 26px; box-shadow: 0 22px 65px rgba(91, 69, 42, .10); }
+.brand { color: var(--green-dark); }
+.brand span span { color: var(--amber); }
+.school-label, .eyebrow { color: #a18a70; }
+.sidebar { border-right-color: #eee5d7; }
+.sidebar nav button, .logout { color: #716b5f; border-radius: 13px; transition: background .18s ease, color .18s ease, transform .18s ease; }
+.sidebar nav button:hover, .logout:hover { background: #f7f1e6; color: var(--green-dark); }
+.sidebar nav button.active { background: var(--green-soft); color: var(--green-dark); }
+.sidebar nav button i { background: #f7eddb; color: #9a6c36; }
+.secure { background: #f3f6eb; border-color: #e3ebd9; color: #66765b; border-radius: 14px; }
+.secure svg { color: var(--green); }
+.topbar { border-bottom-color: var(--line); }
+.topbar > div { color: #9a907e; }
+.topbar b { color: var(--ink); }
+.content { color: var(--ink); }
+.page-title h1 { color: #302d27; letter-spacing: -.8px; }
+.page-title p, .section-head p { color: #827d70; }
+.btn {
+  border-color: #e9dfcf;
+  border-radius: 12px;
+  background: #fffdf8;
+  color: #514b40;
+  transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease;
+}
+.btn:hover { transform: translateY(-1px); background: #faf5eb; border-color: #ddcfb9; box-shadow: 0 5px 14px rgba(77, 59, 33, .07); }
+.btn:active { transform: translateY(0); }
+.btn.primary {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(57, 132, 92, .18);
+}
+.btn.primary:hover { background: var(--green-dark); border-color: var(--green-dark); }
+.btn.ghost { background: #f8f4eb; }
+.btn.outline { color: var(--green-dark); border-color: #cfe1cf; background: #f7fbf4; }
+.btn.outline:hover { background: var(--green-soft); }
+.metrics { gap: 13px; }
+.metric {
+  background: #fffdf8;
+  border-color: #eee5d7;
+  border-radius: 17px;
+  box-shadow: 0 5px 18px rgba(76, 59, 34, .035);
+}
+.metric svg { color: var(--green); }
+.metric:nth-child(2) svg { color: var(--amber); }
+.metric:nth-child(3) svg { color: var(--purple); }
+.metric:nth-child(4) svg { color: #c87959; }
+.metric span { color: #827d70; }
+.metric b { color: #302d27; }
+.graph-panel { border-radius: 22px; }
+.section-head h2 { color: #373228; }
+.legend { color: #827d70; }
+.teacher-dot { background: var(--purple); }
+.student-dot { background: var(--green); }
+.root-node { background: #f6f5e9; border-color: #e7e6cf; border-radius: 16px; }
+.root-node > span { color: #7d6339; background: #f8ebcf; }
+.tree-line, .teacher-branch:before { background: #e3d9c8; }
+.teacher-card { background: #f7f2fa; border-color: #e8dced; }
+.person-card { background: #fffdf8; border-color: #eee5d7; border-radius: 15px; }
+.teacher-card .avatar, .avatar.teacher, .teacher-avatar { background: #eee5f5; color: #7652a2; }
+.student-card .avatar, .avatar.student, .student-avatar { background: #e8f3e5; color: #39845c; }
+.student-list { border-left-color: #dce8d6; }
+.empty-students { border-color: #e7e6d5; background: #faf9f1; color: #8e8978; border-radius: 12px; }
+.add-student { color: var(--green-dark); border-radius: 9px; }
+.add-student:hover { background: var(--green-soft); }
+.unassigned { border-top-color: #e9dfcf; }
+.unassigned-grid .person-card { background: #f5f8ef; border-color: #e1ead8; }
+.toolbar { color: #827d70; }
+.search { background: #fffdf8; border-color: #e9dfcf; border-radius: 13px; }
+.search:focus-within { border-color: #9dbd9d; box-shadow: 0 0 0 3px rgba(57, 132, 92, .10); }
+.search svg { color: #9a907e; }
+.search input { background: transparent; color: var(--ink); }
+.search input::placeholder { color: #aaa292; }
+.user-row { border-bottom-color: #f0e9dd; transition: background .16s ease; }
+.user-row:hover { background: #fcf9f1; }
+.user-row .avatar.student, .user-row .avatar.student-avatar { background: #e8f3e5; color: #39845c; }
+.user-row .avatar.teacher, .user-row .avatar.teacher-avatar { background: #eee5f5; color: #7652a2; }
+.role-tag { background: #eee5f5; color: #7652a2; border-radius: 999px; padding: 6px 10px; }
+.role-tag.student { background: #e8f3e5; color: #32734e; }
+.role-tag.teacher { background: #eee5f5; color: #7652a2; }
+.telegram-connected { color: #327c50; }
+.person-actions button, .icon-btn { border-radius: 10px; color: #8d8577; }
+.person-actions button:hover, .icon-btn:hover { background: #f2eddf; color: var(--green-dark); }
+.person-actions .danger-icon:hover, .danger-icon:hover { background: #fff0e8; color: #bf634c; }
+.chat-layout { border-radius: 20px; }
+.chat-list { border-right-color: #eee5d7; }
+.chat-item { background: transparent; border-radius: 12px; }
+.chat-item.selected, .chat-item:hover { background: #f2f5e9; }
+.chat-item span { color: var(--green-dark); }
+.chat-head { border-bottom-color: #eee5d7; }
+.message { background: #f2eee7; border-radius: 14px 14px 14px 5px; }
+.message.teacher { background: #f0eaf5; border-radius: 14px 14px 5px 14px; }
+.message p { color: #403b32; }
+.stack label { color: #655e51; }
+.stack input, .stack select {
+  background: #fffdf8;
+  border-color: #e8dfd1;
+  border-radius: 11px;
+  color: var(--ink);
+}
+.stack input:focus, .stack select:focus {
+  border-color: #8db58f;
+  box-shadow: 0 0 0 3px rgba(57, 132, 92, .12);
+}
+.alert { background: #fff0e8; color: #a64f38; border-color: #f2d7c9; border-radius: 12px; }
+.modal { border-radius: 22px; }
+.overlay { background: rgba(49, 43, 33, .48); }
+.invite-code { color: var(--green-dark); background: #eff5e9; border-color: #c8ddc4; }
+.hint { color: #827d70; }
+.toast { background: #315f45; box-shadow: 0 10px 30px rgba(49, 95, 69, .22); border-radius: 14px; }
+.toast svg { color: #f3d28f; }
+.empty-state { color: #827d70; }
+.empty-state > svg { color: var(--green); }
+.empty-state b { color: var(--ink); }
+.main footer { color: #a69b89; }
+.main footer span { color: var(--amber); }
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 3px solid rgba(213, 138, 60, .32);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
