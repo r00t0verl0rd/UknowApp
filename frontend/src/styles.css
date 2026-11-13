@@ -93,3 +93,5 @@
   .metric { min-height: 60px; }
   .root-node { max-width: 100%; }
 }
+/* Connected Telegram accounts are highlighted; the disconnected label stays neutral. */
+.telegram-connected { color: #16834a; font-weight: 700; }
