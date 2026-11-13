@@ -439,6 +439,16 @@ async def handle_teacher_keyboard_message(
     if not body:
         return False
 
+    # A button from an older keyboard revision may still be cached by a client.
+    # Consume it and explicitly replace the chat keyboard instead of forwarding it.
+    if body.startswith("Написать · "):
+        try:
+            await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+        except Exception:
+            pass
+        await update_teacher_panel(bot, db, teacher, force_keyboard_refresh=True)
+        return True
+
     panel = db.get(TeacherPanel, teacher.id)
     page = panel.page_index if panel else 0
     actions, page, total_pages = teacher_keyboard_actions(db, teacher, page)
