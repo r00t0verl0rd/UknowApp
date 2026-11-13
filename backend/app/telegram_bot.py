@@ -321,8 +321,21 @@ def _teacher_button_labels(items: list[dict]) -> list[str]:
     return labels
 
 
-def _teacher_keyboard(visible: list[dict], page: int, total_pages: int) -> ReplyKeyboardMarkup:
-    labels = _teacher_button_labels(visible)
+def _teacher_keyboard(
+    all_items: list[dict],
+    visible: list[dict],
+    page: int,
+    total_pages: int,
+) -> ReplyKeyboardMarkup:
+    all_labels = _teacher_button_labels(all_items)
+    labels_by_conversation = {
+        item["conversation"].id: label
+        for item, label in zip(all_items, all_labels)
+    }
+    labels = [
+        labels_by_conversation[item["conversation"].id]
+        for item in visible
+    ]
     rows = []
     for index in range(0, len(labels), 2):
         row = [KeyboardButton(text=label) for label in labels[index:index + 2]]
@@ -379,7 +392,7 @@ def teacher_panel_view(
             lines.append("")
         if total_pages > 1:
             lines.append("Страница " + str(page + 1) + " из " + str(total_pages) + ".")
-    return "\n".join(lines), _teacher_keyboard(visible, page, total_pages), page
+    return "\n".join(lines), _teacher_keyboard(items, visible, page, total_pages), page
 
 
 def teacher_keyboard_actions(
@@ -389,10 +402,14 @@ def teacher_keyboard_actions(
 ) -> tuple[dict[str, Conversation], int, int]:
     items = teacher_conversations(db, teacher)
     total_pages, page, visible = _teacher_page(items, page)
-    labels = _teacher_button_labels(visible)
+    all_labels = _teacher_button_labels(items)
+    labels_by_conversation = {
+        item["conversation"].id: label
+        for item, label in zip(items, all_labels)
+    }
     actions = {
-        label: item["conversation"]
-        for label, item in zip(labels, visible)
+        labels_by_conversation[item["conversation"].id]: item["conversation"]
+        for item in visible
     }
     return actions, page, total_pages
 
