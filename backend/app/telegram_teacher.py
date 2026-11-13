@@ -197,12 +197,9 @@ def teacher_panel_view(
     page: int = 0,
 ) -> tuple[str, ReplyKeyboardMarkup, int]:
     items = teacher_conversations(db, teacher)
-    total_unread = sum(item["unanswered"] for item in items)
     total_pages, page, visible = _teacher_page(items, page)
     lines = [
         "👩‍🏫 Панель учителя",
-        "Новых сообщений: " + str(total_unread),
-        "Выберите ученика на клавиатуре ниже.",
         "",
     ]
     if not visible:
