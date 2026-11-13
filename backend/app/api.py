@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy import select
+from sqlalchemy.orm import aliased
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -316,8 +317,21 @@ def assign_student(payload: AssignmentCreate, _: Admin, db: Db):
 
 @router.get("/admin/conversations")
 def list_conversations(_: Admin, db: Db):
+    # Keep this list in sync with the school graph:
+    # only active assignments between active teachers and active students are visible.
+    teacher = aliased(User)
+    student = aliased(User)
     conversations = db.scalars(
-        select(Conversation).join(Assignment).order_by(Conversation.created_at.desc())
+        select(Conversation)
+        .join(Assignment, Conversation.assignment_id == Assignment.id)
+        .join(teacher, Assignment.teacher_id == teacher.id)
+        .join(student, Assignment.student_id == student.id)
+        .where(
+            Assignment.active.is_(True),
+            teacher.active.is_(True),
+            student.active.is_(True),
+        )
+        .order_by(Conversation.created_at.desc())
     ).all()
     return [conversation_dict(db, item) for item in conversations]
 
