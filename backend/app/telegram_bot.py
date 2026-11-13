@@ -345,7 +345,12 @@ async def _update_teacher_panel_locked(bot: Bot, db: Session, teacher: User) -> 
     """Keep exactly one persistent teacher panel and edit it when inbox data changes."""
     if not teacher.telegram_id:
         return
-    text, markup = teacher_panel_view(db, teacher)
+    session = db.get(TeacherSession, teacher.id)
+    conversation = get_teacher_conversation(db, teacher, session.conversation_id) if session else None
+    if conversation:
+        text, markup = teacher_chat_view(db, teacher, conversation)
+    else:
+        text, markup = teacher_panel_view(db, teacher)
     panel = db.get(TeacherPanel, teacher.id)
     if panel:
         try:
@@ -427,25 +432,40 @@ async def show_teacher_panel(target: TgMessage, teacher: User, db: Session, page
         await target.answer(text, reply_markup=markup)
 
 
-async def show_teacher_pending(target: TgMessage, teacher: User, db: Session, conversation: Conversation, edit: bool = False) -> None:
-    rows = conversation_messages(db, conversation.id)
-    unread = pending_student_messages(rows)
+def teacher_chat_view(
+    db: Session,
+    teacher: User,
+    conversation: Conversation,
+) -> tuple[str, InlineKeyboardMarkup]:
     student = conversation.assignment.student
-    lines = ["👤 " + student.full_name, "Непрочитанные сообщения: " + str(len(unread)), ""]
-    if unread:
-        for row in unread:
-            lines.append(message_preview(row))
-            lines.append("")
+    rows = conversation_messages(db, conversation.id)
+    unread_count = len(pending_student_messages(rows))
+    # Keep the screen compact; the complete conversation remains in SQLite.
+    visible_rows = rows[-12:]
+    lines = [
+        "💬 " + student.full_name,
+        "Новых сообщений: " + str(unread_count),
+        "Ответы будут отправлены этому ученику.",
+        "",
+    ]
+    if not visible_rows:
+        lines.append("История пока пуста.")
     else:
-        lines.append("Новых сообщений нет.")
-    lines.extend([
-        "Режим ответа активен.",
-        "Отправьте следующее сообщение — оно будет доставлено этому ученику.",
-    ])
+        for row in visible_rows:
+            sender_label = "Ученик" if row.sender_role == "student" else "Вы"
+            preview = message_preview(row)
+            lines.append(sender_label + ": " + preview)
+    if len(rows) > len(visible_rows):
+        lines.insert(3, "Показаны последние " + str(len(visible_rows)) + " из " + str(len(rows)) + " сообщений.")
     markup = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="← К списку учеников", callback_data="ui:teacher:page:0")],
+        [InlineKeyboardButton(text="↻ Обновить", callback_data="ui:home")],
     ])
-    text = "\n".join(lines)[:3900]
+    return "\n".join(lines)[:3900], markup
+
+
+async def show_teacher_pending(target: TgMessage, teacher: User, db: Session, conversation: Conversation, edit: bool = False) -> None:
+    text, markup = teacher_chat_view(db, teacher, conversation)
     if edit:
         await edit_inline_message(target, text, markup)
     else:
@@ -745,7 +765,9 @@ async def route_message(message: TgMessage, bot: Bot):
                     metadata["teacher_read_at"] = now
                     pending.metadata_json = json.dumps(metadata, ensure_ascii=False)
                 db.commit()
-                clear_teacher_session(db, sender)
+                # Keep the selected conversation active. The persistent panel
+                # now shows the updated SQLite history and remains ready for
+                # the next reply to this same student.
                 try:
                     await update_teacher_panel(bot, db, sender)
                 except Exception:
