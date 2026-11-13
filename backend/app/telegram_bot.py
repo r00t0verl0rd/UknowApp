@@ -10,12 +10,9 @@ from .telegram_common import (
     CONNECTION_CODE_RE,
     claim_connection_code,
     contact_would_be_exposed,
-    conversation_messages,
     current_student_conversation,
     get_linked_user,
     message_metadata,
-    message_preview,
-    pending_student_messages,
     persist_message,
 )
 from .telegram_handlers import (
@@ -28,6 +25,9 @@ from .telegram_handlers import (
 )
 from .telegram_teacher import (
     TEACHER_BACK_LABEL,
+    conversation_messages,
+    message_preview,
+    pending_student_messages,
     TEACHER_KEYBOARD_VERSION,
     TEACHER_NEXT_PAGE_LABEL,
     TEACHER_PAGE_SIZE,
