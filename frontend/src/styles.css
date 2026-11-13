@@ -411,55 +411,59 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
 
 
-/* Refined relationship lines only. The graph panel background and cards stay unchanged. */
-.graph-panel .tree-line {
-  width: 2px;
-  background: linear-gradient(to bottom, #c8b8e6, #aa9bd0);
-  border-radius: 2px;
-  box-shadow: 0 0 5px rgba(132, 103, 184, .14);
+
+/* Relationship connectors follow the actual card positions at every screen size. */
+.graph-panel { position: relative; }
+.graph-panel > .graph-connections {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
 }
+.graph-panel > .section-head,
+.graph-panel > .root-node,
+.graph-panel > .teacher-grid,
+.graph-panel > .unassigned {
+  position: relative;
+  z-index: 1;
+}
+.graph-panel .tree-line,
 .graph-panel .teacher-branch:before {
-  width: 2px;
-  background: linear-gradient(to bottom, #aa9bd0, #c6b7df);
-  border-radius: 2px;
+  display: none;
 }
 .graph-panel .student-list {
-  position: relative;
-  border-left: 0;
-  padding-left: 16px;
+  border-left-color: transparent;
 }
-.graph-panel .student-list:before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 15px;
-  bottom: 15px;
-  width: 2px;
-  border-radius: 2px;
-  background: linear-gradient(to bottom, #b8a8dc, #dfc99e);
+.graph-connection-glow {
+  fill: none;
+  stroke: #9c83c7;
+  stroke-width: 7;
+  stroke-linecap: round;
+  opacity: .16;
+  filter: blur(2px);
 }
-.graph-panel .student-card {
-  position: relative;
+.graph-connection {
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  opacity: .9;
 }
-.graph-panel .student-card:before {
-  content: "";
-  position: absolute;
-  left: -16px;
-  top: 50%;
-  width: 16px;
-  height: 2px;
-  border-radius: 2px;
-  background: linear-gradient(to right, #b8a8dc, #dfc99e);
+.graph-connection.teacher { stroke: #a996d2; }
+.graph-connection.student { stroke: #c5ad83; }
+.graph-connection-dot {
+  stroke: #fff;
+  stroke-width: 1.5;
 }
-.graph-panel .student-card:after {
-  content: "";
-  position: absolute;
-  left: -4px;
-  top: calc(50% - 3px);
-  width: 6px;
-  height: 6px;
-  border: 1px solid #fff;
-  border-radius: 50%;
-  background: #c5a6d5;
-  box-shadow: 0 0 0 1px rgba(142, 116, 178, .18);
+.graph-connection-dot.teacher { fill: #a996d2; }
+.graph-connection-dot.student { fill: #c5ad83; }
+
+/* The admin role tag is neutral, not the warning red used elsewhere. */
+.root-node > span {
+  color: var(--purple);
+  background: #eee8f7;
+  border: 1px solid #dfd5ed;
 }
