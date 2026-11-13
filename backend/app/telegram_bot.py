@@ -462,6 +462,29 @@ async def start(message: TgMessage, bot: Bot):
         if user.role == "teacher":
             clear_teacher_session(db, user)
             await update_teacher_panel(bot, db, user)
+            await message.answer(
+                "Панель учителя обновлена. Выберите ученика, чтобы открыть переписку."
+            )
+            return
+
+        if user.role == "student":
+            conversation = current_student_conversation(db, user.id)
+            if conversation and conversation.status == "active":
+                teacher = conversation.assignment.teacher
+                await message.answer(
+                    "Вы подключены к UknowApp.\n"
+                    "Ваш учитель: " + teacher.full_name + ".\n\n"
+                    "Можете отправить ему сообщение прямо сюда."
+                )
+            else:
+                await message.answer(
+                    "Аккаунт подключён, но активный учитель пока не назначен. "
+                    "Обратитесь к администратору."
+                )
+            return
+
+        if user.role == "admin":
+            await message.answer("Аккаунт администратора подключён. Управление доступно через веб-панель.")
 
 
 @router.message(Command("menu"))
