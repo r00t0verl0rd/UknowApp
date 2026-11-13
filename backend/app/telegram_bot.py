@@ -207,13 +207,18 @@ def conversation_messages(db: Session, conversation_id: int) -> list[Message]:
 
 
 async def edit_inline_message(target: TgMessage, text: str, markup: Optional[InlineKeyboardMarkup] = None) -> None:
+    """Update the current inline screen in place; never create a duplicate as fallback."""
     try:
         await target.edit_text(text, reply_markup=markup)
     except Exception as exc:
         if "message is not modified" in str(exc).lower():
             return
-        logger.info("Could not edit Telegram panel message; sending a new one: %s", exc)
-        await target.answer(text, reply_markup=markup)
+        logger.warning(
+            "Could not edit inline screen in place (chat_id=%s message_id=%s): %s",
+            target.chat.id,
+            target.message_id,
+            exc,
+        )
 
 
 def pending_student_messages(rows: list[Message]) -> list[Message]:
@@ -336,6 +341,7 @@ def teacher_panel_view(db: Session, teacher: User, page: int = 0) -> tuple[str, 
 
 
 async def update_teacher_panel(bot: Bot, db: Session, teacher: User) -> None:
+    """Keep exactly one persistent teacher panel and edit it when inbox data changes."""
     if not teacher.telegram_id:
         return
     text, markup = teacher_panel_view(db, teacher)
@@ -343,30 +349,54 @@ async def update_teacher_panel(bot: Bot, db: Session, teacher: User) -> None:
     if panel:
         try:
             await bot.edit_message_text(
-                chat_id=teacher.telegram_id,
+                chat_id=panel.chat_id,
                 message_id=panel.message_id,
                 text=text,
                 reply_markup=markup,
             )
             return
         except Exception as exc:
-            if "message is not modified" in str(exc).lower():
+            error_text = str(exc).lower()
+            if "message is not modified" in error_text:
                 return
-            logger.info("Stored teacher panel is unavailable; creating a new one: %s", exc)
+            # Do not create another panel for transient/API errors. Only replace a
+            # panel that Telegram confirms can no longer be edited or found.
+            permanent_panel_errors = (
+                "message to edit not found",
+                "message can't be edited",
+                "message_id_invalid",
+                "chat not found",
+            )
+            if not any(marker in error_text for marker in permanent_panel_errors):
+                logger.warning(
+                    "Teacher panel edit failed; keeping its stored message id "
+                    "(teacher_id=%s message_id=%s): %s",
+                    teacher.id, panel.message_id, exc,
+                )
+                return
+            try:
+                await bot.delete_message(chat_id=panel.chat_id, message_id=panel.message_id)
+            except Exception:
+                # The message may already be gone or too old to delete. In either
+                # case, the stale id is discarded before creating its replacement.
+                pass
+            logger.info(
+                "Replacing unavailable teacher panel (teacher_id=%s message_id=%s)",
+                teacher.id, panel.message_id,
+            )
+            db.delete(panel)
+            db.commit()
+
     sent = await bot.send_message(
         chat_id=teacher.telegram_id,
         text=text,
         reply_markup=markup,
     )
-    if panel:
-        panel.message_id = sent.message_id
-        panel.chat_id = teacher.telegram_id
-    else:
-        db.add(TeacherPanel(
-            teacher_id=teacher.id,
-            message_id=sent.message_id,
-            chat_id=teacher.telegram_id,
-        ))
+    db.add(TeacherPanel(
+        teacher_id=teacher.id,
+        message_id=sent.message_id,
+        chat_id=teacher.telegram_id,
+    ))
     db.commit()
 
 
