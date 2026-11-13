@@ -206,7 +206,7 @@ def conversation_messages(db: Session, conversation_id: int) -> list[Message]:
 
 async def edit_inline_message(target: TgMessage, text: str, markup: Optional[InlineKeyboardMarkup] = None) -> None:
     try:
-        await edit_inline_message(target, text, markup)
+        await target.edit_text(text, reply_markup=markup)
     except Exception as exc:
         if "message is not modified" in str(exc).lower():
             return
