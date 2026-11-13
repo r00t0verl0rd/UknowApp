@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from .database import SessionLocal
 from .media_storage import archive_telegram_media
-from .models import Assignment, ConnectionCode, Conversation, Message, TeacherSession, User
+from .models import Assignment, ConnectionCode, Conversation, Message, TeacherPanel, TeacherSession, User
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -341,6 +341,41 @@ def teacher_panel_view(db: Session, teacher: User, page: int = 0) -> tuple[str, 
     return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
+async def update_teacher_panel(bot: Bot, db: Session, teacher: User) -> None:
+    if not teacher.telegram_id:
+        return
+    text, markup = teacher_panel_view(db, teacher)
+    panel = db.get(TeacherPanel, teacher.id)
+    if panel:
+        try:
+            await bot.edit_message_text(
+                chat_id=teacher.telegram_id,
+                message_id=panel.message_id,
+                text=text,
+                reply_markup=markup,
+            )
+            return
+        except Exception as exc:
+            if "message is not modified" in str(exc).lower():
+                return
+            logger.info("Stored teacher panel is unavailable; creating a new one: %s", exc)
+    sent = await bot.send_message(
+        chat_id=teacher.telegram_id,
+        text=text,
+        reply_markup=markup,
+    )
+    if panel:
+        panel.message_id = sent.message_id
+        panel.chat_id = teacher.telegram_id
+    else:
+        db.add(TeacherPanel(
+            teacher_id=teacher.id,
+            message_id=sent.message_id,
+            chat_id=teacher.telegram_id,
+        ))
+    db.commit()
+
+
 async def show_teacher_panel(target: TgMessage, teacher: User, db: Session, page: int = 0, edit: bool = False) -> None:
     text, markup = teacher_panel_view(db, teacher, page)
     if edit:
@@ -631,31 +666,31 @@ async def route_message(message: TgMessage, bot: Bot):
             if sender.role == "student":
                 # The student sees their own outgoing message in Telegram.
                 # The teacher receives the copied message and an unread inbox.
-                panel_text, panel_markup = teacher_panel_view(db, recipient)
                 try:
-                    await bot.send_message(
-                        chat_id=recipient.telegram_id,
-                        text=panel_text,
-                        reply_markup=panel_markup,
-                    )
+                    await update_teacher_panel(bot, db, recipient)
                 except Exception:
                     logger.exception("Could not refresh teacher inbox for conversation_id=%s", conversation.id)
             else:
                 # A successful teacher reply closes the pending batch.
+                pending_rows = pending_student_messages(conversation_messages(db, conversation.id))
+                for pending in pending_rows:
+                    if pending.destination_message_id:
+                        try:
+                            await bot.delete_message(
+                                chat_id=sender.telegram_id,
+                                message_id=pending.destination_message_id,
+                            )
+                        except Exception:
+                            logger.info("Could not remove handled student message %s from teacher inbox", pending.id)
                 now = datetime.now(timezone.utc).isoformat()
-                for pending in pending_student_messages(conversation_messages(db, conversation.id)):
+                for pending in pending_rows:
                     metadata = json.loads(pending.metadata_json or "{}")
                     metadata["teacher_read_at"] = now
                     pending.metadata_json = json.dumps(metadata, ensure_ascii=False)
                 db.commit()
                 clear_teacher_session(db, sender)
-                panel_text, panel_markup = teacher_panel_view(db, sender)
                 try:
-                    await bot.send_message(
-                        chat_id=sender.telegram_id,
-                        text=panel_text,
-                        reply_markup=panel_markup,
-                    )
+                    await update_teacher_panel(bot, db, sender)
                 except Exception:
                     logger.exception("Could not refresh teacher inbox after reply for conversation_id=%s", conversation.id)
         except Exception:
