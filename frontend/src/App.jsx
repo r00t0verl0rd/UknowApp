@@ -216,7 +216,7 @@ export default function App() {
             <div className="teacher-grid">
               {activeTeachers.map(teacher => {
                 const studentsForTeacher = overview?.teachers.find(t => t.id === teacher.id)?.students || [];
-                const wireHeight = 220 + studentsForTeacher.length * 80;
+                const wireHeight = 182 + studentsForTeacher.length * 89;
                 return <section className="teacher-branch" key={teacher.id}>
                   <svg className="node-wires" viewBox={`0 0 1000 ${wireHeight}`} preserveAspectRatio="none" aria-hidden="true">
                     <defs>
@@ -226,8 +226,8 @@ export default function App() {
                       </linearGradient>
                     </defs>
                     {studentsForTeacher.map((student, index) => {
-                      const targetY = 167 + index * 80;
-                      const path = `M 500 82 C 500 ${targetY - 50}, 16 ${targetY - 50}, 8 ${targetY}`;
+                      const targetY = 173 + index * 89;
+                      const path = `M 500 83 C 500 ${targetY - 48}, 0 ${targetY - 48}, 0 ${targetY}`;
                       return <g key={student.id}>
                         <path className="node-wire-glow" d={path}/>
                         <path className="node-wire" d={path} stroke={`url(#teacher-wire-${teacher.id})`}/>
