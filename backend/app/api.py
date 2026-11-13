@@ -5,11 +5,13 @@ from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .database import SessionLocal
+from .media_storage import MEDIA_DIR, delete_message_media
 from .models import Assignment, ConnectionCode, Conversation, Message, TeacherSession, User
 from .schemas import AssignmentCreate, LoginRequest, UserCreate, UserUpdate
 from .security import require_admin, verify_admin
@@ -209,6 +211,9 @@ def delete_user(user_id: int, _: Admin, db: Db):
     ).all()
     conversation_ids = [item.conversation.id for item in assignments if item.conversation]
     if conversation_ids:
+        media_rows = db.scalars(select(Message).where(Message.conversation_id.in_(conversation_ids))).all()
+        for media_row in media_rows:
+            delete_message_media(media_row.metadata_json)
         db.query(TeacherSession).filter(
             TeacherSession.conversation_id.in_(conversation_ids)
         ).delete(synchronize_session=False)
@@ -336,3 +341,26 @@ def list_messages(conversation_id: int, _: Admin, db: Db):
         "delivery_status": item.delivery_status,
         "created_at": item.created_at.isoformat(),
     } for item in rows]
+
+
+
+@router.get("/admin/messages/{message_id}/media")
+def get_message_media(message_id: int, _: Admin, db: Db):
+    item = db.get(Message, message_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Сообщение не найдено")
+    metadata = json.loads(item.metadata_json or "{}")
+    media = metadata.get("media") or {}
+    relative = media.get("local_path")
+    if not relative or media.get("archive_status") != "stored":
+        raise HTTPException(status_code=404, detail="Локальная копия вложения недоступна")
+    root = MEDIA_DIR.resolve()
+    path = (root / relative).resolve()
+    if root not in path.parents or not path.is_file():
+        raise HTTPException(status_code=404, detail="Файл вложения не найден")
+    return FileResponse(
+        path,
+        media_type=media.get("mime_type") or "application/octet-stream",
+        filename=media.get("file_name") or path.name,
+        content_disposition_type="inline",
+    )
