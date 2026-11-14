@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from .database import SessionLocal
 from .media_storage import MEDIA_DIR, delete_message_media
-from .models import Assignment, ConnectionCode, Conversation, Message, TeacherPanel, TeacherSession, User
+from .models import Assignment, ConnectionCode, Conversation, Message, StudentTelegramGroup, TeacherPanel, TeacherSession, User
 from .schemas import AssignmentCreate, LoginRequest, PanelMessageCreate, UserCreate, UserUpdate
 from .security import authenticate_panel_user, hash_web_password, require_admin, require_panel_user, verify_admin
 
@@ -499,16 +499,50 @@ async def send_panel_message(
     if not body:
         raise HTTPException(status_code=400, detail="Введите текст сообщения")
 
+    student = conversation.assignment.student
+    teacher = conversation.assignment.teacher
     if principal["role"] == "teacher":
         sender = db.get(User, principal["user_id"])
-        recipients = [conversation.assignment.student]
+        recipients = [(student, "student")]
     else:
         sender = db.scalar(select(User).where(User.role == "admin").order_by(User.id).limit(1))
         if not sender:
             sender = User(full_name="Администратор", role="admin", active=True)
             db.add(sender)
             db.flush()
-        recipients = [conversation.assignment.student, conversation.assignment.teacher]
+        recipients = [(student, "student"), (teacher, "teacher")]
+
+    # Continue in the same Telegram forum topic when the student's latest
+    # unanswered message came from a linked group topic; otherwise use the DM.
+    student_target = {"chat_id": student.telegram_id} if student.telegram_id else None
+    rows = db.scalars(
+        select(Message).where(Message.conversation_id == conversation.id)
+        .order_by(Message.created_at, Message.id)
+    ).all()
+    last_reply_index = max(
+        (i for i, item in enumerate(rows) if item.sender_role in {"teacher", "admin"} and item.delivery_status in {"delivered", "partial"}),
+        default=-1,
+    )
+    for incoming in reversed(rows[last_reply_index + 1:]):
+        if incoming.sender_role != "student":
+            continue
+        incoming_meta = json.loads(incoming.metadata_json or "{}")
+        if incoming_meta.get("source_mode") == "group_topic":
+            try:
+                group_chat_id = int(incoming_meta["source_chat_id"])
+                thread_id = int(incoming_meta["source_thread_id"])
+            except (KeyError, TypeError, ValueError):
+                break
+            linked_topic = db.scalar(
+                select(StudentTelegramGroup).where(
+                    StudentTelegramGroup.student_id == student.id,
+                    StudentTelegramGroup.chat_id == group_chat_id,
+                    StudentTelegramGroup.thread_id == thread_id,
+                )
+            )
+            if linked_topic:
+                student_target = {"chat_id": group_chat_id, "message_thread_id": thread_id}
+        break
 
     row = Message(
         conversation_id=conversation.id,
@@ -527,18 +561,27 @@ async def send_panel_message(
     delivery_errors = []
     delivered = []
     if bot:
-        for recipient in recipients:
-            if not recipient.telegram_id or not recipient.active:
+        for recipient, recipient_role in recipients:
+            if not recipient.active or not recipient.telegram_id:
                 delivery_errors.append(recipient.full_name + ": Telegram не подключён")
                 continue
             try:
-                prefix = ""
-                if principal["role"] == "teacher":
-                    prefix = "Сообщение от учителя " + sender.full_name + ":\n"
-                else:
-                    prefix = "Сообщение от администратора школы:\n"
-                sent = await bot.send_message(chat_id=recipient.telegram_id, text=prefix + body)
-                delivered.append({"user_id": recipient.id, "telegram_message_id": sent.message_id})
+                prefix = (
+                    "Сообщение от учителя " + sender.full_name + ":\\n"
+                    if principal["role"] == "teacher"
+                    else "Сообщение от администратора школы:\\n"
+                )
+                target = student_target if recipient_role == "student" else {"chat_id": recipient.telegram_id}
+                if not target:
+                    delivery_errors.append(recipient.full_name + ": Telegram не подключён")
+                    continue
+                sent = await bot.send_message(**target, text=prefix + body)
+                delivered.append({
+                    "user_id": recipient.id,
+                    "telegram_message_id": sent.message_id,
+                    "chat_id": target["chat_id"],
+                    "thread_id": target.get("message_thread_id"),
+                })
             except Exception as exc:
                 delivery_errors.append(recipient.full_name + ": " + str(exc)[:180])
     else:
@@ -549,10 +592,12 @@ async def send_panel_message(
     if delivery_errors:
         metadata["telegram_delivery_errors"] = delivery_errors
     row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+    student_delivery = next((item for item in delivered if item["user_id"] == student.id), None)
+    if student_delivery:\n        row.destination_message_id = student_delivery["telegram_message_id"]
     row.delivery_status = "delivered" if delivered and not delivery_errors else ("partial" if delivered else "failed")
     db.commit()
 
-    if principal["role"] == "admin" and bot and conversation.assignment.teacher.telegram_id:
+    if bot and teacher.telegram_id:
         try:
             from .telegram_teacher import update_teacher_panel
             await update_teacher_panel(bot, db, conversation.assignment.teacher)
