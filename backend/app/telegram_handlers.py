@@ -26,8 +26,10 @@ from .telegram_teacher import (
     conversation_messages,
     get_teacher_conversation,
     handle_teacher_keyboard_message,
-    pending_student_messages,
+    mark_visible_messages_read_by_teacher,
+    send_group_delivery_receipt,
     set_teacher_session,
+    unanswered_student_messages,
     update_teacher_panel,
 )
 
@@ -104,6 +106,7 @@ async def handle_panel_callback(callback: CallbackQuery, bot: Bot):
 
         parts = callback.data.split(":")
         action = parts[1] if len(parts) > 1 else ""
+        opened_conversation = None
         try:
             if action == "home":
                 clear_teacher_session(db, user)
@@ -120,12 +123,14 @@ async def handle_panel_callback(callback: CallbackQuery, bot: Bot):
                     await callback.answer("Ученик больше не назначен вам.", show_alert=True)
                     return
                 set_teacher_session(db, user, conversation)
+                opened_conversation = conversation
             elif action == "reply" and len(parts) > 2:
                 conversation = get_teacher_conversation(db, user, int(parts[2]))
                 if not conversation:
                     await callback.answer("Эта переписка больше недоступна.", show_alert=True)
                     return
                 set_teacher_session(db, user, conversation)
+                opened_conversation = conversation
             else:
                 await callback.answer("Старая кнопка больше не действует. Панель обновлена.")
                 await update_teacher_panel(bot, db, user)
@@ -135,6 +140,8 @@ async def handle_panel_callback(callback: CallbackQuery, bot: Bot):
             return
 
         await callback.answer()
+        if opened_conversation:
+            await mark_visible_messages_read_by_teacher(bot, db, opened_conversation)
         await update_teacher_panel(bot, db, user)
 
 
@@ -156,6 +163,7 @@ async def choose_conversation(callback: CallbackQuery, bot: Bot):
             return
         set_teacher_session(db, teacher, conversation)
         await callback.answer()
+        await mark_visible_messages_read_by_teacher(bot, db, conversation)
         await update_teacher_panel(bot, db, teacher)
 
 
@@ -317,10 +325,12 @@ async def route_message(message: TgMessage, bot: Bot):
             )
             return
 
-        pending_before_reply = (
-            pending_student_messages(conversation_messages(db, conversation.id))
+        unanswered_before_reply = (
+            unanswered_student_messages(conversation_messages(db, conversation.id))
             if sender.role == "teacher" else []
         )
+        if sender.role == "teacher":
+            await mark_visible_messages_read_by_teacher(bot, db, conversation)
         row = persist_message(db, conversation.id, sender, message, "pending")
         metadata = json.loads(row.metadata_json or "{}")
         metadata["source_mode"] = "group_topic" if group_binding else "private"
@@ -343,6 +353,8 @@ async def route_message(message: TgMessage, bot: Bot):
                 # persistent teacher panel; do not create extra Telegram messages.
                 row.delivery_status = "delivered"
                 db.commit()
+                if group_binding:
+                    await send_group_delivery_receipt(bot, db, row)
                 try:
                     await update_teacher_panel(bot, db, recipient)
                 except Exception:
@@ -352,7 +364,7 @@ async def route_message(message: TgMessage, bot: Bot):
                 # unanswered message arrived: forum topic or private bot chat.
                 destination_chat_id = recipient.telegram_id
                 destination_thread_id = None
-                for pending in reversed(pending_before_reply):
+                for pending in reversed(unanswered_before_reply):
                     pending_metadata = json.loads(pending.metadata_json or "{}")
                     if pending_metadata.get("source_mode") == "group_topic":
                         destination_chat_id = int(pending_metadata["source_chat_id"])
@@ -383,7 +395,7 @@ async def route_message(message: TgMessage, bot: Bot):
                     logger.info("Could not remove teacher's sent message from the bot chat")
 
                 # A successful teacher reply closes the pending batch.
-                pending_rows = pending_before_reply
+                pending_rows = unanswered_before_reply
                 for pending in pending_rows:
                     if pending.destination_message_id:
                         try:
