@@ -104,7 +104,7 @@ export default function App() {
       }
     } catch (e) {
       setError(e.message);
-      if (String(e.message).toLowerCase().includes("учитель") || String(e.message).includes("401")) {
+      if (String(e.message).toLowerCase().includes("учитель") || String(e.message).toLowerCase().includes("логин") || String(e.message).includes("401")) {
         sessionStorage.removeItem("uknowapp-auth");
         setAuth("");
         setProfile(null);
