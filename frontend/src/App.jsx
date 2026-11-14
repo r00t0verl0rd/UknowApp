@@ -45,6 +45,7 @@ function MessageBubble({ message, auth }) {
 export default function App() {
   const [auth, setAuth] = useState(initialAuth);
   const [profile, setProfile] = useState(null);
+  const [teacherGraph, setTeacherGraph] = useState(null);
   const [draft, setDraft] = useState("");
   const [attachment, setAttachment] = useState(null);
   const [webPassword, setWebPassword] = useState("");
@@ -94,7 +95,9 @@ export default function App() {
         ]);
         setUsers(people); setOverview(summary);
       } else {
-        setUsers([]); setOverview(null); setPage("chats");
+        const graph = await request("/api/panel/graph");
+        setTeacherGraph(graph);
+        setUsers([]); setOverview(null);
       }
     } catch (e) {
       setError(e.message);
@@ -128,12 +131,12 @@ export default function App() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.detail || "Не удалось войти");
       const encoded = btoa(unescape(encodeURIComponent(login + ":" + password)));
-      sessionStorage.setItem("uknowapp-auth", encoded); setProfile(result); setPage(result.role === "teacher" ? "chats" : "graph"); setAuth(encoded); setPassword("");
+      sessionStorage.setItem("uknowapp-auth", encoded); setProfile(result); setPage("graph"); setAuth(encoded); setPassword("");
     } catch (e) { setError(e.message); }
   }
 
   function signOut() {
-    sessionStorage.removeItem("uknowapp-auth"); setAuth(""); setProfile(null); setUsers([]); setOverview(null); setChats([]); setMessages([]); setSelectedChat(null); setDraft(""); setAttachment(null);
+    sessionStorage.removeItem("uknowapp-auth"); setAuth(""); setProfile(null); setTeacherGraph(null); setUsers([]); setOverview(null); setChats([]); setMessages([]); setSelectedChat(null); setDraft(""); setAttachment(null);
   }
 
   function openCreate(defaultRole = "teacher") {
@@ -248,10 +251,12 @@ export default function App() {
       <div className="brand"><img src="/logo.svg" alt="" /><span>Uknow<span>App</span></span></div>
       <div className="school-label">{profile?.role === "admin" ? "УПРАВЛЕНИЕ ШКОЛОЙ" : "РАБОЧЕЕ МЕСТО УЧИТЕЛЯ"}</div>
       <nav>
-        {profile?.role === "admin" && <>
+        <>
           <button className={page === "graph" ? "active" : ""} onClick={() => setPage("graph")}><Activity/>Структура</button>
+          {profile?.role === "admin" && <>
           <button className={page === "users" ? "active" : ""} onClick={() => setPage("users")}><Users/>Пользователи</button>
-        </>}
+          </>}
+        </>
         <button className={page === "chats" ? "active" : ""} onClick={() => setPage("chats")}><MessageCircle/>Переписки <i>{chats.length}</i></button>
       </nav>
       <div className="sidebar-bottom"><button className="logout" onClick={signOut}><LogOut/>Выйти</button></div>
@@ -261,7 +266,28 @@ export default function App() {
       <header className="topbar"><div><span>UknowApp</span><ChevronRight/><b>{profile?.role === "teacher" ? "Кабинет учителя" : ({ graph: "Структура", users: "Пользователи", chats: "Переписки" })[page]}</b><small className="topbar-user">{profile?.full_name}</small></div><button className="icon-btn" onClick={refresh} title="Обновить"><RefreshCw className={busy ? "spin" : ""}/></button></header>
       <div className="content">
         {error && <div className="alert alert-row">{error}<button onClick={() => setError("")}><X/></button></div>}
-        {page === "graph" && <>
+        {page === "graph" && profile?.role === "teacher" && <section className="teacher-readonly-graph">
+          <div className="page-title"><div><div className="eyebrow">МОЯ ГРУППА</div><h1>Моя структура</h1><p>Здесь показаны только вы и ученики, назначенные вам администратором школы.</p></div></div>
+          <div className="teacher-graph-root">
+            <div className="teacher-graph-card">
+              <div className="avatar teacher-avatar"><GraduationCap/></div>
+              <div><b>{teacherGraph?.teacher.full_name || profile?.full_name}</b><small>Вы · Учитель</small></div>
+              <span className="readonly-tag">Только просмотр</span>
+            </div>
+            <div className="teacher-graph-students">
+              <div className="teacher-graph-connector"/>
+              <div className="teacher-graph-student-grid">
+                {(teacherGraph?.students || []).map(student => <div className="teacher-graph-card student" key={student.id}>
+                  <div className="avatar student-avatar"><Users/></div>
+                  <div><b>{student.full_name}</b><small>Ученик</small></div>
+                </div>)}
+              </div>
+              {!(teacherGraph?.students || []).length && <div className="empty-state">Пока нет назначенных учеников</div>}
+            </div>
+          </div>
+          <div className="teacher-graph-summary"><Users size={18}/><b>{teacherGraph?.counts.students || 0}</b><span>активных учеников в вашей группе</span></div>
+        </section>}
+        {page === "graph" && profile?.role === "admin" && <>
           <div className="page-title"><div><div className="eyebrow">ВИЗУАЛЬНОЕ УПРАВЛЕНИЕ</div><h1>Структура школы</h1><p>Добавляйте участников, меняйте их данные и назначайте учеников прямо на схеме.</p></div><button className="btn primary" onClick={() => openCreate()}><Plus/>Добавить участника</button></div>
           <div className="metrics">
             <div className="metric"><GraduationCap/><span>Учителя</span><b>{overview?.counts.teachers || 0}</b></div>
