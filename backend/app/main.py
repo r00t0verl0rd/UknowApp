@@ -36,9 +36,9 @@ async def run_telegram_bot(bot, dispatcher) -> None:
             # This call can time out when Telegram is unreachable. It must never
             # run directly in the FastAPI startup path.
             bot_info = await bot.get_me()
-            logger.info("Telegram bot connected: @%s (id=%s)", bot_info.username, bot_info.id)
+            logger.warning(\n                "TELEGRAM_CONNECTED username=@%s id=%s privacy_disabled=%s",\n                bot_info.username, bot_info.id,\n                getattr(bot_info, "can_read_all_group_messages", None),\n            )
             await bot.delete_webhook(drop_pending_updates=False)
-            logger.info("Telegram long polling started")
+            logger.warning("TELEGRAM_POLLING_STARTED")
             await dispatcher.start_polling(bot, handle_signals=False)
             return
         except asyncio.CancelledError:
@@ -73,7 +73,7 @@ async def lifespan(_: FastAPI):
             name="uknowapp-telegram-polling",
         )
     else:
-        logger.warning("TELEGRAM_BOT_TOKEN is empty. Telegram bot is disabled; admin API remains available.")
+        logger.error("TELEGRAM_BOT_TOKEN_EMPTY: Telegram bot is disabled; admin API remains available.")
     try:
         yield
     finally:
