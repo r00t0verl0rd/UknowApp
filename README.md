@@ -4,6 +4,8 @@ UknowApp is a school messaging MVP with a React admin panel, a FastAPI backend, 
 
 ## Local development on macOS
 
+Use a supported Python release (recommended: Python 3.11 or newer). Python 3.9 reached end of life on 2025-10-31 and no longer receives security updates. Existing Python 3.9 environments may still run with compatible dependency versions, but should be migrated to a supported interpreter.
+
 Create the environment file once:
 
 ```bash
