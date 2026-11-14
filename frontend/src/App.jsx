@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, Trash2, Users, X, Link2, Copy, Unlink } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
-const ROLE = { teacher: "Учитель", student: "Ученик" };
+const ROLE = { teacher: "Учитель", student: "Ученик", admin: "Администратор" };
 const initialAuth = () => sessionStorage.getItem("uknowapp-auth") || "";
 
 function MessageBubble({ message, auth }) {
@@ -31,6 +31,7 @@ function MessageBubble({ message, auth }) {
   const label = media?.file_name || ({ voice: "Голосовое сообщение", video_note: "Видеокружочек", photo: "Фотография", video: "Видео", audio: "Аудио", document: "Документ", sticker: "Стикер", animation: "Анимация" }[kind] || "Вложение");
   return <div className={"message " + message.sender_role}>
     <b>{message.sender} <small>{ROLE[message.sender_role] || message.sender_role}</small></b>
+    <time className="message-time">{message.created_at ? new Date(message.created_at).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}</time>
     {message.text && <p>{message.text}</p>}
     {mediaUrl && kind === "photo" && <img className="chat-media-image" src={mediaUrl} alt={label} />}
     {mediaUrl && ["voice", "audio"].includes(kind) && <audio className="chat-media-player" controls preload="metadata" src={mediaUrl} />}
@@ -271,7 +272,7 @@ export default function App() {
           <div className="page-title"><div><div className="eyebrow">УЧЁТНЫЕ ЗАПИСИ</div><h1>Пользователи</h1><p>Создание, редактирование, смена ролей и удаление.</p></div><button className="btn primary" onClick={() => openCreate()}><Plus/>Добавить</button></div>
           <div className="toolbar"><div className="search"><Search/><input placeholder="Поиск по имени или Telegram ID" value={search} onChange={e => setSearch(e.target.value)}/></div><span>{visibleUsers.length} пользователей</span></div>
           <div className="user-list">{visibleUsers.map(user => <div className="user-row" key={user.id}>
-            <div className={"avatar " + user.role}><Users/></div><div className="person-info"><b>{user.full_name}</b><small>#{user.id} · {user.telegram_id ? <span className="telegram-connected">Telegram ID {user.telegram_id}</span> : "Telegram не подключён"} · {user.active ? "Активен" : "Отключён"}</small></div><span className={"role-tag " + user.role}>{ROLE[user.role]}</span>
+            <div className={"avatar " + user.role}><Users/></div><div className="person-info"><b>{user.full_name}</b><small>#{user.id} · {user.telegram_id ? <span className="telegram-connected">Telegram ID {user.telegram_id}</span> : "Telegram не подключён"} · {user.role === "teacher" ? (user.has_web_password ? "Веб-доступ настроен" : "Пароль веб-панели не задан") + " · " : ""}{user.active ? "Активен" : "Отключён"}</small></div><span className={"role-tag " + user.role}>{ROLE[user.role]}</span>
             <button className="btn small" onClick={() => openEdit(user)}><Pencil/>Изменить</button>{user.telegram_id && <button className="btn small disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram"><Unlink/>Отключить Telegram</button>}<button className="icon-btn danger-icon" onClick={() => removeUser(user)} title="Удалить"><Trash2/></button>
             {user.active && !user.telegram_id && <button className="btn small outline" onClick={() => makeCode(user)}><Copy/>Код</button>}
           </div>)}</div>
@@ -279,7 +280,7 @@ export default function App() {
 
         {page === "chats" && <>
           <div className="page-title"><div><div className="eyebrow">{profile?.role === "teacher" ? "МОИ УЧЕНИКИ" : "ИСТОРИЯ ОБЩЕНИЯ"}</div><h1>{profile?.role === "teacher" ? "Чаты с учениками" : "Переписки"}</h1><p>{profile?.role === "teacher" ? "Каждый ученик — отдельный диалог. Файлы и аудио находятся внутри нужной переписки." : "Просмотр и участие в переписках учеников и учителей."}</p></div></div>
-          <div className="chat-layout"><div className="chat-list">{chats.map(chat => <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected" : "")} onClick={() => openChat(chat)}><b>{profile?.role === "teacher" ? chat.student.full_name : chat.student.full_name + " ↔ " + chat.teacher.full_name}</b><small>{chat.last_message}</small><span>{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span></button>)}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}</div>
+          <div className="chat-layout"><div className="chat-list">{chats.map(chat => <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected" : "")} onClick={() => openChat(chat)}><b>{profile?.role === "teacher" ? chat.student.full_name : chat.student.full_name + " ↔ " + chat.teacher.full_name}</b><small>{chat.last_message}</small><span>{chat.unread_count ? chat.unread_count + " непрочитанных · " : ""}{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span></button>)}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}</div>
             <div className="chat-detail">{selectedChat ? <>
               <div className="chat-head"><div><b>{selectedChat.student.full_name}</b><small>{profile?.role === "admin" ? "Учитель: " + selectedChat.teacher.full_name + " · " : ""}Переписка #{selectedChat.id}</small></div><span className="role-tag">{selectedChat.status === "active" ? "Активна" : "Закрыта"}</span></div>
               <div className="messages">{messages.map(message => <MessageBubble message={message} auth={auth} key={message.id} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}</div>
