@@ -54,7 +54,7 @@ def message_preview(row: Optional[Message]) -> str:
         return preview if len(preview) <= 115 else preview[:112] + "…"
     if body:
         return body if len(body) <= 115 else body[:112] + "…"
-    return "Сообщение";
+    return "Сообщение"
 
 
 def conversation_messages(db: Session, conversation_id: int) -> list[Message]:
