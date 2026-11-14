@@ -456,8 +456,8 @@ async def route_message(message: TgMessage, bot: Bot):
             return
         try:
             if sender.role == "student":
-                # Keep text in the persistent conversation panel, but copy every
-                # non-text Telegram message into the teacher's private bot chat.
+                # Keep text in the persistent conversation panel, and copy each
+                # recognized attachment into the teacher's private bot chat.
                 # copy_message preserves the original Telegram media type and caption,
                 # including photos, videos, voice notes, audio, documents, stickers,
                 # animations and video notes.
