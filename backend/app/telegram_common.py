@@ -20,16 +20,17 @@ TG_LINK_RE = re.compile(r"(?:https?://)?(?:t\.me|telegram\.me)/[A-Za-z0-9_]+", r
 PHONE_RE = re.compile(r"(?<!\w)\+?\d[\d\s().-]{6,}\d(?!\w)")
 
 
-def contact_would_be_exposed(message: TgMessage) -> bool:
-    if message.contact:
-        return True
-    body = message.text or message.caption or ""
+def text_contains_contact_data(body: str) -> bool:
     if EMAIL_RE.search(body) or USERNAME_RE.search(body) or TG_LINK_RE.search(body):
         return True
     for match in PHONE_RE.findall(body):
         if sum(char.isdigit() for char in match) >= 8:
             return True
     return False
+
+
+def contact_would_be_exposed(message: TgMessage) -> bool:
+    return bool(message.contact) or text_contains_contact_data(message.text or message.caption or "")
 
 
 def message_metadata(message: TgMessage) -> dict:
