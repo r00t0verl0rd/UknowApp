@@ -58,7 +58,7 @@ async def run_telegram_bot(bot, dispatcher) -> None:
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(app: FastAPI):
     create_tables()
     if SEED_DEMO_DATA:
         seed_demo_data()
