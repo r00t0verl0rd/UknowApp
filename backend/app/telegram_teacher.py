@@ -315,7 +315,8 @@ def teacher_chat_view(
     else:
         for row in visible_rows:
             sender_label = "Ученик" if row.sender_role == "student" else "Администратор" if row.sender_role == "admin" else "Вы"
-            stamp = row.created_at.strftime("%H:%M") if row.created_at else ""\n            lines.append((stamp + " · " if stamp else "") + sender_label + ": " + escape(message_preview(row)))
+            stamp = row.created_at.strftime("%H:%M") if row.created_at else ""
+            lines.append((stamp + " · " if stamp else "") + sender_label + ": " + escape(message_preview(row)))
     if len(rows) > len(visible_rows):
         lines.insert(1, "Показаны последние " + str(len(visible_rows)) + " из " + str(len(rows)) + " сообщений.")
     return "\n".join(lines)[:3900]
