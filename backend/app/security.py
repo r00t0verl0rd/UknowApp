@@ -170,6 +170,9 @@ def create_panel_session(
     if not fingerprint:
         raise HTTPException(status_code=401, detail="Учётная запись недоступна")
 
+    # A new login replaces the browser's previous session, limiting the
+    # lifetime of any older token that may have been copied or exposed.
+    revoke_panel_session(request, db)
     now = datetime.now(timezone.utc)
     db.query(PanelSession).filter(PanelSession.expires_at < now).delete(synchronize_session=False)
     token = secrets.token_urlsafe(32)
