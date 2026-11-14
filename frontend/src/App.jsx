@@ -209,6 +209,7 @@ export default function App() {
     event.preventDefault();
     if (!selectedChat || (!draft.trim() && !attachment)) return;
     try {
+      let sentMessage;
       if (attachment) {
         const form = new FormData();
         form.append("file", attachment);
@@ -220,15 +221,19 @@ export default function App() {
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.detail || "Не удалось отправить файл");
+        sentMessage = data;
       } else {
-        await request("/api/panel/conversations/" + selectedChat.id + "/messages", {
+        sentMessage = await request("/api/panel/conversations/" + selectedChat.id + "/messages", {
           method: "POST", body: JSON.stringify({ text: draft.trim() })
         });
       }
       setDraft(""); setAttachment(null);
       setMessages(await request("/api/panel/conversations/" + selectedChat.id + "/messages"));
       setChats(await request("/api/panel/conversations"));
-      notify("Сообщение отправлено");
+      const deliveryErrors = sentMessage?.metadata?.telegram_delivery_errors || [];
+      if (sentMessage?.delivery_status === "delivered") notify("Сообщение отправлено");
+      else if (sentMessage?.delivery_status === "partial") notify("Сообщение доставлено не всем участникам");
+      else notify("Сохранено в истории, но Telegram-доставка не удалась");
     } catch (e) { setError(e.message); }
   }
 
