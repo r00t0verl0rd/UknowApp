@@ -131,3 +131,15 @@ The database backup contains student and teacher data; the media backup contains
 - Browser requests use the same domain in production, so the frontend does not need a hardcoded API host.
 - SQLite is stored on a persistent volume. For a larger multi-instance deployment, move to PostgreSQL and redesign Telegram polling as a separately managed single worker before scaling the API.
 - HTTP Basic authentication is retained for this MVP. Use HTTPS, a unique strong admin password, SSH key authentication and a VPS firewall. Before production use with real student data, add stronger account/session management, access auditing, rate limiting and a tested backup/restore process.
+
+
+## Web panel roles and messaging
+
+The same browser panel supports two roles:
+
+- **Administrator** signs in with `ADMIN_USERNAME` and `ADMIN_PASSWORD` from `.env`. The administrator keeps access to the school graph, users, assignments and every active conversation. In any conversation the administrator can post a message as **Администратор**; it is saved to the shared history and delivered to the student and teacher through Telegram.
+- **Teacher** signs in with the internal UknowApp user ID (the `#ID` shown in the administrator's Users list) and an individual web-panel password. A teacher sees only their own active student conversations and can reply from the browser. Teachers cannot access or edit the school graph or user directory.
+
+To enable browser access for a teacher, open **Пользователи** in the administrator panel, create or edit the teacher, and set **Пароль для веб-панели** (at least 8 characters). Share the teacher's internal `#ID` and password securely. The password is stored as a salted PBKDF2 hash; it is never returned by the API. Leave the password field empty when editing to keep the current password.
+
+The browser chat keeps text, archived media, audio and files in the same conversation. Teacher replies are delivered to the student's Telegram; if the student's latest unanswered message came from their linked forum topic, the reply is sent to that topic. Administrator messages are added to that same conversation and delivered to both participants. In the teacher's Telegram inbox, copied student files now carry the student's name in the media caption whenever Telegram supports captions; non-captionable message types receive a separate identity label.
