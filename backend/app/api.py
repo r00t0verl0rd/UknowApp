@@ -452,6 +452,64 @@ def _panel_message_dict(item: Message) -> dict:
     }
 
 
+def _panel_student_telegram_target(
+    db: Session,
+    conversation: Conversation,
+    rows: list[Message],
+) -> dict | None:
+    student = conversation.assignment.student
+    if not student.telegram_id:
+        return None
+    target = {"chat_id": student.telegram_id}
+    last_reply_index = max(
+        (
+            i for i, item in enumerate(rows)
+            if item.sender_role in {"teacher", "admin"}
+            and item.delivery_status in {"delivered", "partial"}
+        ),
+        default=-1,
+    )
+    for incoming in reversed(rows[last_reply_index + 1:]):
+        if incoming.sender_role != "student":
+            continue
+        incoming_meta = json.loads(incoming.metadata_json or "{}")
+        if incoming_meta.get("source_mode") == "group_topic":
+            try:
+                group_chat_id = int(incoming_meta["source_chat_id"])
+                thread_id = int(incoming_meta["source_thread_id"])
+            except (KeyError, TypeError, ValueError):
+                return target
+            linked_topic = db.scalar(select(StudentTelegramGroup).where(
+                StudentTelegramGroup.student_id == student.id,
+                StudentTelegramGroup.chat_id == group_chat_id,
+                StudentTelegramGroup.thread_id == thread_id,
+            ))
+            if linked_topic:
+                return {"chat_id": group_chat_id, "message_thread_id": thread_id}
+        return target
+
+    # Preserve the group topic used by the last answer after an administrator
+    # has intervened and there is no newer student message.
+    if last_reply_index >= 0:
+        response_meta = json.loads(rows[last_reply_index].metadata_json or "{}")
+        for delivery in response_meta.get("telegram_deliveries") or []:
+            if delivery.get("user_id") != student.id or delivery.get("thread_id") is None:
+                continue
+            try:
+                group_chat_id = int(delivery["chat_id"])
+                thread_id = int(delivery["thread_id"])
+            except (KeyError, TypeError, ValueError):
+                return target
+            linked_topic = db.scalar(select(StudentTelegramGroup).where(
+                StudentTelegramGroup.student_id == student.id,
+                StudentTelegramGroup.chat_id == group_chat_id,
+                StudentTelegramGroup.thread_id == thread_id,
+            ))
+            if linked_topic:
+                return {"chat_id": group_chat_id, "message_thread_id": thread_id}
+    return target
+
+
 @router.get("/panel/me")
 def panel_me(principal: PanelUser, db: Db):
     if principal["role"] == "admin":
@@ -550,37 +608,11 @@ async def send_panel_message(
             db.flush()
         recipients = [(student, "student"), (teacher, "teacher")]
 
-    # Continue in the same Telegram forum topic when the student's latest
-    # unanswered message came from a linked group topic; otherwise use the DM.
-    student_target = {"chat_id": student.telegram_id} if student.telegram_id else None
     rows = db.scalars(
         select(Message).where(Message.conversation_id == conversation.id)
         .order_by(Message.created_at, Message.id)
     ).all()
-    last_reply_index = max(
-        (i for i, item in enumerate(rows) if item.sender_role in {"teacher", "admin"} and item.delivery_status in {"delivered", "partial"}),
-        default=-1,
-    )
-    for incoming in reversed(rows[last_reply_index + 1:]):
-        if incoming.sender_role != "student":
-            continue
-        incoming_meta = json.loads(incoming.metadata_json or "{}")
-        if incoming_meta.get("source_mode") == "group_topic":
-            try:
-                group_chat_id = int(incoming_meta["source_chat_id"])
-                thread_id = int(incoming_meta["source_thread_id"])
-            except (KeyError, TypeError, ValueError):
-                break
-            linked_topic = db.scalar(
-                select(StudentTelegramGroup).where(
-                    StudentTelegramGroup.student_id == student.id,
-                    StudentTelegramGroup.chat_id == group_chat_id,
-                    StudentTelegramGroup.thread_id == thread_id,
-                )
-            )
-            if linked_topic:
-                student_target = {"chat_id": group_chat_id, "message_thread_id": thread_id}
-        break
+    student_target = _panel_student_telegram_target(db, conversation, rows)
 
     row = Message(
         conversation_id=conversation.id,
@@ -630,7 +662,6 @@ async def send_panel_message(
     if delivery_errors:
         metadata["telegram_delivery_errors"] = delivery_errors
     row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-    student_delivery = next((item for item in delivered if item["user_id"] == student.id), None)
     row.delivery_status = "delivered" if delivered and not delivery_errors else ("partial" if delivered else "failed")
     db.commit()
 
@@ -721,33 +752,11 @@ async def send_panel_attachment(
     db.commit()
     db.refresh(row)
 
-    student_target = {"chat_id": student.telegram_id} if student.telegram_id else None
     rows = db.scalars(
         select(Message).where(Message.conversation_id == conversation.id)
         .order_by(Message.created_at, Message.id)
     ).all()
-    last_reply_index = max(
-        (i for i, item in enumerate(rows[:-1]) if item.sender_role in {"teacher", "admin"} and item.delivery_status in {"delivered", "partial"}),
-        default=-1,
-    )
-    for incoming in reversed(rows[last_reply_index + 1:-1]):
-        if incoming.sender_role != "student":
-            continue
-        incoming_meta = json.loads(incoming.metadata_json or "{}")
-        if incoming_meta.get("source_mode") == "group_topic":
-            try:
-                group_chat_id = int(incoming_meta["source_chat_id"])
-                thread_id = int(incoming_meta["source_thread_id"])
-            except (KeyError, TypeError, ValueError):
-                break
-            linked_topic = db.scalar(select(StudentTelegramGroup).where(
-                StudentTelegramGroup.student_id == student.id,
-                StudentTelegramGroup.chat_id == group_chat_id,
-                StudentTelegramGroup.thread_id == thread_id,
-            ))
-            if linked_topic:
-                student_target = {"chat_id": group_chat_id, "message_thread_id": thread_id}
-        break
+    student_target = _panel_student_telegram_target(db, conversation, rows[:-1])
 
     recipients = [(student, "student")]
     if principal["role"] == "admin":
@@ -798,9 +807,6 @@ async def send_panel_attachment(
     if delivery_errors:
         metadata["telegram_delivery_errors"] = delivery_errors
     row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-    student_delivery = next((item for item in delivered if item["user_id"] == student.id), None)
-    if student_delivery:
-        row.destination_message_id = student_delivery["telegram_message_id"]
     row.delivery_status = "delivered" if delivered and not delivery_errors else ("partial" if delivered else "failed")
     db.commit()
 
