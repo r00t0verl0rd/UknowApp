@@ -263,7 +263,7 @@ export default function App() {
       </form> : <form className="stack" onSubmit={saveUser}>
         <label>Имя и фамилия<input value={name} onChange={e => setName(e.target.value)} minLength="2" maxLength="160" required autoFocus/></label>
         <label>Роль<select value={role} onChange={e => setRole(e.target.value)}><option value="teacher">Учитель</option><option value="student">Ученик</option></select></label>
-        <label>Telegram ID <input type="number" value={telegramId} onChange={e => setTelegramId(e.target.value)} placeholder="Не подключён"/></label>
+        <label>Telegram ID <input type="text" inputMode="numeric" pattern="[0-9]*" value={telegramId} onChange={e => setTelegramId(e.target.value)} placeholder="Не подключён"/></label>
         {modal.mode === "edit" && role !== users.find(u => u.id === modal.id)?.role && <p className="hint">При смене роли активные назначения будут закрыты. История переписок сохранится.</p>}
         <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setModal(null)}>Отмена</button><button className="btn primary"><Check/>Сохранить</button></div>
       </form>}
