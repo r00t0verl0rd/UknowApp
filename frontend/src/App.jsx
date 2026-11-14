@@ -178,7 +178,7 @@ export default function App() {
     sessionStorage.removeItem("uknowapp-auth"); setAuth(""); setProfile(null); setTeacherGraph(null); setUsers([]); setOverview(null); setChats([]); setMessages([]); setSelectedChat(null); setDraft(""); setAttachment(null);
   }
 
-  function openCreate(defaultRole = "teacher") {
+  function openCreate(defaultRole = "student") {
     setModal({ mode: "create", id: null }); setName(""); setTeacherLogin(""); setRole(defaultRole); setTelegramId(""); setWebPassword("");
   }
   function openEdit(user) {
