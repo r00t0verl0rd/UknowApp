@@ -11,7 +11,7 @@ from sqlalchemy import select
 
 from .database import SessionLocal
 from .media_storage import archive_telegram_media
-from .models import StudentTelegramGroup, TeacherPanel, TeacherSession
+from .models import StudentTelegramGroup, TeacherPanel, TeacherSession, User
 from .telegram_common import (
     CONNECTION_CODE_RE,
     claim_connection_code,
@@ -264,21 +264,23 @@ async def bind_student_group(message: TgMessage, bot: Bot):
 
 @router.message()
 async def route_message(message: TgMessage, bot: Bot):
-    if not message.from_user:
-        return
+    sender_chat = message.sender_chat
     logger.warning(
-        "TELEGRAM_UPDATE_RECEIVED telegram_id=%s chat_type=%s chat_id=%s thread_id=%s "
-        "content_type=%s text_length=%s",
-        message.from_user.id,
+        "TELEGRAM_UPDATE_RECEIVED telegram_id=%s sender_chat_id=%s chat_type=%s chat_id=%s "
+        "thread_id=%s content_type=%s text_length=%s",
+        message.from_user.id if message.from_user else None,
+        sender_chat.id if sender_chat else None,
         message.chat.type,
         message.chat.id,
         message.message_thread_id,
         message.content_type,
         len(message.text or message.caption or ""),
     )
+
     with SessionLocal() as db:
-        sender = get_linked_user(db, message.from_user.id)
+        sender = get_linked_user(db, message.from_user.id) if message.from_user else None
         group_binding = None
+
         if message.chat.type in {"group", "supergroup"}:
             if not message.message_thread_id:
                 logger.info(
@@ -287,35 +289,69 @@ async def route_message(message: TgMessage, bot: Bot):
                     message.message_id,
                 )
                 return
-            if not sender or sender.role != "student":
-                logger.info(
-                    "Ignoring group message from an unlinked/non-student sender: chat_id=%s "
-                    "thread_id=%s telegram_id=%s",
-                    message.chat.id,
-                    message.message_thread_id,
-                    message.from_user.id,
+
+            # First, accept messages sent by the student's linked Telegram account.
+            if sender and sender.role == "student":
+                group_binding = db.scalar(
+                    select(StudentTelegramGroup).where(
+                        StudentTelegramGroup.chat_id == message.chat.id,
+                        StudentTelegramGroup.thread_id == message.message_thread_id,
+                        StudentTelegramGroup.student_id == sender.id,
+                    )
                 )
-                return
-            group_binding = db.scalar(
-                select(StudentTelegramGroup).where(
-                    StudentTelegramGroup.chat_id == message.chat.id,
-                    StudentTelegramGroup.thread_id == message.message_thread_id,
-                    StudentTelegramGroup.student_id == sender.id,
+
+            # Telegram may represent a message sent on behalf of the supergroup
+            # with sender_chat and no real from_user (or a synthetic sender ID).
+            # In that case the bound forum topic is the identity context:
+            # resolve its linked student and keep the message in that student's
+            # conversation instead of silently dropping it.
+            if (
+                not group_binding
+                and sender_chat
+                and sender_chat.id == message.chat.id
+            ):
+                group_binding = db.scalar(
+                    select(StudentTelegramGroup).where(
+                        StudentTelegramGroup.chat_id == message.chat.id,
+                        StudentTelegramGroup.thread_id == message.message_thread_id,
+                    )
                 )
-            )
-            # The forum topic is only an additional input channel. Once the
-            # sender and topic are verified, it follows the exact same message
-            # persistence, moderation, delivery and teacher-inbox path as DM.
-            if not group_binding:
+                if group_binding:
+                    bound_student = db.get(User, group_binding.student_id)
+                    if bound_student and bound_student.active and bound_student.role == "student":
+                        sender = bound_student
+                        logger.warning(
+                            "TELEGRAM_GROUP_SENDER_RESOLVED chat_id=%s thread_id=%s student_id=%s",
+                            message.chat.id,
+                            message.message_thread_id,
+                            sender.id,
+                        )
+                    else:
+                        group_binding = None
+                        sender = None
+
+            if not sender or sender.role != "student" or not group_binding:
                 logger.warning(
-                    "Ignoring message from unbound Telegram topic: student_id=%s chat_id=%s "
-                    "thread_id=%s message_id=%s",
-                    sender.id,
+                    "TELEGRAM_GROUP_MESSAGE_IGNORED telegram_id=%s sender_chat_id=%s "
+                    "chat_id=%s thread_id=%s has_from_user=%s",
+                    message.from_user.id if message.from_user else None,
+                    sender_chat.id if sender_chat else None,
                     message.chat.id,
                     message.message_thread_id,
-                    message.message_id,
+                    bool(message.from_user),
                 )
                 return
+            # The forum topic is an additional input channel for the student.
+            # It uses the same persistence, moderation and teacher-inbox path as DM.
+        elif not sender:
+            # Messages without a Telegram user identity cannot be linked in a
+            # private chat, and must not be attributed to another account.
+            logger.warning(
+                "TELEGRAM_MESSAGE_IGNORED_NO_LINKED_USER chat_id=%s sender_chat_id=%s",
+                message.chat.id,
+                sender_chat.id if sender_chat else None,
+            )
+            return
         if not sender:
             text = (message.text or "").strip()
             normalized = re.sub(r"[\s-]", "", text).upper()
