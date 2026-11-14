@@ -18,8 +18,9 @@ Set `TELEGRAM_BOT_TOKEN` in `.env` to enable the bot. Change `ADMIN_PASSWORD` be
 
 ```bash
 cd ~/Desktop/UknowApp
-python3 -m venv .venv   # only on first setup
+python3.11 -m venv .venv   # only on first setup; Python 3.11+ is required
 source .venv/bin/activate
+python -m pip install --upgrade pip
 python -m pip install -r backend/requirements.txt   # first setup or after requirements change
 python -m uvicorn app.main:app --app-dir backend --reload
 ```
