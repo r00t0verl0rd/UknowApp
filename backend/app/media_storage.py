@@ -97,8 +97,13 @@ async def archive_telegram_media(bot: Bot, message: TgMessage, row: Message) -> 
             await bot.download(item.file_id, destination=target)
             media["local_path"] = relative.as_posix()
             media["archive_status"] = "stored"
-    except Exception:
-        logger.exception("Could not archive Telegram media for message_id=%s", row.id)
+    except Exception as exc:
+        # Download errors can contain a Bot API URL with the bot token.
+        logger.warning(
+            "Could not archive Telegram media (message_id=%s error_type=%s)",
+            row.id,
+            type(exc).__name__,
+        )
         media["archive_status"] = "download_failed"
     row.metadata_json = json.dumps(metadata, ensure_ascii=False)
 
