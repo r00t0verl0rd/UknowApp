@@ -274,10 +274,10 @@ async def bind_student_group(message: TgMessage, bot: Bot):
                 "и добавьте снова. После этого повторите /bind_group."
             )
             return
-    except Exception:
-        logger.exception(
-            "Could not verify Telegram group message access for chat_id=%s",
-            message.chat.id,
+    except Exception as exc:
+        logger.warning(
+            "Could not verify Telegram group message access (error_type=%s)",
+            type(exc).__name__,
         )
         await message.answer(
             "Telegram не подтвердил, что бот получает обычные сообщения этой группы. "
@@ -332,9 +332,9 @@ async def bind_student_group(message: TgMessage, bot: Bot):
 @router.message()
 async def route_message(message: TgMessage, bot: Bot):
     sender_chat = message.sender_chat
-    logger.warning(
+    logger.debug(
         "TELEGRAM_UPDATE_RECEIVED telegram_id=%s sender_chat_id=%s chat_type=%s chat_id=%s "
-        "thread_id=%s content_type=%s text_length=%s",
+         "thread_id=%s content_type=%s text_length=%s",
         message.from_user.id if message.from_user else None,
         sender_chat.id if sender_chat else None,
         message.chat.type,
@@ -627,8 +627,8 @@ async def route_message(message: TgMessage, bot: Bot):
                         clear_teacher_session(db, recipient)
                 try:
                     await update_teacher_panel(bot, db, recipient)
-                except Exception:
-                    logger.exception("Could not refresh teacher panel for conversation_id=%s", conversation.id)
+                except Exception as exc:
+                    logger.warning("Could not refresh teacher panel (error_type=%s)", type(exc).__name__)
             else:
                 # Reply in the same channel where the student's latest
                 # unanswered message arrived: forum topic or private bot chat.
@@ -698,12 +698,16 @@ async def route_message(message: TgMessage, bot: Bot):
                 # Keep the selected conversation active after replying.
                 try:
                     await update_teacher_panel(bot, db, sender)
-                except Exception:
-                    logger.exception("Could not refresh teacher inbox after reply for conversation_id=%s", conversation.id)
-        except Exception:
+                except Exception as exc:
+                    logger.warning("Could not refresh teacher inbox (error_type=%s)", type(exc).__name__)
+        except Exception as exc:
             row.delivery_status = "failed"
             db.commit()
-            logger.exception("Could not forward Telegram message for conversation_id=%s", conversation.id)
+            logger.warning(
+                "Could not forward Telegram message (conversation_id=%s error_type=%s)",
+                conversation.id,
+                type(exc).__name__,
+            )
             if sender.role == "teacher":
                 await message.answer("Не удалось доставить сообщение. Попробуйте ещё раз позже.")
             else:
