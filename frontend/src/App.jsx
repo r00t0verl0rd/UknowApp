@@ -12,7 +12,7 @@ function MessageBubble({ message, auth }) {
     if (!media || media.archive_status !== "stored") return undefined;
     let objectUrl = "";
     let cancelled = false;
-    fetch(API + "/api/admin/messages/" + message.id + "/media", {
+    fetch(API + "/api/panel/messages/" + message.id + "/media", {
       headers: { Authorization: "Basic " + auth }
     }).then(response => {
       if (!response.ok) throw new Error("media unavailable");
@@ -43,6 +43,9 @@ function MessageBubble({ message, auth }) {
 
 export default function App() {
   const [auth, setAuth] = useState(initialAuth);
+  const [profile, setProfile] = useState(null);
+  const [draft, setDraft] = useState("");
+  const [webPassword, setWebPassword] = useState("");
   const [login, setLogin] = useState("admin");
   const [password, setPassword] = useState("");
   const [page, setPage] = useState("graph");
@@ -77,12 +80,26 @@ export default function App() {
     if (!auth) return;
     setBusy(true); setError("");
     try {
-      const [people, summary, conversations] = await Promise.all([
-        request("/api/admin/users"), request("/api/admin/overview"), request("/api/admin/conversations")
-      ]);
-      setUsers(people); setOverview(summary); setChats(conversations);
-    } catch (e) { setError(e.message); }
-    finally { setBusy(false); }
+      const who = await request("/api/panel/me");
+      setProfile(who);
+      const conversations = await request("/api/panel/conversations");
+      setChats(conversations);
+      if (who.role === "admin") {
+        const [people, summary] = await Promise.all([
+          request("/api/admin/users"), request("/api/admin/overview")
+        ]);
+        setUsers(people); setOverview(summary);
+      } else {
+        setUsers([]); setOverview(null); setPage("chats");
+      }
+    } catch (e) {
+      setError(e.message);
+      if (String(e.message).toLowerCase().includes("учитель") || String(e.message).includes("401")) {
+        sessionStorage.removeItem("uknowapp-auth");
+        setAuth("");
+        setProfile(null);
+      }
+    } finally { setBusy(false); }
   }, [auth, request]);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -101,24 +118,25 @@ export default function App() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.detail || "Не удалось войти");
       const encoded = btoa(unescape(encodeURIComponent(login + ":" + password)));
-      sessionStorage.setItem("uknowapp-auth", encoded); setAuth(encoded); setPassword("");
+      sessionStorage.setItem("uknowapp-auth", encoded); setProfile(result); setPage(result.role === "teacher" ? "chats" : "graph"); setAuth(encoded); setPassword("");
     } catch (e) { setError(e.message); }
   }
 
   function signOut() {
-    sessionStorage.removeItem("uknowapp-auth"); setAuth(""); setUsers([]); setOverview(null); setChats([]); setMessages([]); setSelectedChat(null);
+    sessionStorage.removeItem("uknowapp-auth"); setAuth(""); setProfile(null); setUsers([]); setOverview(null); setChats([]); setMessages([]); setSelectedChat(null); setDraft("");
   }
 
   function openCreate(defaultRole = "teacher") {
-    setModal({ mode: "create", id: null }); setName(""); setRole(defaultRole); setTelegramId("");
+    setModal({ mode: "create", id: null }); setName(""); setRole(defaultRole); setTelegramId(""); setWebPassword("");
   }
   function openEdit(user) {
-    setModal({ mode: "edit", id: user.id }); setName(user.full_name); setRole(user.role); setTelegramId(user.telegram_id ? String(user.telegram_id) : "");
+    setModal({ mode: "edit", id: user.id }); setName(user.full_name); setRole(user.role); setTelegramId(user.telegram_id ? String(user.telegram_id) : ""); setWebPassword("");
   }
 
   async function saveUser(event) {
     event.preventDefault();
     const body = { full_name: name.trim(), role, telegram_id: telegramId.trim() ? Number(telegramId) : null };
+    if (webPassword.trim()) body.web_password = webPassword.trim();
     try {
       if (modal.mode === "create") await request("/api/admin/users", { method: "POST", body: JSON.stringify(body) });
       else await request("/api/admin/users/" + modal.id, { method: "PATCH", body: JSON.stringify(body) });
@@ -166,18 +184,32 @@ export default function App() {
   }
 
   async function openChat(chat) {
-    setSelectedChat(chat); setPage("chats");
-    try { setMessages(await request("/api/admin/conversations/" + chat.id + "/messages")); }
+    setSelectedChat(chat); setPage("chats"); setDraft("");
+    try { setMessages(await request("/api/panel/conversations/" + chat.id + "/messages")); }
     catch (e) { setError(e.message); }
+  }
+
+  async function sendChatMessage(event) {
+    event.preventDefault();
+    if (!selectedChat || !draft.trim()) return;
+    try {
+      await request("/api/panel/conversations/" + selectedChat.id + "/messages", {
+        method: "POST", body: JSON.stringify({ text: draft.trim() })
+      });
+      setDraft("");
+      setMessages(await request("/api/panel/conversations/" + selectedChat.id + "/messages"));
+      setChats(await request("/api/panel/conversations"));
+      notify("Сообщение отправлено");
+    } catch (e) { setError(e.message); }
   }
 
   if (!auth) return <div className="login-screen">
     <div className="login-card">
       <img src="/logo.svg" alt="UknowApp" className="login-logo" />
-      <div className="eyebrow">ПАНЕЛЬ АДМИНИСТРАТОРА</div><h1>UknowApp</h1>
-      <p className="muted">Управление учителями, учениками и переписками.</p>
+      <div className="eyebrow">ЕДИНАЯ ПАНЕЛЬ ШКОЛЫ</div><h1>UknowApp</h1>
+      <p className="muted">Вход администратора или учителя.</p>
       <form onSubmit={signIn} className="stack">
-        <label>Логин<input value={login} onChange={e => setLogin(e.target.value)} autoComplete="username" /></label>
+        <label>Логин администратора или ID учителя<input value={login} onChange={e => setLogin(e.target.value)} autoComplete="username" /></label>
         <label>Пароль<input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" /></label>
         {error && <div className="alert">{error}</div>}
         <button className="btn primary" type="submit">Войти <ChevronRight size={17}/></button>
@@ -188,17 +220,19 @@ export default function App() {
   return <div className="shell">
     <aside className="sidebar">
       <div className="brand"><img src="/logo.svg" alt="" /><span>Uknow<span>App</span></span></div>
-      <div className="school-label">УПРАВЛЕНИЕ ШКОЛОЙ</div>
+      <div className="school-label">{profile?.role === "admin" ? "УПРАВЛЕНИЕ ШКОЛОЙ" : "РАБОЧЕЕ МЕСТО УЧИТЕЛЯ"}</div>
       <nav>
-        <button className={page === "graph" ? "active" : ""} onClick={() => setPage("graph")}><Activity/>Структура</button>
-        <button className={page === "users" ? "active" : ""} onClick={() => setPage("users")}><Users/>Пользователи</button>
+        {profile?.role === "admin" && <>
+          <button className={page === "graph" ? "active" : ""} onClick={() => setPage("graph")}><Activity/>Структура</button>
+          <button className={page === "users" ? "active" : ""} onClick={() => setPage("users")}><Users/>Пользователи</button>
+        </>}
         <button className={page === "chats" ? "active" : ""} onClick={() => setPage("chats")}><MessageCircle/>Переписки <i>{chats.length}</i></button>
       </nav>
       <div className="sidebar-bottom"><button className="logout" onClick={signOut}><LogOut/>Выйти</button></div>
     </aside>
 
     <main className="main">
-      <header className="topbar"><div><span>UknowApp</span><ChevronRight/><b>{({ graph: "Структура", users: "Пользователи", chats: "Переписки" })[page]}</b></div><button className="icon-btn" onClick={refresh} title="Обновить"><RefreshCw className={busy ? "spin" : ""}/></button></header>
+      <header className="topbar"><div><span>UknowApp</span><ChevronRight/><b>{profile?.role === "teacher" ? "Кабинет учителя" : ({ graph: "Структура", users: "Пользователи", chats: "Переписки" })[page]}</b><small className="topbar-user">{profile?.full_name}</small></div><button className="icon-btn" onClick={refresh} title="Обновить"><RefreshCw className={busy ? "spin" : ""}/></button></header>
       <div className="content">
         {error && <div className="alert alert-row">{error}<button onClick={() => setError("")}><X/></button></div>}
         {page === "graph" && <>
@@ -244,9 +278,16 @@ export default function App() {
         </>}
 
         {page === "chats" && <>
-          <div className="page-title"><div><div className="eyebrow">ИСТОРИЯ ОБЩЕНИЯ</div><h1>Переписки</h1><p>Просмотр сообщений между учениками и учителями.</p></div></div>
-          <div className="chat-layout"><div className="chat-list">{chats.map(chat => <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected" : "")} onClick={() => openChat(chat)}><b>{chat.student.full_name} ↔ {chat.teacher.full_name}</b><small>{chat.last_message}</small><span>{chat.status === "active" ? "Активна" : "Закрыта"}</span></button>)}{!chats.length && <div className="empty-state">Переписок пока нет</div>}</div>
-            <div className="chat-detail">{selectedChat ? <><div className="chat-head"><b>{selectedChat.student.full_name} ↔ {selectedChat.teacher.full_name}</b><small>Переписка #{selectedChat.id}</small></div><div className="messages">{messages.map(message => <MessageBubble message={message} auth={auth} key={message.id} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}</div></> : <div className="empty-state">Выберите переписку слева</div>}</div>
+          <div className="page-title"><div><div className="eyebrow">{profile?.role === "teacher" ? "МОИ УЧЕНИКИ" : "ИСТОРИЯ ОБЩЕНИЯ"}</div><h1>{profile?.role === "teacher" ? "Чаты с учениками" : "Переписки"}</h1><p>{profile?.role === "teacher" ? "Каждый ученик — отдельный диалог. Файлы и аудио находятся внутри нужной переписки." : "Просмотр и участие в переписках учеников и учителей."}</p></div></div>
+          <div className="chat-layout"><div className="chat-list">{chats.map(chat => <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected" : "")} onClick={() => openChat(chat)}><b>{profile?.role === "teacher" ? chat.student.full_name : chat.student.full_name + " ↔ " + chat.teacher.full_name}</b><small>{chat.last_message}</small><span>{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span></button>)}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}</div>
+            <div className="chat-detail">{selectedChat ? <>
+              <div className="chat-head"><div><b>{selectedChat.student.full_name}</b><small>{profile?.role === "admin" ? "Учитель: " + selectedChat.teacher.full_name + " · " : ""}Переписка #{selectedChat.id}</small></div><span className="role-tag">{selectedChat.status === "active" ? "Активна" : "Закрыта"}</span></div>
+              <div className="messages">{messages.map(message => <MessageBubble message={message} auth={auth} key={message.id} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}</div>
+              {selectedChat.status === "active" && <form className="chat-composer" onSubmit={sendChatMessage}>
+                <textarea value={draft} onChange={e => setDraft(e.target.value)} placeholder={profile?.role === "admin" ? "Сообщение от администратора обеим сторонам…" : "Ответить ученику…"} rows={2} maxLength={4000}/>
+                <div className="composer-footer"><small>{profile?.role === "admin" ? "Сообщение увидят ученик и учитель" : "Ответ сохранится в общем диалоге и отправится ученику в Telegram"}</small><button className="btn primary" disabled={!draft.trim()}>Отправить <ChevronRight size={16}/></button></div>
+              </form>}
+            </> : <div className="empty-state">Выберите ученика слева</div>}</div>
           </div>
         </>}
       </div>
@@ -264,6 +305,7 @@ export default function App() {
         <label>Имя и фамилия<input value={name} onChange={e => setName(e.target.value)} minLength="2" maxLength="160" required autoFocus/></label>
         <label>Роль<select value={role} onChange={e => setRole(e.target.value)}><option value="teacher">Учитель</option><option value="student">Ученик</option></select></label>
         <label>Telegram ID <input type="text" inputMode="numeric" pattern="[0-9]*" value={telegramId} onChange={e => setTelegramId(e.target.value)} placeholder="Не подключён"/></label>
+        {role === "teacher" && <><label>Пароль для веб-панели<input type="password" value={webPassword} onChange={e => setWebPassword(e.target.value)} minLength="8" maxLength="128" placeholder={modal.mode === "edit" ? "Оставьте пустым, чтобы не менять" : "Не менее 8 символов"} autoComplete="new-password"/></label><p className="hint">Учитель входит по внутреннему ID пользователя #{modal.id || "будет присвоен"} и этому паролю. Сам пароль в базе хранится в хешированном виде.</p></>}
         {modal.mode === "edit" && role !== users.find(u => u.id === modal.id)?.role && <p className="hint">При смене роли активные назначения будут закрыты. История переписок сохранится.</p>}
         <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setModal(null)}>Отмена</button><button className="btn primary"><Check/>Сохранить</button></div>
       </form>}
