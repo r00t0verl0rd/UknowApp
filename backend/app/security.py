@@ -201,10 +201,19 @@ def _request_token(request: Request) -> Optional[str]:
     return request.cookies.get(SECURE_SESSION_COOKIE) or request.cookies.get(SESSION_COOKIE)
 
 
+def _token_digest(token: Optional[str]) -> Optional[str]:
+    if not token or len(token) > 128:
+        return None
+    try:
+        token_bytes = token.encode("ascii")
+    except UnicodeEncodeError:
+        return None
+    return hashlib.sha256(token_bytes).hexdigest()
+
+
 def revoke_panel_session(request: Request, db) -> None:
-    token = _request_token(request)
-    if token:
-        token_hash = hashlib.sha256(token.encode("ascii", errors="ignore")).hexdigest()
+    token_hash = _token_digest(_request_token(request))
+    if token_hash:
         session = db.scalar(select(PanelSession).where(PanelSession.token_hash == token_hash))
         if session:
             db.delete(session)
@@ -224,10 +233,9 @@ def clear_panel_cookies(request: Request, response: Response) -> None:
 
 
 def _load_panel_identity(request: Request) -> Optional[dict]:
-    token = _request_token(request)
-    if not token or len(token) > 128:
+    token_hash = _token_digest(_request_token(request))
+    if not token_hash:
         return None
-    token_hash = hashlib.sha256(token.encode("ascii", errors="ignore")).hexdigest()
     with SessionLocal() as db:
         session = db.scalar(select(PanelSession).where(PanelSession.token_hash == token_hash))
         if not session:
