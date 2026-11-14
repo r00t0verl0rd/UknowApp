@@ -456,8 +456,40 @@ async def route_message(message: TgMessage, bot: Bot):
             return
         try:
             if sender.role == "student":
-                # Student messages are rendered from SQLite inside the single
-                # persistent teacher panel; do not create extra Telegram messages.
+                # Keep text in the persistent conversation panel, but copy every
+                # non-text Telegram message into the teacher's private bot chat.
+                # copy_message preserves the original Telegram media type and caption,
+                # including photos, videos, voice notes, audio, documents, stickers,
+                # animations and video notes.
+                if row.content_type != "text":
+                    notice = await bot.send_message(
+                        chat_id=recipient.telegram_id,
+                        text="📎 Вложение от " + sender.full_name,
+                    )
+                    try:
+                        copied = await bot.copy_message(
+                            chat_id=recipient.telegram_id,
+                            from_chat_id=message.chat.id,
+                            message_id=message.message_id,
+                        )
+                    except Exception:
+                        try:
+                            await bot.delete_message(
+                                chat_id=recipient.telegram_id,
+                                message_id=notice.message_id,
+                            )
+                        except Exception:
+                            logger.debug(
+                                "Could not remove attachment notice after copy failure",
+                                exc_info=True,
+                            )
+                        raise
+
+                    row.destination_message_id = copied.message_id
+                    attachment_metadata = json.loads(row.metadata_json or "{}")
+                    attachment_metadata["teacher_inbox_notice_message_id"] = notice.message_id
+                    row.metadata_json = json.dumps(attachment_metadata, ensure_ascii=False)
+
                 row.delivery_status = "delivered"
                 db.commit()
                 try:
@@ -502,14 +534,25 @@ async def route_message(message: TgMessage, bot: Bot):
                 # A successful teacher reply closes the pending batch.
                 pending_rows = unanswered_before_reply
                 for pending in pending_rows:
-                    if pending.destination_message_id:
+                    pending_metadata = json.loads(pending.metadata_json or "{}")
+                    inbox_message_ids = [
+                        pending.destination_message_id,
+                        pending_metadata.get("teacher_inbox_notice_message_id"),
+                    ]
+                    for inbox_message_id in inbox_message_ids:
+                        if not inbox_message_id:
+                            continue
                         try:
                             await bot.delete_message(
                                 chat_id=sender.telegram_id,
-                                message_id=pending.destination_message_id,
+                                message_id=int(inbox_message_id),
                             )
                         except Exception:
-                            logger.info("Could not remove handled student message %s from teacher inbox", pending.id)
+                            logger.info(
+                                "Could not remove handled student message %s from teacher inbox (telegram_message_id=%s)",
+                                pending.id,
+                                inbox_message_id,
+                            )
                 await mark_messages_read_by_teacher(bot, db, pending_rows)
                 # Keep the selected conversation active after replying.
                 try:
