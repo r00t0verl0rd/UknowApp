@@ -787,6 +787,8 @@ async def send_panel_attachment(
     text: str = Form(default=""),
 ):
     conversation = _panel_visible_conversation(db, principal, conversation_id)
+    if len(text or "") > 3900:
+        raise HTTPException(status_code=400, detail="Текст к вложению слишком длинный")
     student = conversation.assignment.student
     teacher = conversation.assignment.teacher
     sender = db.get(User, principal["user_id"]) if principal["role"] == "teacher" else None
