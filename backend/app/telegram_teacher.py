@@ -5,10 +5,17 @@ import hashlib
 from html import escape
 import json
 import logging
+from datetime import datetime, timezone
 from typing import Optional
 
 from aiogram import Bot
-from aiogram.types import KeyboardButton, Message as TgMessage, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from aiogram.types import (
+    KeyboardButton,
+    Message as TgMessage,
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
+    ReplyParameters,
+)
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -56,25 +63,165 @@ def conversation_messages(db: Session, conversation_id: int) -> list[Message]:
     ).all()
 
 
-def pending_student_messages(rows: list[Message]) -> list[Message]:
-    """Return only delivered student messages not yet handled by the teacher.
-
-    Older rows do not have a read marker, so the latest teacher reply is used
-    as a compatibility boundary for messages created before this feature.
-    """
+def unanswered_student_messages(rows: list[Message]) -> list[Message]:
+    """Return delivered student messages that have not yet received a teacher reply."""
     last_teacher_index = -1
     for index, row in enumerate(rows):
         if row.sender_role == "teacher" and row.delivery_status == "delivered":
             last_teacher_index = index
 
-    pending = []
-    for index, row in enumerate(rows):
-        if index <= last_teacher_index or row.sender_role != "student" or row.delivery_status != "delivered":
-            continue
+    return [
+        row
+        for index, row in enumerate(rows)
+        if (
+            index > last_teacher_index
+            and row.sender_role == "student"
+            and row.delivery_status == "delivered"
+        )
+    ]
+
+
+def pending_student_messages(rows: list[Message]) -> list[Message]:
+    """Return unanswered student messages the teacher has not opened yet."""
+    return [
+        row
+        for row in unanswered_student_messages(rows)
+        if json.loads(row.metadata_json or "{}").get("teacher_read_at") is None
+    ]
+
+
+async def _send_group_read_receipt(
+    bot: Bot,
+    db: Session,
+    row: Message,
+    *,
+    teacher_has_read: bool,
+) -> None:
+    """Post one bot-owned receipt under a student message in its bound forum topic."""
+    metadata = json.loads(row.metadata_json or "{}")
+    if metadata.get("source_mode") != "group_topic":
+        return
+
+    status = metadata.get("teacher_read_receipt_status")
+    if status in {"sending", "sent", "read"}:
+        return
+
+    try:
+        chat_id = int(metadata["source_chat_id"])
+        thread_id = int(metadata["source_thread_id"])
+        source_message_id = int(row.source_message_id)
+    except (KeyError, TypeError, ValueError):
+        logger.warning("Cannot create read receipt: source metadata missing for message_id=%s", row.id)
+        return
+
+    metadata["teacher_read_receipt_status"] = "sending"
+    row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+    db.commit()
+
+    receipt_text = "☑️☑️" if teacher_has_read else "✓✓"
+    try:
+        sent = await bot.send_message(
+            chat_id=chat_id,
+            message_thread_id=thread_id,
+            text=receipt_text,
+            reply_parameters=ReplyParameters(message_id=source_message_id),
+            disable_notification=True,
+        )
+    except Exception:
+        metadata = json.loads(row.metadata_json or "{}")
+        if metadata.get("teacher_read_receipt_status") == "sending":
+            metadata["teacher_read_receipt_status"] = "pending"
+            row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+            db.commit()
+        logger.warning("Could not send group read receipt for message_id=%s", row.id, exc_info=True)
+        return
+
+    # The teacher may open the conversation while send_message is in flight.
+    # Re-read metadata after the await so the receipt cannot remain grey.
+    metadata = json.loads(row.metadata_json or "{}")
+    is_read = teacher_has_read or bool(metadata.get("teacher_read_at"))
+    if is_read:
+        try:
+            await bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=sent.message_id,
+                text="☑️☑️",
+            )
+        except Exception:
+            logger.warning(
+                "Could not turn group read receipt blue for message_id=%s",
+                row.id,
+                exc_info=True,
+            )
+
+    metadata["teacher_read_receipt_message_id"] = sent.message_id
+    metadata["teacher_read_receipt_status"] = "read" if is_read else "sent"
+    metadata["teacher_read_receipt_sent_at"] = datetime.now(timezone.utc).isoformat()
+    row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+    db.commit()
+
+
+async def send_group_delivery_receipt(bot: Bot, db: Session, row: Message) -> None:
+    """Show grey double checks as soon as UknowApp has accepted a group message."""
+    await _send_group_read_receipt(bot, db, row, teacher_has_read=False)
+
+
+async def mark_visible_messages_read_by_teacher(
+    bot: Bot,
+    db: Session,
+    conversation: Conversation,
+) -> None:
+    """Mark visible unanswered messages read and turn their group receipts blue."""
+    rows = conversation_messages(db, conversation.id)
+    visible_rows = rows[-12:]
+    unanswered = unanswered_student_messages(visible_rows)
+    now = datetime.now(timezone.utc).isoformat()
+
+    changed = False
+    for row in unanswered:
         metadata = json.loads(row.metadata_json or "{}")
         if metadata.get("teacher_read_at") is None:
-            pending.append(row)
-    return pending
+            metadata["teacher_read_at"] = now
+            row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+            changed = True
+    if changed:
+        db.commit()
+
+    for row in unanswered:
+        metadata = json.loads(row.metadata_json or "{}")
+        if metadata.get("source_mode") != "group_topic":
+            continue
+
+        status = metadata.get("teacher_read_receipt_status")
+        receipt_id = metadata.get("teacher_read_receipt_message_id")
+        if status == "read":
+            continue
+        if status == "sending":
+            # The in-flight delivery receipt checks teacher_read_at and turns
+            # itself blue after Telegram confirms the send.
+            continue
+
+        if status == "sent" and receipt_id:
+            try:
+                await bot.edit_message_text(
+                    chat_id=int(metadata["source_chat_id"]),
+                    message_id=int(receipt_id),
+                    text="☑️☑️",
+                )
+                metadata["teacher_read_receipt_status"] = "read"
+                metadata["teacher_read_receipt_read_at"] = now
+                row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+                db.commit()
+            except Exception:
+                logger.warning(
+                    "Could not update group read receipt for message_id=%s",
+                    row.id,
+                    exc_info=True,
+                )
+        else:
+            # If the grey receipt could not be sent earlier, send the blue
+            # state directly now that the teacher has opened the conversation.
+            await _send_group_read_receipt(bot, db, row, teacher_has_read=True)
 
 
 def teacher_conversations(db: Session, teacher: User) -> list[dict]:
@@ -478,6 +625,7 @@ async def handle_teacher_keyboard_message(
         valid = get_teacher_conversation(db, teacher, conversation.id)
         if valid:
             set_teacher_session(db, teacher, valid)
+            await mark_visible_messages_read_by_teacher(bot, db, valid)
         else:
             clear_teacher_session(db, teacher)
     elif body == TEACHER_BACK_LABEL:
