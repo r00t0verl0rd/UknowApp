@@ -358,7 +358,9 @@ async def route_message(message: TgMessage, bot: Bot):
                         destination_chat_id = int(pending_metadata["source_chat_id"])
                         destination_thread_id = int(pending_metadata["source_thread_id"])
                         break
-                    if pending_metadata.get("source_mode") == "private":
+                    # Messages stored before topic support have no
+                    # source marker; treat them as private-chat messages.
+                    if pending_metadata.get("source_mode", "private") == "private":
                         destination_chat_id = recipient.telegram_id
                         destination_thread_id = None
                         break
