@@ -1,6 +1,6 @@
 import hashlib
 import secrets
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -25,7 +25,7 @@ def hash_web_password(password: str) -> str:
     return salt.hex() + ":" + digest.hex()
 
 
-def verify_web_password(password: str, stored: str | None) -> bool:
+def verify_web_password(password: str, stored: Optional[str]) -> bool:
     if not stored or ":" not in stored:
         return False
     try:
@@ -38,7 +38,7 @@ def verify_web_password(password: str, stored: str | None) -> bool:
     return secrets.compare_digest(actual, expected)
 
 
-def authenticate_panel_user(username: str, password: str) -> dict | None:
+def authenticate_panel_user(username: str, password: str) -> Optional[dict]:
     if verify_admin(username, password):
         return {"role": "admin", "user_id": None, "full_name": "Администратор"}
     try:
