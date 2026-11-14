@@ -535,10 +535,10 @@ async def route_message(message: TgMessage, bot: Bot):
                 pending_rows = unanswered_before_reply
                 for pending in pending_rows:
                     pending_metadata = json.loads(pending.metadata_json or "{}")
-                    inbox_message_ids = [
-                        pending.destination_message_id,
-                        pending_metadata.get("teacher_inbox_notice_message_id"),
-                    ]
+                    # Keep new native attachment copies and their student labels
+                    # in the teacher's Telegram history. Only legacy transient
+                    # inbox copies stored in destination_message_id are removed.
+                    inbox_message_ids = [pending.destination_message_id]
                     for inbox_message_id in inbox_message_ids:
                         if not inbox_message_id:
                             continue
