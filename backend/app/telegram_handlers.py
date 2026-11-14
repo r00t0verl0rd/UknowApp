@@ -568,6 +568,13 @@ async def route_message(message: TgMessage, bot: Bot):
 
                 row.delivery_status = "delivered"
                 db.commit()
+                if sender.role == "student":
+                    teacher_session = db.get(TeacherSession, recipient.id)
+                    if teacher_session and teacher_session.conversation_id != conversation.id:
+                        # A new message from another student returns the teacher to
+                        # the grouped inbox so a different student's attachment or
+                        # text never appears to belong to the currently open chat.
+                        clear_teacher_session(db, recipient)
                 try:
                     await update_teacher_panel(bot, db, recipient)
                 except Exception:
