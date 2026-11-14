@@ -138,7 +138,7 @@ The database backup contains student and teacher data; the media backup contains
 The same browser panel supports two roles:
 
 - **Administrator** signs in with `ADMIN_USERNAME` and `ADMIN_PASSWORD` from `.env`. The administrator keeps access to the school graph, users, assignments and every active conversation. In any conversation the administrator can post a message as **Администратор**; it is saved to the shared history and delivered to the student and teacher through Telegram.
-- **Teacher** signs in with the internal UknowApp user ID (the `#ID` shown in the administrator's Users list) and an individual web-panel password. A teacher sees only their own active student conversations and can reply from the browser. Teachers cannot access or edit the school graph or user directory.
+- **Teacher** signs in with the internal UknowApp user ID (the `#ID` shown in the administrator's Users list) and an individual web-panel password. A teacher sees a read-only graph containing only their own profile and their assigned active students, plus their own active student conversations. Teachers can reply from the browser but cannot edit the graph, assignments or user directory.
 
 To enable browser access for a teacher, open **Пользователи** in the administrator panel, create or edit the teacher, and set **Пароль для веб-панели** (at least 8 characters). Share the teacher's internal `#ID` and password securely. The password is stored as a salted PBKDF2 hash; it is never returned by the API. Leave the password field empty when editing to keep the current password.
 
