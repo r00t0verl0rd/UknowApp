@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -97,3 +97,20 @@ class TeacherPanel(Base):
     keyboard_signature: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     page_index: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class StudentTelegramGroup(Base):
+    """Telegram forum topic linked to one student's UknowApp conversation."""
+
+    __tablename__ = "student_telegram_groups"
+    __table_args__ = (
+        UniqueConstraint("chat_id", "thread_id", name="uq_student_telegram_group_topic"),
+    )
+
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
+    thread_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    group_title: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    bound_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+    student: Mapped[User] = relationship()
