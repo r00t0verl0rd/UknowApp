@@ -262,7 +262,9 @@ def teacher_panel_view(
             notice = " · " + str(item["unanswered"]) + " новых" if item["unanswered"] else ""
             lines.append("👤 " + student_name + notice)
             for row in item["unread"][-3:]:
-                lines.append("   " + escape(message_preview(row)))
+                stamp = row.created_at.strftime("%H:%M") if row.created_at else ""
+                prefix = stamp + " · " if stamp else ""
+                lines.append("   " + prefix + escape(message_preview(row)))
             if item["unanswered"] > 3:
                 lines.append("   …ещё " + str(item["unanswered"] - 3) + " сообщений")
             lines.append("")
