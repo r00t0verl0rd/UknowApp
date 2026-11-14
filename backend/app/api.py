@@ -61,7 +61,22 @@ def conversation_dict(db: Session, conversation: Conversation) -> dict:
         "created_at": conversation.created_at.isoformat(),
         "teacher": user_dict(assignment.teacher),
         "student": user_dict(assignment.student),
-        "last_message": last_message.text if last_message else "Переписка пока пуста",
+        "last_message": (
+            (last_message.text or "Сообщение") if last_message.content_type == "text"
+            else (
+                (json.loads(last_message.metadata_json or "{}").get("media") or {}).get("file_name")
+                or {
+                    "photo": "🖼 Фотография",
+                    "voice": "🎤 Голосовое сообщение",
+                    "audio": "🎵 Аудио",
+                    "video": "🎬 Видео",
+                    "video_note": "⭕ Видеосообщение",
+                    "document": "📎 Документ",
+                    "sticker": "Стикер",
+                    "animation": "GIF-анимация",
+                }.get(last_message.content_type, "📎 Вложение")
+            ) + ((": " + last_message.text) if last_message.text else "")
+        ) if last_message else "Переписка пока пуста",
         "last_message_at": last_message.created_at.isoformat() if last_message else None,
         "message_count": count,
         "unread_count": sum(1 for row in db.scalars(select(Message).where(Message.conversation_id == conversation.id)).all() if row.sender_role == "student" and json.loads(row.metadata_json or "{}").get("teacher_read_at") is None),
