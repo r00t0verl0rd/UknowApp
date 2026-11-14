@@ -41,10 +41,10 @@ UknowApp also supports a public-to-the-group conversation topic for each student
 2. Create a topic named **🤖 Бот**.
 3. Add the UknowApp bot to the group as an administrator (no additional administrative permissions are needed just for receiving group messages). Alternatively, disable the bot's Privacy Mode in @BotFather and remove/re-add the bot to the group so the new setting takes effect. Telegram's default Privacy Mode hides ordinary group messages from bots.
 4. The student must first connect their Telegram account to UknowApp in the bot's private chat using the administrator-issued activation code.
-5. From the **🤖 Бот** topic, the student sends `/bind_group` once. UknowApp binds that exact group topic to the student's account and active teacher.
-6. The student can then send ordinary text, media, or files in that topic; a slash prefix is not required. The teacher receives messages in the usual UknowApp teacher panel; teacher replies are copied back into the same topic, where group members can see them.
+5. No manual binding command is required. When the linked student sends their first message (text or attachment) in the intended **🤖 Бот** forum topic, UknowApp automatically binds that exact topic to the student's account and active teacher, provided the student has no other group binding and the topic is not already assigned to someone else.
+6. The student can continue sending ordinary text, media, or files in that topic; a slash prefix is not required. The teacher receives messages in the usual UknowApp teacher panel; teacher replies are copied back into the same topic, where group members can see them.
 
-Only messages sent by the linked student account in the bound topic are processed. Messages from classmates and other group members are ignored. The student's private bot chat remains available and works as before; replies are delivered to the same channel (private chat or group topic) where the student's latest unanswered message was sent.
+Only messages sent by the linked student account in the bound topic are processed. Messages from classmates and other group members are ignored. The student's private bot chat remains available and works as before; replies are delivered to the same channel (private chat or group topic) where the student's latest unanswered message was sent. The optional `/bind_group` command remains available for manually moving the student's binding to another topic.
 
 The bot does not post separate check-mark messages in the topic. Telegram controls its native message check marks. The Bot API cannot mark a student's group message as read when the teacher opens the separate private bot chat, so that action cannot turn the original group message's native check marks blue.
 
