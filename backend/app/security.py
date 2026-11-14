@@ -6,7 +6,7 @@ from collections import deque
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import Depends, HTTPException, Request, Response, status
+from fastapi import HTTPException, Request, Response, status
 from sqlalchemy import select
 
 from .config import ADMIN_PASSWORD, ADMIN_USERNAME, ALLOWED_ORIGINS
