@@ -35,3 +35,6 @@ ALLOWED_ORIGINS = [
     ).split(",")
     if origin.strip()
 ]
+
+if "*" in ALLOWED_ORIGINS:
+    raise ValueError("ALLOWED_ORIGINS must list explicit trusted origins; wildcard origins are unsafe with cookie sessions.")
