@@ -3,9 +3,9 @@ import { Activity, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pe
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 const ROLE = { teacher: "Учитель", student: "Ученик", admin: "Администратор" };
-const initialAuth = () => sessionStorage.getItem("uknowapp-auth") || "";
+const initialAuth = () => sessionStorage.getItem("uknowapp-auth") === "1" ? "1" : "";
 
-function MessageBubble({ message, auth }) {
+function MessageBubble({ message }) {
   const [mediaUrl, setMediaUrl] = useState("");
   const media = message.metadata?.media;
   useEffect(() => {
@@ -13,7 +13,7 @@ function MessageBubble({ message, auth }) {
     let objectUrl = "";
     let cancelled = false;
     fetch(API + "/api/panel/messages/" + message.id + "/media", {
-      headers: { Authorization: "Basic " + auth }
+      credentials: "include"
     }).then(response => {
       if (!response.ok) throw new Error("media unavailable");
       return response.blob();
@@ -26,7 +26,7 @@ function MessageBubble({ message, auth }) {
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [message.id, auth, media?.archive_status]);
+  }, [message.id, media?.archive_status]);
   const kind = media?.kind || message.content_type;
   const label = media?.file_name || ({ voice: "Голосовое сообщение", video_note: "Видеокружочек", photo: "Фотография", video: "Видео", audio: "Аудио", document: "Документ", sticker: "Стикер", animation: "Анимация" }[kind] || "Вложение");
   return <div className={"message " + message.sender_role}>
@@ -77,12 +77,13 @@ export default function App() {
   const request = useCallback(async (path, options = {}) => {
     const response = await fetch(API + path, {
       ...options,
-      headers: { "Content-Type": "application/json", Authorization: "Basic " + auth, ...(options.headers || {}) }
+      credentials: "include",
+      headers: { "Content-Type": "application/json", ...(options.headers || {}) }
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.detail || "Ошибка запроса");
     return data;
-  }, [auth]);
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!auth) return;
@@ -104,7 +105,7 @@ export default function App() {
       }
     } catch (e) {
       setError(e.message);
-      if (String(e.message).toLowerCase().includes("учитель") || String(e.message).toLowerCase().includes("логин") || String(e.message).includes("401")) {
+      if (String(e.message).toLowerCase().includes("учитель") || String(e.message).toLowerCase().includes("логин") || String(e.message).toLowerCase().includes("сессия") || String(e.message).toLowerCase().includes("войдите") || String(e.message).includes("401")) {
         sessionStorage.removeItem("uknowapp-auth");
         setAuth("");
         setProfile(null);
@@ -166,15 +167,19 @@ export default function App() {
   async function signIn(event) {
     event.preventDefault(); setError("");
     try {
-      const response = await fetch(API + "/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: login, password }) });
+      const response = await fetch(API + "/api/auth/login", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: login, password }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.detail || "Не удалось войти");
-      const encoded = btoa(unescape(encodeURIComponent(login + ":" + password)));
-      sessionStorage.setItem("uknowapp-auth", encoded); setProfile(result); setPage("graph"); setAuth(encoded); setPassword("");
+      sessionStorage.setItem("uknowapp-auth", "1"); setProfile(result); setPage("graph"); setAuth("1"); setPassword("");
     } catch (e) { setError(e.message); }
   }
 
-  function signOut() {
+  async function signOut() {
+    try {
+      await fetch(API + "/api/auth/logout", { method: "POST", credentials: "include" });
+    } catch {
+      // Clear the local view even when the server is temporarily unreachable.
+    }
     sessionStorage.removeItem("uknowapp-auth"); setAuth(""); setProfile(null); setTeacherGraph(null); setUsers([]); setOverview(null); setChats([]); setMessages([]); setSelectedChat(null); setDraft(""); setAttachment(null);
   }
 
@@ -256,7 +261,7 @@ export default function App() {
         form.append("text", draft.trim());
         const response = await fetch(API + "/api/panel/conversations/" + selectedChat.id + "/attachments", {
           method: "POST",
-          headers: { Authorization: "Basic " + auth },
+          credentials: "include",
           body: form
         });
         const data = await response.json().catch(() => ({}));
@@ -379,7 +384,7 @@ export default function App() {
           <div className="chat-layout"><div className="chat-list"><div className="chat-list-tools"><input aria-label="Поиск по ученикам" placeholder="Найти ученика…" value={chatSearch} onChange={e => setChatSearch(e.target.value)}/><select aria-label="Фильтр переписок" value={chatFilter} onChange={e => setChatFilter(e.target.value)}><option value="all">Все диалоги</option><option value="unread">Есть непрочитанные</option></select></div>{visibleChats.map(chat => <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected" : "")} onClick={() => openChat(chat)}><b>{profile?.role === "teacher" ? chat.student.full_name : chat.student.full_name + " ↔ " + chat.teacher.full_name}</b><small>{chat.last_message}</small><span>{chat.last_message_at ? new Date(chat.last_message_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) + " · " : ""}{chat.unread_count ? chat.unread_count + " непрочитанных · " : ""}{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span></button>)}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">По выбранному фильтру ничего не найдено</div>}</div>
             <div className="chat-detail">{selectedChat ? <>
               <div className="chat-head"><div><b>{selectedChat.student.full_name}</b><small>{profile?.role === "admin" ? "Учитель: " + selectedChat.teacher.full_name + " · " : ""}Переписка #{selectedChat.id}</small></div><div className="chat-head-tools"><select aria-label="Фильтр сообщений" value={messageFilter} onChange={e => setMessageFilter(e.target.value)}><option value="all">Все сообщения</option><option value="media">Все вложения</option><option value="audio">Аудио</option><option value="photos">Фото</option><option value="files">Файлы и видео</option></select><span className="role-tag">{selectedChat.status === "active" ? "Активна" : "Закрыта"}</span></div></div>
-              <div className="messages">{visibleMessages.map(message => <MessageBubble message={message} auth={auth} key={message.id} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}{!!messages.length && !visibleMessages.length && <div className="empty-state">Нет сообщений этого типа</div>}</div>
+              <div className="messages">{visibleMessages.map(message => <MessageBubble message={message} key={message.id} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}{!!messages.length && !visibleMessages.length && <div className="empty-state">Нет сообщений этого типа</div>}</div>
               {selectedChat.status === "active" && <form className="chat-composer" onSubmit={sendChatMessage}>
                 <textarea value={draft} onChange={e => setDraft(e.target.value)} placeholder={profile?.role === "admin" ? "Сообщение от администратора обеим сторонам…" : "Ответить ученику…"} rows={2} maxLength={4000}/>
                 <div className="composer-footer">
