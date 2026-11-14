@@ -151,7 +151,8 @@ def teacher_conversations(db: Session, teacher: User) -> list[dict]:
             "unread": unread,
             "unanswered": len(unread),
             "preview": message_preview(unread[-1]) if unread else "",
-            "last_at": unread[-1].created_at.isoformat() if unread else assignment.created_at.isoformat(),
+            "latest": rows[-1] if rows else None,
+            "last_at": (rows[-1].created_at.isoformat() if rows else assignment.created_at.isoformat()),
         })
     # Keep all assigned students visible; students with unread messages come first.
     items.sort(key=lambda item: (item["unanswered"] > 0, item["last_at"]), reverse=True)
@@ -267,6 +268,15 @@ def teacher_panel_view(
                 lines.append("   " + prefix + escape(message_preview(row)))
             if item["unanswered"] > 3:
                 lines.append("   …ещё " + str(item["unanswered"] - 3) + " сообщений")
+            latest = item["latest"]
+            if latest and (
+                not item["unread"]
+                or (item["unread"] and latest.id > item["unread"][-1].id and latest.sender_role == "admin")
+            ):
+                label = "Администратор" if latest.sender_role == "admin" else "Последнее сообщение"
+                stamp = latest.created_at.strftime("%H:%M") if latest.created_at else ""
+                prefix = stamp + " · " if stamp else ""
+                lines.append("   " + prefix + label + ": " + escape(message_preview(latest)))
             lines.append("")
         if total_pages > 1:
             lines.append("Страница " + str(page + 1) + " из " + str(total_pages) + ".")
