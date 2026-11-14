@@ -456,7 +456,7 @@ def _panel_student_telegram_target(
     db: Session,
     conversation: Conversation,
     rows: list[Message],
-) -> dict | None:
+) -> Optional[dict]:
     student = conversation.assignment.student
     if not student.telegram_id:
         return None
