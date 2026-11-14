@@ -189,6 +189,15 @@ def create_panel_session(
 
     secure = request.url.scheme == "https"
     cookie_name = SECURE_SESSION_COOKIE if secure else SESSION_COOKIE
+    if secure:
+        # Remove a legacy development cookie when the site first moves to HTTPS.
+        response.delete_cookie(
+            key=SESSION_COOKIE,
+            path="/",
+            secure=False,
+            httponly=True,
+            samesite="strict",
+        )
     response.set_cookie(
         key=cookie_name,
         value=token,
@@ -215,12 +224,23 @@ def _token_digest(token: Optional[str]) -> Optional[str]:
 
 
 def revoke_panel_session(request: Request, db) -> None:
-    token_hash = _token_digest(_request_token(request))
-    if token_hash:
+    # Revoke either cookie variant if a browser is transitioning from local HTTP
+    # development to HTTPS on the same host.
+    revoked = False
+    tokens = {
+        request.cookies.get(SECURE_SESSION_COOKIE),
+        request.cookies.get(SESSION_COOKIE),
+    }
+    for token in tokens:
+        token_hash = _token_digest(token)
+        if not token_hash:
+            continue
         session = db.scalar(select(PanelSession).where(PanelSession.token_hash == token_hash))
         if session:
             db.delete(session)
-            db.commit()
+            revoked = True
+    if revoked:
+        db.commit()
 
 
 def clear_panel_cookies(request: Request, response: Response) -> None:
