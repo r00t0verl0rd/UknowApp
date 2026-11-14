@@ -193,7 +193,7 @@ async def bind_student_group(message: TgMessage, bot: Bot):
             )
             if bot_member.status not in {"administrator", "creator"}:
                 await message.answer(
-                    "⚠️ Тема не привязана: Telegram сейчас не передаёт боту обычные сообщения из группы.\\n\\n"
+                    "⚠️ Тема не привязана: Telegram сейчас не передаёт боту обычные сообщения из группы.\n\n"
                     "Добавьте бота в администраторы этой группы либо отключите Group Privacy "
                     "в @BotFather (Bot Settings → Group Privacy), затем удалите бота из группы "
                     "и добавьте снова. После этого повторите /bind_group."
