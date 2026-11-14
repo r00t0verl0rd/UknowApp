@@ -19,8 +19,7 @@
     @api path /api/*
     header @api Cache-Control "no-store"
 
-    @uploads path /api/panel/conversations/*/attachments
-    request_body @uploads {
+    request_body @api {
         max_size 22MB
     }
 
