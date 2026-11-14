@@ -57,6 +57,8 @@ export default function App() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [search, setSearch] = useState("");
+  const [chatSearch, setChatSearch] = useState("");
+  const [chatFilter, setChatFilter] = useState("all");
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const [busy, setBusy] = useState(false);
@@ -112,6 +114,12 @@ export default function App() {
   const visibleUsers = useMemo(() => users.filter(u => (u.full_name + " " + (u.telegram_id || "")).toLowerCase().includes(search.toLowerCase())), [users, search]);
   const assignedStudentIds = new Set((overview?.teachers || []).flatMap(t => t.students.map(s => s.id)));
   const unassignedStudents = activeStudents.filter(student => !assignedStudentIds.has(student.id));
+  const visibleChats = useMemo(() => chats.filter(chat => {
+    const names = (chat.student.full_name + " " + chat.teacher.full_name).toLowerCase();
+    const matchesSearch = names.includes(chatSearch.toLowerCase()) || (chat.last_message || "").toLowerCase().includes(chatSearch.toLowerCase());
+    const matchesFilter = chatFilter === "all" || Number(chat.unread_count || 0) > 0;
+    return matchesSearch && matchesFilter;
+  }), [chats, chatSearch, chatFilter]);
 
   async function signIn(event) {
     event.preventDefault(); setError("");
@@ -187,7 +195,10 @@ export default function App() {
 
   async function openChat(chat) {
     setSelectedChat(chat); setPage("chats"); setDraft(""); setAttachment(null);
-    try { setMessages(await request("/api/panel/conversations/" + chat.id + "/messages")); }
+    try {
+      setMessages(await request("/api/panel/conversations/" + chat.id + "/messages"));
+      if (profile?.role === "teacher") setChats(await request("/api/panel/conversations"));
+    }
     catch (e) { setError(e.message); }
   }
 
@@ -294,7 +305,7 @@ export default function App() {
 
         {page === "chats" && <>
           <div className="page-title"><div><div className="eyebrow">{profile?.role === "teacher" ? "МОИ УЧЕНИКИ" : "ИСТОРИЯ ОБЩЕНИЯ"}</div><h1>{profile?.role === "teacher" ? "Чаты с учениками" : "Переписки"}</h1><p>{profile?.role === "teacher" ? "Каждый ученик — отдельный диалог. Файлы и аудио находятся внутри нужной переписки." : "Просмотр и участие в переписках учеников и учителей."}</p></div></div>
-          <div className="chat-layout"><div className="chat-list">{chats.map(chat => <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected" : "")} onClick={() => openChat(chat)}><b>{profile?.role === "teacher" ? chat.student.full_name : chat.student.full_name + " ↔ " + chat.teacher.full_name}</b><small>{chat.last_message}</small><span>{chat.unread_count ? chat.unread_count + " непрочитанных · " : ""}{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span></button>)}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}</div>
+          <div className="chat-layout"><div className="chat-list"><div className="chat-list-tools"><input aria-label="Поиск по ученикам" placeholder="Найти ученика…" value={chatSearch} onChange={e => setChatSearch(e.target.value)}/><select aria-label="Фильтр переписок" value={chatFilter} onChange={e => setChatFilter(e.target.value)}><option value="all">Все диалоги</option><option value="unread">Есть непрочитанные</option></select></div>{visibleChats.map(chat => <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected" : "")} onClick={() => openChat(chat)}><b>{profile?.role === "teacher" ? chat.student.full_name : chat.student.full_name + " ↔ " + chat.teacher.full_name}</b><small>{chat.last_message}</small><span>{chat.unread_count ? chat.unread_count + " непрочитанных · " : ""}{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span></button>)}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">По выбранному фильтру ничего не найдено</div>}</div>
             <div className="chat-detail">{selectedChat ? <>
               <div className="chat-head"><div><b>{selectedChat.student.full_name}</b><small>{profile?.role === "admin" ? "Учитель: " + selectedChat.teacher.full_name + " · " : ""}Переписка #{selectedChat.id}</small></div><span className="role-tag">{selectedChat.status === "active" ? "Активна" : "Закрыта"}</span></div>
               <div className="messages">{messages.map(message => <MessageBubble message={message} auth={auth} key={message.id} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}</div>
