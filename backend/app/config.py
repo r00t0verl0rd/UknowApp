@@ -18,11 +18,16 @@ else:
     (ROOT_DIR / "data").mkdir(parents=True, exist_ok=True)
     DATABASE_URL = "sqlite:///" + str(ROOT_DIR / "data" / "uknowapp.db")
 
-if ADMIN_PASSWORD in {"change-me-now", "replace-with-a-long-random-password"}:
-    import warnings
+import warnings
 
+if ADMIN_PASSWORD in {"change-me-now", "replace-with-a-long-random-password"}:
     warnings.warn(
         "Using a placeholder admin password. Set a unique ADMIN_PASSWORD in .env before exposing UknowApp.",
+        stacklevel=1,
+    )
+elif len(ADMIN_PASSWORD) < 16:
+    warnings.warn(
+        "ADMIN_PASSWORD is shorter than 16 characters. Use a long, unique random password.",
         stacklevel=1,
     )
 
