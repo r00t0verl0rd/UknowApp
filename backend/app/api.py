@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from aiogram.types import BufferedInputFile
 from sqlalchemy import select
@@ -632,7 +632,7 @@ async def send_panel_attachment(
     principal: PanelUser,
     db: Db,
     file: UploadFile = File(...),
-    text: str = "",
+    text: str = Form(default=""),
 ):
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     student = conversation.assignment.student
@@ -647,12 +647,11 @@ async def send_panel_attachment(
     if not sender:
         raise HTTPException(status_code=401, detail="Учётная запись недоступна")
 
-    content = await file.read()
-    if not content:
-        raise HTTPException(status_code=400, detail="Файл пустой")
+    content = await file.read(20 * 1024 * 1024 + 1)
     if len(content) > 20 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="Максимальный размер файла — 20 МБ")
-
+    if not content:
+        raise HTTPException(status_code=400, detail="Файл пустой")
     original_name = Path(file.filename or "attachment").name
     suffix = re.sub(r"[^A-Za-z0-9.]", "", Path(original_name).suffix)[:12]
     if not suffix:
