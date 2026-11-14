@@ -11,6 +11,13 @@ services:
     volumes:
       - app_data:/app/data
     init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     stop_grace_period: 30s
     restart: unless-stopped
     healthcheck:
