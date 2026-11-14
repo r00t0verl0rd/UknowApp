@@ -26,6 +26,7 @@ from .telegram_teacher import (
     conversation_messages,
     get_teacher_conversation,
     handle_teacher_keyboard_message,
+    mark_messages_read_by_teacher,
     mark_visible_messages_read_by_teacher,
     send_group_delivery_receipt,
     set_teacher_session,
@@ -407,12 +408,7 @@ async def route_message(message: TgMessage, bot: Bot):
                             )
                         except Exception:
                             logger.info("Could not remove handled student message %s from teacher inbox", pending.id)
-                now = datetime.now(timezone.utc).isoformat()
-                for pending in pending_rows:
-                    metadata = json.loads(pending.metadata_json or "{}")
-                    metadata["teacher_read_at"] = now
-                    pending.metadata_json = json.dumps(metadata, ensure_ascii=False)
-                db.commit()
+                await mark_messages_read_by_teacher(bot, db, pending_rows)
                 # Keep the selected conversation active after replying.
                 try:
                     await update_teacher_panel(bot, db, sender)
