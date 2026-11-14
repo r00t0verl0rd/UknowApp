@@ -965,3 +965,22 @@ img, video, audio { max-width: 100%; }
   .composer-footer .btn { width: 100%; }
   .message { max-width: 94%; }
 }
+
+
+.chat-list-tools { display: grid; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.chat-list-tools input, .chat-list-tools select { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); padding: 10px 11px; font-size: 12px; outline: none; }
+.chat-list-tools input:focus, .chat-list-tools select:focus { border-color: #b6a3d7; box-shadow: 0 0 0 3px #59439a12; }
+.chat-composer .composer-footer { display: grid; gap: 10px; }
+.composer-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.attach-control { display: inline-flex; align-items: center; gap: 7px; width: fit-content; padding: 9px 12px; border: 1px solid var(--line); border-radius: 9px; color: var(--purple); background: #f8f5fc; font-size: 11px; font-weight: 800; cursor: pointer; }
+.attach-control input { display: none; }
+.selected-file { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; color: #625b70; background: #f2eff6; border-radius: 8px; padding: 7px 9px; font-size: 11px; overflow-wrap: anywhere; }
+.selected-file button { display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 6px; background: transparent; padding: 3px; color: #766d84; }
+.composer-send { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.message-time { display: block; color: #a49bad; font-size: 9px; font-weight: 500; margin-top: 3px; }
+@media(max-width:760px) {
+  .chat-list-tools { grid-template-columns: minmax(0,1fr) minmax(110px,.8fr); gap: 6px; }
+  .chat-list-tools input, .chat-list-tools select { font-size: 11px; padding: 9px 7px; }
+  .composer-send { align-items: stretch; flex-direction: column; }
+  .composer-send .btn { width: 100%; }
+}
