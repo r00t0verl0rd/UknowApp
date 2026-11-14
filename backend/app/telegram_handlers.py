@@ -41,6 +41,9 @@ router = Router()
 _CONNECTION_CODE_WINDOW = 15 * 60
 _CONNECTION_CODE_LIMIT = 5
 _connection_code_attempts: dict[int, deque[float]] = {}
+_BIND_GROUP_WINDOW = 60
+_BIND_GROUP_LIMIT = 5
+_bind_group_attempts: dict[tuple[int, int], deque[float]] = {}
 
 
 def _connection_code_attempt_allowed(telegram_id: int) -> bool:
@@ -57,6 +60,30 @@ def _record_connection_code_attempt(telegram_id: int) -> None:
     while attempts and now - attempts[0] >= _CONNECTION_CODE_WINDOW:
         attempts.popleft()
     attempts.append(now)
+    if len(_connection_code_attempts) > 10_000:
+        for user_id, bucket in list(_connection_code_attempts.items()):
+            while bucket and now - bucket[0] >= _CONNECTION_CODE_WINDOW:
+                bucket.popleft()
+            if not bucket:
+                _connection_code_attempts.pop(user_id, None)
+
+
+def _bind_group_attempt_allowed(telegram_id: int, chat_id: int) -> bool:
+    now = time.monotonic()
+    key = (telegram_id, chat_id)
+    attempts = _bind_group_attempts.setdefault(key, deque())
+    while attempts and now - attempts[0] >= _BIND_GROUP_WINDOW:
+        attempts.popleft()
+    if len(attempts) >= _BIND_GROUP_LIMIT:
+        return False
+    attempts.append(now)
+    if len(_bind_group_attempts) > 10_000:
+        for cached_key, bucket in list(_bind_group_attempts.items()):
+            while bucket and now - bucket[0] >= _BIND_GROUP_WINDOW:
+                bucket.popleft()
+            if not bucket:
+                _bind_group_attempts.pop(cached_key, None)
+    return True
 
 
 @router.message(CommandStart())
@@ -199,6 +226,23 @@ async def bind_student_group(message: TgMessage, bot: Bot):
             "Откройте тему «🤖 Бот» в супергруппе с включёнными темами и отправьте /bind_group."
         )
         return
+
+    telegram_id = message.from_user.id
+    if not _bind_group_attempt_allowed(telegram_id, message.chat.id):
+        await message.answer("Слишком часто. Повторите привязку через минуту.")
+        return
+
+    # Verify the sender before making any Telegram API calls. Unlinked users
+    # must not be able to use /bind_group to generate requests from our bot.
+    with SessionLocal() as db:
+        student = get_linked_user(db, telegram_id)
+        if not student or student.role != "student":
+            await message.answer("Привязать тему может только подключённый аккаунт ученика.")
+            return
+        conversation = current_student_conversation(db, student.id)
+        if not conversation or conversation.status != "active":
+            await message.answer("Сначала попросите администратора назначить вам активного учителя.")
+            return
 
     # Telegram may deliver /bind_group while hiding ordinary group messages
     # from bots with Group Privacy Mode enabled. Verify that this bot can
