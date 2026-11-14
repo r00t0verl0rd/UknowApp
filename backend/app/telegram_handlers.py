@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 
 from .database import SessionLocal
 from .media_storage import archive_telegram_media
-from .models import StudentTelegramGroup, TeacherPanel, TeacherSession, User
+from .models import StudentTelegramGroup, TeacherPanel, TeacherSession
 from .telegram_common import (
     CONNECTION_CODE_RE,
     claim_connection_code,
