@@ -41,16 +41,20 @@ def verify_web_password(password: str, stored: Optional[str]) -> bool:
 def authenticate_panel_user(username: str, password: str) -> Optional[dict]:
     if verify_admin(username, password):
         return {"role": "admin", "user_id": None, "full_name": "Администратор"}
-    try:
-        user_id = int(username)
-    except (TypeError, ValueError):
+    normalized_username = (username or "").strip().casefold()
+    if not normalized_username:
         return None
     with SessionLocal() as db:
-        user = db.get(User, user_id)
-        if (
-            not user or user.role != "teacher" or not user.active
-            or not verify_web_password(password, user.web_password_hash)
-        ):
+        teachers = db.query(User).filter(User.role == "teacher", User.active.is_(True)).all()
+        matches = [
+            user for user in teachers
+            if (user.web_username or user.full_name).strip().casefold() == normalized_username
+        ]
+        # Ambiguous logins are never allowed to authenticate the wrong account.
+        if len(matches) != 1:
+            return None
+        user = matches[0]
+        if not verify_web_password(password, user.web_password_hash):
             return None
         return {"role": "teacher", "user_id": user.id, "full_name": user.full_name}
 
@@ -62,7 +66,7 @@ def require_panel_user(
     if not identity:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверный ID учителя или пароль",
+            detail="Неверный логин или пароль",
             headers={"WWW-Authenticate": "Basic"},
         )
     return identity
