@@ -466,6 +466,14 @@ def _panel_student_telegram_target(
             i for i, item in enumerate(rows)
             if item.sender_role in {"teacher", "admin"}
             and item.delivery_status in {"delivered", "partial"}
+            and (
+                item.sender_role == "teacher"
+                or any(
+                    delivery.get("user_id") == student.id
+                    for delivery in (json.loads(item.metadata_json or "{}").get("telegram_deliveries") or [])
+                )
+                or not json.loads(item.metadata_json or "{}").get("telegram_deliveries")
+            )
         ),
         default=-1,
     )
@@ -667,8 +675,11 @@ async def send_panel_message(
 
     if bot and teacher.telegram_id:
         try:
-            from .telegram_teacher import update_teacher_panel
-            await update_teacher_panel(bot, db, conversation.assignment.teacher)
+            from .telegram_teacher import clear_teacher_session, update_teacher_panel
+            current_session = db.get(TeacherSession, teacher.id)
+            if current_session and current_session.conversation_id != conversation.id:
+                clear_teacher_session(db, teacher)
+            await update_teacher_panel(bot, db, teacher)
         except Exception:
             # Message is already persisted; a panel refresh failure must not undo it.
             pass
@@ -812,7 +823,10 @@ async def send_panel_attachment(
 
     if bot and teacher.telegram_id:
         try:
-            from .telegram_teacher import update_teacher_panel
+            from .telegram_teacher import clear_teacher_session, update_teacher_panel
+            current_session = db.get(TeacherSession, teacher.id)
+            if current_session and current_session.conversation_id != conversation.id:
+                clear_teacher_session(db, teacher)
             await update_teacher_panel(bot, db, teacher)
         except Exception:
             pass
