@@ -461,7 +461,8 @@ async def route_message(message: TgMessage, bot: Bot):
                 # copy_message preserves the original Telegram media type and caption,
                 # including photos, videos, voice notes, audio, documents, stickers,
                 # animations and video notes.
-                if row.content_type != "text":
+                attachment_metadata = json.loads(row.metadata_json or "{}")
+                if attachment_metadata.get("media"):
                     notice = await bot.send_message(
                         chat_id=recipient.telegram_id,
                         text="📎 Вложение от " + sender.full_name,
@@ -485,7 +486,6 @@ async def route_message(message: TgMessage, bot: Bot):
                             )
                         raise
 
-                    attachment_metadata = json.loads(row.metadata_json or "{}")
                     attachment_metadata["teacher_inbox_media_message_id"] = copied.message_id
                     attachment_metadata["teacher_inbox_notice_message_id"] = notice.message_id
                     row.metadata_json = json.dumps(attachment_metadata, ensure_ascii=False)
