@@ -185,12 +185,21 @@ async def bind_student_group(message: TgMessage, bot: Bot):
         can_read_group_messages = bool(
             getattr(bot_info, "can_read_all_group_messages", False)
         )
+        bot_member_status = "not_checked"
         if not can_read_group_messages:
             bot_member = await bot.get_chat_member(
                 chat_id=message.chat.id,
                 user_id=bot_info.id,
             )
-            if bot_member.status not in {"administrator", "creator"}:
+            bot_member_status = str(bot_member.status)
+        logger.warning(
+            "TELEGRAM_GROUP_ACCESS_CHECK chat_id=%s thread_id=%s privacy_disabled=%s bot_member_status=%s",
+            message.chat.id,
+            message.message_thread_id,
+            can_read_group_messages,
+            bot_member_status,
+        )
+        if not can_read_group_messages and bot_member_status not in {"administrator", "creator"}:
                 await message.answer(
                     "⚠️ Тема не привязана: Telegram сейчас не передаёт боту обычные сообщения из группы.\n\n"
                     "Добавьте бота в администраторы этой группы либо отключите Group Privacy "
@@ -257,8 +266,8 @@ async def bind_student_group(message: TgMessage, bot: Bot):
 async def route_message(message: TgMessage, bot: Bot):
     if not message.from_user:
         return
-    logger.info(
-        "Received Telegram message: telegram_id=%s chat_type=%s chat_id=%s thread_id=%s "
+    logger.warning(
+        "TELEGRAM_UPDATE_RECEIVED telegram_id=%s chat_type=%s chat_id=%s thread_id=%s "
         "content_type=%s text_length=%s",
         message.from_user.id,
         message.chat.type,
