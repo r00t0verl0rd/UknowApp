@@ -146,7 +146,8 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
     if new_web_password:
         if changes.get("role", user.role) != "teacher":
             raise HTTPException(status_code=400, detail="Пароль веб-панели можно задать только учителю")
-        user.web_password_hash = hash_web_password(new_web_password)\n    role_changed = "role" in changes and changes["role"] != user.role
+        user.web_password_hash = hash_web_password(new_web_password)
+    role_changed = "role" in changes and changes["role"] != user.role
     if role_changed:
         db.query(TeacherPanel).filter(TeacherPanel.teacher_id == user.id).delete(synchronize_session=False)
         assignments = db.scalars(select(Assignment).where(Assignment.active.is_(True), (Assignment.teacher_id == user.id) | (Assignment.student_id == user.id))).all()
