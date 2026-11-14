@@ -71,12 +71,14 @@ async def lifespan(_: FastAPI):
         from .telegram_bot import create_dispatcher
 
         bot = Bot(token=TELEGRAM_BOT_TOKEN)
+        app.state.telegram_bot = bot
         dispatcher = create_dispatcher()
         bot_task = asyncio.create_task(
             run_telegram_bot(bot, dispatcher),
             name="uknowapp-telegram-polling",
         )
     else:
+        app.state.telegram_bot = None
         logger.error("TELEGRAM_BOT_TOKEN_EMPTY: Telegram bot is disabled; admin API remains available.")
     try:
         yield
