@@ -1,15 +1,27 @@
 import hashlib
 import secrets
+import threading
+import time
+from collections import deque
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Optional
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi import Depends, HTTPException, Request, Response, status
+from sqlalchemy import select
 
-from .config import ADMIN_PASSWORD, ADMIN_USERNAME
+from .config import ADMIN_PASSWORD, ADMIN_USERNAME, ALLOWED_ORIGINS
 from .database import SessionLocal
-from .models import User
+from .models import PanelSession, User
 
-basic = HTTPBasic()
+SESSION_COOKIE = "uknowapp_session"
+SECURE_SESSION_COOKIE = "__Host-uknowapp_session"
+SESSION_TTL = timedelta(hours=8)
+SESSION_MAX_AGE = int(SESSION_TTL.total_seconds())
+_LOGIN_WINDOW_SECONDS = 15 * 60
+_LOGIN_USER_LIMIT = 8
+_LOGIN_IP_LIMIT = 60
+_login_attempts: dict[str, deque[float]] = {}
+_login_attempts_lock = threading.Lock()
 
 
 def verify_admin(username: str, password: str) -> bool:
@@ -45,12 +57,13 @@ def authenticate_panel_user(username: str, password: str) -> Optional[dict]:
     if not normalized_username:
         return None
     with SessionLocal() as db:
-        teachers = db.query(User).filter(User.role == "teacher", User.active.is_(True)).all()
+        teachers = db.scalars(
+            select(User).where(User.role == "teacher", User.active.is_(True))
+        ).all()
         matches = [
             user for user in teachers
             if (user.web_username or user.full_name).strip().casefold() == normalized_username
         ]
-        # Ambiguous logins are never allowed to authenticate the wrong account.
         if len(matches) != 1:
             return None
         user = matches[0]
@@ -59,26 +72,220 @@ def authenticate_panel_user(username: str, password: str) -> Optional[dict]:
         return {"role": "teacher", "user_id": user.id, "full_name": user.full_name}
 
 
-def require_panel_user(
-    credentials: Annotated[HTTPBasicCredentials, Depends(basic)],
-) -> dict:
-    identity = authenticate_panel_user(credentials.username, credentials.password)
+def verify_request_origin(request: Request) -> None:
+    """Reject cross-origin state-changing browser requests (CSRF defence)."""
+    if request.method.upper() in {"GET", "HEAD", "OPTIONS"}:
+        return
+    origin = request.headers.get("origin")
+    if not origin:
+        # Non-browser clients do not send Origin; cookie-based browser requests do.
+        return
+    origin = origin.strip().rstrip("/")
+    current_origin = (str(request.base_url).rstrip("/"))
+    allowed = {item.strip().rstrip("/") for item in ALLOWED_ORIGINS if item.strip()}
+    allowed.add(current_origin)
+    if origin not in allowed:
+        raise HTTPException(status_code=403, detail="Запрос с этого источника запрещён")
+
+
+def _login_keys(request: Request, username: str) -> tuple[str, str]:
+    ip = request.client.host if request.client else "unknown"
+    normalized = (username or "").strip().casefold()[:160]
+    return "ip:" + ip, "user:" + ip + ":" + normalized
+
+
+def _prune_attempts(bucket: deque[float], now: float) -> None:
+    while bucket and now - bucket[0] >= _LOGIN_WINDOW_SECONDS:
+        bucket.popleft()
+
+
+def check_login_rate_limit(request: Request, username: str) -> None:
+    now = time.monotonic()
+    ip_key, user_key = _login_keys(request, username)
+    with _login_attempts_lock:
+        ip_bucket = _login_attempts.setdefault(ip_key, deque())
+        user_bucket = _login_attempts.setdefault(user_key, deque())
+        _prune_attempts(ip_bucket, now)
+        _prune_attempts(user_bucket, now)
+        retry_after = 0
+        if len(ip_bucket) >= _LOGIN_IP_LIMIT:
+            retry_after = int(_LOGIN_WINDOW_SECONDS - (now - ip_bucket[0])) + 1
+        elif len(user_bucket) >= _LOGIN_USER_LIMIT:
+            retry_after = int(_LOGIN_WINDOW_SECONDS - (now - user_bucket[0])) + 1
+        if retry_after:
+            raise HTTPException(
+                status_code=429,
+                detail="Слишком много неудачных попыток входа. Попробуйте позже.",
+                headers={"Retry-After": str(max(1, retry_after))},
+            )
+
+
+def record_failed_login(request: Request, username: str) -> None:
+    now = time.monotonic()
+    ip_key, user_key = _login_keys(request, username)
+    with _login_attempts_lock:
+        _login_attempts.setdefault(ip_key, deque()).append(now)
+        _login_attempts.setdefault(user_key, deque()).append(now)
+        if len(_login_attempts) > 10_000:
+            stale_keys = []
+            for key, bucket in _login_attempts.items():
+                _prune_attempts(bucket, now)
+                if not bucket:
+                    stale_keys.append(key)
+            for key in stale_keys:
+                _login_attempts.pop(key, None)
+
+
+def clear_username_failures(request: Request, username: str) -> None:
+    _, user_key = _login_keys(request, username)
+    with _login_attempts_lock:
+        _login_attempts.pop(user_key, None)
+
+
+def _credential_fingerprint(db, role: str, user_id: Optional[int]) -> Optional[str]:
+    if role == "admin":
+        value = ADMIN_USERNAME + "\0" + ADMIN_PASSWORD
+    elif role == "teacher" and user_id is not None:
+        user = db.get(User, user_id)
+        if not user or user.role != "teacher" or not user.active or not user.web_password_hash:
+            return None
+        value = user.web_password_hash
+    else:
+        return None
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def create_panel_session(
+    db,
+    identity: dict,
+    request: Request,
+    response: Response,
+) -> None:
+    role = identity["role"]
+    user_id = identity.get("user_id")
+    fingerprint = _credential_fingerprint(db, role, user_id)
+    if not fingerprint:
+        raise HTTPException(status_code=401, detail="Учётная запись недоступна")
+
+    now = datetime.now(timezone.utc)
+    db.query(PanelSession).filter(PanelSession.expires_at < now).delete(synchronize_session=False)
+    token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(token.encode("ascii")).hexdigest()
+    db.add(PanelSession(
+        token_hash=token_hash,
+        role=role,
+        user_id=user_id,
+        credential_fingerprint=fingerprint,
+        created_at=now,
+        expires_at=now + SESSION_TTL,
+    ))
+    db.commit()
+
+    secure = request.url.scheme == "https"
+    cookie_name = SECURE_SESSION_COOKIE if secure else SESSION_COOKIE
+    response.set_cookie(
+        key=cookie_name,
+        value=token,
+        max_age=SESSION_MAX_AGE,
+        httponly=True,
+        secure=secure,
+        samesite="strict",
+        path="/",
+    )
+
+
+def _request_token(request: Request) -> Optional[str]:
+    return request.cookies.get(SECURE_SESSION_COOKIE) or request.cookies.get(SESSION_COOKIE)
+
+
+def revoke_panel_session(request: Request, db) -> None:
+    token = _request_token(request)
+    if token:
+        token_hash = hashlib.sha256(token.encode("ascii", errors="ignore")).hexdigest()
+        session = db.scalar(select(PanelSession).where(PanelSession.token_hash == token_hash))
+        if session:
+            db.delete(session)
+            db.commit()
+
+
+def clear_panel_cookies(request: Request, response: Response) -> None:
+    secure = request.url.scheme == "https"
+    for cookie_name in (SECURE_SESSION_COOKIE, SESSION_COOKIE):
+        response.delete_cookie(
+            key=cookie_name,
+            path="/",
+            secure=(cookie_name == SECURE_SESSION_COOKIE) or secure,
+            httponly=True,
+            samesite="strict",
+        )
+
+
+def _load_panel_identity(request: Request) -> Optional[dict]:
+    token = _request_token(request)
+    if not token or len(token) > 128:
+        return None
+    token_hash = hashlib.sha256(token.encode("ascii", errors="ignore")).hexdigest()
+    with SessionLocal() as db:
+        session = db.scalar(select(PanelSession).where(PanelSession.token_hash == token_hash))
+        if not session:
+            return None
+
+        expires_at = session.expires_at
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        valid = expires_at > datetime.now(timezone.utc)
+        if session.role == "admin":
+            valid = valid and session.user_id is None
+            expected_fingerprint = _credential_fingerprint(db, "admin", None)
+            valid = valid and secrets.compare_digest(
+                session.credential_fingerprint, expected_fingerprint or ""
+            )
+            identity = {"role": "admin", "user_id": None, "full_name": "Администратор"}
+        elif session.role == "teacher" and session.user_id is not None:
+            user = db.get(User, session.user_id)
+            expected_fingerprint = _credential_fingerprint(db, "teacher", session.user_id)
+            valid = (
+                valid
+                and user is not None
+                and user.active
+                and user.role == "teacher"
+                and expected_fingerprint is not None
+                and secrets.compare_digest(
+                    session.credential_fingerprint, expected_fingerprint or ""
+                )
+            )
+            identity = (
+                {"role": "teacher", "user_id": user.id, "full_name": user.full_name}
+                if valid and user else None
+            )
+        else:
+            valid = False
+            identity = None
+
+        if not valid:
+            db.delete(session)
+            db.commit()
+            return None
+        return identity
+
+
+def require_panel_user(request: Request) -> dict:
+    verify_request_origin(request)
+    identity = _load_panel_identity(request)
     if not identity:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверный логин или пароль",
-            headers={"WWW-Authenticate": "Basic"},
+            detail="Сессия истекла или недействительна. Войдите снова.",
         )
     return identity
 
 
-def require_admin(
-    credentials: Annotated[HTTPBasicCredentials, Depends(basic)],
-) -> str:
-    if not verify_admin(credentials.username, credentials.password):
+def require_admin(request: Request) -> str:
+    verify_request_origin(request)
+    identity = _load_panel_identity(request)
+    if not identity or identity.get("role") != "admin":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Требуются права администратора",
-            headers={"WWW-Authenticate": "Basic"},
         )
-    return credentials.username
+    return ADMIN_USERNAME
