@@ -21,6 +21,7 @@ from .media_storage import MEDIA_DIR, delete_message_media
 from .models import Assignment, ConnectionCode, Conversation, Message, StudentTelegramGroup, TeacherPanel, TeacherSession, User
 from .schemas import AssignmentCreate, LoginRequest, PanelMessageCreate, UserCreate, UserUpdate
 from .security import authenticate_panel_user, hash_web_password, require_admin, require_panel_user, verify_admin
+from .telegram_common import text_contains_contact_data
 
 router = APIRouter(prefix="/api")
 
@@ -149,6 +150,8 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
         user.web_password_hash = hash_web_password(new_web_password)
     role_changed = "role" in changes and changes["role"] != user.role
     if role_changed:
+        if changes.get("role") != "teacher":
+            user.web_password_hash = None
         db.query(TeacherPanel).filter(TeacherPanel.teacher_id == user.id).delete(synchronize_session=False)
         assignments = db.scalars(select(Assignment).where(Assignment.active.is_(True), (Assignment.teacher_id == user.id) | (Assignment.student_id == user.id))).all()
         now = datetime.now(timezone.utc)
@@ -514,6 +517,8 @@ async def send_panel_message(
 ):
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     body = payload.text.strip()
+    if text_contains_contact_data(body):
+        raise HTTPException(status_code=400, detail="Контактные данные нельзя отправлять через чат UknowApp")
     if not body:
         raise HTTPException(status_code=400, detail="Введите текст сообщения")
 
@@ -649,6 +654,8 @@ async def send_panel_attachment(
     if not sender:
         raise HTTPException(status_code=401, detail="Учётная запись недоступна")
 
+    if text_contains_contact_data((text or "").strip()):
+        raise HTTPException(status_code=400, detail="Контактные данные нельзя отправлять через чат UknowApp")
     content = await file.read(20 * 1024 * 1024 + 1)
     if len(content) > 20 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="Максимальный размер файла — 20 МБ")
@@ -791,3 +798,37 @@ async def send_panel_attachment(
         except Exception:
             pass
     return _panel_message_dict(row)
+
+
+@router.get("/panel/graph")
+def panel_graph(principal: PanelUser, db: Db):
+    if principal["role"] != "teacher":
+        raise HTTPException(status_code=403, detail="Граф учителя доступен только учителю")
+    teacher = db.get(User, principal["user_id"])
+    if not teacher or teacher.role != "teacher" or not teacher.active:
+        raise HTTPException(status_code=404, detail="Учитель не найден")
+    assignments = db.scalars(
+        select(Assignment)
+        .where(Assignment.teacher_id == teacher.id, Assignment.active.is_(True))
+        .order_by(Assignment.created_at.desc())
+    ).all()
+    students = []
+    for assignment in assignments:
+        student = assignment.student
+        if student and student.active and assignment.conversation and assignment.conversation.status == "active":
+            students.append({
+                "id": student.id,
+                "full_name": student.full_name,
+                "role": "student",
+                "active": student.active,
+            })
+    return {
+        "teacher": {
+            "id": teacher.id,
+            "full_name": teacher.full_name,
+            "role": "teacher",
+            "active": teacher.active,
+        },
+        "students": students,
+        "counts": {"students": len(students)},
+    }
