@@ -567,9 +567,9 @@ async def send_panel_message(
                 continue
             try:
                 prefix = (
-                    "Сообщение от учителя " + sender.full_name + ":\\n"
+                    "Сообщение от учителя " + sender.full_name + ":\n"
                     if principal["role"] == "teacher"
-                    else "Сообщение от администратора школы:\\n"
+                    else "Сообщение от администратора школы:\n"
                 )
                 target = student_target if recipient_role == "student" else {"chat_id": recipient.telegram_id}
                 if not target:
@@ -593,7 +593,8 @@ async def send_panel_message(
         metadata["telegram_delivery_errors"] = delivery_errors
     row.metadata_json = json.dumps(metadata, ensure_ascii=False)
     student_delivery = next((item for item in delivered if item["user_id"] == student.id), None)
-    if student_delivery:\n        row.destination_message_id = student_delivery["telegram_message_id"]
+    if student_delivery:
+        row.destination_message_id = student_delivery["telegram_message_id"]
     row.delivery_status = "delivered" if delivered and not delivery_errors else ("partial" if delivered else "failed")
     db.commit()
 
