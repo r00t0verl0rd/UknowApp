@@ -1019,3 +1019,16 @@ img, video, audio { max-width: 100%; }
 }
 
 .message-delivery { color: #b45a37; line-height: 1.4; }
+
+
+/* Graph-level participant action, placed after the relationship map. */
+.graph-panel .graph-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid #eee8f4;
+}
+@media (max-width: 760px) {
+  .graph-panel .graph-actions .btn { width: 100%; justify-content: center; }
+}
