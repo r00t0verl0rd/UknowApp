@@ -106,7 +106,7 @@ def overview(_: Admin, db: Db):
 
 @router.get("/admin/users")
 def list_users(_: Admin, db: Db):
-    users = db.scalars(select(User).order_by(User.role, User.full_name)).all()
+    users = db.scalars(select(User).where(User.role.in_(["teacher", "student"])).order_by(User.role, User.full_name)).all()
     return [user_dict(user) for user in users]
 
 
@@ -128,7 +128,7 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
-    changes = payload.model_dump(exclude_unset=True)\n    new_web_password = changes.pop("web_password", None)\n    if new_web_password:\n        if user.role != "teacher" and changes.get("role", user.role) != "teacher":\n            raise HTTPException(status_code=400, detail="Пароль веб-панели можно задать только учителю")\n        user.web_password_hash = hash_web_password(new_web_password)\n    role_changed = "role" in changes and changes["role"] != user.role
+    changes = payload.model_dump(exclude_unset=True)\n    new_web_password = changes.pop("web_password", None)\n    if new_web_password:\n        if changes.get("role", user.role) != "teacher":\n            raise HTTPException(status_code=400, detail="Пароль веб-панели можно задать только учителю")\n        user.web_password_hash = hash_web_password(new_web_password)\n    role_changed = "role" in changes and changes["role"] != user.role
     if role_changed:
         db.query(TeacherPanel).filter(TeacherPanel.teacher_id == user.id).delete(synchronize_session=False)
         assignments = db.scalars(select(Assignment).where(Assignment.active.is_(True), (Assignment.teacher_id == user.id) | (Assignment.student_id == user.id))).all()
