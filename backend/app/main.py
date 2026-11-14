@@ -47,10 +47,13 @@ async def run_telegram_bot(bot, dispatcher) -> None:
             return
         except asyncio.CancelledError:
             raise
-        except Exception:
-            logger.exception(
-                "Telegram bot could not connect. Retrying in %s seconds; "
+        except Exception as exc:
+            # Telegram Bot API request URLs may contain the bot token.
+            # Log the exception type only; never print request URLs or headers.
+            logger.error(
+                "Telegram bot could not connect (error_type=%s). Retrying in %s seconds; "
                 "the admin panel remains available.",
+                type(exc).__name__,
                 retry_delay,
             )
             await asyncio.sleep(retry_delay)
