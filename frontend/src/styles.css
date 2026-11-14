@@ -1017,3 +1017,5 @@ img, video, audio { max-width: 100%; }
   .chat-head-tools { flex-wrap: wrap; }
   .chat-head-tools select { max-width: 145px; }
 }
+
+.message-delivery { color: #b45a37; line-height: 1.4; }
