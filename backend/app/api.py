@@ -68,7 +68,10 @@ def conversation_dict(db: Session, conversation: Conversation) -> dict:
 
 @router.post("/auth/login")
 def login(payload: LoginRequest):
-    identity = authenticate_panel_user(payload.username, payload.password)\n    if not identity:\n        raise HTTPException(status_code=401, detail="Неверный логин или пароль")\n    return {"ok": True, "username": payload.username, **identity}
+    identity = authenticate_panel_user(payload.username, payload.password)
+    if not identity:
+        raise HTTPException(status_code=401, detail="Неверный логин или пароль")
+    return {"ok": True, "username": payload.username, **identity}
 
 
 @router.get("/health")
@@ -117,7 +120,11 @@ def list_users(_: Admin, db: Db):
 
 @router.post("/admin/users", status_code=201)
 def create_user(payload: UserCreate, _: Admin, db: Db):
-    user = User(full_name=payload.full_name.strip(), role=payload.role, telegram_id=payload.telegram_id)\n    if payload.web_password:\n        if payload.role != "teacher":\n            raise HTTPException(status_code=400, detail="Пароль веб-панели можно задать только учителю")\n        user.web_password_hash = hash_web_password(payload.web_password)
+    user = User(full_name=payload.full_name.strip(), role=payload.role, telegram_id=payload.telegram_id)
+    if payload.web_password:
+        if payload.role != "teacher":
+            raise HTTPException(status_code=400, detail="Пароль веб-панели можно задать только учителю")
+        user.web_password_hash = hash_web_password(payload.web_password)
     db.add(user)
     try:
         db.commit()
@@ -133,7 +140,12 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
-    changes = payload.model_dump(exclude_unset=True)\n    new_web_password = changes.pop("web_password", None)\n    if new_web_password:\n        if changes.get("role", user.role) != "teacher":\n            raise HTTPException(status_code=400, detail="Пароль веб-панели можно задать только учителю")\n        user.web_password_hash = hash_web_password(new_web_password)\n    role_changed = "role" in changes and changes["role"] != user.role
+    changes = payload.model_dump(exclude_unset=True)
+    new_web_password = changes.pop("web_password", None)
+    if new_web_password:
+        if changes.get("role", user.role) != "teacher":
+            raise HTTPException(status_code=400, detail="Пароль веб-панели можно задать только учителю")
+        user.web_password_hash = hash_web_password(new_web_password)\n    role_changed = "role" in changes and changes["role"] != user.role
     if role_changed:
         db.query(TeacherPanel).filter(TeacherPanel.teacher_id == user.id).delete(synchronize_session=False)
         assignments = db.scalars(select(Assignment).where(Assignment.active.is_(True), (Assignment.teacher_id == user.id) | (Assignment.student_id == user.id))).all()
