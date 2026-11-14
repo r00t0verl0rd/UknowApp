@@ -19,6 +19,7 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     telegram_id: Mapped[Optional[int]] = mapped_column(BigInteger, unique=True, nullable=True, index=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    web_password_hash: Mapped[Optional[str]] = mapped_column(String(160), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
 
