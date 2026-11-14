@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, Trash2, Users, X, Link2, Copy, Unlink } from "lucide-react";
+import { Activity, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, Trash2, Users, X, Link2, Copy, Unlink, Paperclip } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 const ROLE = { teacher: "Учитель", student: "Ученик", admin: "Администратор" };
@@ -46,6 +46,7 @@ export default function App() {
   const [auth, setAuth] = useState(initialAuth);
   const [profile, setProfile] = useState(null);
   const [draft, setDraft] = useState("");
+  const [attachment, setAttachment] = useState(null);
   const [webPassword, setWebPassword] = useState("");
   const [login, setLogin] = useState("admin");
   const [password, setPassword] = useState("");
@@ -124,7 +125,7 @@ export default function App() {
   }
 
   function signOut() {
-    sessionStorage.removeItem("uknowapp-auth"); setAuth(""); setProfile(null); setUsers([]); setOverview(null); setChats([]); setMessages([]); setSelectedChat(null); setDraft("");
+    sessionStorage.removeItem("uknowapp-auth"); setAuth(""); setProfile(null); setUsers([]); setOverview(null); setChats([]); setMessages([]); setSelectedChat(null); setDraft(""); setAttachment(null);
   }
 
   function openCreate(defaultRole = "teacher") {
@@ -185,19 +186,32 @@ export default function App() {
   }
 
   async function openChat(chat) {
-    setSelectedChat(chat); setPage("chats"); setDraft("");
+    setSelectedChat(chat); setPage("chats"); setDraft(""); setAttachment(null);
     try { setMessages(await request("/api/panel/conversations/" + chat.id + "/messages")); }
     catch (e) { setError(e.message); }
   }
 
   async function sendChatMessage(event) {
     event.preventDefault();
-    if (!selectedChat || !draft.trim()) return;
+    if (!selectedChat || (!draft.trim() && !attachment)) return;
     try {
-      await request("/api/panel/conversations/" + selectedChat.id + "/messages", {
-        method: "POST", body: JSON.stringify({ text: draft.trim() })
-      });
-      setDraft("");
+      if (attachment) {
+        const form = new FormData();
+        form.append("file", attachment);
+        form.append("text", draft.trim());
+        const response = await fetch(API + "/api/panel/conversations/" + selectedChat.id + "/attachments", {
+          method: "POST",
+          headers: { Authorization: "Basic " + auth },
+          body: form
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.detail || "Не удалось отправить файл");
+      } else {
+        await request("/api/panel/conversations/" + selectedChat.id + "/messages", {
+          method: "POST", body: JSON.stringify({ text: draft.trim() })
+        });
+      }
+      setDraft(""); setAttachment(null);
       setMessages(await request("/api/panel/conversations/" + selectedChat.id + "/messages"));
       setChats(await request("/api/panel/conversations"));
       notify("Сообщение отправлено");
@@ -286,7 +300,13 @@ export default function App() {
               <div className="messages">{messages.map(message => <MessageBubble message={message} auth={auth} key={message.id} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}</div>
               {selectedChat.status === "active" && <form className="chat-composer" onSubmit={sendChatMessage}>
                 <textarea value={draft} onChange={e => setDraft(e.target.value)} placeholder={profile?.role === "admin" ? "Сообщение от администратора обеим сторонам…" : "Ответить ученику…"} rows={2} maxLength={4000}/>
-                <div className="composer-footer"><small>{profile?.role === "admin" ? "Сообщение увидят ученик и учитель" : "Ответ сохранится в общем диалоге и отправится ученику в Telegram"}</small><button className="btn primary" disabled={!draft.trim()}>Отправить <ChevronRight size={16}/></button></div>
+                <div className="composer-footer">
+                  <div className="composer-tools">
+                    <label className="attach-control"><Paperclip size={16}/> Прикрепить файл<input type="file" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" onChange={e => setAttachment(e.target.files?.[0] || null)}/></label>
+                    {attachment && <span className="selected-file">{attachment.name}<button type="button" onClick={() => setAttachment(null)} aria-label="Убрать файл"><X size={14}/></button></span>}
+                  </div>
+                  <div className="composer-send"><small>{profile?.role === "admin" ? "Сообщение увидят ученик и учитель" : "Ответ сохранится в общем диалоге и отправится ученику в Telegram"}</small><button className="btn primary" disabled={!draft.trim() && !attachment}>Отправить <ChevronRight size={16}/></button></div>
+                </div>
               </form>}
             </> : <div className="empty-state">Выберите ученика слева</div>}</div>
           </div>
