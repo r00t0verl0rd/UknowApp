@@ -4,7 +4,7 @@ import threading
 import time
 from collections import deque
 from datetime import datetime, timedelta, timezone
-from typing import Annotated, Optional
+from typing import Optional
 
 from fastapi import Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
@@ -25,6 +25,9 @@ _login_attempts_lock = threading.Lock()
 
 
 def verify_admin(username: str, password: str) -> bool:
+    # Never allow the documented fallback credentials to authenticate an admin.
+    if ADMIN_PASSWORD in {"change-me-now", "replace-with-a-long-random-password"}:
+        return False
     return (
         secrets.compare_digest(username.encode("utf-8"), ADMIN_USERNAME.encode("utf-8"))
         and secrets.compare_digest(password.encode("utf-8"), ADMIN_PASSWORD.encode("utf-8"))
