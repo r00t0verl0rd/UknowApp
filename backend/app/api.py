@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.responses import FileResponse
 from aiogram.types import BufferedInputFile
 from sqlalchemy import select
@@ -18,10 +18,22 @@ from sqlalchemy.orm import Session
 
 from .config import ADMIN_USERNAME
 from .database import SessionLocal
-from .media_storage import MEDIA_DIR, delete_message_media
+from .media_storage import MEDIA_DIR, delete_message_media, safe_media_type, media_content_disposition
 from .models import Assignment, ConnectionCode, Conversation, Message, StudentTelegramGroup, TeacherPanel, TeacherSession, User
 from .schemas import AssignmentCreate, LoginRequest, PanelMessageCreate, UserCreate, UserUpdate
-from .security import authenticate_panel_user, hash_web_password, require_admin, require_panel_user, verify_admin
+from .security import (
+    authenticate_panel_user,
+    check_login_rate_limit,
+    clear_panel_cookies,
+    clear_username_failures,
+    create_panel_session,
+    hash_web_password,
+    record_failed_login,
+    require_admin,
+    require_panel_user,
+    revoke_panel_session,
+    verify_request_origin,
+)
 from .telegram_common import text_contains_contact_data
 
 router = APIRouter(prefix="/api")
@@ -37,13 +49,13 @@ PanelUser = Annotated[dict, Depends(require_panel_user)]
 Db = Annotated[Session, Depends(get_db)]
 
 
-def user_dict(user: User) -> dict:
+def user_dict(user: User, include_telegram_id: bool = True) -> dict:
     return {
         "id": user.id,
         "full_name": user.full_name,
         "web_username": (user.web_username or user.full_name) if user.role == "teacher" else None,
         "role": user.role,
-        "telegram_id": user.telegram_id,
+        "telegram_id": user.telegram_id if include_telegram_id else None,
         "active": user.active,
         "created_at": user.created_at.isoformat() if user.created_at else None,
         "has_web_password": bool(user.web_password_hash),
@@ -66,7 +78,9 @@ def validate_teacher_username(db: Session, username: str, exclude_user_id: Optio
     return cleaned
 
 
-def conversation_dict(db: Session, conversation: Conversation) -> dict:
+def conversation_dict(
+    db: Session, conversation: Conversation, include_telegram_ids: bool = True
+) -> dict:
     assignment = conversation.assignment
     last_message = db.scalar(
         select(Message).where(Message.conversation_id == conversation.id)
@@ -77,8 +91,8 @@ def conversation_dict(db: Session, conversation: Conversation) -> dict:
         "id": conversation.id,
         "status": conversation.status,
         "created_at": conversation.created_at.isoformat(),
-        "teacher": user_dict(assignment.teacher),
-        "student": user_dict(assignment.student),
+        "teacher": user_dict(assignment.teacher, include_telegram_id=include_telegram_ids),
+        "student": user_dict(assignment.student, include_telegram_id=include_telegram_ids),
         "last_message": (
             (last_message.text or "Сообщение") if last_message.content_type == "text"
             else (
@@ -102,11 +116,24 @@ def conversation_dict(db: Session, conversation: Conversation) -> dict:
 
 
 @router.post("/auth/login")
-def login(payload: LoginRequest):
+def login(payload: LoginRequest, request: Request, response: Response, db: Db):
+    verify_request_origin(request)
+    check_login_rate_limit(request, payload.username)
     identity = authenticate_panel_user(payload.username, payload.password)
     if not identity:
+        record_failed_login(request, payload.username)
         raise HTTPException(status_code=401, detail="Неверный логин или пароль")
-    return {"ok": True, "username": payload.username, **identity}
+    clear_username_failures(request, payload.username)
+    create_panel_session(db, identity, request, response)
+    return {"ok": True, **identity}
+
+
+@router.post("/auth/logout")
+def logout(request: Request, response: Response, db: Db):
+    verify_request_origin(request)
+    revoke_panel_session(request, db)
+    clear_panel_cookies(request, response)
+    return {"ok": True}
 
 
 @router.get("/health")
@@ -447,14 +474,17 @@ def get_message_media(message_id: int, _: Admin, db: Db):
         raise HTTPException(status_code=404, detail="Файл вложения не найден")
     return FileResponse(
         path,
-        media_type=media.get("mime_type") or "application/octet-stream",
+        media_type=safe_media_type(media.get("mime_type")),
         filename=media.get("file_name") or path.name,
-        content_disposition_type="inline",
+        content_disposition_type=media_content_disposition(media.get("kind"), media.get("mime_type")),
+        headers={"X-Content-Type-Options": "nosniff", "Content-Security-Policy": "sandbox"},
     )
 
 
-def _panel_conversation_dict(db: Session, conversation: Conversation) -> dict:
-    return conversation_dict(db, conversation)
+def _panel_conversation_dict(db: Session, conversation: Conversation, principal: dict) -> dict:
+    return conversation_dict(
+        db, conversation, include_telegram_ids=(principal["role"] == "admin")
+    )
 
 
 def _panel_visible_conversation(db: Session, principal: dict, conversation_id: int) -> Conversation:
@@ -474,14 +504,34 @@ def _panel_visible_conversation(db: Session, principal: dict, conversation_id: i
     return conversation
 
 
-def _panel_message_dict(item: Message) -> dict:
+def _panel_message_dict(item: Message, expose_internal_metadata: bool = True) -> dict:
+    metadata = json.loads(item.metadata_json or "{}")
+    if not expose_internal_metadata:
+        for key in (
+            "source_chat_id", "source_thread_id", "telegram_deliveries",
+            "telegram_delivery_errors", "teacher_inbox_media_message_id",
+            "teacher_inbox_notice_message_id",
+        ):
+            metadata.pop(key, None)
+        for key in ("photo", "document", "audio", "video", "voice", "video_note", "sticker", "animation"):
+            attachment = metadata.get(key)
+            if isinstance(attachment, dict):
+                attachment.pop("file_id", None)
+                attachment.pop("file_unique_id", None)
+        media = metadata.get("media")
+        if isinstance(media, dict):
+            metadata["media"] = {
+                key: media.get(key)
+                for key in ("kind", "file_name", "mime_type", "file_size", "archive_status")
+                if key in media
+            }
     return {
         "id": item.id,
         "sender": item.sender.full_name if item.sender else "Администратор",
         "sender_role": item.sender_role,
         "content_type": item.content_type,
         "text": item.text,
-        "metadata": json.loads(item.metadata_json or "{}"),
+        "metadata": metadata,
         "delivery_status": item.delivery_status,
         "created_at": item.created_at.isoformat(),
     }
@@ -575,7 +625,7 @@ def panel_conversations(principal: PanelUser, db: Db):
     if principal["role"] == "teacher":
         statement = statement.where(Assignment.teacher_id == principal["user_id"])
     conversations = db.scalars(statement).all()
-    return [_panel_conversation_dict(db, item) for item in conversations]
+    return [_panel_conversation_dict(db, item, principal) for item in conversations]
 
 
 @router.get("/panel/conversations/{conversation_id}/messages")
@@ -597,7 +647,10 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db):
                     changed = True
         if changed:
             db.commit()
-    return [_panel_message_dict(item) for item in rows]
+    return [
+        _panel_message_dict(item, expose_internal_metadata=(principal["role"] == "admin"))
+        for item in rows
+    ]
 
 
 @router.get("/panel/messages/{message_id}/media")
@@ -617,9 +670,10 @@ def panel_message_media(message_id: int, principal: PanelUser, db: Db):
         raise HTTPException(status_code=404, detail="Файл вложения не найден")
     return FileResponse(
         path,
-        media_type=media.get("mime_type") or "application/octet-stream",
+        media_type=safe_media_type(media.get("mime_type")),
         filename=media.get("file_name") or path.name,
-        content_disposition_type="inline",
+        content_disposition_type=media_content_disposition(media.get("kind"), media.get("mime_type")),
+        headers={"X-Content-Type-Options": "nosniff", "Content-Security-Policy": "sandbox"},
     )
 
 
@@ -696,7 +750,8 @@ async def send_panel_message(
                     "thread_id": target.get("message_thread_id"),
                 })
             except Exception as exc:
-                delivery_errors.append(recipient.full_name + ": " + str(exc)[:180])
+                logger.warning("Telegram delivery failed for conversation_id=%s: %s", conversation.id, type(exc).__name__)
+                delivery_errors.append(recipient.full_name + ": ошибка Telegram (" + type(exc).__name__ + ")")
     else:
         delivery_errors.append("Telegram-бот не подключён к веб-приложению")
 
@@ -719,7 +774,7 @@ async def send_panel_message(
             # Message is already persisted; a panel refresh failure must not undo it.
             pass
 
-    return _panel_message_dict(row)
+    return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"))
 
 
 @router.post("/panel/conversations/{conversation_id}/attachments", status_code=201)
@@ -746,12 +801,20 @@ async def send_panel_attachment(
 
     if text_contains_contact_data((text or "").strip()):
         raise HTTPException(status_code=400, detail="Контактные данные нельзя отправлять через чат UknowApp")
+    content_length = request.headers.get("content-length")
+    if content_length:
+        try:
+            if int(content_length) > 22 * 1024 * 1024:
+                raise HTTPException(status_code=413, detail="Максимальный размер файла — 20 МБ")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Некорректный Content-Length")
     content = await file.read(20 * 1024 * 1024 + 1)
     if len(content) > 20 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="Максимальный размер файла — 20 МБ")
     if not content:
         raise HTTPException(status_code=400, detail="Файл пустой")
-    original_name = Path(file.filename or "attachment").name
+    original_name = (file.filename or "attachment").replace("\\", "/").rsplit("/", 1)[-1]
+    original_name = "".join(char for char in original_name if ord(char) >= 32 and char not in "\r\n")[:180].strip() or "attachment"
     suffix = re.sub(r"[^A-Za-z0-9.]", "", Path(original_name).suffix)[:12]
     if not suffix:
         suffix = mimetypes.guess_extension(file.content_type or "") or ".bin"
@@ -763,7 +826,8 @@ async def send_panel_attachment(
     target_path.parent.mkdir(parents=True, exist_ok=True)
     target_path.write_bytes(content)
 
-    mime_type = file.content_type or mimetypes.guess_type(original_name)[0] or "application/octet-stream"
+    reported_mime_type = file.content_type or mimetypes.guess_type(original_name)[0]
+    mime_type = safe_media_type(reported_mime_type)
     if mime_type.startswith("image/"):
         kind = "photo"
     elif mime_type.startswith("video/"):
@@ -844,7 +908,8 @@ async def send_panel_attachment(
                     "thread_id": target.get("message_thread_id"),
                 })
             except Exception as exc:
-                delivery_errors.append(recipient.full_name + ": " + str(exc)[:180])
+                logger.warning("Telegram delivery failed for conversation_id=%s: %s", conversation.id, type(exc).__name__)
+                delivery_errors.append(recipient.full_name + ": ошибка Telegram (" + type(exc).__name__ + ")")
     else:
         delivery_errors.append("Telegram-бот не подключён к веб-приложению")
 
@@ -865,7 +930,7 @@ async def send_panel_attachment(
             await update_teacher_panel(bot, db, teacher)
         except Exception:
             pass
-    return _panel_message_dict(row)
+    return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"))
 
 
 @router.get("/panel/graph")
