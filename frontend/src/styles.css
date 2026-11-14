@@ -1007,3 +1007,13 @@ img, video, audio { max-width: 100%; }
   .teacher-graph-card .readonly-tag { font-size: 9px; padding: 5px 7px; }
   .teacher-graph-student-grid { grid-template-columns: minmax(0,1fr); gap: 8px; }
 }
+
+
+.chat-head-tools { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.chat-head-tools select { max-width: 155px; min-width: 0; border: 1px solid var(--line); border-radius: 9px; padding: 7px 9px; background: #faf9fc; color: var(--ink); font-size: 10px; }
+.message-delivery { display: block; margin-top: 7px; color: #a49bad; font-size: 9px; }
+@media(max-width:760px) {
+  .sidebar nav { grid-template-columns: repeat(auto-fit,minmax(105px,1fr)); }
+  .chat-head-tools { flex-wrap: wrap; }
+  .chat-head-tools select { max-width: 145px; }
+}
