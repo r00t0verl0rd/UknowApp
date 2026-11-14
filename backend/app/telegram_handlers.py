@@ -41,6 +41,9 @@ router = Router()
 _CONNECTION_CODE_WINDOW = 15 * 60
 _CONNECTION_CODE_LIMIT = 5
 _connection_code_attempts: dict[int, deque[float]] = {}
+_UNLINKED_MESSAGE_WINDOW = 60
+_UNLINKED_MESSAGE_LIMIT = 12
+_unlinked_message_attempts: dict[int, deque[float]] = {}
 _BIND_GROUP_WINDOW = 60
 _BIND_GROUP_LIMIT = 5
 _bind_group_attempts: dict[tuple[int, int], deque[float]] = {}
@@ -66,6 +69,23 @@ def _record_connection_code_attempt(telegram_id: int) -> None:
                 bucket.popleft()
             if not bucket:
                 _connection_code_attempts.pop(user_id, None)
+
+
+def _unlinked_message_allowed(telegram_id: int) -> bool:
+    now = time.monotonic()
+    attempts = _unlinked_message_attempts.setdefault(telegram_id, deque())
+    while attempts and now - attempts[0] >= _UNLINKED_MESSAGE_WINDOW:
+        attempts.popleft()
+    if len(attempts) >= _UNLINKED_MESSAGE_LIMIT:
+        return False
+    attempts.append(now)
+    if len(_unlinked_message_attempts) > 10_000:
+        for user_id, bucket in list(_unlinked_message_attempts.items()):
+            while bucket and now - bucket[0] >= _UNLINKED_MESSAGE_WINDOW:
+                bucket.popleft()
+            if not bucket:
+                _unlinked_message_attempts.pop(user_id, None)
+    return True
 
 
 def _bind_group_attempt_allowed(telegram_id: int, chat_id: int) -> bool:
@@ -105,8 +125,12 @@ async def start(message: TgMessage, bot: Bot):
                 # Open the persistent teacher panel directly; do not send a
                 # separate confirmation message after /start.
                 await update_teacher_panel(bot, db, user, force_keyboard_refresh=True)
-            except Exception:
-                logger.exception("Could not open teacher panel from /start for user_id=%s", user.id)
+            except Exception as exc:
+                logger.warning(
+                    "Could not open teacher panel (user_id=%s error_type=%s)",
+                    user.id,
+                    type(exc).__name__,
+                )
             return
 
         if user.role == "student":
@@ -467,6 +491,8 @@ async def route_message(message: TgMessage, bot: Bot):
             )
             return
         if not sender:
+            if message.from_user and not _unlinked_message_allowed(message.from_user.id):
+                return
             text = (message.text or "").strip()
             normalized = re.sub(r"[\s-]", "", text).upper()
             if CONNECTION_CODE_RE.fullmatch(normalized):
