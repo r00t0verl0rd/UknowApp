@@ -14,6 +14,39 @@ from .models import Message
 logger = logging.getLogger(__name__)
 MEDIA_DIR = ROOT_DIR / "data" / "media"
 
+SAFE_MEDIA_TYPES = {
+    "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp",
+    "audio/mpeg", "audio/mp3", "audio/ogg", "audio/opus", "audio/wav",
+    "audio/x-wav", "audio/mp4", "audio/aac", "audio/flac", "audio/webm",
+    "video/mp4", "video/webm", "video/ogg", "video/quicktime",
+    "application/pdf",
+    "text/plain", "text/csv",
+    "application/zip", "application/x-zip-compressed",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+}
+
+
+def safe_media_type(value: Optional[str]) -> str:
+    """Only return known browser-safe MIME types; unknown types are downloads."""
+    normalized = (value or "").split(";", 1)[0].strip().lower()
+    return normalized if normalized in SAFE_MEDIA_TYPES else "application/octet-stream"
+
+
+def media_content_disposition(kind: Optional[str], value: Optional[str]) -> str:
+    mime_type = safe_media_type(value)
+    if kind == "photo" and mime_type.startswith("image/") and mime_type != "image/svg+xml":
+        return "inline"
+    if kind in {"voice", "audio"} and mime_type.startswith("audio/"):
+        return "inline"
+    if kind in {"video", "video_note", "animation"} and mime_type.startswith("video/"):
+        return "inline"
+    return "attachment"
+
 
 def _media_item(message: TgMessage):
     for field in ("photo", "document", "audio", "video", "voice", "video_note", "sticker", "animation"):
@@ -34,7 +67,15 @@ async def archive_telegram_media(bot: Bot, message: TgMessage, row: Message) -> 
         "file_id": item.file_id,
         "file_unique_id": getattr(item, "file_unique_id", None),
         "file_name": getattr(item, "file_name", None),
-        "mime_type": getattr(item, "mime_type", None),
+        "mime_type": safe_media_type(
+            getattr(item, "mime_type", None)
+            or {
+                "photo": "image/jpeg",
+                "video": "video/mp4",
+                "video_note": "video/mp4",
+                "voice": "audio/ogg",
+            }.get(field)
+        ),
         "file_size": getattr(item, "file_size", None),
         "archive_status": "pending",
     }
