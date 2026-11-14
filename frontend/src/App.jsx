@@ -60,6 +60,7 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [chatSearch, setChatSearch] = useState("");
   const [chatFilter, setChatFilter] = useState("all");
+  const [messageFilter, setMessageFilter] = useState("all");
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const [busy, setBusy] = useState(false);
@@ -117,6 +118,15 @@ export default function App() {
   const visibleUsers = useMemo(() => users.filter(u => (u.full_name + " " + (u.telegram_id || "")).toLowerCase().includes(search.toLowerCase())), [users, search]);
   const assignedStudentIds = new Set((overview?.teachers || []).flatMap(t => t.students.map(s => s.id)));
   const unassignedStudents = activeStudents.filter(student => !assignedStudentIds.has(student.id));
+  const visibleMessages = useMemo(() => messages.filter(message => {
+    const kind = message.metadata?.media?.kind || message.content_type;
+    if (messageFilter === "all") return true;
+    if (messageFilter === "media") return kind !== "text" || Boolean(message.metadata?.media);
+    if (messageFilter === "audio") return ["voice", "audio"].includes(kind);
+    if (messageFilter === "photos") return kind === "photo";
+    if (messageFilter === "files") return ["document", "video", "video_note", "animation"].includes(kind);
+    return true;
+  }), [messages, messageFilter]);
   const visibleChats = useMemo(() => chats.filter(chat => {
     const names = (chat.student.full_name + " " + chat.teacher.full_name).toLowerCase();
     const matchesSearch = names.includes(chatSearch.toLowerCase()) || (chat.last_message || "").toLowerCase().includes(chatSearch.toLowerCase());
@@ -197,7 +207,7 @@ export default function App() {
   }
 
   async function openChat(chat) {
-    setSelectedChat(chat); setPage("chats"); setDraft(""); setAttachment(null);
+    setSelectedChat(chat); setPage("chats"); setDraft(""); setAttachment(null); setMessageFilter("all");
     try {
       setMessages(await request("/api/panel/conversations/" + chat.id + "/messages"));
       if (profile?.role === "teacher") setChats(await request("/api/panel/conversations"));
@@ -338,8 +348,8 @@ export default function App() {
           <div className="page-title"><div><div className="eyebrow">{profile?.role === "teacher" ? "МОИ УЧЕНИКИ" : "ИСТОРИЯ ОБЩЕНИЯ"}</div><h1>{profile?.role === "teacher" ? "Чаты с учениками" : "Переписки"}</h1><p>{profile?.role === "teacher" ? "Каждый ученик — отдельный диалог. Файлы и аудио находятся внутри нужной переписки." : "Просмотр и участие в переписках учеников и учителей."}</p></div></div>
           <div className="chat-layout"><div className="chat-list"><div className="chat-list-tools"><input aria-label="Поиск по ученикам" placeholder="Найти ученика…" value={chatSearch} onChange={e => setChatSearch(e.target.value)}/><select aria-label="Фильтр переписок" value={chatFilter} onChange={e => setChatFilter(e.target.value)}><option value="all">Все диалоги</option><option value="unread">Есть непрочитанные</option></select></div>{visibleChats.map(chat => <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected" : "")} onClick={() => openChat(chat)}><b>{profile?.role === "teacher" ? chat.student.full_name : chat.student.full_name + " ↔ " + chat.teacher.full_name}</b><small>{chat.last_message}</small><span>{chat.unread_count ? chat.unread_count + " непрочитанных · " : ""}{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span></button>)}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">По выбранному фильтру ничего не найдено</div>}</div>
             <div className="chat-detail">{selectedChat ? <>
-              <div className="chat-head"><div><b>{selectedChat.student.full_name}</b><small>{profile?.role === "admin" ? "Учитель: " + selectedChat.teacher.full_name + " · " : ""}Переписка #{selectedChat.id}</small></div><span className="role-tag">{selectedChat.status === "active" ? "Активна" : "Закрыта"}</span></div>
-              <div className="messages">{messages.map(message => <MessageBubble message={message} auth={auth} key={message.id} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}</div>
+              <div className="chat-head"><div><b>{selectedChat.student.full_name}</b><small>{profile?.role === "admin" ? "Учитель: " + selectedChat.teacher.full_name + " · " : ""}Переписка #{selectedChat.id}</small></div><div className="chat-head-tools"><select aria-label="Фильтр сообщений" value={messageFilter} onChange={e => setMessageFilter(e.target.value)}><option value="all">Все сообщения</option><option value="media">Все вложения</option><option value="audio">Аудио</option><option value="photos">Фото</option><option value="files">Файлы и видео</option></select><span className="role-tag">{selectedChat.status === "active" ? "Активна" : "Закрыта"}</span></div></div>
+              <div className="messages">{visibleMessages.map(message => <MessageBubble message={message} auth={auth} key={message.id} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}{!!messages.length && !visibleMessages.length && <div className="empty-state">Нет сообщений этого типа</div>}</div>
               {selectedChat.status === "active" && <form className="chat-composer" onSubmit={sendChatMessage}>
                 <textarea value={draft} onChange={e => setDraft(e.target.value)} placeholder={profile?.role === "admin" ? "Сообщение от администратора обеим сторонам…" : "Ответить ученику…"} rows={2} maxLength={4000}/>
                 <div className="composer-footer">
