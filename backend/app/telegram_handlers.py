@@ -3,7 +3,6 @@
 import json
 import logging
 import re
-from datetime import datetime, timezone
 
 from aiogram import Bot, F, Router
 from aiogram.filters import Command, CommandStart
