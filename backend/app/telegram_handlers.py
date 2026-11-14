@@ -605,6 +605,14 @@ async def route_message(message: TgMessage, bot: Bot):
                     copy_kwargs["message_thread_id"] = destination_thread_id
                 copied = await bot.copy_message(**copy_kwargs)
                 row.destination_message_id = copied.message_id
+                delivery_metadata = json.loads(row.metadata_json or "{}")
+                delivery_metadata["telegram_deliveries"] = [{
+                    "user_id": recipient.id,
+                    "telegram_message_id": copied.message_id,
+                    "chat_id": destination_chat_id,
+                    "thread_id": destination_thread_id,
+                }]
+                row.metadata_json = json.dumps(delivery_metadata, ensure_ascii=False)
                 row.delivery_status = "delivered"
                 db.commit()
 
