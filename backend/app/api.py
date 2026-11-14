@@ -1,11 +1,15 @@
 import hashlib
 import json
 import secrets
+import mimetypes
+import re
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
+from aiogram.types import BufferedInputFile
 from sqlalchemy import select
 from sqlalchemy.orm import aliased
 from sqlalchemy.exc import IntegrityError
@@ -606,4 +610,171 @@ async def send_panel_message(
             # Message is already persisted; a panel refresh failure must not undo it.
             pass
 
+    return _panel_message_dict(row)
+
+
+@router.post("/panel/conversations/{conversation_id}/attachments", status_code=201)
+async def send_panel_attachment(
+    conversation_id: int,
+    request: Request,
+    principal: PanelUser,
+    db: Db,
+    file: UploadFile = File(...),
+    text: str = "",
+):
+    conversation = _panel_visible_conversation(db, principal, conversation_id)
+    student = conversation.assignment.student
+    teacher = conversation.assignment.teacher
+    sender = db.get(User, principal["user_id"]) if principal["role"] == "teacher" else None
+    if principal["role"] == "admin":
+        sender = db.scalar(select(User).where(User.role == "admin").order_by(User.id).limit(1))
+        if not sender:
+            sender = User(full_name="Администратор", role="admin", active=True)
+            db.add(sender)
+            db.flush()
+    if not sender:
+        raise HTTPException(status_code=401, detail="Учётная запись недоступна")
+
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Файл пустой")
+    if len(content) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Максимальный размер файла — 20 МБ")
+
+    original_name = Path(file.filename or "attachment").name
+    suffix = re.sub(r"[^A-Za-z0-9.]", "", Path(original_name).suffix)[:12]
+    if not suffix:
+        suffix = mimetypes.guess_extension(file.content_type or "") or ".bin"
+    relative = Path(str(conversation.id)) / (uuid.uuid4().hex + suffix)
+    target_path = (MEDIA_DIR / relative).resolve()
+    root = MEDIA_DIR.resolve()
+    if root not in target_path.parents:
+        raise HTTPException(status_code=400, detail="Недопустимое имя файла")
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    target_path.write_bytes(content)
+
+    mime_type = file.content_type or mimetypes.guess_type(original_name)[0] or "application/octet-stream"
+    if mime_type.startswith("image/"):
+        kind = "photo"
+    elif mime_type.startswith("video/"):
+        kind = "video"
+    elif mime_type.startswith("audio/"):
+        kind = "voice" if mime_type in {"audio/ogg", "audio/opus"} else "audio"
+    else:
+        kind = "document"
+
+    media = {
+        "kind": kind,
+        "file_name": original_name,
+        "mime_type": mime_type,
+        "file_size": len(content),
+        "local_path": relative.as_posix(),
+        "archive_status": "stored",
+    }
+    row = Message(
+        conversation_id=conversation.id,
+        sender_id=sender.id,
+        sender_role=principal["role"],
+        content_type=kind,
+        text=(text or "").strip(),
+        metadata_json=json.dumps({
+            "source_mode": "web",
+            "web_sender_role": principal["role"],
+            "media": media,
+        }, ensure_ascii=False),
+        delivery_status="pending",
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+
+    student_target = {"chat_id": student.telegram_id} if student.telegram_id else None
+    rows = db.scalars(
+        select(Message).where(Message.conversation_id == conversation.id)
+        .order_by(Message.created_at, Message.id)
+    ).all()
+    last_reply_index = max(
+        (i for i, item in enumerate(rows[:-1]) if item.sender_role in {"teacher", "admin"} and item.delivery_status in {"delivered", "partial"}),
+        default=-1,
+    )
+    for incoming in reversed(rows[last_reply_index + 1:-1]):
+        if incoming.sender_role != "student":
+            continue
+        incoming_meta = json.loads(incoming.metadata_json or "{}")
+        if incoming_meta.get("source_mode") == "group_topic":
+            try:
+                group_chat_id = int(incoming_meta["source_chat_id"])
+                thread_id = int(incoming_meta["source_thread_id"])
+            except (KeyError, TypeError, ValueError):
+                break
+            linked_topic = db.scalar(select(StudentTelegramGroup).where(
+                StudentTelegramGroup.student_id == student.id,
+                StudentTelegramGroup.chat_id == group_chat_id,
+                StudentTelegramGroup.thread_id == thread_id,
+            ))
+            if linked_topic:
+                student_target = {"chat_id": group_chat_id, "message_thread_id": thread_id}
+        break
+
+    recipients = [(student, "student")]
+    if principal["role"] == "admin":
+        recipients.append((teacher, "teacher"))
+    bot = getattr(request.app.state, "telegram_bot", None)
+    delivery_errors = []
+    delivered = []
+    if bot:
+        for recipient, recipient_role in recipients:
+            if not recipient.active or not recipient.telegram_id:
+                delivery_errors.append(recipient.full_name + ": Telegram не подключён")
+                continue
+            target = student_target if recipient_role == "student" else {"chat_id": recipient.telegram_id}
+            if not target:
+                delivery_errors.append(recipient.full_name + ": Telegram не подключён")
+                continue
+            prefix = (
+                "От учителя " + sender.full_name + (": " + row.text if row.text else "")
+                if principal["role"] == "teacher"
+                else "От администратора школы" + (": " + row.text if row.text else "")
+            )
+            upload = BufferedInputFile(content, filename=original_name)
+            kwargs = {**target, "caption": prefix[:1024]}
+            try:
+                if kind == "photo":
+                    sent = await bot.send_photo(photo=upload, **kwargs)
+                elif kind == "video":
+                    sent = await bot.send_video(video=upload, **kwargs)
+                elif kind == "voice":
+                    sent = await bot.send_voice(voice=upload, **kwargs)
+                elif kind == "audio":
+                    sent = await bot.send_audio(audio=upload, **kwargs)
+                else:
+                    sent = await bot.send_document(document=upload, **kwargs)
+                delivered.append({
+                    "user_id": recipient.id,
+                    "telegram_message_id": sent.message_id,
+                    "chat_id": target["chat_id"],
+                    "thread_id": target.get("message_thread_id"),
+                })
+            except Exception as exc:
+                delivery_errors.append(recipient.full_name + ": " + str(exc)[:180])
+    else:
+        delivery_errors.append("Telegram-бот не подключён к веб-приложению")
+
+    metadata = json.loads(row.metadata_json or "{}")
+    metadata["telegram_deliveries"] = delivered
+    if delivery_errors:
+        metadata["telegram_delivery_errors"] = delivery_errors
+    row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+    student_delivery = next((item for item in delivered if item["user_id"] == student.id), None)
+    if student_delivery:
+        row.destination_message_id = student_delivery["telegram_message_id"]
+    row.delivery_status = "delivered" if delivered and not delivery_errors else ("partial" if delivered else "failed")
+    db.commit()
+
+    if bot and teacher.telegram_id:
+        try:
+            from .telegram_teacher import update_teacher_panel
+            await update_teacher_panel(bot, db, teacher)
+        except Exception:
+            pass
     return _panel_message_dict(row)
