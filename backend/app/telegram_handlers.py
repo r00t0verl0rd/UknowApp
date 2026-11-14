@@ -8,10 +8,11 @@ from datetime import datetime, timezone
 from aiogram import Bot, F, Router
 from aiogram.filters import Command, CommandStart
 from aiogram.types import CallbackQuery, Message as TgMessage
+from sqlalchemy import select
 
 from .database import SessionLocal
 from .media_storage import archive_telegram_media
-from .models import TeacherPanel, TeacherSession
+from .models import StudentTelegramGroup, TeacherPanel, TeacherSession
 from .telegram_common import (
     CONNECTION_CODE_RE,
     claim_connection_code,
@@ -158,6 +159,59 @@ async def choose_conversation(callback: CallbackQuery, bot: Bot):
         await update_teacher_panel(bot, db, teacher)
 
 
+@router.message(Command("bind_group"))
+async def bind_student_group(message: TgMessage):
+    """Bind the current Telegram forum topic to the linked student account."""
+    if not message.from_user:
+        return
+    if message.chat.type != "supergroup" or not message.chat.is_forum or not message.message_thread_id:
+        await message.answer(
+            "Откройте тему «🤖 Бот» в супергруппе с включёнными темами и отправьте /bind_group."
+        )
+        return
+
+    with SessionLocal() as db:
+        student = get_linked_user(db, message.from_user.id)
+        if not student or student.role != "student":
+            await message.answer("Привязать тему может только подключённый аккаунт ученика.")
+            return
+        conversation = current_student_conversation(db, student.id)
+        if not conversation or conversation.status != "active":
+            await message.answer("Сначала попросите администратора назначить вам активного учителя.")
+            return
+
+        occupied = db.scalar(
+            select(StudentTelegramGroup).where(
+                StudentTelegramGroup.chat_id == message.chat.id,
+                StudentTelegramGroup.thread_id == message.message_thread_id,
+            )
+        )
+        if occupied and occupied.student_id != student.id:
+            await message.answer("Эта тема уже привязана к другому ученику.")
+            return
+
+        binding = db.get(StudentTelegramGroup, student.id)
+        if binding is None:
+            binding = StudentTelegramGroup(
+                student_id=student.id,
+                chat_id=message.chat.id,
+                thread_id=message.message_thread_id,
+                group_title=message.chat.title,
+            )
+            db.add(binding)
+        else:
+            binding.chat_id = message.chat.id
+            binding.thread_id = message.message_thread_id
+            binding.group_title = message.chat.title
+        db.commit()
+
+    await message.answer(
+        "✅ Тема привязана к вашему аккаунту UknowApp.\n"
+        "Теперь отправляйте сообщения здесь — учитель получит их в своей панели, "
+        "а его ответы будут появляться в этой теме. Личный чат с ботом продолжает работать."
+    )
+
+
 @router.message()
 async def route_message(message: TgMessage, bot: Bot):
     if not message.from_user:
@@ -170,6 +224,21 @@ async def route_message(message: TgMessage, bot: Bot):
     )
     with SessionLocal() as db:
         sender = get_linked_user(db, message.from_user.id)
+        group_binding = None
+        if message.chat.type in {"group", "supergroup"}:
+            if not message.message_thread_id or not sender or sender.role != "student":
+                return
+            group_binding = db.scalar(
+                select(StudentTelegramGroup).where(
+                    StudentTelegramGroup.chat_id == message.chat.id,
+                    StudentTelegramGroup.thread_id == message.message_thread_id,
+                    StudentTelegramGroup.student_id == sender.id,
+                )
+            )
+            # Only the student to whom this topic is bound can use it.
+            # Messages from classmates and other group members are ignored.
+            if not group_binding:
+                return
         if not sender:
             text = (message.text or "").strip()
             normalized = re.sub(r"[\s-]", "", text).upper()
@@ -253,6 +322,12 @@ async def route_message(message: TgMessage, bot: Bot):
             if sender.role == "teacher" else []
         )
         row = persist_message(db, conversation.id, sender, message, "pending")
+        metadata = json.loads(row.metadata_json or "{}")
+        metadata["source_mode"] = "group_topic" if group_binding else "private"
+        metadata["source_chat_id"] = message.chat.id
+        metadata["source_thread_id"] = message.message_thread_id if group_binding else None
+        row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+        db.commit()
         await archive_telegram_media(bot, message, row)
         if not recipient.telegram_id or not recipient.active:
             row.delivery_status = "failed"
@@ -273,11 +348,28 @@ async def route_message(message: TgMessage, bot: Bot):
                 except Exception:
                     logger.exception("Could not refresh teacher panel for conversation_id=%s", conversation.id)
             else:
-                copied = await bot.copy_message(
-                    chat_id=recipient.telegram_id,
-                    from_chat_id=message.chat.id,
-                    message_id=message.message_id,
-                )
+                # Reply in the same channel where the student's latest
+                # unanswered message arrived: forum topic or private bot chat.
+                destination_chat_id = recipient.telegram_id
+                destination_thread_id = None
+                for pending in reversed(pending_before_reply):
+                    pending_metadata = json.loads(pending.metadata_json or "{}")
+                    if pending_metadata.get("source_mode") == "group_topic":
+                        destination_chat_id = int(pending_metadata["source_chat_id"])
+                        destination_thread_id = int(pending_metadata["source_thread_id"])
+                        break
+                    if pending_metadata.get("source_mode") == "private":
+                        destination_chat_id = recipient.telegram_id
+                        destination_thread_id = None
+                        break
+                copy_kwargs = {
+                    "chat_id": destination_chat_id,
+                    "from_chat_id": message.chat.id,
+                    "message_id": message.message_id,
+                }
+                if destination_thread_id is not None:
+                    copy_kwargs["message_thread_id"] = destination_thread_id
+                copied = await bot.copy_message(**copy_kwargs)
                 row.destination_message_id = copied.message_id
                 row.delivery_status = "delivered"
                 db.commit()
