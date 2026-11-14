@@ -307,6 +307,7 @@ async def route_message(message: TgMessage, bot: Bot):
             # conversation instead of silently dropping it.
             if (
                 not group_binding
+                and not sender
                 and sender_chat
                 and sender_chat.id == message.chat.id
             ):
