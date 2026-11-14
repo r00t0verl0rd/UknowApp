@@ -39,6 +39,7 @@ function MessageBubble({ message, auth }) {
     {mediaUrl && !["photo", "voice", "audio", "video", "video_note", "animation"].includes(kind) && <a className="chat-media-download" href={mediaUrl} download={label}>Скачать: {label}</a>}
     {!mediaUrl && media && <small className="chat-media-status">{media.archive_status === "too_large_for_telegram_download" ? "Файл больше 20 МБ — Telegram Bot API не разрешил архивировать его" : media.archive_status === "download_failed" ? "Не удалось сохранить копию вложения" : "Загрузка вложения…"}</small>}
     {!media && !message.text && <p>Вложение: {message.content_type}</p>}
+    {message.delivery_status && message.delivery_status !== "delivered" && <small className="message-delivery">{message.delivery_status === "partial" ? "Доставлено не всем участникам" : "Не доставлено в Telegram"}{message.metadata?.telegram_delivery_errors?.length ? " · " + message.metadata.telegram_delivery_errors.join("; ") : ""}</small>}
   </div>;
 }
 
@@ -111,6 +112,33 @@ export default function App() {
   }, [auth, request]);
 
   useEffect(() => { refresh(); }, [refresh]);
+
+  useEffect(() => {
+    if (!auth || page !== "chats") return undefined;
+    let active = true;
+    let inFlight = false;
+    const interval = window.setInterval(async () => {
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const conversations = await request("/api/panel/conversations");
+        if (!active) return;
+        setChats(conversations);
+        if (selectedChat?.id) {
+          const rows = await request("/api/panel/conversations/" + selectedChat.id + "/messages");
+          if (active) setMessages(rows);
+        }
+      } catch {
+        // Keep the current conversation visible during brief network interruptions.
+      } finally {
+        inFlight = false;
+      }
+    }, 10000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [auth, page, selectedChat?.id, request]);
 
   const notify = (message) => { setToast(message); window.setTimeout(() => setToast(""), 2600); };
   const activeTeachers = users.filter(u => u.active && u.role === "teacher");
@@ -240,7 +268,6 @@ export default function App() {
       setDraft(""); setAttachment(null);
       setMessages(await request("/api/panel/conversations/" + selectedChat.id + "/messages"));
       setChats(await request("/api/panel/conversations"));
-      const deliveryErrors = sentMessage?.metadata?.telegram_delivery_errors || [];
       if (sentMessage?.delivery_status === "delivered") notify("Сообщение отправлено");
       else if (sentMessage?.delivery_status === "partial") notify("Сообщение доставлено не всем участникам");
       else notify("Сохранено в истории, но Telegram-доставка не удалась");
