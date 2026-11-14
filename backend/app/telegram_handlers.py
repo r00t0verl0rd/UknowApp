@@ -290,7 +290,10 @@ async def route_message(message: TgMessage, bot: Bot):
                 )
                 return
 
-            # First, accept messages sent by the student's linked Telegram account.
+            # The student's Telegram ID is the primary identity. If this
+            # student has not bound a topic yet, bind the first forum topic
+            # where they send a message, provided it is not already owned by
+            # another student. This replaces the manual /bind_group step.
             if sender and sender.role == "student":
                 group_binding = db.scalar(
                     select(StudentTelegramGroup).where(
@@ -299,6 +302,56 @@ async def route_message(message: TgMessage, bot: Bot):
                         StudentTelegramGroup.student_id == sender.id,
                     )
                 )
+
+                if not group_binding and message.chat.is_forum:
+                    existing_student_binding = db.get(StudentTelegramGroup, sender.id)
+                    occupied_topic = db.scalar(
+                        select(StudentTelegramGroup).where(
+                            StudentTelegramGroup.chat_id == message.chat.id,
+                            StudentTelegramGroup.thread_id == message.message_thread_id,
+                        )
+                    )
+                    active_conversation = current_student_conversation(db, sender.id)
+
+                    if (
+                        existing_student_binding is None
+                        and occupied_topic is None
+                        and active_conversation
+                        and active_conversation.status == "active"
+                    ):
+                        group_binding = StudentTelegramGroup(
+                            student_id=sender.id,
+                            chat_id=message.chat.id,
+                            thread_id=message.message_thread_id,
+                            group_title=message.chat.title,
+                        )
+                        db.add(group_binding)
+                        db.commit()
+                        logger.warning(
+                            "TELEGRAM_GROUP_AUTO_BOUND student_id=%s telegram_id=%s "
+                            "chat_id=%s thread_id=%s",
+                            sender.id,
+                            message.from_user.id,
+                            message.chat.id,
+                            message.message_thread_id,
+                        )
+                    elif occupied_topic and occupied_topic.student_id != sender.id:
+                        logger.warning(
+                            "TELEGRAM_GROUP_AUTO_BIND_DENIED topic_already_bound "
+                            "student_id=%s owner_student_id=%s chat_id=%s thread_id=%s",
+                            sender.id,
+                            occupied_topic.student_id,
+                            message.chat.id,
+                            message.message_thread_id,
+                        )
+                    elif existing_student_binding:
+                        logger.info(
+                            "Student already has a forum binding; automatic rebind skipped "
+                            "(student_id=%s chat_id=%s thread_id=%s)",
+                            sender.id,
+                            message.chat.id,
+                            message.message_thread_id,
+                        )
 
             # Telegram may represent a message sent on behalf of the supergroup
             # with sender_chat and no real from_user (or a synthetic sender ID).
