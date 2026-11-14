@@ -485,8 +485,8 @@ async def route_message(message: TgMessage, bot: Bot):
                             )
                         raise
 
-                    row.destination_message_id = copied.message_id
                     attachment_metadata = json.loads(row.metadata_json or "{}")
+                    attachment_metadata["teacher_inbox_media_message_id"] = copied.message_id
                     attachment_metadata["teacher_inbox_notice_message_id"] = notice.message_id
                     row.metadata_json = json.dumps(attachment_metadata, ensure_ascii=False)
 
