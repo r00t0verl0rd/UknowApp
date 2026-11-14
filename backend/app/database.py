@@ -26,6 +26,17 @@ def create_tables() -> None:
         with engine.begin() as connection:
             connection.execute(text("ALTER TABLE users ADD COLUMN web_password_hash VARCHAR(160)"))
 
+    if "web_username" not in user_columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN web_username VARCHAR(160)"))
+
+    # Existing teachers receive their current full name as the initial web login.
+    with engine.begin() as connection:
+        connection.execute(text(
+            "UPDATE users SET web_username = full_name "
+            "WHERE role = 'teacher' AND (web_username IS NULL OR TRIM(web_username) = '')"
+        ))
+
     # create_all does not add columns to an existing database. Keep this small,
     # idempotent migration here so existing local SQLite installs are upgraded
     # automatically when the backend starts.
