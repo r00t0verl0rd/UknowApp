@@ -34,13 +34,10 @@ TEACHER_NEXT_PAGE_LABEL = "Следующая →"
 def message_preview(row: Optional[Message]) -> str:
     if not row:
         return "Сообщений пока нет"
-    body = (row.text or "").strip()
-    if body:
-        body = " ".join(body.split())
-        return body if len(body) <= 115 else body[:112] + "…"
+    body = " ".join((row.text or "").strip().split())
     labels = {
         "voice": "🎤 Голосовое сообщение",
-        "video_note": "⭕ Видеокружочек",
+        "video_note": "⭕ Видеокружок",
         "photo": "🖼 Фотография",
         "video": "🎬 Видео",
         "audio": "🎵 Аудио",
@@ -51,7 +48,13 @@ def message_preview(row: Optional[Message]) -> str:
         "contact": "Контакт",
         "poll": "Опрос",
     }
-    return labels.get(row.content_type, "Вложение: " + (row.content_type or "файл"))
+    if row.content_type != "text":
+        label = labels.get(row.content_type, "Вложение: " + (row.content_type or "файл"))
+        preview = label + (": " + body if body else "")
+        return preview if len(preview) <= 115 else preview[:112] + "…"
+    if body:
+        return body if len(body) <= 115 else body[:112] + "…"
+    return "Сообщение";
 
 
 def conversation_messages(db: Session, conversation_id: int) -> list[Message]:
