@@ -338,6 +338,10 @@ async def route_message(message: TgMessage, bot: Bot):
         metadata["source_thread_id"] = message.message_thread_id if group_binding else None
         row.metadata_json = json.dumps(metadata, ensure_ascii=False)
         db.commit()
+        # A grey receipt means the message is safely stored by UknowApp,
+        # independently of whether the teacher's Telegram account is available.
+        if group_binding:
+            await send_group_delivery_receipt(bot, db, row)
         await archive_telegram_media(bot, message, row)
         if not recipient.telegram_id or not recipient.active:
             row.delivery_status = "failed"
@@ -353,8 +357,6 @@ async def route_message(message: TgMessage, bot: Bot):
                 # persistent teacher panel; do not create extra Telegram messages.
                 row.delivery_status = "delivered"
                 db.commit()
-                if group_binding:
-                    await send_group_delivery_receipt(bot, db, row)
                 try:
                     await update_teacher_panel(bot, db, recipient)
                 except Exception:
