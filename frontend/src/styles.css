@@ -984,3 +984,26 @@ img, video, audio { max-width: 100%; }
   .composer-send { align-items: stretch; flex-direction: column; }
   .composer-send .btn { width: 100%; }
 }
+
+
+.teacher-readonly-graph { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 24px; }
+.teacher-graph-root { max-width: 960px; margin: 20px auto; }
+.teacher-graph-card { display: flex; align-items: center; gap: 13px; min-width: 0; padding: 16px; border: 1px solid #ded2ef; background: linear-gradient(110deg,#f8f5fc,#fff); border-radius: 14px; box-shadow: 0 4px 14px rgba(41,34,63,.035); }
+.teacher-graph-card .avatar { flex: 0 0 44px; width: 44px; height: 44px; }
+.teacher-graph-card b, .teacher-graph-card small { display: block; }
+.teacher-graph-card b { font-size: 14px; }
+.teacher-graph-card small { margin-top: 4px; color: var(--muted); font-size: 11px; }
+.teacher-graph-card .readonly-tag { margin-left: auto; flex: none; border-radius: 20px; padding: 6px 9px; color: #75658f; background: #f1edf7; font-size: 10px; font-weight: 800; }
+.teacher-graph-connector { width: 1px; height: 26px; margin: 0 auto; background: #d8cde7; }
+.teacher-graph-student-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px; }
+.teacher-graph-card.student { border-color: #f0e5ce; background: linear-gradient(110deg,#fff8e9,#fff); }
+.teacher-graph-summary { display: flex; align-items: center; gap: 9px; max-width: 960px; margin: 20px auto 0; color: var(--muted); font-size: 12px; }
+.teacher-graph-summary svg { color: var(--purple); }
+.teacher-graph-summary b { color: var(--ink); font-size: 18px; }
+@media(max-width:760px) {
+  .teacher-readonly-graph { padding: 14px; }
+  .teacher-graph-card { padding: 12px; gap: 9px; }
+  .teacher-graph-card b { font-size: 12px; overflow-wrap: anywhere; }
+  .teacher-graph-card .readonly-tag { font-size: 9px; padding: 5px 7px; }
+  .teacher-graph-student-grid { grid-template-columns: minmax(0,1fr); gap: 8px; }
+}
