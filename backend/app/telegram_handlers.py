@@ -168,13 +168,46 @@ async def choose_conversation(callback: CallbackQuery, bot: Bot):
 
 
 @router.message(Command("bind_group"))
-async def bind_student_group(message: TgMessage):
+async def bind_student_group(message: TgMessage, bot: Bot):
     """Bind the current Telegram forum topic to the linked student account."""
     if not message.from_user:
         return
     if message.chat.type != "supergroup" or not message.chat.is_forum or not message.message_thread_id:
         await message.answer(
             "Откройте тему «🤖 Бот» в супергруппе с включёнными темами и отправьте /bind_group."
+        )
+        return
+
+    # Telegram may deliver /bind_group while hiding ordinary group messages
+    # from bots with Group Privacy Mode enabled. Verify that this bot can
+    # actually receive the student's regular messages before binding the topic.
+    try:
+        bot_info = await bot.get_me()
+        can_read_group_messages = bool(
+            getattr(bot_info, "can_read_all_group_messages", False)
+        )
+        if not can_read_group_messages:
+            bot_member = await bot.get_chat_member(
+                chat_id=message.chat.id,
+                user_id=bot_info.id,
+            )
+            if bot_member.status not in {"administrator", "creator"}:
+                await message.answer(
+                    "⚠️ Тема не привязана: Telegram сейчас не передаёт боту обычные сообщения из группы.\\n\\n"
+                    "Добавьте бота в администраторы этой группы либо отключите Group Privacy "
+                    "в @BotFather (Bot Settings → Group Privacy), затем удалите бота из группы "
+                    "и добавьте снова. После этого повторите /bind_group."
+                )
+                return
+    except Exception:
+        logger.exception(
+            "Could not verify Telegram group message access for chat_id=%s",
+            message.chat.id,
+        )
+        await message.answer(
+            "Не удалось проверить доступ бота к сообщениям группы. "
+            "Проверьте, что бот добавлен в эту группу и имеет доступ к сообщениям, "
+            "затем повторите /bind_group."
         )
         return
 
@@ -225,8 +258,12 @@ async def route_message(message: TgMessage, bot: Bot):
     if not message.from_user:
         return
     logger.info(
-        "Received Telegram message: telegram_id=%s content_type=%s text_length=%s",
+        "Received Telegram message: telegram_id=%s chat_type=%s chat_id=%s thread_id=%s "
+        "content_type=%s text_length=%s",
         message.from_user.id,
+        message.chat.type,
+        message.chat.id,
+        message.message_thread_id,
         message.content_type,
         len(message.text or message.caption or ""),
     )
@@ -234,7 +271,21 @@ async def route_message(message: TgMessage, bot: Bot):
         sender = get_linked_user(db, message.from_user.id)
         group_binding = None
         if message.chat.type in {"group", "supergroup"}:
-            if not message.message_thread_id or not sender or sender.role != "student":
+            if not message.message_thread_id:
+                logger.info(
+                    "Ignoring group message outside a bound forum topic: chat_id=%s message_id=%s",
+                    message.chat.id,
+                    message.message_id,
+                )
+                return
+            if not sender or sender.role != "student":
+                logger.info(
+                    "Ignoring group message from an unlinked/non-student sender: chat_id=%s "
+                    "thread_id=%s telegram_id=%s",
+                    message.chat.id,
+                    message.message_thread_id,
+                    message.from_user.id,
+                )
                 return
             group_binding = db.scalar(
                 select(StudentTelegramGroup).where(
@@ -243,9 +294,18 @@ async def route_message(message: TgMessage, bot: Bot):
                     StudentTelegramGroup.student_id == sender.id,
                 )
             )
-            # Only the student to whom this topic is bound can use it.
-            # Messages from classmates and other group members are ignored.
+            # The forum topic is only an additional input channel. Once the
+            # sender and topic are verified, it follows the exact same message
+            # persistence, moderation, delivery and teacher-inbox path as DM.
             if not group_binding:
+                logger.warning(
+                    "Ignoring message from unbound Telegram topic: student_id=%s chat_id=%s "
+                    "thread_id=%s message_id=%s",
+                    sender.id,
+                    message.chat.id,
+                    message.message_thread_id,
+                    message.message_id,
+                )
                 return
         if not sender:
             text = (message.text or "").strip()
