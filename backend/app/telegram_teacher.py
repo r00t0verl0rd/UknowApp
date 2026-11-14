@@ -14,7 +14,6 @@ from aiogram.types import (
     Message as TgMessage,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
-    ReplyParameters,
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -90,88 +89,12 @@ def pending_student_messages(rows: list[Message]) -> list[Message]:
     ]
 
 
-async def _send_group_read_receipt(
-    bot: Bot,
-    db: Session,
-    row: Message,
-    *,
-    teacher_has_read: bool,
-) -> None:
-    """Post one bot-owned receipt under a student message in its bound forum topic."""
-    metadata = json.loads(row.metadata_json or "{}")
-    if metadata.get("source_mode") != "group_topic":
-        return
-
-    status = metadata.get("teacher_read_receipt_status")
-    if status in {"sending", "sent", "read"}:
-        return
-
-    try:
-        chat_id = int(metadata["source_chat_id"])
-        thread_id = int(metadata["source_thread_id"])
-        source_message_id = int(row.source_message_id)
-    except (KeyError, TypeError, ValueError):
-        logger.warning("Cannot create read receipt: source metadata missing for message_id=%s", row.id)
-        return
-
-    metadata["teacher_read_receipt_status"] = "sending"
-    row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-    db.commit()
-
-    receipt_text = "☑️☑️" if teacher_has_read else "✓✓"
-    try:
-        sent = await bot.send_message(
-            chat_id=chat_id,
-            message_thread_id=thread_id,
-            text=receipt_text,
-            reply_parameters=ReplyParameters(message_id=source_message_id),
-            disable_notification=True,
-        )
-    except Exception:
-        metadata = json.loads(row.metadata_json or "{}")
-        if metadata.get("teacher_read_receipt_status") == "sending":
-            metadata["teacher_read_receipt_status"] = "pending"
-            row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-            db.commit()
-        logger.warning("Could not send group read receipt for message_id=%s", row.id, exc_info=True)
-        return
-
-    # The teacher may open the conversation while send_message is in flight.
-    # Re-read metadata after the await so the receipt cannot remain grey.
-    metadata = json.loads(row.metadata_json or "{}")
-    is_read = teacher_has_read or bool(metadata.get("teacher_read_at"))
-    if is_read:
-        try:
-            await bot.edit_message_text(
-                chat_id=chat_id,
-                message_id=sent.message_id,
-                text="☑️☑️",
-            )
-        except Exception:
-            logger.warning(
-                "Could not turn group read receipt blue for message_id=%s",
-                row.id,
-                exc_info=True,
-            )
-
-    metadata["teacher_read_receipt_message_id"] = sent.message_id
-    metadata["teacher_read_receipt_status"] = "read" if is_read else "sent"
-    metadata["teacher_read_receipt_sent_at"] = datetime.now(timezone.utc).isoformat()
-    row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-    db.commit()
-
-
-async def send_group_delivery_receipt(bot: Bot, db: Session, row: Message) -> None:
-    """Show grey double checks as soon as UknowApp has accepted a group message."""
-    await _send_group_read_receipt(bot, db, row, teacher_has_read=False)
-
-
 async def mark_messages_read_by_teacher(
     bot: Bot,
     db: Session,
     messages: list[Message],
 ) -> None:
-    """Mark a batch as read and update its group-topic receipts."""
+    """Persist teacher read state without sending extra messages to Telegram groups."""
     if not messages:
         return
 
@@ -185,41 +108,6 @@ async def mark_messages_read_by_teacher(
             changed = True
     if changed:
         db.commit()
-
-    for row in messages:
-        metadata = json.loads(row.metadata_json or "{}")
-        if metadata.get("source_mode") != "group_topic":
-            continue
-
-        status = metadata.get("teacher_read_receipt_status")
-        receipt_id = metadata.get("teacher_read_receipt_message_id")
-        if status == "read" or status == "sending":
-            continue
-
-        if status == "sent" and receipt_id:
-            try:
-                await bot.edit_message_text(
-                    chat_id=int(metadata["source_chat_id"]),
-                    message_id=int(receipt_id),
-                    text="☑️☑️",
-                )
-                metadata["teacher_read_receipt_status"] = "read"
-                metadata["teacher_read_receipt_read_at"] = now
-                row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-                db.commit()
-            except Exception:
-                logger.warning(
-                    "Could not update group read receipt for message_id=%s",
-                    row.id,
-                    exc_info=True,
-                )
-        else:
-            # Retry a missing/failed delivery receipt directly in its read state.
-            if status == "sent":
-                metadata["teacher_read_receipt_status"] = "pending"
-                row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-                db.commit()
-            await _send_group_read_receipt(bot, db, row, teacher_has_read=True)
 
 
 async def mark_visible_messages_read_by_teacher(
