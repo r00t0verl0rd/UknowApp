@@ -384,9 +384,8 @@ async def _update_teacher_panel_locked(
             )
             if not any(marker in error_text for marker in permanent_panel_errors):
                 logger.warning(
-                    "Teacher panel edit failed; keeping its stored message id "
-                    "(teacher_id=%s message_id=%s): %s",
-                    teacher.id, panel.message_id, exc,
+                    "Teacher panel edit failed (teacher_id=%s message_id=%s error_type=%s)",
+                    teacher.id, panel.message_id, type(exc).__name__,
                 )
                 return False
             logger.info(
@@ -408,11 +407,11 @@ async def _update_teacher_panel_locked(
                 text="Обновляю список учеников…",
                 reply_markup=ReplyKeyboardRemove(),
             )
-        except Exception:
+        except Exception as exc:
             logger.warning(
-                "Could not remove the previous teacher keyboard (teacher_id=%s)",
+                "Could not remove the previous teacher keyboard (teacher_id=%s error_type=%s)",
                 teacher.id,
-                exc_info=True,
+                type(exc).__name__,
             )
 
     sent = await bot.send_message(
