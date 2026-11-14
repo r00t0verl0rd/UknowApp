@@ -343,9 +343,10 @@ async def route_message(message: TgMessage, bot: Bot):
                 return
             # The forum topic is an additional input channel for the student.
             # It uses the same persistence, moderation and teacher-inbox path as DM.
-        elif not sender:
-            # Messages without a Telegram user identity cannot be linked in a
-            # private chat, and must not be attributed to another account.
+        elif not sender and not message.from_user:
+            # A private message without a Telegram user identity cannot be
+            # linked to an account. In a private chat, normal user messages
+            # still continue to the activation-code flow below.
             logger.warning(
                 "TELEGRAM_MESSAGE_IGNORED_NO_LINKED_USER chat_id=%s sender_chat_id=%s",
                 message.chat.id,
