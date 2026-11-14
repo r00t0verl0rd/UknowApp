@@ -3,6 +3,8 @@
 import json
 import logging
 import re
+import time
+from collections import deque
 
 from aiogram import Bot, F, Router
 from aiogram.filters import Command, CommandStart
@@ -35,6 +37,26 @@ from .telegram_teacher import (
 
 logger = logging.getLogger(__name__)
 router = Router()
+
+_CONNECTION_CODE_WINDOW = 15 * 60
+_CONNECTION_CODE_LIMIT = 5
+_connection_code_attempts: dict[int, deque[float]] = {}
+
+
+def _connection_code_attempt_allowed(telegram_id: int) -> bool:
+    now = time.monotonic()
+    attempts = _connection_code_attempts.setdefault(telegram_id, deque())
+    while attempts and now - attempts[0] >= _CONNECTION_CODE_WINDOW:
+        attempts.popleft()
+    return len(attempts) < _CONNECTION_CODE_LIMIT
+
+
+def _record_connection_code_attempt(telegram_id: int) -> None:
+    now = time.monotonic()
+    attempts = _connection_code_attempts.setdefault(telegram_id, deque())
+    while attempts and now - attempts[0] >= _CONNECTION_CODE_WINDOW:
+        attempts.popleft()
+    attempts.append(now)
 
 
 @router.message(CommandStart())
@@ -375,37 +397,8 @@ async def route_message(message: TgMessage, bot: Bot):
                             message.message_thread_id,
                         )
 
-            # Telegram may represent a message sent on behalf of the supergroup
-            # with sender_chat and no real from_user (or a synthetic sender ID).
-            # In that case the bound forum topic is the identity context:
-            # resolve its linked student and keep the message in that student's
-            # conversation instead of silently dropping it.
-            if (
-                not group_binding
-                and not sender
-                and sender_chat
-                and sender_chat.id == message.chat.id
-            ):
-                group_binding = db.scalar(
-                    select(StudentTelegramGroup).where(
-                        StudentTelegramGroup.chat_id == message.chat.id,
-                        StudentTelegramGroup.thread_id == message.message_thread_id,
-                    )
-                )
-                if group_binding:
-                    bound_student = db.get(User, group_binding.student_id)
-                    if bound_student and bound_student.active and bound_student.role == "student":
-                        sender = bound_student
-                        logger.warning(
-                            "TELEGRAM_GROUP_SENDER_RESOLVED chat_id=%s thread_id=%s student_id=%s",
-                            message.chat.id,
-                            message.message_thread_id,
-                            sender.id,
-                        )
-                    else:
-                        group_binding = None
-                        sender = None
-
+            # Anonymous group posts have no verified Telegram user identity.
+            # They must not impersonate the student assigned to this topic.
             if not sender or sender.role != "student" or not group_binding:
                 logger.warning(
                     "TELEGRAM_GROUP_MESSAGE_IGNORED telegram_id=%s sender_chat_id=%s "
@@ -433,8 +426,14 @@ async def route_message(message: TgMessage, bot: Bot):
             text = (message.text or "").strip()
             normalized = re.sub(r"[\s-]", "", text).upper()
             if CONNECTION_CODE_RE.fullmatch(normalized):
+                telegram_id = message.from_user.id
+                if not _connection_code_attempt_allowed(telegram_id):
+                    await message.answer(
+                        "Слишком много попыток подключения. Попробуйте снова через 15 минут."
+                    )
+                    return
                 try:
-                    linked_user, result = claim_connection_code(db, normalized, message.from_user.id)
+                    linked_user, result = claim_connection_code(db, normalized, telegram_id)
                 except Exception:
                     db.rollback()
                     logger.exception(
@@ -448,26 +447,33 @@ async def route_message(message: TgMessage, bot: Bot):
                     return
                 logger.info(
                     "Telegram connection code processed: telegram_id=%s result=%s",
-                    message.from_user.id,
+                    telegram_id,
                     result,
                 )
                 if result == "ok" and linked_user:
+                    _connection_code_attempts.pop(telegram_id, None)
                     await message.answer(
                         "✅ Telegram подключён к аккаунту «" + linked_user.full_name + "»."
                     )
                     if linked_user.role == "teacher":
                         await update_teacher_panel(bot, db, linked_user)
                 elif result == "expired":
+                    _record_connection_code_attempt(telegram_id)
                     await message.answer("Срок действия кода истёк. Попросите администратора создать новый код.")
                 elif result == "used":
+                    _record_connection_code_attempt(telegram_id)
                     await message.answer("Этот код уже использован. Попросите администратора создать новый.")
                 elif result == "telegram_already_linked":
+                    _record_connection_code_attempt(telegram_id)
                     await message.answer("Этот Telegram-аккаунт уже привязан к другому пользователю UknowApp.")
                 elif result == "account_already_linked":
+                    _record_connection_code_attempt(telegram_id)
                     await message.answer("К аккаунту уже привязан другой Telegram. Обратитесь к администратору.")
                 elif result == "inactive":
+                    _record_connection_code_attempt(telegram_id)
                     await message.answer("Этот аккаунт UknowApp отключён. Обратитесь к администратору.")
                 else:
+                    _record_connection_code_attempt(telegram_id)
                     await message.answer("Код не найден или был заменён. Проверьте его или запросите новый у администратора.")
             else:
                 await message.answer(
