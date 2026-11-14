@@ -67,6 +67,7 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [modal, setModal] = useState(null);
   const [name, setName] = useState("");
+  const [teacherLogin, setTeacherLogin] = useState("");
   const [role, setRole] = useState("teacher");
   const [telegramId, setTelegramId] = useState("");
   const [teacherId, setTeacherId] = useState("");
@@ -178,15 +179,16 @@ export default function App() {
   }
 
   function openCreate(defaultRole = "teacher") {
-    setModal({ mode: "create", id: null }); setName(""); setRole(defaultRole); setTelegramId(""); setWebPassword("");
+    setModal({ mode: "create", id: null }); setName(""); setTeacherLogin(""); setRole(defaultRole); setTelegramId(""); setWebPassword("");
   }
   function openEdit(user) {
-    setModal({ mode: "edit", id: user.id }); setName(user.full_name); setRole(user.role); setTelegramId(user.telegram_id ? String(user.telegram_id) : ""); setWebPassword("");
+    setModal({ mode: "edit", id: user.id }); setName(user.full_name); setTeacherLogin(user.web_username || user.full_name); setRole(user.role); setTelegramId(user.telegram_id ? String(user.telegram_id) : ""); setWebPassword("");
   }
 
   async function saveUser(event) {
     event.preventDefault();
     const body = { full_name: name.trim(), role, telegram_id: telegramId.trim() ? Number(telegramId) : null };
+    if (role === "teacher") body.web_username = (teacherLogin || name).trim();
     if (webPassword.trim()) body.web_password = webPassword.trim();
     try {
       if (modal.mode === "create") await request("/api/admin/users", { method: "POST", body: JSON.stringify(body) });
@@ -280,7 +282,7 @@ export default function App() {
       <div className="eyebrow">ЕДИНАЯ ПАНЕЛЬ ШКОЛЫ</div><h1>UknowApp</h1>
       <p className="muted">Вход администратора или учителя.</p>
       <form onSubmit={signIn} className="stack">
-        <label>Логин администратора или ID учителя<input value={login} onChange={e => setLogin(e.target.value)} autoComplete="username" /></label>
+        <label>Логин администратора или учителя<input value={login} onChange={e => setLogin(e.target.value)} autoComplete="username" /></label>
         <label>Пароль<input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" /></label>
         {error && <div className="alert">{error}</div>}
         <button className="btn primary" type="submit">Войти <ChevronRight size={17}/></button>
@@ -330,7 +332,7 @@ export default function App() {
           <div className="teacher-graph-summary"><Users size={18}/><b>{teacherGraph?.counts.students || 0}</b><span>активных учеников в вашей группе</span></div>
         </section>}
         {page === "graph" && profile?.role === "admin" && <>
-          <div className="page-title"><div><div className="eyebrow">ВИЗУАЛЬНОЕ УПРАВЛЕНИЕ</div><h1>Структура школы</h1><p>Добавляйте участников, меняйте их данные и назначайте учеников прямо на схеме.</p></div><button className="btn primary" onClick={() => openCreate()}><Plus/>Добавить участника</button></div>
+          <div className="page-title"><div><div className="eyebrow">ВИЗУАЛЬНОЕ УПРАВЛЕНИЕ</div><h1>Структура школы</h1><p>Добавляйте участников, меняйте их данные и назначайте учеников прямо на схеме.</p></div></div>
           <div className="metrics">
             <div className="metric"><GraduationCap/><span>Учителя</span><b>{overview?.counts.teachers || 0}</b></div>
             <div className="metric"><Users/><span>Ученики</span><b>{overview?.counts.students || 0}</b></div>
@@ -338,7 +340,7 @@ export default function App() {
             <div className="metric"><MessageCircle/><span>Переписки</span><b>{overview?.counts.conversations || 0}</b></div>
           </div>
           <section className="graph-panel">
-            <div className="section-head"><div><h2>Карта связей</h2><p>Действия доступны на карточках участников.</p></div><div className="legend"><span className="teacher-dot"/> Учителя <span className="student-dot"/> Ученики</div></div>
+            <div className="section-head"><div className="legend"><span className="teacher-dot"/> Учителя <span className="student-dot"/> Ученики</div></div>
             <div className="root-node"><img src="/logo.svg" alt=""/><div><b>Администратор</b><small>Полное управление</small></div></div>
             <div className="teacher-grid">
               {activeTeachers.map(teacher => <section className="teacher-branch" key={teacher.id}>
@@ -356,8 +358,9 @@ export default function App() {
                 <button className="add-student" onClick={() => { setTeacherId(String(teacher.id)); setStudentId(activeStudents[0]?.id ? String(activeStudents[0].id) : ""); setModal({ mode: "assign" }); }}><Plus/>Назначить ученика</button>
               </section>)}
             </div>
-            {!activeTeachers.length && <div className="empty-state"><GraduationCap/><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span><button className="btn primary" onClick={() => openCreate("teacher")}><Plus/>Добавить учителя</button></div>}
+            {!activeTeachers.length && <div className="empty-state"><GraduationCap/><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span></div>}
             {!!unassignedStudents.length && <section className="unassigned"><div className="section-head"><div><h2>Ученики без назначения</h2><p>Их можно назначить учителю прямо отсюда.</p></div></div><div className="unassigned-grid">{unassignedStudents.map(student => <div className="person-card student-card" key={student.id}><div className="person-main"><div className="avatar student-avatar"><Users/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small></div></div><div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div><button className="btn small outline" disabled={!activeTeachers.length} onClick={() => { setStudentId(String(student.id)); setTeacherId(String(activeTeachers[0]?.id || "")); setModal({ mode: "assign" }); }}>Назначить</button></div>)}</div></section>}
+            <div className="graph-actions"><button className="btn primary" onClick={() => openCreate()}><Plus/>Добавить участника</button></div>
           </section>
         </>}
 
@@ -365,7 +368,7 @@ export default function App() {
           <div className="page-title"><div><div className="eyebrow">УЧЁТНЫЕ ЗАПИСИ</div><h1>Пользователи</h1><p>Создание, редактирование, смена ролей и удаление.</p></div><button className="btn primary" onClick={() => openCreate()}><Plus/>Добавить</button></div>
           <div className="toolbar"><div className="search"><Search/><input placeholder="Поиск по имени или Telegram ID" value={search} onChange={e => setSearch(e.target.value)}/></div><span>{visibleUsers.length} пользователей</span></div>
           <div className="user-list">{visibleUsers.map(user => <div className="user-row" key={user.id}>
-            <div className={"avatar " + user.role}><Users/></div><div className="person-info"><b>{user.full_name}</b><small>#{user.id} · {user.telegram_id ? <span className="telegram-connected">Telegram ID {user.telegram_id}</span> : "Telegram не подключён"} · {user.role === "teacher" ? (user.has_web_password ? "Веб-доступ настроен" : "Пароль веб-панели не задан") + " · " : ""}{user.active ? "Активен" : "Отключён"}</small></div><span className={"role-tag " + user.role}>{ROLE[user.role]}</span>
+            <div className={"avatar " + user.role}><Users/></div><div className="person-info"><b>{user.full_name}</b><small>#{user.id} · {user.telegram_id ? <span className="telegram-connected">Telegram ID {user.telegram_id}</span> : "Telegram не подключён"} · {user.role === "teacher" ? (user.has_web_password ? "Веб-доступ настроен" : "Пароль веб-панели не задан") + " · " : ""}{user.active ? "Активен" : "Отключён"}</small>{user.role === "teacher" && <small>Логин для входа: <b>{user.web_username || user.full_name}</b></small>}</div><span className={"role-tag " + user.role}>{ROLE[user.role]}</span>
             <button className="btn small" onClick={() => openEdit(user)}><Pencil/>Изменить</button>{user.telegram_id && <button className="btn small disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram"><Unlink/>Отключить Telegram</button>}<button className="icon-btn danger-icon" onClick={() => removeUser(user)} title="Удалить"><Trash2/></button>
             {user.active && !user.telegram_id && <button className="btn small outline" onClick={() => makeCode(user)}><Copy/>Код</button>}
           </div>)}</div>
@@ -402,10 +405,10 @@ export default function App() {
         <p className="hint">Если у ученика уже есть активное назначение, оно будет заменено новым.</p>
         <button className="btn primary" disabled={!activeStudents.length}>Создать связь</button>
       </form> : <form className="stack" onSubmit={saveUser}>
-        <label>Имя и фамилия<input value={name} onChange={e => setName(e.target.value)} minLength="2" maxLength="160" required autoFocus/></label>
+        <label>Имя и фамилия<input value={name} onChange={e => { const nextName = e.target.value; setName(nextName); if (!teacherLogin || teacherLogin === name) setTeacherLogin(nextName); }} minLength="2" maxLength="160" required autoFocus/></label>
         <label>Роль<select value={role} onChange={e => setRole(e.target.value)}><option value="teacher">Учитель</option><option value="student">Ученик</option></select></label>
         <label>Telegram ID <input type="text" inputMode="numeric" pattern="[0-9]*" value={telegramId} onChange={e => setTelegramId(e.target.value)} placeholder="Не подключён"/></label>
-        {role === "teacher" && <><label>Пароль для веб-панели<input type="password" value={webPassword} onChange={e => setWebPassword(e.target.value)} minLength="8" maxLength="128" placeholder={modal.mode === "edit" ? "Оставьте пустым, чтобы не менять" : "Не менее 8 символов"} autoComplete="new-password"/></label><p className="hint">Учитель входит по внутреннему ID пользователя #{modal.id || "будет присвоен"} и этому паролю. Сам пароль в базе хранится в хешированном виде.</p></>}
+        {role === "teacher" && <><label>Логин для входа в панель<input value={teacherLogin || name} onChange={e => setTeacherLogin(e.target.value)} minLength="2" maxLength="160" required autoComplete="off" /></label><p className="hint">По умолчанию логин совпадает с именем учителя. Его можно изменить отдельно от имени.</p><label>Пароль для веб-панели<input type="password" value={webPassword} onChange={e => setWebPassword(e.target.value)} minLength="8" maxLength="128" placeholder={modal.mode === "edit" ? "Оставьте пустым, чтобы не менять" : "Не менее 8 символов"} autoComplete="new-password"/></label><p className="hint">Пароль в базе хранится в хешированном виде. При редактировании оставьте поле пустым, чтобы сохранить текущий пароль.</p></>}
         {modal.mode === "edit" && role !== users.find(u => u.id === modal.id)?.role && <p className="hint">При смене роли активные назначения будут закрыты. История переписок сохранится.</p>}
         <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setModal(null)}>Отмена</button><button className="btn primary"><Check/>Сохранить</button></div>
       </form>}
