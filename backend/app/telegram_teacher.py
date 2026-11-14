@@ -166,19 +166,18 @@ async def send_group_delivery_receipt(bot: Bot, db: Session, row: Message) -> No
     await _send_group_read_receipt(bot, db, row, teacher_has_read=False)
 
 
-async def mark_visible_messages_read_by_teacher(
+async def mark_messages_read_by_teacher(
     bot: Bot,
     db: Session,
-    conversation: Conversation,
+    messages: list[Message],
 ) -> None:
-    """Mark visible unanswered messages read and turn their group receipts blue."""
-    rows = conversation_messages(db, conversation.id)
-    visible_rows = rows[-12:]
-    unanswered = unanswered_student_messages(visible_rows)
-    now = datetime.now(timezone.utc).isoformat()
+    """Mark a batch as read and update its group-topic receipts."""
+    if not messages:
+        return
 
+    now = datetime.now(timezone.utc).isoformat()
     changed = False
-    for row in unanswered:
+    for row in messages:
         metadata = json.loads(row.metadata_json or "{}")
         if metadata.get("teacher_read_at") is None:
             metadata["teacher_read_at"] = now
@@ -187,18 +186,14 @@ async def mark_visible_messages_read_by_teacher(
     if changed:
         db.commit()
 
-    for row in unanswered:
+    for row in messages:
         metadata = json.loads(row.metadata_json or "{}")
         if metadata.get("source_mode") != "group_topic":
             continue
 
         status = metadata.get("teacher_read_receipt_status")
         receipt_id = metadata.get("teacher_read_receipt_message_id")
-        if status == "read":
-            continue
-        if status == "sending":
-            # The in-flight delivery receipt checks teacher_read_at and turns
-            # itself blue after Telegram confirms the send.
+        if status == "read" or status == "sending":
             continue
 
         if status == "sent" and receipt_id:
@@ -219,9 +214,27 @@ async def mark_visible_messages_read_by_teacher(
                     exc_info=True,
                 )
         else:
-            # If the grey receipt could not be sent earlier, send the blue
-            # state directly now that the teacher has opened the conversation.
+            # Retry a missing/failed delivery receipt directly in its read state.
+            if status == "sent":
+                metadata["teacher_read_receipt_status"] = "pending"
+                row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+                db.commit()
             await _send_group_read_receipt(bot, db, row, teacher_has_read=True)
+
+
+async def mark_visible_messages_read_by_teacher(
+    bot: Bot,
+    db: Session,
+    conversation: Conversation,
+) -> None:
+    """Mark the messages currently shown in the teacher's chat as read."""
+    rows = conversation_messages(db, conversation.id)
+    visible_rows = rows[-12:]
+    await mark_messages_read_by_teacher(
+        bot,
+        db,
+        unanswered_student_messages(visible_rows),
+    )
 
 
 def teacher_conversations(db: Session, teacher: User) -> list[dict]:
