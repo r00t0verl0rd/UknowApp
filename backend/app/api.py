@@ -16,6 +16,7 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from .config import ADMIN_USERNAME
 from .database import SessionLocal
 from .media_storage import MEDIA_DIR, delete_message_media
 from .models import Assignment, ConnectionCode, Conversation, Message, StudentTelegramGroup, TeacherPanel, TeacherSession, User
@@ -40,12 +41,29 @@ def user_dict(user: User) -> dict:
     return {
         "id": user.id,
         "full_name": user.full_name,
+        "web_username": (user.web_username or user.full_name) if user.role == "teacher" else None,
         "role": user.role,
         "telegram_id": user.telegram_id,
         "active": user.active,
         "created_at": user.created_at.isoformat() if user.created_at else None,
         "has_web_password": bool(user.web_password_hash),
     }
+
+
+def validate_teacher_username(db: Session, username: str, exclude_user_id: Optional[int] = None) -> str:
+    cleaned = (username or "").strip()
+    if len(cleaned) < 2 or len(cleaned) > 160:
+        raise HTTPException(status_code=400, detail="Логин учителя должен содержать от 2 до 160 символов")
+    if cleaned.casefold() == ADMIN_USERNAME.casefold():
+        raise HTTPException(status_code=409, detail="Этот логин зарезервирован для администратора")
+    teachers = db.scalars(select(User).where(User.role == "teacher")).all()
+    for teacher in teachers:
+        if teacher.id == exclude_user_id:
+            continue
+        existing = (teacher.web_username or teacher.full_name).strip()
+        if existing.casefold() == cleaned.casefold():
+            raise HTTPException(status_code=409, detail="Этот логин уже используется другим учителем")
+    return cleaned
 
 
 def conversation_dict(db: Session, conversation: Conversation) -> dict:
@@ -137,7 +155,9 @@ def list_users(_: Admin, db: Db):
 
 @router.post("/admin/users", status_code=201)
 def create_user(payload: UserCreate, _: Admin, db: Db):
-    user = User(full_name=payload.full_name.strip(), role=payload.role, telegram_id=payload.telegram_id)
+    full_name = payload.full_name.strip()
+    web_username = validate_teacher_username(db, payload.web_username or full_name) if payload.role == "teacher" else None
+    user = User(full_name=full_name, web_username=web_username, role=payload.role, telegram_id=payload.telegram_id)
     if payload.web_password:
         if payload.role != "teacher":
             raise HTTPException(status_code=400, detail="Пароль веб-панели можно задать только учителю")
@@ -159,10 +179,25 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     changes = payload.model_dump(exclude_unset=True)
     new_web_password = changes.pop("web_password", None)
+    requested_web_username = changes.pop("web_username", None)
+    target_role = changes.get("role", user.role)
     if new_web_password:
-        if changes.get("role", user.role) != "teacher":
+        if target_role != "teacher":
             raise HTTPException(status_code=400, detail="Пароль веб-панели можно задать только учителю")
         user.web_password_hash = hash_web_password(new_web_password)
+
+    if target_role == "teacher":
+        previous_username = user.web_username or user.full_name
+        if requested_web_username is not None:
+            target_username = requested_web_username
+        elif "full_name" in changes and previous_username.strip().casefold() == user.full_name.strip().casefold():
+            target_username = changes["full_name"].strip()
+        else:
+            target_username = previous_username
+        user.web_username = validate_teacher_username(db, target_username, exclude_user_id=user.id)
+    else:
+        user.web_username = None
+
     role_changed = "role" in changes and changes["role"] != user.role
     if role_changed:
         if changes.get("role") != "teacher":
