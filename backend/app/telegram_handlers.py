@@ -538,31 +538,32 @@ async def route_message(message: TgMessage, bot: Bot):
                 # animations and video notes.
                 attachment_metadata = json.loads(row.metadata_json or "{}")
                 if attachment_metadata.get("media"):
-                    notice = await bot.send_message(
-                        chat_id=recipient.telegram_id,
-                        text="📎 Вложение от " + sender.full_name,
-                    )
+                    original_caption = (message.caption or "").strip()
+                    label_caption = "📎 От ученика: " + sender.full_name
+                    if original_caption:
+                        label_caption += "\\n" + original_caption
                     try:
                         copied = await bot.copy_message(
                             chat_id=recipient.telegram_id,
                             from_chat_id=message.chat.id,
                             message_id=message.message_id,
+                            caption=label_caption[:1024],
                         )
                     except Exception:
-                        try:
-                            await bot.delete_message(
-                                chat_id=recipient.telegram_id,
-                                message_id=notice.message_id,
-                            )
-                        except Exception:
-                            logger.debug(
-                                "Could not remove attachment notice after copy failure",
-                                exc_info=True,
-                            )
-                        raise
+                        # Some Telegram message types (for example stickers) do not
+                        # accept captions. In that case send a clearly paired label.
+                        notice = await bot.send_message(
+                            chat_id=recipient.telegram_id,
+                            text="📎 Вложение от ученика: " + sender.full_name,
+                        )
+                        copied = await bot.copy_message(
+                            chat_id=recipient.telegram_id,
+                            from_chat_id=message.chat.id,
+                            message_id=message.message_id,
+                        )
+                        attachment_metadata["teacher_inbox_notice_message_id"] = notice.message_id
 
                     attachment_metadata["teacher_inbox_media_message_id"] = copied.message_id
-                    attachment_metadata["teacher_inbox_notice_message_id"] = notice.message_id
                     row.metadata_json = json.dumps(attachment_metadata, ensure_ascii=False)
 
                 row.delivery_status = "delivered"
