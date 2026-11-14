@@ -21,6 +21,11 @@ def create_tables() -> None:
 
     Base.metadata.create_all(bind=engine)
 
+    user_columns = {column["name"] for column in inspect(engine).get_columns("users")}
+    if "web_password_hash" not in user_columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN web_password_hash VARCHAR(160)"))
+
     # create_all does not add columns to an existing database. Keep this small,
     # idempotent migration here so existing local SQLite installs are upgraded
     # automatically when the backend starts.
