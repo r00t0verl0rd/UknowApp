@@ -8,6 +8,7 @@ from aiogram import Bot, F, Router
 from aiogram.filters import Command, CommandStart
 from aiogram.types import CallbackQuery, Message as TgMessage
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from .database import SessionLocal
 from .media_storage import archive_telegram_media
@@ -326,15 +327,36 @@ async def route_message(message: TgMessage, bot: Bot):
                             group_title=message.chat.title,
                         )
                         db.add(group_binding)
-                        db.commit()
-                        logger.warning(
-                            "TELEGRAM_GROUP_AUTO_BOUND student_id=%s telegram_id=%s "
-                            "chat_id=%s thread_id=%s",
-                            sender.id,
-                            message.from_user.id,
-                            message.chat.id,
-                            message.message_thread_id,
-                        )
+                        try:
+                            db.commit()
+                            logger.warning(
+                                "TELEGRAM_GROUP_AUTO_BOUND student_id=%s telegram_id=%s "
+                                "chat_id=%s thread_id=%s",
+                                sender.id,
+                                message.from_user.id,
+                                message.chat.id,
+                                message.message_thread_id,
+                            )
+                        except IntegrityError:
+                            # Another update may have attempted the same first-time
+                            # binding concurrently. Re-read the row instead of losing
+                            # the student's first message to a uniqueness race.
+                            db.rollback()
+                            group_binding = db.scalar(
+                                select(StudentTelegramGroup).where(
+                                    StudentTelegramGroup.chat_id == message.chat.id,
+                                    StudentTelegramGroup.thread_id == message.message_thread_id,
+                                    StudentTelegramGroup.student_id == sender.id,
+                                )
+                            )
+                            if not group_binding:
+                                logger.exception(
+                                    "TELEGRAM_GROUP_AUTO_BIND_CONFLICT student_id=%s "
+                                    "chat_id=%s thread_id=%s",
+                                    sender.id,
+                                    message.chat.id,
+                                    message.message_thread_id,
+                                )
                     elif occupied_topic and occupied_topic.student_id != sender.id:
                         logger.warning(
                             "TELEGRAM_GROUP_AUTO_BIND_DENIED topic_already_bound "
