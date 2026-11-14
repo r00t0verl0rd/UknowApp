@@ -50,6 +50,8 @@ The bot does not post separate check-mark messages in the topic. Telegram contro
 
 Teachers continue to get a persistent Reply Keyboard with their active students, the latest incoming messages, and the number of messages awaiting a reply. Tap a student's name to select that conversation, then send text or attachments normally. Use **К списку учеников** to switch recipients; when there are more than six active students, the keyboard includes page navigation.
 
+Incoming non-text messages from students are also copied as native Telegram messages into the teacher's private bot chat, preceded by a short student-name label. Photos, videos, video notes, voice messages, audio, documents, animations, stickers and other copyable message types can be opened or played directly in Telegram. These attachment copies remain in the teacher's chat history after a reply; the conversation panel also shows the attachment type and its caption when present.
+
 The local SQLite database is created at `data/uknowapp.db`. Telegram attachments are archived under `data/media/` and shown in the admin conversation view (voice playback, video notes, photos, video and downloadable documents). Keep the `.env` file and the entire `data/` directory private; both are excluded from Git. The hosted Telegram Bot API currently allows downloads up to 20 MB; larger attachments are still forwarded by Telegram but cannot be archived locally by this version.
 
 ## VPS deployment with Docker Compose
