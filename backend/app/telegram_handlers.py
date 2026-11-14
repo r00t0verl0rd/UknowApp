@@ -541,7 +541,7 @@ async def route_message(message: TgMessage, bot: Bot):
                     original_caption = (message.caption or "").strip()
                     label_caption = "📎 От ученика: " + sender.full_name
                     if original_caption:
-                        label_caption += "\\n" + original_caption
+                        label_caption += "\n" + original_caption
                     try:
                         copied = await bot.copy_message(
                             chat_id=recipient.telegram_id,
