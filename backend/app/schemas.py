@@ -11,6 +11,7 @@ class LoginRequest(BaseModel):
 class UserCreate(BaseModel):
     full_name: str = Field(min_length=2, max_length=160)
     role: Literal["teacher", "student"]
+    web_username: Optional[str] = Field(default=None, min_length=2, max_length=160)
     telegram_id: Optional[int] = None
     web_password: Optional[str] = Field(default=None, min_length=8, max_length=128)
 
@@ -18,6 +19,7 @@ class UserCreate(BaseModel):
 class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(default=None, min_length=2, max_length=160)
     role: Optional[Literal["teacher", "student"]] = None
+    web_username: Optional[str] = Field(default=None, min_length=2, max_length=160)
     telegram_id: Optional[int] = None
     active: Optional[bool] = None
     web_password: Optional[str] = Field(default=None, min_length=8, max_length=128)
