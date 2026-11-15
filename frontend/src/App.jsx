@@ -124,7 +124,7 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const messagesViewportRef = useRef(null);
   const [search, setSearch] = useState("");
-  const [userSort, setUserSort] = useState("name-asc");
+  const [userSort, setUserSort] = useState("students");
   const [userInfo, setUserInfo] = useState(null);
   const [chatSearch, setChatSearch] = useState("");
   const [chatFilter, setChatFilter] = useState("all");
