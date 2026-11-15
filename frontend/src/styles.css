@@ -4908,3 +4908,67 @@ body {
     font-size: 11px;
   }
 }
+
+/* Keep the graph counters and add-participant action on one line, even on
+   extra-narrow phones. Both sides may compact, but must never wrap. */
+.graph-panel .graph-legend-row {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  min-width: 0;
+  width: 100%;
+}
+
+.graph-panel .graph-legend-row > * {
+  min-width: 0;
+}
+
+.graph-panel .graph-legend-row .legend {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: clamp(3px, 1.2vw, 7px);
+  white-space: nowrap;
+  font-size: clamp(9px, 2.7vw, 12px);
+}
+
+.graph-panel .graph-add-participant {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  max-width: 52%;
+  margin-left: 0;
+  padding: 8px clamp(6px, 1.8vw, 12px);
+  gap: 5px;
+  font-size: clamp(9px, 2.6vw, 12px);
+  white-space: nowrap;
+}
+
+.graph-panel .graph-add-participant svg {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 380px) {
+  .graph-panel .graph-legend-row {
+    gap: 3px;
+  }
+
+  .graph-panel .graph-legend-row .legend {
+    font-size: 9px;
+    gap: 3px;
+  }
+
+  .graph-panel .graph-add-participant {
+    max-width: 50%;
+    padding-inline: 5px;
+    font-size: 9px;
+    gap: 3px;
+  }
+}
