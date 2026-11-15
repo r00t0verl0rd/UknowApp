@@ -5132,8 +5132,9 @@ body {
     flex-direction: column;
     overflow: hidden;
   }
+  /* Match Users and Structure: remove the empty mobile profile row above chats. */
   .chats-main > .topbar {
-    flex: 0 0 54px;
+    display: none;
   }
   .chats-content {
     flex: 1 1 auto;
