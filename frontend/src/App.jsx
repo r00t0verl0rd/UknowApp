@@ -379,7 +379,7 @@ export default function App() {
       <button type="button" className="theme-toggle login-theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
         {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
       </button>
-      <img src="/logo.svg" alt="UknowApp" className="login-logo" />
+      <img src="/logo.png" alt="UknowApp" className="login-logo" />
       <div className="eyebrow">ЕДИНАЯ ПАНЕЛЬ ШКОЛЫ</div><h1>UknowApp</h1>
       <p className="muted">Вход администратора или учителя.</p>
       <form onSubmit={signIn} className="stack">
@@ -393,7 +393,7 @@ export default function App() {
 
   return <div className="shell">
     <aside className="sidebar">
-      <div className="brand"><img src="/logo.svg" alt="" /><span>Uknow<span>App</span></span></div>
+      <div className="brand"><img src="/logo.png" alt="" /><span>Uknow<span>App</span></span></div>
       <div className="school-label">{profile?.role === "admin" ? "УПРАВЛЕНИЕ ШКОЛОЙ" : "РАБОЧЕЕ МЕСТО УЧИТЕЛЯ"}</div>
       <nav>
         <>
@@ -447,7 +447,7 @@ export default function App() {
           </div>
           <section className="graph-panel">
             <div className="section-head"><div className="legend"><span className="teacher-dot"/> Учителя <span className="student-dot"/> Ученики</div></div>
-            <div className="root-node"><img src="/logo.svg" alt=""/><div><b>Администратор</b><small>Полное управление</small></div></div>
+            <div className="root-node"><img src="/logo.png" alt=""/><div><b>Администратор</b><small>Полное управление</small></div></div>
             <div className="teacher-grid">
               {activeTeachers.map(teacher => <section className="teacher-branch" key={teacher.id}>
                 <div className="person-card teacher-card">

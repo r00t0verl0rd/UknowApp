@@ -1,10 +1,10 @@
 :root{font-family:Manrope,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#29223f;background:#f7f6fb;font-synthesis:none;text-rendering:optimizeLegibility;--purple:#59439a;--purple2:#7856bd;--red:#e82c3b;--ink:#29223f;--muted:#89839b;--line:#ebe7f1}
 *{box-sizing:border-box}body{margin:0;min-width:320px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}
 .login-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 20% 20%,#fce8ed,transparent 35%),radial-gradient(circle at 85% 85%,#e9e2f8,transparent 35%),#f8f7fb}.login-card{width:min(420px,100%);background:#fff;border:1px solid var(--line);border-radius:24px;padding:38px;box-shadow:0 24px 80px #39245c12}.login-logo{width:112px;height:112px;object-fit:contain;display:block;margin:0 auto 22px}.login-card h1{text-align:center;font-size:32px;margin:7px 0}.login-card>.eyebrow{text-align:center}.muted{text-align:center;color:var(--muted);font-size:13px;margin:0 0 28px}
-.shell{min-height:100vh}.sidebar{position:fixed;inset:0 auto 0 0;width:250px;background:#fff;border-right:1px solid var(--line);padding:25px 18px;display:flex;flex-direction:column;z-index:2}.brand{display:flex;align-items:center;gap:10px;padding:0 8px 32px;font-size:22px;font-weight:800;color:var(--purple)}.brand img{width:42px;height:42px;object-fit:contain}.brand span span{color:var(--red)}.school-label,.eyebrow{font-size:10px;letter-spacing:1.5px;font-weight:800;color:#a49bb4}.school-label{padding:0 11px 12px}.sidebar nav{display:grid;gap:6px}.sidebar nav button,.logout{display:flex;align-items:center;gap:12px;border:0;background:transparent;color:#716b80;padding:12px;border-radius:11px;text-align:left;font-size:13px;font-weight:700}.sidebar nav button svg,.logout svg{width:18px;height:18px}.sidebar nav button.active{background:#f0ebf9;color:var(--purple)}.sidebar nav button i{margin-left:auto;font-style:normal;font-size:11px;background:#f2eff6;padding:3px 7px;border-radius:20px}.sidebar-bottom{margin-top:auto}.secure{display:flex;align-items:center;gap:10px;padding:13px;background:#faf8fd;border:1px solid var(--line);border-radius:12px;color:#7f7890;font-size:10px;line-height:1.5}.secure svg{width:20px;color:var(--purple)}.logout{margin-top:12px;width:100%}.main{margin-left:250px;min-height:100vh}.topbar{height:70px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 34px}.topbar>div{display:flex;align-items:center;gap:9px;color:#a39bad;font-size:12px}.topbar svg{width:15px}.topbar b{color:var(--ink)}.content{max-width:1400px;margin:auto;padding:34px}.page-title{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:25px}.page-title h1{font-size:29px;letter-spacing:-1px;margin:7px 0}.page-title p,.section-head p{color:var(--muted);font-size:12px;margin:0}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:800;background:#fff;color:var(--ink)}.btn svg{width:16px;height:16px}.btn.primary{background:var(--purple);border-color:var(--purple);color:white;box-shadow:0 6px 18px #59439a24}.btn.primary:hover{background:#483581}.btn.ghost{background:#faf9fc}.btn.small{padding:8px 10px;font-size:11px}.btn.outline{color:var(--purple)}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:20px}.metric{background:white;border:1px solid var(--line);border-radius:15px;padding:17px;display:grid;grid-template-columns:34px 1fr;align-items:center;column-gap:10px}.metric svg{grid-row:span 2;width:22px;color:var(--purple)}.metric span{font-size:11px;color:var(--muted)}.metric b{font-size:22px}.graph-panel,.user-list,.chat-layout{background:white;border:1px solid var(--line);border-radius:17px;padding:22px}.section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:25px}.section-head h2{font-size:17px;margin:0 0 5px}.legend{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:10px}.legend span{width:8px;height:8px;border-radius:50%;margin-left:9px}.teacher-dot{background:var(--purple)}.student-dot{background:#e84b56}.root-node{width:230px;margin:auto;display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #e7dff3;background:#faf8fd;border-radius:13px}.root-node img{width:40px;height:40px;object-fit:contain}.root-node b,.root-node small{display:block}.root-node b{font-size:12px}.root-node small{font-size:10px;color:var(--muted);margin-top:3px}.root-node>span{margin-left:auto;font-size:9px;font-weight:800;color:var(--purple);background:#eee8f7;padding:5px 7px;border-radius:6px}.tree-line{height:28px;width:1px;background:#d9d1e6;margin:auto}.teacher-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:18px;align-items:start}.teacher-branch{position:relative;padding-top:0}.teacher-branch:before{content:"";position:absolute;width:1px;height:18px;top:-18px;left:50%;background:#d9d1e6}.person-card{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}.teacher-card{border-color:#e4dcf1;background:#fcfaff}.person-main{display:flex;align-items:center;gap:9px;min-width:0}.avatar{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;flex:none;background:#f0eafa;color:var(--purple)}.avatar svg{width:18px}.teacher-avatar{background:#eee8f8;color:var(--purple)}.student-avatar,.avatar.student{background:#fff0f1;color:var(--red)}.person-info{min-width:0}.person-info b,.person-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.person-info b{font-size:12px}.person-info small{font-size:9px;color:var(--muted);margin-top:4px}.person-actions{display:flex;gap:4px;flex:none}.person-actions button,.icon-btn{width:30px;height:30px;border:1px solid transparent;border-radius:8px;background:transparent;color:#898198;display:grid;place-items:center}.person-actions button:hover,.icon-btn:hover{background:#f3eff8;color:var(--purple)}.person-actions svg,.icon-btn svg{width:15px;height:15px}.person-actions .danger-icon:hover,.danger-icon:hover{background:#fff0f1;color:var(--red)}.student-list{display:grid;gap:7px;margin:12px 0 0 22px;padding-left:14px;border-left:1px solid #e6dfea}.student-card{padding:9px 10px}.empty-students{padding:13px;border:1px dashed #e7e1ec;border-radius:10px;color:#a69fb0;font-size:10px;text-align:center}.add-student{margin:10px 0 0 36px;border:0;background:transparent;color:var(--purple);font-size:10px;font-weight:800;display:flex;align-items:center;gap:6px;padding:5px}.add-student svg{width:14px}.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:40px 15px;text-align:center;color:var(--muted);font-size:12px}.empty-state>svg{width:30px;height:30px;color:var(--purple)}.empty-state b{color:var(--ink)}.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;color:var(--muted);font-size:11px}.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:0 10px;width:min(360px,100%);height:40px}.search svg{width:16px;color:#aaa2b5}.search input{border:0;outline:0;width:100%;font-size:11px}.user-list{padding:0}.user-row{display:flex;align-items:center;gap:12px;padding:13px 17px;border-bottom:1px solid #f1eef4}.user-row:last-child{border:0}.user-row .person-info{flex:1}.role-tag{font-size:10px;font-weight:800;padding:5px 8px;border-radius:7px;background:#f0eafa;color:var(--purple)}.role-tag.student{background:#fff0f1;color:var(--red)}.chat-layout{display:grid;grid-template-columns:310px minmax(0,1fr);padding:0;min-height:500px;overflow:hidden}.chat-list{border-right:1px solid var(--line);padding:8px}.chat-item{display:grid;gap:6px;width:100%;text-align:left;padding:13px;border:0;border-radius:10px;background:white;color:var(--ink)}.chat-item.selected,.chat-item:hover{background:#f7f4fb}.chat-item b{font-size:11px}.chat-item small{font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chat-item span{font-size:9px;color:var(--purple)}.chat-detail{min-width:0}.chat-head{padding:17px;border-bottom:1px solid var(--line)}.chat-head b,.chat-head small{display:block}.chat-head b{font-size:12px}.chat-head small{font-size:10px;color:var(--muted);margin-top:4px}.messages{padding:18px;display:grid;align-content:start;gap:10px;max-height:600px;overflow:auto}.message{max-width:85%;padding:10px 12px;background:#f6f3fa;border-radius:10px}.message.teacher{justify-self:end;background:#fff0f1}.message b{font-size:10px}.message b small{font-weight:500;color:var(--muted);margin-left:6px}.message p{font-size:11px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0}.main footer{padding:0 34px 25px;color:#aaa3b4;font-size:10px}.main footer span{color:var(--red);padding:0 4px}
+.shell{min-height:100vh}.sidebar{position:fixed;inset:0 auto 0 0;width:250px;background:#fff;border-right:1px solid var(--line);padding:25px 18px;display:flex;flex-direction:column;z-index:2}.brand{display:flex;align-items:center;gap:10px;padding:0 8px 32px;font-size:22px;font-weight:800;color:var(--purple)}.brand img{width:42px;height:42px;object-fit:contain}.brand span span{color:var(--red)}.school-label,.eyebrow{font-size:10px;letter-spacing:1.5px;font-weight:800;color:#a49bb4}.school-label{padding:0 11px 12px}.sidebar nav{display:grid;gap:6px}.sidebar nav button,.logout{display:flex;align-items:center;gap:12px;border:0;background:transparent;color:#716b80;padding:12px;border-radius:11px;text-align:left;font-size:13px;font-weight:700}.sidebar nav button svg,.logout svg{width:18px;height:18px}.sidebar nav button.active{background:#f0ebf9;color:var(--purple)}.sidebar nav button i{margin-left:auto;font-style:normal;font-size:11px;background:#f2eff6;padding:3px 7px;border-radius:20px}.sidebar-bottom{margin-top:auto}.logout{margin-top:12px;width:100%}.main{margin-left:250px;min-height:100vh}.topbar{height:70px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 34px}.topbar>div{display:flex;align-items:center;gap:9px;color:#a39bad;font-size:12px}.topbar svg{width:15px}.topbar b{color:var(--ink)}.content{max-width:1400px;margin:auto;padding:34px}.page-title{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:25px}.page-title h1{font-size:29px;letter-spacing:-1px;margin:7px 0}.page-title p,.section-head p{color:var(--muted);font-size:12px;margin:0}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:800;background:#fff;color:var(--ink)}.btn svg{width:16px;height:16px}.btn.primary{background:var(--purple);border-color:var(--purple);color:white;box-shadow:0 6px 18px #59439a24}.btn.primary:hover{background:#483581}.btn.ghost{background:#faf9fc}.btn.small{padding:8px 10px;font-size:11px}.btn.outline{color:var(--purple)}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:20px}.metric{background:white;border:1px solid var(--line);border-radius:15px;padding:17px;display:grid;grid-template-columns:34px 1fr;align-items:center;column-gap:10px}.metric svg{grid-row:span 2;width:22px;color:var(--purple)}.metric span{font-size:11px;color:var(--muted)}.metric b{font-size:22px}.graph-panel,.user-list,.chat-layout{background:white;border:1px solid var(--line);border-radius:17px;padding:22px}.section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:25px}.section-head h2{font-size:17px;margin:0 0 5px}.legend{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:10px}.legend span{width:8px;height:8px;border-radius:50%;margin-left:9px}.teacher-dot{background:var(--purple)}.student-dot{background:#e84b56}.root-node{width:230px;margin:auto;display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #e7dff3;background:#faf8fd;border-radius:13px}.root-node img{width:40px;height:40px;object-fit:contain}.root-node b,.root-node small{display:block}.root-node b{font-size:12px}.root-node small{font-size:10px;color:var(--muted);margin-top:3px}.root-node>span{margin-left:auto;font-size:9px;font-weight:800;color:var(--purple);background:#eee8f7;padding:5px 7px;border-radius:6px}.teacher-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:18px;align-items:start}.teacher-branch{position:relative;padding-top:0}.person-card{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}.teacher-card{border-color:#e4dcf1;background:#fcfaff}.person-main{display:flex;align-items:center;gap:9px;min-width:0}.avatar{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;flex:none;background:#f0eafa;color:var(--purple)}.avatar svg{width:18px}.teacher-avatar{background:#eee8f8;color:var(--purple)}.student-avatar,.avatar.student{background:#fff0f1;color:var(--red)}.person-info{min-width:0}.person-info b,.person-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.person-info b{font-size:12px}.person-info small{font-size:9px;color:var(--muted);margin-top:4px}.person-actions{display:flex;gap:4px;flex:none}.person-actions button,.icon-btn{width:30px;height:30px;border:1px solid transparent;border-radius:8px;background:transparent;color:#898198;display:grid;place-items:center}.person-actions button:hover,.icon-btn:hover{background:#f3eff8;color:var(--purple)}.person-actions svg,.icon-btn svg{width:15px;height:15px}.person-actions .danger-icon:hover,.danger-icon:hover{background:#fff0f1;color:var(--red)}.student-list{display:grid;gap:7px;margin:12px 0 0 22px;padding-left:14px;border-left:1px solid #e6dfea}.student-card{padding:9px 10px}.empty-students{padding:13px;border:1px dashed #e7e1ec;border-radius:10px;color:#a69fb0;font-size:10px;text-align:center}.add-student{margin:10px 0 0 36px;border:0;background:transparent;color:var(--purple);font-size:10px;font-weight:800;display:flex;align-items:center;gap:6px;padding:5px}.add-student svg{width:14px}.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:40px 15px;text-align:center;color:var(--muted);font-size:12px}.empty-state>svg{width:30px;height:30px;color:var(--purple)}.empty-state b{color:var(--ink)}.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;color:var(--muted);font-size:11px}.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:0 10px;width:min(360px,100%);height:40px}.search svg{width:16px;color:#aaa2b5}.search input{border:0;outline:0;width:100%;font-size:11px}.user-list{padding:0}.user-row{display:flex;align-items:center;gap:12px;padding:13px 17px;border-bottom:1px solid #f1eef4}.user-row:last-child{border:0}.user-row .person-info{flex:1}.role-tag{font-size:10px;font-weight:800;padding:5px 8px;border-radius:7px;background:#f0eafa;color:var(--purple)}.role-tag.student{background:#fff0f1;color:var(--red)}.chat-layout{display:grid;grid-template-columns:310px minmax(0,1fr);padding:0;min-height:500px;overflow:hidden}.chat-list{border-right:1px solid var(--line);padding:8px}.chat-item{display:grid;gap:6px;width:100%;text-align:left;padding:13px;border:0;border-radius:10px;background:white;color:var(--ink)}.chat-item.selected,.chat-item:hover{background:#f7f4fb}.chat-item b{font-size:11px}.chat-item small{font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chat-item span{font-size:9px;color:var(--purple)}.chat-detail{min-width:0}.chat-head{padding:17px;border-bottom:1px solid var(--line)}.chat-head b,.chat-head small{display:block}.chat-head b{font-size:12px}.chat-head small{font-size:10px;color:var(--muted);margin-top:4px}.messages{padding:18px;display:grid;align-content:start;gap:10px;max-height:600px;overflow:auto}.message{max-width:85%;padding:10px 12px;background:#f6f3fa;border-radius:10px}.message.teacher{justify-self:end;background:#fff0f1}.message b{font-size:10px}.message b small{font-weight:500;color:var(--muted);margin-left:6px}.message p{font-size:11px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0}.main footer{padding:0 34px 25px;color:#aaa3b4;font-size:10px}.main footer span{color:var(--red);padding:0 4px}
 .stack{display:grid;gap:14px}.stack label{display:grid;gap:7px;color:#6e687b;font-size:11px;font-weight:700}.stack input,.stack select{height:42px;border:1px solid var(--line);border-radius:9px;padding:0 11px;background:white;color:var(--ink);outline:0}.stack input:focus,.stack select:focus{border-color:#a997cf;box-shadow:0 0 0 3px #7856bd16}.alert{background:#fff0f1;color:#b82c3b;border:1px solid #f6d4d8;padding:11px 13px;border-radius:9px;font-size:11px}.alert-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.alert-row button{border:0;background:none;color:inherit}.alert-row svg{width:15px}.overlay{position:fixed;inset:0;background:#241b3580;backdrop-filter:blur(5px);display:grid;place-items:center;padding:20px;z-index:5}.modal{width:min(440px,100%);background:white;border-radius:18px;padding:24px;box-shadow:0 25px 90px #21163145}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px}.modal-head h2{font-size:19px;margin:6px 0 0}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}.hint{font-size:10px;color:var(--muted);line-height:1.5;margin:0}.invite-code{font:800 28px ui-monospace,monospace;letter-spacing:4px;text-align:center;color:var(--purple);background:#f5f0fb;border:1px dashed #cfc0e3;padding:18px;border-radius:12px;margin-bottom:13px}.toast{position:fixed;right:24px;bottom:24px;display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:11px;background:#2f2446;color:white;font-size:11px;z-index:8;box-shadow:0 10px 30px #21163135}.toast svg{width:16px;color:#e9a0a8}.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:1000px){.sidebar{width:210px}.main{margin-left:210px}.content{padding:25px}.metrics{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:700px){.sidebar{position:static;width:auto;height:auto;padding:12px;display:block;border-right:0;border-bottom:1px solid var(--line)}.brand{padding:0 4px 12px}.brand img{width:32px;height:32px}.school-label,.sidebar-bottom{display:none}.sidebar nav{display:flex;gap:5px}.sidebar nav button{flex:1;justify-content:center;padding:10px 5px;font-size:10px}.sidebar nav button i{display:none}.main{margin:0}.topbar{height:54px;padding:0 16px}.content{padding:20px 14px}.page-title{align-items:flex-start;flex-direction:column}.page-title h1{font-size:25px}.metrics{gap:8px}.metric{padding:12px}.graph-panel{padding:14px}.section-head{align-items:flex-start;flex-direction:column}.teacher-grid{grid-template-columns:1fr}.teacher-branch:before{display:none}.user-row{flex-wrap:wrap}.user-row .person-info{min-width:calc(100% - 65px)}.role-tag{margin-left:45px}.chat-layout{grid-template-columns:1fr}.chat-list{border-right:0;border-bottom:1px solid var(--line);max-height:220px;overflow:auto}.main footer{padding:0 14px 18px}.login-card{padding:26px}.login-logo{width:90px;height:90px}}
+@media(max-width:700px){.sidebar{position:static;width:auto;height:auto;padding:12px;display:block;border-right:0;border-bottom:1px solid var(--line)}.brand{padding:0 4px 12px}.brand img{width:32px;height:32px}.school-label,.sidebar-bottom{display:none}.sidebar nav{display:flex;gap:5px}.sidebar nav button{flex:1;justify-content:center;padding:10px 5px;font-size:10px}.sidebar nav button i{display:none}.main{margin:0}.topbar{height:54px;padding:0 16px}.content{padding:20px 14px}.page-title{align-items:flex-start;flex-direction:column}.page-title h1{font-size:25px}.metrics{gap:8px}.metric{padding:12px}.graph-panel{padding:14px}.section-head{align-items:flex-start;flex-direction:column}.teacher-grid{grid-template-columns:1fr}.user-row{flex-wrap:wrap}.user-row .person-info{min-width:calc(100% - 65px)}.role-tag{margin-left:45px}.chat-layout{grid-template-columns:1fr}.chat-list{border-right:0;border-bottom:1px solid var(--line);max-height:220px;overflow:auto}.main footer{padding:0 14px 18px}.login-card{padding:26px}.login-logo{width:90px;height:90px}}
 
 .unassigned{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}.unassigned .section-head{margin-bottom:12px}.unassigned .section-head h2{font-size:14px}.unassigned-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:9px}.unassigned-grid .person-card{flex-wrap:wrap;background:#fffafa;border-color:#f2e5e7}
 
@@ -17,7 +17,6 @@
 .brand img { width: 60px; height: 60px; }
 .sidebar nav button, .logout { font-size: 15px; padding: 14px; }
 .sidebar nav button svg, .logout svg { width: 20px; height: 20px; }
-.secure { font-size: 12px; padding: 15px; }
 .login-card { width: min(460px, 100%); padding: 42px; }
 .login-logo { width: 150px; height: 150px; margin-bottom: 25px; }
 .login-card h1 { font-size: 36px; }
@@ -49,10 +48,7 @@
 .root-node img { width: 55px; height: 55px; }
 .root-node b { font-size: 15px; }
 .root-node small { font-size: 12px; }
-.root-node > span { font-size: 10px; }
-.tree-line { height: 38px; }
 .teacher-grid { grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 26px; }
-.teacher-branch:before { height: 24px; top: -24px; }
 .person-card { padding: 16px; gap: 12px; border-radius: 14px; }
 .teacher-card { min-height: 82px; }
 .person-main { gap: 12px; }
@@ -160,12 +156,6 @@ body { background: var(--canvas); color: var(--ink); }
   box-shadow: 0 5px 18px rgba(87,62,153,.24), 0 0 16px rgba(194,153,255,.20);
 }
 .sidebar nav button.active i { color: #fff; background: rgba(255,255,255,.18); }
-.secure {
-  background: linear-gradient(135deg, #f6f1fc, #fff7f7);
-  border-color: #e9def6;
-  color: #756a8d;
-}
-.secure svg { color: var(--purple); }
 .topbar {
   background: rgba(255,255,255,.94);
   border-bottom-color: var(--line);
@@ -232,8 +222,6 @@ body { background: var(--canvas); color: var(--ink); }
   border-radius: 15px;
   box-shadow: 0 0 20px rgba(194,153,255,.13);
 }
-.root-node > span { color: #fff; background: var(--red); }
-.tree-line, .teacher-branch:before { background: #d8cbea; }
 .person-card {
   background: #fff;
   border-color: #e9e3f2;
@@ -422,19 +410,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     radial-gradient(circle, rgba(118, 84, 189, .075) .8px, transparent 1px);
   background-size: auto, auto, 20px 20px;
 }
-.graph-panel .tree-line,
-.graph-panel .teacher-branch:before {
-  display: none;
-}
 .graph-panel .student-list {
   border-left: 0;
-}
-
-/* Keep the administrator role tag neutral. */
-.root-node > span {
-  color: var(--purple);
-  background: #eee8f7;
-  border: 1px solid #dfd5ed;
 }
 
 
@@ -507,14 +484,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .graph-panel .root-node small {
   color: #89809b;
 }
-.graph-panel .root-node > span {
-  color: #654b98;
-  background: #f0eafa;
-  border: 1px solid #dfd3ef;
-  border-radius: 999px;
-  padding: 6px 9px;
-  letter-spacing: .7px;
-}
 .graph-panel .teacher-grid {
   grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
   align-items: stretch;
@@ -533,10 +502,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   border-color: #d8c9ed;
   box-shadow: 0 9px 24px rgba(87,62,153,.085);
   transform: translateY(-1px);
-}
-.graph-panel .teacher-branch:before,
-.graph-panel .tree-line {
-  display: none;
 }
 .graph-panel .teacher-card {
   min-height: 76px;
@@ -1406,7 +1371,6 @@ img, video, audio { max-width: 100%; }
   box-shadow: 0 0 0 3px rgba(170, 160, 216, .13) !important;
 }
 :root[data-theme="dark-soft"] .chat-list-tools,
-:root[data-theme="dark-soft"] .chat-list-tools,
 :root[data-theme="dark-soft"] .chat-head,
 :root[data-theme="dark-soft"] .chat-composer,
 :root[data-theme="dark-soft"] .user-row {
@@ -1541,4 +1505,286 @@ img, video, audio { max-width: 100%; }
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
+}
+
+/* Refined soft-dark surfaces for the school graph and user directory. */
+:root[data-theme="dark-soft"] .graph-panel {
+  background-color: #1e2531 !important;
+  background-image:
+    radial-gradient(ellipse at 12% 0%, rgba(126, 109, 174, .11), transparent 38%),
+    radial-gradient(ellipse at 100% 100%, rgba(121, 75, 87, .08), transparent 34%) !important;
+  border: 1px solid #3a4659 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .2) !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .legend {
+  color: #d1d7e3 !important;
+  background: #2a3342 !important;
+  border: 1px solid #46536a !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .teacher-dot {
+  background: #a99bd7 !important;
+  box-shadow: 0 0 0 2px rgba(169, 155, 215, .16);
+}
+:root[data-theme="dark-soft"] .graph-panel .student-dot {
+  background: #d98b94 !important;
+  box-shadow: 0 0 0 2px rgba(217, 139, 148, .14);
+}
+:root[data-theme="dark-soft"] .graph-panel .root-node {
+  background: #293241 !important;
+  background-image: none !important;
+  border: 1px solid #49566d !important;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, .22) !important;
+  color: #edf0f6 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .root-node:before {
+  width: 3px;
+  background: #9687c7 !important;
+  opacity: .9;
+}
+:root[data-theme="dark-soft"] .graph-panel .root-node img {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .root-node b {
+  color: #edf0f6 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .root-node small {
+  color: #aab4c5 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .teacher-branch {
+  background: #242d3a !important;
+  background-image: none !important;
+  border: 1px solid #3f4d61 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .14) !important;
+  transform: none !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .teacher-branch:hover {
+  background: #293343 !important;
+  border-color: #69749a !important;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, .2) !important;
+  transform: none !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .teacher-card {
+  background: #303144 !important;
+  background-image: none !important;
+  border: 1px solid #4c4b69 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .teacher-card .avatar {
+  background: #3e3a58 !important;
+  color: #c5b9ef !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .student-card {
+  background: #2b3541 !important;
+  background-image: none !important;
+  border: 1px solid #4a5864 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .student-card .avatar {
+  background: #41414b !important;
+  color: #e0b1a8 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .empty-students {
+  background: #252e3a !important;
+  border: 1px dashed #566176 !important;
+  color: #aab4c5 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .add-student {
+  background: #303448 !important;
+  border: 1px solid #4b4c69 !important;
+  color: #c7bdf0 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .add-student:hover {
+  background: #3b3a55 !important;
+  border-color: #77729d !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .unassigned {
+  border-top: 1px solid #414d60 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .graph-actions {
+  border-top: 1px solid #414d60 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .person-card,
+:root[data-theme="dark-soft"] .user-list .person-card {
+  color: #e4e8f0 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .person-card:hover,
+:root[data-theme="dark-soft"] .user-row:hover,
+:root[data-theme="dark-soft"] .unassigned-grid .person-card:hover {
+  background: #30394a !important;
+  border-color: #66728c !important;
+  box-shadow: 0 4px 13px rgba(0, 0, 0, .2) !important;
+  transform: none !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .person-actions button:hover,
+:root[data-theme="dark-soft"] .graph-panel .icon-btn:hover {
+  background: #3b4057 !important;
+  border-color: #525b78 !important;
+  color: #d3cafa !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .person-actions .danger-icon:hover,
+:root[data-theme="dark-soft"] .graph-panel .danger-icon:hover {
+  background: #482f3b !important;
+  border-color: #78505f !important;
+  color: #f0aab4 !important;
+}
+:root[data-theme="dark-soft"] .toolbar .search,
+:root[data-theme="dark-soft"] .search {
+  background: #262f3d !important;
+  border: 1px solid #414e62 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .search:focus-within {
+  background: #2c3747 !important;
+  border-color: #8c82ba !important;
+  box-shadow: 0 0 0 3px rgba(170, 160, 216, .13) !important;
+}
+:root[data-theme="dark-soft"] .search svg {
+  color: #aab4c5 !important;
+}
+:root[data-theme="dark-soft"] .search input {
+  background: transparent !important;
+  color: #e4e8f0 !important;
+}
+:root[data-theme="dark-soft"] .search input::placeholder {
+  color: #8895a9 !important;
+}
+:root[data-theme="dark-soft"] .user-row {
+  background: transparent !important;
+  border-bottom: 1px solid #343f52 !important;
+}
+:root[data-theme="dark-soft"] .user-row:hover {
+  background: #293343 !important;
+}
+:root[data-theme="dark-soft"] .user-row .role-tag.teacher {
+  background: #393650 !important;
+  color: #c8c0ef !important;
+}
+:root[data-theme="dark-soft"] .user-row .role-tag.student {
+  background: #47333c !important;
+  color: #e8b4bd !important;
+}
+
+/* Crisp, stable graph edges and comfortable mobile spacing. */
+:root[data-theme="dark-soft"] .graph-panel,
+:root[data-theme="dark-soft"] .graph-panel * {
+  -webkit-font-smoothing: antialiased;
+}
+.graph-panel .root-node,
+.graph-panel .teacher-branch,
+.graph-panel .teacher-card,
+.graph-panel .student-card {
+  border-width: 1px;
+  border-style: solid;
+  transform: none;
+}
+.graph-panel .teacher-branch,
+.graph-panel .person-card {
+  transition: border-color .16s ease, background-color .16s ease, box-shadow .16s ease;
+}
+.graph-panel .teacher-branch:hover,
+.graph-panel .person-card:hover {
+  transform: none;
+}
+@media (max-width: 760px) {
+  .content { padding: 16px 12px; }
+  .graph-panel {
+    min-width: 0;
+    padding: 12px;
+    border-radius: 15px;
+  }
+  .graph-panel .section-head {
+    align-items: flex-start;
+    margin-bottom: 13px;
+  }
+  .graph-panel .legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    max-width: 100%;
+    padding: 8px 10px;
+    border-radius: 11px;
+    line-height: 1.3;
+  }
+  .graph-panel .root-node {
+    width: min(100%, 330px);
+    min-height: 66px;
+    gap: 10px;
+    margin-bottom: 13px;
+    padding: 10px 12px;
+  }
+  .graph-panel .root-node img {
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+  }
+  .graph-panel .teacher-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .graph-panel .teacher-branch {
+    min-width: 0;
+    padding: 9px;
+    border-radius: 13px;
+  }
+  .graph-panel .teacher-card,
+  .graph-panel .student-card {
+    min-width: 0;
+    min-height: 58px;
+    padding: 9px;
+    gap: 8px;
+    border-radius: 10px;
+  }
+  .graph-panel .person-main,
+  .graph-panel .person-info {
+    min-width: 0;
+  }
+  .graph-panel .person-info b {
+    overflow-wrap: anywhere;
+    white-space: normal;
+    line-height: 1.35;
+  }
+  .graph-panel .person-actions {
+    gap: 3px;
+  }
+  .graph-panel .person-actions button {
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+  }
+  .graph-panel .student-list {
+    gap: 7px;
+    margin-top: 8px;
+  }
+  .graph-panel .add-student {
+    min-height: 36px;
+    margin-top: 8px;
+  }
+  .user-row:hover,
+  .person-card:hover,
+  .teacher-branch:hover {
+    transform: none;
+  }
+}
+@media (max-width: 380px) {
+  .content { padding: 12px 9px; }
+  .graph-panel { padding: 9px; }
+  .graph-panel .teacher-branch { padding: 7px; }
+  .graph-panel .person-card { padding: 7px; gap: 5px; }
+  .graph-panel .person-actions button { width: 28px; height: 28px; flex-basis: 28px; }
+}
+@media (hover: none), (pointer: coarse) {
+  :root[data-theme="dark-soft"] .user-row:hover,
+  :root[data-theme="dark-soft"] .person-card:hover,
+  :root[data-theme="dark-soft"] .teacher-branch:hover {
+    background: #293343 !important;
+    border-color: #59657b !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
 }
