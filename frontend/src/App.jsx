@@ -46,17 +46,42 @@ function MessageBubble({ message, timeZone }) {
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [message.id, media?.archive_status]);
-  const kind = media?.kind || message.content_type;
-  const label = media?.file_name || ({ voice: "Голосовое сообщение", video_note: "Видеокружочек", photo: "Фотография", video: "Видео", audio: "Аудио", document: "Документ", sticker: "Стикер", animation: "Анимация" }[kind] || "Вложение");
+  const sourceKind = media?.kind || message.content_type;
+  const mimeType = (media?.mime_type || "").toLowerCase();
+  // Telegram documents may actually contain playable audio/video or images.
+  // Detect the browser presentation from MIME while preserving special types.
+  const kind = sourceKind === "video_note"
+    ? "video_note"
+    : sourceKind === "animated_sticker"
+      ? "animated_sticker"
+      : mimeType.startsWith("image/")
+        ? "photo"
+        : mimeType.startsWith("video/")
+          ? "video"
+          : mimeType.startsWith("audio/")
+            ? (sourceKind === "voice" ? "voice" : "audio")
+            : sourceKind;
+  const label = ({
+    voice: "Голосовое сообщение",
+    video_note: "Видеокружок",
+    photo: mimeType === "image/gif" ? "GIF-анимация" : "Фотография",
+    video: sourceKind === "video_sticker" ? "Видео-стикер" : sourceKind === "animation" ? "Анимация" : "Видео",
+    audio: "Аудио",
+    document: "Документ",
+    sticker: "Стикер",
+    animated_sticker: "Анимированный стикер",
+    video_sticker: "Видео-стикер",
+    animation: "Анимация"
+  }[sourceKind] || "Вложение");
   return <div className={"message " + message.sender_role}>
     <b>{message.sender} <small>{ROLE[message.sender_role] || message.sender_role}</small></b>
     <time className="message-time">{formatTimeInZone(message.created_at, timeZone, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</time>
     {message.text && <p>{message.text}</p>}
     {mediaUrl && kind === "photo" && <img className="chat-media-image" src={mediaUrl} alt={label} />}
     {mediaUrl && ["voice", "audio"].includes(kind) && <audio className="chat-media-player" controls preload="metadata" src={mediaUrl} />}
-    {mediaUrl && ["video", "video_note", "animation"].includes(kind) && <video className="chat-media-video" controls playsInline preload="metadata" src={mediaUrl} />}
+    {mediaUrl && ["video", "video_note"].includes(kind) && <video className={"chat-media-video" + (kind === "video_note" ? " chat-media-video-note" : "")} controls playsInline preload="metadata" aria-label={label} src={mediaUrl} />}
     {mediaUrl && !["photo", "voice", "audio", "video", "video_note", "animation"].includes(kind) && <a className="chat-media-download" href={mediaUrl} download={label}>Скачать: {label}</a>}
-    {!mediaUrl && media && <small className="chat-media-status">{media.archive_status === "too_large_for_telegram_download" ? "Файл больше 20 МБ — Telegram Bot API не разрешил архивировать его" : media.archive_status === "download_failed" ? "Не удалось сохранить копию вложения" : "Загрузка вложения…"}</small>}
+    {!mediaUrl && media && <small className="chat-media-status">{media.archive_status === "too_large_for_telegram_download" ? "Файл больше 20 МБ: Telegram не разрешает сохранить его копию для веб-панели. Оригинал доставлен в Telegram." : media.archive_status === "download_failed" ? "Не удалось сохранить копию вложения. Проверьте оригинал в Telegram." : "Загрузка вложения…"}</small>}
     {!media && !message.text && <p>Вложение: {message.content_type}</p>}
     {message.delivery_status && message.delivery_status !== "delivered" && <small className="message-delivery">{message.delivery_status === "partial" ? "Доставлено не всем участникам" : "Не доставлено в Telegram"}{message.metadata?.telegram_delivery_errors?.length ? " · " + message.metadata.telegram_delivery_errors.join("; ") : ""}</small>}
   </div>;
