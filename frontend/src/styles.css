@@ -8016,7 +8016,7 @@ button:focus-visible, .btn:focus-visible {
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
-.chat-audio-player.is-playing .chat-audio-wave span:nth-child(-n+18) {
+.chat-audio-wave span.is-progress {
   background: var(--purple, #7654bd);
 }
 :root[data-theme="dark-soft"] .chat-audio-player {
@@ -8024,7 +8024,7 @@ button:focus-visible, .btn:focus-visible {
   border-color: #414c60;
 }
 :root[data-theme="dark-soft"] .chat-audio-wave span { background: #59647b; }
-:root[data-theme="dark-soft"] .chat-audio-player.is-playing .chat-audio-wave span:nth-child(-n+18) { background: #b49be8; }
+:root[data-theme="dark-soft"] .chat-audio-wave span.is-progress { background: #b49be8; }
 :root[data-theme="dark-soft"] .chat-audio-time { color: #aeb8c9; }
 @keyframes chat-audio-wave-pulse {
   from { transform: scaleY(.48); }
