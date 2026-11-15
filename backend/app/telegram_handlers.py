@@ -114,10 +114,9 @@ async def start(message: TgMessage, bot: Bot):
         user = get_linked_user(db, message.from_user.id)
         if not user:
             await message.answer(
-                "Добро пожаловать в UknowApp!\n\n"
+                "Добро пожаловать в Uknow!\n\n"
                 "Для подключения попросите администратора выдать вам код доступа.\n"
-                "Отправьте его сюда отдельным сообщением. Код ученика действует 15 минут; "
-                "код учителя совпадает с кодом входа в веб-панель и действует до замены."
+                "Код действует 15 минут."
             )
             return
         if user.role == "teacher":
