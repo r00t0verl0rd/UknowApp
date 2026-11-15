@@ -859,16 +859,17 @@ async def send_panel_message(
                 delivery_errors.append(recipient.full_name + ": Telegram не подключён")
                 continue
             try:
-                prefix = (
-                    "Сообщение от учителя " + sender.full_name + ":\n"
-                    if principal["role"] == "teacher"
-                    else "Сообщение от администратора школы:\n"
-                )
                 target = student_target if recipient_role == "student" else {"chat_id": recipient.telegram_id}
                 if not target:
                     delivery_errors.append(recipient.full_name + ": Telegram не подключён")
                     continue
-                sent = await bot.send_message(**target, text=prefix + body)
+                # The student already knows this is the teacher's private chat.
+                # Deliver teacher text naturally; only label a separate admin role.
+                outgoing_text = (
+                    body if principal["role"] == "teacher"
+                    else "Сообщение от администратора школы:\n" + body
+                )
+                sent = await bot.send_message(**target, text=outgoing_text)
                 delivered.append({
                     "user_id": recipient.id,
                     "telegram_message_id": sent.message_id,
@@ -1013,12 +1014,16 @@ async def send_panel_attachment(
             if not target:
                 delivery_errors.append(recipient.full_name + ": Telegram не подключён")
                 continue
-            prefix = (
-                "От учителя " + sender.full_name + (": " + row.text if row.text else "")
+            # Teacher and student already share this conversation; avoid repeating
+            # a sender label on every teacher attachment.
+            caption = (
+                (row.text or "").strip()[:1024]
                 if principal["role"] == "teacher"
-                else "От администратора школы" + (": " + row.text if row.text else "")
+                else "От администратора школы" + ((": " + row.text) if row.text else "")
             )
-            kwargs = {**target, "caption": prefix[:1024]}
+            kwargs = {**target}
+            if caption:
+                kwargs["caption"] = caption
             try:
                 upload = BufferedInputFile(content, filename=original_name)
                 if kind == "photo" and len(content) <= 10 * 1024 * 1024:
