@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 from .config import ADMIN_USERNAME
 from .database import SessionLocal
 from .media_storage import MEDIA_DIR, delete_message_media, safe_media_type, media_content_disposition
-from .models import Assignment, ConnectionCode, Conversation, Message, StudentTelegramGroup, TeacherPanel, TeacherSession, User
+from .models import Assignment, ConnectionCode, Conversation, Message, PanelSession, StudentTelegramGroup, TeacherPanel, TeacherSession, User
 from .schemas import AssignmentCreate, LoginRequest, PanelMessageCreate, UserCreate, UserUpdate
 from .security import (
     authenticate_panel_user,
@@ -239,12 +239,13 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
         user.web_username = None
 
     role_changed = "role" in changes and changes["role"] != user.role
+    if target_role == "teacher" and (role_changed or not user.web_password_hash):
+        issued_password = generate_teacher_password()
+        user.web_password_hash = hash_web_password(issued_password)
+    elif target_role != "teacher":
+        user.web_password_hash = None
+
     if role_changed:
-        if target_role != "teacher":
-            user.web_password_hash = None
-        elif not user.web_password_hash:
-            issued_password = generate_teacher_password()
-            user.web_password_hash = hash_web_password(issued_password)
         db.query(TeacherPanel).filter(TeacherPanel.teacher_id == user.id).delete(synchronize_session=False)
         assignments = db.scalars(select(Assignment).where(Assignment.active.is_(True), (Assignment.teacher_id == user.id) | (Assignment.student_id == user.id))).all()
         now = datetime.now(timezone.utc)
