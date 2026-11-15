@@ -4600,3 +4600,165 @@ textarea {
     grid-template-rows: clamp(130px, 25dvh, 210px) minmax(0, 1fr);
   }
 }
+
+
+/* Final narrow-screen safeguards (including iPhone mini widths). */
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+}
+
+html {
+  overflow-x: clip;
+}
+
+body {
+  overflow-x: clip;
+}
+
+.login-screen {
+  width: 100%;
+  min-width: 0;
+  min-height: 100svh;
+  padding: clamp(12px, 4vw, 24px);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 460px;
+  min-width: 0;
+}
+
+.login-card .stack,
+.login-card .stack label,
+.login-card .stack input,
+.login-card .stack select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 420px) {
+  .login-screen {
+    padding: 14px;
+  }
+
+  .login-card {
+    padding: 26px 20px 22px;
+    border-radius: 20px;
+  }
+
+  .login-logo {
+    width: 96px;
+    height: 96px;
+    margin-bottom: 17px;
+  }
+
+  .login-card h1 {
+    font-size: clamp(27px, 8vw, 32px);
+  }
+
+  .login-card .muted {
+    margin-bottom: 22px;
+  }
+
+  /* Prevent Safari on iOS from zooming the page when an input is focused. */
+  .login-card .stack input,
+  .login-card .stack select {
+    min-height: 46px;
+    font-size: 16px;
+  }
+
+  .login-theme-toggle {
+    top: 12px;
+    right: 12px;
+  }
+
+  .sidebar nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .sidebar nav button {
+    min-width: 0;
+    padding-inline: 2px;
+    gap: 4px;
+    font-size: clamp(9px, 2.8vw, 11px);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .content,
+  .topbar,
+  .graph-panel,
+  .user-list,
+  .chat-layout,
+  .chat-detail,
+  .chat-list,
+  .modal {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .page-title h1,
+  .section-head h2,
+  .user-row,
+  .message,
+  .chat-head,
+  .chat-item {
+    overflow-wrap: anywhere;
+  }
+
+  .metric,
+  .person-card,
+  .user-row,
+  .chat-head-tools,
+  .composer-footer {
+    min-width: 0;
+  }
+
+  .chat-head-tools {
+    flex-wrap: wrap;
+  }
+
+  .chat-head-tools select {
+    max-width: 100%;
+  }
+
+  .toast {
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+    max-width: calc(100% - 20px);
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 360px) {
+  .login-card {
+    padding: 24px 16px 20px;
+  }
+
+  .login-logo {
+    width: 84px;
+    height: 84px;
+  }
+
+  .sidebar nav button {
+    font-size: 9px;
+    letter-spacing: -.15px;
+  }
+
+  .content {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .graph-panel,
+  .user-list,
+  .chat-layout {
+    padding: 9px;
+  }
+}
