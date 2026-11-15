@@ -7909,3 +7909,25 @@ button:focus-visible, .btn:focus-visible {
 :root[data-theme="dark-soft"] .chat-composer {
   background: #222b39;
 }
+
+
+/* Mobile chat proportions: prioritize the conversation history over the picker. */
+@media (max-width: 760px) {
+  .chats-content > .chat-layout {
+    grid-template-rows: minmax(88px, min(17dvh, 132px)) minmax(0, 1fr);
+  }
+
+  .chat-composer textarea {
+    font-size: 16px;
+  }
+
+  .chat-composer textarea::placeholder {
+    font-size: 12px;
+    line-height: 1.25;
+    opacity: .72;
+  }
+
+  .chat-detail > .messages {
+    padding: 11px 10px;
+  }
+}
