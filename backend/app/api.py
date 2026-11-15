@@ -250,7 +250,13 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
         user.web_username = None
 
     role_changed = "role" in changes and changes["role"] != user.role
-    if target_role == "teacher" and (role_changed or not user.web_password_hash):
+    has_active_access_code = db.scalar(
+        select(ConnectionCode.id).where(
+            ConnectionCode.user_id == user.id,
+            ConnectionCode.used_at.is_(None),
+        ).limit(1)
+    ) is not None
+    if target_role == "teacher" and (role_changed or not user.web_password_hash or not has_active_access_code):
         issued_password = generate_teacher_password()
         user.web_password_hash = hash_web_password(issued_password)
     elif target_role != "teacher":
@@ -363,11 +369,13 @@ def disconnect_telegram(user_id: int, _: Admin, db: Db):
             TeacherSession.teacher_id == user.id
         ).delete(synchronize_session=False)
 
-    # Prevent any previously generated, unused code from being reused.
-    db.query(ConnectionCode).filter(
-        ConnectionCode.user_id == user.id,
-        ConnectionCode.used_at.is_(None),
-    ).update({ConnectionCode.used_at: now}, synchronize_session=False)
+    # Student activation codes are one-time. A teacher's shared access code
+    # remains valid after Telegram is disconnected so the teacher can reconnect.
+    if user.role == "student":
+        db.query(ConnectionCode).filter(
+            ConnectionCode.user_id == user.id,
+            ConnectionCode.used_at.is_(None),
+        ).update({ConnectionCode.used_at: now}, synchronize_session=False)
 
     db.commit()
     db.refresh(user)
