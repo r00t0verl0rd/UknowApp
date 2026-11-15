@@ -19,7 +19,7 @@ function formatTimeInZone(value, timeZone, options) {
   if (!value) return "";
   // SQLite may return UTC timestamps without an explicit offset. Treat those
   // values as UTC instead of letting the browser interpret them as local time.
-  const normalized = /(?:Z|[+-]\\d{2}:?\\d{2})$/i.test(value) ? value : value + "Z";
+  const normalized = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value) ? value : value + "Z";
   const date = new Date(normalized);
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleString("ru-RU", { ...options, timeZone });
 }
