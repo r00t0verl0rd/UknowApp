@@ -1972,3 +1972,56 @@ img, video, audio { max-width: 100%; }
     background: #191f2a !important;
   }
 }
+
+
+/* Desktop inbox keeps a fixed frame regardless of conversation length.
+   Only the chat list and message history scroll inside that frame. */
+@media (min-width: 761px) {
+  .chat-layout {
+    height: clamp(480px, calc(100dvh - 300px), 760px);
+    min-height: 480px;
+    max-height: 760px;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  .chat-list {
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+  }
+
+  .chat-detail {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .chat-head {
+    position: relative;
+    top: auto;
+    flex: 0 0 auto;
+  }
+
+  .messages {
+    flex: 1 1 0;
+    height: 0;
+    min-height: 0;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+  }
+
+  .chat-composer {
+    flex: 0 0 auto;
+  }
+}
