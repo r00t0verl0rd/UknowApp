@@ -317,7 +317,7 @@ def teacher_chat_view(
     rows = conversation_messages(db, conversation.id)
     visible_rows = rows[-12:]
     lines = [
-        "💬 " + escape(student.full_name),
+        "😊 " + escape(student.full_name),
         "",
     ]
     if not visible_rows:
