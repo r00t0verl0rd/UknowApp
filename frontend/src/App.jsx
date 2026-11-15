@@ -121,6 +121,8 @@ export default function App() {
   }, [userInfo]);
   const [deleteCandidate, setDeleteCandidate] = useState(null);
   const [deletingUser, setDeletingUser] = useState(false);
+  const [disconnectCandidate, setDisconnectCandidate] = useState(null);
+  const [disconnectingTelegram, setDisconnectingTelegram] = useState(false);
   const [name, setName] = useState("");
   const [teacherLogin, setTeacherLogin] = useState("");
   const [role, setRole] = useState("teacher");
@@ -372,18 +374,22 @@ export default function App() {
     } catch (e) { setError(e.message); }
   }
 
-  async function disconnectTelegram(user) {
-    const ok = window.confirm(
-      "Отключить Telegram у «" + user.full_name + "»?\n\n" +
-      "Пользователь и история переписки останутся в системе. " +
-      "Отправлять и получать сообщения через бота он не сможет до повторного подключения."
-    );
-    if (!ok) return;
+  function disconnectTelegram(user) {
+    setDisconnectCandidate(user);
+  }
+
+  async function confirmDisconnectTelegram() {
+    const user = disconnectCandidate;
+    if (!user || disconnectingTelegram) return;
+    setDisconnectingTelegram(true);
+    setError("");
     try {
       await request("/api/admin/users/" + user.id + "/disconnect-telegram", { method: "POST" });
+      setDisconnectCandidate(null);
       await refresh();
       notify("Telegram отключён");
     } catch (e) { setError(e.message); }
+    finally { setDisconnectingTelegram(false); }
   }
 
   async function makeCode(user) {
@@ -656,6 +662,19 @@ export default function App() {
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={() => setDeleteCandidate(null)} disabled={deletingUser}>Отмена</button>
           <button type="button" className="btn danger" onClick={confirmRemoveUser} disabled={deletingUser}>{deletingUser ? "Удаляем…" : <><Trash2/>Удалить участника</>}</button>
+        </div>
+      </section>
+    </div>}
+    {disconnectCandidate && <div className="overlay" onMouseDown={() => !disconnectingTelegram && setDisconnectCandidate(null)}>
+      <section className="modal confirm-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="disconnect-telegram-title" onMouseDown={e => e.stopPropagation()}>
+        <div className="modal-head">
+          <div><div className="eyebrow">ОТКЛЮЧЕНИЕ TELEGRAM</div><h2 id="disconnect-telegram-title">Отключить Telegram?</h2></div>
+          <button className="icon-btn" type="button" onClick={() => setDisconnectCandidate(null)} disabled={disconnectingTelegram} aria-label="Закрыть"><X/></button>
+        </div>
+        <p className="hint">Отключить Telegram у пользователя «<b>{disconnectCandidate.full_name}</b>»? Профиль и история переписки останутся в системе. Отправлять и получать сообщения через бота он не сможет до повторного подключения.</p>
+        <div className="modal-actions">
+          <button type="button" className="btn ghost" onClick={() => setDisconnectCandidate(null)} disabled={disconnectingTelegram}>Отмена</button>
+          <button type="button" className="btn danger" onClick={confirmDisconnectTelegram} disabled={disconnectingTelegram}>{disconnectingTelegram ? "Отключаем…" : "Отключить Telegram"}</button>
         </div>
       </section>
     </div>}
