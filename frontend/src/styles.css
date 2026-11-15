@@ -4455,3 +4455,78 @@ textarea {
   }
 }
 
+
+
+/* The conversation workspace follows the available viewport height. */
+.chat-layout {
+  height: clamp(480px, calc(100dvh - 275px), 1100px);
+  min-height: 0;
+  align-items: stretch;
+}
+
+.chat-list {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.chat-list-tools {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.chat-items-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+}
+
+.chat-detail {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.chat-detail > .messages {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+}
+
+@media (max-width: 760px) {
+  .chat-layout {
+    height: clamp(520px, calc(100dvh - 205px), 1000px);
+    min-height: 0;
+    grid-template-rows: clamp(150px, 27dvh, 245px) minmax(0, 1fr);
+  }
+
+  .chat-list {
+    height: 100%;
+    max-height: none;
+    min-height: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .chat-detail {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .chat-detail > .messages {
+    max-height: none;
+  }
+}
+
+@media (max-height: 650px) and (min-width: 761px) {
+  .chat-layout {
+    height: max(420px, calc(100dvh - 220px));
+  }
+}
