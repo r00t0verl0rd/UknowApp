@@ -5077,3 +5077,56 @@ body {
     max-width: 52%;
   }
 }
+
+
+/* Prevent graph counter badges from escaping their compact column on phones. */
+@media (max-width: 520px) {
+  .graph-panel .graph-legend-row > .graph-legend {
+    flex: 0 1 48%;
+    width: 48%;
+    min-width: 0;
+    max-width: 48%;
+    gap: 3px;
+    padding: 6px 5px;
+    overflow: hidden;
+  }
+
+  .graph-panel .graph-legend .graph-legend-item {
+    flex: 0 1 auto;
+    min-width: 0;
+    gap: 3px;
+    font-size: clamp(8px, 2.35vw, 10px);
+    white-space: nowrap;
+  }
+
+  .graph-panel .graph-legend .graph-legend-item > span {
+    flex: 0 0 7px;
+    width: 7px;
+    height: 7px;
+  }
+
+  .graph-panel .graph-legend .graph-legend-item b {
+    flex: 0 0 auto;
+    min-width: 17px;
+    padding: 2px 4px;
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 380px) {
+  .graph-panel .graph-legend-row > .graph-legend {
+    padding-inline: 4px;
+    gap: 2px;
+  }
+
+  .graph-panel .graph-legend .graph-legend-item {
+    gap: 2px;
+    font-size: 8px;
+  }
+
+  .graph-panel .graph-legend .graph-legend-item b {
+    min-width: 15px;
+    padding-inline: 3px;
+    font-size: 8px;
+  }
+}
