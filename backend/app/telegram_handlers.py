@@ -139,9 +139,9 @@ async def start(message: TgMessage, bot: Bot):
             if conversation and conversation.status == "active":
                 teacher = conversation.assignment.teacher
                 await message.answer(
-                    "Вы подключены к UknowApp.\n"
+                    "😊 Вы подключены к UknowApp.\n"
                     "Ваш учитель: " + teacher.full_name + ".\n\n"
-                    "Можете отправить ему сообщение прямо сюда."
+                    "Отправляйте сюда сообщения, фото, видео, видеокружочки, голосовые и документы."
                 )
             else:
                 await message.answer(
