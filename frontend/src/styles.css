@@ -5863,8 +5863,254 @@ button,
 
 }
 
+/* --------------------------------------------------------------------------
+   UknowApp unified visual system
+   Shared component surfaces and interaction states across desktop, tablet,
+   mobile, and both color themes. Layout-specific sizing remains above.
+   -------------------------------------------------------------------------- */
+:root {
+  --ui-radius-sm: 9px;
+  --ui-radius-md: 12px;
+  --ui-radius-lg: 16px;
+  --ui-border: #e5deef;
+  --ui-border-strong: #d8c9ed;
+  --ui-control-bg: #f0eef3;
+  --ui-control-hover: #eae4f4;
+  --ui-control-text: #393149;
+  --ui-shadow-soft: 0 2px 6px rgba(41, 34, 63, .06);
+  --ui-shadow-card: 0 7px 24px rgba(47, 31, 84, .045);
+  --ui-focus: 0 0 0 3px rgba(118, 84, 189, .14);
+}
 
+/* Consistent focus and motion without changing component geometry. */
+button, input, select, textarea {
+  font-family: inherit;
+}
+button, .btn, .icon-btn, .theme-toggle, .logout,
+.person-actions button, .add-student, .chat-item,
+.chat-filter-segment button, .attach-control, .composer-send,
+.user-action-btn, .password-actions button {
+  transition: background-color .16s ease, border-color .16s ease,
+    color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+:where(button, input, select, textarea, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--ui-focus);
+}
 
+/* Buttons share one quiet, rounded control language. */
+.btn, .theme-toggle, .icon-btn, .logout,
+.person-actions button, .add-student, .graph-add-participant,
+.user-action-btn, .attach-control, .composer-send,
+.password-actions button, .modal-head button, .alert-row button,
+.chat-filter-segment button {
+  border-radius: var(--ui-radius-sm);
+}
+.btn, .user-action-btn, .attach-control, .password-actions button {
+  border-color: var(--ui-border);
+  box-shadow: var(--ui-shadow-soft);
+}
+.btn:not(.primary):not(.disconnect):not(.danger),
+.user-action-btn:not(.danger):not(.disconnect),
+.theme-toggle, .icon-btn, .person-actions button,
+.logout, .chat-filter-segment button {
+  background: var(--ui-control-bg);
+  border-color: var(--ui-border);
+  color: var(--ui-control-text);
+}
+.btn:not(.primary):not(.disconnect):not(.danger):hover,
+.user-action-btn:not(.danger):not(.disconnect):hover,
+.theme-toggle:hover, .icon-btn:hover,
+.person-actions button:hover, .logout:hover,
+.chat-filter-segment button:hover {
+  background: var(--ui-control-hover);
+  border-color: var(--ui-border-strong);
+  color: var(--purple);
+  box-shadow: 0 3px 9px rgba(87, 62, 153, .09);
+}
+.btn.primary, .composer-send {
+  border-color: transparent;
+  border-radius: var(--ui-radius-sm);
+  box-shadow: 0 4px 13px rgba(87, 62, 153, .18);
+}
+.btn.danger, .btn.disconnect, .user-action-btn.danger,
+.user-action-btn.disconnect, .danger-icon {
+  border-color: #f0d5d9;
+  background: #fff0f1;
+  color: #b82c3b;
+}
+.btn.danger:hover, .btn.disconnect:hover,
+.user-action-btn.danger:hover, .user-action-btn.disconnect:hover,
+.danger-icon:hover {
+  background: #ffe5e8;
+  border-color: #eebfc6;
+  color: #a92332;
+}
+.sidebar nav button { border-radius: var(--ui-radius-md); }
+.sidebar nav button:not(.active) { border: 1px solid transparent; }
+.sidebar nav button:not(.active):hover {
+  background: var(--ui-control-hover);
+  border-color: var(--ui-border);
+}
+.chat-item { border: 1px solid transparent; border-radius: var(--ui-radius-md); }
+.chat-item.selected {
+  border-color: var(--ui-border-strong);
+  box-shadow: inset 3px 0 0 var(--purple);
+}
 
+/* Inputs, search, filters, and composer use matching borders and focus states. */
+.stack input, .stack select, .stack textarea,
+.search, .search input, .user-sort, .user-sort select,
+.chat-search-control, .chat-search-control input,
+.chat-head-tools select, .chat-composer textarea,
+.timezone-control select, input, select, textarea {
+  border-radius: var(--ui-radius-sm);
+}
+.stack input, .stack select, .stack textarea,
+.search, .user-sort, .chat-search-control,
+.chat-head-tools select, .chat-composer textarea,
+.timezone-control select {
+  border-color: var(--ui-border);
+  background-color: #fff;
+}
+.stack input:focus, .stack select:focus, .stack textarea:focus,
+.search:focus-within, .user-sort:focus-within,
+.chat-search-control:focus-within,
+.chat-head-tools select:focus, .chat-composer textarea:focus,
+.timezone-control select:focus {
+  border-color: #a98bd8;
+  box-shadow: var(--ui-focus);
+  outline: none;
+}
+input::placeholder, textarea::placeholder { color: #a49daf; }
 
+/* Cards and workspaces share consistent surface depth and corner rhythm. */
+.graph-panel, .user-list, .chat-layout, .metric,
+.person-card, .teacher-graph-card, .teacher-graph-summary,
+.user-info-popover, .chat-list, .chat-detail {
+  border-radius: var(--ui-radius-lg);
+}
+.graph-panel, .user-list, .chat-layout, .metric,
+.user-info-popover, .teacher-graph-card, .teacher-graph-summary {
+  border-color: var(--line);
+  box-shadow: var(--ui-shadow-card);
+}
+.section-head { align-items: center; }
+.person-card { box-shadow: 0 1px 4px rgba(47, 31, 84, .025); }
+.person-card:hover { box-shadow: 0 5px 15px rgba(87, 62, 153, .075); }
+.user-row { border-bottom-color: #efebf4; }
+.role-tag, .readonly-tag, .unread-badge { border-radius: 7px; }
+.avatar { border-radius: 11px; }
+
+/* Dialogs, alerts, messages, and feedback follow the same rounded language. */
+.overlay > .modal, .modal { border-radius: 18px; }
+.modal { border: 1px solid var(--line); box-shadow: 0 22px 70px rgba(33, 22, 49, .18); }
+.modal-head { gap: 12px; }
+.alert { border-radius: var(--ui-radius-sm); }
+.message { border-radius: 13px; }
+.toast { border: 1px solid rgba(255,255,255,.12); border-radius: var(--ui-radius-md); }
+.invite-code, .credential-password { border-radius: var(--ui-radius-md); }
+
+/* Compact top-bar actions intentionally match the touch-device controls. */
+.topbar-actions > .theme-toggle,
+.topbar-actions > .icon-btn,
+.mobile-quick-actions > .theme-toggle,
+.mobile-quick-actions > .icon-btn {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 6px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-control-bg);
+  color: var(--purple);
+  box-shadow: var(--ui-shadow-soft);
+}
+.topbar-actions > .theme-toggle svg,
+.topbar-actions > .icon-btn svg,
+.mobile-quick-actions > .theme-toggle svg,
+.mobile-quick-actions > .icon-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* The soft-dark theme uses the same components, with coordinated dark surfaces. */
+:root[data-theme="dark-soft"] {
+  --ui-border: #414c60;
+  --ui-border-strong: #59657b;
+  --ui-control-bg: #2b3443;
+  --ui-control-hover: #343e50;
+  --ui-control-text: #c6cddd;
+  --ui-shadow-soft: none;
+  --ui-shadow-card: 0 7px 24px rgba(0, 0, 0, .13);
+  --ui-focus: 0 0 0 3px rgba(160, 143, 211, .20);
+}
+:root[data-theme="dark-soft"] .btn:not(.primary):not(.disconnect):not(.danger),
+:root[data-theme="dark-soft"] .user-action-btn:not(.danger):not(.disconnect),
+:root[data-theme="dark-soft"] .theme-toggle,
+:root[data-theme="dark-soft"] .icon-btn,
+:root[data-theme="dark-soft"] .logout,
+:root[data-theme="dark-soft"] .person-actions button:not(.danger-icon),
+:root[data-theme="dark-soft"] .chat-filter-segment button,
+:root[data-theme="dark-soft"] .topbar-actions > .theme-toggle,
+:root[data-theme="dark-soft"] .topbar-actions > .icon-btn,
+:root[data-theme="dark-soft"] .mobile-quick-actions > .theme-toggle,
+:root[data-theme="dark-soft"] .mobile-quick-actions > .icon-btn {
+  background: var(--ui-control-bg) !important;
+  border-color: var(--ui-border) !important;
+  color: var(--ui-control-text) !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .btn:not(.primary):hover,
+:root[data-theme="dark-soft"] .theme-toggle:hover,
+:root[data-theme="dark-soft"] .icon-btn:hover,
+:root[data-theme="dark-soft"] .person-actions button:hover,
+:root[data-theme="dark-soft"] .logout:hover {
+  background: var(--ui-control-hover) !important;
+  border-color: var(--ui-border-strong) !important;
+}
+:root[data-theme="dark-soft"] .stack input,
+:root[data-theme="dark-soft"] .stack select,
+:root[data-theme="dark-soft"] .stack textarea,
+:root[data-theme="dark-soft"] .search,
+:root[data-theme="dark-soft"] .user-sort,
+:root[data-theme="dark-soft"] .chat-search-control,
+:root[data-theme="dark-soft"] .chat-head-tools select,
+:root[data-theme="dark-soft"] .chat-composer textarea,
+:root[data-theme="dark-soft"] .timezone-control select {
+  background: #202a38 !important;
+  border-color: #414c60 !important;
+  color: #e0e5ee !important;
+}
+:root[data-theme="dark-soft"] .chat-item {
+  border-color: transparent;
+}
+:root[data-theme="dark-soft"] .chat-item.selected {
+  background: #343449 !important;
+  border-color: #514b6d !important;
+  color: #d1c9f4 !important;
+}
+:root[data-theme="dark-soft"] .btn.danger,
+:root[data-theme="dark-soft"] .btn.disconnect,
+:root[data-theme="dark-soft"] .user-action-btn.danger,
+:root[data-theme="dark-soft"] .user-action-btn.disconnect,
+:root[data-theme="dark-soft"] .danger-icon {
+  background: #432d39 !important;
+  border-color: #69404c !important;
+  color: #f0aab3 !important;
+}
+:root[data-theme="dark-soft"] .modal {
+  border-color: #39465a;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, .32);
+}
+:root[data-theme="dark-soft"] .user-row {
+  border-bottom-color: #303b4c;
+}
+:root[data-theme="dark-soft"] .person-card {
+  box-shadow: none;
+}
 
