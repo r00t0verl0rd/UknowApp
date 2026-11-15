@@ -212,7 +212,7 @@ def _teacher_page(items: list[dict], page: int) -> tuple[int, int, list[dict]]:
 
 
 def _teacher_button_labels(items: list[dict]) -> list[str]:
-    """Use only each student's full name as the Reply Keyboard button text."""
+    """Use the same friendly student label in the keyboard and message router."""
     return ["😊 " + item["student"].full_name.strip() for item in items]
 
 
