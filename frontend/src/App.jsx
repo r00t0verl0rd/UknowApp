@@ -554,12 +554,7 @@ export default function App() {
     </aside>
 
     <main className={"main" + (page === "chats" ? " chats-main" : "")}>
-      <header className="topbar"><div className="topbar-context"><small className="topbar-user">{profile?.full_name}</small></div><div className="topbar-actions">
-        <button type="button" className="theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
-          {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
-        </button>
-        <button className="icon-btn" onClick={refresh} title="Обновить"><RefreshCw className={busy ? "spin" : ""}/></button>
-      </div></header>
+      <header className="topbar"><div className="topbar-context"><small className="topbar-user">{profile?.full_name}</small></div></header>
       <div className={"content" + (page === "chats" ? " chats-content" : "")}>
         {error && <div className="alert alert-row">{error}<button onClick={() => setError("")}><X/></button></div>}
         {page === "graph" && profile?.role === "teacher" && <section className="teacher-readonly-graph">
