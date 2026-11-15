@@ -2476,3 +2476,14 @@ img, video, audio { max-width: 100%; }
     font-size: 10px;
   }
 }
+
+
+/* Round Telegram video messages should retain their native circular presentation. */
+.chat-media-video.chat-media-video-note {
+  width: min(100%, 260px);
+  aspect-ratio: 1;
+  max-height: none;
+  object-fit: cover;
+  border-radius: 50%;
+  background: #17131f;
+}
