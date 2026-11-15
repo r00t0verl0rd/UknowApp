@@ -544,7 +544,7 @@ async def route_message(message: TgMessage, bot: Bot):
                     await message.answer("Срок действия кода истёк. Попросите администратора создать новый код.")
                 elif result == "used":
                     _record_connection_code_attempt(telegram_id)
-                    await message.answer("Этот код уже использован. Попросите администратора создать новый.")
+                    await message.answer("Этот код уже недействителен. Попросите администратора создать новый.")
                 elif result == "telegram_already_linked":
                     _record_connection_code_attempt(telegram_id)
                     await message.answer("Этот Telegram-аккаунт уже привязан к другому пользователю UknowApp.")
