@@ -1185,3 +1185,354 @@ img, video, audio { max-width: 100%; }
   .chat-filter-segment button { font-size: 9px; gap: 4px; }
   .credential-password b { font-size: 24px; }
 }
+
+
+/* Personal display preferences: timezone selector and soft dark theme. */
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.theme-toggle {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #faf9fc;
+  color: var(--purple);
+  transition: background .18s, border-color .18s, transform .18s;
+}
+.theme-toggle:hover {
+  background: #f0ebf9;
+  border-color: #dcd2ed;
+  transform: translateY(-1px);
+}
+.theme-toggle svg { width: 17px; height: 17px; }
+.login-card { position: relative; }
+.login-theme-toggle { position: absolute; top: 15px; right: 15px; }
+.timezone-control {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+.timezone-control > span {
+  padding-left: 2px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .35px;
+}
+.timezone-control select {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  outline: none;
+  background: #fff;
+  color: var(--ink);
+  font-size: 11px;
+}
+.timezone-control select:focus {
+  border-color: #a99bcc;
+  box-shadow: 0 0 0 3px #59439a12;
+}
+@media (max-width: 760px) {
+  .topbar-actions { gap: 5px; }
+  .theme-toggle { width: 33px; height: 33px; flex: 0 0 33px; }
+  .timezone-control select { height: 36px; }
+}
+
+/* A calm, low-contrast dark palette. It is activated by the theme button and
+   intentionally avoids pure black and highly saturated accent colours. */
+:root[data-theme="dark-soft"] {
+  color-scheme: dark;
+  color: #e4e8f0;
+  background: #171b25;
+  --purple: #aaa0d8;
+  --purple2: #9185c4;
+  --red: #d97883;
+  --ink: #e4e8f0;
+  --muted: #9ba6b8;
+  --line: #343d4d;
+}
+:root[data-theme="dark-soft"] body {
+  background: #171b25 !important;
+  color: #e4e8f0 !important;
+}
+:root[data-theme="dark-soft"] .login-screen {
+  background:
+    radial-gradient(circle at 18% 18%, #3b2e46 0, transparent 34%),
+    radial-gradient(circle at 86% 84%, #29374b 0, transparent 38%),
+    #171b25 !important;
+}
+:root[data-theme="dark-soft"] .login-card,
+:root[data-theme="dark-soft"] .sidebar,
+:root[data-theme="dark-soft"] .topbar,
+:root[data-theme="dark-soft"] .graph-panel,
+:root[data-theme="dark-soft"] .user-list,
+:root[data-theme="dark-soft"] .chat-layout,
+:root[data-theme="dark-soft"] .teacher-readonly-graph,
+:root[data-theme="dark-soft"] .metric,
+:root[data-theme="dark-soft"] .chat-head,
+:root[data-theme="dark-soft"] .chat-composer,
+:root[data-theme="dark-soft"] .credential-row,
+:root[data-theme="dark-soft"] .modal {
+  background: #202633 !important;
+  color: #e4e8f0 !important;
+  border-color: #343d4d !important;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, .16);
+}
+:root[data-theme="dark-soft"] .main,
+:root[data-theme="dark-soft"] .shell {
+  background: #171b25 !important;
+}
+:root[data-theme="dark-soft"] .school-label,
+:root[data-theme="dark-soft"] .eyebrow,
+:root[data-theme="dark-soft"] .muted,
+:root[data-theme="dark-soft"] .page-title p,
+:root[data-theme="dark-soft"] .section-head p,
+:root[data-theme="dark-soft"] .person-info small,
+:root[data-theme="dark-soft"] .chat-head small,
+:root[data-theme="dark-soft"] .chat-item small,
+:root[data-theme="dark-soft"] .chat-item span,
+:root[data-theme="dark-soft"] .chat-list-caption,
+:root[data-theme="dark-soft"] .timezone-control > span,
+:root[data-theme="dark-soft"] .composer-footer small,
+:root[data-theme="dark-soft"] .message-time,
+:root[data-theme="dark-soft"] .credential-row span,
+:root[data-theme="dark-soft"] .credential-password span {
+  color: #9ba6b8 !important;
+}
+:root[data-theme="dark-soft"] .topbar > div,
+:root[data-theme="dark-soft"] .topbar b,
+:root[data-theme="dark-soft"] .page-title h1,
+:root[data-theme="dark-soft"] .section-head h2,
+:root[data-theme="dark-soft"] .person-info b,
+:root[data-theme="dark-soft"] .metric b,
+:root[data-theme="dark-soft"] .chat-head b,
+:root[data-theme="dark-soft"] .chat-item b,
+:root[data-theme="dark-soft"] .credential-row b,
+:root[data-theme="dark-soft"] .empty-state b {
+  color: #e4e8f0 !important;
+}
+:root[data-theme="dark-soft"] .sidebar nav button,
+:root[data-theme="dark-soft"] .logout {
+  background: transparent !important;
+  color: #aeb7c7 !important;
+}
+:root[data-theme="dark-soft"] .sidebar nav button:hover,
+:root[data-theme="dark-soft"] .logout:hover {
+  background: #293142 !important;
+  color: #e4e8f0 !important;
+}
+:root[data-theme="dark-soft"] .sidebar nav button.active {
+  background: #353149 !important;
+  color: #c6bdf0 !important;
+  border-color: #49415f !important;
+}
+:root[data-theme="dark-soft"] .sidebar nav button i {
+  background: #303849 !important;
+  color: #c5bddf !important;
+}
+:root[data-theme="dark-soft"] .chat-list {
+  background: #1d2430 !important;
+  border-color: #343d4d !important;
+}
+:root[data-theme="dark-soft"] .chat-item,
+:root[data-theme="dark-soft"] .person-card,
+:root[data-theme="dark-soft"] .root-node,
+:root[data-theme="dark-soft"] .teacher-graph-card,
+:root[data-theme="dark-soft"] .secure {
+  background: #252d3b !important;
+  color: #e4e8f0 !important;
+  border-color: #394457 !important;
+}
+:root[data-theme="dark-soft"] .chat-item:hover,
+:root[data-theme="dark-soft"] .chat-item.selected {
+  background: #343449 !important;
+  border-color: #514b6d !important;
+  color: #d1c9f4 !important;
+}
+:root[data-theme="dark-soft"] .messages {
+  background: #191f2a !important;
+}
+:root[data-theme="dark-soft"] .message {
+  background: #252d3a !important;
+  color: #e4e8f0 !important;
+  border-color: #394456 !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .14) !important;
+}
+:root[data-theme="dark-soft"] .message.teacher {
+  background: #302e43 !important;
+  border-color: #4c4667 !important;
+}
+:root[data-theme="dark-soft"] .message.admin {
+  background: #393445 !important;
+  border-color: #66546a !important;
+}
+:root[data-theme="dark-soft"] .message p {
+  color: #e4e8f0 !important;
+}
+:root[data-theme="dark-soft"] .chat-composer,
+:root[data-theme="dark-soft"] .chat-head {
+  background: #202633 !important;
+}
+:root[data-theme="dark-soft"] .chat-composer textarea,
+:root[data-theme="dark-soft"] input,
+:root[data-theme="dark-soft"] select,
+:root[data-theme="dark-soft"] textarea,
+:root[data-theme="dark-soft"] .chat-search-control,
+:root[data-theme="dark-soft"] .timezone-control select,
+:root[data-theme="dark-soft"] .chat-head-tools select {
+  background: #262f3d !important;
+  color: #e4e8f0 !important;
+  border-color: #414c60 !important;
+}
+:root[data-theme="dark-soft"] input::placeholder,
+:root[data-theme="dark-soft"] textarea::placeholder,
+:root[data-theme="dark-soft"] .chat-search-control input::placeholder {
+  color: #8793a7 !important;
+}
+:root[data-theme="dark-soft"] .chat-search-control:focus-within,
+:root[data-theme="dark-soft"] .chat-composer textarea:focus,
+:root[data-theme="dark-soft"] .timezone-control select:focus {
+  background: #2b3545 !important;
+  border-color: #8579b7 !important;
+  box-shadow: 0 0 0 3px rgba(170, 160, 216, .13) !important;
+}
+:root[data-theme="dark-soft"] .chat-list-tools,
+:root[data-theme="dark-soft"] .chat-list-tools,
+:root[data-theme="dark-soft"] .chat-head,
+:root[data-theme="dark-soft"] .chat-composer,
+:root[data-theme="dark-soft"] .user-row {
+  border-color: #343d4d !important;
+}
+:root[data-theme="dark-soft"] .chat-filter-segment {
+  background: #1a202b !important;
+  border-color: #343d4d !important;
+}
+:root[data-theme="dark-soft"] .chat-filter-segment button {
+  color: #a4aec0 !important;
+}
+:root[data-theme="dark-soft"] .chat-filter-segment button.active {
+  background: #333149 !important;
+  border-color: #514b6d !important;
+  color: #d1c9f4 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .chat-filter-segment button span {
+  background: #424057 !important;
+  color: #d1c9f4 !important;
+}
+:root[data-theme="dark-soft"] .btn:not(.primary):not(.disconnect),
+:root[data-theme="dark-soft"] .icon-btn,
+:root[data-theme="dark-soft"] .person-actions button,
+:root[data-theme="dark-soft"] .chat-list-tools button,
+:root[data-theme="dark-soft"] .theme-toggle,
+:root[data-theme="dark-soft"] .modal-head button,
+:root[data-theme="dark-soft"] .attach-control,
+:root[data-theme="dark-soft"] .selected-file {
+  background: #2b3443 !important;
+  color: #c6cddd !important;
+  border-color: #414c60 !important;
+}
+:root[data-theme="dark-soft"] .btn.primary {
+  background: #71679e !important;
+  border-color: #8b80b8 !important;
+  color: #fff !important;
+  box-shadow: 0 5px 16px rgba(0, 0, 0, .18) !important;
+}
+:root[data-theme="dark-soft"] .btn.primary:hover {
+  background: #8176b0 !important;
+}
+:root[data-theme="dark-soft"] .btn.outline,
+:root[data-theme="dark-soft"] .add-student {
+  background: #353149 !important;
+  border-color: #514b6d !important;
+  color: #c9c0ef !important;
+}
+:root[data-theme="dark-soft"] .btn.disconnect,
+:root[data-theme="dark-soft"] .danger-icon {
+  background: #402b36 !important;
+  border-color: #68414d !important;
+  color: #e69aa4 !important;
+}
+:root[data-theme="dark-soft"] .role-tag,
+:root[data-theme="dark-soft"] .avatar,
+:root[data-theme="dark-soft"] .teacher-graph-card .readonly-tag {
+  background: #353149 !important;
+  color: #c6bdf0 !important;
+}
+:root[data-theme="dark-soft"] .role-tag.student,
+:root[data-theme="dark-soft"] .student-avatar,
+:root[data-theme="dark-soft"] .avatar.student {
+  background: #402b36 !important;
+  color: #e69aa4 !important;
+}
+:root[data-theme="dark-soft"] .teacher-graph-card.student {
+  background: #302d32 !important;
+  border-color: #51474a !important;
+}
+:root[data-theme="dark-soft"] .password-info,
+:root[data-theme="dark-soft"] .credential-password,
+:root[data-theme="dark-soft"] .invite-code {
+  background: #2b2d3e !important;
+  border-color: #4b4662 !important;
+  color: #c6cddd !important;
+}
+:root[data-theme="dark-soft"] .credential-password b,
+:root[data-theme="dark-soft"] .password-info b {
+  color: #c9c0ef !important;
+}
+:root[data-theme="dark-soft"] .alert {
+  background: #3b2b35 !important;
+  border-color: #65404b !important;
+  color: #edabb4 !important;
+}
+:root[data-theme="dark-soft"] .empty-state {
+  color: #9ba6b8 !important;
+}
+:root[data-theme="dark-soft"] .chat-media-status,
+:root[data-theme="dark-soft"] .message-delivery {
+  color: #d59a83 !important;
+}
+:root[data-theme="dark-soft"] .topbar svg,
+:root[data-theme="dark-soft"] .theme-toggle svg {
+  color: inherit;
+}
+
+/* The legacy mobile rules force pale surfaces with !important; this final
+   theme layer keeps the selected dark palette consistent on touch screens. */
+@media (max-width: 900px), (hover: none), (pointer: coarse) {
+  :root[data-theme="dark-soft"] button:not(.primary):not(.disconnect):not(.danger-icon),
+  :root[data-theme="dark-soft"] .btn:not(.primary):not(.disconnect):not(.danger-icon),
+  :root[data-theme="dark-soft"] .sidebar nav button,
+  :root[data-theme="dark-soft"] .person-actions button:not(.danger-icon),
+  :root[data-theme="dark-soft"] .icon-btn:not(.danger-icon),
+  :root[data-theme="dark-soft"] .add-student,
+  :root[data-theme="dark-soft"] .chat-item,
+  :root[data-theme="dark-soft"] .alert-row button,
+  :root[data-theme="dark-soft"] .modal-head button {
+    background: #2b3443 !important;
+    border-color: #414c60 !important;
+    color: #c6cddd !important;
+    box-shadow: none !important;
+  }
+  :root[data-theme="dark-soft"] .sidebar nav button.active,
+  :root[data-theme="dark-soft"] .btn.primary {
+    background: #71679e !important;
+    border-color: #8b80b8 !important;
+    color: #fff !important;
+  }
+  :root[data-theme="dark-soft"] .chat-item.selected,
+  :root[data-theme="dark-soft"] button.chat-item.selected {
+    background: #343449 !important;
+    border-color: #514b6d !important;
+    color: #d1c9f4 !important;
+  }
+}
