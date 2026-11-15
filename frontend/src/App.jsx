@@ -166,13 +166,23 @@ export default function App() {
     if (messageFilter === "files") return ["document", "video", "video_note", "animation"].includes(kind);
     return true;
   }), [messages, messageFilter]);
-  const visibleChats = useMemo(() => chats.filter(chat => {
-    const names = (chat.student.full_name + " " + chat.teacher.full_name).toLowerCase();
-    const query = chatSearch.trim().toLowerCase();
-    const matchesSearch = !query || names.includes(query) || (chat.last_message || "").toLowerCase().includes(query);
-    const matchesFilter = chatFilter === "all" || Number(chat.unread_count || 0) > 0;
-    return matchesSearch && matchesFilter;
-  }), [chats, chatSearch, chatFilter]);
+  const visibleChats = useMemo(() => {
+    const query = chatSearch.trim().toLocaleLowerCase("ru");
+    if (profile?.role === "admin") {
+      return [...chats]
+        .filter(chat => !query || chat.teacher.full_name.toLocaleLowerCase("ru").includes(query))
+        .sort((a, b) =>
+          a.teacher.full_name.localeCompare(b.teacher.full_name, "ru", { sensitivity: "base" }) ||
+          a.student.full_name.localeCompare(b.student.full_name, "ru", { sensitivity: "base" })
+        );
+    }
+    return chats.filter(chat => {
+      const names = (chat.student.full_name + " " + chat.teacher.full_name).toLowerCase();
+      const matchesSearch = !query || names.includes(query) || (chat.last_message || "").toLowerCase().includes(query);
+      const matchesFilter = chatFilter === "all" || Number(chat.unread_count || 0) > 0;
+      return matchesSearch && matchesFilter;
+    });
+  }, [chats, chatSearch, chatFilter, profile?.role]);
 
   async function signIn(event) {
     event.preventDefault(); setError("");
@@ -429,19 +439,19 @@ export default function App() {
           <div className="chat-layout"><div className="chat-list"><div className="chat-list-tools">
               <div className="chat-search-control">
                 <Search size={17}/>
-                <input aria-label="Найти ученика" placeholder="Найти ученика" value={chatSearch} onChange={e => setChatSearch(e.target.value)}/>
+                <input aria-label={profile?.role === "admin" ? "Найти учителя" : "Найти ученика"} placeholder={profile?.role === "admin" ? "Найти учителя" : "Найти ученика"} value={chatSearch} onChange={e => setChatSearch(e.target.value)}/>
                 {chatSearch && <button type="button" onClick={() => setChatSearch("")} aria-label="Очистить поиск"><X size={14}/></button>}
               </div>
-              <div className="chat-filter-segment" role="group" aria-label="Фильтр диалогов">
+              {profile?.role !== "admin" && <div className="chat-filter-segment" role="group" aria-label="Фильтр диалогов">
                 <button type="button" className={chatFilter === "all" ? "active" : ""} aria-pressed={chatFilter === "all"} onClick={() => setChatFilter("all")}>
                   <MessageCircle size={14}/>Все диалоги
                 </button>
                 <button type="button" className={chatFilter === "unread" ? "active" : ""} aria-pressed={chatFilter === "unread"} onClick={() => setChatFilter("unread")}>
                   <Check size={14}/>Непрочитанные
                 </button>
-              </div>
-              <div className="chat-list-caption">{visibleChats.length === chats.length ? "Все ваши диалоги" : "Показано " + visibleChats.length + " из " + chats.length}</div>
-            </div>{visibleChats.map(chat => <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected" : "")} onClick={() => openChat(chat)}><b>{profile?.role === "teacher" ? chat.student.full_name : chat.student.full_name + " ↔ " + chat.teacher.full_name}</b><small>{chat.last_message}</small><span>{chat.last_message_at ? new Date(chat.last_message_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) + " · " : ""}{chat.unread_count ? chat.unread_count + " непрочитанных · " : ""}{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span></button>)}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">По выбранному фильтру ничего не найдено</div>}</div>
+              </div>}
+              <div className="chat-list-caption">{profile?.role === "admin" ? "Сортировка по имени учителя" : visibleChats.length === chats.length ? "Все ваши диалоги" : "Показано " + visibleChats.length + " из " + chats.length}</div>
+            </div>{visibleChats.map(chat => <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected" : "")} onClick={() => openChat(chat)}><b>{profile?.role === "teacher" ? chat.student.full_name : chat.teacher.full_name + " · " + chat.student.full_name}</b><small>{chat.last_message}</small><span>{chat.last_message_at ? new Date(chat.last_message_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) + " · " : ""}{chat.unread_count ? chat.unread_count + " непрочитанных · " : ""}{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span></button>)}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">{profile?.role === "admin" ? "Учитель не найден" : "По выбранному фильтру ничего не найдено"}</div>}</div>
             <div className="chat-detail">{selectedChat ? <>
               <div className="chat-head"><div><b>{selectedChat.student.full_name}</b><small>{profile?.role === "admin" ? "Учитель: " + selectedChat.teacher.full_name + " · " : ""}Переписка #{selectedChat.id}</small></div><div className="chat-head-tools"><select aria-label="Фильтр сообщений" value={messageFilter} onChange={e => setMessageFilter(e.target.value)}><option value="all">Все сообщения</option><option value="media">Все вложения</option><option value="audio">Аудио</option><option value="photos">Фото</option><option value="files">Файлы и видео</option></select><span className="role-tag">{selectedChat.status === "active" ? "Активна" : "Закрыта"}</span></div></div>
               <div className="messages">{visibleMessages.map(message => <MessageBubble message={message} key={message.id} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}{!!messages.length && !visibleMessages.length && <div className="empty-state">Нет сообщений этого типа</div>}</div>
