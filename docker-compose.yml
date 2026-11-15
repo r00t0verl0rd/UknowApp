@@ -56,7 +56,7 @@ services:
         - -q
         - -O
         - /dev/null
-        - http://127.0.0.1/
+        - http://127.0.0.1:2019/config/
       interval: 60s
       timeout: 5s
       retries: 3
