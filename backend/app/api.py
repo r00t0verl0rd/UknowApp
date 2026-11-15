@@ -97,10 +97,22 @@ def conversation_dict(
         select(Message).where(Message.conversation_id == conversation.id)
     ).all()
     count = len(message_rows)
+    # Match the teacher inbox logic: only delivered student messages that
+    # arrived after the latest successfully delivered teacher reply are pending.
+    last_teacher_reply = max(
+        (
+            index
+            for index, row in enumerate(message_rows)
+            if row.sender_role == "teacher" and row.delivery_status == "delivered"
+        ),
+        default=-1,
+    )
     unread_count = sum(
         1
-        for row in message_rows
-        if row.sender_role == "student"
+        for index, row in enumerate(message_rows)
+        if index > last_teacher_reply
+        and row.sender_role == "student"
+        and row.delivery_status == "delivered"
         and json.loads(row.metadata_json or "{}").get("teacher_read_at") is None
     )
     return {
@@ -775,7 +787,7 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db):
         now = datetime.now(timezone.utc).isoformat()
         changed = False
         for row in rows:
-            if row.sender_role == "student":
+            if row.sender_role == "student" and row.delivery_status == "delivered":
                 metadata = json.loads(row.metadata_json or "{}")
                 if metadata.get("teacher_read_at") is None:
                     metadata["teacher_read_at"] = now
