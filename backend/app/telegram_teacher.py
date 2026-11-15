@@ -287,12 +287,10 @@ def teacher_panel_view(
             if item["unanswered"] > 3:
                 lines.append("   …ещё " + str(item["unanswered"] - 3) + " сообщений")
             latest = item["latest"]
-            if latest and (
-                not item["unread"]
-                or (item["unread"] and latest.id > item["unread"][-1].id and latest.sender_role == "admin")
+            if latest and latest.sender_role == "admin" and (
+                not item["unread"] or latest.id > item["unread"][-1].id
             ):
-                label = "Администратор" if latest.sender_role == "admin" else "Последнее сообщение"
-                lines.append("   " + label + ": " + escape(message_preview(latest)))
+                lines.append("   Администратор: " + escape(message_preview(latest)))
             lines.append("")
         if total_pages > 1:
             lines.append("Страница " + str(page + 1) + " из " + str(total_pages) + ".")
