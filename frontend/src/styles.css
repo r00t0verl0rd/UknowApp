@@ -5723,14 +5723,14 @@ body {
   }
   .graph-panel .graph-legend .graph-legend-item {
     flex: 0 1 auto; min-width: 0; gap: clamp(2px, .8vw, 5px);
-    font-size: clamp(8px, 2.5vw, 11px); white-space: nowrap;
+    font-size: clamp(9px, 2.8vw, 12px); white-space: nowrap;
   }
   .graph-panel .graph-legend .graph-legend-item > span {
     flex: 0 0 7px; width: 7px; height: 7px;
   }
   .graph-panel .graph-legend .graph-legend-item b {
     flex: 0 0 auto; min-width: 15px; min-height: 0;
-    padding: 2px clamp(3px, .8vw, 5px); font-size: clamp(8px, 2.2vw, 10px);
+    padding: 2px clamp(3px, .8vw, 5px); font-size: clamp(9px, 2.5vw, 11px);
   }
   .graph-panel .graph-add-participant {
     flex: 0 1 auto; align-self: stretch; min-height: 0; height: auto;
