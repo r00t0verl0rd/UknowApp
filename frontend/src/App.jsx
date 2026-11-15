@@ -510,7 +510,17 @@ export default function App() {
                 </button>
               </div>}
               
-            </div>{visibleChats.map(chat => <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected" : "")} onClick={() => openChat(chat)}><b>{profile?.role === "teacher" ? chat.student.full_name : chat.teacher.full_name + " · " + chat.student.full_name}</b><small>{chat.last_message}</small><span>{chat.last_message_at ? formatTimeInZone(chat.last_message_at, timeZone, { hour: "2-digit", minute: "2-digit" }) + " · " : ""}{chat.unread_count ? chat.unread_count + " непрочитанных · " : ""}{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span></button>)}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">{profile?.role === "admin" ? "Учитель не найден" : "По выбранному фильтру ничего не найдено"}</div>}</div>
+            </div>{visibleChats.map(chat => {
+              const unreadCount = Number(chat.unread_count) || 0;
+              return <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected " : "") + (unreadCount > 0 ? "has-unread" : "")} onClick={() => openChat(chat)}>
+                <div className="chat-item-heading">
+                  <b>{profile?.role === "teacher" ? chat.student.full_name : chat.teacher.full_name + " · " + chat.student.full_name}</b>
+                  {unreadCount > 0 && <span className="unread-badge" title={profile?.role === "admin" ? "Непрочитано учителем" : "Непрочитанные сообщения"} aria-label={profile?.role === "admin" ? unreadCount + " сообщений не прочитано учителем" : unreadCount + " непрочитанных сообщений"}>{unreadCount > 99 ? "99+" : unreadCount}</span>}
+                </div>
+                <small>{chat.last_message}</small>
+                <span className="chat-item-meta">{chat.last_message_at ? formatTimeInZone(chat.last_message_at, timeZone, { hour: "2-digit", minute: "2-digit" }) + " · " : ""}{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span>
+              </button>;
+            })}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">{profile?.role === "admin" ? "Учитель не найден" : "По выбранному фильтру ничего не найдено"}</div>}</div>
             <div className="chat-detail">{selectedChat ? <>
               <div className="chat-head"><div><b>{selectedChat.student.full_name}</b>{profile?.role === "admin" && <small>Учитель: {selectedChat.teacher.full_name}</small>}</div><div className="chat-head-tools"><select aria-label="Фильтр сообщений" value={messageFilter} onChange={e => setMessageFilter(e.target.value)}><option value="all">Все сообщения</option><option value="media">Все вложения</option><option value="audio">Аудио</option><option value="photos">Фото</option><option value="files">Файлы и видео</option></select><span className="role-tag">{selectedChat.status === "active" ? "Активна" : "Закрыта"}</span></div></div>
               <div className="messages">{visibleMessages.map(message => <MessageBubble message={message} timeZone={timeZone} key={message.id} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}{!!messages.length && !visibleMessages.length && <div className="empty-state">Нет сообщений этого типа</div>}</div>
