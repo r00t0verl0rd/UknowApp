@@ -2675,3 +2675,182 @@ img, video, audio { max-width: 100%; }
     min-height: 36px;
   }
 }
+
+
+/* Final graph-card sizing: keep the admin identity on one compact row and
+   make student cards shrink safely inside narrow teacher branches. */
+.graph-panel .root-node {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 0;
+  margin: 0 auto 20px;
+  padding: 11px 16px;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.graph-panel .root-node img {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+}
+
+.graph-panel .root-node > div {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-items: initial;
+  justify-content: center;
+  gap: 3px 9px;
+  width: auto;
+  min-width: 0;
+  text-align: left;
+}
+
+.graph-panel .root-node b,
+.graph-panel .root-node small {
+  display: inline;
+  width: auto;
+  margin: 0;
+  text-align: left;
+}
+
+.graph-panel .root-node b {
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.graph-panel .root-node small {
+  white-space: nowrap;
+  font-size: 10px;
+}
+
+.graph-panel .teacher-grid,
+.graph-panel .teacher-branch,
+.graph-panel .student-list {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.graph-panel .teacher-grid {
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+}
+
+.graph-panel .student-list {
+  margin-left: 0;
+  padding-left: 12px;
+  overflow: hidden;
+}
+
+.graph-panel .student-card {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.graph-panel .student-card .person-main {
+  display: flex;
+  flex: 1 1 0%;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.graph-panel .student-card .person-info {
+  flex: 1 1 0%;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.graph-panel .student-card .person-info b,
+.graph-panel .student-card .person-info small {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  text-overflow: clip;
+}
+
+.graph-panel .student-card .person-actions {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.graph-panel .student-card .person-actions button {
+  flex: 0 0 27px;
+  width: 27px;
+  height: 27px;
+}
+
+@media (max-width: 760px) {
+  .graph-panel .root-node {
+    width: fit-content;
+    max-width: 100%;
+    margin-bottom: 15px;
+    padding: 10px 12px;
+  }
+
+  .graph-panel .root-node > div {
+    justify-content: flex-start;
+    gap: 2px 7px;
+  }
+
+  .graph-panel .student-list {
+    padding-left: 9px;
+  }
+
+  .graph-panel .student-card {
+    gap: 5px;
+    padding: 8px 7px;
+  }
+
+  .graph-panel .student-card .avatar {
+    flex-basis: 30px;
+    width: 30px;
+    height: 30px;
+  }
+
+  .graph-panel .student-card .person-actions button {
+    flex-basis: 25px;
+    width: 25px;
+    height: 25px;
+  }
+}
+
+@media (max-width: 360px) {
+  .graph-panel .root-node {
+    gap: 8px;
+    padding: 9px 10px;
+  }
+
+  .graph-panel .root-node img {
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .graph-panel .root-node > div {
+    gap: 2px 6px;
+  }
+
+  .graph-panel .root-node b {
+    font-size: 11px;
+  }
+
+  .graph-panel .root-node small {
+    font-size: 9px;
+  }
+}
