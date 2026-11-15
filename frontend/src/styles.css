@@ -7324,3 +7324,16 @@ button:focus-visible, .btn:focus-visible {
     flex: 0 0 auto !important;
   }
 }
+
+
+/* Keep the navigation shell fixed while only the active section viewport changes. */
+.chats-main > .content:not(.chats-content) {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+@media (max-width: 760px) {
+  .chats-main > .topbar {
+    display: none;
+  }
+}
