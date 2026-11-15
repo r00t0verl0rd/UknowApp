@@ -70,6 +70,7 @@ async def archive_telegram_media(bot: Bot, message: TgMessage, row: Message) -> 
         "video": "video/mp4",
         "video_note": "video/mp4",
         "voice": "audio/ogg",
+        "animation": "video/mp4",
     }.get(field)
 
     # Telegram stickers have three different file formats. Preserve their real
@@ -97,7 +98,11 @@ async def archive_telegram_media(bot: Bot, message: TgMessage, row: Message) -> 
         "file_id": item.file_id,
         "file_unique_id": getattr(item, "file_unique_id", None),
         "file_name": file_name,
-        "mime_type": safe_media_type(getattr(item, "mime_type", None) or default_mime_type),
+        "mime_type": safe_media_type(
+            getattr(item, "mime_type", None)
+            or default_mime_type
+            or mimetypes.guess_type(file_name or "")[0]
+        ),
         "file_size": getattr(item, "file_size", None),
         "archive_status": "pending",
     }
