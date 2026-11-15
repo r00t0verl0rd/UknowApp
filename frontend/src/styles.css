@@ -3462,3 +3462,383 @@ img, video, audio { max-width: 100%; }
 :root:not([data-theme="dark-soft"]) .chat-list-tools {
   border-bottom-color: #ded9e5;
 }
+
+
+/* Users panel: restore the more spacious, prominent controls and rows. */
+.user-toolbar {
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 17px;
+}
+
+.user-toolbar .search {
+  flex: 1 1 340px;
+  min-width: 220px;
+  max-width: 620px;
+  height: 48px;
+  padding: 0 14px;
+  border-radius: 12px;
+}
+
+.user-toolbar .search svg {
+  width: 18px;
+  height: 18px;
+}
+
+.user-toolbar .search input {
+  font-size: 13px;
+}
+
+.user-sort {
+  min-height: 48px;
+  height: 48px;
+  padding: 0 14px;
+  gap: 9px;
+  border-radius: 12px;
+}
+
+.user-sort svg {
+  width: 17px;
+  height: 17px;
+}
+
+.user-sort select {
+  max-width: 185px;
+  font-size: 13px;
+}
+
+.user-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 13px;
+  border: 1px solid #e4deed;
+  border-radius: 12px;
+  color: #7f788d;
+  background: #faf8fd;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.user-count b {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 7px;
+  border-radius: 9px;
+  color: #62439d;
+  background: #eee8fa;
+  font-size: 14px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+.user-add-btn {
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.user-add-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.user-list {
+  border-radius: 17px;
+}
+
+.user-row {
+  min-height: 86px;
+  gap: 16px;
+  padding: 16px 20px;
+}
+
+.user-row > .avatar {
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+}
+
+.user-row > .avatar svg {
+  width: 22px;
+  height: 22px;
+}
+
+.user-person-info > b {
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.user-meta {
+  gap: 7px 13px;
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.user-status-dot {
+  width: 8px;
+  height: 8px;
+  flex-basis: 8px;
+}
+
+.telegram-state {
+  gap: 5px;
+}
+
+.telegram-state svg {
+  width: 14px;
+  height: 14px;
+}
+
+.user-login {
+  max-width: 300px;
+  font-size: 11px;
+}
+
+.user-actions {
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+}
+
+.user-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  padding: 0;
+  border: 1px solid #e5dfed;
+  border-radius: 11px;
+  color: #777085;
+  background: #faf9fc;
+}
+
+.user-action-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.user-action-btn.code-btn {
+  width: auto;
+  min-width: 88px;
+  flex: 0 0 auto;
+  padding: 0 13px;
+  border-color: #d9ccef;
+  color: #64469e;
+  background: #f4effb;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.user-action-btn.code-btn:hover {
+  border-color: #bca7df;
+  color: #513486;
+  background: #ece4f8;
+}
+
+.user-action-btn.disconnect {
+  color: #c77983;
+  border-color: #f0d8dc;
+  background: #fff8f8;
+}
+
+.user-action-btn.edit-btn {
+  color: #756a91;
+  background: #f8f6fb;
+}
+
+.user-action-btn.user-delete {
+  margin-left: 3px;
+  color: #c66f7a;
+  border-color: #efd4d8;
+  background: #fff5f6;
+}
+
+.user-action-btn.user-delete:hover {
+  color: #fff;
+  border-color: #bd5968;
+  background: #bd5968;
+}
+
+:root[data-theme="dark-soft"] .user-count {
+  color: #c2cad8;
+  border-color: #414e62;
+  background: #252e3d;
+}
+
+:root[data-theme="dark-soft"] .user-count b {
+  color: #e0d5ff;
+  background: #403956;
+}
+
+:root[data-theme="dark-soft"] .user-sort {
+  background: #262f3d;
+  border-color: #414e62;
+}
+
+:root[data-theme="dark-soft"] .user-action-btn {
+  color: #c0c8d6;
+  border-color: #414e62;
+  background: #252e3d;
+}
+
+:root[data-theme="dark-soft"] .user-action-btn.code-btn {
+  color: #dfd2ff;
+  border-color: #62547f;
+  background: #39334c;
+}
+
+:root[data-theme="dark-soft"] .user-action-btn.code-btn:hover {
+  background: #49405f;
+  border-color: #79699a;
+}
+
+:root[data-theme="dark-soft"] .user-action-btn.disconnect,
+:root[data-theme="dark-soft"] .user-action-btn.user-delete {
+  color: #f0aab3;
+  border-color: #66444e;
+  background: #382d38;
+}
+
+:root[data-theme="dark-soft"] .user-action-btn.user-delete:hover {
+  color: #fff;
+  background: #a94e60;
+}
+
+@media (max-width: 760px) {
+  .user-toolbar {
+    gap: 9px;
+    margin-bottom: 12px;
+  }
+
+  .user-toolbar .search {
+    flex: 1 1 100%;
+    max-width: none;
+    height: 46px;
+  }
+
+  .user-sort {
+    min-height: 44px;
+    height: 44px;
+    flex: 1 1 170px;
+  }
+
+  .user-sort select {
+    max-width: none;
+    width: 100%;
+  }
+
+  .user-count {
+    min-height: 42px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+
+  .user-add-btn {
+    min-height: 44px;
+    padding: 0 13px;
+  }
+
+  .user-row {
+    min-height: 80px;
+    gap: 11px;
+    padding: 13px 14px;
+  }
+
+  .user-row > .avatar {
+    flex-basis: 44px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .user-person-info > b {
+    font-size: 14px;
+  }
+
+  .user-meta {
+    gap: 5px 9px;
+    font-size: 11px;
+  }
+
+  .user-actions {
+    gap: 6px;
+    margin-left: auto;
+  }
+
+  .user-action-btn {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+
+  .user-action-btn.code-btn {
+    min-width: 78px;
+    flex-basis: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .user-toolbar > .user-count {
+    order: 3;
+    flex: 1 1 auto;
+  }
+
+  .user-toolbar > .user-add-btn {
+    order: 4;
+  }
+
+  .user-row {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .user-row > .avatar {
+    flex-basis: 42px;
+    width: 42px;
+    height: 42px;
+  }
+
+  .user-row > .user-person-info {
+    flex: 1 1 calc(100% - 58px);
+    min-width: 0;
+  }
+
+  .user-actions {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+    margin: 2px 0 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 360px) {
+  .user-toolbar .search input {
+    font-size: 12px;
+  }
+
+  .user-sort {
+    padding: 0 9px;
+  }
+
+  .user-count {
+    gap: 6px;
+    font-size: 10px;
+  }
+
+  .user-row {
+    padding: 12px 10px;
+  }
+}
