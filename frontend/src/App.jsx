@@ -98,7 +98,8 @@ function ChatAudioPlayer({ src, label }) {
       <div className="chat-audio-wave" aria-hidden="true">
         {bars.map((height, index) => <span
           key={index}
-          style={{ height: height + "px", "--bar-index": index, "--bar-progress": ((index + 1) / bars.length * 100) + "%" }}
+          className={((index + 1) / bars.length * 100) <= progress ? "is-progress" : ""}
+          style={{ height: height + "px", "--bar-index": index }}
         />)}
       </div>
       <input
