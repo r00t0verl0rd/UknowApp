@@ -221,7 +221,7 @@ def create_user(payload: UserCreate, _: Admin, db: Db):
             now = datetime.now(timezone.utc)
             db.add(ConnectionCode(
                 user_id=user.id,
-                code_hash=hashlib.sha256(issued_access_code.encode("utf-8")).hexdigest(),
+                code_hash=hashlib.sha256(issued_access_code.replace("-", "").encode("utf-8")).hexdigest(),
                 created_at=now,
                 expires_at=now + timedelta(days=36500),
             ))
@@ -314,7 +314,7 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
         ).update({ConnectionCode.used_at: now}, synchronize_session=False)
         db.add(ConnectionCode(
             user_id=user.id,
-            code_hash=hashlib.sha256(issued_access_code.encode("utf-8")).hexdigest(),
+            code_hash=hashlib.sha256(issued_access_code.replace("-", "").encode("utf-8")).hexdigest(),
             created_at=now,
             expires_at=now + timedelta(days=36500),
         ))
@@ -349,7 +349,7 @@ def regenerate_teacher_access_code(user_id: int, _: Admin, db: Db):
     ).update({ConnectionCode.used_at: now}, synchronize_session=False)
     db.add(ConnectionCode(
         user_id=user.id,
-        code_hash=hashlib.sha256(issued_access_code.encode("utf-8")).hexdigest(),
+        code_hash=hashlib.sha256(issued_access_code.replace("-", "").encode("utf-8")).hexdigest(),
         created_at=now,
         expires_at=now + timedelta(days=36500),
     ))
@@ -503,7 +503,8 @@ def generate_connection_code(user_id: int, _: Admin, db: Db):
     alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
     raw_code = "".join(secrets.choice(alphabet) for _ in range(8))
     code_hash = hashlib.sha256(raw_code.encode("utf-8")).hexdigest()
-    expires_at = now + timedelta(minutes=15)
+    # Student codes do not expire while unused; they are consumed on first activation.
+    expires_at = now + timedelta(days=36500)
 
     db.add(ConnectionCode(
         user_id=user.id,
@@ -515,8 +516,8 @@ def generate_connection_code(user_id: int, _: Admin, db: Db):
 
     return {
         "code": raw_code[:4] + "-" + raw_code[4:],
-        "expires_at": expires_at.isoformat(),
-        "lifetime_minutes": 15,
+        "expires_at": None,
+        "lifetime_minutes": None,
         "user": user.full_name,
         "role": user.role,
     }
