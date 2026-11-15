@@ -6353,3 +6353,232 @@ input::placeholder, textarea::placeholder { color: #a49daf; }
     justify-content: flex-start;
   }
 }
+
+/* Final button system: the same component styles on desktop, tablet and mobile.
+   Breakpoints may change layout/size, but never replace button colours or surfaces. */
+:root {
+  --button-bg: #f0eef3;
+  --button-bg-hover: #eae4f4;
+  --button-border: #e2dce9;
+  --button-border-hover: #d3c6e5;
+  --button-text: #514960;
+  --button-primary: linear-gradient(105deg, #573e99, #7856bd);
+  --button-primary-hover: linear-gradient(105deg, #493281, #6949aa);
+  --button-danger-bg: #fff0f1;
+  --button-danger-border: #f0d5d9;
+  --button-danger-text: #b82c3b;
+}
+
+/* Neutral buttons */
+.btn:not(.primary):not(.danger):not(.disconnect),
+.sidebar nav button:not(.active),
+.logout,
+.icon-btn,
+.theme-toggle,
+.person-actions button:not(.danger-icon),
+.user-action-btn:not(.connect):not(.disconnect):not(.user-delete),
+.add-student,
+.graph-add-participant,
+.attach-control,
+.chat-filter-segment button,
+.user-info-popover-head button,
+.selected-file button {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  background: var(--button-bg) !important;
+  border: 1px solid var(--button-border) !important;
+  color: var(--button-text) !important;
+  box-shadow: var(--ui-shadow-soft, 0 2px 6px rgba(41,34,63,.06)) !important;
+}
+
+.btn:not(.primary):not(.danger):not(.disconnect):hover:not(:disabled),
+.sidebar nav button:not(.active):hover,
+.logout:hover,
+.icon-btn:hover,
+.theme-toggle:hover,
+.person-actions button:not(.danger-icon):hover,
+.user-action-btn:not(.connect):not(.disconnect):not(.user-delete):hover,
+.add-student:hover,
+.graph-add-participant:hover,
+.attach-control:hover,
+.chat-filter-segment button:hover,
+.user-info-popover-head button:hover,
+.selected-file button:hover {
+  background: var(--button-bg-hover) !important;
+  border-color: var(--button-border-hover) !important;
+  color: var(--purple) !important;
+  box-shadow: 0 3px 9px rgba(87,62,153,.09) !important;
+}
+
+/* Primary actions */
+.btn.primary,
+.sidebar nav button.active {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  background: var(--button-primary) !important;
+  border: 1px solid transparent !important;
+  color: #fff !important;
+  box-shadow: 0 4px 13px rgba(87,62,153,.18) !important;
+}
+.btn.primary:hover:not(:disabled),
+.sidebar nav button.active:hover {
+  background: var(--button-primary-hover) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+  box-shadow: 0 6px 17px rgba(87,62,153,.23) !important;
+}
+
+/* Destructive and disconnect actions */
+.btn.danger,
+.btn.disconnect,
+.user-action-btn.disconnect,
+.user-action-btn.user-delete,
+.person-actions button.danger-icon,
+.icon-btn.danger-icon,
+.danger-icon {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  background: var(--button-danger-bg) !important;
+  border: 1px solid var(--button-danger-border) !important;
+  color: var(--button-danger-text) !important;
+  box-shadow: var(--ui-shadow-soft, 0 2px 6px rgba(41,34,63,.06)) !important;
+}
+.btn.danger:hover:not(:disabled),
+.btn.disconnect:hover:not(:disabled),
+.user-action-btn.disconnect:hover:not(:disabled),
+.user-action-btn.user-delete:hover:not(:disabled),
+.person-actions button.danger-icon:hover,
+.icon-btn.danger-icon:hover,
+.danger-icon:hover {
+  background: #ffe5e8 !important;
+  border-color: #eebfc6 !important;
+  color: #a92332 !important;
+}
+
+/* Selected states remain distinct without changing the shared button language. */
+.chat-item {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+}
+.chat-item:not(.selected) {
+  background: var(--button-bg) !important;
+  color: var(--button-text) !important;
+}
+.chat-item:not(.selected):hover {
+  background: var(--button-bg-hover) !important;
+  border-color: var(--button-border-hover) !important;
+}
+.chat-item.selected,
+.chat-filter-segment button.active {
+  background: #eae4f4 !important;
+  border: 1px solid var(--button-border-hover) !important;
+  color: #573e99 !important;
+  box-shadow: inset 3px 0 0 #7856bd !important;
+}
+.chat-filter-segment button.active {
+  box-shadow: 0 2px 7px rgba(41,34,63,.06) !important;
+}
+
+/* Normalize button typography and focus on every viewport. */
+.btn,
+.sidebar nav button,
+.logout,
+.icon-btn,
+.theme-toggle,
+.person-actions button,
+.user-action-btn,
+.add-student,
+.graph-add-participant,
+.chat-filter-segment button,
+.attach-control,
+.user-info-popover-head button {
+  font-family: inherit;
+  font-weight: 700;
+  -webkit-tap-highlight-color: transparent;
+}
+button:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid #a98bd8 !important;
+  outline-offset: 2px !important;
+}
+button:disabled,
+.btn:disabled {
+  opacity: .48 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+/* Matching surfaces in the soft-dark theme. */
+:root[data-theme="dark-soft"] {
+  --button-bg: #2b3443;
+  --button-bg-hover: #343e50;
+  --button-border: #414c60;
+  --button-border-hover: #59657b;
+  --button-text: #c6cddd;
+  --button-primary: linear-gradient(105deg, #665d91, #8176b0);
+  --button-primary-hover: linear-gradient(105deg, #746aa2, #9185c2);
+  --button-danger-bg: #432d39;
+  --button-danger-border: #69404c;
+  --button-danger-text: #f0aab3;
+}
+:root[data-theme="dark-soft"] .btn:not(.primary):not(.danger):not(.disconnect),
+:root[data-theme="dark-soft"] .sidebar nav button:not(.active),
+:root[data-theme="dark-soft"] .logout,
+:root[data-theme="dark-soft"] .icon-btn,
+:root[data-theme="dark-soft"] .theme-toggle,
+:root[data-theme="dark-soft"] .person-actions button:not(.danger-icon),
+:root[data-theme="dark-soft"] .user-action-btn:not(.connect):not(.disconnect):not(.user-delete),
+:root[data-theme="dark-soft"] .add-student,
+:root[data-theme="dark-soft"] .graph-add-participant,
+:root[data-theme="dark-soft"] .attach-control,
+:root[data-theme="dark-soft"] .chat-filter-segment button,
+:root[data-theme="dark-soft"] .user-info-popover-head button,
+:root[data-theme="dark-soft"] .selected-file button,
+:root[data-theme="dark-soft"] .chat-item:not(.selected) {
+  background: var(--button-bg) !important;
+  border-color: var(--button-border) !important;
+  color: var(--button-text) !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .btn:not(.primary):not(.danger):not(.disconnect):hover,
+:root[data-theme="dark-soft"] .sidebar nav button:not(.active):hover,
+:root[data-theme="dark-soft"] .logout:hover,
+:root[data-theme="dark-soft"] .icon-btn:hover,
+:root[data-theme="dark-soft"] .theme-toggle:hover,
+:root[data-theme="dark-soft"] .person-actions button:hover,
+:root[data-theme="dark-soft"] .user-action-btn:hover,
+:root[data-theme="dark-soft"] .add-student:hover,
+:root[data-theme="dark-soft"] .graph-add-participant:hover,
+:root[data-theme="dark-soft"] .attach-control:hover,
+:root[data-theme="dark-soft"] .chat-item:not(.selected):hover {
+  background: var(--button-bg-hover) !important;
+  border-color: var(--button-border-hover) !important;
+  color: #e0d8ff !important;
+}
+:root[data-theme="dark-soft"] .btn.primary,
+:root[data-theme="dark-soft"] .sidebar nav button.active {
+  background: var(--button-primary) !important;
+  border-color: #8b80b8 !important;
+  color: #fff !important;
+}
+:root[data-theme="dark-soft"] .btn.danger,
+:root[data-theme="dark-soft"] .btn.disconnect,
+:root[data-theme="dark-soft"] .user-action-btn.disconnect,
+:root[data-theme="dark-soft"] .user-action-btn.user-delete,
+:root[data-theme="dark-soft"] .person-actions button.danger-icon,
+:root[data-theme="dark-soft"] .icon-btn.danger-icon,
+:root[data-theme="dark-soft"] .danger-icon {
+  background: var(--button-danger-bg) !important;
+  border-color: var(--button-danger-border) !important;
+  color: var(--button-danger-text) !important;
+}
+:root[data-theme="dark-soft"] .chat-item.selected,
+:root[data-theme="dark-soft"] .chat-filter-segment button.active {
+  background: #39354d !important;
+  border-color: #62577e !important;
+  color: #ddd5ff !important;
+  box-shadow: inset 3px 0 0 #9587c6 !important;
+}
+
