@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 TEACHER_PAGE_SIZE = 6
-TEACHER_KEYBOARD_VERSION = 7
+TEACHER_KEYBOARD_VERSION = 8
 TEACHER_BACK_LABEL = "← К списку учеников"
 TEACHER_REFRESH_LABEL = "↻ Обновить"
 TEACHER_PREVIOUS_PAGE_LABEL = "← Предыдущая"
@@ -221,6 +221,7 @@ def _teacher_keyboard(
     visible: list[dict],
     page: int,
     total_pages: int,
+    selected_student_name: Optional[str] = None,
 ) -> ReplyKeyboardMarkup:
     all_labels = _teacher_button_labels(all_items)
     labels_by_conversation = {
@@ -254,7 +255,11 @@ def _teacher_keyboard(
         resize_keyboard=True,
         is_persistent=True,
         one_time_keyboard=False,
-        input_field_placeholder="Выберите ученика или напишите сообщение",
+        input_field_placeholder=(
+            "Отправить сообщение ученику: " + selected_student_name
+            if selected_student_name
+            else "Выберите ученика для отправки сообщения"
+        )[:64],
     )
 
 
@@ -262,6 +267,7 @@ def teacher_panel_view(
     db: Session,
     teacher: User,
     page: int = 0,
+    selected_student_name: Optional[str] = None,
 ) -> tuple[str, ReplyKeyboardMarkup, int]:
     items = teacher_conversations(db, teacher)
     total_pages, page, visible = _teacher_page(items, page)
@@ -290,7 +296,9 @@ def teacher_panel_view(
             lines.append("")
         if total_pages > 1:
             lines.append("Страница " + str(page + 1) + " из " + str(total_pages) + ".")
-    return "\n".join(lines), _teacher_keyboard(items, visible, page, total_pages), page
+    return "\n".join(lines), _teacher_keyboard(
+        items, visible, page, total_pages, selected_student_name
+    ), page
 
 
 def teacher_keyboard_actions(
@@ -317,7 +325,14 @@ def teacher_keyboard_actions(
 
 def teacher_keyboard_signature(markup: ReplyKeyboardMarkup) -> str:
     layout = [[button.text for button in row] for row in markup.keyboard]
-    payload = json.dumps(layout, ensure_ascii=False, separators=(",", ":"))
+    payload = json.dumps(
+        {
+            "layout": layout,
+            "input_field_placeholder": markup.input_field_placeholder,
+        },
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
@@ -355,13 +370,16 @@ async def _update_teacher_panel_locked(
 
     panel = db.get(TeacherPanel, teacher.id)
     page = panel.page_index if panel else 0
-    list_text, markup, page = teacher_panel_view(db, teacher, page)
+    session = db.get(TeacherSession, teacher.id)
+    conversation = get_teacher_conversation(db, teacher, session.conversation_id) if session else None
+    selected_student_name = conversation.assignment.student.full_name if conversation else None
+    list_text, markup, page = teacher_panel_view(
+        db, teacher, page, selected_student_name
+    )
     if panel and panel.page_index != page:
         panel.page_index = page
         db.commit()
 
-    session = db.get(TeacherSession, teacher.id)
-    conversation = get_teacher_conversation(db, teacher, session.conversation_id) if session else None
     text = teacher_chat_view(db, conversation) if conversation else list_text
     signature = teacher_keyboard_signature(markup)
 
