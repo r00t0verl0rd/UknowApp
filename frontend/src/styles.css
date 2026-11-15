@@ -3155,3 +3155,101 @@ img, video, audio { max-width: 100%; }
     flex-basis: 28px;
   }
 }
+
+
+/* Teacher cards use the same responsive name wrapping as student cards.
+   Keep avatar and action buttons fixed while the name column takes the
+   remaining width and can wrap at any viewport/zoom level. */
+.graph-panel .teacher-card {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  gap: 8px;
+}
+
+.graph-panel .teacher-card > .person-main {
+  display: flex;
+  flex: 1 1 0%;
+  width: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  gap: 8px;
+}
+
+.graph-panel .teacher-card .avatar {
+  flex: 0 0 auto;
+}
+
+.graph-panel .teacher-card .person-info {
+  flex: 1 1 0%;
+  width: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.graph-panel .teacher-card .person-info b {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  text-overflow: clip;
+  line-height: 1.25;
+}
+
+.graph-panel .teacher-card .person-info small {
+  display: block;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+
+.graph-panel .teacher-card .person-actions {
+  display: flex;
+  flex: 0 0 auto;
+  min-width: 0;
+  gap: 1px;
+}
+
+.graph-panel .teacher-card .person-actions button {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+}
+
+@media (max-width: 760px) {
+  .graph-panel .teacher-card {
+    gap: 6px;
+  }
+
+  .graph-panel .teacher-card > .person-main {
+    gap: 7px;
+  }
+
+  .graph-panel .teacher-card .person-actions button {
+    flex-basis: 27px;
+    width: 27px;
+    height: 27px;
+  }
+}
+
+@media (max-width: 380px) {
+  .graph-panel .teacher-card {
+    gap: 5px;
+    padding: 7px;
+  }
+
+  .graph-panel .teacher-card .person-actions button {
+    flex-basis: 25px;
+    width: 25px;
+    height: 25px;
+  }
+}
