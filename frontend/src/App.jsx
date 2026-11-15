@@ -546,7 +546,7 @@ export default function App() {
     </div>
   </div>;
 
-  return <div className={"shell" + (page === "chats" ? " chats-shell" : "")}>
+  return <div className="shell chats-shell">
     <aside className="sidebar">
       <div className="brand"><img src="/logo.png" alt="" /><span>Uknow<span>App</span></span></div>
       <div className="school-label">{profile?.role === "admin" ? "УПРАВЛЕНИЕ ШКОЛОЙ" : "РАБОЧЕЕ МЕСТО УЧИТЕЛЯ"}</div>
@@ -571,7 +571,7 @@ export default function App() {
       </div>
     </aside>
 
-    <main className={"main" + (page === "chats" ? " chats-main" : "")}>
+    <main className="main chats-main">
       <header className="topbar">
         <div className="topbar-context"><small className="topbar-user">{profile?.full_name}</small></div>
         <div className="topbar-actions">
