@@ -1181,7 +1181,7 @@ img, video, audio { max-width: 100%; }
   text-align: center;
 }
 @media(max-width:760px) {
-  .chat-list-tools { padding: 10px 8px; }
+  .chat-list-tools { grid-template-columns: minmax(0,1fr); padding: 10px 8px; }
   .chat-filter-segment button { font-size: 9px; gap: 4px; }
   .credential-password b { font-size: 24px; }
 }
