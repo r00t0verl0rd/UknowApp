@@ -58,7 +58,7 @@ def user_dict(user: User, include_telegram_id: bool = True) -> dict:
         "telegram_id": user.telegram_id if include_telegram_id else None,
         "active": user.active,
         "created_at": user.created_at.isoformat() if user.created_at else None,
-        "has_web_password": bool(user.web_password_hash),
+        "has_access_code": bool(user.web_password_hash),
     }
 
 
@@ -213,7 +213,7 @@ def create_user(payload: UserCreate, _: Admin, db: Db):
         raise HTTPException(status_code=409, detail="Этот Telegram ID уже используется")
     result = user_dict(user)
     if issued_password:
-        result["issued_web_password"] = issued_password
+        result["issued_access_code"] = issued_password
     return result
 
 
@@ -283,17 +283,21 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
         raise HTTPException(status_code=409, detail="Этот Telegram ID уже используется")
     result = user_dict(user)
     if issued_password:
-        result["issued_web_password"] = issued_password
+        result["issued_access_code"] = issued_password
     return result
 
 
-@router.post("/admin/users/{user_id}/web-password")
-def regenerate_teacher_password(user_id: int, _: Admin, db: Db):
+@router.post("/admin/users/{user_id}/access-code")
+def regenerate_teacher_access_code(user_id: int, _: Admin, db: Db):
     user = db.get(User, user_id)
     if not user or user.role != "teacher":
         raise HTTPException(status_code=404, detail="Учитель не найден")
     issued_password = generate_teacher_password()
     user.web_password_hash = hash_web_password(issued_password)
+    db.query(ConnectionCode).filter(
+        ConnectionCode.user_id == user.id,
+        ConnectionCode.used_at.is_(None),
+    ).update({ConnectionCode.used_at: datetime.now(timezone.utc)}, synchronize_session=False)
     db.query(PanelSession).filter(
         PanelSession.role == "teacher",
         PanelSession.user_id == user.id,
@@ -302,7 +306,7 @@ def regenerate_teacher_password(user_id: int, _: Admin, db: Db):
     db.refresh(user)
     return {
         **user_dict(user),
-        "issued_web_password": issued_password,
+        "issued_access_code": issued_password,
     }
 
 
@@ -390,6 +394,31 @@ def generate_connection_code(user_id: int, _: Admin, db: Db):
         raise HTTPException(status_code=404, detail="Учитель или ученик не найден")
     if not user.active:
         raise HTTPException(status_code=400, detail="Нельзя подключить отключённого пользователя")
+    if user.role == "teacher":
+        # A teacher has one persistent access code for both web login and Telegram.
+        # Rotating it invalidates the previous web credential and any unused legacy
+        # one-time codes; an existing Telegram binding remains intact.
+        access_code = generate_teacher_password()
+        user.web_password_hash = hash_web_password(access_code)
+        db.query(PanelSession).filter(
+            PanelSession.role == "teacher",
+            PanelSession.user_id == user.id,
+        ).delete(synchronize_session=False)
+        db.query(ConnectionCode).filter(
+            ConnectionCode.user_id == user.id,
+            ConnectionCode.used_at.is_(None),
+        ).update({ConnectionCode.used_at: datetime.now(timezone.utc)}, synchronize_session=False)
+        db.commit()
+        db.refresh(user)
+        return {
+            "code": access_code,
+            "expires_at": None,
+            "lifetime_minutes": None,
+            "user": user.full_name,
+            "role": user.role,
+            "shared_access": True,
+        }
+
     if user.telegram_id:
         raise HTTPException(
             status_code=409,
