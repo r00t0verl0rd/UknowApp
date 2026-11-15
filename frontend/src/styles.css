@@ -4370,3 +4370,61 @@ textarea {
     font-size: 15px;
   }
 }
+
+/* Desktop inbox: keep the conversation picker in its own scroll area.
+   Flex sizing prevents chat rows from sharing/overlapping the same grid track. */
+@media (min-width: 761px) {
+  .chat-layout {
+    min-height: 620px;
+    height: min(760px, calc(100vh - 230px));
+    max-height: calc(100vh - 190px);
+    min-width: 0;
+  }
+
+  .chat-list {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 0;
+    min-height: 0;
+    max-height: none;
+    overflow: hidden;
+    gap: 0;
+    box-sizing: border-box;
+  }
+
+  .chat-list-tools {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+  }
+
+  .chat-items-scroll {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding-top: 10px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+  }
+
+  .chat-items-scroll > .chat-item {
+    display: grid;
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    min-height: max-content;
+    box-sizing: border-box;
+  }
+}
+
