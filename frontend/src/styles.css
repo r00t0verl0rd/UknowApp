@@ -4810,3 +4810,101 @@ body {
     padding-right: 48px;
   }
 }
+
+
+/* Mobile layout: keep the graph action on the right and constrain every dialog
+   to the viewport, including long forms and confirmation windows. */
+@media (max-width: 760px) {
+  .graph-panel .graph-legend-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 8px;
+  }
+
+  .graph-panel .graph-add-participant {
+    margin-left: auto;
+    align-self: flex-end;
+    max-width: 100%;
+  }
+
+  .overlay {
+    box-sizing: border-box;
+    padding: 12px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    place-items: center;
+  }
+
+  .overlay > .modal {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 440px;
+    min-width: 0;
+    max-height: calc(100dvh - 24px);
+    margin: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+  }
+
+  .modal *,
+  .modal *::before,
+  .modal *::after {
+    box-sizing: border-box;
+    min-width: 0;
+  }
+
+  .modal .stack,
+  .modal .stack label,
+  .modal .stack input,
+  .modal .stack select,
+  .modal .stack textarea {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .modal .modal-head {
+    gap: 10px;
+  }
+
+  .modal .modal-head > div {
+    flex: 1 1 auto;
+    overflow-wrap: anywhere;
+  }
+
+  .modal .modal-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .modal .modal-actions > .btn {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .modal .invite-code {
+    max-width: 100%;
+    font-size: clamp(20px, 7vw, 28px);
+    letter-spacing: clamp(2px, 1vw, 4px);
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 380px) {
+  .overlay {
+    padding: 8px;
+  }
+
+  .overlay > .modal {
+    max-height: calc(100dvh - 16px);
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .graph-panel .graph-add-participant {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+}
