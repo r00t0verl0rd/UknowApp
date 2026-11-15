@@ -190,6 +190,8 @@ def list_users(_: Admin, db: Db):
 @router.post("/admin/users", status_code=201)
 def create_user(payload: UserCreate, _: Admin, db: Db):
     full_name = payload.full_name.strip()
+    if len(full_name) < 2:
+        raise HTTPException(status_code=400, detail="Имя должно содержать минимум два символа")
     web_username = (
         validate_teacher_username(db, payload.web_username or full_name)
         if payload.role == "teacher" else None
@@ -258,6 +260,8 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
     for field, value in changes.items():
         if field == "full_name" and value is not None:
             value = value.strip()
+            if len(value) < 2:
+                raise HTTPException(status_code=400, detail="Имя должно содержать минимум два символа")
         setattr(user, field, value)
     if changes.get("active") is False:
         related = db.scalars(
