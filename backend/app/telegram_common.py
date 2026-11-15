@@ -99,9 +99,18 @@ def claim_connection_code(
     if not CONNECTION_CODE_RE.fullmatch(normalized):
         return None, "invalid_format"
 
-    code_hash = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+    # Older teacher codes were stored with the XXXX-XXXX separator, while
+    # this Telegram flow normalizes the input to XXXXXXXX. Check both hashes
+    # so existing issued credentials keep working after the normalization fix.
+    formatted_code = normalized[:4] + "-" + normalized[4:]
+    code_hashes = {
+        hashlib.sha256(normalized.encode("utf-8")).hexdigest(),
+        hashlib.sha256(formatted_code.encode("utf-8")).hexdigest(),
+    }
     connection_code = db.scalar(
-        select(ConnectionCode).where(ConnectionCode.code_hash == code_hash)
+        select(ConnectionCode)
+        .where(ConnectionCode.code_hash.in_(code_hashes))
+        .order_by(ConnectionCode.id.desc())
     )
     if not connection_code:
         return None, "invalid"
@@ -138,7 +147,9 @@ def claim_connection_code(
     if connection_code.used_at is not None:
         return None, "used"
 
-    if expires_at <= now:
+    # Student activation codes stay valid until their first successful use.
+    # Ignore legacy 15-minute expiry timestamps for unused student codes.
+    if user.role != "student" and expires_at <= now:
         connection_code.used_at = now
         db.commit()
         return None, "expired"
