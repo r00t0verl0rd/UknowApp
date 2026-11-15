@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, Trash2, Users, X, Link2, Copy, Unlink, Paperclip, Moon, Sun } from "lucide-react";
+import { Activity, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, Trash2, Users, X, Link2, Copy, Unlink, Paperclip, Moon, Sun, Smile } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 const ROLE = { teacher: "Учитель", student: "Ученик", admin: "Администратор" };
@@ -428,7 +428,7 @@ export default function App() {
               <div className="teacher-graph-connector"/>
               <div className="teacher-graph-student-grid">
                 {(teacherGraph?.students || []).map(student => <div className="teacher-graph-card student" key={student.id}>
-                  <div className="avatar student-avatar"><Users/></div>
+                  <div className="avatar student-avatar"><Smile/></div>
                   <div><b>{student.full_name}</b><small>Ученик</small></div>
                 </div>)}
               </div>
@@ -456,7 +456,7 @@ export default function App() {
                 </div>
                 <div className="student-list">
                   {(overview?.teachers.find(t => t.id === teacher.id)?.students || []).map(student => <div className="person-card student-card" key={student.id}>
-                    <div className="person-main"><div className="avatar student-avatar"><Users/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small></div></div>
+                    <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small></div></div>
                     <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div>
                   </div>)}
                   {!(overview?.teachers.find(t => t.id === teacher.id)?.students || []).length && <div className="empty-students">Нет назначенных учеников</div>}
@@ -465,7 +465,7 @@ export default function App() {
               </section>)}
             </div>
             {!activeTeachers.length && <div className="empty-state"><GraduationCap/><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span></div>}
-            {!!unassignedStudents.length && <section className="unassigned"><div className="section-head"><div><h2>Ученики без назначения</h2><p>Их можно назначить учителю прямо отсюда.</p></div></div><div className="unassigned-grid">{unassignedStudents.map(student => <div className="person-card student-card" key={student.id}><div className="person-main"><div className="avatar student-avatar"><Users/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small></div></div><div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div><button className="btn small outline" disabled={!activeTeachers.length} onClick={() => { setStudentId(String(student.id)); setTeacherId(String(activeTeachers[0]?.id || "")); setModal({ mode: "assign" }); }}>Назначить</button></div>)}</div></section>}
+            {!!unassignedStudents.length && <section className="unassigned"><div className="section-head"><div><h2>Ученики без назначения</h2><p>Их можно назначить учителю прямо отсюда.</p></div></div><div className="unassigned-grid">{unassignedStudents.map(student => <div className="person-card student-card" key={student.id}><div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small></div></div><div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div><button className="btn small outline" disabled={!activeTeachers.length} onClick={() => { setStudentId(String(student.id)); setTeacherId(String(activeTeachers[0]?.id || "")); setModal({ mode: "assign" }); }}>Назначить</button></div>)}</div></section>}
             <div className="graph-actions"><button className="btn primary" onClick={() => openCreate()}><Plus/>Добавить участника</button></div>
           </section>
         </>}
@@ -474,7 +474,7 @@ export default function App() {
           <div className="page-title"><div><div className="eyebrow">УЧЁТНЫЕ ЗАПИСИ</div><h1>Пользователи</h1><p>Создание, редактирование, смена ролей и удаление.</p></div><button className="btn primary" onClick={() => openCreate()}><Plus/>Добавить</button></div>
           <div className="toolbar"><div className="search"><Search/><input placeholder="Поиск по имени или Telegram ID" value={search} onChange={e => setSearch(e.target.value)}/></div><span>{visibleUsers.length} пользователей</span></div>
           <div className="user-list">{visibleUsers.map(user => <div className="user-row" key={user.id}>
-            <div className={"avatar " + user.role}><Users/></div><div className="person-info"><b>{user.full_name}</b><small>#{user.id} · {user.telegram_id ? <span className="telegram-connected">Telegram ID {user.telegram_id}</span> : "Telegram не подключён"} · {user.role === "teacher" ? (user.has_access_code ? "Код доступа настроен" : "Код доступа не задан") + " · " : ""}{user.active ? "Активен" : "Отключён"}</small>{user.role === "teacher" && <small>Логин веб-панели: <b>{user.web_username || user.full_name}</b> · один код для веб-панели и Telegram</small>}</div><span className={"role-tag " + user.role}>{ROLE[user.role]}</span>
+            <div className={"avatar " + user.role}>{user.role === "teacher" ? <GraduationCap/> : user.role === "student" ? <Smile/> : <Users/>}</div><div className="person-info"><b>{user.full_name}</b><small>#{user.id} · {user.telegram_id ? <span className="telegram-connected">Telegram ID {user.telegram_id}</span> : "Telegram не подключён"} · {user.role === "teacher" ? (user.has_access_code ? "Код доступа настроен" : "Код доступа не задан") + " · " : ""}{user.active ? "Активен" : "Отключён"}</small>{user.role === "teacher" && <small>Логин веб-панели: <b>{user.web_username || user.full_name}</b> · один код для веб-панели и Telegram</small>}</div><span className={"role-tag " + user.role}>{ROLE[user.role]}</span>
             <button className="btn small" onClick={() => openEdit(user)}><Pencil/>Изменить</button>{user.telegram_id && <button className="btn small disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram"><Unlink/>Отключить Telegram</button>}<button className="icon-btn danger-icon" onClick={() => removeUser(user)} title="Удалить"><Trash2/></button>
             {user.active && (user.role === "teacher" || !user.telegram_id) && <button className="btn small outline" onClick={() => makeCode(user)}><Copy/>{user.role === "teacher" ? "Новый код" : "Код"}</button>}
           </div>)}</div>
