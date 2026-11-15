@@ -4112,10 +4112,12 @@ body {
 .mobile-quick-actions .icon-btn { color: var(--purple); }
   .topbar > .topbar-actions { display: none !important; }
   .main { margin: 0; width: 100%; min-width: 0; }
+  /* Remove the empty profile strip between mobile navigation and the page workspace. */
+  .shell:not(.chats-shell) > .main > .topbar { display: none; }
   .topbar { height: 48px; padding: 0 14px; }
   .topbar > div { min-width: 0; gap: 5px; font-size: 11px; }
   .topbar > div span { display: none; }
-  .content { width: 100%; padding: 18px 12px 24px; }
+  .content { width: 100%; padding: 10px 12px 24px; }
   .page-title { align-items: stretch; flex-direction: column; gap: 12px; margin-bottom: 17px; }
   .page-title > div { min-width: 0; }
   .page-title h1 { font-size: clamp(23px, 6vw, 28px); line-height: 1.15; overflow-wrap: anywhere; }
