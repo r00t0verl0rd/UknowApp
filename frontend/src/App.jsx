@@ -114,7 +114,7 @@ export default function App() {
   const [attachment, setAttachment] = useState(null);
   const [issuedCredential, setIssuedCredential] = useState(null);
   const [savingUser, setSavingUser] = useState(false);
-  const [login, setLogin] = useState("admin");
+  const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [page, setPage] = useState("graph");
   const [users, setUsers] = useState([]);
@@ -519,7 +519,6 @@ export default function App() {
       </button>
       <img src="/logo.png" alt="UknowApp" className="login-logo" />
       <h1>UknowApp</h1>
-      <p className="muted">Вход администратора или учителя.</p>
       <form onSubmit={signIn} className="stack">
         <label>Логин администратора или учителя<input value={login} onChange={e => setLogin(e.target.value)} autoComplete="username" /></label>
         <label>Пароль администратора / код доступа учителя<input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" /></label>
