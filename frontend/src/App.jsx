@@ -69,7 +69,7 @@ function MessageBubble({ message }) {
     {mediaUrl && kind === "photo" && <img className="chat-media-image" src={mediaUrl} alt={label} />}
     {mediaUrl && ["voice", "audio"].includes(kind) && <audio className="chat-media-player" controls preload="metadata" src={mediaUrl} />}
     {mediaUrl && ["video", "video_note", "animation"].includes(kind) && <video className={"chat-media-video" + (kind === "video_note" ? " chat-media-video-note" : "")} controls playsInline preload="metadata" aria-label={label} src={mediaUrl} />}
-    {mediaUrl && !["photo", "voice", "audio", "video", "video_note", "animation"].includes(kind) && <a className="chat-media-download" href={mediaUrl} download={label}>Скачать: {label}</a>}
+    {mediaUrl && <a className="chat-media-download" href={mediaUrl} download={media?.file_name || label}>Скачать файл: {media?.file_name || label}</a>}
     {!mediaUrl && media && <small className="chat-media-status">{media.archive_status === "too_large_for_telegram_download" ? "Файл больше 20 МБ: Telegram не позволяет сохранить копию для веб-панели. Оригинал остаётся в исходном чате Telegram." : media.archive_status === "download_failed" ? "Не удалось сохранить копию вложения. Проверьте оригинал в Telegram." : "Загрузка вложения…"}</small>}
     {!media && !message.text && <p>Вложение: {message.content_type}</p>}
     {message.delivery_status && message.delivery_status !== "delivered" && <small className="message-delivery">{message.delivery_status === "partial" ? "Доставлено не всем участникам" : "Не доставлено в Telegram"}{message.metadata?.telegram_delivery_errors?.length ? " · " + message.metadata.telegram_delivery_errors.join("; ") : ""}</small>}
@@ -103,6 +103,22 @@ export default function App() {
   const [toast, setToast] = useState("");
   const [busy, setBusy] = useState(false);
   const [modal, setModal] = useState(null);
+
+  useEffect(() => {
+    if (userInfo === null) return undefined;
+    const closeInfoOnOutsideClick = event => {
+      if (!event.target.closest?.(".user-info-wrap")) setUserInfo(null);
+    };
+    const closeInfoOnEscape = event => {
+      if (event.key === "Escape") setUserInfo(null);
+    };
+    document.addEventListener("pointerdown", closeInfoOnOutsideClick);
+    document.addEventListener("keydown", closeInfoOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeInfoOnOutsideClick);
+      document.removeEventListener("keydown", closeInfoOnEscape);
+    };
+  }, [userInfo]);
   const [deleteCandidate, setDeleteCandidate] = useState(null);
   const [deletingUser, setDeletingUser] = useState(false);
   const [name, setName] = useState("");
