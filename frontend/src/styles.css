@@ -7939,3 +7939,103 @@ button:focus-visible, .btn:focus-visible {
     grid-template-rows: minmax(150px, min(30dvh, 230px)) minmax(0, 1fr);
   }
 }
+
+
+/* Custom audio controls with a clear play target and animated waveform. */
+.chat-audio-player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 360px);
+  min-width: 0;
+  margin-top: 10px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface, #fff);
+  box-sizing: border-box;
+}
+.chat-audio-native { display: none; }
+.chat-audio-play {
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--purple, #7654bd);
+  cursor: pointer;
+  transition: transform .16s ease, filter .16s ease;
+}
+.chat-audio-play:hover { filter: brightness(1.08); }
+.chat-audio-play:active { transform: scale(.94); }
+.chat-audio-play svg { display: block; }
+.chat-audio-track { position: relative; flex: 1 1 auto; min-width: 0; }
+.chat-audio-wave {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  height: 25px;
+  overflow: hidden;
+}
+.chat-audio-wave span {
+  display: block;
+  flex: 1 1 0;
+  min-width: 2px;
+  max-width: 4px;
+  border-radius: 3px;
+  background: #b9a8dc;
+  transform-origin: center;
+  transition: background .18s ease;
+}
+.chat-audio-player.is-playing .chat-audio-wave span {
+  animation: chat-audio-wave-pulse .72s ease-in-out infinite alternate;
+  animation-delay: calc(var(--bar-index) * -31ms);
+}
+.chat-audio-player.is-playing .chat-audio-wave span:nth-child(3n) { animation-duration: .58s; }
+.chat-audio-player.is-playing .chat-audio-wave span:nth-child(4n) { animation-duration: .86s; }
+.chat-audio-seek {
+  position: absolute;
+  inset: 0 0 13px;
+  width: 100%;
+  height: 25px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.chat-audio-time {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.chat-audio-player.is-playing .chat-audio-wave span:nth-child(-n+18) {
+  background: var(--purple, #7654bd);
+}
+:root[data-theme="dark-soft"] .chat-audio-player {
+  background: #293243;
+  border-color: #414c60;
+}
+:root[data-theme="dark-soft"] .chat-audio-wave span { background: #59647b; }
+:root[data-theme="dark-soft"] .chat-audio-player.is-playing .chat-audio-wave span:nth-child(-n+18) { background: #b49be8; }
+:root[data-theme="dark-soft"] .chat-audio-time { color: #aeb8c9; }
+@keyframes chat-audio-wave-pulse {
+  from { transform: scaleY(.48); }
+  to { transform: scaleY(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-audio-player.is-playing .chat-audio-wave span { animation: none; }
+}
+@media (max-width: 760px) {
+  .chat-audio-player { width: 100%; max-width: 100%; gap: 10px; padding: 9px 10px; }
+  .chat-audio-play { flex-basis: 36px; width: 36px; height: 36px; }
+  .chat-audio-wave { height: 23px; }
+  .chat-audio-seek { height: 23px; }
+}
