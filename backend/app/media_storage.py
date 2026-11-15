@@ -39,11 +39,13 @@ def safe_media_type(value: Optional[str]) -> str:
 
 def media_content_disposition(kind: Optional[str], value: Optional[str]) -> str:
     mime_type = safe_media_type(value)
-    if kind == "photo" and mime_type.startswith("image/") and mime_type != "image/svg+xml":
+    if kind in {"photo", "sticker"} and mime_type.startswith("image/") and mime_type != "image/svg+xml":
+        return "inline"
+    if kind == "animation" and mime_type == "image/gif":
         return "inline"
     if kind in {"voice", "audio"} and mime_type.startswith("audio/"):
         return "inline"
-    if kind in {"video", "video_note", "animation"} and mime_type.startswith("video/"):
+    if kind in {"video", "video_note", "animation", "video_sticker"} and mime_type.startswith("video/"):
         return "inline"
     return "attachment"
 
@@ -62,20 +64,40 @@ async def archive_telegram_media(bot: Bot, message: TgMessage, row: Message) -> 
     if not item:
         return
     metadata = json.loads(row.metadata_json or "{}")
+    media_kind = field
+    default_mime_type = {
+        "photo": "image/jpeg",
+        "video": "video/mp4",
+        "video_note": "video/mp4",
+        "voice": "audio/ogg",
+    }.get(field)
+
+    # Telegram stickers have three different file formats. Preserve their real
+    # type so WebP and WebM stickers can be shown inline; keep TGS as a download.
+    if field == "sticker":
+        if bool(getattr(item, "is_video", False)):
+            media_kind = "video_sticker"
+            default_mime_type = "video/webm"
+        elif bool(getattr(item, "is_animated", False)):
+            media_kind = "animated_sticker"
+            default_mime_type = "application/octet-stream"
+        else:
+            default_mime_type = "image/webp"
+
+    file_name = getattr(item, "file_name", None)
+    if not file_name and field == "sticker":
+        file_name = {
+            "video_sticker": "Видео-стикер.webm",
+            "animated_sticker": "Анимированный-стикер.tgs",
+            "sticker": "Стикер.webp",
+        }[media_kind]
+
     media = {
-        "kind": field,
+        "kind": media_kind,
         "file_id": item.file_id,
         "file_unique_id": getattr(item, "file_unique_id", None),
-        "file_name": getattr(item, "file_name", None),
-        "mime_type": safe_media_type(
-            getattr(item, "mime_type", None)
-            or {
-                "photo": "image/jpeg",
-                "video": "video/mp4",
-                "video_note": "video/mp4",
-                "voice": "audio/ogg",
-            }.get(field)
-        ),
+        "file_name": file_name,
+        "mime_type": safe_media_type(getattr(item, "mime_type", None) or default_mime_type),
         "file_size": getattr(item, "file_size", None),
         "archive_status": "pending",
     }
@@ -91,6 +113,12 @@ async def archive_telegram_media(bot: Bot, message: TgMessage, row: Message) -> 
                     "voice": ".ogg", "video_note": ".mp4", "video": ".mp4",
                     "photo": ".jpg", "sticker": ".webp", "animation": ".mp4",
                 }.get(field, ".bin")
+            if field == "sticker":
+                suffix = {
+                    "video_sticker": ".webm",
+                    "animated_sticker": ".tgs",
+                    "sticker": ".webp",
+                }[media_kind]
             relative = Path(str(row.conversation_id)) / (uuid.uuid4().hex + suffix[:12])
             target = MEDIA_DIR / relative
             target.parent.mkdir(parents=True, exist_ok=True)
