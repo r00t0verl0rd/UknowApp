@@ -2649,3 +2649,29 @@ img, video, audio { max-width: 100%; }
     height: 28px;
   }
 }
+
+
+/* Keep the primary graph action at the top beside the legend. */
+.graph-panel .graph-legend-row {
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.graph-panel .graph-add-participant {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 9px 13px;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .graph-panel .graph-legend-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .graph-panel .graph-add-participant {
+    min-height: 36px;
+  }
+}
