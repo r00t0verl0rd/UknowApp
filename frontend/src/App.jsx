@@ -103,6 +103,8 @@ export default function App() {
   const [toast, setToast] = useState("");
   const [busy, setBusy] = useState(false);
   const [modal, setModal] = useState(null);
+  const [deleteCandidate, setDeleteCandidate] = useState(null);
+  const [deletingUser, setDeletingUser] = useState(false);
   const [name, setName] = useState("");
   const [teacherLogin, setTeacherLogin] = useState("");
   const [role, setRole] = useState("teacher");
@@ -321,14 +323,29 @@ export default function App() {
     }
   }
 
-  async function removeUser(user) {
-    const ok = window.confirm("Удалить «" + user.full_name + "»? Связанные переписки и сообщения также будут удалены. Это действие нельзя отменить.");
-    if (!ok) return;
+  function removeUser(user) {
+    setDeleteCandidate(user);
+  }
+
+  async function confirmRemoveUser() {
+    const user = deleteCandidate;
+    if (!user || deletingUser) return;
+    setDeletingUser(true);
+    setError("");
     try {
       await request("/api/admin/users/" + user.id, { method: "DELETE" });
-      if (selectedChat && (selectedChat.teacher.id === user.id || selectedChat.student.id === user.id)) { setSelectedChat(null); setMessages([]); }
-      await refresh(); notify("Пользователь удалён");
-    } catch (e) { setError(e.message); }
+      if (selectedChat && (selectedChat.teacher.id === user.id || selectedChat.student.id === user.id)) {
+        setSelectedChat(null);
+        setMessages([]);
+      }
+      setDeleteCandidate(null);
+      await refresh();
+      notify("Пользователь удалён");
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setDeletingUser(false);
+    }
   }
 
   async function assign(event) {
@@ -612,6 +629,19 @@ export default function App() {
       </form>}
     </section></div>}
 
+    {deleteCandidate && <div className="overlay" onMouseDown={() => !deletingUser && setDeleteCandidate(null)}>
+      <section className="modal confirm-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-user-title" onMouseDown={e => e.stopPropagation()}>
+        <div className="modal-head">
+          <div><div className="eyebrow">УДАЛЕНИЕ УЧАСТНИКА</div><h2 id="delete-user-title">Удалить участника?</h2></div>
+          <button className="icon-btn" type="button" onClick={() => setDeleteCandidate(null)} disabled={deletingUser} aria-label="Закрыть"><X/></button>
+        </div>
+        <p className="hint">Профиль «<b>{deleteCandidate.full_name}</b>», связанные переписки и сообщения будут удалены. Это действие нельзя отменить.</p>
+        <div className="modal-actions">
+          <button type="button" className="btn ghost" onClick={() => setDeleteCandidate(null)} disabled={deletingUser}>Отмена</button>
+          <button type="button" className="btn danger" onClick={confirmRemoveUser} disabled={deletingUser}>{deletingUser ? "Удаляем…" : <><Trash2/>Удалить участника</>}</button>
+        </div>
+      </section>
+    </div>}
     {issuedCredential && <div className="overlay" onMouseDown={() => setIssuedCredential(null)}><section className="modal credential-modal" onMouseDown={e => e.stopPropagation()}>
       <div className="modal-head"><div><div className="eyebrow">ЕДИНЫЙ КОД ДОСТУПА УЧИТЕЛЯ</div><h2>{issuedCredential.full_name}</h2></div><button className="icon-btn" onClick={() => setIssuedCredential(null)}><X/></button></div>
       <div className="credential-row"><span>Логин</span><b>{issuedCredential.username}</b><button type="button" className="icon-btn" onClick={() => navigator.clipboard.writeText(issuedCredential.username).then(() => notify("Логин скопирован"))} aria-label="Скопировать логин"><Copy size={16}/></button></div>
