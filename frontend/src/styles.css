@@ -4972,3 +4972,75 @@ body {
     gap: 3px;
   }
 }
+
+
+/* The create-participant form stays fully inside short, narrow mobile viewports. */
+@media (max-width: 760px) {
+  .overlay:has(.create-participant-modal) {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .overlay > .create-participant-modal {
+    flex: 0 1 auto;
+    width: min(100%, 420px);
+    max-width: 420px;
+    max-height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+    min-height: 0;
+    margin: auto 0;
+    padding: clamp(14px, 4vw, 20px);
+    border-radius: 16px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .create-participant-modal .modal-head {
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .create-participant-modal .modal-head h2 {
+    font-size: clamp(17px, 5vw, 19px);
+  }
+
+  .create-participant-modal .stack {
+    gap: 10px;
+  }
+
+  .create-participant-modal .stack label {
+    gap: 5px;
+    font-size: 12px;
+  }
+
+  .create-participant-modal .stack input,
+  .create-participant-modal .stack select {
+    height: 42px;
+    min-height: 42px;
+    font-size: 16px;
+  }
+
+  .create-participant-modal .modal-actions,
+  .create-participant-modal .stack > .btn {
+    min-height: 42px;
+  }
+}
+
+@media (max-width: 380px) {
+  .overlay > .create-participant-modal {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .create-participant-modal .modal-head {
+    margin-bottom: 11px;
+  }
+
+  .create-participant-modal .stack {
+    gap: 8px;
+  }
+}
