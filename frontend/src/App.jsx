@@ -428,11 +428,11 @@ export default function App() {
         {page === "chats" && <>
           <div className="page-title"><div><div className="eyebrow">{profile?.role === "teacher" ? "МОИ УЧЕНИКИ" : "ИСТОРИЯ ОБЩЕНИЯ"}</div><h1>{profile?.role === "teacher" ? "Чаты с учениками" : "Переписки"}</h1><p>{profile?.role === "teacher" ? "Каждый ученик — отдельный диалог. Файлы и аудио находятся внутри нужной переписки." : "Просмотр и участие в переписках учеников и учителей."}</p></div></div>
           <div className="chat-layout"><div className="chat-list"><div className="chat-list-tools">
-              <label className="chat-search-control">
+              <div className="chat-search-control">
                 <Search size={17}/>
                 <input aria-label="Найти ученика" placeholder="Найти ученика" value={chatSearch} onChange={e => setChatSearch(e.target.value)}/>
                 {chatSearch && <button type="button" onClick={() => setChatSearch("")} aria-label="Очистить поиск"><X size={14}/></button>}
-              </label>
+              </div>
               <div className="chat-filter-segment" role="group" aria-label="Фильтр диалогов">
                 <button type="button" className={chatFilter === "all" ? "active" : ""} aria-pressed={chatFilter === "all"} onClick={() => setChatFilter("all")}>
                   <MessageCircle size={14}/>Все диалоги <span>{chats.length}</span>
