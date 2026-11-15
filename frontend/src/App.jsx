@@ -645,8 +645,8 @@ export default function App() {
               return <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected " : "") + (unreadCount > 0 ? "has-unread" : "")} onClick={() => openChat(chat)}>
                 <div className="chat-item-heading">
                   <div className="chat-item-participants">
-                    {profile?.role === "admin" && <span><small>Учитель</small>{chat.teacher.full_name}</span>}
-                    <span>{profile?.role === "admin" && <small>Ученик</small>}{chat.student.full_name}</span>
+                    {profile?.role === "admin" && <span>{chat.teacher.full_name}</span>}
+                    <span>{chat.student.full_name}</span>
                   </div>
                   {profile?.role === "teacher" && unreadCount > 0 && <span className="unread-badge" title="Непрочитанные сообщения" aria-label={unreadCount + " непрочитанных сообщений"}>{unreadCount > 99 ? "99+" : unreadCount}</span>}
                 </div>
@@ -655,7 +655,7 @@ export default function App() {
               </button>;
             })}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">{profile?.role === "admin" ? "Учитель не найден" : "По выбранному фильтру ничего не найдено"}</div>}</div></div>
             <div className="chat-detail">{selectedChat ? <>
-              <div className="chat-head"><div><b>{selectedChat.student.full_name}</b>{profile?.role === "admin" && <small>Учитель: {selectedChat.teacher.full_name}</small>}</div><div className="chat-head-tools"><select aria-label="Фильтр сообщений" value={messageFilter} onChange={e => setMessageFilter(e.target.value)}><option value="all">Все сообщения</option><option value="media">Все вложения</option><option value="audio">Аудио</option><option value="photos">Фото</option><option value="files">Файлы и видео</option></select><span className="role-tag">{selectedChat.status === "active" ? "Активна" : "Закрыта"}</span></div></div>
+              <div className="chat-head"><div><b>{selectedChat.student.full_name}</b>{profile?.role === "admin" && <small>{selectedChat.teacher.full_name}</small>}</div><div className="chat-head-tools"><select aria-label="Фильтр сообщений" value={messageFilter} onChange={e => setMessageFilter(e.target.value)}><option value="all">Все сообщения</option><option value="media">Все вложения</option><option value="audio">Аудио</option><option value="photos">Фото</option><option value="files">Файлы и видео</option></select><span className="role-tag">{selectedChat.status === "active" ? "Активна" : "Закрыта"}</span></div></div>
               <div className="messages" ref={messagesViewportRef}>{visibleMessages.map(message => <MessageBubble message={message} key={message.id} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}{!!messages.length && !visibleMessages.length && <div className="empty-state">Нет сообщений этого типа</div>}</div>
               {selectedChat.status === "active" && <form className="chat-composer" onSubmit={sendChatMessage}>
                 <textarea value={draft} onChange={e => setDraft(e.target.value)} placeholder={profile?.role === "admin" ? "Сообщение от администратора обеим сторонам…" : "Ответить ученику…"} rows={2} maxLength={4000}/>
