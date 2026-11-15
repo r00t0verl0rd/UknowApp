@@ -518,7 +518,7 @@ export default function App() {
         {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
       </button>
       <img src="/logo.png" alt="UknowApp" className="login-logo" />
-      <div className="eyebrow">ЕДИНАЯ ПАНЕЛЬ ШКОЛЫ</div><h1>UknowApp</h1>
+      <h1>UknowApp</h1>
       <p className="muted">Вход администратора или учителя.</p>
       <form onSubmit={signIn} className="stack">
         <label>Логин администратора или учителя<input value={login} onChange={e => setLogin(e.target.value)} autoComplete="username" /></label>
