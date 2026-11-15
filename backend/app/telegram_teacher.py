@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 TEACHER_PAGE_SIZE = 6
-TEACHER_KEYBOARD_VERSION = 5
+TEACHER_KEYBOARD_VERSION = 6
 TEACHER_BACK_LABEL = "← К списку учеников"
 TEACHER_REFRESH_LABEL = "↻ Обновить"
 TEACHER_PREVIOUS_PAGE_LABEL = "← Предыдущая"
@@ -35,6 +35,9 @@ def message_preview(row: Optional[Message]) -> str:
     if not row:
         return "Сообщений пока нет"
     body = " ".join((row.text or "").strip().split())
+    metadata = json.loads(row.metadata_json or "{}")
+    media = metadata.get("media") or {}
+    media_kind = media.get("kind") or row.content_type
     labels = {
         "voice": "🎤 Голосовое сообщение",
         "video_note": "🎥 Видеокружок",
@@ -42,16 +45,16 @@ def message_preview(row: Optional[Message]) -> str:
         "video": "🎬 Видео",
         "audio": "🎵 Аудио",
         "document": "📎 Документ",
-        "sticker": "🤩 Стикер",
+        "sticker": "😊 Стикер",
         "video_sticker": "🎞 Видео-стикер",
         "animated_sticker": "✨ Анимированный стикер",
         "animation": "🎞 Анимация",
-        "location": "Геопозиция",
+        "location": "📍 Геопозиция",
         "contact": "Контакт",
         "poll": "Опрос",
     }
     if row.content_type != "text":
-        label = labels.get(row.content_type, "Вложение: " + (row.content_type or "файл"))
+        label = media.get("file_name") or labels.get(media_kind, "Вложение: " + (media_kind or "файл"))
         preview = label + (": " + body if body else "")
         return preview if len(preview) <= 115 else preview[:112] + "…"
     if body:
@@ -123,10 +126,16 @@ async def mark_visible_messages_read_by_teacher(
     """Mark the messages currently shown in the teacher's chat as read."""
     rows = conversation_messages(db, conversation.id)
     visible_rows = rows[-12:]
+    # Opening a conversation marks every delivered student message actually
+    # visible in the transcript as read, even when a teacher reply is older
+    # than the 12-message preview window.
     await mark_messages_read_by_teacher(
         bot,
         db,
-        unanswered_student_messages(visible_rows),
+        [
+            row for row in visible_rows
+            if row.sender_role == "student" and row.delivery_status == "delivered"
+        ],
     )
 
 
@@ -201,7 +210,7 @@ def _teacher_page(items: list[dict], page: int) -> tuple[int, int, list[dict]]:
 
 def _teacher_button_labels(items: list[dict]) -> list[str]:
     """Use only each student's full name as the Reply Keyboard button text."""
-    return [item["student"].full_name.strip() for item in items]
+    return ["😊 " + item["student"].full_name.strip() for item in items]
 
 
 def _teacher_keyboard(
