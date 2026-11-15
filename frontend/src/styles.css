@@ -2413,3 +2413,66 @@ img, video, audio { max-width: 100%; }
     max-height: 120px;
   }
 }
+
+
+/* Teacher and student totals are part of the graph legend, not separate cards. */
+.graph-panel .graph-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  max-width: 100%;
+}
+
+.graph-panel .graph-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.graph-panel .graph-legend-item > span {
+  flex: 0 0 9px;
+  width: 9px;
+  height: 9px;
+  margin: 0;
+}
+
+.graph-panel .graph-legend-item b {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 23px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #f0ebf9;
+  color: #573e99;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+:root[data-theme="dark-soft"] .graph-panel .graph-legend-item {
+  color: #d1d7e3 !important;
+}
+
+:root[data-theme="dark-soft"] .graph-panel .graph-legend-item b {
+  background: #394253 !important;
+  color: #e4e8f0 !important;
+}
+
+@media (max-width: 760px) {
+  .graph-panel .graph-legend {
+    gap: 9px;
+    padding: 7px 9px;
+  }
+
+  .graph-panel .graph-legend-item {
+    gap: 6px;
+    font-size: 10px;
+  }
+}
