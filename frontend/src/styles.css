@@ -6114,3 +6114,54 @@ input::placeholder, textarea::placeholder { color: #a49daf; }
   box-shadow: none;
 }
 
+/* Keep the Users toolbar inside the available tablet content width. */
+@media (min-width: 761px) and (max-width: 1024px) {
+  .toolbar.user-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .user-toolbar > .search {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    flex: none;
+    box-sizing: border-box;
+  }
+
+  .user-toolbar > .user-sort {
+    min-width: 0;
+    max-width: 100%;
+    padding-inline: 10px;
+    box-sizing: border-box;
+  }
+
+  .user-toolbar > .user-sort select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .user-toolbar > .user-count {
+    min-width: 0;
+    max-width: 100%;
+    padding-inline: 10px;
+    gap: 6px;
+    white-space: normal;
+    box-sizing: border-box;
+  }
+
+  .user-toolbar > .user-add-btn {
+    grid-column: 1 / -1;
+    justify-self: end;
+    width: auto;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+}
+
