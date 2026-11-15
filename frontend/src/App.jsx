@@ -15,6 +15,15 @@ const TIME_ZONES = (() => {
   }
 })();
 
+function formatTimeInZone(value, timeZone, options) {
+  if (!value) return "";
+  // SQLite may return UTC timestamps without an explicit offset. Treat those
+  // values as UTC instead of letting the browser interpret them as local time.
+  const normalized = /(?:Z|[+-]\\d{2}:?\\d{2})$/i.test(value) ? value : value + "Z";
+  const date = new Date(normalized);
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleString("ru-RU", { ...options, timeZone });
+}
+
 function MessageBubble({ message, timeZone }) {
   const [mediaUrl, setMediaUrl] = useState("");
   const media = message.metadata?.media;
@@ -41,7 +50,7 @@ function MessageBubble({ message, timeZone }) {
   const label = media?.file_name || ({ voice: "Голосовое сообщение", video_note: "Видеокружочек", photo: "Фотография", video: "Видео", audio: "Аудио", document: "Документ", sticker: "Стикер", animation: "Анимация" }[kind] || "Вложение");
   return <div className={"message " + message.sender_role}>
     <b>{message.sender} <small>{ROLE[message.sender_role] || message.sender_role}</small></b>
-    <time className="message-time">{message.created_at ? new Date(message.created_at).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone }) : ""}</time>
+    <time className="message-time">{formatTimeInZone(message.created_at, timeZone, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</time>
     {message.text && <p>{message.text}</p>}
     {mediaUrl && kind === "photo" && <img className="chat-media-image" src={mediaUrl} alt={label} />}
     {mediaUrl && ["voice", "audio"].includes(kind) && <audio className="chat-media-player" controls preload="metadata" src={mediaUrl} />}
@@ -494,7 +503,7 @@ export default function App() {
                 </button>
               </div>}
               <div className="chat-list-caption">{profile?.role === "admin" ? "Сортировка по имени учителя" : visibleChats.length === chats.length ? "Все ваши диалоги" : "Показано " + visibleChats.length + " из " + chats.length}</div>
-            </div>{visibleChats.map(chat => <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected" : "")} onClick={() => openChat(chat)}><b>{profile?.role === "teacher" ? chat.student.full_name : chat.teacher.full_name + " · " + chat.student.full_name}</b><small>{chat.last_message}</small><span>{chat.last_message_at ? new Date(chat.last_message_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", timeZone }) + " · " : ""}{chat.unread_count ? chat.unread_count + " непрочитанных · " : ""}{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span></button>)}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">{profile?.role === "admin" ? "Учитель не найден" : "По выбранному фильтру ничего не найдено"}</div>}</div>
+            </div>{visibleChats.map(chat => <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected" : "")} onClick={() => openChat(chat)}><b>{profile?.role === "teacher" ? chat.student.full_name : chat.teacher.full_name + " · " + chat.student.full_name}</b><small>{chat.last_message}</small><span>{chat.last_message_at ? formatTimeInZone(chat.last_message_at, timeZone, { hour: "2-digit", minute: "2-digit" }) + " · " : ""}{chat.unread_count ? chat.unread_count + " непрочитанных · " : ""}{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span></button>)}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">{profile?.role === "admin" ? "Учитель не найден" : "По выбранному фильтру ничего не найдено"}</div>}</div>
             <div className="chat-detail">{selectedChat ? <>
               <div className="chat-head"><div><b>{selectedChat.student.full_name}</b><small>{profile?.role === "admin" ? "Учитель: " + selectedChat.teacher.full_name + " · " : ""}Переписка #{selectedChat.id}</small></div><div className="chat-head-tools"><select aria-label="Фильтр сообщений" value={messageFilter} onChange={e => setMessageFilter(e.target.value)}><option value="all">Все сообщения</option><option value="media">Все вложения</option><option value="audio">Аудио</option><option value="photos">Фото</option><option value="files">Файлы и видео</option></select><span className="role-tag">{selectedChat.status === "active" ? "Активна" : "Закрыта"}</span></div></div>
               <div className="messages">{visibleMessages.map(message => <MessageBubble message={message} timeZone={timeZone} key={message.id} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}{!!messages.length && !visibleMessages.length && <div className="empty-state">Нет сообщений этого типа</div>}</div>
