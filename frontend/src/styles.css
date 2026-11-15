@@ -2327,3 +2327,89 @@ img, video, audio { max-width: 100%; }
   }
 }
 
+
+
+/* Unread conversations stay easy to spot without dominating the inbox. */
+.chat-item-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  min-width: 0;
+}
+
+.chat-item-heading b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-item .unread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: #d99532;
+  color: #fff !important;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(180, 119, 31, .18);
+}
+
+.chat-item.has-unread:not(.selected) {
+  background: #fffaf0;
+  border: 1px solid #f0d9ab;
+  border-left: 3px solid #d99532;
+  padding-left: 12px;
+}
+
+.chat-item.has-unread:not(.selected):hover {
+  background: #fff5df;
+}
+
+.chat-item .chat-item-meta {
+  color: #8e8798;
+}
+
+:root[data-theme="dark-soft"] .chat-item.has-unread:not(.selected) {
+  background: #302d29 !important;
+  border-color: #68543a !important;
+  border-left-color: #d49a46 !important;
+  color: #f0e7d8 !important;
+}
+
+:root[data-theme="dark-soft"] .chat-item.has-unread:not(.selected):hover {
+  background: #383228 !important;
+}
+
+:root[data-theme="dark-soft"] .chat-item.selected.has-unread {
+  background: #393548 !important;
+  border-color: #756449 !important;
+  border-left-color: #e1ad57 !important;
+  color: #e8e2f6 !important;
+}
+
+:root[data-theme="dark-soft"] .chat-item .chat-item-meta {
+  color: #9ba6b8 !important;
+}
+
+/* Slightly roomier message composer; manual resizing remains disabled. */
+@media (min-width: 761px) {
+  .chat-composer textarea {
+    min-height: 58px;
+    max-height: 112px;
+  }
+}
+
+@media (max-width: 760px) {
+  .chat-composer textarea {
+    min-height: 54px;
+    max-height: 120px;
+  }
+}
