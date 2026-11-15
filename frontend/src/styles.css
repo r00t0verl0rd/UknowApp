@@ -6726,3 +6726,288 @@ button:disabled,
   }
 }
 
+
+
+/* Compact action groups across Structure, Users and Conversations. */
+.page-title > .btn,
+.page-title > .btn-group {
+  flex: 0 0 auto;
+}
+
+.page-title .btn,
+.graph-add-participant,
+.user-add-btn,
+.composer-send > .btn {
+  min-height: 38px;
+  padding: 8px 12px;
+  gap: 7px;
+  border-radius: 10px;
+}
+
+.person-actions,
+.user-actions,
+.unassigned-student-actions,
+.modal-actions,
+.chat-filter-segment,
+.composer-tools,
+.composer-send {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.person-actions {
+  gap: 5px;
+}
+
+.person-actions button,
+.icon-btn,
+.user-action-btn {
+  flex: 0 0 auto;
+}
+
+.person-actions button {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+}
+
+.add-student {
+  min-height: 32px;
+  margin-top: 8px;
+  padding: 5px 9px;
+  gap: 6px;
+  border-radius: 8px;
+}
+
+.unassigned-student-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.unassigned-student-actions .person-actions {
+  gap: 5px;
+}
+
+.unassigned-student-actions > .btn {
+  min-height: 32px;
+  padding: 6px 10px;
+}
+
+.user-actions {
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.user-action-btn {
+  min-height: 34px;
+  border-radius: 9px;
+}
+
+.user-action-btn:not(.connect-toggle) {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+}
+
+.user-action-btn.connect-toggle {
+  min-height: 34px;
+  padding: 6px 10px;
+  gap: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.chat-filter-segment {
+  gap: 5px;
+  padding: 3px;
+  border-radius: 10px;
+}
+
+.chat-filter-segment button {
+  min-height: 32px;
+  padding: 6px 9px;
+  gap: 5px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+.chat-composer .composer-footer {
+  gap: 10px;
+}
+
+.composer-tools,
+.composer-send {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.attach-control {
+  min-height: 34px;
+  padding: 6px 10px;
+  gap: 6px;
+  border-radius: 9px;
+  font-size: 11px;
+}
+
+.composer-send {
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.composer-send > small {
+  min-width: 0;
+}
+
+.modal-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.modal-actions .btn {
+  min-height: 36px;
+  padding: 8px 12px;
+}
+
+/* Keep action groups dense without shrinking tap targets or causing overflow. */
+@media (max-width: 900px) {
+  .person-actions button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .user-actions {
+    gap: 5px;
+  }
+
+  .user-action-btn.connect-toggle {
+    padding-inline: 8px;
+  }
+
+  .composer-send {
+    align-items: flex-end;
+  }
+}
+
+@media (max-width: 760px) {
+  .page-title {
+    align-items: center;
+    gap: 10px;
+  }
+
+  .page-title > .btn {
+    min-height: 36px;
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+
+  .graph-add-participant {
+    min-height: 36px;
+    padding: 7px 10px;
+  }
+
+  .person-actions {
+    gap: 6px;
+  }
+
+  .person-actions button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .user-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .user-action-btn:not(.connect-toggle) {
+    width: 36px;
+    height: 36px;
+  }
+
+  .user-action-btn.connect-toggle {
+    min-height: 36px;
+    min-width: 0;
+    padding: 7px 9px;
+  }
+
+  .chat-filter-segment {
+    width: 100%;
+    gap: 4px;
+  }
+
+  .chat-filter-segment button {
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 0;
+    padding-inline: 6px;
+    font-size: 10px;
+  }
+
+  .composer-send {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .composer-send > small {
+    flex: 1 1 150px;
+  }
+
+  .composer-send > .btn {
+    flex: 0 0 auto;
+  }
+
+  .modal-actions {
+    gap: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .page-title > .btn {
+    margin-left: auto;
+  }
+
+  .unassigned-student-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .user-actions {
+    justify-content: flex-start;
+  }
+
+  .user-action-btn.connect-toggle {
+    flex: 1 1 auto;
+  }
+
+  .composer-send {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .composer-send > small {
+    flex-basis: auto;
+  }
+
+  .composer-send > .btn {
+    width: 100%;
+  }
+
+  .modal-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .modal-actions .btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
