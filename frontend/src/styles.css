@@ -2026,3 +2026,304 @@ img, video, audio { max-width: 100%; }
     flex: 0 0 auto;
   }
 }
+
+
+/* Compact workspace layout: keep the user's work area ahead of decorative headers. */
+@media (min-width: 761px) {
+  .sidebar {
+    width: 232px;
+    padding: 18px 14px;
+  }
+
+  .main {
+    margin-left: 232px;
+  }
+
+  .brand {
+    gap: 10px;
+    padding: 0 7px 22px;
+    font-size: 22px;
+  }
+
+  .brand img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .sidebar nav {
+    gap: 4px;
+  }
+
+  .sidebar nav button,
+  .logout {
+    gap: 10px;
+    padding: 11px;
+    font-size: 13px;
+  }
+
+  .topbar {
+    height: 56px;
+    padding: 0 22px;
+  }
+
+  .topbar-context {
+    gap: 12px;
+  }
+
+  .topbar-context b {
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .topbar-user {
+    margin-left: 0;
+    font-size: 10px;
+  }
+
+  .content {
+    width: 100%;
+    max-width: 1900px;
+    padding: 14px 20px 18px;
+  }
+
+  .page-title {
+    display: none;
+  }
+
+  .metrics {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .metric {
+    min-height: 56px;
+    padding: 9px 12px;
+  }
+
+  .graph-panel {
+    padding: 19px;
+    border-radius: 16px;
+  }
+
+  .graph-panel .section-head {
+    margin-bottom: 12px;
+  }
+
+  .graph-panel .root-node {
+    min-height: 68px;
+    margin-bottom: 14px;
+    padding: 10px 14px;
+  }
+
+  .graph-panel .root-node img {
+    width: 44px;
+    height: 44px;
+  }
+
+  .graph-panel .teacher-grid {
+    gap: 12px;
+  }
+
+  .graph-panel .teacher-branch {
+    padding: 10px;
+    border-radius: 13px;
+  }
+
+  .graph-panel .teacher-card {
+    min-height: 64px;
+    padding: 9px 11px;
+  }
+
+  .graph-panel .student-list {
+    gap: 6px;
+    margin: 9px 0 0 20px;
+  }
+
+  .graph-panel .student-card {
+    min-height: 52px;
+    padding: 7px 9px;
+  }
+
+  .graph-panel .add-student {
+    margin-top: 7px;
+  }
+
+  .graph-panel .unassigned {
+    margin-top: 15px;
+    padding-top: 13px;
+  }
+
+  .graph-panel .graph-actions {
+    margin-top: 12px;
+    padding-top: 12px;
+  }
+
+  .teacher-readonly-graph {
+    padding: 18px;
+  }
+
+  .teacher-graph-root,
+  .teacher-graph-summary {
+    max-width: none;
+  }
+
+  .teacher-graph-root {
+    margin: 10px 0;
+  }
+
+  .teacher-graph-summary {
+    margin: 12px 0 0;
+  }
+
+  .toolbar.user-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 10px;
+  }
+
+  .user-toolbar .search {
+    width: min(580px, 100%);
+    flex: 1 1 360px;
+    height: 40px;
+  }
+
+  .user-toolbar > span {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .user-toolbar > .btn {
+    flex: 0 0 auto;
+  }
+
+  .user-row {
+    gap: 10px;
+    padding: 9px 14px;
+  }
+
+  .chat-layout {
+    height: clamp(440px, calc(100dvh - 88px), 980px);
+    min-height: 440px;
+    max-height: 980px;
+    grid-template-columns: minmax(270px, 320px) minmax(0, 1fr);
+  }
+
+  .chat-list {
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    padding: 10px;
+  }
+
+  .chat-item {
+    gap: 4px;
+    padding: 10px;
+  }
+
+  .chat-detail {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .chat-head {
+    flex: 0 0 auto;
+    padding: 11px 15px;
+  }
+
+  .messages {
+    flex: 1 1 0;
+    height: 0;
+    min-height: 0;
+    max-height: none;
+    padding: 14px 16px;
+  }
+
+  .chat-composer {
+    flex: 0 0 auto;
+    padding: 10px 14px;
+    gap: 8px;
+  }
+
+  .chat-composer textarea {
+    min-height: 50px;
+    max-height: 100px;
+  }
+}
+
+@media (max-width: 760px) {
+  .content {
+    padding: 12px 10px 16px;
+  }
+
+  .topbar {
+    height: 46px;
+    padding: 0 12px;
+  }
+
+  .topbar-context {
+    gap: 7px;
+  }
+
+  .topbar-context b {
+    font-size: 12px;
+  }
+
+  .toolbar.user-toolbar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 9px;
+  }
+
+  .user-toolbar .search {
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    flex: 1 1 180px;
+    height: 40px;
+  }
+
+  .user-toolbar > span {
+    flex: 1 1 auto;
+    margin-right: auto;
+    font-size: 10px;
+  }
+
+  .user-toolbar > .btn {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 40px;
+    padding: 8px 11px;
+    white-space: nowrap;
+  }
+
+  .metrics {
+    margin-bottom: 10px;
+  }
+
+  .graph-panel .section-head {
+    margin-bottom: 10px;
+  }
+
+  .teacher-readonly-graph {
+    padding: 12px;
+  }
+
+  .teacher-graph-root,
+  .teacher-graph-summary {
+    max-width: none;
+  }
+
+  .teacher-graph-root {
+    margin: 10px 0;
+  }
+
+  .teacher-graph-summary {
+    margin: 10px 0 0;
+  }
+}
+
