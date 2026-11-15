@@ -4764,49 +4764,49 @@ body {
 }
 
 
-/* Make the mobile sign-out control visually balanced with its touch target. */
+/* Keep the mobile sign-out control compact and clear of nearby controls. */
 @media (max-width: 760px) {
   .sidebar-bottom {
-    top: 7px;
-    right: 9px;
+    top: 8px;
+    right: 10px;
   }
 
   .sidebar-bottom .logout {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
-    padding: 9px;
-    border-radius: 13px;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    padding: 8px;
+    border-radius: 11px;
     display: grid;
     place-items: center;
   }
 
   .sidebar-bottom .logout svg {
-    width: 23px;
-    height: 23px;
-    min-width: 23px;
-    min-height: 23px;
-    stroke-width: 2.2;
+    width: 19px;
+    height: 19px;
+    min-width: 19px;
+    min-height: 19px;
+    stroke-width: 2;
   }
 
   .sidebar .brand {
-    padding-right: 54px;
+    padding-right: 48px;
   }
 }
 
 @media (max-width: 380px) {
   .sidebar-bottom .logout {
-    width: 44px;
-    height: 44px;
+    width: 38px;
+    height: 38px;
   }
 
   .sidebar-bottom .logout svg {
-    width: 24px;
-    height: 24px;
+    width: 19px;
+    height: 19px;
   }
 
   .sidebar .brand {
-    padding-right: 54px;
+    padding-right: 48px;
   }
 }
