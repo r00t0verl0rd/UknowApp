@@ -419,7 +419,7 @@ export default function App() {
     </aside>
 
     <main className="main">
-      <header className="topbar"><div><span>UknowApp</span><ChevronRight/><b>{profile?.role === "teacher" ? "Кабинет учителя" : ({ graph: "Структура", users: "Пользователи", chats: "Переписки" })[page]}</b><small className="topbar-user">{profile?.full_name}</small></div><div className="topbar-actions">
+      <header className="topbar"><div className="topbar-context"><b>{({ graph: profile?.role === "teacher" ? "Моя группа" : "Структура", users: "Пользователи", chats: "Переписки" })[page]}</b><small className="topbar-user">{profile?.full_name}</small></div><div className="topbar-actions">
         <button type="button" className="theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
           {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
         </button>
@@ -428,7 +428,6 @@ export default function App() {
       <div className="content">
         {error && <div className="alert alert-row">{error}<button onClick={() => setError("")}><X/></button></div>}
         {page === "graph" && profile?.role === "teacher" && <section className="teacher-readonly-graph">
-          <div className="page-title"><div><div className="eyebrow">МОЯ ГРУППА</div><h1>Моя структура</h1><p>Здесь показаны только вы и ученики, назначенные вам администратором школы.</p></div></div>
           <div className="teacher-graph-root">
             <div className="teacher-graph-card">
               <div className="avatar teacher-avatar"><GraduationCap/></div>
@@ -449,7 +448,6 @@ export default function App() {
           <div className="teacher-graph-summary"><Users size={18}/><b>{teacherGraph?.counts.students || 0}</b><span>активных учеников в вашей группе</span></div>
         </section>}
         {page === "graph" && profile?.role === "admin" && <>
-          <div className="page-title"><div><div className="eyebrow">ВИЗУАЛЬНОЕ УПРАВЛЕНИЕ</div><h1>Структура школы</h1><p>Добавляйте участников, меняйте их данные и назначайте учеников прямо на схеме.</p></div></div>
           <div className="metrics">
             <div className="metric"><GraduationCap/><span>Учителя</span><b>{overview?.counts.teachers || 0}</b></div>
             <div className="metric"><Users/><span>Ученики</span><b>{overview?.counts.students || 0}</b></div>
@@ -476,23 +474,21 @@ export default function App() {
               </section>)}
             </div>
             {!activeTeachers.length && <div className="empty-state"><GraduationCap/><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span></div>}
-            {!!unassignedStudents.length && <section className="unassigned"><div className="section-head"><div><h2>Ученики без назначения</h2><p>Их можно назначить учителю прямо отсюда.</p></div></div><div className="unassigned-grid">{unassignedStudents.map(student => <div className="person-card student-card" key={student.id}><div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small></div></div><div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div><button className="btn small outline" disabled={!activeTeachers.length} onClick={() => { setStudentId(String(student.id)); setTeacherId(String(activeTeachers[0]?.id || "")); setModal({ mode: "assign" }); }}>Назначить</button></div>)}</div></section>}
+            {!!unassignedStudents.length && <section className="unassigned"><div className="section-head"><div><h2>Ученики без назначения</h2></div></div><div className="unassigned-grid">{unassignedStudents.map(student => <div className="person-card student-card" key={student.id}><div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small></div></div><div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div><button className="btn small outline" disabled={!activeTeachers.length} onClick={() => { setStudentId(String(student.id)); setTeacherId(String(activeTeachers[0]?.id || "")); setModal({ mode: "assign" }); }}>Назначить</button></div>)}</div></section>}
             <div className="graph-actions"><button className="btn primary" onClick={() => openCreate()}><Plus/>Добавить участника</button></div>
           </section>
         </>}
 
         {page === "users" && <>
-          <div className="page-title"><div><div className="eyebrow">УЧЁТНЫЕ ЗАПИСИ</div><h1>Пользователи</h1><p>Создание, редактирование, смена ролей и удаление.</p></div><button className="btn primary" onClick={() => openCreate()}><Plus/>Добавить</button></div>
-          <div className="toolbar"><div className="search"><Search/><input placeholder="Поиск по имени или Telegram ID" value={search} onChange={e => setSearch(e.target.value)}/></div><span>{visibleUsers.length} пользователей</span></div>
+          <div className="toolbar user-toolbar"><div className="search"><Search/><input placeholder="Поиск по имени или Telegram ID" value={search} onChange={e => setSearch(e.target.value)}/></div><span>{visibleUsers.length} пользователей</span><button className="btn primary" onClick={() => openCreate()}><Plus/>Добавить</button></div>
           <div className="user-list">{visibleUsers.map(user => <div className="user-row" key={user.id}>
-            <div className={"avatar " + user.role}>{user.role === "teacher" ? <GraduationCap/> : user.role === "student" ? <Smile/> : <Users/>}</div><div className="person-info"><b>{user.full_name}</b><small>#{user.id} · {user.telegram_id ? <span className="telegram-connected">Telegram ID {user.telegram_id}</span> : "Telegram не подключён"} · {user.role === "teacher" ? (user.has_access_code ? "Код доступа настроен" : "Код доступа не задан") + " · " : ""}{user.active ? "Активен" : "Отключён"}</small>{user.role === "teacher" && <small>Логин веб-панели: <b>{user.web_username || user.full_name}</b> · один код для веб-панели и Telegram</small>}</div><span className={"role-tag " + user.role}>{ROLE[user.role]}</span>
+            <div className={"avatar " + user.role}>{user.role === "teacher" ? <GraduationCap/> : user.role === "student" ? <Smile/> : <Users/>}</div><div className="person-info"><b>{user.full_name}</b><small>{user.telegram_id ? <span className="telegram-connected">Telegram ID {user.telegram_id}</span> : "Telegram не подключён"} · {user.role === "teacher" ? (user.has_access_code ? "Код доступа настроен" : "Код доступа не задан") + " · " : ""}{user.active ? "Активен" : "Отключён"}</small>{user.role === "teacher" && <small>Логин веб-панели: <b>{user.web_username || user.full_name}</b> · один код для веб-панели и Telegram</small>}</div><span className={"role-tag " + user.role}>{ROLE[user.role]}</span>
             <button className="btn small" onClick={() => openEdit(user)}><Pencil/>Изменить</button>{user.telegram_id && <button className="btn small disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram"><Unlink/>Отключить Telegram</button>}<button className="icon-btn danger-icon" onClick={() => removeUser(user)} title="Удалить"><Trash2/></button>
             {user.active && (user.role === "teacher" || !user.telegram_id) && <button className="btn small outline" onClick={() => makeCode(user)}><Copy/>{user.role === "teacher" ? "Новый код" : "Код"}</button>}
           </div>)}</div>
         </>}
 
         {page === "chats" && <>
-          <div className="page-title"><div><div className="eyebrow">{profile?.role === "teacher" ? "МОИ УЧЕНИКИ" : "ИСТОРИЯ ОБЩЕНИЯ"}</div><h1>{profile?.role === "teacher" ? "Чаты с учениками" : "Переписки"}</h1><p>{profile?.role === "teacher" ? "Каждый ученик — отдельный диалог. Файлы и аудио находятся внутри нужной переписки." : "Наблюдение за переписками учеников и учителей. При необходимости администратор может подключиться к диалогу."}</p></div></div>
           <div className="chat-layout"><div className="chat-list"><div className="chat-list-tools">
               <div className="chat-search-control">
                 <Search size={17}/>
@@ -513,7 +509,7 @@ export default function App() {
                   <Check size={14}/>Непрочитанные
                 </button>
               </div>}
-              <div className="chat-list-caption">{profile?.role === "admin" ? "Сортировка по имени учителя" : visibleChats.length === chats.length ? "Все ваши диалоги" : "Показано " + visibleChats.length + " из " + chats.length}</div>
+              
             </div>{visibleChats.map(chat => <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected" : "")} onClick={() => openChat(chat)}><b>{profile?.role === "teacher" ? chat.student.full_name : chat.teacher.full_name + " · " + chat.student.full_name}</b><small>{chat.last_message}</small><span>{chat.last_message_at ? formatTimeInZone(chat.last_message_at, timeZone, { hour: "2-digit", minute: "2-digit" }) + " · " : ""}{chat.unread_count ? chat.unread_count + " непрочитанных · " : ""}{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span></button>)}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">{profile?.role === "admin" ? "Учитель не найден" : "По выбранному фильтру ничего не найдено"}</div>}</div>
             <div className="chat-detail">{selectedChat ? <>
               <div className="chat-head"><div><b>{selectedChat.student.full_name}</b>{profile?.role === "admin" && <small>Учитель: {selectedChat.teacher.full_name}</small>}</div><div className="chat-head-tools"><select aria-label="Фильтр сообщений" value={messageFilter} onChange={e => setMessageFilter(e.target.value)}><option value="all">Все сообщения</option><option value="media">Все вложения</option><option value="audio">Аудио</option><option value="photos">Фото</option><option value="files">Файлы и видео</option></select><span className="role-tag">{selectedChat.status === "active" ? "Активна" : "Закрыта"}</span></div></div>
@@ -532,7 +528,6 @@ export default function App() {
           </div>
         </>}
       </div>
-      <footer>UknowApp <span>·</span> Локальная версия</footer>
     </main>
 
     {modal && <div className="overlay" onMouseDown={() => setModal(null)}><section className="modal" onMouseDown={e => e.stopPropagation()}>
