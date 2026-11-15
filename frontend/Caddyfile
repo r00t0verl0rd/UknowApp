@@ -21,9 +21,14 @@
     }
 
     @backend path /api/* /docs /docs/* /openapi.json /redoc
-    reverse_proxy @backend backend:8000
 
-    root * /srv
-    try_files {path} /index.html
-    file_server
+    handle @backend {
+        reverse_proxy backend:8000
+    }
+
+    handle {
+        root * /srv
+        try_files {path} /index.html
+        file_server
+    }
 }
