@@ -2854,3 +2854,9 @@ img, video, audio { max-width: 100%; }
     font-size: 9px;
   }
 }
+
+
+/* Preserve comfortable teacher columns; only the card contents may shrink. */
+.graph-panel .teacher-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+}
