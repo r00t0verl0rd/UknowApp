@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 TEACHER_PAGE_SIZE = 6
-TEACHER_KEYBOARD_VERSION = 6
+TEACHER_KEYBOARD_VERSION = 7
 TEACHER_BACK_LABEL = "← К списку учеников"
 TEACHER_REFRESH_LABEL = "↻ Обновить"
 TEACHER_PREVIOUS_PAGE_LABEL = "← Предыдущая"
@@ -213,7 +213,7 @@ def _teacher_page(items: list[dict], page: int) -> tuple[int, int, list[dict]]:
 
 def _teacher_button_labels(items: list[dict]) -> list[str]:
     """Use the same friendly student label in the keyboard and message router."""
-    return ["😊 " + item["student"].full_name.strip() for item in items]
+    return [item["student"].full_name.strip() for item in items]
 
 
 def _teacher_keyboard(
@@ -275,7 +275,7 @@ def teacher_panel_view(
         for item in visible:
             student_name = escape(item["student"].full_name)
             notice = " · " + str(item["unanswered"]) + " новых" if item["unanswered"] else ""
-            lines.append("😊 " + student_name + notice)
+            lines.append(student_name + notice)
             for row in item["unread"][-3:]:
                 lines.append("   " + escape(message_preview(row)))
             if item["unanswered"] > 3:
@@ -329,7 +329,7 @@ def teacher_chat_view(
     rows = conversation_messages(db, conversation.id)
     visible_rows = rows[-12:]
     lines = [
-        "😊 " + escape(student.full_name),
+        "🔸 " + escape(student.full_name),
         "",
     ]
     if not visible_rows:
