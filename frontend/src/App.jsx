@@ -650,8 +650,7 @@ export default function App() {
                   </div>
                   {profile?.role === "teacher" && unreadCount > 0 && <span className="unread-badge" title="Непрочитанные сообщения" aria-label={unreadCount + " непрочитанных сообщений"}>{unreadCount > 99 ? "99+" : unreadCount}</span>}
                 </div>
-                <small>{chat.last_message}</small>
-                <span className="chat-item-meta">{chat.last_message_at ? formatLocalTime(chat.last_message_at, { hour: "2-digit", minute: "2-digit" }) + " · " : ""}{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span>
+                <span className="chat-item-meta">{chat.message_count} сообщений</span>
               </button>;
             })}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">{profile?.role === "admin" ? "Учитель не найден" : "По выбранному фильтру ничего не найдено"}</div>}</div></div>
             <div className="chat-detail">{selectedChat ? <>
