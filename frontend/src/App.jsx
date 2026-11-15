@@ -641,7 +641,7 @@ export default function App() {
               return <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected " : "") + (unreadCount > 0 ? "has-unread" : "")} onClick={() => openChat(chat)}>
                 <div className="chat-item-heading">
                   <b>{profile?.role === "teacher" ? chat.student.full_name : chat.teacher.full_name + " · " + chat.student.full_name}</b>
-                  {unreadCount > 0 && <span className="unread-badge" title={profile?.role === "admin" ? "Непрочитано учителем" : "Непрочитанные сообщения"} aria-label={profile?.role === "admin" ? unreadCount + " сообщений не прочитано учителем" : unreadCount + " непрочитанных сообщений"}>{unreadCount > 99 ? "99+" : unreadCount}</span>}
+                  {profile?.role === "teacher" && unreadCount > 0 && <span className="unread-badge" title={profile?.role === "admin" ? "Непрочитано учителем" : "Непрочитанные сообщения"} aria-label={profile?.role === "admin" ? unreadCount + " сообщений не прочитано учителем" : unreadCount + " непрочитанных сообщений"}>{unreadCount > 99 ? "99+" : unreadCount}</span>}
                 </div>
                 <small>{chat.last_message}</small>
                 <span className="chat-item-meta">{chat.last_message_at ? formatLocalTime(chat.last_message_at, { hour: "2-digit", minute: "2-digit" }) + " · " : ""}{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span>
