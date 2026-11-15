@@ -706,11 +706,14 @@ async def route_message(message: TgMessage, bot: Bot):
                 row.delivery_status = "delivered"
                 db.commit()
 
-                # Keep the teacher's bot chat focused on the persistent panel.
-                try:
-                    await bot.delete_message(chat_id=sender.telegram_id, message_id=message.message_id)
-                except Exception:
-                    logger.info("Could not remove teacher's sent message from the bot chat")
+                # Remove ordinary text after it is captured in the persistent panel.
+                # Keep native media in the teacher's chat so sent photos, documents,
+                # videos, voice notes, round videos and stickers remain visible/openable.
+                if message.text:
+                    try:
+                        await bot.delete_message(chat_id=sender.telegram_id, message_id=message.message_id)
+                    except Exception:
+                        logger.info("Could not remove teacher's sent text from the bot chat")
 
                 # A successful teacher reply closes the pending batch.
                 pending_rows = unanswered_before_reply
