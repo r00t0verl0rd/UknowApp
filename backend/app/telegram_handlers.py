@@ -140,7 +140,7 @@ async def start(message: TgMessage, bot: Bot):
                 await message.answer(
                     "😊 Вы подключены к UknowApp.\n"
                     "🎓 Ваш учитель: " + teacher.full_name + ".\n\n"
-                    "Пишите сюда и отправляйте файлы — всё попадёт в вашу переписку."
+                    "Пишите сюда и отправляйте файлы — всё попадёт вашему учителю."
                 )
             else:
                 await message.answer(
@@ -533,7 +533,7 @@ async def route_message(message: TgMessage, bot: Bot):
                             await message.answer(
                                 "😊 Вы подключены к UknowApp.\n"
                                 "🎓 Ваш учитель: " + conversation.assignment.teacher.full_name + ".\n\n"
-                                "Пишите сюда и отправляйте файлы — всё попадёт в вашу переписку."
+                                "Пишите сюда и отправляйте файлы — всё попадёт вашему учителю."
                             )
                         else:
                             await message.answer(
