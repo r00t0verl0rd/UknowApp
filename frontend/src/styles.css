@@ -4105,3 +4105,171 @@ img, video, audio { max-width: 100%; }
     right: -48px;
   }
 }
+
+
+/* Unassigned students follow the same column rhythm and card proportions
+   as the main teacher branches. */
+.graph-panel .unassigned {
+  width: 100%;
+  min-width: 0;
+}
+
+.graph-panel .unassigned-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+  align-items: stretch;
+  gap: 26px;
+  width: 100%;
+  min-width: 0;
+}
+
+.graph-panel .unassigned-grid .unassigned-student-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 112px;
+  padding: 13px 14px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.graph-panel .unassigned-student-card > .person-main {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.graph-panel .unassigned-student-card > .person-main > .avatar {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+}
+
+.graph-panel .unassigned-student-card .person-info {
+  flex: 1 1 0%;
+  width: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.graph-panel .unassigned-student-card .person-info b {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  text-overflow: clip;
+  line-height: 1.25;
+}
+
+.graph-panel .unassigned-student-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  margin-top: auto;
+}
+
+.graph-panel .unassigned-student-actions .person-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 4px;
+}
+
+.graph-panel .unassigned-student-actions .person-actions button {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+}
+
+.graph-panel .unassigned-student-actions .btn {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 8px 13px;
+  white-space: nowrap;
+}
+
+.graph-panel .unassigned-grid .unassigned-student-card {
+  background: #fff;
+  border-color: #e9e3f2;
+}
+
+.graph-panel .unassigned-grid .unassigned-student-card:hover {
+  border-color: #d8c8eb;
+  box-shadow: 0 5px 17px rgba(87, 62, 153, .08);
+}
+
+:root[data-theme="dark-soft"] .graph-panel .unassigned-grid .unassigned-student-card {
+  background: #2b3541 !important;
+  background-image: none !important;
+  border-color: #4a5864 !important;
+  box-shadow: none !important;
+  color: #e4e8f0 !important;
+}
+
+:root[data-theme="dark-soft"] .graph-panel .unassigned-grid .unassigned-student-card .avatar {
+  background: #41414b !important;
+  color: #e0b1a8 !important;
+}
+
+:root[data-theme="dark-soft"] .graph-panel .unassigned-grid .unassigned-student-card:hover {
+  background: #30394a !important;
+  border-color: #66728c !important;
+}
+
+@media (max-width: 760px) {
+  .graph-panel .unassigned-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  .graph-panel .unassigned-student-card {
+    min-height: 0;
+    padding: 12px;
+  }
+
+  .graph-panel .unassigned-student-actions .person-actions button {
+    flex-basis: 32px;
+    width: 32px;
+    height: 32px;
+  }
+}
+
+@media (max-width: 380px) {
+  .graph-panel .unassigned-student-card {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .graph-panel .unassigned-student-card > .person-main {
+    gap: 9px;
+  }
+
+  .graph-panel .unassigned-student-card > .person-main > .avatar {
+    flex-basis: 38px;
+    width: 38px;
+    height: 38px;
+  }
+
+  .graph-panel .unassigned-student-actions {
+    gap: 7px;
+  }
+
+  .graph-panel .unassigned-student-actions .btn {
+    padding: 7px 10px;
+  }
+}
