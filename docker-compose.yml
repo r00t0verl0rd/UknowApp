@@ -38,12 +38,8 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: ""
-    environment:
-      DOMAIN: ${DOMAIN:-localhost}
     ports:
       - "80:80"
-      - "443:443"
-      - "443:443/udp"
     volumes:
       - caddy_data:/data
       - caddy_config:/config
