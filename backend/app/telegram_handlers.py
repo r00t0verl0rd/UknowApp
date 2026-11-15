@@ -523,11 +523,24 @@ async def route_message(message: TgMessage, bot: Bot):
                 )
                 if result == "ok" and linked_user:
                     _connection_code_attempts.pop(telegram_id, None)
-                    await message.answer(
-                        "✅ Telegram подключён к аккаунту «" + linked_user.full_name + "»."
-                    )
                     if linked_user.role == "teacher":
+                        await message.answer(
+                            "✅ Telegram подключён к аккаунту «" + linked_user.full_name + "»."
+                        )
                         await update_teacher_panel(bot, db, linked_user)
+                    elif linked_user.role == "student":
+                        conversation = current_student_conversation(db, linked_user.id)
+                        if conversation and conversation.status == "active":
+                            await message.answer(
+                                "😊 Готово! Вы подключены к UknowApp.\n"
+                                "Ваш учитель: " + conversation.assignment.teacher.full_name + ".\n\n"
+                                "Пишите сообщения или отправляйте фото, видео, кружочки, голосовые и файлы прямо сюда."
+                            )
+                        else:
+                            await message.answer(
+                                "✅ Telegram подключён к аккаунту «" + linked_user.full_name + "».\n"
+                                "Учитель пока не назначен. Как только администратор создаст связь, здесь можно будет начать переписку."
+                            )
                 elif result == "expired":
                     _record_connection_code_attempt(telegram_id)
                     await message.answer("Срок действия кода истёк. Попросите администратора создать новый код.")
