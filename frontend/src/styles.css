@@ -4107,9 +4107,10 @@ body {
     margin: 0;
   }
   .sidebar-bottom > .desktop-logout { display: none; }
-  .mobile-quick-actions { display: flex; align-items: center; gap: 6px; }
-  .mobile-quick-actions > button { flex: 0 0 38px; width: 38px; height: 38px; min-width: 38px; min-height: 38px; padding: 8px; margin: 0; border-radius: 11px; display: grid; place-items: center; }
-.mobile-quick-actions .icon-btn { color: var(--purple); }
+  .mobile-quick-actions { display: flex; align-items: center; gap: 4px; }
+  .mobile-quick-actions > button { flex: 0 0 32px; width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 6px; margin: 0; border-radius: 9px; display: grid; place-items: center; }
+  .mobile-quick-actions > button svg { width: 15px; height: 15px; }
+  .mobile-quick-actions .icon-btn { color: var(--purple); }
   .topbar > .topbar-actions { display: none !important; }
   .main { margin: 0; width: 100%; min-width: 0; }
   /* Remove the empty profile strip between mobile navigation and the page workspace. */
