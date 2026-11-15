@@ -162,8 +162,9 @@ export default function App() {
     if (!auth || page !== "chats") return undefined;
     let active = true;
     let inFlight = false;
-    const interval = window.setInterval(async () => {
-      if (inFlight) return;
+
+    const syncChats = async () => {
+      if (inFlight || !active) return;
       inFlight = true;
       try {
         const conversations = await request("/api/panel/conversations");
@@ -178,10 +179,20 @@ export default function App() {
       } finally {
         inFlight = false;
       }
-    }, 10000);
+    };
+
+    // Refresh immediately when opening the chat page, then keep it live.
+    void syncChats();
+    const interval = window.setInterval(syncChats, 2000);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") void syncChats();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     return () => {
       active = false;
       window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [auth, page, selectedChat?.id, request]);
 
@@ -402,7 +413,7 @@ export default function App() {
           <button className={page === "users" ? "active" : ""} onClick={() => setPage("users")}><Users/>Пользователи</button>
           </>}
         </>
-        <button className={page === "chats" ? "active" : ""} onClick={() => setPage("chats")}><MessageCircle/>Переписки <i>{chats.reduce((total, chat) => total + (Number(chat.unread_count) || 0), 0)}</i></button>
+        <button className={page === "chats" ? "active" : ""} onClick={() => setPage("chats")}><MessageCircle/>Переписки</button>
       </nav>
       <div className="sidebar-bottom"><button className="logout" onClick={signOut}><LogOut/>Выйти</button></div>
     </aside>
