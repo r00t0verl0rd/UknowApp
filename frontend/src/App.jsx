@@ -49,7 +49,8 @@ export default function App() {
   const [teacherGraph, setTeacherGraph] = useState(null);
   const [draft, setDraft] = useState("");
   const [attachment, setAttachment] = useState(null);
-  const [webPassword, setWebPassword] = useState("");
+  const [issuedCredential, setIssuedCredential] = useState(null);
+  const [savingUser, setSavingUser] = useState(false);
   const [login, setLogin] = useState("admin");
   const [password, setPassword] = useState("");
   const [page, setPage] = useState("graph");
@@ -81,7 +82,15 @@ export default function App() {
       headers: { "Content-Type": "application/json", ...(options.headers || {}) }
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.detail || "Ошибка запроса");
+    if (!response.ok) {
+      const detail = Array.isArray(data.detail)
+        ? data.detail.map(item => {
+            const field = Array.isArray(item.loc) ? item.loc[item.loc.length - 1] : "";
+            return (field ? field + ": " : "") + (item.msg || "Некорректное значение");
+          }).join("; ")
+        : (typeof data.detail === "string" ? data.detail : "Ошибка запроса");
+      throw new Error(detail);
+    }
     return data;
   }, []);
 
@@ -159,7 +168,8 @@ export default function App() {
   }), [messages, messageFilter]);
   const visibleChats = useMemo(() => chats.filter(chat => {
     const names = (chat.student.full_name + " " + chat.teacher.full_name).toLowerCase();
-    const matchesSearch = names.includes(chatSearch.toLowerCase()) || (chat.last_message || "").toLowerCase().includes(chatSearch.toLowerCase());
+    const query = chatSearch.trim().toLowerCase();
+    const matchesSearch = !query || names.includes(query) || (chat.last_message || "").toLowerCase().includes(query);
     const matchesFilter = chatFilter === "all" || Number(chat.unread_count || 0) > 0;
     return matchesSearch && matchesFilter;
   }), [chats, chatSearch, chatFilter]);
@@ -184,22 +194,58 @@ export default function App() {
   }
 
   function openCreate(defaultRole = "student") {
-    setModal({ mode: "create", id: null }); setName(""); setTeacherLogin(""); setRole(defaultRole); setTelegramId(""); setWebPassword("");
+    setModal({ mode: "create", id: null }); setName(""); setTeacherLogin(""); setRole(defaultRole); setTelegramId(""); setError("");
   }
   function openEdit(user) {
-    setModal({ mode: "edit", id: user.id }); setName(user.full_name); setTeacherLogin(user.web_username || user.full_name); setRole(user.role); setTelegramId(user.telegram_id ? String(user.telegram_id) : ""); setWebPassword("");
+    setModal({ mode: "edit", id: user.id }); setName(user.full_name); setTeacherLogin(user.web_username || user.full_name); setRole(user.role); setTelegramId(user.telegram_id ? String(user.telegram_id) : ""); setError("");
   }
 
   async function saveUser(event) {
     event.preventDefault();
+    setSavingUser(true);
+    setError("");
     const body = { full_name: name.trim(), role, telegram_id: telegramId.trim() ? Number(telegramId) : null };
     if (role === "teacher") body.web_username = (teacherLogin || name).trim();
-    if (webPassword.trim()) body.web_password = webPassword.trim();
     try {
-      if (modal.mode === "create") await request("/api/admin/users", { method: "POST", body: JSON.stringify(body) });
-      else await request("/api/admin/users/" + modal.id, { method: "PATCH", body: JSON.stringify(body) });
-      setModal(null); await refresh(); notify(modal.mode === "create" ? "Участник добавлен" : "Изменения сохранены");
-    } catch (e) { setError(e.message); }
+      const saved = modal.mode === "create"
+        ? await request("/api/admin/users", { method: "POST", body: JSON.stringify(body) })
+        : await request("/api/admin/users/" + modal.id, { method: "PATCH", body: JSON.stringify(body) });
+      setModal(null);
+      await refresh();
+      if (saved.issued_web_password) {
+        setIssuedCredential({
+          full_name: saved.full_name,
+          username: saved.web_username || saved.full_name,
+          password: saved.issued_web_password
+        });
+      } else {
+        notify(modal.mode === "create" ? "Участник добавлен" : "Изменения сохранены");
+      }
+    } catch (e) {
+      setError(e.message || "Не удалось сохранить профиль");
+    } finally {
+      setSavingUser(false);
+    }
+  }
+
+  async function regenerateTeacherPassword() {
+    if (!modal || modal.mode !== "edit" || role !== "teacher") return;
+    setSavingUser(true);
+    setError("");
+    try {
+      const issued = await request("/api/admin/users/" + modal.id + "/web-password", { method: "POST" });
+      setModal(null);
+      await refresh();
+      setIssuedCredential({
+        full_name: issued.full_name,
+        username: issued.web_username || issued.full_name,
+        password: issued.issued_web_password
+      });
+    } catch (e) {
+      setError(e.message || "Не удалось сгенерировать пароль");
+    } finally {
+      setSavingUser(false);
+    }
   }
 
   async function removeUser(user) {
@@ -381,7 +427,22 @@ export default function App() {
 
         {page === "chats" && <>
           <div className="page-title"><div><div className="eyebrow">{profile?.role === "teacher" ? "МОИ УЧЕНИКИ" : "ИСТОРИЯ ОБЩЕНИЯ"}</div><h1>{profile?.role === "teacher" ? "Чаты с учениками" : "Переписки"}</h1><p>{profile?.role === "teacher" ? "Каждый ученик — отдельный диалог. Файлы и аудио находятся внутри нужной переписки." : "Просмотр и участие в переписках учеников и учителей."}</p></div></div>
-          <div className="chat-layout"><div className="chat-list"><div className="chat-list-tools"><input aria-label="Поиск по ученикам" placeholder="Найти ученика…" value={chatSearch} onChange={e => setChatSearch(e.target.value)}/><select aria-label="Фильтр переписок" value={chatFilter} onChange={e => setChatFilter(e.target.value)}><option value="all">Все диалоги</option><option value="unread">Есть непрочитанные</option></select></div>{visibleChats.map(chat => <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected" : "")} onClick={() => openChat(chat)}><b>{profile?.role === "teacher" ? chat.student.full_name : chat.student.full_name + " ↔ " + chat.teacher.full_name}</b><small>{chat.last_message}</small><span>{chat.last_message_at ? new Date(chat.last_message_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) + " · " : ""}{chat.unread_count ? chat.unread_count + " непрочитанных · " : ""}{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span></button>)}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">По выбранному фильтру ничего не найдено</div>}</div>
+          <div className="chat-layout"><div className="chat-list"><div className="chat-list-tools">
+              <label className="chat-search-control">
+                <Search size={17}/>
+                <input aria-label="Найти ученика" placeholder="Найти ученика" value={chatSearch} onChange={e => setChatSearch(e.target.value)}/>
+                {chatSearch && <button type="button" onClick={() => setChatSearch("")} aria-label="Очистить поиск"><X size={14}/></button>}
+              </label>
+              <div className="chat-filter-segment" role="group" aria-label="Фильтр диалогов">
+                <button type="button" className={chatFilter === "all" ? "active" : ""} aria-pressed={chatFilter === "all"} onClick={() => setChatFilter("all")}>
+                  <MessageCircle size={14}/>Все диалоги <span>{chats.length}</span>
+                </button>
+                <button type="button" className={chatFilter === "unread" ? "active" : ""} aria-pressed={chatFilter === "unread"} onClick={() => setChatFilter("unread")}>
+                  <Check size={14}/>Непрочитанные <span>{chats.reduce((total, chat) => total + (Number(chat.unread_count) > 0 ? 1 : 0), 0)}</span>
+                </button>
+              </div>
+              <div className="chat-list-caption">{visibleChats.length === chats.length ? "Все ваши диалоги" : "Показано " + visibleChats.length + " из " + chats.length}</div>
+            </div>{visibleChats.map(chat => <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected" : "")} onClick={() => openChat(chat)}><b>{profile?.role === "teacher" ? chat.student.full_name : chat.student.full_name + " ↔ " + chat.teacher.full_name}</b><small>{chat.last_message}</small><span>{chat.last_message_at ? new Date(chat.last_message_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) + " · " : ""}{chat.unread_count ? chat.unread_count + " непрочитанных · " : ""}{chat.message_count} сообщений · {chat.status === "active" ? "Активна" : "Закрыта"}</span></button>)}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">По выбранному фильтру ничего не найдено</div>}</div>
             <div className="chat-detail">{selectedChat ? <>
               <div className="chat-head"><div><b>{selectedChat.student.full_name}</b><small>{profile?.role === "admin" ? "Учитель: " + selectedChat.teacher.full_name + " · " : ""}Переписка #{selectedChat.id}</small></div><div className="chat-head-tools"><select aria-label="Фильтр сообщений" value={messageFilter} onChange={e => setMessageFilter(e.target.value)}><option value="all">Все сообщения</option><option value="media">Все вложения</option><option value="audio">Аудио</option><option value="photos">Фото</option><option value="files">Файлы и видео</option></select><span className="role-tag">{selectedChat.status === "active" ? "Активна" : "Закрыта"}</span></div></div>
               <div className="messages">{visibleMessages.map(message => <MessageBubble message={message} key={message.id} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}{!!messages.length && !visibleMessages.length && <div className="empty-state">Нет сообщений этого типа</div>}</div>
@@ -413,12 +474,28 @@ export default function App() {
         <label>Имя и фамилия<input value={name} onChange={e => { const nextName = e.target.value; setName(nextName); if (!teacherLogin || teacherLogin === name) setTeacherLogin(nextName); }} minLength="2" maxLength="160" required autoFocus/></label>
         <label>Роль<select value={role} onChange={e => setRole(e.target.value)}><option value="teacher">Учитель</option><option value="student">Ученик</option></select></label>
         <label>Telegram ID <input type="text" inputMode="numeric" pattern="[0-9]*" value={telegramId} onChange={e => setTelegramId(e.target.value)} placeholder="Не подключён"/></label>
-        {role === "teacher" && <><label>Логин для входа в панель<input value={teacherLogin || name} onChange={e => setTeacherLogin(e.target.value)} minLength="2" maxLength="160" required autoComplete="off" /></label><p className="hint">По умолчанию логин совпадает с именем учителя. Его можно изменить отдельно от имени.</p><label>Пароль для веб-панели<input type="password" value={webPassword} onChange={e => setWebPassword(e.target.value)} minLength="8" maxLength="128" placeholder={modal.mode === "edit" ? "Оставьте пустым, чтобы не менять" : "Не менее 8 символов"} autoComplete="new-password"/></label><p className="hint">Пароль в базе хранится в хешированном виде. При редактировании оставьте поле пустым, чтобы сохранить текущий пароль.</p></>}
+        {role === "teacher" && <>
+          <label>Логин для входа в панель<input value={teacherLogin || name} onChange={e => setTeacherLogin(e.target.value)} minLength="2" maxLength="160" required autoComplete="off" /></label>
+          <p className="hint">По умолчанию логин совпадает с именем учителя. Его можно изменить отдельно от имени.</p>
+          {modal.mode === "create"
+            ? <div className="password-info"><RefreshCw size={16}/><span>При сохранении автоматически создадим пароль вида <b>XXXX-XXXX</b>. Он появится для передачи учителю.</span></div>
+            : <div className="password-actions">
+                <div className="password-info"><RefreshCw size={16}/><span>Пароль хранится в защищённом виде. Чтобы выдать новый, сгенерируйте его заново.</span></div>
+                <button type="button" className="btn outline" onClick={regenerateTeacherPassword} disabled={savingUser}><RefreshCw size={15}/>Сгенерировать новый пароль</button>
+              </div>}
+        </>}
         {modal.mode === "edit" && role !== users.find(u => u.id === modal.id)?.role && <p className="hint">При смене роли активные назначения будут закрыты. История переписок сохранится.</p>}
-        <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setModal(null)}>Отмена</button><button className="btn primary"><Check/>Сохранить</button></div>
+        <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setModal(null)} disabled={savingUser}>Отмена</button><button className="btn primary" disabled={savingUser}>{savingUser ? "Сохраняем…" : <><Check/>Сохранить</>}</button></div>
       </form>}
     </section></div>}
 
+    {issuedCredential && <div className="overlay" onMouseDown={() => setIssuedCredential(null)}><section className="modal credential-modal" onMouseDown={e => e.stopPropagation()}>
+      <div className="modal-head"><div><div className="eyebrow">ДАННЫЕ ДЛЯ ВХОДА УЧИТЕЛЯ</div><h2>{issuedCredential.full_name}</h2></div><button className="icon-btn" onClick={() => setIssuedCredential(null)}><X/></button></div>
+      <div className="credential-row"><span>Логин</span><b>{issuedCredential.username}</b><button type="button" className="icon-btn" onClick={() => navigator.clipboard.writeText(issuedCredential.username).then(() => notify("Логин скопирован"))} aria-label="Скопировать логин"><Copy size={16}/></button></div>
+      <div className="credential-password"><span>Пароль</span><b>{issuedCredential.password}</b></div>
+      <p className="hint">Передайте логин и пароль учителю вручную. Пароль показывается только сейчас и не хранится в открытом виде. При необходимости его можно сгенерировать заново в профиле учителя.</p>
+      <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setIssuedCredential(null)}>Закрыть</button><button type="button" className="btn primary" onClick={() => navigator.clipboard.writeText("Логин: " + issuedCredential.username + "\nПароль: " + issuedCredential.password).then(() => notify("Данные для входа скопированы"))}><Copy/>Скопировать данные</button></div>
+    </section></div>}
     {code && <div className="overlay" onMouseDown={() => setCode(null)}><section className="modal" onMouseDown={e => e.stopPropagation()}><div className="modal-head"><div><div className="eyebrow">ПОДКЛЮЧЕНИЕ TELEGRAM</div><h2>{code.full_name}</h2></div><button className="icon-btn" onClick={() => setCode(null)}><X/></button></div><div className="invite-code">{code.code}</div><p className="hint">Передайте этот код ученику/учителю для активации телеграмм-бота. Код действует 15 минут.</p><div className="modal-actions"><button className="btn ghost" onClick={() => setCode(null)}>Закрыть</button><button className="btn primary" onClick={() => navigator.clipboard.writeText(code.code).then(() => notify("Код скопирован"))}><Copy/>Скопировать</button></div></section></div>}
     {toast && <div className="toast"><Check/>{toast}</div>}
   </div>;
