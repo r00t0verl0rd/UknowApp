@@ -93,7 +93,17 @@ def conversation_dict(
         select(Message).where(Message.conversation_id == conversation.id)
         .order_by(Message.created_at.desc(), Message.id.desc()).limit(1)
     )
-    count = len(db.scalars(select(Message.id).where(Message.conversation_id == conversation.id)).all())
+    message_rows = db.scalars(
+        select(Message).where(Message.conversation_id == conversation.id)
+    ).all()
+    count = len(message_rows)
+    unread_count = sum(
+        1
+        for row in message_rows
+        if row.sender_role == "student"
+        and row.delivery_status == "delivered"
+        and json.loads(row.metadata_json or "{}").get("teacher_read_at") is None
+    )
     return {
         "id": conversation.id,
         "status": conversation.status,
@@ -118,7 +128,7 @@ def conversation_dict(
         ) if last_message else "Переписка пока пуста",
         "last_message_at": last_message.created_at.isoformat() if last_message else None,
         "message_count": count,
-        "unread_count": sum(1 for row in db.scalars(select(Message).where(Message.conversation_id == conversation.id)).all() if row.sender_role == "student" and json.loads(row.metadata_json or "{}").get("teacher_read_at") is None),
+        "unread_count": unread_count,
     }
 
 
