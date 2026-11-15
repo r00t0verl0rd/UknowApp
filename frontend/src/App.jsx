@@ -234,7 +234,6 @@ export default function App() {
     setError("");
     try {
       const issued = await request("/api/admin/users/" + modal.id + "/web-password", { method: "POST" });
-      setModal(null);
       await refresh();
       setIssuedCredential({
         full_name: issued.full_name,
@@ -477,7 +476,7 @@ export default function App() {
         {role === "teacher" && <>
           <label>Логин для входа в панель<input value={teacherLogin || name} onChange={e => setTeacherLogin(e.target.value)} minLength="2" maxLength="160" required autoComplete="off" /></label>
           <p className="hint">По умолчанию логин совпадает с именем учителя. Его можно изменить отдельно от имени.</p>
-          {modal.mode === "create"
+          {modal.mode === "create" || users.find(u => u.id === modal.id)?.role !== "teacher"
             ? <div className="password-info"><RefreshCw size={16}/><span>При сохранении автоматически создадим пароль вида <b>XXXX-XXXX</b>. Он появится для передачи учителю.</span></div>
             : <div className="password-actions">
                 <div className="password-info"><RefreshCw size={16}/><span>Пароль хранится в защищённом виде. Чтобы выдать новый, сгенерируйте его заново.</span></div>
