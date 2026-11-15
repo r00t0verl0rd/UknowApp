@@ -956,7 +956,9 @@ async def send_panel_attachment(
 
     reported_mime_type = file.content_type or mimetypes.guess_type(original_name)[0]
     mime_type = safe_media_type(reported_mime_type)
-    if mime_type.startswith("image/"):
+    if mime_type == "image/gif":
+        kind = "animation"
+    elif mime_type.startswith("image/"):
         kind = "photo"
     elif mime_type.startswith("video/"):
         kind = "video"
@@ -1016,11 +1018,13 @@ async def send_panel_attachment(
                 if principal["role"] == "teacher"
                 else "От администратора школы" + (": " + row.text if row.text else "")
             )
-            upload = BufferedInputFile(content, filename=original_name)
             kwargs = {**target, "caption": prefix[:1024]}
             try:
-                if kind == "photo":
+                upload = BufferedInputFile(content, filename=original_name)
+                if kind == "photo" and len(content) <= 10 * 1024 * 1024:
                     sent = await bot.send_photo(photo=upload, **kwargs)
+                elif kind == "animation":
+                    sent = await bot.send_animation(animation=upload, **kwargs)
                 elif kind == "video":
                     sent = await bot.send_video(video=upload, **kwargs)
                 elif kind == "voice":
@@ -1028,16 +1032,38 @@ async def send_panel_attachment(
                 elif kind == "audio":
                     sent = await bot.send_audio(audio=upload, **kwargs)
                 else:
-                    sent = await bot.send_document(document=upload, **kwargs)
+                    sent = await bot.send_document(
+                        document=BufferedInputFile(content, filename=original_name),
+                        **kwargs,
+                    )
                 delivered.append({
                     "user_id": recipient.id,
                     "telegram_message_id": sent.message_id,
                     "chat_id": target["chat_id"],
                     "thread_id": target.get("message_thread_id"),
                 })
-            except Exception as exc:
-                logger.warning("Telegram delivery failed for conversation_id=%s: %s", conversation.id, type(exc).__name__)
-                delivery_errors.append(recipient.full_name + ": ошибка Telegram (" + type(exc).__name__ + ")")
+            except Exception as native_exc:
+                # Photos above Telegram's photo limit, uncommon codecs and media
+                # rejected by a native endpoint should still arrive as files.
+                try:
+                    logger.info(
+                        "Native Telegram media send failed; retrying as document "
+                        "(conversation_id=%s kind=%s error_type=%s)",
+                        conversation.id, kind, type(native_exc).__name__,
+                    )
+                    sent = await bot.send_document(
+                        document=BufferedInputFile(content, filename=original_name),
+                        **kwargs,
+                    )
+                    delivered.append({
+                        "user_id": recipient.id,
+                        "telegram_message_id": sent.message_id,
+                        "chat_id": target["chat_id"],
+                        "thread_id": target.get("message_thread_id"),
+                    })
+                except Exception as exc:
+                    logger.warning("Telegram delivery failed for conversation_id=%s: %s", conversation.id, type(exc).__name__)
+                    delivery_errors.append(recipient.full_name + ": ошибка Telegram (" + type(exc).__name__ + ")")
     else:
         delivery_errors.append("Telegram-бот не подключён к веб-приложению")
 
