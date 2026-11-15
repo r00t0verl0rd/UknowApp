@@ -548,6 +548,7 @@ export default function App() {
                   <div className="user-info-popover-head"><b>Информация</b><button type="button" onClick={() => setUserInfo(null)} aria-label="Закрыть"><X size={14}/></button></div>
                   <div className="user-info-line"><span className={"user-status-dot " + (user.active ? "is-active" : "is-inactive")}/><span>{user.active ? "Активен" : "Отключён"}</span></div>
                   <div className="user-info-line"><Link2 size={14}/><span>{user.telegram_id ? "Telegram подключён" : "Telegram не подключён"}</span></div>
+                  <div className="user-info-login"><span>Telegram ID</span><b>{user.telegram_id || "Не подключён"}</b></div>
                   {user.role === "teacher" && <div className="user-info-login"><span>Логин</span><b>{user.web_username || user.full_name}</b></div>}
                 </div>}
               </div>
