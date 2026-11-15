@@ -3343,3 +3343,122 @@ img, video, audio { max-width: 100%; }
     font-size: 14px;
   }
 }
+
+
+/* Conversation picker: search/filter stay above a separate scrollable list
+   so items cannot slide underneath the controls on mobile screens. */
+@media (max-width: 760px) {
+  .chat-list {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    max-height: min(36dvh, 290px);
+    min-height: 0;
+    overflow: hidden;
+    padding: 8px;
+  }
+
+  .chat-list-tools {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+    width: 100%;
+    padding: 2px 0 9px;
+    margin: 0;
+    background: #fff;
+    border-bottom: 1px solid var(--line);
+    box-sizing: border-box;
+  }
+
+  .chat-items-scroll {
+    display: grid;
+    flex: 1 1 auto;
+    align-content: start;
+    gap: 7px;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding-top: 8px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    touch-action: pan-y;
+  }
+
+  .chat-items-scroll > .empty-state {
+    padding: 14px 8px;
+  }
+
+  :root[data-theme="dark-soft"] .chat-list-tools {
+    background: #1d2430 !important;
+    border-bottom-color: #39465a !important;
+  }
+}
+
+/* A little more room to compose messages on every screen size. */
+.chat-composer textarea {
+  min-height: 66px;
+  max-height: 132px;
+  resize: none;
+}
+
+@media (max-width: 760px) {
+  .chat-composer textarea {
+    min-height: 62px;
+    max-height: 136px;
+  }
+}
+
+/* Light theme: clearer panel/control outlines and softer text contrast. */
+:root:not([data-theme="dark-soft"]) {
+  --ink: #514d5a;
+  --muted: #898493;
+  --line: #ded9e5;
+}
+
+:root:not([data-theme="dark-soft"]) body {
+  color: #514d5a;
+}
+
+:root:not([data-theme="dark-soft"]) .topbar,
+:root:not([data-theme="dark-soft"]) .sidebar,
+:root:not([data-theme="dark-soft"]) .graph-panel,
+:root:not([data-theme="dark-soft"]) .user-list,
+:root:not([data-theme="dark-soft"]) .chat-layout,
+:root:not([data-theme="dark-soft"]) .chat-list,
+:root:not([data-theme="dark-soft"]) .chat-detail {
+  border-color: #ded9e5;
+}
+
+:root:not([data-theme="dark-soft"]) .person-card,
+:root:not([data-theme="dark-soft"]) .chat-item,
+:root:not([data-theme="dark-soft"]) .search,
+:root:not([data-theme="dark-soft"]) .chat-search-control,
+:root:not([data-theme="dark-soft"]) .chat-composer textarea,
+:root:not([data-theme="dark-soft"]) .chat-head-tools select {
+  border-color: #dcd6e3;
+}
+
+:root:not([data-theme="dark-soft"]) .person-info b,
+:root:not([data-theme="dark-soft"]) .chat-item b,
+:root:not([data-theme="dark-soft"]) .chat-head b,
+:root:not([data-theme="dark-soft"]) .message b {
+  color: #56515f;
+}
+
+:root:not([data-theme="dark-soft"]) .person-info small,
+:root:not([data-theme="dark-soft"]) .chat-item small,
+:root:not([data-theme="dark-soft"]) .chat-item-meta,
+:root:not([data-theme="dark-soft"]) .chat-head small,
+:root:not([data-theme="dark-soft"]) .message-time,
+:root:not([data-theme="dark-soft"]) .toolbar,
+:root:not([data-theme="dark-soft"]) .hint {
+  color: #918b9a;
+}
+
+:root:not([data-theme="dark-soft"]) .chat-list-tools {
+  border-bottom-color: #ded9e5;
+}
