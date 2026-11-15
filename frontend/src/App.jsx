@@ -212,11 +212,11 @@ export default function App() {
         : await request("/api/admin/users/" + modal.id, { method: "PATCH", body: JSON.stringify(body) });
       setModal(null);
       await refresh();
-      if (saved.issued_web_password) {
+      if (saved.issued_access_code) {
         setIssuedCredential({
           full_name: saved.full_name,
           username: saved.web_username || saved.full_name,
-          password: saved.issued_web_password
+          code: saved.issued_access_code
         });
       } else {
         notify(modal.mode === "create" ? "Участник добавлен" : "Изменения сохранены");
@@ -228,20 +228,20 @@ export default function App() {
     }
   }
 
-  async function regenerateTeacherPassword() {
+  async function regenerateTeacherAccessCode() {
     if (!modal || modal.mode !== "edit" || role !== "teacher") return;
     setSavingUser(true);
     setError("");
     try {
-      const issued = await request("/api/admin/users/" + modal.id + "/web-password", { method: "POST" });
+      const issued = await request("/api/admin/users/" + modal.id + "/access-code", { method: "POST" });
       await refresh();
       setIssuedCredential({
         full_name: issued.full_name,
         username: issued.web_username || issued.full_name,
-        password: issued.issued_web_password
+        code: issued.issued_access_code
       });
     } catch (e) {
-      setError(e.message || "Не удалось сгенерировать пароль");
+      setError(e.message || "Не удалось создать новый код доступа");
     } finally {
       setSavingUser(false);
     }
@@ -418,9 +418,9 @@ export default function App() {
           <div className="page-title"><div><div className="eyebrow">УЧЁТНЫЕ ЗАПИСИ</div><h1>Пользователи</h1><p>Создание, редактирование, смена ролей и удаление.</p></div><button className="btn primary" onClick={() => openCreate()}><Plus/>Добавить</button></div>
           <div className="toolbar"><div className="search"><Search/><input placeholder="Поиск по имени или Telegram ID" value={search} onChange={e => setSearch(e.target.value)}/></div><span>{visibleUsers.length} пользователей</span></div>
           <div className="user-list">{visibleUsers.map(user => <div className="user-row" key={user.id}>
-            <div className={"avatar " + user.role}><Users/></div><div className="person-info"><b>{user.full_name}</b><small>#{user.id} · {user.telegram_id ? <span className="telegram-connected">Telegram ID {user.telegram_id}</span> : "Telegram не подключён"} · {user.role === "teacher" ? (user.has_web_password ? "Веб-доступ настроен" : "Пароль веб-панели не задан") + " · " : ""}{user.active ? "Активен" : "Отключён"}</small>{user.role === "teacher" && <small>Логин для входа: <b>{user.web_username || user.full_name}</b></small>}</div><span className={"role-tag " + user.role}>{ROLE[user.role]}</span>
+            <div className={"avatar " + user.role}><Users/></div><div className="person-info"><b>{user.full_name}</b><small>#{user.id} · {user.telegram_id ? <span className="telegram-connected">Telegram ID {user.telegram_id}</span> : "Telegram не подключён"} · {user.role === "teacher" ? (user.has_access_code ? "Код доступа настроен" : "Код доступа не задан") + " · " : ""}{user.active ? "Активен" : "Отключён"}</small>{user.role === "teacher" && <small>Логин веб-панели: <b>{user.web_username || user.full_name}</b> · один код для веб-панели и Telegram</small>}</div><span className={"role-tag " + user.role}>{ROLE[user.role]}</span>
             <button className="btn small" onClick={() => openEdit(user)}><Pencil/>Изменить</button>{user.telegram_id && <button className="btn small disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram"><Unlink/>Отключить Telegram</button>}<button className="icon-btn danger-icon" onClick={() => removeUser(user)} title="Удалить"><Trash2/></button>
-            {user.active && !user.telegram_id && <button className="btn small outline" onClick={() => makeCode(user)}><Copy/>Код</button>}
+            {user.active && (user.role === "teacher" || !user.telegram_id) && <button className="btn small outline" onClick={() => makeCode(user)}><Copy/>{user.role === "teacher" ? "Новый код" : "Код"}</button>}
           </div>)}</div>
         </>}
 
@@ -474,13 +474,13 @@ export default function App() {
         <label>Роль<select value={role} onChange={e => setRole(e.target.value)}><option value="teacher">Учитель</option><option value="student">Ученик</option></select></label>
         <label>Telegram ID <input type="text" inputMode="numeric" pattern="[0-9]*" value={telegramId} onChange={e => setTelegramId(e.target.value)} placeholder="Не подключён"/></label>
         {role === "teacher" && <>
-          <label>Логин для входа в панель<input value={teacherLogin || name} onChange={e => setTeacherLogin(e.target.value)} minLength="2" maxLength="160" required autoComplete="off" /></label>
-          <p className="hint">По умолчанию логин совпадает с именем учителя. Его можно изменить отдельно от имени.</p>
+          <label>Логин веб-панели<input value={teacherLogin || name} onChange={e => setTeacherLogin(e.target.value)} minLength="2" maxLength="160" required autoComplete="off" /></label>
+          <p className="hint">По умолчанию логин совпадает с именем учителя. Для веб-панели используется этот логин и общий код доступа; в Telegram отправляется только код.</p>
           {modal.mode === "create" || users.find(u => u.id === modal.id)?.role !== "teacher"
-            ? <div className="password-info"><RefreshCw size={16}/><span>При сохранении автоматически создадим пароль вида <b>XXXX-XXXX</b>. Он появится для передачи учителю.</span></div>
+            ? <div className="password-info"><RefreshCw size={16}/><span>При сохранении автоматически создадим единый код вида <b>XXXX-XXXX</b> для входа в веб-панель и подключения Telegram.</span></div>
             : <div className="password-actions">
-                <div className="password-info"><RefreshCw size={16}/><span>Пароль хранится в защищённом виде. Чтобы выдать новый, сгенерируйте его заново.</span></div>
-                <button type="button" className="btn outline" onClick={regenerateTeacherPassword} disabled={savingUser}><RefreshCw size={15}/>Сгенерировать новый пароль</button>
+                <div className="password-info"><RefreshCw size={16}/><span>Один и тот же код используется для веб-панели и Telegram. Новый код сразу заменит старый в обоих местах.</span></div>
+                <button type="button" className="btn outline" onClick={regenerateTeacherAccessCode} disabled={savingUser}><RefreshCw size={15}/>Сгенерировать новый код</button>
               </div>}
         </>}
         {modal.mode === "edit" && role !== users.find(u => u.id === modal.id)?.role && <p className="hint">При смене роли активные назначения будут закрыты. История переписок сохранится.</p>}
@@ -489,13 +489,13 @@ export default function App() {
     </section></div>}
 
     {issuedCredential && <div className="overlay" onMouseDown={() => setIssuedCredential(null)}><section className="modal credential-modal" onMouseDown={e => e.stopPropagation()}>
-      <div className="modal-head"><div><div className="eyebrow">ДАННЫЕ ДЛЯ ВХОДА УЧИТЕЛЯ</div><h2>{issuedCredential.full_name}</h2></div><button className="icon-btn" onClick={() => setIssuedCredential(null)}><X/></button></div>
+      <div className="modal-head"><div><div className="eyebrow">ЕДИНЫЙ КОД ДОСТУПА УЧИТЕЛЯ</div><h2>{issuedCredential.full_name}</h2></div><button className="icon-btn" onClick={() => setIssuedCredential(null)}><X/></button></div>
       <div className="credential-row"><span>Логин</span><b>{issuedCredential.username}</b><button type="button" className="icon-btn" onClick={() => navigator.clipboard.writeText(issuedCredential.username).then(() => notify("Логин скопирован"))} aria-label="Скопировать логин"><Copy size={16}/></button></div>
-      <div className="credential-password"><span>Пароль</span><b>{issuedCredential.password}</b></div>
-      <p className="hint">Передайте логин и пароль учителю вручную. Пароль показывается только сейчас и не хранится в открытом виде. При необходимости его можно сгенерировать заново в профиле учителя.</p>
-      <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setIssuedCredential(null)}>Закрыть</button><button type="button" className="btn primary" onClick={() => navigator.clipboard.writeText("Логин: " + issuedCredential.username + "\nПароль: " + issuedCredential.password).then(() => notify("Данные для входа скопированы"))}><Copy/>Скопировать данные</button></div>
+      <div className="credential-password"><span>Код доступа</span><b>{issuedCredential.code}</b></div>
+      <p className="hint">Передайте учителю логин и этот код. Для веб-панели он вводит логин + код, а для подключения Telegram отправляет только код боту. Новый код заменяет старый сразу в обоих местах.</p>
+      <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setIssuedCredential(null)}>Закрыть</button><button type="button" className="btn primary" onClick={() => navigator.clipboard.writeText("Логин: " + issuedCredential.username + "\nКод доступа: " + issuedCredential.code).then(() => notify("Данные для входа скопированы"))}><Copy/>Скопировать данные</button></div>
     </section></div>}
-    {code && <div className="overlay" onMouseDown={() => setCode(null)}><section className="modal" onMouseDown={e => e.stopPropagation()}><div className="modal-head"><div><div className="eyebrow">ПОДКЛЮЧЕНИЕ TELEGRAM</div><h2>{code.full_name}</h2></div><button className="icon-btn" onClick={() => setCode(null)}><X/></button></div><div className="invite-code">{code.code}</div><p className="hint">Передайте этот код ученику/учителю для активации телеграмм-бота. Код действует 15 минут.</p><div className="modal-actions"><button className="btn ghost" onClick={() => setCode(null)}>Закрыть</button><button className="btn primary" onClick={() => navigator.clipboard.writeText(code.code).then(() => notify("Код скопирован"))}><Copy/>Скопировать</button></div></section></div>}
+    {code && <div className="overlay" onMouseDown={() => setCode(null)}><section className="modal" onMouseDown={e => e.stopPropagation()}><div className="modal-head"><div><div className="eyebrow">ПОДКЛЮЧЕНИЕ TELEGRAM</div><h2>{code.full_name}</h2></div><button className="icon-btn" onClick={() => setCode(null)}><X/></button></div><div className="invite-code">{code.code}</div><p className="hint">{code.shared_access ? "Это единый код учителя: он подходит для входа в веб-панель вместе с логином и для подключения Telegram. Он действует, пока администратор не заменит его новым." : "Передайте этот код ученику для активации телеграмм-бота. Код действует 15 минут."}</p><div className="modal-actions"><button className="btn ghost" onClick={() => setCode(null)}>Закрыть</button><button className="btn primary" onClick={() => navigator.clipboard.writeText(code.code).then(() => notify("Код скопирован"))}><Copy/>Скопировать</button></div></section></div>}
     {toast && <div className="toast"><Check/>{toast}</div>}
   </div>;
 }
