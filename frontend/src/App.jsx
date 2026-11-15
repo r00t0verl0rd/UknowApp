@@ -474,7 +474,7 @@ export default function App() {
         </section>}
         {page === "graph" && profile?.role === "admin" && <>
           <section className="graph-panel">
-            <div className="section-head">
+            <div className="graph-legend-row">
               <div className="legend graph-legend">
                 <div className="graph-legend-item"><span className="teacher-dot"/>Учителя <b>{overview?.counts.teachers || 0}</b></div>
                 <div className="graph-legend-item"><span className="student-dot"/>Ученики <b>{overview?.counts.students || 0}</b></div>
