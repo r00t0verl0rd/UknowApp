@@ -254,6 +254,7 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
         select(ConnectionCode.id).where(
             ConnectionCode.user_id == user.id,
             ConnectionCode.used_at.is_(None),
+            ConnectionCode.expires_at > datetime.now(timezone.utc) + timedelta(days=365),
         ).limit(1)
     ) is not None
     if target_role == "teacher" and (role_changed or not user.web_password_hash or not has_active_access_code):
