@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Activity, ArrowUpDown, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, Trash2, Users, X, Copy, Unlink, Paperclip, Moon, Sun, Smile, Link2, Info } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
@@ -248,11 +248,43 @@ export default function App() {
     return true;
   }), [messages, messageFilter]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const viewport = messagesViewportRef.current;
-    if (!viewport) return;
-    viewport.scrollTop = viewport.scrollHeight;
-  }, [selectedChat?.id, messageFilter, visibleMessages.length, visibleMessages[visibleMessages.length - 1]?.id]);
+    if (!viewport) return undefined;
+
+    const scrollToLatest = () => {
+      // New messages are appended at the bottom, directly above the composer.
+      viewport.scrollTop = viewport.scrollHeight;
+    };
+
+    scrollToLatest();
+    const frame = window.requestAnimationFrame(scrollToLatest);
+
+    // Keep the bottom in view when an attachment finishes loading and changes
+    // the height of an existing message (for example, audio/video metadata).
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(scrollToLatest)
+      : null;
+    const observeMessages = () => {
+      if (!resizeObserver) return;
+      Array.from(viewport.children).forEach(child => resizeObserver.observe(child));
+    };
+    observeMessages();
+
+    const mutationObserver = typeof MutationObserver !== "undefined"
+      ? new MutationObserver(() => {
+          observeMessages();
+          scrollToLatest();
+        })
+      : null;
+    mutationObserver?.observe(viewport, { childList: true });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      resizeObserver?.disconnect();
+      mutationObserver?.disconnect();
+    };
+  }, [selectedChat?.id, messageFilter, visibleMessages]);
 
   const visibleChats = useMemo(() => {
     const query = chatSearch.trim().toLocaleLowerCase("ru");
