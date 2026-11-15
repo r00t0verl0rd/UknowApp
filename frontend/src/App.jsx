@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, Trash2, Users, X, Link2, Copy, Unlink, Paperclip, Moon, Sun, Smile } from "lucide-react";
+import { Activity, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, Trash2, Users, X, Copy, Unlink, Paperclip, Moon, Sun, Smile } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 const ROLE = { teacher: "Учитель", student: "Ученик", admin: "Администратор" };
@@ -448,14 +448,13 @@ export default function App() {
           <div className="teacher-graph-summary"><Users size={18}/><b>{teacherGraph?.counts.students || 0}</b><span>активных учеников в вашей группе</span></div>
         </section>}
         {page === "graph" && profile?.role === "admin" && <>
-          <div className="metrics">
-            <div className="metric"><GraduationCap/><span>Учителя</span><b>{overview?.counts.teachers || 0}</b></div>
-            <div className="metric"><Users/><span>Ученики</span><b>{overview?.counts.students || 0}</b></div>
-            <div className="metric"><Link2/><span>Связи</span><b>{overview?.counts.assignments || 0}</b></div>
-            <div className="metric"><MessageCircle/><span>Переписки</span><b>{overview?.counts.conversations || 0}</b></div>
-          </div>
           <section className="graph-panel">
-            <div className="section-head"><div className="legend"><span className="teacher-dot"/> Учителя <span className="student-dot"/> Ученики</div></div>
+            <div className="section-head">
+              <div className="legend graph-legend">
+                <div className="graph-legend-item"><span className="teacher-dot"/>Учителя <b>{overview?.counts.teachers || 0}</b></div>
+                <div className="graph-legend-item"><span className="student-dot"/>Ученики <b>{overview?.counts.students || 0}</b></div>
+              </div>
+            </div>
             <div className="root-node"><img src="/logo.png" alt=""/><div><b>Администратор</b><small>Полное управление</small></div></div>
             <div className="teacher-grid">
               {activeTeachers.map(teacher => <section className="teacher-branch" key={teacher.id}>
