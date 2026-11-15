@@ -542,7 +542,15 @@ export default function App() {
         </>
         <button className={page === "chats" ? "active" : ""} onClick={() => setPage("chats")}><MessageCircle/>Переписки</button>
       </nav>
-      <div className="sidebar-bottom"><button className="logout" onClick={signOut}><LogOut/>Выйти</button></div>
+      <div className="sidebar-bottom">
+        <div className="mobile-quick-actions">
+          <button type="button" className="theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
+            {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
+          </button>
+          <button type="button" className="icon-btn" onClick={refresh} title="Обновить" aria-label="Обновить"><RefreshCw className={busy ? "spin" : ""}/></button>
+          <button className="logout" onClick={signOut} title="Выйти" aria-label="Выйти"><LogOut/></button>
+        </div>
+      </div>
     </aside>
 
     <main className={"main" + (page === "chats" ? " chats-main" : "")}>
