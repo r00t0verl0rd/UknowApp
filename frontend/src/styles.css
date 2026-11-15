@@ -846,6 +846,37 @@ img, video, audio { max-width: 100%; }
 }
 .theme-toggle svg { width: 17px; height: 17px; }
 
+/* Keep desktop theme and refresh controls visually consistent with the compact touch controls. */
+.topbar-actions > .theme-toggle,
+.topbar-actions > .icon-btn {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 6px;
+  border: 1px solid #e2dce9;
+  border-radius: 9px;
+  background: #f0eef3;
+  color: #573e99;
+  box-shadow: 0 2px 5px rgba(41, 34, 63, .06);
+  display: grid;
+  place-items: center;
+}
+.topbar-actions > .theme-toggle svg,
+.topbar-actions > .icon-btn svg {
+  width: 15px;
+  height: 15px;
+}
+.topbar-actions > .theme-toggle:hover,
+.topbar-actions > .icon-btn:hover {
+  background: #eae4f4;
+  border-color: #d8c9ed;
+  color: #573e99;
+  box-shadow: 0 3px 8px rgba(87, 62, 153, .10);
+}
+
+
 /* Desktop and tablet actions stay in the sidebar footer / top bar. */
 .sidebar-bottom { margin-top: auto; }
 .sidebar-bottom > .desktop-logout { display: flex; }
