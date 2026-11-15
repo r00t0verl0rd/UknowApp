@@ -140,8 +140,8 @@ async def start(message: TgMessage, bot: Bot):
                 teacher = conversation.assignment.teacher
                 await message.answer(
                     "😊 Вы подключены к UknowApp.\n"
-                    "Ваш учитель: " + teacher.full_name + ".\n\n"
-                    "Отправляйте сюда сообщения, фото, видео, видеокружочки, голосовые и документы."
+                    "🎓 Ваш учитель: " + teacher.full_name + ".\n\n"
+                    "Пишите сюда и отправляйте файлы — всё попадёт в вашу переписку."
                 )
             else:
                 await message.answer(
@@ -532,9 +532,9 @@ async def route_message(message: TgMessage, bot: Bot):
                         conversation = current_student_conversation(db, linked_user.id)
                         if conversation and conversation.status == "active":
                             await message.answer(
-                                "😊 Готово! Вы подключены к UknowApp.\n"
-                                "Ваш учитель: " + conversation.assignment.teacher.full_name + ".\n\n"
-                                "Пишите сообщения или отправляйте фото, видео, кружочки, голосовые и файлы прямо сюда."
+                                "😊 Вы подключены к UknowApp.\n"
+                                "🎓 Ваш учитель: " + conversation.assignment.teacher.full_name + ".\n\n"
+                                "Пишите сюда и отправляйте файлы — всё попадёт в вашу переписку."
                             )
                         else:
                             await message.answer(
