@@ -37,13 +37,15 @@ def message_preview(row: Optional[Message]) -> str:
     body = " ".join((row.text or "").strip().split())
     labels = {
         "voice": "🎤 Голосовое сообщение",
-        "video_note": "⭕ Видеокружок",
+        "video_note": "🎥 Видеокружок",
         "photo": "🖼 Фотография",
         "video": "🎬 Видео",
         "audio": "🎵 Аудио",
         "document": "📎 Документ",
-        "sticker": "Стикер",
-        "animation": "GIF-анимация",
+        "sticker": "🤩 Стикер",
+        "video_sticker": "🎞 Видео-стикер",
+        "animated_sticker": "✨ Анимированный стикер",
+        "animation": "🎞 Анимация",
         "location": "Геопозиция",
         "contact": "Контакт",
         "poll": "Опрос",
@@ -261,7 +263,7 @@ def teacher_panel_view(
         for item in visible:
             student_name = escape(item["student"].full_name)
             notice = " · " + str(item["unanswered"]) + " новых" if item["unanswered"] else ""
-            lines.append("👤 " + student_name + notice)
+            lines.append("😊 " + student_name + notice)
             for row in item["unread"][-3:]:
                 lines.append("   " + escape(message_preview(row)))
             if item["unanswered"] > 3:
