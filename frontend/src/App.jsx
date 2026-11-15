@@ -233,7 +233,7 @@ export default function App() {
     if (messageFilter === "media") return kind !== "text" || Boolean(message.metadata?.media);
     if (messageFilter === "audio") return ["voice", "audio"].includes(kind);
     if (messageFilter === "photos") return kind === "photo";
-    if (messageFilter === "files") return ["document", "video", "video_note", "animation"].includes(kind);
+    if (messageFilter === "files") return ["document", "video", "video_note", "video_sticker", "animation", "animated_sticker", "sticker"].includes(kind);
     return true;
   }), [messages, messageFilter]);
   const visibleChats = useMemo(() => {
