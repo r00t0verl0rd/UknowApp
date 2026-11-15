@@ -821,6 +821,8 @@ img, video, audio { max-width: 100%; }
 
 
 
+.mobile-quick-actions { display: none; }
+
 /* Personal display preferences: timezone selector and soft dark theme. */
 .topbar-actions {
   display: flex;
@@ -4093,8 +4095,12 @@ body {
   .sidebar nav button svg { width: 16px; height: 16px; flex: none; }
   .sidebar nav button i { display: none; }
   .sidebar-bottom { display: block; position: absolute; top: 8px; right: 10px; margin: 0; }
-  .logout { width: 34px; height: 34px; justify-content: center; padding: 7px; margin: 0; font-size: 0; }
-  .logout svg { width: 17px; height: 17px; }
+  .mobile-quick-actions { display: flex; align-items: center; gap: 6px; }
+  .mobile-quick-actions > button { flex: 0 0 38px; width: 38px; height: 38px; min-width: 38px; min-height: 38px; padding: 8px; margin: 0; border-radius: 11px; display: grid; place-items: center; }
+  .mobile-quick-actions > button svg { width: 19px; height: 19px; min-width: 19px; min-height: 19px; }
+  .mobile-quick-actions .logout { font-size: 0; }
+  .mobile-quick-actions .icon-btn { color: var(--purple); }
+  .topbar-actions { display: none; }
   .main { margin: 0; width: 100%; min-width: 0; }
   .topbar { height: 48px; padding: 0 14px; }
   .topbar > div { min-width: 0; gap: 5px; font-size: 11px; }
