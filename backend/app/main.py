@@ -43,8 +43,16 @@ async def run_telegram_bot(bot, dispatcher) -> None:
             )
             await bot.delete_webhook(drop_pending_updates=False)
             logger.warning("TELEGRAM_POLLING_STARTED")
+            polling_started_at = asyncio.get_running_loop().time()
             await dispatcher.start_polling(bot, handle_signals=False)
-            return
+            # start_polling normally runs until shutdown. If it returns while
+            # the application is still alive, treat that as an unexpected stop
+            # and bring polling back instead of silently leaving the bot offline.
+            logger.error("TELEGRAM_POLLING_STOPPED_UNEXPECTEDLY")
+            if asyncio.get_running_loop().time() - polling_started_at >= 60:
+                retry_delay = 5
+            await asyncio.sleep(retry_delay)
+            retry_delay = min(retry_delay * 2, 60)
         except asyncio.CancelledError:
             raise
         except Exception as exc:
