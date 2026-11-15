@@ -7084,3 +7084,145 @@ button:focus-visible, .btn:focus-visible {
   color: #e2d9ff !important;
   box-shadow: none !important;
 }
+
+
+/* Users toolbar: stable alignment, static count, equal-height search and sort. */
+.toolbar.user-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(220px, 1fr) minmax(190px, 230px) max-content minmax(max-content, auto);
+  align-items: center !important;
+  gap: 10px !important;
+}
+.toolbar.user-toolbar > .search,
+.toolbar.user-toolbar > .user-sort {
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+}
+.toolbar.user-toolbar > .search {
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+}
+.toolbar.user-toolbar > .search input {
+  height: 100% !important;
+  min-height: 0 !important;
+  padding-block: 0 !important;
+  line-height: normal !important;
+}
+.toolbar.user-toolbar > .user-sort {
+  display: flex !important;
+  align-items: center !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  padding: 0 10px !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+}
+.toolbar.user-toolbar > .user-sort select {
+  height: 100% !important;
+  min-height: 0 !important;
+  padding-block: 0 !important;
+  line-height: normal !important;
+}
+.toolbar.user-toolbar > .user-count {
+  display: inline-flex !important;
+  align-items: baseline !important;
+  justify-self: start !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--muted) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+  cursor: default !important;
+  pointer-events: none !important;
+}
+.toolbar.user-toolbar > .user-count b {
+  display: inline !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--ink) !important;
+  font-size: inherit !important;
+  font-weight: 700 !important;
+}
+.toolbar.user-toolbar > .user-add-btn {
+  justify-self: end !important;
+  margin-left: auto !important;
+  min-height: 42px !important;
+  height: 42px !important;
+  padding: 0 15px !important;
+  white-space: nowrap !important;
+}
+
+/* Tablet: two fixed rows, so controls never wrap unpredictably. */
+@media (min-width: 761px) and (max-width: 1200px) {
+  .toolbar.user-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(190px, .8fr) !important;
+    grid-template-rows: 42px 42px !important;
+    gap: 10px !important;
+  }
+  .toolbar.user-toolbar > .search {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+  }
+  .toolbar.user-toolbar > .user-sort {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+  }
+  .toolbar.user-toolbar > .user-count {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    justify-self: start !important;
+  }
+  .toolbar.user-toolbar > .user-add-btn {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    justify-self: end !important;
+    margin-left: 0 !important;
+  }
+}
+
+/* Phones: a deliberate stack with no accidental line wrapping. */
+@media (max-width: 760px) {
+  .toolbar.user-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    grid-template-rows: 42px 42px auto !important;
+    gap: 8px !important;
+  }
+  .toolbar.user-toolbar > .search {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+  }
+  .toolbar.user-toolbar > .user-sort {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+  }
+  .toolbar.user-toolbar > .user-count {
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+    justify-self: start !important;
+    white-space: nowrap !important;
+  }
+  .toolbar.user-toolbar > .user-add-btn {
+    grid-column: 2 !important;
+    grid-row: 3 !important;
+    justify-self: end !important;
+    width: auto !important;
+    margin: 0 !important;
+  }
+}
