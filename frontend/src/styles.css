@@ -3253,3 +3253,93 @@ img, video, audio { max-width: 100%; }
     height: 25px;
   }
 }
+
+
+/* Make graph totals easy to notice: clear, positive number chips with
+   enough visual weight to encourage progress without competing with the graph. */
+.graph-panel .graph-legend {
+  gap: 18px;
+}
+
+.graph-panel .graph-legend-item {
+  gap: 9px;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.graph-panel .graph-legend-item b {
+  min-width: 36px;
+  min-height: 32px;
+  padding: 0 11px;
+  border-radius: 11px;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 3px 10px rgba(87, 62, 153, .12);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.graph-panel .graph-legend-item:first-child b {
+  background: linear-gradient(145deg, #eee8fb, #e2d8f5);
+  color: #6243a2;
+}
+
+.graph-panel .graph-legend-item:last-child b {
+  background: linear-gradient(145deg, #fff0f1, #f9dfe3);
+  color: #c24b60;
+  box-shadow: 0 3px 10px rgba(194, 75, 96, .12);
+}
+
+.graph-panel .graph-legend-item b:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 13px rgba(87, 62, 153, .16);
+}
+
+:root[data-theme="dark-soft"] .graph-panel .graph-legend-item:first-child b {
+  background: linear-gradient(145deg, #45405e, #3c3853) !important;
+  color: #d9cdfb !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .16);
+}
+
+:root[data-theme="dark-soft"] .graph-panel .graph-legend-item:last-child b {
+  background: linear-gradient(145deg, #563b47, #49333e) !important;
+  color: #ffc3cc !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .16);
+}
+
+@media (max-width: 760px) {
+  .graph-panel .graph-legend {
+    gap: 12px;
+  }
+
+  .graph-panel .graph-legend-item {
+    gap: 7px;
+    font-size: 11px;
+  }
+
+  .graph-panel .graph-legend-item b {
+    min-width: 33px;
+    min-height: 29px;
+    padding: 0 9px;
+    font-size: 15px;
+    border-radius: 9px;
+  }
+}
+
+@media (max-width: 380px) {
+  .graph-panel .graph-legend {
+    gap: 8px;
+  }
+
+  .graph-panel .graph-legend-item {
+    gap: 6px;
+    font-size: 10px;
+  }
+
+  .graph-panel .graph-legend-item b {
+    min-width: 30px;
+    min-height: 27px;
+    padding: 0 8px;
+    font-size: 14px;
+  }
+}
