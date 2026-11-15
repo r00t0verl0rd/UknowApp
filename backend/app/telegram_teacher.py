@@ -531,6 +531,21 @@ async def handle_teacher_keyboard_message(
     page = panel.page_index if panel else 0
     actions, page, total_pages = teacher_keyboard_actions(db, teacher, page)
 
+    # Older Telegram clients may still display the pre-emoji student buttons.
+    # Consume those stale taps and refresh the menu instead of routing the name
+    # as an ordinary message to the currently selected student.
+    legacy_student_labels = {
+        item["student"].full_name.strip()
+        for item in teacher_conversations(db, teacher)
+    }
+    if body not in actions and body in legacy_student_labels:
+        try:
+            await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+        except Exception:
+            pass
+        await update_teacher_panel(bot, db, teacher, force_keyboard_refresh=True)
+        return True
+
     if body in actions:
         conversation = actions[body]
         if conversation is None:
