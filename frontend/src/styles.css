@@ -6582,3 +6582,147 @@ button:disabled,
   box-shadow: inset 3px 0 0 #9587c6 !important;
 }
 
+/* Users toolbar: compact, width-safe alignment on every viewport. */
+.toolbar.user-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(190px, 280px) minmax(170px, 210px) max-content max-content;
+  justify-content: start;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0 0 14px;
+  box-sizing: border-box;
+}
+.toolbar.user-toolbar > * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.toolbar.user-toolbar > .search {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  flex: none;
+}
+.toolbar.user-toolbar > .search input {
+  width: 100%;
+  min-width: 0;
+}
+.toolbar.user-toolbar > .user-sort {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  padding-inline: 9px;
+  box-sizing: border-box;
+}
+.toolbar.user-toolbar > .user-sort select {
+  display: block;
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.toolbar.user-toolbar > .user-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+.toolbar.user-toolbar > .user-add-btn {
+  justify-self: start;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 9px 13px;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+/* On tablets the search gets its own row; the remaining controls stay
+   in a compact two-column grid rather than spreading across the screen. */
+@media (min-width: 761px) and (max-width: 1200px) {
+  .toolbar.user-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 9px;
+  }
+  .toolbar.user-toolbar > .search {
+    grid-column: 1 / -1;
+  }
+  .toolbar.user-toolbar > .user-sort {
+    grid-column: 1;
+    width: 100%;
+  }
+  .toolbar.user-toolbar > .user-count {
+    grid-column: 2;
+    justify-self: end;
+    white-space: normal;
+    text-align: right;
+  }
+  .toolbar.user-toolbar > .user-add-btn {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+}
+
+@media (max-width: 760px) {
+  .toolbar.user-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+  }
+  .toolbar.user-toolbar > .search {
+    grid-column: 1 / -1;
+  }
+  .toolbar.user-toolbar > .user-sort {
+    grid-column: 1;
+    width: 100%;
+  }
+  .toolbar.user-toolbar > .user-count {
+    grid-column: 2;
+    justify-self: stretch;
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .toolbar.user-toolbar > .user-add-btn {
+    grid-column: 1 / -1;
+    justify-self: end;
+    width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .toolbar.user-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .toolbar.user-toolbar > .search,
+  .toolbar.user-toolbar > .user-sort,
+  .toolbar.user-toolbar > .user-count,
+  .toolbar.user-toolbar > .user-add-btn {
+    grid-column: 1;
+    width: 100%;
+    justify-self: stretch;
+  }
+  .toolbar.user-toolbar > .user-count {
+    justify-content: space-between;
+    text-align: left;
+  }
+  .toolbar.user-toolbar > .user-add-btn {
+    justify-content: center;
+  }
+}
+
