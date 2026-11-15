@@ -6114,54 +6114,242 @@ input::placeholder, textarea::placeholder { color: #a49daf; }
   box-shadow: none;
 }
 
-/* Keep the Users toolbar inside the available tablet content width. */
-@media (min-width: 761px) and (max-width: 1024px) {
-  .toolbar.user-toolbar {
-    display: grid;
+/* Users page: responsive layout rules shared by desktop, tablet and mobile. */
+.user-toolbar {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto auto auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.user-toolbar > .search {
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  flex: none;
+  box-sizing: border-box;
+}
+
+.user-toolbar > .user-sort {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.user-toolbar > .user-sort select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.user-toolbar > .user-count {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+}
+
+.user-toolbar > .user-add-btn {
+  justify-self: end;
+  min-width: 0;
+  max-width: 100%;
+  padding-inline: clamp(10px, 1.3vw, 18px);
+  white-space: normal;
+  line-height: 1.25;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.user-list {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.user-row {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.user-person-info,
+.user-actions,
+.user-info-wrap {
+  min-width: 0;
+}
+
+.user-actions {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.user-info-popover {
+  right: 0;
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+}
+
+/* Narrow desktop windows and tablets: controls wrap instead of forcing
+   the page wider than the space left beside the sidebar. */
+@media (min-width: 761px) and (max-width: 1200px) {
+  .user-toolbar {
     grid-template-columns: minmax(0, 1fr) minmax(0, auto);
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
+    gap: 9px;
   }
 
   .user-toolbar > .search {
     grid-column: 1 / -1;
-    width: 100%;
-    min-width: 0;
-    max-width: none;
-    flex: none;
-    box-sizing: border-box;
   }
 
   .user-toolbar > .user-sort {
-    min-width: 0;
-    max-width: 100%;
-    padding-inline: 10px;
-    box-sizing: border-box;
-  }
-
-  .user-toolbar > .user-sort select {
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
+    grid-column: 1;
   }
 
   .user-toolbar > .user-count {
-    min-width: 0;
-    max-width: 100%;
-    padding-inline: 10px;
-    gap: 6px;
-    white-space: normal;
-    box-sizing: border-box;
+    grid-column: 2;
+    justify-self: end;
   }
 
   .user-toolbar > .user-add-btn {
     grid-column: 1 / -1;
     justify-self: end;
-    width: auto;
-    max-width: 100%;
+  }
+
+  .user-row {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px 12px;
+    padding-inline: clamp(10px, 1.6vw, 18px);
+  }
+
+  .user-row > .avatar {
+    grid-column: 1;
+    grid-row: 1;
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+  }
+
+  .user-row > .user-person-info {
+    grid-column: 2;
+    grid-row: 1;
     min-width: 0;
-    box-sizing: border-box;
+  }
+
+  .user-row > .user-actions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: flex-end;
+    margin: 0;
+    padding-top: 9px;
+    border-top: 1px solid var(--line);
   }
 }
 
+/* Mobile: two compact columns for filter/count, with a full-width add action. */
+@media (max-width: 760px) {
+  .user-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .user-toolbar > .search,
+  .user-toolbar > .user-add-btn {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .user-toolbar > .user-sort {
+    grid-column: 1;
+    width: 100%;
+    padding-inline: 9px;
+  }
+
+  .user-toolbar > .user-count {
+    grid-column: 2;
+    justify-self: stretch;
+    justify-content: center;
+    gap: 5px;
+    padding-inline: 7px;
+    font-size: clamp(9px, 2.7vw, 11px);
+    text-align: center;
+  }
+
+  .user-toolbar > .user-add-btn {
+    min-height: 44px;
+  }
+
+  .user-row {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px 10px;
+    padding: 12px 8px;
+  }
+
+  .user-row > .avatar {
+    grid-column: 1;
+    grid-row: 1;
+    width: 38px;
+    height: 38px;
+    flex-basis: 38px;
+  }
+
+  .user-row > .user-person-info {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+  }
+
+  .user-row > .user-person-info > b {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .user-row > .user-actions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: flex-end;
+    gap: 6px;
+    margin: 0;
+    padding-top: 9px;
+    border-top: 1px solid var(--line);
+  }
+
+  .user-action-btn.connect-toggle {
+    min-width: 118px;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 380px) {
+  .user-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .user-toolbar > .search,
+  .user-toolbar > .user-sort,
+  .user-toolbar > .user-count,
+  .user-toolbar > .user-add-btn {
+    grid-column: 1;
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .user-toolbar > .user-count {
+    justify-content: space-between;
+  }
+
+  .user-row > .user-actions {
+    justify-content: flex-start;
+  }
+}
