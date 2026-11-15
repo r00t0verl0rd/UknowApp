@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .models import Assignment, ConnectionCode, Conversation, Message, User
+from .security import verify_web_password
 
 
 EMAIL_RE = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.I)
@@ -98,6 +99,27 @@ def claim_connection_code(
     normalized = re.sub(r"[\s-]", "", raw_code).upper()
     if not CONNECTION_CODE_RE.fullmatch(normalized):
         return None, "invalid_format"
+
+    # Teacher access codes are persistent and shared with web-panel login.
+    # A single rotation replaces the hash used by both authentication paths.
+    teachers = db.scalars(
+        select(User).where(User.role == "teacher", User.active.is_(True))
+    ).all()
+    for teacher in teachers:
+        if teacher.web_password_hash and verify_web_password(normalized, teacher.web_password_hash):
+            existing_user = db.scalar(select(User).where(User.telegram_id == telegram_id))
+            if existing_user and existing_user.id != teacher.id:
+                return None, "telegram_already_linked"
+            if teacher.telegram_id and teacher.telegram_id != telegram_id:
+                return None, "account_already_linked"
+            teacher.telegram_id = telegram_id
+            try:
+                db.commit()
+                db.refresh(teacher)
+            except IntegrityError:
+                db.rollback()
+                return None, "telegram_already_linked"
+            return teacher, "ok"
 
     code_hash = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
     connection_code = db.scalar(
