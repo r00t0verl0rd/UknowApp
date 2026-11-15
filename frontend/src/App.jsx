@@ -546,7 +546,7 @@ export default function App() {
     </aside>
 
     <main className={"main" + (page === "chats" ? " chats-main" : "")}>
-      <header className="topbar"><div className="topbar-context"><b>{({ graph: profile?.role === "teacher" ? "Моя группа" : "Структура", users: "Пользователи", chats: "Переписки" })[page]}</b><small className="topbar-user">{profile?.full_name}</small></div><div className="topbar-actions">
+      <header className="topbar"><div className="topbar-context"><small className="topbar-user">{profile?.full_name}</small></div><div className="topbar-actions">
         <button type="button" className="theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
           {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
         </button>
