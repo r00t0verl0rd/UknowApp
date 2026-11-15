@@ -206,6 +206,15 @@ def create_user(payload: UserCreate, _: Admin, db: Db):
     )
     db.add(user)
     try:
+        db.flush()
+        if issued_password:
+            now = datetime.now(timezone.utc)
+            db.add(ConnectionCode(
+                user_id=user.id,
+                code_hash=hashlib.sha256(issued_password.encode("utf-8")).hexdigest(),
+                created_at=now,
+                expires_at=now + timedelta(days=36500),
+            ))
         db.commit()
         db.refresh(user)
     except IntegrityError:
@@ -275,6 +284,23 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
             assignment.closed_at = datetime.now(timezone.utc)
             if assignment.conversation:
                 assignment.conversation.status = "closed"
+    if issued_password:
+        now = datetime.now(timezone.utc)
+        db.query(ConnectionCode).filter(
+            ConnectionCode.user_id == user.id,
+            ConnectionCode.used_at.is_(None),
+        ).update({ConnectionCode.used_at: now}, synchronize_session=False)
+        db.add(ConnectionCode(
+            user_id=user.id,
+            code_hash=hashlib.sha256(issued_password.encode("utf-8")).hexdigest(),
+            created_at=now,
+            expires_at=now + timedelta(days=36500),
+        ))
+    elif target_role != "teacher":
+        db.query(ConnectionCode).filter(
+            ConnectionCode.user_id == user.id,
+            ConnectionCode.used_at.is_(None),
+        ).update({ConnectionCode.used_at: datetime.now(timezone.utc)}, synchronize_session=False)
     try:
         db.commit()
         db.refresh(user)
@@ -294,10 +320,17 @@ def regenerate_teacher_access_code(user_id: int, _: Admin, db: Db):
         raise HTTPException(status_code=404, detail="Учитель не найден")
     issued_password = generate_teacher_password()
     user.web_password_hash = hash_web_password(issued_password)
+    now = datetime.now(timezone.utc)
     db.query(ConnectionCode).filter(
         ConnectionCode.user_id == user.id,
         ConnectionCode.used_at.is_(None),
-    ).update({ConnectionCode.used_at: datetime.now(timezone.utc)}, synchronize_session=False)
+    ).update({ConnectionCode.used_at: now}, synchronize_session=False)
+    db.add(ConnectionCode(
+        user_id=user.id,
+        code_hash=hashlib.sha256(issued_password.encode("utf-8")).hexdigest(),
+        created_at=now,
+        expires_at=now + timedelta(days=36500),
+    ))
     db.query(PanelSession).filter(
         PanelSession.role == "teacher",
         PanelSession.user_id == user.id,
@@ -404,10 +437,17 @@ def generate_connection_code(user_id: int, _: Admin, db: Db):
             PanelSession.role == "teacher",
             PanelSession.user_id == user.id,
         ).delete(synchronize_session=False)
+        now = datetime.now(timezone.utc)
         db.query(ConnectionCode).filter(
             ConnectionCode.user_id == user.id,
             ConnectionCode.used_at.is_(None),
-        ).update({ConnectionCode.used_at: datetime.now(timezone.utc)}, synchronize_session=False)
+        ).update({ConnectionCode.used_at: now}, synchronize_session=False)
+        db.add(ConnectionCode(
+            user_id=user.id,
+            code_hash=hashlib.sha256(access_code.encode("utf-8")).hexdigest(),
+            created_at=now,
+            expires_at=now + timedelta(days=36500),
+        ))
         db.commit()
         db.refresh(user)
         return {
