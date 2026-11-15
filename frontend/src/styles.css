@@ -619,7 +619,7 @@ img, video, audio { max-width: 100%; }
   }
   .brand { padding: 0 42px 9px 2px; font-size: 19px; gap: 8px; }
   .brand img { width: 32px; height: 32px; }
-  .school-label, .secure { display: none; }
+  .school-label { display: none; }
   .sidebar nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   .sidebar nav button {
     min-width: 0;
@@ -1311,8 +1311,7 @@ img, video, audio { max-width: 100%; }
 :root[data-theme="dark-soft"] .chat-item,
 :root[data-theme="dark-soft"] .person-card,
 :root[data-theme="dark-soft"] .root-node,
-:root[data-theme="dark-soft"] .teacher-graph-card,
-:root[data-theme="dark-soft"] .secure {
+:root[data-theme="dark-soft"] .teacher-graph-card {
   background: #252d3b !important;
   color: #e4e8f0 !important;
   border-color: #394457 !important;
