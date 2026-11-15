@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, ArrowUpDown, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, Trash2, Users, X, Copy, Unlink, Paperclip, Moon, Sun, Smile, Link2 } from "lucide-react";
+import { Activity, ArrowUpDown, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, Trash2, Users, X, Copy, Unlink, Paperclip, Moon, Sun, Smile, Link2, Info } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 const ROLE = { teacher: "Учитель", student: "Ученик", admin: "Администратор" };
@@ -95,6 +95,7 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [search, setSearch] = useState("");
   const [userSort, setUserSort] = useState("name-asc");
+  const [userInfo, setUserInfo] = useState(null);
   const [chatSearch, setChatSearch] = useState("");
   const [chatFilter, setChatFilter] = useState("all");
   const [messageFilter, setMessageFilter] = useState("all");
@@ -501,20 +502,32 @@ export default function App() {
             <span className="user-count">Количество пользователей: <b>{visibleUsers.length}</b></span>
             <button className="btn primary user-add-btn" onClick={() => openCreate()}><Plus/>Добавить пользователя</button>
           </div>
-          <div className="user-list">{visibleUsers.map(user => <div className="user-row" key={user.id}>
+          <div className="user-list">{visibleUsers.map(user => <div className={"user-row" + (userInfo === user.id ? " is-info-open" : "")} key={user.id}>
             <div className={"avatar " + user.role}>{user.role === "teacher" ? <GraduationCap/> : user.role === "student" ? <Smile/> : <Users/>}</div>
             <div className="person-info user-person-info">
               <b>{user.full_name}</b>
-              <small className="user-meta">
-                <span className={"user-status-dot " + (user.active ? "is-active" : "is-inactive")}/>
-                {user.active ? "Активен" : "Отключён"}
-                <span className={"telegram-state " + (user.telegram_id ? "is-connected" : "")} title={user.telegram_id ? "Telegram подключён" : "Telegram не подключён"}><Link2 size={14}/>{user.telegram_id ? "Telegram подключён" : "Telegram не подключён"}</span>
-                {user.role === "teacher" && <span className="user-login">Логин: {user.web_username || user.full_name}</span>}
-              </small>
             </div>
             <div className="user-actions">
-              {user.telegram_id && <button className="user-action-btn disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram" aria-label="Отключить Telegram"><Unlink/><span>Отключить</span></button>}
-              {user.active && (user.role === "teacher" || !user.telegram_id) && <button className="user-action-btn code-btn" onClick={() => makeCode(user)} title={user.role === "teacher" ? "Создать новый код доступа" : "Показать код подключения"} aria-label={user.role === "teacher" ? "Новый код доступа" : "Код подключения"}><Copy/><span>Код</span></button>}
+              {user.telegram_id
+                ? <button className="user-action-btn connect-toggle disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram" aria-label="Отключить Telegram"><Unlink/><span>Отключить</span></button>
+                : <button className="user-action-btn connect-toggle connect" disabled={!user.active} onClick={() => makeCode(user)} title={user.active ? "Создать код для подключения" : "Сначала активируйте участника"} aria-label="Подключить участника"><Link2/><span>Подключить</span></button>}
+              <div className="user-info-wrap">
+                <button
+                  className={"user-action-btn user-info-btn" + (userInfo === user.id ? " is-open" : "")}
+                  type="button"
+                  title="Информация об участнике"
+                  aria-label={"Информация об участнике: " + user.full_name}
+                  aria-expanded={userInfo === user.id}
+                  aria-controls={"user-info-" + user.id}
+                  onClick={() => setUserInfo(current => current === user.id ? null : user.id)}
+                ><Info/></button>
+                {userInfo === user.id && <div className="user-info-popover" id={"user-info-" + user.id} role="status">
+                  <div className="user-info-popover-head"><b>Информация</b><button type="button" onClick={() => setUserInfo(null)} aria-label="Закрыть"><X size={14}/></button></div>
+                  <div className="user-info-line"><span className={"user-status-dot " + (user.active ? "is-active" : "is-inactive")}/><span>{user.active ? "Активен" : "Отключён"}</span></div>
+                  <div className="user-info-line"><Link2 size={14}/><span>{user.telegram_id ? "Telegram подключён" : "Telegram не подключён"}</span></div>
+                  {user.role === "teacher" && <div className="user-info-login"><span>Логин</span><b>{user.web_username || user.full_name}</b></div>}
+                </div>}
+              </div>
               <button className="user-action-btn edit-btn" onClick={() => openEdit(user)} title="Изменить профиль" aria-label="Изменить профиль"><Pencil/></button>
               <button className="user-action-btn danger-icon user-delete" onClick={() => removeUser(user)} title="Удалить пользователя" aria-label="Удалить пользователя"><Trash2/></button>
             </div>
