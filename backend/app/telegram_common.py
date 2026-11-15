@@ -12,7 +12,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .models import Assignment, ConnectionCode, Conversation, Message, User
-from .security import verify_web_password
 
 
 EMAIL_RE = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.I)
@@ -100,33 +99,36 @@ def claim_connection_code(
     if not CONNECTION_CODE_RE.fullmatch(normalized):
         return None, "invalid_format"
 
-    # Teacher access codes are persistent and shared with web-panel login.
-    # A single rotation replaces the hash used by both authentication paths.
-    teachers = db.scalars(
-        select(User).where(User.role == "teacher", User.active.is_(True))
-    ).all()
-    for teacher in teachers:
-        if teacher.web_password_hash and verify_web_password(normalized, teacher.web_password_hash):
-            existing_user = db.scalar(select(User).where(User.telegram_id == telegram_id))
-            if existing_user and existing_user.id != teacher.id:
-                return None, "telegram_already_linked"
-            if teacher.telegram_id and teacher.telegram_id != telegram_id:
-                return None, "account_already_linked"
-            teacher.telegram_id = telegram_id
-            try:
-                db.commit()
-                db.refresh(teacher)
-            except IntegrityError:
-                db.rollback()
-                return None, "telegram_already_linked"
-            return teacher, "ok"
-
     code_hash = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
     connection_code = db.scalar(
         select(ConnectionCode).where(ConnectionCode.code_hash == code_hash)
     )
     if not connection_code:
         return None, "invalid"
+
+    user = db.get(User, connection_code.user_id)
+    if not user or not user.active or user.role not in {"teacher", "student"}:
+        return None, "inactive"
+
+    # Teacher access codes are persistent and shared with web-panel login.
+    # They remain valid until an administrator rotates the code.
+    if user.role == "teacher":
+        if connection_code.used_at is not None:
+            return None, "used"
+        existing_user = db.scalar(select(User).where(User.telegram_id == telegram_id))
+        if existing_user and existing_user.id != user.id:
+            return None, "telegram_already_linked"
+        if user.telegram_id and user.telegram_id != telegram_id:
+            return None, "account_already_linked"
+        user.telegram_id = telegram_id
+        try:
+            db.commit()
+            db.refresh(user)
+        except IntegrityError:
+            db.rollback()
+            return None, "telegram_already_linked"
+        return user, "ok"
+
     if connection_code.used_at is not None:
         return None, "used"
 
@@ -138,12 +140,6 @@ def claim_connection_code(
         connection_code.used_at = now
         db.commit()
         return None, "expired"
-
-    user = db.get(User, connection_code.user_id)
-    if not user or not user.active or user.role not in {"teacher", "student"}:
-        connection_code.used_at = now
-        db.commit()
-        return None, "inactive"
 
     existing_user = db.scalar(
         select(User).where(User.telegram_id == telegram_id)
