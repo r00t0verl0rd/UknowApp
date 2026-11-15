@@ -338,13 +338,31 @@ export default function App() {
   }
 
   async function signIn(event) {
-    event.preventDefault(); setError("");
+    event.preventDefault();
+    setError("");
+
+    if (!login.trim()) {
+      setError("Введите логин");
+      return;
+    }
+    if (!password) {
+      setError("Введите пароль");
+      return;
+    }
+
     try {
-      const response = await fetch(API + "/api/auth/login", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: login, password }) });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.detail || "Не удалось войти");
+      const response = await fetch(API + "/api/auth/login", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: login.trim(), password }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const detail = Array.isArray(result.detail)
+          ? result.detail.map(item => item.msg || "Некорректные данные").join("; ")
+          : typeof result.detail === "string" ? result.detail : "Не удалось войти";
+        throw new Error(detail);
+      }
       sessionStorage.setItem("uknowapp-auth", "1"); setProfile(result); setPage("graph"); setAuth("1"); setPassword("");
-    } catch (e) { setError(e.message); }
+    } catch (e) {
+      setError(e.message || "Не удалось войти");
+    }
   }
 
   async function signOut() {
