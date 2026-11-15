@@ -6838,3 +6838,249 @@ button:disabled,
     min-width: 0;
   }
 }
+
+
+/* Calm, consistent button language — refined hierarchy and lighter surfaces. */
+:root {
+  --button-bg: #fff;
+  --button-bg-hover: #f5f1fa;
+  --button-border: #e9e4ef;
+  --button-border-hover: #d9cde9;
+  --button-text: #625b70;
+  --button-primary: #6549a4;
+  --button-primary-hover: #563c91;
+  --button-danger-bg: #fff;
+  --button-danger-border: #eee7ed;
+  --button-danger-text: #a66a75;
+}
+
+/* Secondary actions should feel quiet; reserve filled colour for the main action. */
+.btn:not(.primary):not(.danger):not(.disconnect),
+.icon-btn,
+.theme-toggle,
+.person-actions button:not(.danger-icon),
+.user-action-btn:not(.connect):not(.disconnect):not(.user-delete),
+.graph-add-participant,
+.attach-control,
+.chat-filter-segment button,
+.user-info-popover-head button,
+.selected-file button {
+  background: #fff !important;
+  border: 1px solid var(--button-border) !important;
+  color: var(--button-text) !important;
+  box-shadow: none !important;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s ease !important;
+}
+.btn:not(.primary):not(.danger):not(.disconnect):hover:not(:disabled),
+.icon-btn:hover:not(:disabled),
+.theme-toggle:hover:not(:disabled),
+.person-actions button:not(.danger-icon):hover:not(:disabled),
+.user-action-btn:not(.connect):not(.disconnect):not(.user-delete):hover:not(:disabled),
+.graph-add-participant:hover:not(:disabled),
+.attach-control:hover,
+.chat-filter-segment button:hover:not(:disabled),
+.user-info-popover-head button:hover,
+.selected-file button:hover {
+  background: #f5f1fa !important;
+  border-color: #d9cde9 !important;
+  color: #594091 !important;
+  box-shadow: none !important;
+}
+.btn:not(.primary):not(.danger):not(.disconnect):active:not(:disabled),
+.icon-btn:active:not(:disabled),
+.person-actions button:active:not(:disabled),
+.user-action-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn.primary {
+  background: var(--button-primary) !important;
+  border: 1px solid var(--button-primary) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 7px rgba(87,62,153,.13) !important;
+  transition: background-color .16s ease, box-shadow .16s ease, transform .16s ease !important;
+}
+.btn.primary:hover:not(:disabled) {
+  background: var(--button-primary-hover) !important;
+  border-color: var(--button-primary-hover) !important;
+  box-shadow: 0 3px 10px rgba(87,62,153,.17) !important;
+}
+.btn.primary:active:not(:disabled) { transform: translateY(1px); }
+
+/* Icon actions are intentionally quiet until the user points at them. */
+.person-actions button,
+.user-action-btn:not(.connect-toggle),
+.icon-btn,
+.theme-toggle {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0 !important;
+  border-radius: 10px !important;
+}
+.person-actions { gap: 4px !important; }
+.user-actions { gap: 5px !important; }
+.person-actions button:not(.danger-icon),
+.user-action-btn:not(.connect):not(.disconnect):not(.user-delete),
+.icon-btn:not(.danger-icon) {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+.person-actions button:not(.danger-icon):hover,
+.user-action-btn:not(.connect):not(.disconnect):not(.user-delete):hover,
+.icon-btn:not(.danger-icon):hover {
+  background: #f2edf8 !important;
+  border-color: #eee7f6 !important;
+}
+
+/* Connect is a contextual action, not a second primary CTA. */
+.user-action-btn.connect-toggle.connect {
+  background: #f2eef9 !important;
+  border: 1px solid #e5dcf1 !important;
+  color: #6549a4 !important;
+  box-shadow: none !important;
+}
+.user-action-btn.connect-toggle.connect:hover:not(:disabled) {
+  background: #eae2f5 !important;
+  border-color: #d8c9eb !important;
+}
+.user-action-btn.connect-toggle.disconnect,
+.btn.disconnect {
+  background: #fff !important;
+  border: 1px solid #eee5e7 !important;
+  color: #a66a75 !important;
+  box-shadow: none !important;
+}
+.user-action-btn.connect-toggle.disconnect:hover:not(:disabled),
+.btn.disconnect:hover:not(:disabled) {
+  background: #fff3f4 !important;
+  border-color: #f0dadd !important;
+  color: #a64d5b !important;
+}
+
+/* Destructive actions stay neutral until hover/focus to avoid visual alarm. */
+.btn.danger,
+.user-action-btn.user-delete,
+.person-actions button.danger-icon,
+.icon-btn.danger-icon,
+.danger-icon {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #a66a75 !important;
+  box-shadow: none !important;
+}
+.btn.danger:hover:not(:disabled),
+.user-action-btn.user-delete:hover:not(:disabled),
+.person-actions button.danger-icon:hover,
+.icon-btn.danger-icon:hover,
+.danger-icon:hover {
+  background: #fff1f2 !important;
+  border-color: #f3dfe2 !important;
+  color: #b33f50 !important;
+  box-shadow: none !important;
+}
+
+/* Small inline actions and segmented controls use one rhythm. */
+.add-student,
+.graph-add-participant,
+.attach-control,
+.chat-filter-segment button {
+  min-height: 36px;
+  border-radius: 10px !important;
+  font-size: 12px;
+  font-weight: 650;
+  box-shadow: none !important;
+}
+.chat-filter-segment {
+  gap: 3px !important;
+  padding: 3px !important;
+  background: #f7f5fa !important;
+  border: 1px solid #eeeaf3 !important;
+  border-radius: 11px !important;
+}
+.chat-filter-segment button {
+  border-color: transparent !important;
+  background: transparent !important;
+}
+.chat-filter-segment button.active {
+  background: #fff !important;
+  border-color: #e9e2f1 !important;
+  color: #594091 !important;
+  box-shadow: 0 1px 3px rgba(41,34,63,.06) !important;
+}
+.toolbar.user-toolbar { gap: 9px !important; }
+.toolbar.user-toolbar > .user-add-btn { min-height: 38px; }
+.modal-actions .btn { min-height: 38px; }
+button:focus-visible, .btn:focus-visible {
+  outline: 2px solid #aa95d0 !important;
+  outline-offset: 2px !important;
+}
+
+/* Soft-dark theme keeps the same restrained hierarchy. */
+:root[data-theme="dark-soft"] {
+  --button-bg: #303747;
+  --button-bg-hover: #394256;
+  --button-border: #414b5e;
+  --button-border-hover: #59657b;
+  --button-text: #c8cede;
+  --button-primary: #7568a7;
+  --button-primary-hover: #8376b7;
+}
+:root[data-theme="dark-soft"] .btn:not(.primary):not(.danger):not(.disconnect),
+:root[data-theme="dark-soft"] .icon-btn,
+:root[data-theme="dark-soft"] .theme-toggle,
+:root[data-theme="dark-soft"] .person-actions button:not(.danger-icon),
+:root[data-theme="dark-soft"] .user-action-btn:not(.connect):not(.disconnect):not(.user-delete),
+:root[data-theme="dark-soft"] .graph-add-participant,
+:root[data-theme="dark-soft"] .attach-control,
+:root[data-theme="dark-soft"] .chat-filter-segment button,
+:root[data-theme="dark-soft"] .user-info-popover-head button,
+:root[data-theme="dark-soft"] .selected-file button {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--button-text) !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .btn:not(.primary):not(.danger):not(.disconnect):hover,
+:root[data-theme="dark-soft"] .icon-btn:hover,
+:root[data-theme="dark-soft"] .theme-toggle:hover,
+:root[data-theme="dark-soft"] .person-actions button:hover,
+:root[data-theme="dark-soft"] .user-action-btn:hover,
+:root[data-theme="dark-soft"] .graph-add-participant:hover,
+:root[data-theme="dark-soft"] .attach-control:hover,
+:root[data-theme="dark-soft"] .chat-filter-segment button:hover {
+  background: #394256 !important;
+  border-color: #4b5670 !important;
+  color: #e1dafa !important;
+}
+:root[data-theme="dark-soft"] .btn.primary {
+  background: var(--button-primary) !important;
+  border-color: var(--button-primary) !important;
+}
+:root[data-theme="dark-soft"] .user-action-btn.connect-toggle.connect {
+  background: #39364d !important;
+  border-color: #514a6c !important;
+  color: #d8cff7 !important;
+}
+:root[data-theme="dark-soft"] .user-action-btn.connect-toggle.disconnect,
+:root[data-theme="dark-soft"] .btn.disconnect,
+:root[data-theme="dark-soft"] .btn.danger,
+:root[data-theme="dark-soft"] .user-action-btn.user-delete,
+:root[data-theme="dark-soft"] .person-actions button.danger-icon,
+:root[data-theme="dark-soft"] .danger-icon {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #d59aa4 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .chat-filter-segment {
+  background: #252d3b !important;
+  border-color: #394355 !important;
+}
+:root[data-theme="dark-soft"] .chat-filter-segment button.active {
+  background: #3b3652 !important;
+  border-color: #51496d !important;
+  color: #e2d9ff !important;
+  box-shadow: none !important;
+}
