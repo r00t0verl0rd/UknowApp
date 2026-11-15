@@ -1,4 +1,4 @@
-:80 {
+uknowschool.ru, www.uknowschool.ru {
     encode zstd gzip
 
     header {
