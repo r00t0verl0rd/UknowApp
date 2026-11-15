@@ -845,6 +845,11 @@ img, video, audio { max-width: 100%; }
   transform: translateY(-1px);
 }
 .theme-toggle svg { width: 17px; height: 17px; }
+
+/* Desktop and tablet actions stay in the sidebar footer / top bar. */
+.sidebar-bottom { margin-top: auto; }
+.sidebar-bottom > .desktop-logout { display: flex; }
+.mobile-quick-actions { display: none; }
 .login-card { position: relative; }
 .login-theme-toggle { position: absolute; top: 15px; right: 15px; }
 .timezone-control {
@@ -4092,7 +4097,18 @@ body {
   }
   .sidebar nav button svg { width: 16px; height: 16px; flex: none; }
   .sidebar nav button i { display: none; }
-.mobile-quick-actions > button { flex: 0 0 38px; width: 38px; height: 38px; min-width: 38px; min-height: 38px; padding: 8px; margin: 0; border-radius: 11px; display: grid; place-items: center; }
+  /* Keep mobile quick actions in the brand row; don't leave a blank footer row. */
+  .sidebar { position: sticky; }
+  .sidebar-bottom {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    display: flex;
+    margin: 0;
+  }
+  .sidebar-bottom > .desktop-logout { display: none; }
+  .mobile-quick-actions { display: flex; align-items: center; gap: 6px; }
+  .mobile-quick-actions > button { flex: 0 0 38px; width: 38px; height: 38px; min-width: 38px; min-height: 38px; padding: 8px; margin: 0; border-radius: 11px; display: grid; place-items: center; }
 .mobile-quick-actions .icon-btn { color: var(--purple); }
   .topbar-actions { display: none; }
   .main { margin: 0; width: 100%; min-width: 0; }
