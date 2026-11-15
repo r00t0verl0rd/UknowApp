@@ -2332,17 +2332,44 @@ img, video, audio { max-width: 100%; }
 /* Unread conversations stay easy to spot without dominating the inbox. */
 .chat-item-heading {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 9px;
   min-width: 0;
 }
 
-.chat-item-heading b {
+.chat-item-participants {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  text-align: left;
+}
+
+.chat-item-participants > span {
+  display: block;
+  width: 100%;
   min-width: 0;
   overflow: hidden;
+  color: inherit;
+  font-weight: 700;
+  line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.chat-item-participants small {
+  display: inline-block;
+  margin-right: 6px;
+  color: #91899d;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+:root[data-theme="dark-soft"] .chat-item-participants small {
+  color: #a7a0b7;
 }
 
 .chat-item .unread-badge {
