@@ -351,7 +351,7 @@ export default function App() {
           <button className={page === "users" ? "active" : ""} onClick={() => setPage("users")}><Users/>Пользователи</button>
           </>}
         </>
-        <button className={page === "chats" ? "active" : ""} onClick={() => setPage("chats")}><MessageCircle/>Переписки <i>{chats.length}</i></button>
+        <button className={page === "chats" ? "active" : ""} onClick={() => setPage("chats")}><MessageCircle/>Переписки <i>{chats.reduce((total, chat) => total + (Number(chat.unread_count) || 0), 0)}</i></button>
       </nav>
       <div className="sidebar-bottom"><button className="logout" onClick={signOut}><LogOut/>Выйти</button></div>
     </aside>
@@ -434,10 +434,10 @@ export default function App() {
               </div>
               <div className="chat-filter-segment" role="group" aria-label="Фильтр диалогов">
                 <button type="button" className={chatFilter === "all" ? "active" : ""} aria-pressed={chatFilter === "all"} onClick={() => setChatFilter("all")}>
-                  <MessageCircle size={14}/>Все диалоги <span>{chats.length}</span>
+                  <MessageCircle size={14}/>Все диалоги
                 </button>
                 <button type="button" className={chatFilter === "unread" ? "active" : ""} aria-pressed={chatFilter === "unread"} onClick={() => setChatFilter("unread")}>
-                  <Check size={14}/>Непрочитанные <span>{chats.reduce((total, chat) => total + (Number(chat.unread_count) > 0 ? 1 : 0), 0)}</span>
+                  <Check size={14}/>Непрочитанные
                 </button>
               </div>
               <div className="chat-list-caption">{visibleChats.length === chats.length ? "Все ваши диалоги" : "Показано " + visibleChats.length + " из " + chats.length}</div>
