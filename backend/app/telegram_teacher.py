@@ -54,7 +54,10 @@ def message_preview(row: Optional[Message]) -> str:
         "poll": "Опрос",
     }
     if row.content_type != "text":
-        label = media.get("file_name") or labels.get(media_kind, "Вложение: " + (media_kind or "файл"))
+        if media_kind in {"sticker", "video_sticker", "animated_sticker"}:
+            label = labels[media_kind]
+        else:
+            label = media.get("file_name") or labels.get(media_kind, "Вложение: " + (media_kind or "файл"))
         preview = label + (": " + body if body else "")
         return preview if len(preview) <= 115 else preview[:112] + "…"
     if body:
