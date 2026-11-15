@@ -498,7 +498,8 @@ export default function App() {
             <label className="user-sort"><ArrowUpDown size={15}/><select aria-label="Сортировка пользователей" value={userSort} onChange={e => setUserSort(e.target.value)}>
               <option value="name-asc">По имени</option><option value="name-desc">Имя: Я — А</option><option value="teachers">Сначала учителя</option><option value="students">Сначала ученики</option><option value="active">Сначала активные</option><option value="inactive">Сначала отключённые</option>
             </select></label>
-            <span>{visibleUsers.length}</span><button className="btn primary" onClick={() => openCreate()}><Plus/>Добавить</button>
+            <span className="user-count">Количество пользователей: <b>{visibleUsers.length}</b></span>
+            <button className="btn primary user-add-btn" onClick={() => openCreate()}><Plus/>Добавить пользователя</button>
           </div>
           <div className="user-list">{visibleUsers.map(user => <div className="user-row" key={user.id}>
             <div className={"avatar " + user.role}>{user.role === "teacher" ? <GraduationCap/> : user.role === "student" ? <Smile/> : <Users/>}</div>
@@ -507,14 +508,14 @@ export default function App() {
               <small className="user-meta">
                 <span className={"user-status-dot " + (user.active ? "is-active" : "is-inactive")}/>
                 {user.active ? "Активен" : "Отключён"}
-                <span className={"telegram-state " + (user.telegram_id ? "is-connected" : "")} title={user.telegram_id ? "Telegram подключён" : "Telegram не подключён"}><Link2 size={12}/>{user.telegram_id ? "Telegram" : "Не подключён"}</span>
+                <span className={"telegram-state " + (user.telegram_id ? "is-connected" : "")} title={user.telegram_id ? "Telegram подключён" : "Telegram не подключён"}><Link2 size={14}/>{user.telegram_id ? "Telegram подключён" : "Telegram не подключён"}</span>
                 {user.role === "teacher" && <span className="user-login">Логин: {user.web_username || user.full_name}</span>}
               </small>
             </div>
             <div className="user-actions">
-              {user.telegram_id && <button className="user-action-btn disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram" aria-label="Отключить Telegram"><Unlink/></button>}
-              {user.active && (user.role === "teacher" || !user.telegram_id) && <button className="user-action-btn" onClick={() => makeCode(user)} title={user.role === "teacher" ? "Создать новый код доступа" : "Показать код подключения"} aria-label={user.role === "teacher" ? "Новый код доступа" : "Код подключения"}><Copy/></button>}
-              <button className="user-action-btn" onClick={() => openEdit(user)} title="Изменить профиль" aria-label="Изменить профиль"><Pencil/></button>
+              {user.telegram_id && <button className="user-action-btn disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram" aria-label="Отключить Telegram"><Unlink/><span>Отключить</span></button>}
+              {user.active && (user.role === "teacher" || !user.telegram_id) && <button className="user-action-btn code-btn" onClick={() => makeCode(user)} title={user.role === "teacher" ? "Создать новый код доступа" : "Показать код подключения"} aria-label={user.role === "teacher" ? "Новый код доступа" : "Код подключения"}><Copy/><span>Код</span></button>}
+              <button className="user-action-btn edit-btn" onClick={() => openEdit(user)} title="Изменить профиль" aria-label="Изменить профиль"><Pencil/></button>
               <button className="user-action-btn danger-icon user-delete" onClick={() => removeUser(user)} title="Удалить пользователя" aria-label="Удалить пользователя"><Trash2/></button>
             </div>
           </div>)}</div>
