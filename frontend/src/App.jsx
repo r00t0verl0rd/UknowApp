@@ -79,7 +79,7 @@ function MessageBubble({ message, timeZone }) {
     {message.text && <p>{message.text}</p>}
     {mediaUrl && kind === "photo" && <img className="chat-media-image" src={mediaUrl} alt={label} />}
     {mediaUrl && ["voice", "audio"].includes(kind) && <audio className="chat-media-player" controls preload="metadata" src={mediaUrl} />}
-    {mediaUrl && ["video", "video_note"].includes(kind) && <video className={"chat-media-video" + (kind === "video_note" ? " chat-media-video-note" : "")} controls playsInline preload="metadata" aria-label={label} src={mediaUrl} />}
+    {mediaUrl && ["video", "video_note", "animation"].includes(kind) && <video className={"chat-media-video" + (kind === "video_note" ? " chat-media-video-note" : "")} controls playsInline preload="metadata" aria-label={label} src={mediaUrl} />}
     {mediaUrl && !["photo", "voice", "audio", "video", "video_note", "animation"].includes(kind) && <a className="chat-media-download" href={mediaUrl} download={label}>Скачать: {label}</a>}
     {!mediaUrl && media && <small className="chat-media-status">{media.archive_status === "too_large_for_telegram_download" ? "Файл больше 20 МБ: Telegram не разрешает сохранить его копию для веб-панели. Оригинал доставлен в Telegram." : media.archive_status === "download_failed" ? "Не удалось сохранить копию вложения. Проверьте оригинал в Telegram." : "Загрузка вложения…"}</small>}
     {!media && !message.text && <p>Вложение: {message.content_type}</p>}
