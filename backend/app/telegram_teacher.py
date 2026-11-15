@@ -263,9 +263,7 @@ def teacher_panel_view(
             notice = " · " + str(item["unanswered"]) + " новых" if item["unanswered"] else ""
             lines.append("👤 " + student_name + notice)
             for row in item["unread"][-3:]:
-                stamp = row.created_at.strftime("%H:%M") if row.created_at else ""
-                prefix = stamp + " · " if stamp else ""
-                lines.append("   " + prefix + escape(message_preview(row)))
+                lines.append("   " + escape(message_preview(row)))
             if item["unanswered"] > 3:
                 lines.append("   …ещё " + str(item["unanswered"] - 3) + " сообщений")
             latest = item["latest"]
@@ -274,9 +272,7 @@ def teacher_panel_view(
                 or (item["unread"] and latest.id > item["unread"][-1].id and latest.sender_role == "admin")
             ):
                 label = "Администратор" if latest.sender_role == "admin" else "Последнее сообщение"
-                stamp = latest.created_at.strftime("%H:%M") if latest.created_at else ""
-                prefix = stamp + " · " if stamp else ""
-                lines.append("   " + prefix + label + ": " + escape(message_preview(latest)))
+                lines.append("   " + label + ": " + escape(message_preview(latest)))
             lines.append("")
         if total_pages > 1:
             lines.append("Страница " + str(page + 1) + " из " + str(total_pages) + ".")
@@ -327,8 +323,7 @@ def teacher_chat_view(
     else:
         for row in visible_rows:
             sender_label = "Ученик" if row.sender_role == "student" else "Администратор" if row.sender_role == "admin" else "Вы"
-            stamp = row.created_at.strftime("%H:%M") if row.created_at else ""
-            lines.append((stamp + " · " if stamp else "") + sender_label + ": " + escape(message_preview(row)))
+            lines.append(sender_label + ": " + escape(message_preview(row)))
     if len(rows) > len(visible_rows):
         lines.insert(1, "Показаны последние " + str(len(visible_rows)) + " из " + str(len(rows)) + " сообщений.")
     return "\n".join(lines)[:3900]
