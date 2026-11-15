@@ -8039,3 +8039,247 @@ button:focus-visible, .btn:focus-visible {
   .chat-audio-wave { height: 23px; }
   .chat-audio-seek { height: 23px; }
 }
+
+
+/* --------------------------------------------------------------------------
+   UknowApp visual system — final shared palette for every screen and state.
+   Keep semantic colors (success / warning / danger) distinct from decoration.
+   -------------------------------------------------------------------------- */
+:root {
+  --purple: #6046a5;
+  --purple2: #785fc0;
+  --ink: #29243a;
+  --muted: #817b90;
+  --line: #e9e5ef;
+  --surface: #ffffff;
+  --canvas: #f7f6fa;
+  --lavender: #b9a4eb;
+  --lavender-soft: #f1edfa;
+  --purple-glow: rgba(96, 70, 165, .16);
+  --red: #df5967;
+  --red-soft: #fff0f1;
+  --red-border: #f2d6da;
+  --success: #25845b;
+  --success-soft: #eaf6ef;
+  --warning: #a87322;
+  --warning-soft: #fff5e3;
+  --ui-border: #e6e1ed;
+  --ui-border-strong: #cfc3e2;
+  --ui-control-bg: #f5f3f8;
+  --ui-control-hover: #eee9f6;
+  --ui-control-text: #514b61;
+  --ui-shadow-soft: 0 1px 3px rgba(38, 29, 58, .055);
+  --ui-shadow-card: 0 5px 18px rgba(38, 29, 58, .045);
+  --ui-shadow-raised: 0 9px 26px rgba(38, 29, 58, .10);
+  --ui-focus: 0 0 0 3px rgba(120, 95, 192, .17);
+  --button-bg: #f5f3f8;
+  --button-bg-hover: #eee9f6;
+  --button-border: #e6e1ed;
+  --button-border-hover: #cfc3e2;
+  --button-text: #514b61;
+  --button-primary: linear-gradient(110deg, #6046a5, #785fc0);
+  --button-primary-hover: linear-gradient(110deg, #50388f, #694eaf);
+  --button-danger-bg: #fff0f1;
+  --button-danger-border: #f2d6da;
+  --button-danger-text: #b33f50;
+  color-scheme: light;
+}
+:root[data-theme="dark-soft"] {
+  --purple: #b2a0e7;
+  --purple2: #9a86d6;
+  --ink: #e7e9f0;
+  --muted: #a4adbd;
+  --line: #343d4d;
+  --surface: #222b39;
+  --canvas: #171d28;
+  --lavender: #a996df;
+  --lavender-soft: #343047;
+  --purple-glow: rgba(169, 150, 223, .18);
+  --red: #e58c98;
+  --red-soft: #402d37;
+  --red-border: #65404b;
+  --success: #83c9a3;
+  --success-soft: #293e38;
+  --warning: #e4b66f;
+  --warning-soft: #443a2d;
+  --ui-border: #3b4658;
+  --ui-border-strong: #58647a;
+  --ui-control-bg: #2b3443;
+  --ui-control-hover: #343e50;
+  --ui-control-text: #d1d7e3;
+  --ui-shadow-soft: none;
+  --ui-shadow-card: 0 5px 18px rgba(0, 0, 0, .12);
+  --ui-shadow-raised: 0 10px 28px rgba(0, 0, 0, .24);
+  --ui-focus: 0 0 0 3px rgba(169, 150, 223, .22);
+  --button-bg: #2b3443;
+  --button-bg-hover: #343e50;
+  --button-border: #3b4658;
+  --button-border-hover: #58647a;
+  --button-text: #d1d7e3;
+  --button-primary: linear-gradient(110deg, #66558f, #8170b4);
+  --button-primary-hover: linear-gradient(110deg, #7563a2, #9180c5);
+  --button-danger-bg: #402d37;
+  --button-danger-border: #65404b;
+  --button-danger-text: #f0aab3;
+  color-scheme: dark;
+}
+
+/* Common canvas, cards and separators. */
+body { background: var(--canvas); color: var(--ink); }
+.sidebar, .topbar, .login-card, .metric, .graph-panel, .user-list,
+.chat-layout, .modal, .user-info-popover, .credential-modal,
+.password-info, .chat-audio-player {
+  background-color: var(--surface);
+  border-color: var(--ui-border);
+}
+.sidebar, .topbar { box-shadow: var(--ui-shadow-card); }
+.metric, .graph-panel, .user-list, .chat-layout, .person-card,
+.modal, .user-info-popover, .login-card {
+  box-shadow: var(--ui-shadow-card);
+}
+.person-card, .teacher-card, .student-card, .root-node,
+.empty-students, .chat-item, .message, .chat-head, .chat-composer {
+  border-color: var(--ui-border);
+}
+
+/* One primary, neutral and destructive button language across all sections. */
+.btn.primary, .sidebar nav button.active {
+  color: #fff !important;
+  background: var(--button-primary) !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 12px var(--purple-glow) !important;
+}
+.btn.primary:hover:not(:disabled), .sidebar nav button.active:hover {
+  background: var(--button-primary-hover) !important;
+  box-shadow: 0 6px 16px var(--purple-glow) !important;
+}
+.btn:not(.primary):not(.danger):not(.disconnect),
+.user-action-btn:not(.connect):not(.disconnect):not(.user-delete),
+.icon-btn:not(.danger-icon), .theme-toggle,
+.person-actions button:not(.danger-icon), .graph-add-participant,
+.attach-control, .chat-filter-segment button,
+.user-info-popover-head button, .selected-file button {
+  background: var(--button-bg);
+  border-color: var(--button-border);
+  color: var(--button-text);
+  box-shadow: var(--ui-shadow-soft);
+}
+.btn:not(.primary):not(.danger):not(.disconnect):hover:not(:disabled),
+.user-action-btn:not(.connect):not(.disconnect):not(.user-delete):hover:not(:disabled),
+.icon-btn:not(.danger-icon):hover:not(:disabled), .theme-toggle:hover,
+.person-actions button:not(.danger-icon):hover,
+.graph-add-participant:hover, .attach-control:hover,
+.chat-filter-segment button:hover:not(:disabled) {
+  background: var(--button-bg-hover) !important;
+  border-color: var(--button-border-hover) !important;
+  color: var(--purple) !important;
+  box-shadow: var(--ui-shadow-soft) !important;
+}
+.btn.danger, .btn.disconnect, .user-action-btn.user-delete,
+.user-action-btn.disconnect, .person-actions button.danger-icon,
+.icon-btn.danger-icon, .danger-icon {
+  background: var(--button-danger-bg) !important;
+  border-color: var(--button-danger-border) !important;
+  color: var(--button-danger-text) !important;
+  box-shadow: none !important;
+}
+.btn.danger:hover:not(:disabled), .btn.disconnect:hover:not(:disabled),
+.user-action-btn.user-delete:hover:not(:disabled),
+.user-action-btn.disconnect:hover:not(:disabled),
+.person-actions button.danger-icon:hover, .danger-icon:hover {
+  background: var(--red-soft) !important;
+  border-color: var(--red-border) !important;
+  color: var(--red) !important;
+}
+
+/* Consistent form fields, focus rings and selection states. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select, textarea {
+  border-color: var(--ui-border);
+  color: var(--ink);
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible,
+button:focus-visible, a:focus-visible {
+  outline: none;
+  box-shadow: var(--ui-focus);
+}
+.search:focus-within, .chat-search-control:focus-within {
+  border-color: var(--ui-border-strong);
+  box-shadow: var(--ui-focus);
+}
+::selection { background: rgba(120, 95, 192, .22); }
+
+/* Harmonized role colors: teachers use purple, students use the brand red. */
+.teacher-dot, .teacher-card .avatar, .avatar.teacher, .teacher-avatar {
+  background-color: var(--lavender-soft);
+  color: var(--purple);
+}
+.student-dot { background: var(--red); box-shadow: 0 0 7px rgba(223, 89, 103, .22); }
+.student-card, .unassigned-grid .person-card {
+  background: var(--surface);
+  border-color: var(--ui-border);
+}
+.student-card .avatar, .avatar.student, .student-avatar,
+.user-row .avatar.student {
+  background: var(--red-soft);
+  color: var(--red);
+}
+.student-list { border-left-color: var(--ui-border); }
+.add-student { color: var(--purple); }
+.add-student:hover { background: var(--lavender-soft); }
+.role-tag { background: var(--lavender-soft); color: var(--purple); }
+.role-tag.student { background: var(--red-soft); color: var(--red); }
+.user-row .role-tag.student { background: var(--red-soft); color: var(--red); }
+.user-row .role-tag.teacher { background: var(--lavender-soft); color: var(--purple); }
+
+/* Semantic feedback colors stay consistent and are not used as decoration. */
+.alert { background: var(--red-soft); border-color: var(--red-border); color: var(--button-danger-text); }
+.telegram-connected { color: var(--success); }
+.success, .status-success { color: var(--success); }
+.warning, .status-warning { color: var(--warning); }
+.toast {
+  background: linear-gradient(110deg, #493681, #6046a5);
+  box-shadow: var(--ui-shadow-raised);
+}
+:root[data-theme="dark-soft"] .toast {
+  background: linear-gradient(110deg, #39314f, #51466f);
+}
+:root[data-theme="dark-soft"] .alert {
+  background: var(--red-soft) !important;
+  border-color: var(--red-border) !important;
+  color: #f0aab3 !important;
+}
+:root[data-theme="dark-soft"] .person-card,
+:root[data-theme="dark-soft"] .teacher-card,
+:root[data-theme="dark-soft"] .student-card,
+:root[data-theme="dark-soft"] .root-node,
+:root[data-theme="dark-soft"] .empty-students,
+:root[data-theme="dark-soft"] .unassigned-grid .person-card {
+  background: var(--surface);
+  border-color: var(--ui-border);
+  box-shadow: var(--ui-shadow-card);
+}
+:root[data-theme="dark-soft"] .student-card .avatar,
+:root[data-theme="dark-soft"] .avatar.student,
+:root[data-theme="dark-soft"] .student-avatar,
+:root[data-theme="dark-soft"] .user-row .avatar.student {
+  background: #402d37 !important;
+  color: #e58c98 !important;
+}
+:root[data-theme="dark-soft"] .role-tag.student,
+:root[data-theme="dark-soft"] .user-row .role-tag.student {
+  background: #402d37 !important;
+  color: #e58c98 !important;
+}
+:root[data-theme="dark-soft"] .student-dot {
+  background: #e58c98;
+  box-shadow: 0 0 7px rgba(229, 140, 152, .20);
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
