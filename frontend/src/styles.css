@@ -7382,3 +7382,172 @@ button:focus-visible, .btn:focus-visible {
     padding-bottom: 14px;
   }
 }
+
+
+/* Touch-first viewport and dialog behavior for tablet and mobile layouts. */
+@media (max-width: 1024px) {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .chats-shell {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .chats-shell > .sidebar {
+    flex: 0 0 auto;
+    z-index: 40;
+  }
+
+  .chats-main {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .chats-main > .content:not(.chats-content) {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+  }
+
+  .chats-main > .content.chats-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-sizing: border-box;
+    overscroll-behavior: contain;
+  }
+
+  .overlay > .modal {
+    flex: 0 1 auto;
+    width: min(100%, 480px);
+    min-width: 0;
+    max-width: 480px;
+    max-height: calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+    margin: auto;
+    padding: clamp(14px, 3vw, 20px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+  }
+
+  .overlay > .modal .stack {
+    min-width: 0;
+  }
+
+  .overlay > .modal .stack label,
+  .overlay > .modal .stack input,
+  .overlay > .modal .stack select {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .chats-shell {
+    height: 100dvh;
+    height: 100svh;
+  }
+
+  .chats-shell > .sidebar {
+    position: relative;
+    top: auto;
+    flex: 0 0 auto;
+  }
+
+  .chats-main > .content:not(.chats-content) {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+
+  .overlay {
+    align-items: flex-start;
+    padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));
+  }
+
+  .overlay > .modal {
+    width: 100%;
+    max-width: 480px;
+    max-height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+    margin: auto 0;
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .overlay > .modal .modal-head {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .overlay > .modal .modal-head h2 {
+    font-size: clamp(17px, 5vw, 20px);
+    line-height: 1.25;
+  }
+
+  .overlay > .modal .stack {
+    gap: 9px;
+  }
+
+  .overlay > .modal .stack label {
+    gap: 5px;
+    font-size: 12px;
+  }
+
+  .overlay > .modal .stack input,
+  .overlay > .modal .stack select {
+    width: 100%;
+    height: 42px;
+    min-height: 42px;
+    font-size: 16px;
+  }
+
+  .overlay > .modal .modal-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    padding-top: 3px;
+  }
+
+  .overlay > .modal .modal-actions .btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding-inline: 8px;
+    white-space: normal;
+  }
+}
