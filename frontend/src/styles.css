@@ -5044,3 +5044,36 @@ body {
     gap: 8px;
   }
 }
+
+
+/* Graph header: keep the counters at their natural width and match the
+   add-participant button height to the counter block. */
+.graph-panel .graph-legend-row {
+  align-items: stretch;
+}
+
+.graph-panel .graph-legend-row > .graph-legend {
+  flex: 0 0 auto;
+  width: fit-content;
+  max-width: calc(100% - 150px);
+  align-self: stretch;
+  box-sizing: border-box;
+}
+
+.graph-panel .graph-add-participant {
+  flex: 0 0 auto;
+  align-self: stretch;
+  min-height: 0;
+  height: auto;
+  box-sizing: border-box;
+}
+
+@media (max-width: 520px) {
+  .graph-panel .graph-legend-row > .graph-legend {
+    max-width: 48%;
+  }
+
+  .graph-panel .graph-add-participant {
+    max-width: 52%;
+  }
+}
