@@ -543,6 +543,7 @@ export default function App() {
         <button className={page === "chats" ? "active" : ""} onClick={() => setPage("chats")}><MessageCircle/>Переписки</button>
       </nav>
       <div className="sidebar-bottom">
+        <button className="logout desktop-logout" onClick={signOut} title="Выйти" aria-label="Выйти"><LogOut/>Выйти</button>
         <div className="mobile-quick-actions">
           <button type="button" className="theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
             {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
@@ -554,7 +555,15 @@ export default function App() {
     </aside>
 
     <main className={"main" + (page === "chats" ? " chats-main" : "")}>
-      <header className="topbar"><div className="topbar-context"><small className="topbar-user">{profile?.full_name}</small></div></header>
+      <header className="topbar">
+        <div className="topbar-context"><small className="topbar-user">{profile?.full_name}</small></div>
+        <div className="topbar-actions">
+          <button type="button" className="theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
+            {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
+          </button>
+          <button type="button" className="icon-btn" onClick={refresh} title="Обновить" aria-label="Обновить"><RefreshCw className={busy ? "spin" : ""}/></button>
+        </div>
+      </header>
       <div className={"content" + (page === "chats" ? " chats-content" : "")}>
         {error && <div className="alert alert-row">{error}<button onClick={() => setError("")}><X/></button></div>}
         {page === "graph" && profile?.role === "teacher" && <section className="teacher-readonly-graph">
