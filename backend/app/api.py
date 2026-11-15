@@ -250,13 +250,18 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
         user.web_username = None
 
     role_changed = "role" in changes and changes["role"] != user.role
-    has_active_access_code = db.scalar(
-        select(ConnectionCode.id).where(
+    active_teacher_codes = db.scalars(
+        select(ConnectionCode).where(
             ConnectionCode.user_id == user.id,
             ConnectionCode.used_at.is_(None),
-            ConnectionCode.expires_at > datetime.now(timezone.utc) + timedelta(days=365),
-        ).limit(1)
-    ) is not None
+        )
+    ).all()
+    persistent_code_cutoff = datetime.now(timezone.utc) + timedelta(days=365)
+    has_active_access_code = any(
+        (item.expires_at.replace(tzinfo=timezone.utc) if item.expires_at.tzinfo is None else item.expires_at)
+        > persistent_code_cutoff
+        for item in active_teacher_codes
+    )
     if target_role == "teacher" and (role_changed or not user.web_password_hash or not has_active_access_code):
         issued_access_code = generate_teacher_access_code()
         user.web_password_hash = hash_web_password(issued_access_code)
