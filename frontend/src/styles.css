@@ -3161,11 +3161,7 @@ body {
 /* Responsive layout: exactly three viewport-width ranges. */
 @media (min-width: 1025px) {
 
-  /* Desktop spacing grows gently with the available viewport. */
-  .sidebar { width: clamp(250px, 18vw, 280px); }
-  .main { margin-left: clamp(250px, 18vw, 280px); }
-  .content { padding-inline: clamp(30px, 2.5vw, 42px); }
-
+  
 
   .chat-layout {
     height: clamp(480px, calc(100dvh - 300px), 760px);
@@ -3537,18 +3533,15 @@ body {
     max-height: none;
   }
 
+/* Desktop spacing grows gently with the available viewport. */
+  .sidebar { width: clamp(250px, 18vw, 280px); }
+  .main { margin-left: clamp(250px, 18vw, 280px); }
+  .content { padding-inline: clamp(30px, 2.5vw, 42px); }
 }
 
 @media (min-width: 761px) and (max-width: 1024px) {
 
-  /* Tablet sizing interpolates between compact mobile and full desktop. */
-  .sidebar { width: clamp(210px, 23vw, 250px); }
-  .main { margin-left: clamp(210px, 23vw, 250px); }
-  .topbar { padding-inline: clamp(20px, 3vw, 34px); }
-  .content { padding: clamp(24px, 3vw, 34px); }
-  .graph-panel { padding: clamp(20px, 2.8vw, 30px); }
-  .teacher-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); gap: clamp(14px, 2vw, 24px); }
-  .chat-layout { grid-template-columns: clamp(220px, 28vw, 290px) minmax(0, 1fr); }
+  
 
 .sidebar{width:210px}.main{margin-left:210px}.content{padding:25px}.metrics{grid-template-columns:repeat(2,1fr)}
 
@@ -4016,63 +4009,19 @@ body {
     max-height: none;
   }
 
+/* Tablet sizing interpolates between compact mobile and full desktop. */
+  .sidebar { width: clamp(210px, 23vw, 250px); }
+  .main { margin-left: clamp(210px, 23vw, 250px); }
+  .topbar { padding-inline: clamp(20px, 3vw, 34px); }
+  .content { padding: clamp(24px, 3vw, 34px); }
+  .graph-panel { padding: clamp(20px, 2.8vw, 30px); }
+  .teacher-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); gap: clamp(14px, 2vw, 24px); }
+  .chat-layout { grid-template-columns: clamp(220px, 28vw, 290px) minmax(0, 1fr); }
 }
 
 @media (max-width: 760px) {
 
-  /* Fluid sizing replaces the former 360/380/420/520px micro-breakpoints. */
-  .sidebar nav button {
-    font-size: clamp(9px, 2.8vw, 11px);
-    gap: clamp(3px, 1vw, 6px);
-  }
-  .content { padding-inline: clamp(8px, 2vw, 15px); }
-  .graph-panel { padding: clamp(9px, 2.2vw, 17px); }
-  .graph-panel .teacher-branch { padding: clamp(7px, 1.8vw, 10px); }
-  .graph-panel .person-card { padding: clamp(7px, 1.8vw, 12px); gap: clamp(5px, 1.2vw, 8px); }
-  .graph-panel .avatar { width: clamp(32px, 8.5vw, 38px); height: clamp(32px, 8.5vw, 38px); }
-  .graph-panel .person-actions button { width: clamp(25px, 6.5vw, 28px); height: clamp(25px, 6.5vw, 28px); }
-  .metric { grid-template-columns: clamp(21px, 6vw, 25px) minmax(0, 1fr); padding: clamp(7px, 2vw, 10px); }
-  .graph-panel .root-node { gap: clamp(8px, 2vw, 11px); padding: clamp(9px, 2.2vw, 12px) clamp(10px, 2.6vw, 16px); }
-  .graph-panel .root-node img { flex-basis: clamp(36px, 10vw, 42px); width: clamp(36px, 10vw, 42px); height: clamp(36px, 10vw, 42px); }
-  .graph-panel .root-node b { font-size: clamp(11px, 3vw, 12px); }
-  .graph-panel .root-node small { font-size: clamp(9px, 2.5vw, 10px); }
-  .user-row { padding: clamp(10px, 2vw, 13px) clamp(10px, 2.5vw, 17px); }
-  .user-toolbar .search input { font-size: clamp(12px, 3vw, 13px); }
-  .user-sort { padding-inline: clamp(9px, 2.5vw, 12px); }
-  .user-count { gap: clamp(6px, 1.5vw, 9px); font-size: clamp(10px, 2.7vw, 11px); }
-  .user-info-popover { right: clamp(-48px, -6vw, -20px); }
-  .graph-panel .unassigned-student-card { padding: clamp(10px, 2vw, 13px); gap: clamp(9px, 2vw, 12px); }
-  .graph-panel .unassigned-student-card > .person-main { gap: clamp(9px, 2vw, 12px); }
-  .graph-panel .unassigned-student-card > .person-main > .avatar { flex-basis: clamp(38px, 10vw, 44px); width: clamp(38px, 10vw, 44px); height: clamp(38px, 10vw, 44px); }
-  .overlay { padding: clamp(8px, 2vw, 12px); }
-  .overlay > .modal { padding: clamp(14px, 3vw, 20px); border-radius: clamp(14px, 3vw, 18px); }
-  .overlay > .create-participant-modal { padding: clamp(14px, 3.5vw, 20px); border-radius: clamp(14px, 3vw, 16px); }
-  .create-participant-modal .modal-head { margin-bottom: clamp(11px, 2.5vw, 14px); }
-  .create-participant-modal .stack { gap: clamp(8px, 2vw, 10px); }
-  .graph-panel .graph-legend-row { flex-flow: row nowrap; align-items: stretch; gap: clamp(3px, 1vw, 8px); }
-  .graph-panel .graph-legend-row > .graph-legend {
-    flex: 0 1 48%; width: 48%; min-width: 0; max-width: 48%;
-    padding: clamp(4px, 1.2vw, 7px) clamp(4px, 1.2vw, 9px);
-    gap: clamp(2px, .8vw, 6px); overflow: hidden;
-  }
-  .graph-panel .graph-legend .graph-legend-item {
-    flex: 0 1 auto; min-width: 0; gap: clamp(2px, .8vw, 5px);
-    font-size: clamp(8px, 2.5vw, 11px); white-space: nowrap;
-  }
-  .graph-panel .graph-legend .graph-legend-item > span {
-    flex: 0 0 7px; width: 7px; height: 7px;
-  }
-  .graph-panel .graph-legend .graph-legend-item b {
-    flex: 0 0 auto; min-width: 15px; min-height: 0;
-    padding: 2px clamp(3px, .8vw, 5px); font-size: clamp(8px, 2.2vw, 10px);
-  }
-  .graph-panel .graph-add-participant {
-    flex: 0 1 auto; align-self: stretch; min-height: 0; height: auto;
-    max-width: 52%; margin-left: 0; padding: 7px clamp(5px, 1.8vw, 12px);
-    gap: clamp(3px, .8vw, 5px); font-size: clamp(9px, 2.6vw, 12px);
-    white-space: nowrap;
-  }
-  .graph-panel .graph-add-participant svg { width: 14px; height: 14px; }
+  
 
 .sidebar{width:210px}.main{margin-left:210px}.content{padding:25px}.metrics{grid-template-columns:repeat(2,1fr)}
 
@@ -5737,17 +5686,63 @@ body {
     font-size: 8px;
   }
 
-}
-
-@media (prefers-reduced-motion: reduce) {
-
-  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
-
+/* Fluid sizing replaces the former 360/380/420/520px micro-breakpoints. */
+  .sidebar nav button {
+    font-size: clamp(9px, 2.8vw, 11px);
+    gap: clamp(3px, 1vw, 6px);
+  }
+  .content { padding-inline: clamp(8px, 2vw, 15px); }
+  .graph-panel { padding: clamp(9px, 2.2vw, 17px); }
+  .graph-panel .teacher-branch { padding: clamp(7px, 1.8vw, 10px); }
+  .graph-panel .person-card { padding: clamp(7px, 1.8vw, 12px); gap: clamp(5px, 1.2vw, 8px); }
+  .graph-panel .avatar { width: clamp(32px, 8.5vw, 38px); height: clamp(32px, 8.5vw, 38px); }
+  .graph-panel .person-actions button { width: clamp(25px, 6.5vw, 28px); height: clamp(25px, 6.5vw, 28px); }
+  .metric { grid-template-columns: clamp(21px, 6vw, 25px) minmax(0, 1fr); padding: clamp(7px, 2vw, 10px); }
+  .graph-panel .root-node { gap: clamp(8px, 2vw, 11px); padding: clamp(9px, 2.2vw, 12px) clamp(10px, 2.6vw, 16px); }
+  .graph-panel .root-node img { flex-basis: clamp(36px, 10vw, 42px); width: clamp(36px, 10vw, 42px); height: clamp(36px, 10vw, 42px); }
+  .graph-panel .root-node b { font-size: clamp(11px, 3vw, 12px); }
+  .graph-panel .root-node small { font-size: clamp(9px, 2.5vw, 10px); }
+  .user-row { padding: clamp(10px, 2vw, 13px) clamp(10px, 2.5vw, 17px); }
+  .user-toolbar .search input { font-size: clamp(12px, 3vw, 13px); }
+  .user-sort { padding-inline: clamp(9px, 2.5vw, 12px); }
+  .user-count { gap: clamp(6px, 1.5vw, 9px); font-size: clamp(10px, 2.7vw, 11px); }
+  .user-info-popover { right: clamp(-48px, -6vw, -20px); }
+  .graph-panel .unassigned-student-card { padding: clamp(10px, 2vw, 13px); gap: clamp(9px, 2vw, 12px); }
+  .graph-panel .unassigned-student-card > .person-main { gap: clamp(9px, 2vw, 12px); }
+  .graph-panel .unassigned-student-card > .person-main > .avatar { flex-basis: clamp(38px, 10vw, 44px); width: clamp(38px, 10vw, 44px); height: clamp(38px, 10vw, 44px); }
+  .overlay { padding: clamp(8px, 2vw, 12px); }
+  .overlay > .modal { padding: clamp(14px, 3vw, 20px); border-radius: clamp(14px, 3vw, 18px); }
+  .overlay > .create-participant-modal { padding: clamp(14px, 3.5vw, 20px); border-radius: clamp(14px, 3vw, 16px); }
+  .create-participant-modal .modal-head { margin-bottom: clamp(11px, 2.5vw, 14px); }
+  .create-participant-modal .stack { gap: clamp(8px, 2vw, 10px); }
+  .graph-panel .graph-legend-row { flex-flow: row nowrap; align-items: stretch; gap: clamp(3px, 1vw, 8px); }
+  .graph-panel .graph-legend-row > .graph-legend {
+    flex: 0 1 48%; width: 48%; min-width: 0; max-width: 48%;
+    padding: clamp(4px, 1.2vw, 7px) clamp(4px, 1.2vw, 9px);
+    gap: clamp(2px, .8vw, 6px); overflow: hidden;
+  }
+  .graph-panel .graph-legend .graph-legend-item {
+    flex: 0 1 auto; min-width: 0; gap: clamp(2px, .8vw, 5px);
+    font-size: clamp(8px, 2.5vw, 11px); white-space: nowrap;
+  }
+  .graph-panel .graph-legend .graph-legend-item > span {
+    flex: 0 0 7px; width: 7px; height: 7px;
+  }
+  .graph-panel .graph-legend .graph-legend-item b {
+    flex: 0 0 auto; min-width: 15px; min-height: 0;
+    padding: 2px clamp(3px, .8vw, 5px); font-size: clamp(8px, 2.2vw, 10px);
+  }
+  .graph-panel .graph-add-participant {
+    flex: 0 1 auto; align-self: stretch; min-height: 0; height: auto;
+    max-width: 52%; margin-left: 0; padding: 7px clamp(5px, 1.8vw, 12px);
+    gap: clamp(3px, .8vw, 5px); font-size: clamp(9px, 2.6vw, 12px);
+    white-space: nowrap;
+  }
+  .graph-panel .graph-add-participant svg { width: 14px; height: 14px; }
 }
 
 @media (hover: none), (pointer: coarse) {
-
-  button,
+button,
   button.btn,
   .sidebar nav button,
   .logout,
@@ -5808,11 +5803,7 @@ body {
     opacity: .5 !important;
   }
 
-}
-
-@media (hover: none), (pointer: coarse) {
-
-  :root[data-theme="dark-soft"] button:not(.primary):not(.disconnect):not(.danger-icon),
+:root[data-theme="dark-soft"] button:not(.primary):not(.disconnect):not(.danger-icon),
   :root[data-theme="dark-soft"] .btn:not(.primary):not(.disconnect):not(.danger-icon),
   :root[data-theme="dark-soft"] .sidebar nav button,
   :root[data-theme="dark-soft"] .person-actions button:not(.danger-icon),
@@ -5839,11 +5830,7 @@ body {
     color: #d1c9f4 !important;
   }
 
-}
-
-@media (hover: none), (pointer: coarse) {
-
-  :root[data-theme="dark-soft"] .user-row:hover,
+:root[data-theme="dark-soft"] .user-row:hover,
   :root[data-theme="dark-soft"] .person-card:hover,
   :root[data-theme="dark-soft"] .teacher-branch:hover {
     background: #293343 !important;
@@ -5851,5 +5838,16 @@ body {
     box-shadow: none !important;
     transform: none !important;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 
 }
+
+
+
+
+
+
