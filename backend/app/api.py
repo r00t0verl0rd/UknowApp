@@ -101,7 +101,6 @@ def conversation_dict(
         1
         for row in message_rows
         if row.sender_role == "student"
-        and row.delivery_status == "delivered"
         and json.loads(row.metadata_json or "{}").get("teacher_read_at") is None
     )
     return {
