@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, Trash2, Users, X, Copy, Unlink, Paperclip, Moon, Sun, Smile } from "lucide-react";
+import { Activity, ArrowUpDown, Check, ChevronRight, GraduationCap, LogOut, MessageCircle, Pencil, Plus, RefreshCw, Search, Trash2, Users, X, Copy, Unlink, Paperclip, Moon, Sun, Smile, Link2 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 const ROLE = { teacher: "Учитель", student: "Ученик", admin: "Администратор" };
@@ -110,6 +110,7 @@ export default function App() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [search, setSearch] = useState("");
+  const [userSort, setUserSort] = useState("name-asc");
   const [chatSearch, setChatSearch] = useState("");
   const [chatFilter, setChatFilter] = useState("all");
   const [messageFilter, setMessageFilter] = useState("all");
@@ -224,7 +225,15 @@ export default function App() {
   const notify = (message) => { setToast(message); window.setTimeout(() => setToast(""), 2600); };
   const activeTeachers = users.filter(u => u.active && u.role === "teacher");
   const activeStudents = users.filter(u => u.active && u.role === "student");
-  const visibleUsers = useMemo(() => users.filter(u => (u.full_name + " " + (u.telegram_id || "")).toLowerCase().includes(search.toLowerCase())), [users, search]);
+  const visibleUsers = useMemo(() => users
+    .filter(u => (u.full_name + " " + (u.telegram_id || "")).toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      if (userSort === "teachers") return (a.role === "teacher" ? 0 : 1) - (b.role === "teacher" ? 0 : 1) || a.full_name.localeCompare(b.full_name, "ru");
+      if (userSort === "students") return (a.role === "student" ? 0 : 1) - (b.role === "student" ? 0 : 1) || a.full_name.localeCompare(b.full_name, "ru");
+      if (userSort === "active") return Number(b.active) - Number(a.active) || a.full_name.localeCompare(b.full_name, "ru");
+      if (userSort === "inactive") return Number(a.active) - Number(b.active) || a.full_name.localeCompare(b.full_name, "ru");
+      return a.full_name.localeCompare(b.full_name, "ru", { sensitivity: "base" }) * (userSort === "name-desc" ? -1 : 1);
+    }), [users, search, userSort]);
   const assignedStudentIds = new Set((overview?.teachers || []).flatMap(t => t.students.map(s => s.id)));
   const unassignedStudents = activeStudents.filter(student => !assignedStudentIds.has(student.id));
   const visibleMessages = useMemo(() => messages.filter(message => {
@@ -504,11 +513,30 @@ export default function App() {
         </>}
 
         {page === "users" && <>
-          <div className="toolbar user-toolbar"><div className="search"><Search/><input placeholder="Поиск по имени или Telegram ID" value={search} onChange={e => setSearch(e.target.value)}/></div><span>{visibleUsers.length} пользователей</span><button className="btn primary" onClick={() => openCreate()}><Plus/>Добавить</button></div>
+          <div className="toolbar user-toolbar">
+            <div className="search"><Search/><input placeholder="Поиск по имени или Telegram ID" value={search} onChange={e => setSearch(e.target.value)}/></div>
+            <label className="user-sort"><ArrowUpDown size={15}/><select aria-label="Сортировка пользователей" value={userSort} onChange={e => setUserSort(e.target.value)}>
+              <option value="name-asc">По имени</option><option value="name-desc">Имя: Я — А</option><option value="teachers">Сначала учителя</option><option value="students">Сначала ученики</option><option value="active">Сначала активные</option><option value="inactive">Сначала отключённые</option>
+            </select></label>
+            <span>{visibleUsers.length}</span><button className="btn primary" onClick={() => openCreate()}><Plus/>Добавить</button>
+          </div>
           <div className="user-list">{visibleUsers.map(user => <div className="user-row" key={user.id}>
-            <div className={"avatar " + user.role}>{user.role === "teacher" ? <GraduationCap/> : user.role === "student" ? <Smile/> : <Users/>}</div><div className="person-info"><b>{user.full_name}</b><small>{user.telegram_id ? <span className="telegram-connected">Telegram ID {user.telegram_id}</span> : "Telegram не подключён"} · {user.role === "teacher" ? (user.has_access_code ? "Код доступа настроен" : "Код доступа не задан") + " · " : ""}{user.active ? "Активен" : "Отключён"}</small>{user.role === "teacher" && <small>Логин веб-панели: <b>{user.web_username || user.full_name}</b> · один код для веб-панели и Telegram</small>}</div><span className={"role-tag " + user.role}>{ROLE[user.role]}</span>
-            <button className="btn small" onClick={() => openEdit(user)}><Pencil/>Изменить</button>{user.telegram_id && <button className="btn small disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram"><Unlink/>Отключить Telegram</button>}<button className="icon-btn danger-icon" onClick={() => removeUser(user)} title="Удалить"><Trash2/></button>
-            {user.active && (user.role === "teacher" || !user.telegram_id) && <button className="btn small outline" onClick={() => makeCode(user)}><Copy/>{user.role === "teacher" ? "Новый код" : "Код"}</button>}
+            <div className={"avatar " + user.role}>{user.role === "teacher" ? <GraduationCap/> : user.role === "student" ? <Smile/> : <Users/>}</div>
+            <div className="person-info user-person-info">
+              <b>{user.full_name}</b>
+              <small className="user-meta">
+                <span className={"user-status-dot " + (user.active ? "is-active" : "is-inactive")}/>
+                {user.active ? "Активен" : "Отключён"}
+                <span className={"telegram-state " + (user.telegram_id ? "is-connected" : "")} title={user.telegram_id ? "Telegram подключён" : "Telegram не подключён"}><Link2 size={12}/>{user.telegram_id ? "Telegram" : "Не подключён"}</span>
+                {user.role === "teacher" && <span className="user-login">Логин: {user.web_username || user.full_name}</span>}
+              </small>
+            </div>
+            <div className="user-actions">
+              {user.telegram_id && <button className="user-action-btn disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram" aria-label="Отключить Telegram"><Unlink/></button>}
+              {user.active && (user.role === "teacher" || !user.telegram_id) && <button className="user-action-btn" onClick={() => makeCode(user)} title={user.role === "teacher" ? "Создать новый код доступа" : "Показать код подключения"} aria-label={user.role === "teacher" ? "Новый код доступа" : "Код подключения"}><Copy/></button>}
+              <button className="user-action-btn" onClick={() => openEdit(user)} title="Изменить профиль" aria-label="Изменить профиль"><Pencil/></button>
+              <button className="user-action-btn danger-icon user-delete" onClick={() => removeUser(user)} title="Удалить пользователя" aria-label="Удалить пользователя"><Trash2/></button>
+            </div>
           </div>)}</div>
         </>}
 
