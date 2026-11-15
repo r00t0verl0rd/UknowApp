@@ -3,7 +3,7 @@
 import hashlib
 import json
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from aiogram.types import Message as TgMessage
@@ -110,9 +110,15 @@ def claim_connection_code(
     if not user or not user.active or user.role not in {"teacher", "student"}:
         return None, "inactive"
 
-    # Teacher access codes are persistent and shared with web-panel login.
-    # They remain valid until an administrator rotates the code.
-    if user.role == "teacher":
+    now = datetime.now(timezone.utc)
+    expires_at = connection_code.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    # Persistent teacher codes use a long validity horizon and are shared with
+    # web-panel login. Older teacher activation codes retain their original
+    # one-time / 15-minute behavior until replaced.
+    if user.role == "teacher" and expires_at > now + timedelta(days=365):
         if connection_code.used_at is not None:
             return None, "used"
         existing_user = db.scalar(select(User).where(User.telegram_id == telegram_id))
@@ -132,10 +138,6 @@ def claim_connection_code(
     if connection_code.used_at is not None:
         return None, "used"
 
-    now = datetime.now(timezone.utc)
-    expires_at = connection_code.expires_at
-    if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
     if expires_at <= now:
         connection_code.used_at = now
         db.commit()
