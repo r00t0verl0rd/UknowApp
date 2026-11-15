@@ -1536,3 +1536,9 @@ img, video, audio { max-width: 100%; }
     color: #d1c9f4 !important;
   }
 }
+
+:root[data-theme="dark-soft"] .chat-search-control input {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
