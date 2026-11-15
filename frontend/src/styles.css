@@ -7931,3 +7931,11 @@ button:focus-visible, .btn:focus-visible {
     padding: 11px 10px;
   }
 }
+
+
+/* Give the mobile conversation picker enough height for its controls and several chats. */
+@media (max-width: 760px) {
+  .chats-content > .chat-layout {
+    grid-template-rows: minmax(150px, min(30dvh, 230px)) minmax(0, 1fr);
+  }
+}
