@@ -34,12 +34,14 @@ def verify_admin(username: str, password: str) -> bool:
     )
 
 
+# Храним только PBKDF2-хеш с уникальной солью, а не исходный пароль учителя.
 def hash_web_password(password: str) -> str:
     salt = secrets.token_bytes(16)
     digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 310_000)
     return salt.hex() + ":" + digest.hex()
 
 
+# Сравниваем вычисленный хеш с сохранённым значением без утечки через время сравнения.
 def verify_web_password(password: str, stored: Optional[str]) -> bool:
     if not stored or ":" not in stored:
         return False
@@ -102,6 +104,7 @@ def _prune_attempts(bucket: deque[float], now: float) -> None:
         bucket.popleft()
 
 
+# Ограничиваем частоту входов отдельно по IP и по паре IP/логин.
 def check_login_rate_limit(request: Request, username: str) -> None:
     now = time.monotonic()
     ip_key, user_key = _login_keys(request, username)
