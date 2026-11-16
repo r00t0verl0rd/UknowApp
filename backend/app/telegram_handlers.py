@@ -684,6 +684,16 @@ async def route_message(message: TgMessage, bot: Bot):
                         destination_chat_id = recipient.telegram_id
                         destination_thread_id = None
                         break
+
+                # With no unanswered message to infer the channel from, use
+                # the student's current verified forum-topic binding. This
+                # also lets a teacher initiate a new conversation in that topic.
+                if not unanswered_before_reply:
+                    current_binding = db.get(StudentTelegramGroup, recipient.id)
+                    if current_binding:
+                        destination_chat_id = current_binding.chat_id
+                        destination_thread_id = current_binding.thread_id
+
                 copy_kwargs = {
                     "chat_id": destination_chat_id,
                     "from_chat_id": message.chat.id,
