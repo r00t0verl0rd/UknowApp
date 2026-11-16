@@ -9216,3 +9216,82 @@ button:focus-visible, a:focus-visible {
 @media (min-width: 761px) {
   .mobile-chat-back { display: none; }
 }
+
+
+/* Align mobile composer note and send action in a predictable footer grid. */
+@media (max-width: 760px) {
+  .chat-composer .composer-footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(118px, 38%);
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .chat-composer .composer-tools,
+  .chat-composer .composer-send {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .chat-composer .composer-send {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .chat-composer .composer-send > small {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    text-align: center;
+    overflow-wrap: anywhere;
+    font-size: 9px;
+    line-height: 1.25;
+  }
+
+  .chat-composer .composer-send > .btn {
+    display: inline-flex;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 38px;
+    box-sizing: border-box;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .chat-composer .attach-control {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 360px) {
+  .chat-composer .composer-footer {
+    grid-template-columns: minmax(0, 1fr) minmax(108px, 40%);
+    gap: 6px;
+  }
+
+  .chat-composer .composer-send > small {
+    font-size: 8px;
+  }
+
+  .chat-composer .composer-send > .btn {
+    padding-inline: 6px;
+    font-size: 11px;
+  }
+
+  .chat-composer .attach-control {
+    gap: 4px;
+    padding-inline: 6px;
+    font-size: 10px;
+  }
+}
