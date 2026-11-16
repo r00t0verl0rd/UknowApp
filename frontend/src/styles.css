@@ -9526,3 +9526,41 @@ button:focus-visible, a:focus-visible {
     padding: 0;
   }
 }
+
+
+/* Restore the graph's soft rounded surfaces while keeping the workspace full width. */
+.chats-main > .content:not(.chats-content) > .graph-panel,
+.chats-main > .content:not(.chats-content) > .teacher-readonly-graph {
+  border: 1px solid var(--line, #e8e0f2);
+  border-radius: 20px;
+  background-color: var(--surface, #fff);
+  box-shadow: 0 8px 28px rgba(47, 31, 84, .045);
+  overflow: hidden;
+}
+
+.chats-main > .content:not(.chats-content) > .graph-panel {
+  padding: clamp(16px, 2vw, 28px);
+  background-image:
+    radial-gradient(ellipse at 4% 2%, rgba(194, 153, 255, .18), transparent 34%),
+    radial-gradient(ellipse at 96% 98%, rgba(255, 220, 176, .16), transparent 34%),
+    radial-gradient(circle, rgba(118, 84, 189, .055) .8px, transparent 1px);
+  background-size: auto, auto, 20px 20px;
+}
+
+.chats-main > .content:not(.chats-content) > .teacher-readonly-graph {
+  padding: clamp(14px, 1.8vw, 24px);
+}
+
+.chats-main > .content:not(.chats-content) > .graph-panel .teacher-branch,
+.chats-main > .content:not(.chats-content) > .graph-panel .person-card,
+.chats-main > .content:not(.chats-content) > .teacher-readonly-graph .teacher-graph-card {
+  border-radius: 14px;
+}
+
+@media (max-width: 760px) {
+  .chats-main > .content:not(.chats-content) > .graph-panel,
+  .chats-main > .content:not(.chats-content) > .teacher-readonly-graph {
+    border-radius: 16px;
+    padding: 13px;
+  }
+}
