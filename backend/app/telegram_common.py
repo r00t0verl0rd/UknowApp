@@ -1,4 +1,4 @@
-"""Shared Telegram message, account and conversation helpers."""
+"""Общие функции Telegram: привязка аккаунтов, проверка сообщений и работа с диалогами."""
 
 import hashlib
 import json
