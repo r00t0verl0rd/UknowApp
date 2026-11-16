@@ -15,7 +15,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from aiogram.types import BufferedInputFile
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import aliased
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -96,41 +96,48 @@ def validate_teacher_username(db: Session, username: str, exclude_user_id: Optio
 def conversation_dict(
     db: Session, conversation: Conversation, include_telegram_ids: bool = True
 ) -> dict:
-    # Одним запросом получаем историю диалога: из неё считаем непрочитанное и берём последнее сообщение.
+    # Для карточки диалога читаем только счётчик, последнее сообщение и непрочитанные записи.
+    # Полная история загружается отдельно, когда пользователь открывает переписку.
     assignment = conversation.assignment
-    message_rows = db.execute(
-        select(
-            Message.id,
-            Message.sender_role,
-            Message.delivery_status,
-            Message.metadata_json,
-            Message.content_type,
-            Message.text,
-            Message.created_at,
-        )
+    message_count = db.scalar(
+        select(func.count(Message.id)).where(Message.conversation_id == conversation.id)
+    ) or 0
+    last_message = db.scalar(
+        select(Message)
         .where(Message.conversation_id == conversation.id)
-        .order_by(Message.created_at, Message.id)
-    ).all()
-    count = len(message_rows)
-    last_message = message_rows[-1] if message_rows else None
-    # Match the teacher inbox logic: only delivered student messages that
-    # arrived after the latest successfully delivered teacher reply are pending.
-    last_teacher_reply = max(
-        (
-            index
-            for index, row in enumerate(message_rows)
-            if row.sender_role == "teacher" and row.delivery_status == "delivered"
-        ),
-        default=-1,
+        .order_by(Message.created_at.desc(), Message.id.desc())
+        .limit(1)
     )
+    last_teacher_reply = db.execute(
+        select(Message.created_at, Message.id)
+        .where(
+            Message.conversation_id == conversation.id,
+            Message.sender_role == "teacher",
+            Message.delivery_status == "delivered",
+        )
+        .order_by(Message.created_at.desc(), Message.id.desc())
+        .limit(1)
+    ).first()
+
+    unread_query = select(Message.metadata_json).where(
+        Message.conversation_id == conversation.id,
+        Message.sender_role == "student",
+        Message.delivery_status == "delivered",
+    )
+    if last_teacher_reply:
+        unread_query = unread_query.where(
+            or_(
+                Message.created_at > last_teacher_reply.created_at,
+                (Message.created_at == last_teacher_reply.created_at)
+                & (Message.id > last_teacher_reply.id),
+            )
+        )
+    unread_rows = db.scalars(unread_query).all()
     unread_count = sum(
-        1
-        for index, row in enumerate(message_rows)
-        if index > last_teacher_reply
-        and row.sender_role == "student"
-        and row.delivery_status == "delivered"
-        and json.loads(row.metadata_json or "{}").get("teacher_read_at") is None
+        1 for metadata_json in unread_rows
+        if json.loads(metadata_json or "{}").get("teacher_read_at") is None
     )
+
     return {
         "id": conversation.id,
         "status": conversation.status,
@@ -154,7 +161,7 @@ def conversation_dict(
             ) + ((": " + last_message.text) if last_message.text else "")
         ) if last_message else "Переписка пока пуста",
         "last_message_at": last_message.created_at.isoformat() if last_message else None,
-        "message_count": count,
+        "message_count": message_count,
         "unread_count": unread_count,
     }
 
