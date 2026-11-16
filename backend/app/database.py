@@ -8,14 +8,16 @@ class Base(DeclarativeBase):
     pass
 
 
+# Проверяем соединение перед использованием; для SQLite увеличиваем ожидание блокировки файла БД.
 engine_options = {"pool_pre_ping": True}
 if DATABASE_URL.startswith("sqlite"):
-    engine_options["connect_args"] = {"check_same_thread": False}
+    engine_options["connect_args"] = {"check_same_thread": False, "timeout": 30}
 
 engine = create_engine(DATABASE_URL, **engine_options)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
+# Создаём таблицы и выполняем небольшие совместимые миграции старых баз данных.
 def create_tables() -> None:
     from . import models  # noqa: F401
 
