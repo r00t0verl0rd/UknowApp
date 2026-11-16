@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Resp
 from fastapi.responses import FileResponse, StreamingResponse
 from aiogram.types import BufferedInputFile
 from sqlalchemy import func, or_, select
-from sqlalchemy.orm import aliased
+from sqlalchemy.orm import aliased, selectinload
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -599,6 +599,10 @@ def list_conversations(_: Admin, db: Db):
     student = aliased(User)
     conversations = db.scalars(
         select(Conversation)
+        .options(
+            selectinload(Conversation.assignment).selectinload(Assignment.teacher),
+            selectinload(Conversation.assignment).selectinload(Assignment.student),
+        )
         .join(Assignment, Conversation.assignment_id == Assignment.id)
         .join(teacher, Assignment.teacher_id == teacher.id)
         .join(student, Assignment.student_id == student.id)
@@ -851,6 +855,10 @@ async def panel_events(request: Request, principal: PanelUser):
 def panel_conversations(principal: PanelUser, db: Db):
     statement = (
         select(Conversation)
+        .options(
+            selectinload(Conversation.assignment).selectinload(Assignment.teacher),
+            selectinload(Conversation.assignment).selectinload(Assignment.student),
+        )
         .join(Assignment, Conversation.assignment_id == Assignment.id)
         .join(User, Assignment.student_id == User.id)
         .where(Assignment.active.is_(True), User.active.is_(True), Conversation.status == "active")
