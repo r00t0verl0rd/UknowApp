@@ -404,32 +404,44 @@ async def route_message(message: TgMessage, bot: Bot):
                     active_conversation = current_student_conversation(db, sender.id)
 
                     if (
-                        existing_student_binding is None
-                        and occupied_topic is None
+                        occupied_topic is None
                         and active_conversation
                         and active_conversation.status == "active"
                     ):
-                        group_binding = StudentTelegramGroup(
-                            student_id=sender.id,
-                            chat_id=message.chat.id,
-                            thread_id=message.message_thread_id,
-                            group_title=message.chat.title,
-                        )
-                        db.add(group_binding)
+                        # The linked Telegram account identifies the student.
+                        # Automatically move their topic binding when they start
+                        # writing in another free forum topic; no /bind_group step
+                        # should be required from the student.
+                        if existing_student_binding:
+                            existing_student_binding.chat_id = message.chat.id
+                            existing_student_binding.thread_id = message.message_thread_id
+                            existing_student_binding.group_title = message.chat.title
+                            group_binding = existing_student_binding
+                            event_name = "TELEGRAM_GROUP_AUTO_REBOUND"
+                        else:
+                            group_binding = StudentTelegramGroup(
+                                student_id=sender.id,
+                                chat_id=message.chat.id,
+                                thread_id=message.message_thread_id,
+                                group_title=message.chat.title,
+                            )
+                            db.add(group_binding)
+                            event_name = "TELEGRAM_GROUP_AUTO_BOUND"
+
                         try:
                             db.commit()
                             logger.warning(
-                                "TELEGRAM_GROUP_AUTO_BOUND student_id=%s telegram_id=%s "
-                                "chat_id=%s thread_id=%s",
+                                "%s student_id=%s telegram_id=%s chat_id=%s thread_id=%s",
+                                event_name,
                                 sender.id,
                                 message.from_user.id,
                                 message.chat.id,
                                 message.message_thread_id,
                             )
                         except IntegrityError:
-                            # Another update may have attempted the same first-time
-                            # binding concurrently. Re-read the row instead of losing
-                            # the student's first message to a uniqueness race.
+                            # Another student/update may have claimed the topic
+                            # concurrently. Re-read only this student's exact
+                            # target binding; never attribute a foreign topic.
                             db.rollback()
                             group_binding = db.scalar(
                                 select(StudentTelegramGroup).where(
@@ -439,7 +451,7 @@ async def route_message(message: TgMessage, bot: Bot):
                                 )
                             )
                             if not group_binding:
-                                logger.exception(
+                                logger.warning(
                                     "TELEGRAM_GROUP_AUTO_BIND_CONFLICT student_id=%s "
                                     "chat_id=%s thread_id=%s",
                                     sender.id,
@@ -452,14 +464,6 @@ async def route_message(message: TgMessage, bot: Bot):
                             "student_id=%s owner_student_id=%s chat_id=%s thread_id=%s",
                             sender.id,
                             occupied_topic.student_id,
-                            message.chat.id,
-                            message.message_thread_id,
-                        )
-                    elif existing_student_binding:
-                        logger.info(
-                            "Student already has a forum binding; automatic rebind skipped "
-                            "(student_id=%s chat_id=%s thread_id=%s)",
-                            sender.id,
                             message.chat.id,
                             message.message_thread_id,
                         )
