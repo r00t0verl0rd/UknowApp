@@ -2,7 +2,7 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm install --no-fund
+RUN npm ci --no-fund --no-audit
 
 COPY . .
 ARG VITE_API_BASE_URL=""
