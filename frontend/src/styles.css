@@ -7645,6 +7645,12 @@ button:focus-visible, a:focus-visible {
   border-color: var(--ui-border-strong);
   box-shadow: var(--ui-focus);
 }
+/* The search wrapper owns the focus ring; prevent a second rectangular ring on the input. */
+.chat-search-control input:focus,
+.chat-search-control input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
 ::selection { background: rgba(120, 95, 192, .22); }
 
 /* Harmonized role colors: teachers use purple, students use the brand red. */
