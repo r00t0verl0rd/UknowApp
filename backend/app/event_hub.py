@@ -1,8 +1,8 @@
-"""In-process notifications for live panel updates.
+"""Локальные уведомления для обновления веб-панели в реальном времени.
 
-The application runs a single Uvicorn worker because Telegram long polling
-must have a single owner. A bounded queue per SSE client coalesces bursts:
-clients only need to know that some panel data changed and should be reloaded.
+Приложение работает с одним Uvicorn worker, чтобы только один процесс
+управлял Telegram long polling. Ограниченная очередь SSE-клиента объединяет
+частые события: браузеру достаточно узнать, что данные изменились, и перечитать их.
 """
 
 import asyncio
@@ -12,6 +12,7 @@ import json
 _subscribers: set[asyncio.Queue[str]] = set()
 
 
+# Создаём очередь на одного клиента; размер 1 не даёт копить устаревшие события.
 def subscribe_chat_updates() -> asyncio.Queue:
     queue = asyncio.Queue(maxsize=1)
     _subscribers.add(queue)
@@ -22,6 +23,7 @@ def unsubscribe_chat_updates(queue: asyncio.Queue) -> None:
     _subscribers.discard(queue)
 
 
+# Отправляем сигнал об изменении, а не сами данные: источником истины остаётся БД.
 def publish_chat_update(conversation_id: int) -> None:
     payload = json.dumps({"conversation_id": int(conversation_id)})
     for queue in tuple(_subscribers):
