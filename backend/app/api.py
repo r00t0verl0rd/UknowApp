@@ -782,17 +782,17 @@ async def panel_events(request: Request, principal: PanelUser):
         try:
             # The initial event makes the client perform one authoritative load
             # after the stream is established, so no polling timer is necessary.
-            yield "retry: 5000\\n\\n"
-            yield "event: update\\ndata: {}\\n\\n"
+            yield "retry: 5000\n\n"
+            yield "event: update\ndata: {}\n\n"
             while not await request.is_disconnected():
                 try:
                     payload = await asyncio.wait_for(queue.get(), timeout=20)
                 except asyncio.TimeoutError:
                     # SSE comment frames keep intermediaries from closing an idle
                     # connection; they do not trigger a browser data callback.
-                    yield ": keep-alive\\n\\n"
+                    yield ": keep-alive\n\n"
                     continue
-                yield "event: update\\ndata: " + payload + "\\n\\n"
+                yield "event: update\ndata: " + payload + "\n\n"
         finally:
             unsubscribe_chat_updates(queue)
 
