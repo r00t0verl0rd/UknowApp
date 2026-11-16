@@ -301,9 +301,14 @@ export default function App() {
     if (!auth || page !== "chats") return undefined;
     let active = true;
     let inFlight = false;
+    let refreshPending = false;
 
     const syncChats = async () => {
-      if (inFlight || !active) return;
+      if (!active) return;
+      if (inFlight) {
+        refreshPending = true;
+        return;
+      }
       inFlight = true;
       try {
         const conversations = await request("/api/panel/conversations");
@@ -317,12 +322,18 @@ export default function App() {
         // Keep the current conversation visible during brief network interruptions.
       } finally {
         inFlight = false;
+        if (refreshPending && active) {
+          refreshPending = false;
+          void syncChats();
+        }
       }
     };
 
-    // Refresh immediately when opening the chat page, then keep it live.
-    void syncChats();
-    const interval = window.setInterval(syncChats, 2000);
+    // One persistent SSE connection replaces the two-second HTTP polling loop.
+    // The server sends an initial update event as soon as the stream is ready.
+    const eventSource = new EventSource(API + "/api/panel/events", { withCredentials: true });
+    eventSource.addEventListener("update", syncChats);
+
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") void syncChats();
     };
@@ -330,7 +341,7 @@ export default function App() {
 
     return () => {
       active = false;
-      window.clearInterval(interval);
+      eventSource.close();
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [auth, page, selectedChat?.id, request]);
