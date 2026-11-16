@@ -32,6 +32,7 @@ def seed_demo_data() -> None:
         db.commit()
 
 
+# Telegram работает в фоновой задаче: временная недоступность Telegram не должна останавливать API.
 async def run_telegram_bot(bot, dispatcher) -> None:
     """Run polling in the background; Telegram outages must not stop the web API."""
     retry_delay = 5
@@ -81,6 +82,7 @@ async def run_telegram_bot(bot, dispatcher) -> None:
             retry_delay = min(retry_delay * 2, 60)
 
 
+# Подготавливаем БД и запускаем один экземпляр фонового Telegram polling на время жизни API.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_tables()
