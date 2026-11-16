@@ -1,4 +1,4 @@
-"""Telegram commands and message routing."""
+"""Обработчики команд Telegram и маршрутизация входящих сообщений."""
 
 import json
 import logging
