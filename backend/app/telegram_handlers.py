@@ -214,7 +214,7 @@ async def handle_panel_callback(callback: CallbackQuery, bot: Bot):
 
         await callback.answer()
         if opened_conversation:
-            await mark_visible_messages_read_by_teacher(bot, db, opened_conversation)
+            mark_visible_messages_read_by_teacher(db, opened_conversation)
         await update_teacher_panel(bot, db, user)
 
 
@@ -236,7 +236,7 @@ async def choose_conversation(callback: CallbackQuery, bot: Bot):
             return
         set_teacher_session(db, teacher, conversation)
         await callback.answer()
-        await mark_visible_messages_read_by_teacher(bot, db, conversation)
+        mark_visible_messages_read_by_teacher(db, conversation)
         await update_teacher_panel(bot, db, teacher)
 
 
@@ -605,7 +605,7 @@ async def route_message(message: TgMessage, bot: Bot):
             if sender.role == "teacher" else []
         )
         if sender.role == "teacher":
-            await mark_visible_messages_read_by_teacher(bot, db, conversation)
+            mark_visible_messages_read_by_teacher(db, conversation)
         row = persist_message(db, conversation.id, sender, message, "pending")
         metadata = json.loads(row.metadata_json or "{}")
         metadata["source_mode"] = "group_topic" if group_binding else "private"
@@ -754,7 +754,7 @@ async def route_message(message: TgMessage, bot: Bot):
                                 pending.id,
                                 inbox_message_id,
                             )
-                await mark_messages_read_by_teacher(bot, db, pending_rows)
+                mark_messages_read_by_teacher(db, pending_rows)
                 # Keep the selected conversation active after replying.
                 try:
                     await update_teacher_panel(bot, db, sender)
