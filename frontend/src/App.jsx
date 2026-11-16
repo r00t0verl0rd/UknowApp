@@ -124,7 +124,7 @@ function ChatAudioPlayer({ src, label }) {
   </div>;
 }
 
-function MessageBubble({ message }) {
+function MessageBubble({ message, onDelete }) {
   const [mediaUrl, setMediaUrl] = useState("");
   const media = message.metadata?.media;
   useEffect(() => {
@@ -174,8 +174,13 @@ function MessageBubble({ message }) {
     animation: "Анимация"
   }[sourceKind] || "Вложение");
   return <div className={"message " + message.sender_role}>
-    <b>{message.sender} <small>{ROLE[message.sender_role] || message.sender_role}</small></b>
-    <time className="message-time">{formatLocalTime(message.created_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</time>
+    <div className="message-topline">
+      <b>{message.sender} <small>{ROLE[message.sender_role] || message.sender_role}</small></b>
+      <div className="message-tools">
+        <time className="message-time">{formatLocalTime(message.created_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</time>
+        {message.can_delete && <button type="button" className="message-delete-btn" onClick={() => onDelete?.(message)} title="Удалить своё сообщение у всех" aria-label="Удалить своё сообщение"><Trash2 size={14}/></button>}
+      </div>
+    </div>
     {message.text && <p>{message.text}</p>}
     {mediaUrl && kind === "photo" && <img className="chat-media-image" src={mediaUrl} alt={label} />}
     {mediaUrl && ["voice", "audio"].includes(kind) && <ChatAudioPlayer src={mediaUrl} label={label} />}
@@ -233,6 +238,8 @@ export default function App() {
   }, [userInfo]);
   const [deleteCandidate, setDeleteCandidate] = useState(null);
   const [deletingUser, setDeletingUser] = useState(false);
+  const [deleteMessageCandidate, setDeleteMessageCandidate] = useState(null);
+  const [deletingMessage, setDeletingMessage] = useState(false);
   const [disconnectCandidate, setDisconnectCandidate] = useState(null);
   const [disconnectingTelegram, setDisconnectingTelegram] = useState(false);
   const [name, setName] = useState("");
@@ -592,6 +599,28 @@ export default function App() {
     catch (e) { setError(e.message); }
   }
 
+  async function confirmDeleteMessage() {
+    const message = deleteMessageCandidate;
+    if (!message || deletingMessage) return;
+    setDeletingMessage(true);
+    setError("");
+    try {
+      const result = await request("/api/panel/messages/" + message.id, { method: "DELETE" });
+      setMessages(current => current.filter(item => item.id !== message.id));
+      setDeleteMessageCandidate(null);
+      if (selectedChat) setChats(await request("/api/panel/conversations"));
+      if (result.telegram_failed > 0) {
+        notify("Удалено из UknowApp. Не удалось удалить копии в Telegram: " + result.telegram_failed + ". Возможно, Telegram уже не разрешает их удаление.");
+      } else {
+        notify("Сообщение удалено у всех участников");
+      }
+    } catch (e) {
+      setError(e.message || "Не удалось удалить сообщение");
+    } finally {
+      setDeletingMessage(false);
+    }
+  }
+
   async function sendChatMessage(event) {
     event.preventDefault();
     if (!selectedChat || (!draft.trim() && !attachment)) return;
@@ -809,7 +838,7 @@ export default function App() {
             })}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">{profile?.role === "admin" ? "Учитель не найден" : "По выбранному фильтру ничего не найдено"}</div>}</div></div>
             <div className="chat-detail">{selectedChat ? <>
               <div className="chat-head"><button type="button" className="mobile-chat-back" onClick={() => { setSelectedChat(null); setMessages([]); }} aria-label="Назад к списку диалогов"><ArrowLeft size={19}/><span>Диалоги</span></button><div className="chat-head-person"><b>{selectedChat.student.full_name}</b>{profile?.role === "admin" && <small>{selectedChat.teacher.full_name}</small>}</div><div className="chat-head-tools"><select aria-label="Фильтр сообщений" value={messageFilter} onChange={e => setMessageFilter(e.target.value)}><option value="all">Все сообщения</option><option value="media">Все вложения</option><option value="audio">Аудио</option><option value="photos">Фото</option><option value="files">Файлы и видео</option></select><span className="role-tag">{selectedChat.status === "active" ? "Активна" : "Закрыта"}</span></div></div>
-              <div className="messages" ref={messagesViewportRef}>{visibleMessages.map(message => <MessageBubble message={message} key={message.id} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}{!!messages.length && !visibleMessages.length && <div className="empty-state">Нет сообщений этого типа</div>}</div>
+              <div className="messages" ref={messagesViewportRef}>{visibleMessages.map(message => <MessageBubble message={message} key={message.id} onDelete={setDeleteMessageCandidate} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}{!!messages.length && !visibleMessages.length && <div className="empty-state">Нет сообщений этого типа</div>}</div>
               {selectedChat.status === "active" && <form className="chat-composer" onSubmit={sendChatMessage}>
                 <textarea value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder={profile?.role === "admin" ? "Сообщение от администратора обеим сторонам…" : "Ответить ученику…"} rows={2} maxLength={4000}/>
                 <div className="composer-footer">
@@ -862,6 +891,20 @@ export default function App() {
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={() => setDeleteCandidate(null)} disabled={deletingUser}>Отмена</button>
           <button type="button" className="btn danger" onClick={confirmRemoveUser} disabled={deletingUser}>{deletingUser ? "Удаляем…" : <><Trash2/>Удалить участника</>}</button>
+        </div>
+      </section>
+    </div>}
+    {deleteMessageCandidate && <div className="overlay" onMouseDown={() => !deletingMessage && setDeleteMessageCandidate(null)}>
+      <section className="modal confirm-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-message-title" onMouseDown={e => e.stopPropagation()}>
+        <div className="modal-head">
+          <div><div className="eyebrow">УДАЛЕНИЕ СООБЩЕНИЯ</div><h2 id="delete-message-title">Удалить у всех?</h2></div>
+          <button className="icon-btn" type="button" onClick={() => setDeleteMessageCandidate(null)} disabled={deletingMessage} aria-label="Закрыть"><X/></button>
+        </div>
+        <p className="hint">Сообщение будет удалено из переписки UknowApp и предпринята попытка удалить его копии в Telegram у всех получателей. Чужие сообщения удалить нельзя.</p>
+        <div className="message-delete-preview">{deleteMessageCandidate.text || deleteMessageCandidate.metadata?.media?.file_name || "Вложение"}</div>
+        <div className="modal-actions">
+          <button type="button" className="btn ghost" onClick={() => setDeleteMessageCandidate(null)} disabled={deletingMessage}>Отмена</button>
+          <button type="button" className="btn danger" onClick={confirmDeleteMessage} disabled={deletingMessage}>{deletingMessage ? "Удаляем…" : <><Trash2/>Удалить у всех</>}</button>
         </div>
       </section>
     </div>}
