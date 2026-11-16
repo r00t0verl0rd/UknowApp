@@ -8283,3 +8283,118 @@ button:focus-visible, a:focus-visible {
     transition-duration: .01ms !important;
   }
 }
+
+
+/* Stable user rows on tablets: identity and actions occupy predictable
+   grid tracks; long names never compete with the action controls. */
+.user-list,
+.user-row {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.user-row > .user-person-info {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.user-row > .user-person-info > b {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.user-row > .user-actions {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+}
+
+.user-row > .user-actions > .user-info-wrap {
+  display: flex;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.user-row > .user-actions > .user-action-btn,
+.user-row > .user-actions > .user-info-wrap > .user-action-btn {
+  flex: 0 0 auto;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.user-row > .user-actions .connect-toggle {
+  min-width: 118px;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.user-info-popover {
+  z-index: 30;
+  max-width: min(320px, calc(100vw - 28px));
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 761px) and (max-width: 1200px) {
+  .user-row {
+    display: grid !important;
+    grid-template-columns: 44px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 10px;
+    padding: 13px clamp(10px, 1.5vw, 18px);
+  }
+
+  .user-row > .avatar {
+    grid-column: 1;
+    grid-row: 1;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+  }
+
+  .user-row > .user-person-info {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .user-row > .user-actions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    margin: 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 760px) {
+  .user-row > .user-actions {
+    justify-content: flex-start;
+    gap: 7px;
+  }
+}
+
+@media (max-width: 420px) {
+  .user-row > .user-actions {
+    column-gap: 6px;
+    row-gap: 7px;
+  }
+
+  .user-row > .user-actions .connect-toggle {
+    min-width: 112px;
+    padding-inline: 9px;
+  }
+}
