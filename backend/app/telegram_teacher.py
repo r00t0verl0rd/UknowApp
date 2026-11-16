@@ -1,4 +1,4 @@
-"""Teacher inbox, Reply Keyboard and persistent panel management."""
+"""Входящие учителя, клавиатура Telegram и управление постоянной панелью диалогов."""
 
 import asyncio
 import hashlib
