@@ -11,6 +11,7 @@ from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from .event_hub import publish_chat_update
 from .models import Assignment, ConnectionCode, Conversation, Message, User
 
 
@@ -84,6 +85,7 @@ def persist_message(
     db.add(row)
     db.commit()
     db.refresh(row)
+    publish_chat_update(conversation_id)
     return row
 
 
