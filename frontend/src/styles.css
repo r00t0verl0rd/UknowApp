@@ -3502,465 +3502,9 @@ body {
   .content { padding-inline: clamp(30px, 2.5vw, 42px); }
 }
 
-@media (min-width: 761px) and (max-width: 1024px) {
 
-  
 
-.sidebar{width:210px}.main{margin-left:210px}.content{padding:25px}.metrics{grid-template-columns:repeat(2,1fr)}
-
-
-  .sidebar { width: 230px; }
-  .main { margin-left: 230px; }
-  .content { padding: 28px 24px; }
-  .brand img { width: 52px; height: 52px; }
-
-
-
-  button:not(.primary):not(.disconnect):not(.danger-icon),
-  .btn:not(.primary):not(.disconnect),
-  .sidebar nav button,
-  .person-actions button:not(.danger-icon),
-  .icon-btn:not(.danger-icon),
-  .add-student,
-  .chat-item,
-  .alert-row button,
-  .modal-head button {
-    -webkit-appearance: none !important;
-    appearance: none !important;
-    background-color: #f0eef3 !important;
-    border: 1px solid #e2dce9 !important;
-    color: #393149 !important;
-    box-shadow: none !important;
-  }
-  .btn.ghost { background-color: #eae7ef !important; }
-  .btn.outline, .add-student { background-color: #f1edf7 !important; color: var(--purple) !important; }
-  .sidebar nav button.active {
-    background: linear-gradient(105deg, #573e99, #7856bd) !important;
-    border-color: transparent !important;
-    color: #fff !important;
-  }
-  .chat-item.selected { background-color: #eae4f4 !important; color: var(--purple) !important; }
-  .btn.primary {
-    background: linear-gradient(105deg, #573e99, #7856bd) !important;
-    border-color: transparent !important;
-    color: #fff !important;
-  }
-  .btn.disconnect {
-    background-color: #fff0f1 !important;
-    border-color: #f2d5d9 !important;
-    color: #b82c3b !important;
-  }
-
-
-
-  .sidebar nav button.active:not(.primary):not(.disconnect):not(.danger-icon) {
-    background: linear-gradient(105deg, #573e99, #7856bd) !important;
-    border-color: transparent !important;
-    color: #fff !important;
-  }
-  .btn.ghost:not(.primary):not(.disconnect):not(.danger-icon) {
-    background-color: #eae7ef !important;
-  }
-  .btn.outline:not(.primary):not(.disconnect):not(.danger-icon),
-  button.add-student:not(.primary):not(.disconnect):not(.danger-icon) {
-    background-color: #f1edf7 !important;
-    color: var(--purple) !important;
-  }
-  button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) {
-    background-color: #eae4f4 !important;
-    color: var(--purple) !important;
-  }
-
-
-
-  :root[data-theme="dark-soft"] button:not(.primary):not(.disconnect):not(.danger-icon),
-  :root[data-theme="dark-soft"] .btn:not(.primary):not(.disconnect):not(.danger-icon),
-  :root[data-theme="dark-soft"] .sidebar nav button,
-  :root[data-theme="dark-soft"] .person-actions button:not(.danger-icon),
-  :root[data-theme="dark-soft"] .icon-btn:not(.danger-icon),
-  :root[data-theme="dark-soft"] .add-student,
-  :root[data-theme="dark-soft"] .chat-item,
-  :root[data-theme="dark-soft"] .alert-row button,
-  :root[data-theme="dark-soft"] .modal-head button {
-    background: #2b3443 !important;
-    border-color: #414c60 !important;
-    color: #c6cddd !important;
-    box-shadow: none !important;
-  }
-  :root[data-theme="dark-soft"] .sidebar nav button.active,
-  :root[data-theme="dark-soft"] .btn.primary {
-    background: #71679e !important;
-    border-color: #8b80b8 !important;
-    color: #fff !important;
-  }
-  :root[data-theme="dark-soft"] .chat-item.selected,
-  :root[data-theme="dark-soft"] button.chat-item.selected {
-    background: #343449 !important;
-    border-color: #514b6d !important;
-    color: #d1c9f4 !important;
-  }
-
-
-
-  .chat-layout {
-    height: clamp(480px, calc(100dvh - 300px), 760px);
-    min-height: 480px;
-    max-height: 760px;
-    align-items: stretch;
-    overflow: hidden;
-  }
-
-  .chat-list {
-    height: 100%;
-    min-height: 0;
-    max-height: none;
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    scrollbar-width: thin;
-  }
-
-  .chat-detail {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-width: 0;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .chat-head {
-    position: relative;
-    top: auto;
-    flex: 0 0 auto;
-  }
-
-  .messages {
-    flex: 1 1 0;
-    height: 0;
-    min-height: 0;
-    max-height: none;
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    scrollbar-width: thin;
-  }
-
-  .chat-composer {
-    flex: 0 0 auto;
-  }
-
-
-
-  .sidebar {
-    width: 232px;
-    padding: 18px 14px;
-  }
-
-  .main {
-    margin-left: 232px;
-  }
-
-  .brand {
-    gap: 10px;
-    padding: 0 7px 22px;
-    font-size: 22px;
-  }
-
-  .brand img {
-    width: 48px;
-    height: 48px;
-  }
-
-  .sidebar nav {
-    gap: 4px;
-  }
-
-  .sidebar nav button,
-  .logout {
-    gap: 10px;
-    padding: 11px;
-    font-size: 13px;
-  }
-
-  .topbar {
-    height: 56px;
-    padding: 0 22px;
-  }
-
-  .topbar-context {
-    gap: 12px;
-  }
-
-  .topbar-context b {
-    font-size: 13px;
-    font-weight: 800;
-  }
-
-  .topbar-user {
-    margin-left: 0;
-    font-size: 10px;
-  }
-
-  .content {
-    width: 100%;
-    max-width: 1900px;
-    padding: 14px 20px 18px;
-  }
-
-  .page-title {
-    display: none;
-  }
-
-  .metrics {
-    gap: 10px;
-    margin-bottom: 12px;
-  }
-
-  .metric {
-    min-height: 56px;
-    padding: 9px 12px;
-  }
-
-  .graph-panel {
-    padding: 19px;
-    border-radius: 16px;
-  }
-
-  .graph-panel .section-head {
-    margin-bottom: 12px;
-  }
-
-  .graph-panel .root-node {
-    min-height: 68px;
-    margin-bottom: 14px;
-    padding: 10px 14px;
-  }
-
-  .graph-panel .root-node img {
-    width: 44px;
-    height: 44px;
-  }
-
-  .graph-panel .teacher-grid {
-    gap: 12px;
-  }
-
-  .graph-panel .teacher-branch {
-    padding: 10px;
-    border-radius: 13px;
-  }
-
-  .graph-panel .teacher-card {
-    min-height: 64px;
-    padding: 9px 11px;
-  }
-
-  .graph-panel .student-list {
-    gap: 6px;
-    margin: 9px 0 0 20px;
-  }
-
-  .graph-panel .student-card {
-    min-height: 52px;
-    padding: 7px 9px;
-  }
-
-  .graph-panel .add-student {
-    margin-top: 7px;
-  }
-
-  .graph-panel .unassigned {
-    margin-top: 15px;
-    padding-top: 13px;
-  }
-
-  .graph-panel .graph-actions {
-    margin-top: 12px;
-    padding-top: 12px;
-  }
-
-  .teacher-readonly-graph {
-    padding: 18px;
-  }
-
-  .teacher-graph-root,
-  .teacher-graph-summary {
-    max-width: none;
-  }
-
-  .teacher-graph-root {
-    margin: 10px 0;
-  }
-
-  .teacher-graph-summary {
-    margin: 12px 0 0;
-  }
-
-  .user-row {
-    gap: 10px;
-    padding: 9px 14px;
-  }
-
-  .chat-layout {
-    height: clamp(440px, calc(100dvh - 88px), 980px);
-    min-height: 440px;
-    max-height: 980px;
-    grid-template-columns: minmax(270px, 320px) minmax(0, 1fr);
-  }
-
-  .chat-list {
-    height: 100%;
-    min-height: 0;
-    max-height: none;
-    padding: 10px;
-  }
-
-  .chat-item {
-    gap: 4px;
-    padding: 10px;
-  }
-
-  .chat-detail {
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .chat-head {
-    flex: 0 0 auto;
-    padding: 11px 15px;
-  }
-
-  .messages {
-    flex: 1 1 0;
-    height: 0;
-    min-height: 0;
-    max-height: none;
-    padding: 14px 16px;
-  }
-
-  .chat-composer {
-    flex: 0 0 auto;
-    padding: 10px 14px;
-    gap: 8px;
-  }
-
-  .chat-composer textarea {
-    min-height: 50px;
-    max-height: 100px;
-  }
-
-
-
-  .chat-composer textarea {
-    min-height: 58px;
-    max-height: 112px;
-  }
-
-
-
-  .chat-layout {
-    min-height: 620px;
-    height: min(760px, calc(100vh - 230px));
-    max-height: calc(100vh - 190px);
-    min-width: 0;
-  }
-
-  .chat-list {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    min-width: 0;
-    min-height: 0;
-    max-height: none;
-    overflow: hidden;
-    gap: 0;
-    box-sizing: border-box;
-  }
-
-  .chat-list-tools {
-    position: relative;
-    z-index: 1;
-    flex: 0 0 auto;
-    width: 100%;
-    box-sizing: border-box;
-    margin: 0;
-  }
-
-  .chat-items-scroll {
-    display: flex;
-    flex: 1 1 auto;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 7px;
-    width: 100%;
-    min-width: 0;
-    min-height: 0;
-    padding-top: 10px;
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    scrollbar-width: thin;
-  }
-
-  .chat-items-scroll > .chat-item {
-    display: grid;
-    flex: 0 0 auto;
-    width: 100%;
-    min-width: 0;
-    min-height: max-content;
-    box-sizing: border-box;
-  }
-
-
-@media (max-height: 650px) {
-
-  .chat-layout {
-    height: max(420px, calc(100dvh - 220px));
-  }
-
-}
-
-
-  .chats-shell {
-    height: 100dvh;
-    min-height: 0;
-    overflow: hidden;
-  }
-  .chats-main {
-    height: 100dvh;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  .chats-content {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    padding-bottom: 24px;
-  }
-  .chats-content > .chat-layout {
-    flex: 1 1 auto;
-    height: auto;
-    min-height: 0;
-    max-height: none;
-  }
-
-/* Tablet sizing interpolates between compact mobile and full desktop. */
-  .sidebar { width: clamp(210px, 23vw, 250px); }
-  .main { margin-left: clamp(210px, 23vw, 250px); }
-  .topbar { padding-inline: clamp(20px, 3vw, 34px); }
-  .content { padding: clamp(24px, 3vw, 34px); }
-  .graph-panel { padding: clamp(20px, 2.8vw, 30px); }
-  .teacher-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); gap: clamp(14px, 2vw, 24px); }
-  .chat-layout { grid-template-columns: clamp(220px, 28vw, 290px) minmax(0, 1fr); }
-}
-
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
 
   
 
@@ -6025,7 +5569,7 @@ input::placeholder, textarea::placeholder { color: #a49daf; }
 
 /* Narrow desktop windows and tablets: controls wrap instead of forcing
    the page wider than the space left beside the sidebar. */
-@media (min-width: 761px) and (max-width: 1200px) {
+@media (min-width: 1025px) and (max-width: 1200px) {
   .user-toolbar {
     grid-template-columns: minmax(0, 1fr) minmax(0, auto);
     gap: 9px;
@@ -6082,7 +5626,7 @@ input::placeholder, textarea::placeholder { color: #a49daf; }
 }
 
 /* Mobile: two compact columns for filter/count, with a full-width add action. */
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .user-toolbar {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 8px;
@@ -6481,7 +6025,7 @@ button:disabled,
 
 /* On tablets the search gets its own row; the remaining controls stay
    in a compact two-column grid rather than spreading across the screen. */
-@media (min-width: 761px) and (max-width: 1200px) {
+@media (min-width: 1025px) and (max-width: 1200px) {
   .toolbar.user-toolbar {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 9px;
@@ -6505,7 +6049,7 @@ button:disabled,
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .toolbar.user-toolbar {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 8px;
@@ -6720,7 +6264,7 @@ button:disabled,
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .page-title {
     align-items: center;
     gap: 10px;
@@ -7167,7 +6711,7 @@ button:focus-visible, .btn:focus-visible {
 }
 
 /* Tablet: two fixed rows, so controls never wrap unpredictably. */
-@media (min-width: 761px) and (max-width: 1200px) {
+@media (min-width: 1025px) and (max-width: 1200px) {
   .toolbar.user-toolbar {
     grid-template-columns: minmax(0, 1fr) minmax(190px, .8fr) !important;
     grid-template-rows: 42px 42px !important;
@@ -7197,7 +6741,7 @@ button:focus-visible, .btn:focus-visible {
 }
 
 /* Phones: a deliberate stack with no accidental line wrapping. */
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .toolbar.user-toolbar {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
     grid-template-rows: 42px 42px auto !important;
@@ -7332,7 +6876,7 @@ button:focus-visible, .btn:focus-visible {
   min-height: 0;
   overflow-y: auto;
 }
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .chats-main > .topbar {
     display: none;
   }
@@ -7373,7 +6917,7 @@ button:focus-visible, .btn:focus-visible {
   max-height: none;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .chats-main > .content {
     padding: 12px clamp(9px, 3vw, 14px) 14px;
   }
@@ -7479,7 +7023,7 @@ button:focus-visible, .btn:focus-visible {
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .chats-shell {
     height: 100dvh;
     height: 100svh;
@@ -7555,115 +7099,9 @@ button:focus-visible, .btn:focus-visible {
 
 /* Responsive inbox workspace: keep the composer visible and scroll only
    the conversation list and message history on touch-sized screens. */
-@media (min-width: 761px) and (max-width: 1024px) {
-  .chats-main > .content.chats-content {
-    min-height: 0;
-    overflow: hidden;
-  }
 
-  .chats-content > .chat-layout {
-    display: grid;
-    grid-template-columns: minmax(205px, 27%) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-    max-height: none;
-    gap: 10px;
-    overflow: hidden;
-  }
 
-  .chat-list {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    min-height: 0;
-    max-height: none;
-    overflow: hidden;
-    padding: 10px;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    background: var(--surface, #fff);
-  }
-
-  .chat-list-tools {
-    flex: 0 0 auto;
-    padding-bottom: 9px;
-  }
-
-  .chat-items-scroll {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .chat-detail {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    min-height: 0;
-    height: 100%;
-    overflow: hidden;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    background: var(--surface, #fff);
-  }
-
-  .chat-head {
-    position: relative;
-    flex: 0 0 auto;
-    padding: 12px 14px;
-  }
-
-  .chat-detail > .messages {
-    flex: 1 1 0;
-    min-height: 0;
-    height: 0;
-    max-height: none;
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .chat-composer {
-    position: relative;
-    flex: 0 0 auto;
-    max-height: none;
-    overflow: visible;
-    padding: 10px 12px;
-    padding-bottom: max(10px, env(safe-area-inset-bottom));
-    background: var(--surface, #fff);
-  }
-
-  .chat-composer .composer-footer {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
-  }
-
-  .composer-send {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .composer-send > small {
-    min-width: 0;
-    max-width: 58%;
-  }
-
-  .composer-send > .btn {
-    flex: 0 0 auto;
-    min-height: 42px;
-  }
-}
-
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .chats-main > .content.chats-content {
     min-height: 0;
     overflow: hidden;
@@ -7912,7 +7350,7 @@ button:focus-visible, .btn:focus-visible {
 
 
 /* Mobile chat proportions: prioritize the conversation history over the picker. */
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .chats-content > .chat-layout {
     grid-template-rows: minmax(88px, min(17dvh, 132px)) minmax(0, 1fr);
   }
@@ -7934,7 +7372,7 @@ button:focus-visible, .btn:focus-visible {
 
 
 /* Give the mobile conversation picker enough height for its controls and several chats. */
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .chats-content > .chat-layout {
     grid-template-rows: minmax(150px, min(30dvh, 230px)) minmax(0, 1fr);
   }
@@ -8033,7 +7471,7 @@ button:focus-visible, .btn:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .chat-audio-player.is-playing .chat-audio-wave span { animation: none; }
 }
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .chat-audio-player { width: 100%; max-width: 100%; gap: 10px; padding: 9px 10px; }
   .chat-audio-play { flex-basis: 36px; width: 36px; height: 36px; }
   .chat-audio-wave { height: 23px; }
@@ -8343,7 +7781,7 @@ button:focus-visible, a:focus-visible {
   overflow-wrap: anywhere;
 }
 
-@media (min-width: 761px) and (max-width: 1200px) {
+@media (min-width: 1025px) and (max-width: 1200px) {
   .user-row {
     display: grid !important;
     grid-template-columns: 44px minmax(0, 1fr);
@@ -8380,7 +7818,7 @@ button:focus-visible, a:focus-visible {
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .user-row > .user-actions {
     justify-content: flex-start;
     gap: 7px;
@@ -8402,79 +7840,7 @@ button:focus-visible, a:focus-visible {
 
 /* Seamless responsive workspace: tablet bounds and single-line user actions. */
 /* Keep every workspace inside the viewport at tablet widths. */
-@media (min-width: 761px) and (max-width: 1024px) {
-  html,
-  body,
-  #root {
-    width: 100%;
-    max-width: 100%;
-  }
 
-  .chats-shell {
-    width: 100%;
-    max-width: 100vw;
-    min-width: 0;
-  }
-
-  .chats-shell > .sidebar {
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-  }
-
-  .chats-main {
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    margin: 0;
-  }
-
-  .chats-main > .content {
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    padding: clamp(12px, 2.2vw, 22px);
-    overflow-x: clip;
-  }
-
-  .chats-main > .content > *,
-  .graph-panel,
-  .user-list,
-  .chat-layout,
-  .teacher-grid,
-  .unassigned-grid,
-  .metrics {
-    min-width: 0;
-    max-width: 100%;
-  }
-
-  .metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .teacher-grid,
-  .unassigned-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .toolbar.user-toolbar {
-    min-width: 0;
-    max-width: 100%;
-  }
-
-  .graph-panel {
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-  }
-
-  .graph-panel > * {
-    max-width: 100%;
-  }
-
-  .chat-layout {
-    grid-template-columns: minmax(190px, 30%) minmax(0, 1fr);
-  }
-}
 
 /* User identity and controls stay on the same row at every screen size. */
 .user-row {
@@ -8565,7 +7931,7 @@ button:focus-visible, a:focus-visible {
   display: inline;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .user-row {
     grid-template-columns: 34px minmax(0, 1fr) auto;
     column-gap: 6px;
@@ -8630,193 +7996,19 @@ button:focus-visible, a:focus-visible {
 /* Tablet fix: the desktop sidebar is fixed to the viewport. At tablet
    widths it must return to normal flow, otherwise its full-width layer
    covers the workspace and makes the active section appear empty. */
-@media (min-width: 761px) and (max-width: 1024px) {
-  .chats-shell {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100dvh;
-    min-height: 0;
-    overflow: hidden;
-  }
 
-  .chats-shell > .sidebar {
-    position: relative;
-    inset: auto;
-    display: flex;
-    flex: 0 0 auto;
-    flex-direction: column;
-    width: 100%;
-    height: auto;
-    min-height: 0;
-    max-height: none;
-    padding: 14px 16px 12px;
-    overflow: visible;
-    box-sizing: border-box;
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .chats-shell > .sidebar .brand {
-    padding-bottom: 12px;
-  }
-
-  .chats-shell > .sidebar .school-label {
-    margin-bottom: 10px;
-  }
-
-  .chats-shell > .sidebar nav {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
-    gap: 7px;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .chats-shell > .sidebar nav button {
-    justify-content: center;
-    min-width: 0;
-    width: 100%;
-    padding: 11px 8px;
-    white-space: nowrap;
-  }
-
-  .chats-shell > .sidebar .sidebar-bottom {
-    margin-top: 10px;
-  }
-
-  .chats-main {
-    position: relative;
-    display: flex;
-    flex: 1 1 auto;
-    flex-direction: column;
-    width: 100%;
-    height: auto;
-    min-height: 0;
-    margin: 0;
-    overflow: hidden;
-  }
-}
 
 
 /* Tablet workspace: keep the navigation in a compact left rail and reserve
    the remaining viewport for the active page. This avoids the full-width
    sidebar consuming the entire tablet height at intermediate breakpoints. */
-@media (min-width: 761px) and (max-width: 1024px) {
-  .chats-shell {
-    display: block;
-    position: relative;
-    width: 100%;
-    max-width: 100vw;
-    height: 100dvh;
-    min-height: 0;
-    overflow: hidden;
-  }
 
-  .chats-shell > .sidebar {
-    position: fixed;
-    inset: 0 auto 0 0;
-    display: flex;
-    flex-direction: column;
-    width: 210px;
-    height: 100dvh;
-    min-height: 0;
-    max-height: 100dvh;
-    padding: 20px 12px 14px;
-    overflow-x: hidden;
-    overflow-y: auto;
-    box-sizing: border-box;
-    border-right: 1px solid var(--line);
-    border-bottom: 0;
-  }
-
-  .chats-shell > .sidebar .brand {
-    padding: 0 4px 22px;
-    font-size: 20px;
-    gap: 8px;
-  }
-
-  .chats-shell > .sidebar .brand img {
-    width: 36px;
-    height: 36px;
-  }
-
-  .chats-shell > .sidebar .school-label {
-    display: block;
-    padding: 0 5px 12px;
-    font-size: 9px;
-  }
-
-  .chats-shell > .sidebar nav {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 6px;
-    width: 100%;
-  }
-
-  .chats-shell > .sidebar nav button {
-    justify-content: flex-start;
-    width: 100%;
-    min-height: 42px;
-    padding: 10px 9px;
-    font-size: 12px;
-    white-space: normal;
-  }
-
-  .chats-shell > .sidebar .sidebar-bottom {
-    position: static;
-    display: flex;
-    margin-top: auto;
-    padding-top: 12px;
-  }
-
-  .chats-shell > .sidebar .desktop-logout {
-    display: flex;
-  }
-
-  .chats-shell > .sidebar .mobile-quick-actions {
-    display: none;
-  }
-
-  .chats-main {
-    display: flex;
-    flex-direction: column;
-    width: calc(100% - 210px);
-    max-width: calc(100% - 210px);
-    height: 100dvh;
-    min-height: 0;
-    margin-left: 210px;
-    overflow: hidden;
-  }
-
-  .chats-main > .content {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    padding: clamp(12px, 2vw, 20px);
-    box-sizing: border-box;
-  }
-
-  .chats-main > .content:not(.chats-content) {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-x: hidden;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .chats-main > .content.chats-content {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: hidden;
-  }
-}
 
 
 /* Mobile chat: keep the conversation history as the primary workspace.
    The picker stays usable but compact; the composer uses a two-column footer
    so it does not consume the message viewport. */
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .chats-content > .chat-layout {
     grid-template-rows: clamp(104px, 17dvh, 148px) minmax(0, 1fr);
     gap: 7px;
@@ -8956,7 +8148,7 @@ button:focus-visible, a:focus-visible {
 
 /* Mobile inbox navigation: list and conversation are separate full-height
    screens. This avoids squeezing both into the same small viewport. */
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .chats-content > .chat-layout {
     display: block;
     position: relative;
@@ -9213,13 +8405,13 @@ button:focus-visible, a:focus-visible {
   }
 }
 
-@media (min-width: 761px) {
+@media (min-width: 1025px) {
   .mobile-chat-back { display: none; }
 }
 
 
 /* Align mobile composer note and send action in a predictable footer grid. */
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .chat-composer .composer-footer {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(118px, 38%);
@@ -9298,7 +8490,7 @@ button:focus-visible, a:focus-visible {
 
 
 /* Mobile chat uses the available viewport directly, without nested card frames. */
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .chats-main > .content.chats-content {
     width: 100%;
     max-width: none;
@@ -9470,23 +8662,9 @@ button:focus-visible, a:focus-visible {
   }
 }
 
-@media (min-width: 761px) and (max-width: 1024px) {
-  .chats-main {
-    height: 100dvh;
-    min-height: 0;
-  }
 
-  .chats-main > .content:not(.chats-content) {
-    padding: 18px 20px;
-  }
 
-  .chats-main > .content:not(.chats-content) > .graph-panel .teacher-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
-    gap: 14px;
-  }
-}
-
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .chats-shell {
     height: 100dvh;
     min-height: 0;
@@ -9557,7 +8735,7 @@ button:focus-visible, a:focus-visible {
   border-radius: 14px;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .chats-main > .content:not(.chats-content) > .graph-panel,
   .chats-main > .content:not(.chats-content) > .teacher-readonly-graph {
     border-radius: 16px;
@@ -9566,7 +8744,7 @@ button:focus-visible, a:focus-visible {
 }
 
 /* Keep assigned student cards strictly inside their teacher branch on desktop and tablet. */
-@media (min-width: 761px) {
+@media (min-width: 1025px) {
   .chats-main > .content:not(.chats-content) > .graph-panel .teacher-grid {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 255px), 1fr));
     min-width: 0;
@@ -9635,7 +8813,7 @@ button:focus-visible, a:focus-visible {
   box-shadow: none;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .chats-main > .content:not(.chats-content) > .user-list {
     gap: 8px;
   }
@@ -9707,7 +8885,7 @@ button:focus-visible, a:focus-visible {
 
 
 /* Desktop and tablet: keep attachment controls and the send action on one row. */
-@media (min-width: 761px) {
+@media (min-width: 1025px) {
   .chat-composer .composer-footer {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
