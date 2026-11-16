@@ -15,7 +15,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from aiogram.types import BufferedInputFile
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.orm import aliased, selectinload
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -99,9 +99,6 @@ def conversation_dict(
     # Для карточки диалога читаем только счётчик, последнее сообщение и непрочитанные записи.
     # Полная история загружается отдельно, когда пользователь открывает переписку.
     assignment = conversation.assignment
-    message_count = db.scalar(
-        select(func.count(Message.id)).where(Message.conversation_id == conversation.id)
-    ) or 0
     last_message = db.scalar(
         select(Message)
         .where(Message.conversation_id == conversation.id)
@@ -119,25 +116,29 @@ def conversation_dict(
         .limit(1)
     ).first()
 
-    unread_query = select(Message.metadata_json).where(
-        Message.conversation_id == conversation.id,
+    # Счётчик всех сообщений и непрочитанных считаем одним агрегатным запросом.
+    unread_conditions = [
         Message.sender_role == "student",
         Message.delivery_status == "delivered",
-    )
+        func.json_extract(Message.metadata_json, "$.teacher_read_at").is_(None),
+    ]
     if last_teacher_reply:
-        unread_query = unread_query.where(
+        unread_conditions.append(
             or_(
                 Message.created_at > last_teacher_reply.created_at,
-                (Message.created_at == last_teacher_reply.created_at)
-                & (Message.id > last_teacher_reply.id),
+                and_(
+                    Message.created_at == last_teacher_reply.created_at,
+                    Message.id > last_teacher_reply.id,
+                ),
             )
         )
-    unread_count = db.scalar(
-        select(func.count(Message.id)).select_from(Message).where(
-            *unread_query.whereclause.clauses,
-            func.json_extract(Message.metadata_json, "$.teacher_read_at").is_(None),
-        )
-    ) or 0
+    message_count, unread_count = db.execute(
+        select(
+            func.count(Message.id),
+            func.coalesce(func.sum(case((and_(*unread_conditions), 1), else_=0)), 0),
+        ).where(Message.conversation_id == conversation.id)
+    ).one()
+
 
     return {
         "id": conversation.id,
