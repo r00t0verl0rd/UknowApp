@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import json
 import secrets
@@ -9,7 +10,7 @@ from pathlib import Path
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from aiogram.types import BufferedInputFile
 from sqlalchemy import select
 from sqlalchemy.orm import aliased
@@ -18,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from .config import ADMIN_USERNAME
 from .database import SessionLocal
+from .event_hub import publish_chat_update, subscribe_chat_updates, unsubscribe_chat_updates
 from .media_storage import MEDIA_DIR, delete_message_media, safe_media_type, media_content_disposition
 from .models import Assignment, ConnectionCode, Conversation, Message, PanelSession, StudentTelegramGroup, TeacherPanel, TeacherSession, User
 from .schemas import AssignmentCreate, LoginRequest, PanelMessageCreate, UserCreate, UserUpdate
@@ -771,6 +773,40 @@ def panel_me(principal: PanelUser, db: Db):
     return {"role": "teacher", "id": teacher.id, "full_name": teacher.full_name}
 
 
+@router.get("/panel/events")
+async def panel_events(request: Request, principal: PanelUser):
+    """Keep an authenticated browser connection open for conversation changes."""
+
+    async def event_stream():
+        queue = subscribe_chat_updates()
+        try:
+            # The initial event makes the client perform one authoritative load
+            # after the stream is established, so no polling timer is necessary.
+            yield "retry: 5000\\n\\n"
+            yield "event: update\\ndata: {}\\n\\n"
+            while not await request.is_disconnected():
+                try:
+                    payload = await asyncio.wait_for(queue.get(), timeout=20)
+                except asyncio.TimeoutError:
+                    # SSE comment frames keep intermediaries from closing an idle
+                    # connection; they do not trigger a browser data callback.
+                    yield ": keep-alive\\n\\n"
+                    continue
+                yield "event: update\\ndata: " + payload + "\\n\\n"
+        finally:
+            unsubscribe_chat_updates(queue)
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
 @router.get("/panel/conversations")
 def panel_conversations(principal: PanelUser, db: Db):
     statement = (
@@ -921,6 +957,7 @@ async def send_panel_message(
     row.metadata_json = json.dumps(metadata, ensure_ascii=False)
     row.delivery_status = "delivered" if delivered and not delivery_errors else ("partial" if delivered else "failed")
     db.commit()
+    publish_chat_update(conversation.id)
 
     if bot and teacher.telegram_id:
         try:
