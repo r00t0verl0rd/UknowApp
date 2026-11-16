@@ -8697,3 +8697,117 @@ button:focus-visible, a:focus-visible {
     overflow: hidden;
   }
 }
+
+
+/* Tablet workspace: keep the navigation in a compact left rail and reserve
+   the remaining viewport for the active page. This avoids the full-width
+   sidebar consuming the entire tablet height at intermediate breakpoints. */
+@media (min-width: 761px) and (max-width: 1024px) {
+  .chats-shell {
+    display: block;
+    position: relative;
+    width: 100%;
+    max-width: 100vw;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .chats-shell > .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    display: flex;
+    flex-direction: column;
+    width: 210px;
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100dvh;
+    padding: 20px 12px 14px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-sizing: border-box;
+    border-right: 1px solid var(--line);
+    border-bottom: 0;
+  }
+
+  .chats-shell > .sidebar .brand {
+    padding: 0 4px 22px;
+    font-size: 20px;
+    gap: 8px;
+  }
+
+  .chats-shell > .sidebar .brand img {
+    width: 36px;
+    height: 36px;
+  }
+
+  .chats-shell > .sidebar .school-label {
+    display: block;
+    padding: 0 5px 12px;
+    font-size: 9px;
+  }
+
+  .chats-shell > .sidebar nav {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    width: 100%;
+  }
+
+  .chats-shell > .sidebar nav button {
+    justify-content: flex-start;
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 9px;
+    font-size: 12px;
+    white-space: normal;
+  }
+
+  .chats-shell > .sidebar .sidebar-bottom {
+    position: static;
+    display: flex;
+    margin-top: auto;
+    padding-top: 12px;
+  }
+
+  .chats-shell > .sidebar .desktop-logout {
+    display: flex;
+  }
+
+  .chats-shell > .sidebar .mobile-quick-actions {
+    display: none;
+  }
+
+  .chats-main {
+    display: flex;
+    flex-direction: column;
+    width: calc(100% - 210px);
+    max-width: calc(100% - 210px);
+    height: 100dvh;
+    min-height: 0;
+    margin-left: 210px;
+    overflow: hidden;
+  }
+
+  .chats-main > .content {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: clamp(12px, 2vw, 20px);
+    box-sizing: border-box;
+  }
+
+  .chats-main > .content:not(.chats-content) {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chats-main > .content.chats-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
