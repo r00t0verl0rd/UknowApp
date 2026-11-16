@@ -685,7 +685,7 @@ export default function App() {
             <div className="teacher-graph-card">
               <div className="avatar teacher-avatar"><GraduationCap/></div>
               <div><b>{teacherGraph?.teacher.full_name || profile?.full_name}</b><small>Вы · Учитель</small></div>
-              <span className="readonly-tag">Только просмотр</span>
+              <span className="readonly-tag">Ваша группа</span>
             </div>
             <div className="teacher-graph-students">
               <div className="teacher-graph-connector"/>
@@ -698,7 +698,6 @@ export default function App() {
               {!(teacherGraph?.students || []).length && <div className="empty-state">Пока нет назначенных учеников</div>}
             </div>
           </div>
-          <div className="teacher-graph-summary"><Users size={18}/><b>{teacherGraph?.counts.students || 0}</b><span>активных учеников в вашей группе</span></div>
         </section>}
         {page === "graph" && profile?.role === "admin" && <>
           <section className="graph-panel">
