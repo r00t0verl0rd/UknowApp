@@ -9746,3 +9746,12 @@ button:focus-visible, a:focus-visible {
     white-space: nowrap;
   }
 }
+
+/* Login field hints: lighter, cleaner typography. */
+.login-card .stack input::placeholder {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: .1px;
+  opacity: .82;
+}
