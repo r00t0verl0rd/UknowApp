@@ -1,3 +1,5 @@
+"""Модели таблиц базы данных и связи между сущностями UknowApp."""
+
 from datetime import datetime, timezone
 from typing import Optional
 
