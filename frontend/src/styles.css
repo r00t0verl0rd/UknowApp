@@ -9688,3 +9688,29 @@ button:focus-visible, a:focus-visible {
   background: #4a2933;
   color: #ff9ca7;
 }
+
+
+/* Users page: remove the legacy square panel behind the individual participant cards. */
+.content > .user-list {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.content > .user-list > .user-row {
+  border: 1px solid var(--line, #e8e0f2);
+  border-radius: 13px;
+  background: var(--surface, #fff);
+  box-shadow: 0 3px 12px rgba(47, 31, 84, .035);
+  margin-bottom: 9px;
+}
+.content > .user-list > .user-row:last-child {
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--line, #e8e0f2);
+}
+:root[data-theme="dark-soft"] .content > .user-list > .user-row {
+  background: var(--surface, #211d2a);
+  border-color: var(--line, #3a3347);
+  box-shadow: none;
+}
