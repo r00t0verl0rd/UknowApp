@@ -824,16 +824,14 @@ def panel_conversations(principal: PanelUser, db: Db):
 
 
 @router.get("/panel/conversations/{conversation_id}/messages")
-async def panel_messages(conversation_id: int, request: Request, principal: PanelUser, db: Db):
+def panel_messages(conversation_id: int, principal: PanelUser, db: Db):
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     rows = db.scalars(
         select(Message).where(Message.conversation_id == conversation.id)
         .order_by(Message.created_at, Message.id)
     ).all()
     if principal["role"] == "teacher":
-        bot = getattr(request.app.state, "telegram_bot", None)
-        await mark_messages_read_by_teacher(
-            bot,
+        mark_messages_read_by_teacher(
             db,
             [row for row in rows if row.sender_role == "student" and row.delivery_status == "delivered"],
         )
