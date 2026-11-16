@@ -9368,3 +9368,161 @@ button:focus-visible, a:focus-visible {
     min-height: 42px;
   }
 }
+
+
+/* Shared full-viewport workspace for Structure, Users and Conversations.
+   Keep useful inner cards (people, metrics, controls), flatten only redundant
+   page-level frames and let the active page own the available main area. */
+.chats-shell {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.chats-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.chats-main > .topbar {
+  flex: 0 0 auto;
+}
+
+.chats-main > .content:not(.chats-content) {
+  display: block;
+  flex: 1 1 0;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: clamp(16px, 2vw, 28px);
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+/* Structure: remove the large card wrapped around the whole hierarchy.
+   Individual teacher/student cards remain distinct and readable. */
+.chats-main > .content:not(.chats-content) > .graph-panel,
+.chats-main > .content:not(.chats-content) > .teacher-readonly-graph {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.chats-main > .content:not(.chats-content) > .graph-panel {
+  background-image: none;
+}
+
+.chats-main > .content:not(.chats-content) > .graph-panel .graph-legend-row {
+  margin-top: 0;
+}
+
+.chats-main > .content:not(.chats-content) > .teacher-readonly-graph .teacher-graph-root {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+/* Users: let the toolbar and list span the workspace; rows remain the
+   meaningful repeated units instead of nesting them inside another card. */
+.chats-main > .content:not(.chats-content) > .user-toolbar,
+.chats-main > .content:not(.chats-content) > .user-list {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin-inline: 0;
+}
+
+.chats-main > .content:not(.chats-content) > .user-list {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+@media (min-width: 1025px) {
+  .chats-main > .content:not(.chats-content) {
+    padding: clamp(22px, 2vw, 34px) clamp(24px, 2.4vw, 42px);
+  }
+
+  .chats-main > .content:not(.chats-content) > .graph-panel .teacher-grid {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1024px) {
+  .chats-main {
+    height: 100dvh;
+    min-height: 0;
+  }
+
+  .chats-main > .content:not(.chats-content) {
+    padding: 18px 20px;
+  }
+
+  .chats-main > .content:not(.chats-content) > .graph-panel .teacher-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+    gap: 14px;
+  }
+}
+
+@media (max-width: 760px) {
+  .chats-shell {
+    height: 100dvh;
+    min-height: 0;
+  }
+
+  .chats-main {
+    flex: 1 1 auto;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+  }
+
+  .chats-main > .content:not(.chats-content) {
+    padding: 12px 12px max(14px, env(safe-area-inset-bottom));
+  }
+
+  .chats-main > .content:not(.chats-content) > .graph-panel,
+  .chats-main > .content:not(.chats-content) > .teacher-readonly-graph {
+    padding: 0;
+  }
+
+  .chats-main > .content:not(.chats-content) > .graph-panel .graph-legend-row {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .chats-main > .content:not(.chats-content) > .graph-panel .teacher-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .chats-main > .content:not(.chats-content) > .user-toolbar {
+    margin-bottom: 12px;
+  }
+
+  .chats-main > .content:not(.chats-content) > .user-list {
+    padding: 0;
+  }
+}
