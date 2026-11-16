@@ -9600,28 +9600,38 @@ button:focus-visible, a:focus-visible {
   }
 }
 
-/* Give each user row its own softly rounded outline, matching the Structure graph cards. */
+/* The list is a transparent layout wrapper; each participant row is its own card. */
 .chats-main > .content:not(.chats-content) > .user-list {
   display: grid;
   gap: 9px;
-  background: transparent;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .chats-main > .content:not(.chats-content) > .user-list > .user-row {
-  border: 1px solid var(--line, #e8e0f2);
+  border: 1px solid var(--line);
   border-radius: 13px;
-  background: var(--surface, #fff);
-  box-shadow: 0 3px 12px rgba(47, 31, 84, .035);
+  background: var(--surface);
+  box-shadow: var(--ui-shadow-card);
   padding: 12px 15px;
 }
 
 .chats-main > .content:not(.chats-content) > .user-list > .user-row:last-child {
-  border-bottom: 1px solid var(--line, #e8e0f2);
+  border-bottom: 1px solid var(--line);
+}
+
+:root[data-theme="dark-soft"] .chats-main > .content:not(.chats-content) > .user-list {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
 }
 
 :root[data-theme="dark-soft"] .chats-main > .content:not(.chats-content) > .user-list > .user-row {
-  background: var(--surface, #211d2a);
-  border-color: var(--line, #3a3347);
+  background: var(--surface);
+  border-color: var(--line);
   box-shadow: none;
 }
 
@@ -9684,33 +9694,13 @@ button:focus-visible, a:focus-visible {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+:root[data-theme="dark-soft"] .message-delete-preview {
+  background: var(--ui-control-bg);
+  border-color: var(--ui-border);
+  color: var(--ink);
+}
 :root[data-theme="dark-soft"] .message-delete-btn:hover {
   background: #4a2933;
   color: #ff9ca7;
-}
-
-
-/* Users page: remove the legacy square panel behind the individual participant cards. */
-.content > .user-list {
-  background: transparent !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-}
-.content > .user-list > .user-row {
-  border: 1px solid var(--line, #e8e0f2);
-  border-radius: 13px;
-  background: var(--surface, #fff);
-  box-shadow: 0 3px 12px rgba(47, 31, 84, .035);
-  margin-bottom: 9px;
-}
-.content > .user-list > .user-row:last-child {
-  margin-bottom: 0;
-  border-bottom: 1px solid var(--line, #e8e0f2);
-}
-:root[data-theme="dark-soft"] .content > .user-list > .user-row {
-  background: var(--surface, #211d2a);
-  border-color: var(--line, #3a3347);
-  box-shadow: none;
 }
