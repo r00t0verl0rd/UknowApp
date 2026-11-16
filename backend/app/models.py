@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -72,6 +72,8 @@ class TeacherSession(Base):
 
 class Message(Base):
     __tablename__ = "messages"
+    # Ускоряет выборку истории и сортировку сообщений внутри одного диалога.
+    __table_args__ = (Index("ix_messages_conversation_created_id", "conversation_id", "created_at", "id"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     conversation_id: Mapped[int] = mapped_column(ForeignKey("conversations.id"), nullable=False, index=True)
