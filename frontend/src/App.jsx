@@ -4,6 +4,9 @@ import { Activity, ArrowLeft, ArrowUpDown, Check, ChevronRight, GraduationCap, L
 const API = import.meta.env.VITE_API_BASE_URL || "";
 const ROLE = { teacher: "Учитель", student: "Ученик", admin: "Администратор" };
 const initialAuth = () => sessionStorage.getItem("uknowapp-auth") === "1" ? "1" : "";
+
+// Высоты декоративной звуковой волны общие для всех плееров — не создаём массив при каждом рендере.
+const AUDIO_WAVE_BARS = [4, 7, 10, 6, 13, 8, 15, 10, 6, 12, 17, 9, 5, 13, 8, 16, 11, 6, 14, 9, 17, 7, 12, 5, 15, 9, 13, 6, 11, 16, 8, 12, 5, 14, 9, 7];
 function formatLocalTime(value, options) {
   if (!value) return "";
   // SQLite timestamps without an explicit offset are stored as UTC.
@@ -76,7 +79,6 @@ function ChatAudioPlayer({ src, label }) {
   };
 
   const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
-  const bars = [4, 7, 10, 6, 13, 8, 15, 10, 6, 12, 17, 9, 5, 13, 8, 16, 11, 6, 14, 9, 17, 7, 12, 5, 15, 9, 13, 6, 11, 16, 8, 12, 5, 14, 9, 7];
 
   return <div className={"chat-audio-player" + (playing ? " is-playing" : "")}>
     <audio
@@ -96,9 +98,9 @@ function ChatAudioPlayer({ src, label }) {
     </button>
     <div className="chat-audio-track">
       <div className="chat-audio-wave" aria-hidden="true">
-        {bars.map((height, index) => <span
+        {AUDIO_WAVE_BARS.map((height, index) => <span
           key={index}
-          className={((index + 1) / bars.length * 100) <= progress ? "is-progress" : ""}
+          className={((index + 1) / AUDIO_WAVE_BARS.length * 100) <= progress ? "is-progress" : ""}
           style={{ height: height + "px", "--bar-index": index }}
         />)}
       </div>
@@ -192,6 +194,7 @@ function MessageBubble({ message, onDelete }) {
   </div>;
 }
 
+// Главный экран панели: здесь хранятся состояние разделов, данные API и действия пользователя.
 export default function App() {
   const [auth, setAuth] = useState(initialAuth);
   const [theme, setTheme] = useState(() => localStorage.getItem("uknowapp-theme") === "dark-soft" ? "dark-soft" : "light");
@@ -250,6 +253,7 @@ export default function App() {
   const [studentId, setStudentId] = useState("");
   const [code, setCode] = useState(null);
 
+  // Единая точка HTTP-запросов: добавляет cookie-сессию и приводит ошибки API к понятному сообщению.
   const request = useCallback(async (path, options = {}) => {
     const response = await fetch(API + path, {
       ...options,
@@ -269,6 +273,7 @@ export default function App() {
     return data;
   }, []);
 
+  // Загружает актуальные данные панели в зависимости от роли вошедшего пользователя.
   const refresh = useCallback(async () => {
     if (!auth) return;
     setBusy(true); setError("");
@@ -304,6 +309,7 @@ export default function App() {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
+  // В разделе переписок события SSE сообщают об изменениях; периодический опрос не нужен.
   useEffect(() => {
     if (!auth || page !== "chats") return undefined;
     let active = true;
@@ -358,8 +364,9 @@ export default function App() {
   }, [auth, page, selectedChat?.id, request]);
 
   const notify = (message) => { setToast(message); window.setTimeout(() => setToast(""), 2600); };
-  const activeTeachers = users.filter(u => u.active && u.role === "teacher");
-  const activeStudents = users.filter(u => u.active && u.role === "student");
+  // Списки участников пересчитываются только при изменении массива пользователей.
+  const activeTeachers = useMemo(() => users.filter(u => u.active && u.role === "teacher"), [users]);
+  const activeStudents = useMemo(() => users.filter(u => u.active && u.role === "student"), [users]);
   const visibleUsers = useMemo(() => users
     .filter(u => (u.full_name + " " + (u.telegram_id || "")).toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
@@ -369,8 +376,9 @@ export default function App() {
       if (userSort === "inactive") return Number(a.active) - Number(b.active) || a.full_name.localeCompare(b.full_name, "ru");
       return a.full_name.localeCompare(b.full_name, "ru", { sensitivity: "base" }) * (userSort === "name-desc" ? -1 : 1);
     }), [users, search, userSort]);
-  const assignedStudentIds = new Set((overview?.teachers || []).flatMap(t => t.students.map(s => s.id)));
-  const unassignedStudents = activeStudents.filter(student => !assignedStudentIds.has(student.id));
+  // Один раз собираем ID уже назначенных учеников, чтобы быстро найти свободных.
+  const assignedStudentIds = useMemo(() => new Set((overview?.teachers || []).flatMap(t => t.students.map(s => s.id))), [overview]);
+  const unassignedStudents = useMemo(() => activeStudents.filter(student => !assignedStudentIds.has(student.id)), [activeStudents, assignedStudentIds]);
   const visibleMessages = useMemo(() => messages.filter(message => {
     const kind = message.metadata?.media?.kind || message.content_type;
     if (messageFilter === "all") return true;
