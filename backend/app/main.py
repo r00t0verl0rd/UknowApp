@@ -1,5 +1,9 @@
 import asyncio
+import fcntl
+import hashlib
 import logging
+import os
+import tempfile
 from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
@@ -56,6 +60,15 @@ async def run_telegram_bot(bot, dispatcher) -> None:
         except asyncio.CancelledError:
             raise
         except Exception as exc:
+            # A Telegram conflict means another process is polling this bot.
+            # Retrying forever only creates noisy logs and repeated takeovers.
+            if type(exc).__name__ == "TelegramConflictError":
+                logger.critical(
+                    "TELEGRAM_POLLING_CONFLICT: another process is already calling getUpdates "
+                    "for this bot. Polling has been stopped; close the other bot instance "
+                    "and restart UknowApp."
+                )
+                return
             # Telegram Bot API request URLs may contain the bot token.
             # Log the exception type only; never print request URLs or headers.
             logger.error(
@@ -77,17 +90,34 @@ async def lifespan(app: FastAPI):
     bot_task = None
     bot = None
     dispatcher = None
+    polling_lock_fd = None
     if TELEGRAM_BOT_TOKEN:
         from aiogram import Bot
         from .telegram_bot import create_dispatcher
 
         bot = Bot(token=TELEGRAM_BOT_TOKEN)
         app.state.telegram_bot = bot
-        dispatcher = create_dispatcher()
-        bot_task = asyncio.create_task(
-            run_telegram_bot(bot, dispatcher),
-            name="uknowapp-telegram-polling",
-        )
+
+        # A non-blocking OS lock prevents two local Uvicorn processes (including
+        # accidental duplicate launches) from polling the same Telegram bot.
+        token_fingerprint = hashlib.sha256(TELEGRAM_BOT_TOKEN.encode("utf-8")).hexdigest()[:20]
+        lock_path = os.path.join(tempfile.gettempdir(), f"uknowapp-telegram-{token_fingerprint}.lock")
+        polling_lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
+        try:
+            fcntl.flock(polling_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            os.close(polling_lock_fd)
+            polling_lock_fd = None
+            logger.warning(
+                "TELEGRAM_POLLING_SKIPPED: another local UknowApp process already owns "
+                "the polling lock. This process will keep the web API available without polling."
+            )
+        else:
+            dispatcher = create_dispatcher()
+            bot_task = asyncio.create_task(
+                run_telegram_bot(bot, dispatcher),
+                name="uknowapp-telegram-polling",
+            )
     else:
         app.state.telegram_bot = None
         logger.error("TELEGRAM_BOT_TOKEN_EMPTY: Telegram bot is disabled; admin API remains available.")
@@ -103,6 +133,11 @@ async def lifespan(app: FastAPI):
                 await bot_task
         if bot:
             await bot.session.close()
+        if polling_lock_fd is not None:
+            with suppress(OSError):
+                fcntl.flock(polling_lock_fd, fcntl.LOCK_UN)
+            with suppress(OSError):
+                os.close(polling_lock_fd)
 
 
 app = FastAPI(
