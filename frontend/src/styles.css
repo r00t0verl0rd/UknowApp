@@ -9295,3 +9295,76 @@ button:focus-visible, a:focus-visible {
     font-size: 10px;
   }
 }
+
+
+/* Mobile chat uses the available viewport directly, without nested card frames. */
+@media (max-width: 760px) {
+  .chats-main > .content.chats-content {
+    width: 100%;
+    max-width: none;
+    min-height: 0;
+    height: 100%;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+
+  .chats-content > .chat-layout {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  .chats-content > .chat-layout > .chat-list,
+  .chats-content > .chat-layout > .chat-detail {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    margin: 0;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .chats-content > .chat-layout > .chat-list {
+    padding: 10px 12px max(12px, env(safe-area-inset-bottom));
+  }
+
+  .chats-content > .chat-layout > .chat-detail {
+    padding: 0;
+    background: transparent;
+  }
+
+  .chat-head {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .chat-detail > .messages {
+    padding: 14px 12px;
+  }
+
+  .chat-composer {
+    padding: 9px 12px max(12px, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+  }
+
+  .chat-composer .composer-send {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .chat-composer .composer-send > .btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+  }
+}
