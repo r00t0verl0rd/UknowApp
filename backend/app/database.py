@@ -23,6 +23,13 @@ def create_tables() -> None:
 
     Base.metadata.create_all(bind=engine)
 
+    # create_all не добавляет новые индексы в уже существующие таблицы — создаём индекс явно.
+    with engine.begin() as connection:
+        connection.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_messages_conversation_created_id "
+            "ON messages (conversation_id, created_at, id)"
+        ))
+
     user_columns = {column["name"] for column in inspect(engine).get_columns("users")}
     if "web_password_hash" not in user_columns:
         with engine.begin() as connection:
