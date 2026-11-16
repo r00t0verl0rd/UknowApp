@@ -8999,3 +8999,20 @@ button:focus-visible, a:focus-visible {
 :root:not([data-theme="dark-soft"]) .chat-detail .message-time {
   color: #817b8d;
 }
+
+
+/* Match light-theme message colors to the participant cards in the graph. */
+:root:not([data-theme="dark-soft"]) .chat-detail .message.student {
+  background: linear-gradient(105deg, #fff8e9, #fffdf7 78%);
+  border-color: #f0e5ce;
+}
+
+:root:not([data-theme="dark-soft"]) .chat-detail .message.teacher {
+  background: linear-gradient(110deg, #f0e9fb, #fbf9ff 78%);
+  border-color: #e3d8f1;
+}
+
+:root:not([data-theme="dark-soft"]) .chat-detail .message.admin {
+  background: linear-gradient(110deg, #edf6ec, #f8fcf6 78%);
+  border-color: #d7e8d3;
+}
