@@ -128,6 +128,12 @@ docker compose cp backend:/app/data/media ./media-backup
 
 The database backup contains student and teacher data; the media backup contains private voice messages, videos, photos and documents. Store both securely and protect access to them. Restore the database to `data/uknowapp.db` and media files to `data/media/` together so message references remain valid. The `app_data`, `caddy_data` and `caddy_config` volumes must not be removed when updating the containers.
 
+**Important SQLite notes:**
+- UknowApp uses SQLite write-ahead logging (WAL). While the app is running, recent committed changes may be in `uknowapp.db-wal`; never copy only the raw `.db` file or delete `-wal` / `-shm` files manually. Use SQLite's online backup API as shown above.
+- Message text and metadata are stored in SQLite; attachment bytes are stored separately in `data/media/`. A complete portable backup must include both.
+- Deleting records makes their pages reusable, but does not necessarily shrink the database file immediately. Do not run `VACUUM` on every request or automatically at startup: it needs extra disk space and can block access while rebuilding the database. Compaction should be an explicit maintenance operation after a backup.
+- Keep the database and media archive together when moving UknowApp. A future in-app export should package a consistent SQLite backup, the media directory and a versioned manifest; import should validate the archive and database before replacing live data.
+
 ## Deployment notes
 
 - The backend is not published directly to the internet; Caddy is the only public web service.
