@@ -311,13 +311,17 @@ export default function App() {
       }
       inFlight = true;
       try {
+        let rows = null;
+        if (selectedChat?.id) {
+          rows = await request("/api/panel/conversations/" + selectedChat.id + "/messages");
+          if (!active) return;
+          setMessages(rows);
+        }
+        // Loading messages marks them read for teachers. Fetch the list after
+        // that write so unread counters are correct in the same refresh cycle.
         const conversations = await request("/api/panel/conversations");
         if (!active) return;
         setChats(conversations);
-        if (selectedChat?.id) {
-          const rows = await request("/api/panel/conversations/" + selectedChat.id + "/messages");
-          if (active) setMessages(rows);
-        }
       } catch {
         // Keep the current conversation visible during brief network interruptions.
       } finally {
