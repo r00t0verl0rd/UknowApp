@@ -37,6 +37,7 @@ from .security import (
     verify_request_origin,
 )
 from .telegram_common import text_contains_contact_data
+from .telegram_teacher import mark_messages_read_by_teacher
 
 router = APIRouter(prefix="/api")
 
@@ -823,24 +824,19 @@ def panel_conversations(principal: PanelUser, db: Db):
 
 
 @router.get("/panel/conversations/{conversation_id}/messages")
-def panel_messages(conversation_id: int, principal: PanelUser, db: Db):
+async def panel_messages(conversation_id: int, request: Request, principal: PanelUser, db: Db):
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     rows = db.scalars(
         select(Message).where(Message.conversation_id == conversation.id)
         .order_by(Message.created_at, Message.id)
     ).all()
     if principal["role"] == "teacher":
-        now = datetime.now(timezone.utc).isoformat()
-        changed = False
-        for row in rows:
-            if row.sender_role == "student" and row.delivery_status == "delivered":
-                metadata = json.loads(row.metadata_json or "{}")
-                if metadata.get("teacher_read_at") is None:
-                    metadata["teacher_read_at"] = now
-                    row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-                    changed = True
-        if changed:
-            db.commit()
+        bot = getattr(request.app.state, "telegram_bot", None)
+        await mark_messages_read_by_teacher(
+            bot,
+            db,
+            [row for row in rows if row.sender_role == "student" and row.delivery_status == "delivered"],
+        )
     return [
         _panel_message_dict(item, expose_internal_metadata=(principal["role"] == "admin"))
         for item in rows
