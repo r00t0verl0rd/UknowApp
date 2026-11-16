@@ -817,7 +817,7 @@ export default function App() {
                     <label className="attach-control"><Paperclip size={16}/> Прикрепить файл<input type="file" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" onChange={e => setAttachment(e.target.files?.[0] || null)}/></label>
                     {attachment && <span className="selected-file">{attachment.name}<button type="button" onClick={() => setAttachment(null)} aria-label="Убрать файл"><X size={14}/></button></span>}
                   </div>
-                  <div className="composer-send"><small>{profile?.role === "admin" ? "Сообщение увидят ученик и учитель" : "Ответ сохранится в общем диалоге и отправится ученику в Telegram"}</small><button className="btn primary" disabled={!draft.trim() && !attachment}>Отправить <ChevronRight size={16}/></button></div>
+                  <div className="composer-send"><button className="btn primary" disabled={!draft.trim() && !attachment}>Отправить <ChevronRight size={16}/></button></div>
                 </div>
               </form>}
             </> : <div className="empty-state">Выберите ученика слева</div>}</div>
