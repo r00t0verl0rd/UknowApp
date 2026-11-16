@@ -1148,6 +1148,7 @@ async def send_panel_attachment(
     row.metadata_json = json.dumps(metadata, ensure_ascii=False)
     row.delivery_status = "delivered" if delivered and not delivery_errors else ("partial" if delivered else "failed")
     db.commit()
+    publish_chat_update(conversation.id)
 
     if bot and teacher.telegram_id:
         try:
