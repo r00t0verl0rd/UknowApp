@@ -9564,3 +9564,39 @@ button:focus-visible, a:focus-visible {
     padding: 13px;
   }
 }
+
+/* Keep assigned student cards strictly inside their teacher branch on desktop and tablet. */
+@media (min-width: 761px) {
+  .chats-main > .content:not(.chats-content) > .graph-panel .teacher-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 255px), 1fr));
+    min-width: 0;
+  }
+
+  .chats-main > .content:not(.chats-content) > .graph-panel .teacher-branch {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .chats-main > .content:not(.chats-content) > .graph-panel .student-list {
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin-right: 0;
+  }
+
+  .chats-main > .content:not(.chats-content) > .graph-panel .student-list > .student-card,
+  .chats-main > .content:not(.chats-content) > .graph-panel .student-list > .empty-students {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .chats-main > .content:not(.chats-content) > .graph-panel .student-card .person-main,
+  .chats-main > .content:not(.chats-content) > .graph-panel .student-card .person-info {
+    min-width: 0;
+  }
+}
+
