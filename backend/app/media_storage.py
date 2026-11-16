@@ -1,3 +1,5 @@
+"""Сохранение вложений Telegram и безопасная выдача файлов веб-панели."""
+
 import json
 import logging
 import mimetypes
