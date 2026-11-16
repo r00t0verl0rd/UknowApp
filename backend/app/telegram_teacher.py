@@ -100,8 +100,7 @@ def pending_student_messages(rows: list[Message]) -> list[Message]:
     ]
 
 
-async def mark_messages_read_by_teacher(
-    bot: Bot,
+def mark_messages_read_by_teacher(
     db: Session,
     messages: list[Message],
 ) -> None:
@@ -121,8 +120,7 @@ async def mark_messages_read_by_teacher(
         db.commit()
 
 
-async def mark_visible_messages_read_by_teacher(
-    bot: Bot,
+def mark_visible_messages_read_by_teacher(
     db: Session,
     conversation: Conversation,
 ) -> None:
@@ -132,8 +130,7 @@ async def mark_visible_messages_read_by_teacher(
     # Opening a conversation marks every delivered student message actually
     # visible in the transcript as read, even when a teacher reply is older
     # than the 12-message preview window.
-    await mark_messages_read_by_teacher(
-        bot,
+    mark_messages_read_by_teacher(
         db,
         [
             row for row in visible_rows
