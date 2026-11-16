@@ -655,7 +655,11 @@ def _panel_visible_conversation(db: Session, principal: dict, conversation_id: i
     return conversation
 
 
-def _panel_message_dict(item: Message, expose_internal_metadata: bool = True) -> dict:
+def _panel_message_dict(
+    item: Message,
+    expose_internal_metadata: bool = True,
+    principal: Optional[dict] = None,
+) -> dict:
     metadata = json.loads(item.metadata_json or "{}")
     if not expose_internal_metadata:
         for key in (
@@ -680,6 +684,14 @@ def _panel_message_dict(item: Message, expose_internal_metadata: bool = True) ->
         "id": item.id,
         "sender": item.sender.full_name if item.sender else "Администратор",
         "sender_role": item.sender_role,
+        "can_delete": bool(
+            principal
+            and item.sender_role == principal["role"]
+            and (
+                principal["role"] == "admin"
+                or item.sender_id == principal.get("user_id")
+            )
+        ),
         "content_type": item.content_type,
         "text": item.text,
         "metadata": metadata,
@@ -836,9 +848,77 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db):
             [row for row in rows if row.sender_role == "student" and row.delivery_status == "delivered"],
         )
     return [
-        _panel_message_dict(item, expose_internal_metadata=(principal["role"] == "admin"))
+        _panel_message_dict(
+            item,
+            expose_internal_metadata=(principal["role"] == "admin"),
+            principal=principal,
+        )
         for item in rows
     ]
+
+
+@router.delete("/panel/messages/{message_id}")
+async def delete_panel_message(
+    message_id: int,
+    request: Request,
+    principal: PanelUser,
+    db: Db,
+):
+    item = db.get(Message, message_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Сообщение не найдено")
+
+    conversation = _panel_visible_conversation(db, principal, item.conversation_id)
+    owns_message = (
+        item.sender_role == principal["role"]
+        and (
+            principal["role"] == "admin"
+            or item.sender_id == principal.get("user_id")
+        )
+    )
+    if not owns_message:
+        raise HTTPException(status_code=403, detail="Можно удалить только собственное сообщение")
+
+    metadata = json.loads(item.metadata_json or "{}")
+    deliveries = metadata.get("telegram_deliveries") or []
+    bot = getattr(request.app.state, "telegram_bot", None)
+    telegram_deleted = 0
+    telegram_failed = 0
+
+    # Remove every Telegram copy recorded at delivery time. Telegram may reject
+    # deletion of old messages or messages that are no longer accessible; the
+    # web history is still removed and the response reports those failures.
+    if deliveries and bot:
+        for delivery in deliveries:
+            try:
+                chat_id = int(delivery["chat_id"])
+                telegram_message_id = int(delivery["telegram_message_id"])
+                await bot.delete_message(
+                    chat_id=chat_id,
+                    message_id=telegram_message_id,
+                )
+                telegram_deleted += 1
+            except Exception as exc:
+                telegram_failed += 1
+                logger.warning(
+                    "Could not delete Telegram copy (message_id=%s error_type=%s)",
+                    item.id,
+                    type(exc).__name__,
+                )
+    else:
+        telegram_failed = len(deliveries)
+
+    delete_message_media(item.metadata_json)
+    db.delete(item)
+    db.commit()
+    publish_chat_update(conversation.id)
+
+    return {
+        "ok": True,
+        "deleted_message_id": message_id,
+        "telegram_deleted": telegram_deleted,
+        "telegram_failed": telegram_failed,
+    }
 
 
 @router.get("/panel/messages/{message_id}/media")
@@ -964,7 +1044,7 @@ async def send_panel_message(
             # Message is already persisted; a panel refresh failure must not undo it.
             pass
 
-    return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"))
+    return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"), principal=principal)
 
 
 @router.post("/panel/conversations/{conversation_id}/attachments", status_code=201)
@@ -1153,7 +1233,7 @@ async def send_panel_attachment(
             await update_teacher_panel(bot, db, teacher)
         except Exception:
             pass
-    return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"))
+    return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"), principal=principal)
 
 
 @router.get("/panel/graph")
