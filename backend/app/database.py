@@ -1,5 +1,6 @@
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from datetime import datetime, timedelta, timezone
 
 from .config import DATABASE_URL
 
@@ -9,26 +10,62 @@ class Base(DeclarativeBase):
 
 
 # Проверяем соединение перед использованием; для SQLite увеличиваем ожидание блокировки файла БД.
-engine_options = {"pool_pre_ping": True}
-if DATABASE_URL.startswith("sqlite"):
+# Для SQLite не делаем лишний SELECT 1 при каждом получении соединения.
+# WAL ускоряет параллельное чтение, а NORMAL сохраняет надёжность при меньшем числе fsync.
+is_sqlite = DATABASE_URL.startswith("sqlite")
+engine_options = {"pool_pre_ping": not is_sqlite}
+if is_sqlite:
     engine_options["connect_args"] = {"check_same_thread": False, "timeout": 30}
 
 engine = create_engine(DATABASE_URL, **engine_options)
+
+if is_sqlite:
+    @event.listens_for(engine, "connect")
+    def configure_sqlite_connection(dbapi_connection, _connection_record):
+        cursor = dbapi_connection.cursor()
+        try:
+            cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.execute("PRAGMA busy_timeout=30000")
+            cursor.execute("PRAGMA synchronous=NORMAL")
+            cursor.execute("PRAGMA temp_store=MEMORY")
+            # WAL не применяется к in-memory SQLite и не подходит для сетевых файловых систем.
+            if DATABASE_URL not in {"sqlite://", "sqlite:///:memory:"} and ":memory:" not in DATABASE_URL:
+                cursor.execute("PRAGMA journal_mode=WAL")
+        finally:
+            cursor.close()
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
 # Создаём таблицы и выполняем небольшие совместимые миграции старых баз данных.
 def create_tables() -> None:
     from . import models  # noqa: F401
+    from .models import ConnectionCode, PanelSession
 
     Base.metadata.create_all(bind=engine)
 
-    # create_all не добавляет новые индексы в уже существующие таблицы — создаём индекс явно.
+    # Составной индекс обслуживает историю и счётчики; отдельный индекс по conversation_id избыточен.
     with engine.begin() as connection:
+        connection.execute(text("DROP INDEX IF EXISTS ix_messages_conversation_id"))
         connection.execute(text(
             "CREATE INDEX IF NOT EXISTS ix_messages_conversation_created_id "
             "ON messages (conversation_id, created_at, id)"
         ))
+
+    # Одноразовые коды и истёкшие сессии не нужны для истории — удаляем старые записи.
+    retention_cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+    with SessionLocal() as db:
+        db.query(PanelSession).filter(PanelSession.expires_at < datetime.now(timezone.utc)).delete(
+            synchronize_session=False
+        )
+        db.query(ConnectionCode).filter(
+            (ConnectionCode.used_at.is_not(None) & (ConnectionCode.used_at < retention_cutoff))
+            | (ConnectionCode.expires_at < retention_cutoff)
+        ).delete(synchronize_session=False)
+        db.commit()
+
+    if is_sqlite:
+        with engine.begin() as connection:
+            connection.execute(text("PRAGMA optimize"))
 
     user_columns = {column["name"] for column in inspect(engine).get_columns("users")}
     if "web_password_hash" not in user_columns:
