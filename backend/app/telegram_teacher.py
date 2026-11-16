@@ -105,7 +105,7 @@ async def mark_messages_read_by_teacher(
     db: Session,
     messages: list[Message],
 ) -> None:
-    """Persist teacher read state without sending extra messages to Telegram groups."""
+    """Persist teacher read state and publish a visible receipt in the student's forum topic."""
     if not messages:
         return
 
@@ -119,6 +119,41 @@ async def mark_messages_read_by_teacher(
             changed = True
     if changed:
         db.commit()
+
+    # Telegram does not expose native read receipts for messages in forum topics.
+    # Reply with a compact ✓✓ marker so the student can see that the teacher read
+    # the original message. The receipt is sent once and stays in the same topic.
+    if bot is None:
+        return
+    for row in messages:
+        metadata = json.loads(row.metadata_json or "{}")
+        if (
+            metadata.get("source_mode") != "group_topic"
+            or metadata.get("teacher_read_receipt_message_id")
+        ):
+            continue
+        try:
+            chat_id = int(metadata["source_chat_id"])
+            thread_id = int(metadata["source_thread_id"])
+            source_message_id = int(row.source_message_id)
+            receipt = await bot.send_message(
+                chat_id=chat_id,
+                message_thread_id=thread_id,
+                reply_to_message_id=source_message_id,
+                text="✓✓ Прочитано учителем",
+                disable_notification=True,
+            )
+            metadata["teacher_read_receipt_message_id"] = receipt.message_id
+            row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+            db.commit()
+        except (KeyError, TypeError, ValueError):
+            logger.warning("Cannot create teacher read receipt (message_id=%s): missing topic metadata", row.id)
+        except Exception as exc:
+            logger.warning(
+                "Cannot create teacher read receipt (message_id=%s error_type=%s)",
+                row.id,
+                type(exc).__name__,
+            )
 
 
 async def mark_visible_messages_read_by_teacher(
