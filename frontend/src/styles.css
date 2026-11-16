@@ -8939,3 +8939,63 @@ button:focus-visible, a:focus-visible {
   letter-spacing: .1px;
   opacity: .82;
 }
+
+
+/* Light theme: softer conversation list and clearer message surfaces. */
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item {
+  background: #fff;
+  border: 1px solid #eeeaf2;
+  box-shadow: 0 1px 3px rgba(41, 34, 63, .025);
+  transition: background .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item:hover {
+  background: #faf9fc;
+  border-color: #e8e2ef;
+  box-shadow: 0 2px 7px rgba(41, 34, 63, .035);
+}
+
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item.selected {
+  background: #f4f1f8;
+  border-color: #e5deed;
+  box-shadow: inset 2px 0 0 #a895c8;
+}
+
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item .chat-item-participants span {
+  color: #393346;
+}
+
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item .chat-item-meta,
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item small {
+  color: #817b8d;
+}
+
+:root:not([data-theme="dark-soft"]) .chat-detail > .messages {
+  background: #faf9fc;
+}
+
+:root:not([data-theme="dark-soft"]) .chat-detail .message {
+  background: #f1f3f7;
+  border: 1px solid #e6e9ef;
+  box-shadow: 0 2px 7px rgba(41, 34, 63, .035);
+}
+
+:root:not([data-theme="dark-soft"]) .chat-detail .message.teacher {
+  background: #f0ecf7;
+  border-color: #e5ddec;
+}
+
+:root:not([data-theme="dark-soft"]) .chat-detail .message.admin {
+  background: #faf5e9;
+  border-color: #eee3c9;
+}
+
+:root:not([data-theme="dark-soft"]) .chat-detail .message b,
+:root:not([data-theme="dark-soft"]) .chat-detail .message p {
+  color: #332e3e;
+}
+
+:root:not([data-theme="dark-soft"]) .chat-detail .message b small,
+:root:not([data-theme="dark-soft"]) .chat-detail .message-time {
+  color: #817b8d;
+}
