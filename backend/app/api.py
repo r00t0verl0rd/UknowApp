@@ -98,8 +98,17 @@ def conversation_dict(
 ) -> dict:
     # Одним запросом получаем историю диалога: из неё считаем непрочитанное и берём последнее сообщение.
     assignment = conversation.assignment
-    message_rows = db.scalars(
-        select(Message).where(Message.conversation_id == conversation.id)
+    message_rows = db.execute(
+        select(
+            Message.id,
+            Message.sender_role,
+            Message.delivery_status,
+            Message.metadata_json,
+            Message.content_type,
+            Message.text,
+            Message.created_at,
+        )
+        .where(Message.conversation_id == conversation.id)
         .order_by(Message.created_at, Message.id)
     ).all()
     count = len(message_rows)
