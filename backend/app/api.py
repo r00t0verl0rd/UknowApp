@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import json
+import logging
 import secrets
 import mimetypes
 import re
@@ -38,6 +39,8 @@ from .security import (
 )
 from .telegram_common import text_contains_contact_data
 from .telegram_teacher import mark_messages_read_by_teacher
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api")
 
