@@ -96,16 +96,14 @@ def validate_teacher_username(db: Session, username: str, exclude_user_id: Optio
 def conversation_dict(
     db: Session, conversation: Conversation, include_telegram_ids: bool = True
 ) -> dict:
-    # Формируем краткую карточку диалога: последнее сообщение, общий и непрочитанный счётчики.
+    # Одним запросом получаем историю диалога: из неё считаем непрочитанное и берём последнее сообщение.
     assignment = conversation.assignment
-    last_message = db.scalar(
-        select(Message).where(Message.conversation_id == conversation.id)
-        .order_by(Message.created_at.desc(), Message.id.desc()).limit(1)
-    )
     message_rows = db.scalars(
         select(Message).where(Message.conversation_id == conversation.id)
+        .order_by(Message.created_at, Message.id)
     ).all()
     count = len(message_rows)
+    last_message = message_rows[-1] if message_rows else None
     # Match the teacher inbox logic: only delivered student messages that
     # arrived after the latest successfully delivered teacher reply are pending.
     last_teacher_reply = max(
