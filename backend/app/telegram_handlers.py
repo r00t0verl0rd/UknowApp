@@ -13,6 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from .database import SessionLocal
+from .event_hub import publish_chat_update
 from .media_storage import archive_telegram_media
 from .models import StudentTelegramGroup, TeacherPanel, TeacherSession
 from .telegram_common import (
@@ -612,10 +613,12 @@ async def route_message(message: TgMessage, bot: Bot):
         metadata["source_thread_id"] = message.message_thread_id if group_binding else None
         row.metadata_json = json.dumps(metadata, ensure_ascii=False)
         db.commit()
+        publish_chat_update(conversation.id)
         await archive_telegram_media(bot, message, row)
         if not recipient.telegram_id or not recipient.active:
             row.delivery_status = "failed"
             db.commit()
+            publish_chat_update(conversation.id)
             if sender.role == "teacher":
                 await message.answer("Не удалось доставить сообщение: аккаунт ученика не подключён.")
             else:
@@ -660,6 +663,7 @@ async def route_message(message: TgMessage, bot: Bot):
 
                 row.delivery_status = "delivered"
                 db.commit()
+                publish_chat_update(conversation.id)
                 if sender.role == "student":
                     teacher_session = db.get(TeacherSession, recipient.id)
                     if teacher_session and teacher_session.conversation_id != conversation.id:
@@ -717,6 +721,7 @@ async def route_message(message: TgMessage, bot: Bot):
                 row.metadata_json = json.dumps(delivery_metadata, ensure_ascii=False)
                 row.delivery_status = "delivered"
                 db.commit()
+                publish_chat_update(conversation.id)
 
                 # Remove ordinary text after it is captured in the persistent panel.
                 # Keep native media in the teacher's chat so sent photos, documents,
@@ -758,6 +763,7 @@ async def route_message(message: TgMessage, bot: Bot):
         except Exception as exc:
             row.delivery_status = "failed"
             db.commit()
+            publish_chat_update(conversation.id)
             logger.warning(
                 "Could not forward Telegram message (conversation_id=%s error_type=%s)",
                 conversation.id,
