@@ -9636,3 +9636,55 @@ button:focus-visible, a:focus-visible {
   }
 }
 
+
+/* Message ownership actions */
+.message-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.message-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+}
+.message-time {
+  color: var(--muted, #89839b);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.message-delete-btn {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #9b93a8;
+}
+.message-delete-btn:hover {
+  background: #fff0f1;
+  color: #d63848;
+}
+.message-delete-preview {
+  max-height: 120px;
+  overflow: auto;
+  margin: 14px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line, #ebe7f1);
+  border-radius: 10px;
+  background: var(--surface-soft, #f7f5fa);
+  color: var(--ink, #29223f);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+:root[data-theme="dark-soft"] .message-delete-btn:hover {
+  background: #4a2933;
+  color: #ff9ca7;
+}
