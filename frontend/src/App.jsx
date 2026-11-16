@@ -431,7 +431,7 @@ export default function App() {
     const query = chatSearch.trim().toLocaleLowerCase("ru");
     if (profile?.role === "admin") {
       return [...chats]
-        .filter(chat => !query || chat.teacher.full_name.toLocaleLowerCase("ru").includes(query))
+        .filter(chat => !query || (chat.teacher.full_name + " " + chat.student.full_name).toLocaleLowerCase("ru").includes(query))
         .sort((a, b) =>
           a.teacher.full_name.localeCompare(b.teacher.full_name, "ru", { sensitivity: "base" }) ||
           a.student.full_name.localeCompare(b.student.full_name, "ru", { sensitivity: "base" })
@@ -819,7 +819,7 @@ export default function App() {
           <div className={"chat-layout" + (selectedChat ? " chat-layout-conversation-open" : " chat-layout-list-open")}><div className="chat-list"><div className="chat-list-tools">
               <div className="chat-search-control">
                 <Search size={17}/>
-                <input aria-label={profile?.role === "admin" ? "Найти учителя" : "Найти ученика"} placeholder={profile?.role === "admin" ? "Найти учителя" : "Найти ученика"} value={chatSearch} onChange={e => setChatSearch(e.target.value)}/>
+                <input aria-label="Поиск по имени" placeholder="Поиск по имени" value={chatSearch} onChange={e => setChatSearch(e.target.value)}/>
                 {chatSearch && <button type="button" onClick={() => setChatSearch("")} aria-label="Очистить поиск"><X size={14}/></button>}
               </div>
               {profile?.role !== "admin" && <div className="chat-filter-segment" role="group" aria-label="Фильтр диалогов">
