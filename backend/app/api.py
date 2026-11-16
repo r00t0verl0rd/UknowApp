@@ -132,11 +132,12 @@ def conversation_dict(
                 & (Message.id > last_teacher_reply.id),
             )
         )
-    unread_rows = db.scalars(unread_query).all()
-    unread_count = sum(
-        1 for metadata_json in unread_rows
-        if json.loads(metadata_json or "{}").get("teacher_read_at") is None
-    )
+    unread_count = db.scalar(
+        select(func.count(Message.id)).select_from(Message).where(
+            *unread_query.whereclause.clauses,
+            func.json_extract(Message.metadata_json, "$.teacher_read_at").is_(None),
+        )
+    ) or 0
 
     return {
         "id": conversation.id,
