@@ -9704,3 +9704,45 @@ button:focus-visible, a:focus-visible {
   background: #4a2933;
   color: #ff9ca7;
 }
+
+
+/* Desktop and tablet: keep attachment controls and the send action on one row. */
+@media (min-width: 761px) {
+  .chat-composer .composer-footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    justify-content: stretch;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .chat-composer .composer-tools {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .chat-composer .composer-send {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    align-self: center;
+    min-width: max-content;
+    margin: 0;
+  }
+
+  .chat-composer .composer-send > .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-width: 124px;
+    min-height: 40px;
+    margin: 0;
+    white-space: nowrap;
+  }
+}
