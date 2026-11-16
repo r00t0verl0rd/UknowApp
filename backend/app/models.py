@@ -78,7 +78,7 @@ class Message(Base):
     __table_args__ = (Index("ix_messages_conversation_created_id", "conversation_id", "created_at", "id"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    conversation_id: Mapped[int] = mapped_column(ForeignKey("conversations.id"), nullable=False, index=True)
+    conversation_id: Mapped[int] = mapped_column(ForeignKey("conversations.id"), nullable=False)
     sender_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     sender_role: Mapped[str] = mapped_column(String(20), nullable=False)
     content_type: Mapped[str] = mapped_column(String(40), default="text", nullable=False)
