@@ -439,7 +439,7 @@ export default function App() {
     }
     return chats.filter(chat => {
       const names = (chat.student.full_name + " " + chat.teacher.full_name).toLowerCase();
-      const matchesSearch = !query || names.includes(query) || (chat.last_message || "").toLowerCase().includes(query);
+      const matchesSearch = !query || names.toLocaleLowerCase("ru").includes(query);
       const matchesFilter = chatFilter === "all" || Number(chat.unread_count || 0) > 0;
       return matchesSearch && matchesFilter;
     });
