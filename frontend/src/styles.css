@@ -8811,3 +8811,144 @@ button:focus-visible, a:focus-visible {
     overflow: hidden;
   }
 }
+
+
+/* Mobile chat: keep the conversation history as the primary workspace.
+   The picker stays usable but compact; the composer uses a two-column footer
+   so it does not consume the message viewport. */
+@media (max-width: 760px) {
+  .chats-content > .chat-layout {
+    grid-template-rows: clamp(104px, 17dvh, 148px) minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .chat-list {
+    gap: 4px;
+    padding: 7px;
+  }
+
+  .chat-list-tools {
+    gap: 5px;
+    padding-bottom: 5px;
+  }
+
+  .chat-search-control {
+    min-height: 36px;
+  }
+
+  .chat-search-control input {
+    min-height: 34px;
+  }
+
+  .chat-items-scroll {
+    padding-top: 3px;
+    gap: 5px;
+  }
+
+  .chat-items-scroll > .chat-item {
+    gap: 3px;
+    padding: 7px 9px;
+  }
+
+  .chat-item-heading {
+    gap: 5px;
+  }
+
+  .chat-item-meta {
+    font-size: 10px;
+    line-height: 1.2;
+  }
+
+  .chat-detail {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .chat-head {
+    gap: 7px;
+    padding: 9px 10px;
+  }
+
+  .chat-head b {
+    font-size: 13px;
+  }
+
+  .chat-head-tools {
+    gap: 5px;
+  }
+
+  .chat-detail > .messages {
+    flex: 1 1 0;
+    height: 0;
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chat-composer {
+    display: grid;
+    flex: 0 0 auto;
+    gap: 6px;
+    padding: 7px 8px max(8px, env(safe-area-inset-bottom));
+  }
+
+  .chat-composer textarea {
+    min-height: 48px;
+    max-height: 72px;
+    padding: 8px 10px;
+  }
+
+  .chat-composer .composer-footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .chat-composer .composer-tools {
+    min-width: 0;
+    gap: 5px;
+  }
+
+  .chat-composer .attach-control {
+    width: fit-content;
+    max-width: 100%;
+    min-height: 34px;
+    padding: 5px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .chat-composer .selected-file {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .chat-composer .composer-send {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .chat-composer .composer-send > small {
+    display: block;
+    width: 100%;
+    max-width: 150px;
+    font-size: 9px;
+    line-height: 1.2;
+    text-align: right;
+  }
+
+  .chat-composer .composer-send > .btn {
+    width: auto;
+    min-width: 112px;
+    min-height: 36px;
+    padding: 7px 12px;
+    font-size: 12px;
+  }
+}
