@@ -462,6 +462,11 @@ def delete_user(user_id: int, _: Admin, db: Db):
             Conversation.id.in_(conversation_ids)
         ).delete(synchronize_session=False)
 
+    # Удаляем все служебные ссылки до пользователя: SQLite теперь проверяет внешние ключи.
+    db.query(PanelSession).filter(PanelSession.user_id == user.id).delete(synchronize_session=False)
+    db.query(StudentTelegramGroup).filter(
+        StudentTelegramGroup.student_id == user.id
+    ).delete(synchronize_session=False)
     db.query(TeacherSession).filter(
         TeacherSession.teacher_id == user.id
     ).delete(synchronize_session=False)
