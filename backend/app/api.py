@@ -1,3 +1,5 @@
+"""HTTP API веб-панели: авторизация, участники, переписки и доставка сообщений."""
+
 import asyncio
 import hashlib
 import json
@@ -94,6 +96,7 @@ def validate_teacher_username(db: Session, username: str, exclude_user_id: Optio
 def conversation_dict(
     db: Session, conversation: Conversation, include_telegram_ids: bool = True
 ) -> dict:
+    # Формируем краткую карточку диалога: последнее сообщение, общий и непрочитанный счётчики.
     assignment = conversation.assignment
     last_message = db.scalar(
         select(Message).where(Message.conversation_id == conversation.id)
@@ -642,6 +645,7 @@ def _panel_conversation_dict(db: Session, conversation: Conversation, principal:
 
 
 def _panel_visible_conversation(db: Session, principal: dict, conversation_id: int) -> Conversation:
+    # Проверяем доступ к диалогу на сервере, даже если клиент подменит его ID.
     conversation = db.get(Conversation, conversation_id)
     if not conversation:
         raise HTTPException(status_code=404, detail="Переписка не найдена")
@@ -663,6 +667,7 @@ def _panel_message_dict(
     expose_internal_metadata: bool = True,
     principal: Optional[dict] = None,
 ) -> dict:
+    # Внутренние Telegram ID и file_id не раскрываем учителю в обычном ответе API.
     metadata = json.loads(item.metadata_json or "{}")
     if not expose_internal_metadata:
         for key in (
@@ -956,6 +961,7 @@ async def send_panel_message(
     principal: PanelUser,
     db: Db,
 ):
+    # Сначала сохраняем сообщение в БД, затем отправляем его адресатам в Telegram.
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     body = payload.text.strip()
     if text_contains_contact_data(body):
@@ -1059,6 +1065,7 @@ async def send_panel_attachment(
     file: UploadFile = File(...),
     text: str = Form(default=""),
 ):
+    # Ограничиваем размер до чтения файла целиком и сохраняем локальную копию для веб-панели.
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     if len(text or "") > 3900:
         raise HTTPException(status_code=400, detail="Текст к вложению слишком длинный")
