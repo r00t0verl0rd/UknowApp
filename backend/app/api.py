@@ -748,6 +748,16 @@ def _panel_student_telegram_target(
             ))
             if linked_topic:
                 return {"chat_id": group_chat_id, "message_thread_id": thread_id}
+
+    # If the conversation has no usable recent delivery route yet, fall back
+    # to the student's current verified forum-topic binding instead of always
+    # sending the first teacher-initiated message to the private bot chat.
+    current_binding = db.get(StudentTelegramGroup, student.id)
+    if current_binding:
+        return {
+            "chat_id": current_binding.chat_id,
+            "message_thread_id": current_binding.thread_id,
+        }
     return target
 
 
