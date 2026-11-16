@@ -23,7 +23,7 @@ import { Smile } from "lucide-react/dist/esm/icons/smile.js";
 import { Link2 } from "lucide-react/dist/esm/icons/link-2.js";
 import { Info } from "lucide-react/dist/esm/icons/info.js";
 import { Play } from "lucide-react/dist/esm/icons/play.js";
-import { Pause } from "lucide-react/dist/esm/icons/pause.js";
+import Pause from "lucide-react/dist/esm/icons/pause.js";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 const ROLE = { teacher: "Учитель", student: "Ученик", admin: "Администратор" };
