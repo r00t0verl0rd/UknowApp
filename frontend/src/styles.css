@@ -1,7 +1,8 @@
 :root{font-family:Onest,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#29223f;background:#f7f6fb;font-synthesis:none;text-rendering:optimizeLegibility;--purple:#59439a;--purple2:#7856bd;--red:#e82c3b;--ink:#29223f;--muted:#89839b;--line:#ebe7f1}
 *{box-sizing:border-box}body{margin:0;min-width:320px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}
-.login-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 20% 20%,#fce8ed,transparent 35%),radial-gradient(circle at 85% 85%,#e9e2f8,transparent 35%),#f8f7fb}.login-card{width:min(420px,100%);background:#fff;border:1px solid var(--line);border-radius:24px;padding:38px;box-shadow:0 24px 80px #39245c12}.login-logo{width:112px;height:112px;object-fit:contain;display:block;margin:0 auto 22px}.login-card h1{text-align:center;font-size:32px;margin:7px 0}.login-card>.eyebrow{text-align:center}.muted{text-align:center;color:var(--muted);font-size:13px;margin:0 0 28px}
-.shell{min-height:100vh}.sidebar{position:fixed;inset:0 auto 0 0;width:250px;background:#fff;border-right:1px solid var(--line);padding:25px 18px;display:flex;flex-direction:column;z-index:2}.brand{display:flex;align-items:center;gap:10px;padding:0 8px 32px;font-size:22px;font-weight:800;color:var(--purple)}.brand img{width:42px;height:42px;object-fit:contain}.brand span span{color:var(--red)}.school-label,.eyebrow{font-size:10px;letter-spacing:1.5px;font-weight:800;color:#a49bb4}.school-label{padding:0 11px 12px}.sidebar nav{display:grid;gap:6px}.sidebar nav button,.logout{display:flex;align-items:center;gap:12px;border:0;background:transparent;color:#716b80;padding:12px;border-radius:11px;text-align:left;font-size:13px;font-weight:700}.sidebar nav button svg,.logout svg{width:18px;height:18px}.sidebar nav button.active{background:#f0ebf9;color:var(--purple)}.sidebar nav button i{margin-left:auto;font-style:normal;font-size:11px;background:#f2eff6;padding:3px 7px;border-radius:20px}.logout{margin-top:12px;width:100%}.main{margin-left:250px;min-height:100vh}.topbar{height:70px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 34px}.topbar>div{display:flex;align-items:center;gap:9px;color:#a39bad;font-size:12px}.topbar svg{width:15px}.topbar b{color:var(--ink)}.content{max-width:1400px;margin:auto;padding:34px}.page-title{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:25px}.page-title h1{font-size:29px;letter-spacing:-1px;margin:7px 0}.page-title p,.section-head p{color:var(--muted);font-size:12px;margin:0}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:800;background:#fff;color:var(--ink)}.btn svg{width:16px;height:16px}.btn.primary{background:var(--purple);border-color:var(--purple);color:white;box-shadow:0 6px 18px #59439a24}.btn.primary:hover{background:#483581}.btn.ghost{background:#faf9fc}.btn.small{padding:8px 10px;font-size:11px}.btn.outline{color:var(--purple)}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:20px}.metric{background:white;border:1px solid var(--line);border-radius:15px;padding:17px;display:grid;grid-template-columns:34px 1fr;align-items:center;column-gap:10px}.metric svg{grid-row:span 2;width:22px;color:var(--purple)}.metric span{font-size:11px;color:var(--muted)}.metric b{font-size:22px}.graph-panel,.user-list,.chat-layout{background:white;border:1px solid var(--line);border-radius:17px;padding:22px}.section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:25px}.section-head h2{font-size:17px;margin:0 0 5px}.legend{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:10px}.legend span{width:8px;height:8px;border-radius:50%;margin-left:9px}.teacher-dot{background:var(--purple)}.student-dot{background:#e84b56}.root-node{width:230px;margin:auto;display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #e7dff3;background:#faf8fd;border-radius:13px}.root-node img{width:40px;height:40px;object-fit:contain}.root-node b,.root-node small{display:block}.root-node b{font-size:12px}.root-node small{font-size:10px;color:var(--muted);margin-top:3px}.root-node>span{margin-left:auto;font-size:9px;font-weight:800;color:var(--purple);background:#eee8f7;padding:5px 7px;border-radius:6px}.teacher-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:18px;align-items:start}.teacher-branch{position:relative;padding-top:0}.person-card{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}.teacher-card{border-color:#e4dcf1;background:#fcfaff}.person-main{display:flex;align-items:center;gap:9px;min-width:0}.avatar{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;flex:none;background:#f0eafa;color:var(--purple)}.avatar svg{width:18px}.teacher-avatar{background:#eee8f8;color:var(--purple)}.student-avatar,.avatar.student{background:#fff0f1;color:var(--red)}.person-info{min-width:0}.person-info b,.person-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.person-info b{font-size:12px}.person-info small{font-size:9px;color:var(--muted);margin-top:4px}.person-actions{display:flex;gap:4px;flex:none}.person-actions button,.icon-btn{width:30px;height:30px;border:1px solid transparent;border-radius:8px;background:transparent;color:#898198;display:grid;place-items:center}.person-actions button:hover,.icon-btn:hover{background:#f3eff8;color:var(--purple)}.person-actions svg,.icon-btn svg{width:15px;height:15px}.person-actions .danger-icon:hover,.danger-icon:hover{background:#fff0f1;color:var(--red)}.student-list{display:grid;gap:7px;margin:12px 0 0 22px;padding-left:14px;border-left:1px solid #e6dfea}.student-card{padding:9px 10px}.empty-students{padding:13px;border:1px dashed #e7e1ec;border-radius:10px;color:#a69fb0;font-size:10px;text-align:center}.add-student{margin:10px 0 0 36px;border:0;background:transparent;color:var(--purple);font-size:10px;font-weight:800;display:flex;align-items:center;gap:6px;padding:5px}.add-student svg{width:14px}.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:40px 15px;text-align:center;color:var(--muted);font-size:12px}.empty-state>svg{width:30px;height:30px;color:var(--purple)}.empty-state b{color:var(--ink)}.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;color:var(--muted);font-size:11px}.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:0 10px;width:min(360px,100%);height:40px}.search svg{width:16px;color:#aaa2b5}.search input{border:0;outline:0;width:100%;font-size:11px}.user-list{padding:0}.user-row{display:flex;align-items:center;gap:12px;padding:13px 17px;border-bottom:1px solid #f1eef4}.user-row:last-child{border:0}.user-row .person-info{flex:1}.role-tag{font-size:10px;font-weight:800;padding:5px 8px;border-radius:7px;background:#f0eafa;color:var(--purple)}.role-tag.student{background:#fff0f1;color:var(--red)}.chat-layout{display:grid;grid-template-columns:310px minmax(0,1fr);padding:0;min-height:500px;overflow:hidden}.chat-list{border-right:1px solid var(--line);padding:8px}.chat-item{display:grid;gap:6px;width:100%;text-align:left;padding:13px;border:0;border-radius:10px;background:white;color:var(--ink)}.chat-item.selected,.chat-item:hover{background:#f7f4fb}.chat-item b{font-size:11px}.chat-item small{font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chat-item span{font-size:9px;color:var(--purple)}.chat-detail{min-width:0}.chat-head{padding:17px;border-bottom:1px solid var(--line)}.chat-head b,.chat-head small{display:block}.chat-head b{font-size:12px}.chat-head small{font-size:10px;color:var(--muted);margin-top:4px}.messages{padding:18px;display:grid;align-content:start;gap:10px;max-height:600px;overflow:auto}.message{max-width:85%;padding:10px 12px;background:#f6f3fa;border-radius:10px}.message.teacher{justify-self:end;background:#fff0f1}.message b{font-size:10px}.message b small{font-weight:500;color:var(--muted);margin-left:6px}.message p{font-size:11px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0}.main footer{padding:0 34px 25px;color:#aaa3b4;font-size:10px}.main footer span{color:var(--red);padding:0 4px}
+.login-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 20% 20%,#fce8ed,transparent 35%),radial-gradient(circle at 85% 85%,#e9e2f8,transparent 35%),#f8f7fb}.login-card{width:min(420px,100%);background:#fff;border:1px solid var(--line);border-radius:24px;padding:38px;box-shadow:0 24px 80px #39245c12}.login-logo{width:112px;height:112px;object-fit:contain;display:block;margin:0 auto 22px}.login-card h1{text-align:center;font-size:32px;margin:7px 0}.login-card>.eyebrow{text-align:center}
+.shell{min-height:100vh}.sidebar{position:fixed;inset:0 auto 0 0;width:250px;background:#fff;border-right:1px solid var(--line);padding:25px 18px;display:flex;flex-direction:column;z-index:2}.brand{display:flex;align-items:center;gap:10px;padding:0 8px 32px;font-size:22px;font-weight:800;color:var(--purple)}.brand img{width:42px;height:42px;object-fit:contain}.brand span span{color:var(--red)}.school-label,.eyebrow{font-size:10px;letter-spacing:1.5px;font-weight:800;color:#a49bb4}.school-label{padding:0 11px 12px}.sidebar nav{display:grid;gap:6px}.sidebar nav button,.logout{display:flex;align-items:center;gap:12px;border:0;background:transparent;color:#716b80;padding:12px;border-radius:11px;text-align:left;font-size:13px;font-weight:700}.sidebar nav button svg,.logout svg{width:18px;height:18px}.sidebar nav button.active{background:#f0ebf9;color:var(--purple)}.sidebar nav button i{margin-left:auto;font-style:normal;font-size:11px;background:#f2eff6;padding:3px 7px;border-radius:20px}.logout{margin-top:12px;width:100%}.main{margin-left:250px;min-height:100vh}.topbar{height:70px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 34px}.topbar>div{display:flex;align-items:center;gap:9px;color:#a39bad;font-size:12px}.topbar svg{width:15px}.topbar b{color:var(--ink)}.content{max-width:1400px;margin:auto;padding:34px}.section-head p
+{color:var(--muted);font-size:12px;margin:0}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:800;background:#fff;color:var(--ink)}.btn svg{width:16px;height:16px}.btn.primary{background:var(--purple);border-color:var(--purple);color:white;box-shadow:0 6px 18px #59439a24}.btn.primary:hover{background:#483581}.btn.ghost{background:#faf9fc}.btn.small{padding:8px 10px;font-size:11px}.btn.outline{color:var(--purple)}.graph-panel,.user-list,.chat-layout{background:white;border:1px solid var(--line);border-radius:17px;padding:22px}.section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:25px}.section-head h2{font-size:17px;margin:0 0 5px}.legend{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:10px}.legend span{width:8px;height:8px;border-radius:50%;margin-left:9px}.teacher-dot{background:var(--purple)}.student-dot{background:#e84b56}.root-node{width:230px;margin:auto;display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #e7dff3;background:#faf8fd;border-radius:13px}.root-node img{width:40px;height:40px;object-fit:contain}.root-node b,.root-node small{display:block}.root-node b{font-size:12px}.root-node small{font-size:10px;color:var(--muted);margin-top:3px}.root-node>span{margin-left:auto;font-size:9px;font-weight:800;color:var(--purple);background:#eee8f7;padding:5px 7px;border-radius:6px}.teacher-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:18px;align-items:start}.teacher-branch{position:relative;padding-top:0}.person-card{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}.teacher-card{border-color:#e4dcf1;background:#fcfaff}.person-main{display:flex;align-items:center;gap:9px;min-width:0}.avatar{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;flex:none;background:#f0eafa;color:var(--purple)}.avatar svg{width:18px}.teacher-avatar{background:#eee8f8;color:var(--purple)}.student-avatar,.avatar.student{background:#fff0f1;color:var(--red)}.person-info{min-width:0}.person-info b,.person-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.person-info b{font-size:12px}.person-info small{font-size:9px;color:var(--muted);margin-top:4px}.person-actions{display:flex;gap:4px;flex:none}.person-actions button,.icon-btn{width:30px;height:30px;border:1px solid transparent;border-radius:8px;background:transparent;color:#898198;display:grid;place-items:center}.person-actions button:hover,.icon-btn:hover{background:#f3eff8;color:var(--purple)}.person-actions svg,.icon-btn svg{width:15px;height:15px}.person-actions .danger-icon:hover,.danger-icon:hover{background:#fff0f1;color:var(--red)}.student-list{display:grid;gap:7px;margin:12px 0 0 22px;padding-left:14px;border-left:1px solid #e6dfea}.student-card{padding:9px 10px}.empty-students{padding:13px;border:1px dashed #e7e1ec;border-radius:10px;color:#a69fb0;font-size:10px;text-align:center}.add-student{margin:10px 0 0 36px;border:0;background:transparent;color:var(--purple);font-size:10px;font-weight:800;display:flex;align-items:center;gap:6px;padding:5px}.add-student svg{width:14px}.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:40px 15px;text-align:center;color:var(--muted);font-size:12px}.empty-state>svg{width:30px;height:30px;color:var(--purple)}.empty-state b{color:var(--ink)}.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;color:var(--muted);font-size:11px}.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:0 10px;width:min(360px,100%);height:40px}.search svg{width:16px;color:#aaa2b5}.search input{border:0;outline:0;width:100%;font-size:11px}.user-list{padding:0}.user-row{display:flex;align-items:center;gap:12px;padding:13px 17px;border-bottom:1px solid #f1eef4}.user-row:last-child{border:0}.user-row .person-info{flex:1}.role-tag{font-size:10px;font-weight:800;padding:5px 8px;border-radius:7px;background:#f0eafa;color:var(--purple)}.role-tag.student{background:#fff0f1;color:var(--red)}.chat-layout{display:grid;grid-template-columns:310px minmax(0,1fr);padding:0;min-height:500px;overflow:hidden}.chat-list{border-right:1px solid var(--line);padding:8px}.chat-item{display:grid;gap:6px;width:100%;text-align:left;padding:13px;border:0;border-radius:10px;background:white;color:var(--ink)}.chat-item.selected,.chat-item:hover{background:#f7f4fb}.chat-item b{font-size:11px}.chat-item small{font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chat-item span{font-size:9px;color:var(--purple)}.chat-detail{min-width:0}.chat-head{padding:17px;border-bottom:1px solid var(--line)}.chat-head b,.chat-head small{display:block}.chat-head b{font-size:12px}.chat-head small{font-size:10px;color:var(--muted);margin-top:4px}.messages{padding:18px;display:grid;align-content:start;gap:10px;max-height:600px;overflow:auto}.message{max-width:85%;padding:10px 12px;background:#f6f3fa;border-radius:10px}.message.teacher{justify-self:end;background:#fff0f1}.message b{font-size:10px}.message b small{font-weight:500;color:var(--muted);margin-left:6px}.message p{font-size:11px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0}.main footer{padding:0 34px 25px;color:#aaa3b4;font-size:10px}.main footer span{color:var(--red);padding:0 4px}
 .stack{display:grid;gap:14px}.stack label{display:grid;gap:7px;color:#6e687b;font-size:11px;font-weight:700}.stack input,.stack select{height:42px;border:1px solid var(--line);border-radius:9px;padding:0 11px;background:white;color:var(--ink);outline:0}.stack input:focus,.stack select:focus{border-color:#a997cf;box-shadow:0 0 0 3px #7856bd16}.alert{background:#fff0f1;color:#b82c3b;border:1px solid #f6d4d8;padding:11px 13px;border-radius:9px;font-size:11px}.alert-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.alert-row button{border:0;background:none;color:inherit}.alert-row svg{width:15px}.overlay{position:fixed;inset:0;background:#241b3580;backdrop-filter:blur(5px);display:grid;place-items:center;padding:20px;z-index:5}.modal{width:min(440px,100%);background:white;border-radius:18px;padding:24px;box-shadow:0 25px 90px #21163145}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px}.modal-head h2{font-size:19px;margin:6px 0 0}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}.hint{font-size:10px;color:var(--muted);line-height:1.5;margin:0}.invite-code{font:800 28px ui-monospace,monospace;letter-spacing:4px;text-align:center;color:var(--purple);background:#f5f0fb;border:1px dashed #cfc0e3;padding:18px;border-radius:12px;margin-bottom:13px}.toast{position:fixed;right:24px;bottom:24px;display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:11px;background:#2f2446;color:white;font-size:11px;z-index:8;box-shadow:0 10px 30px #21163135}.toast svg{width:16px;color:#e9a0a8}.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 
 .unassigned{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}.unassigned .section-head{margin-bottom:12px}.unassigned .section-head h2{font-size:14px}.unassigned-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:9px}.unassigned-grid .person-card{flex-wrap:wrap;background:#fffafa;border-color:#f2e5e7}
@@ -17,24 +18,16 @@
 .login-card { width: min(460px, 100%); padding: 42px; }
 .login-logo { width: 150px; height: 150px; margin-bottom: 25px; }
 .login-card h1 { font-size: 36px; }
-.muted { font-size: 15px; }
 .stack label { font-size: 13px; }
 .stack input, .stack select { height: 46px; font-size: 14px; }
 .topbar { padding: 0 40px; }
 .topbar > div { font-size: 14px; }
-.content { max-width: 1680px; padding: 38px 42px; }
-.page-title h1 { font-size: 35px; }
-.page-title p, .section-head p { font-size: 14px; }
+.content { max-width: 1680px; padding: 38px 42px; }.section-head p
+{ font-size: 14px; }
 .btn { font-size: 13px; padding: 12px 16px; }
 .btn.small { font-size: 12px; }
-.eyebrow, .school-label { font-size: 11px; letter-spacing: 1.6px; }
+.eyebrow, .school-label { font-size: 11px; letter-spacing: 1.6px; }/* Statistics are intentionally compact to give the hierarchy more space. */
 
-/* Statistics are intentionally compact to give the hierarchy more space. */
-.metrics { gap: 11px; margin-bottom: 16px; }
-.metric { min-height: 64px; padding: 8px 12px; grid-template-columns: 25px 1fr; column-gap: 8px; border-radius: 12px; }
-.metric svg { width: 17px; }
-.metric span { font-size: 10px; }
-.metric b { font-size: 18px; line-height: 1.1; }
 
 /* The hierarchy graph is the main workspace. */
 .graph-panel { padding: 30px; border-radius: 20px; }
@@ -65,10 +58,8 @@
 .chat-item b, .chat-head b, .message b { font-size: 13px; }
 .chat-item small, .chat-head small, .message p { font-size: 12px; }
 .messages { gap: 13px; padding: 22px; }
-.message { padding: 13px 15px; }
+.message { padding: 13px 15px; }/* Connected Telegram accounts are highlighted; the disconnected label stays neutral. */
 
-/* Connected Telegram accounts are highlighted; the disconnected label stays neutral. */
-.telegram-connected { color: #16834a; font-weight: 700; }
 
 /* User list role colors: students green, teachers purple. */
 .user-row .avatar.student { background: #e8f7ee; color: #16834a; }
@@ -139,9 +130,8 @@ body { background: var(--canvas); color: var(--ink); }
 }
 .topbar > div { color: #9a91aa; }
 .topbar b { color: var(--ink); }
-.content { color: var(--ink); }
-.page-title h1 { color: #29223f; letter-spacing: -.9px; }
-.page-title p, .section-head p { color: var(--muted); }
+.content { color: var(--ink); }.section-head p
+{ color: var(--muted); }
 .btn {
   background: #fff;
   color: var(--ink);
@@ -169,19 +159,6 @@ body { background: var(--canvas); color: var(--ink); }
 .btn.ghost { background: #f7f4fb; }
 .btn.outline { color: var(--purple); border-color: #d8c9ed; background: #faf7ff; }
 .btn.outline:hover { background: #f0e9fb; }
-.metrics { gap: 12px; }
-.metric {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  box-shadow: 0 5px 20px rgba(47,31,84,.035);
-}
-.metric svg { color: var(--purple); }
-.metric:nth-child(2) svg { color: var(--amber); }
-.metric:nth-child(3) svg { color: var(--red); }
-.metric:nth-child(4) svg { color: var(--lavender); }
-.metric span { color: var(--muted); }
-.metric b { color: var(--ink); }
 .graph-panel, .user-list, .chat-layout {
   background: #fff;
   border-color: var(--line);
@@ -271,7 +248,6 @@ body { background: var(--canvas); color: var(--ink); }
 }
 .role-tag.student { background: #fff0ce; color: #986114; }
 .role-tag.teacher { background: #eee6fb; color: #6847a8; }
-.telegram-connected { color: #21844f; }
 .person-actions button, .icon-btn {
   color: #898198;
   border-radius: 9px;
@@ -364,7 +340,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 
 .chat-media-image { display: block; max-width: min(100%, 360px); max-height: 360px; object-fit: contain; border-radius: 10px; margin-top: 9px; }
-.chat-media-player { display: block; width: min(100%, 340px); margin-top: 9px; }
 .chat-media-video { display: block; width: min(100%, 340px); max-height: 420px; background: #17131f; border-radius: 12px; margin-top: 9px; }
 .chat-media-download { display: inline-block; margin-top: 9px; color: var(--purple); font-weight: 650; overflow-wrap: anywhere; }
 .chat-media-status { display: block; margin-top: 8px; color: #8a6b3c; }
@@ -614,9 +589,6 @@ img, video, audio { max-width: 100%; }
 .teacher-graph-connector { width: 1px; height: 26px; margin: 0 auto; background: #d8cde7; }
 .teacher-graph-student-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px; }
 .teacher-graph-card.student { border-color: #f0e5ce; background: linear-gradient(110deg,#fff8e9,#fff); }
-.teacher-graph-summary { display: flex; align-items: center; gap: 9px; max-width: 960px; margin: 20px auto 0; color: var(--muted); font-size: 12px; }
-.teacher-graph-summary svg { color: var(--purple); }
-.teacher-graph-summary b { color: var(--ink); font-size: 18px; }
 
 .chat-head-tools { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .chat-head-tools select { max-width: 155px; min-width: 0; border: 1px solid var(--line); border-radius: 9px; padding: 7px 9px; background: #faf9fc; color: var(--ink); font-size: 10px; }
@@ -626,16 +598,8 @@ img, video, audio { max-width: 100%; }
   font-size: 9px;
   color: #b45a37;
   line-height: 1.4;
-}
+}/* Graph-level participant action, placed after the relationship map. */
 
-/* Graph-level participant action, placed after the relationship map. */
-.graph-panel .graph-actions {
-  display: flex;
-  justify-content: center;
-  margin-top: 22px;
-  padding-top: 18px;
-  border-top: 1px solid #eee8f4;
-}
 
 /* Friendly conversation search and filter controls */
 .chat-list-tools {
@@ -730,12 +694,6 @@ img, video, audio { max-width: 100%; }
   text-align: center;
 }
 .chat-filter-segment button.active span { background: #eee7f8; color: var(--purple); }
-.chat-list-caption {
-  padding: 0 2px;
-  color: #a29aaa;
-  font-size: 9px;
-  letter-spacing: .15px;
-}
 .password-actions { display: grid; gap: 10px; }
 .password-info {
   display: flex;
@@ -845,34 +803,6 @@ img, video, audio { max-width: 100%; }
 .mobile-quick-actions { display: none; }
 .login-card { position: relative; }
 .login-theme-toggle { position: absolute; top: 15px; right: 15px; }
-.timezone-control {
-  min-width: 0;
-  display: grid;
-  gap: 5px;
-}
-.timezone-control > span {
-  padding-left: 2px;
-  color: var(--muted);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: .35px;
-}
-.timezone-control select {
-  width: 100%;
-  min-width: 0;
-  height: 38px;
-  padding: 0 10px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  outline: none;
-  background: #fff;
-  color: var(--ink);
-  font-size: 11px;
-}
-.timezone-control select:focus {
-  border-color: #a99bcc;
-  box-shadow: 0 0 0 3px #59439a12;
-}
 
 /* A calm, low-contrast dark palette. It is activated by the theme button and
    intentionally avoids pure black and highly saturated accent colours. */
@@ -896,19 +826,18 @@ img, video, audio { max-width: 100%; }
     radial-gradient(circle at 18% 18%, #3b2e46 0, transparent 34%),
     radial-gradient(circle at 86% 84%, #29374b 0, transparent 38%),
     #171b25 !important;
-}
-:root[data-theme="dark-soft"] .login-card,
+}:root[data-theme="dark-soft"] .login-card,
 :root[data-theme="dark-soft"] .sidebar,
 :root[data-theme="dark-soft"] .topbar,
 :root[data-theme="dark-soft"] .graph-panel,
 :root[data-theme="dark-soft"] .user-list,
 :root[data-theme="dark-soft"] .chat-layout,
 :root[data-theme="dark-soft"] .teacher-readonly-graph,
-:root[data-theme="dark-soft"] .metric,
 :root[data-theme="dark-soft"] .chat-head,
 :root[data-theme="dark-soft"] .chat-composer,
 :root[data-theme="dark-soft"] .credential-row,
-:root[data-theme="dark-soft"] .modal {
+:root[data-theme="dark-soft"] .modal
+{
   background: #202633 !important;
   color: #e4e8f0 !important;
   border-color: #343d4d !important;
@@ -917,34 +846,28 @@ img, video, audio { max-width: 100%; }
 :root[data-theme="dark-soft"] .main,
 :root[data-theme="dark-soft"] .shell {
   background: #171b25 !important;
-}
-:root[data-theme="dark-soft"] .school-label,
+}:root[data-theme="dark-soft"] .school-label,
 :root[data-theme="dark-soft"] .eyebrow,
-:root[data-theme="dark-soft"] .muted,
-:root[data-theme="dark-soft"] .page-title p,
 :root[data-theme="dark-soft"] .section-head p,
 :root[data-theme="dark-soft"] .person-info small,
 :root[data-theme="dark-soft"] .chat-head small,
 :root[data-theme="dark-soft"] .chat-item small,
 :root[data-theme="dark-soft"] .chat-item span,
-:root[data-theme="dark-soft"] .chat-list-caption,
-:root[data-theme="dark-soft"] .timezone-control > span,
 :root[data-theme="dark-soft"] .composer-footer small,
 :root[data-theme="dark-soft"] .message-time,
 :root[data-theme="dark-soft"] .credential-row span,
-:root[data-theme="dark-soft"] .credential-password span {
+:root[data-theme="dark-soft"] .credential-password span
+{
   color: #9ba6b8 !important;
-}
-:root[data-theme="dark-soft"] .topbar > div,
+}:root[data-theme="dark-soft"] .topbar > div,
 :root[data-theme="dark-soft"] .topbar b,
-:root[data-theme="dark-soft"] .page-title h1,
 :root[data-theme="dark-soft"] .section-head h2,
 :root[data-theme="dark-soft"] .person-info b,
-:root[data-theme="dark-soft"] .metric b,
 :root[data-theme="dark-soft"] .chat-head b,
 :root[data-theme="dark-soft"] .chat-item b,
 :root[data-theme="dark-soft"] .credential-row b,
-:root[data-theme="dark-soft"] .empty-state b {
+:root[data-theme="dark-soft"] .empty-state b
+{
   color: #e4e8f0 !important;
 }
 :root[data-theme="dark-soft"] .sidebar nav button,
@@ -1007,14 +930,13 @@ img, video, audio { max-width: 100%; }
 :root[data-theme="dark-soft"] .chat-composer,
 :root[data-theme="dark-soft"] .chat-head {
   background: #202633 !important;
-}
-:root[data-theme="dark-soft"] .chat-composer textarea,
+}:root[data-theme="dark-soft"] .chat-composer textarea,
 :root[data-theme="dark-soft"] input,
 :root[data-theme="dark-soft"] select,
 :root[data-theme="dark-soft"] textarea,
 :root[data-theme="dark-soft"] .chat-search-control,
-:root[data-theme="dark-soft"] .timezone-control select,
-:root[data-theme="dark-soft"] .chat-head-tools select {
+:root[data-theme="dark-soft"] .chat-head-tools select
+{
   background: #262f3d !important;
   color: #e4e8f0 !important;
   border-color: #414c60 !important;
@@ -1023,10 +945,9 @@ img, video, audio { max-width: 100%; }
 :root[data-theme="dark-soft"] textarea::placeholder,
 :root[data-theme="dark-soft"] .chat-search-control input::placeholder {
   color: #8793a7 !important;
-}
-:root[data-theme="dark-soft"] .chat-search-control:focus-within,
-:root[data-theme="dark-soft"] .chat-composer textarea:focus,
-:root[data-theme="dark-soft"] .timezone-control select:focus {
+}:root[data-theme="dark-soft"] .chat-search-control:focus-within,
+:root[data-theme="dark-soft"] .chat-composer textarea:focus
+{
   background: #2b3545 !important;
   border-color: #8579b7 !important;
   box-shadow: 0 0 0 3px rgba(170, 160, 216, .13) !important;
@@ -1235,9 +1156,6 @@ img, video, audio { max-width: 100%; }
   border-color: #77729d !important;
 }
 :root[data-theme="dark-soft"] .graph-panel .unassigned {
-  border-top: 1px solid #414d60 !important;
-}
-:root[data-theme="dark-soft"] .graph-panel .graph-actions {
   border-top: 1px solid #414d60 !important;
 }
 :root[data-theme="dark-soft"] .graph-panel .person-card,
@@ -1848,18 +1766,6 @@ img, video, audio { max-width: 100%; }
   white-space: nowrap;
 }
 
-.user-meta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 5px 10px;
-  min-width: 0;
-  margin-top: 4px;
-  color: var(--muted);
-  font-size: 10px;
-  line-height: 1.35;
-}
-
 .user-status-dot {
   width: 7px;
   height: 7px;
@@ -1875,28 +1781,6 @@ img, video, audio { max-width: 100%; }
 
 .user-status-dot.is-inactive {
   background: #d49a46;
-}
-
-.telegram-state {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--muted);
-}
-
-.telegram-state.is-connected {
-  color: #32a879;
-}
-
-.telegram-state svg {
-  flex: 0 0 auto;
-}
-
-.user-login {
-  overflow: hidden;
-  max-width: 260px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .user-actions {
@@ -2248,31 +2132,10 @@ img, video, audio { max-width: 100%; }
   line-height: 1.35;
 }
 
-.user-meta {
-  gap: 7px 13px;
-  margin-top: 6px;
-  font-size: 11px;
-  line-height: 1.45;
-}
-
 .user-status-dot {
   width: 8px;
   height: 8px;
   flex-basis: 8px;
-}
-
-.telegram-state {
-  gap: 5px;
-}
-
-.telegram-state svg {
-  width: 14px;
-  height: 14px;
-}
-
-.user-login {
-  max-width: 300px;
-  font-size: 11px;
 }
 
 .user-actions {
@@ -2299,24 +2162,6 @@ img, video, audio { max-width: 100%; }
 .user-action-btn svg {
   width: 18px;
   height: 18px;
-}
-
-.user-action-btn.code-btn {
-  width: auto;
-  min-width: 88px;
-  flex: 0 0 auto;
-  padding: 0 13px;
-  border-color: #d9ccef;
-  color: #64469e;
-  background: #f4effb;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.user-action-btn.code-btn:hover {
-  border-color: #bca7df;
-  color: #513486;
-  background: #ece4f8;
 }
 
 .user-action-btn.disconnect {
@@ -2363,17 +2208,6 @@ img, video, audio { max-width: 100%; }
   color: #c0c8d6;
   border-color: #414e62;
   background: #252e3d;
-}
-
-:root[data-theme="dark-soft"] .user-action-btn.code-btn {
-  color: #dfd2ff;
-  border-color: #62547f;
-  background: #39334c;
-}
-
-:root[data-theme="dark-soft"] .user-action-btn.code-btn:hover {
-  background: #49405f;
-  border-color: #79699a;
 }
 
 :root[data-theme="dark-soft"] .user-action-btn.disconnect,
@@ -3102,20 +2936,6 @@ body {
     padding: 14px 20px 18px;
   }
 
-  .page-title {
-    display: none;
-  }
-
-  .metrics {
-    gap: 10px;
-    margin-bottom: 12px;
-  }
-
-  .metric {
-    min-height: 56px;
-    padding: 9px 12px;
-  }
-
   .graph-panel {
     padding: 19px;
     border-radius: 16px;
@@ -3169,26 +2989,15 @@ body {
     padding-top: 13px;
   }
 
-  .graph-panel .graph-actions {
-    margin-top: 12px;
-    padding-top: 12px;
-  }
-
   .teacher-readonly-graph {
     padding: 18px;
-  }
-
-  .teacher-graph-root,
-  .teacher-graph-summary {
+  }.teacher-graph-root
+{
     max-width: none;
   }
 
   .teacher-graph-root {
     margin: 10px 0;
-  }
-
-  .teacher-graph-summary {
-    margin: 12px 0 0;
   }
 
   .user-row {
@@ -3341,9 +3150,9 @@ body {
 
 @media (max-width: 1024px) {
 
-.sidebar{width:210px}.main{margin-left:210px}.content{padding:25px}.metrics{grid-template-columns:repeat(2,1fr)}
+.sidebar{width:210px}.main{margin-left:210px}.content{padding:25px}
 
-.sidebar{position:static;width:auto;height:auto;padding:12px;display:block;border-right:0;border-bottom:1px solid var(--line)}.brand{padding:0 4px 12px}.brand img{width:32px;height:32px}.school-label{display:none}.sidebar nav{display:flex;gap:5px}.sidebar nav button{flex:1;justify-content:center;padding:10px 5px;font-size:10px}.sidebar nav button i{display:none}.main{margin:0}.topbar{height:54px;padding:0 16px}.content{padding:20px 14px}.page-title{align-items:flex-start;flex-direction:column}.page-title h1{font-size:25px}.metrics{gap:8px}.metric{padding:12px}.graph-panel{padding:14px}.section-head{align-items:flex-start;flex-direction:column}.teacher-grid{grid-template-columns:1fr}.user-row{flex-wrap:wrap}.user-row .person-info{min-width:calc(100% - 65px)}.role-tag{margin-left:45px}.chat-layout{grid-template-columns:1fr}.chat-list{border-right:0;border-bottom:1px solid var(--line);max-height:220px;overflow:auto}.main footer{padding:0 14px 18px}.login-card{padding:26px}.login-logo{width:90px;height:90px}
+.sidebar{position:static;width:auto;height:auto;padding:12px;display:block;border-right:0;border-bottom:1px solid var(--line)}.brand{padding:0 4px 12px}.brand img{width:32px;height:32px}.school-label{display:none}.sidebar nav{display:flex;gap:5px}.sidebar nav button{flex:1;justify-content:center;padding:10px 5px;font-size:10px}.sidebar nav button i{display:none}.main{margin:0}.topbar{height:54px;padding:0 16px}.content{padding:20px 14px}.graph-panel{padding:14px}.section-head{align-items:flex-start;flex-direction:column}.teacher-grid{grid-template-columns:1fr}.user-row{flex-wrap:wrap}.user-row .person-info{min-width:calc(100% - 65px)}.role-tag{margin-left:45px}.chat-layout{grid-template-columns:1fr}.chat-list{border-right:0;border-bottom:1px solid var(--line);max-height:220px;overflow:auto}.main footer{padding:0 14px 18px}.login-card{padding:26px}.login-logo{width:90px;height:90px}
 
   .sidebar { width: 230px; }
   .main { margin-left: 230px; }
@@ -3356,10 +3165,7 @@ body {
   .sidebar nav button { font-size: 11px; }
   .main { margin: 0; }
   .content { padding: 23px 15px; }
-  .page-title h1 { font-size: 29px; }
   .graph-panel { padding: 17px; }
-  .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
-  .metric { min-height: 60px; }
   .root-node { max-width: 100%; }
 
   .graph-panel {
@@ -3425,15 +3231,6 @@ body {
   .topbar > div { min-width: 0; gap: 5px; font-size: 11px; }
   .topbar > div span { display: none; }
   .content { width: 100%; padding: 10px 12px 24px; }
-  .page-title { align-items: stretch; flex-direction: column; gap: 12px; margin-bottom: 17px; }
-  .page-title > div { min-width: 0; }
-  .page-title h1 { font-size: clamp(23px, 6vw, 28px); line-height: 1.15; overflow-wrap: anywhere; }
-  .page-title p { font-size: 12px; line-height: 1.5; }
-  .page-title > .btn { width: 100%; min-height: 42px; }
-  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .metric { min-width: 0; padding: 11px 9px; grid-template-columns: 25px minmax(0, 1fr); column-gap: 7px; }
-  .metric span { overflow-wrap: anywhere; }
-  .metric b { font-size: 19px; }
   .graph-panel, .user-list, .chat-layout { min-width: 0; width: 100%; padding: 13px; border-radius: 15px; }
   .graph-panel { overflow: hidden; }
   .graph-panel .section-head { align-items: flex-start; flex-direction: column; gap: 10px; }
@@ -3475,8 +3272,8 @@ body {
   .chat-head b { overflow-wrap: anywhere; }
   .messages { min-width: 0; padding: 12px 2px; }
   .message { max-width: 100%; min-width: 0; overflow-wrap: anywhere; }
-  .message p { overflow-wrap: anywhere; white-space: pre-wrap; }
-  .chat-media-video, .chat-media-player { width: 100%; max-width: 100%; }
+  .message p { overflow-wrap: anywhere; white-space: pre-wrap; }.chat-media-video
+{ width: 100%; max-width: 100%; }
   .overlay { align-items: flex-end; padding: 10px; }
   .modal { width: 100%; max-width: 100%; max-height: calc(100dvh - 20px); overflow-y: auto; padding: 18px; border-radius: 18px; }
   .modal-head { gap: 10px; }
@@ -3494,8 +3291,6 @@ body {
   .graph-panel .person-card { padding: 8px; gap: 5px; }
   .graph-panel .avatar { width: 32px; height: 32px; }
   .graph-panel .person-actions button { width: 28px; height: 28px; }
-  .metric { grid-template-columns: 21px minmax(0, 1fr); padding: 9px 7px; }
-  .metric svg { width: 17px; }
 
   button,
   .btn,
@@ -3621,15 +3416,12 @@ body {
   .chat-head-tools { flex-wrap: wrap; }
   .chat-head-tools select { max-width: 145px; }
 
-  .graph-panel .graph-actions .btn { width: 100%; justify-content: center; }
-
   .chat-list-tools { grid-template-columns: minmax(0,1fr); padding: 10px 8px; }
   .chat-filter-segment button { font-size: 9px; gap: 4px; }
   .credential-password b { font-size: 24px; }
 
   .topbar-actions { gap: 5px; }
   .theme-toggle { width: 33px; height: 33px; flex: 0 0 33px; }
-  .timezone-control select { height: 36px; }
 
   :root[data-theme="dark-soft"] button:not(.primary):not(.disconnect):not(.danger-icon),
   :root[data-theme="dark-soft"] .btn:not(.primary):not(.disconnect):not(.danger-icon),
@@ -3940,29 +3732,19 @@ body {
     font-size: 12px;
   }
 
-  .metrics {
-    margin-bottom: 10px;
-  }
-
   .graph-panel .section-head {
     margin-bottom: 10px;
   }
 
   .teacher-readonly-graph {
     padding: 12px;
-  }
-
-  .teacher-graph-root,
-  .teacher-graph-summary {
+  }.teacher-graph-root
+{
     max-width: none;
   }
 
   .teacher-graph-root {
     margin: 10px 0;
-  }
-
-  .teacher-graph-summary {
-    margin: 10px 0 0;
   }
 
   .chat-composer textarea {
@@ -4085,14 +3867,6 @@ body {
     width: 30px;
     height: 30px;
     flex-basis: 30px;
-  }
-
-  .user-login {
-    max-width: 100%;
-  }
-
-  .user-meta {
-    gap: 4px 7px;
   }
 
   .user-row {
@@ -4259,11 +4033,6 @@ body {
     font-size: 14px;
   }
 
-  .user-meta {
-    gap: 5px 9px;
-    font-size: 11px;
-  }
-
   .user-actions {
     gap: 6px;
     margin-left: auto;
@@ -4273,11 +4042,6 @@ body {
     width: 40px;
     height: 40px;
     flex-basis: 40px;
-  }
-
-  .user-action-btn.code-btn {
-    min-width: 78px;
-    flex-basis: auto;
   }
 
   .user-row {
@@ -4465,10 +4229,6 @@ body {
     font-size: clamp(27px, 8vw, 32px);
   }
 
-  .login-card .muted {
-    margin-bottom: 22px;
-  }
-
   /* Prevent Safari on iOS from zooming the page when an input is focused. */
   .login-card .stack input,
   .login-card .stack select {
@@ -4504,22 +4264,18 @@ body {
   .modal {
     min-width: 0;
     max-width: 100%;
-  }
-
-  .page-title h1,
-  .section-head h2,
-  .user-row,
-  .message,
-  .chat-head,
-  .chat-item {
+  }.section-head h2,
+.user-row,
+.message,
+.chat-head,
+.chat-item
+{
     overflow-wrap: anywhere;
-  }
-
-  .metric,
-  .person-card,
-  .user-row,
-  .chat-head-tools,
-  .composer-footer {
+  }.person-card,
+.user-row,
+.chat-head-tools,
+.composer-footer
+{
     min-width: 0;
   }
 
@@ -4812,7 +4568,6 @@ body {
   .graph-panel .person-card { padding: clamp(7px, 1.8vw, 12px); gap: clamp(5px, 1.2vw, 8px); }
   .graph-panel .avatar { width: clamp(32px, 8.5vw, 38px); height: clamp(32px, 8.5vw, 38px); }
   .graph-panel .person-actions button { width: clamp(25px, 6.5vw, 28px); height: clamp(25px, 6.5vw, 28px); }
-  .metric { grid-template-columns: clamp(21px, 6vw, 25px) minmax(0, 1fr); padding: clamp(7px, 2vw, 10px); }
   .graph-panel .root-node { gap: clamp(8px, 2vw, 11px); padding: clamp(9px, 2.2vw, 12px) clamp(10px, 2.6vw, 16px); }
   .graph-panel .root-node img { flex-basis: clamp(36px, 10vw, 42px); width: clamp(36px, 10vw, 42px); height: clamp(36px, 10vw, 42px); }
   .graph-panel .root-node b { font-size: clamp(11px, 3vw, 12px); }
@@ -5053,42 +4808,64 @@ button, .btn, .icon-btn, .theme-toggle, .logout,
 .chat-item.selected {
   border-color: var(--ui-border-strong);
   box-shadow: inset 3px 0 0 var(--purple);
-}
-
-/* Inputs, search, filters, and composer use matching borders and focus states. */
-.stack input, .stack select, .stack textarea,
-.search, .search input, .user-sort, .user-sort select,
-.chat-search-control, .chat-search-control input,
-.chat-head-tools select, .chat-composer textarea,
-.timezone-control select, input, select, textarea {
+}/* Inputs, search, filters, and composer use matching borders and focus states. */
+.stack input,
+.stack select,
+.stack textarea,
+.search,
+.search input,
+.user-sort,
+.user-sort select,
+.chat-search-control,
+.chat-search-control input,
+.chat-head-tools select,
+.chat-composer textarea,
+input,
+select,
+textarea
+{
   border-radius: var(--ui-radius-sm);
-}
-.stack input, .stack select, .stack textarea,
-.search, .user-sort, .chat-search-control,
-.chat-head-tools select, .chat-composer textarea,
-.timezone-control select {
+}.stack input,
+.stack select,
+.stack textarea,
+.search,
+.user-sort,
+.chat-search-control,
+.chat-head-tools select,
+.chat-composer textarea
+{
   border-color: var(--ui-border);
   background-color: #fff;
-}
-.stack input:focus, .stack select:focus, .stack textarea:focus,
-.search:focus-within, .user-sort:focus-within,
+}.stack input:focus,
+.stack select:focus,
+.stack textarea:focus,
+.search:focus-within,
+.user-sort:focus-within,
 .chat-search-control:focus-within,
-.chat-head-tools select:focus, .chat-composer textarea:focus,
-.timezone-control select:focus {
+.chat-head-tools select:focus,
+.chat-composer textarea:focus
+{
   border-color: #a98bd8;
   box-shadow: var(--ui-focus);
   outline: none;
 }
-input::placeholder, textarea::placeholder { color: #a49daf; }
-
-/* Cards and workspaces share consistent surface depth and corner rhythm. */
-.graph-panel, .user-list, .chat-layout, .metric,
-.person-card, .teacher-graph-card, .teacher-graph-summary,
-.user-info-popover, .chat-list, .chat-detail {
+input::placeholder, textarea::placeholder { color: #a49daf; }/* Cards and workspaces share consistent surface depth and corner rhythm. */
+.graph-panel,
+.user-list,
+.chat-layout,
+.person-card,
+.teacher-graph-card,
+.user-info-popover,
+.chat-list,
+.chat-detail
+{
   border-radius: var(--ui-radius-lg);
-}
-.graph-panel, .user-list, .chat-layout, .metric,
-.user-info-popover, .teacher-graph-card, .teacher-graph-summary {
+}.graph-panel,
+.user-list,
+.chat-layout,
+.user-info-popover,
+.teacher-graph-card
+{
   border-color: var(--line);
   box-shadow: var(--ui-shadow-card);
 }
@@ -5169,16 +4946,15 @@ input::placeholder, textarea::placeholder { color: #a49daf; }
 :root[data-theme="dark-soft"] .logout:hover {
   background: var(--ui-control-hover) !important;
   border-color: var(--ui-border-strong) !important;
-}
-:root[data-theme="dark-soft"] .stack input,
+}:root[data-theme="dark-soft"] .stack input,
 :root[data-theme="dark-soft"] .stack select,
 :root[data-theme="dark-soft"] .stack textarea,
 :root[data-theme="dark-soft"] .search,
 :root[data-theme="dark-soft"] .user-sort,
 :root[data-theme="dark-soft"] .chat-search-control,
 :root[data-theme="dark-soft"] .chat-head-tools select,
-:root[data-theme="dark-soft"] .chat-composer textarea,
-:root[data-theme="dark-soft"] .timezone-control select {
+:root[data-theme="dark-soft"] .chat-composer textarea
+{
   background: #202a38 !important;
   border-color: #414c60 !important;
   color: #e0e5ee !important;
@@ -5821,18 +5597,11 @@ button:disabled,
   .toolbar.user-toolbar > .user-add-btn {
     justify-content: center;
   }
-}
-
-/* Compact action groups across Structure, Users and Conversations. */
-.page-title > .btn,
-.page-title > .btn-group {
-  flex: 0 0 auto;
-}
-
-.page-title .btn,
+}/* Compact action groups across Structure, Users and Conversations. */
 .graph-add-participant,
 .user-add-btn,
-.composer-send > .btn {
+.composer-send > .btn
+{
   min-height: 38px;
   padding: 8px 12px;
   gap: 7px;
@@ -5988,16 +5757,6 @@ button:disabled,
 }
 
 @media (max-width: 1024px) {
-  .page-title {
-    align-items: center;
-    gap: 10px;
-  }
-
-  .page-title > .btn {
-    min-height: 36px;
-    padding: 7px 10px;
-    font-size: 11px;
-  }
 
   .graph-add-participant {
     min-height: 36px;
@@ -6061,14 +5820,6 @@ button:disabled,
 }
 
 @media (max-width: 480px) {
-  .page-title {
-    flex-wrap: wrap;
-    align-items: flex-start;
-  }
-
-  .page-title > .btn {
-    margin-left: auto;
-  }
 
   .unassigned-student-actions {
     width: 100%;
@@ -7274,16 +7025,29 @@ button:focus-visible, .btn:focus-visible {
 }
 
 /* Common canvas, cards and separators. */
-body { background: var(--canvas); color: var(--ink); }
-.sidebar, .topbar, .login-card, .metric, .graph-panel, .user-list,
-.chat-layout, .modal, .user-info-popover, .credential-modal,
-.password-info, .chat-audio-player {
+body { background: var(--canvas); color: var(--ink); }.sidebar,
+.topbar,
+.login-card,
+.graph-panel,
+.user-list,
+.chat-layout,
+.modal,
+.user-info-popover,
+.credential-modal,
+.password-info,
+.chat-audio-player
+{
   background-color: var(--surface);
   border-color: var(--ui-border);
 }
-.sidebar, .topbar { box-shadow: var(--ui-shadow-card); }
-.metric, .graph-panel, .user-list, .chat-layout, .person-card,
-.modal, .user-info-popover, .login-card {
+.sidebar, .topbar { box-shadow: var(--ui-shadow-card); }.graph-panel,
+.user-list,
+.chat-layout,
+.person-card,
+.modal,
+.user-info-popover,
+.login-card
+{
   box-shadow: var(--ui-shadow-card);
 }
 .person-card, .teacher-card, .student-card, .root-node,
@@ -7389,9 +7153,6 @@ button:focus-visible, a:focus-visible {
 
 /* Semantic feedback colors stay consistent and are not used as decoration. */
 .alert { background: var(--red-soft); border-color: var(--red-border); color: var(--button-danger-text); }
-.telegram-connected { color: var(--success); }
-.success, .status-success { color: var(--success); }
-.warning, .status-warning { color: var(--warning); }
 .toast {
   background: linear-gradient(110deg, #493681, #6046a5);
   box-shadow: var(--ui-shadow-raised);
@@ -8812,10 +8573,8 @@ body,
 .chats-shell,
 .chats-main {
   background: var(--canvas);
-}
-.sidebar,
+}.sidebar,
 .topbar,
-.metric,
 .graph-panel,
 .user-list > .user-row,
 .chat-layout,
@@ -8824,7 +8583,8 @@ body,
 .modal,
 .login-card,
 .user-info-popover,
-.credential-modal {
+.credential-modal
+{
   background-color: var(--surface);
 }
 
@@ -9014,10 +8774,8 @@ body,
 :root:not([data-theme="dark-soft"]) .chats-shell,
 :root:not([data-theme="dark-soft"]) .chats-main {
   background: #f2eff7 !important;
-}
-:root:not([data-theme="dark-soft"]) .sidebar,
+}:root:not([data-theme="dark-soft"]) .sidebar,
 :root:not([data-theme="dark-soft"]) .topbar,
-:root:not([data-theme="dark-soft"]) .metric,
 :root:not([data-theme="dark-soft"]) .graph-panel,
 :root:not([data-theme="dark-soft"]) .user-list > .user-row,
 :root:not([data-theme="dark-soft"]) .chat-layout,
@@ -9026,7 +8784,8 @@ body,
 :root:not([data-theme="dark-soft"]) .modal,
 :root:not([data-theme="dark-soft"]) .login-card,
 :root:not([data-theme="dark-soft"]) .user-info-popover,
-:root:not([data-theme="dark-soft"]) .credential-modal {
+:root:not([data-theme="dark-soft"]) .credential-modal
+{
   background-color: #faf8fd !important;
 }
 
@@ -9082,11 +8841,10 @@ body,
 :root:not([data-theme="dark-soft"]) .sidebar nav button:not(.active):hover,
 :root:not([data-theme="dark-soft"]) .chat-item.selected {
   background: #eee8f6 !important;
-}
-:root:not([data-theme="dark-soft"]) .metric,
-:root:not([data-theme="dark-soft"]) .user-row,
+}:root:not([data-theme="dark-soft"]) .user-row,
 :root:not([data-theme="dark-soft"]) .panel,
-:root:not([data-theme="dark-soft"]) .card {
+:root:not([data-theme="dark-soft"]) .card
+{
   border-color: #e7dfef;
 }
 
