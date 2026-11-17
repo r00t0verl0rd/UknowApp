@@ -9079,7 +9079,7 @@ body,
   box-shadow: 0 2px 8px rgba(56, 43, 77, .035) !important;
 }
 :root:not([data-theme="dark-soft"]) .graph-panel .teacher-card {
-  background: #f0ecf5 !important;
+  background: linear-gradient(110deg, #f0e9fb, #fff 78%) !important;
   border-color: #ded6e8 !important;
   box-shadow: none !important;
 }
@@ -9221,6 +9221,9 @@ body,
 .graph-panel .teacher-branch > .teacher-card > .teacher-toggle:hover,
 .graph-panel .teacher-branch > .teacher-card > .teacher-toggle:active {
   display: flex !important;
+  background: inherit !important;
+  background-color: inherit !important;
+
   flex: 1 1 0 !important;
   width: 0 !important;
   min-width: 0 !important;
