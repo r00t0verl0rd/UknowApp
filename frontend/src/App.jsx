@@ -150,7 +150,7 @@ function ChatAudioPlayer({ src, label }) {
   </div>;
 }
 
-function MessageBubble({ message, onDelete }) {
+function MessageBubble({ message, onDelete, viewerRole }) {
   const [mediaUrl, setMediaUrl] = useState("");
   const media = message.metadata?.media;
   useEffect(() => {
@@ -201,7 +201,7 @@ function MessageBubble({ message, onDelete }) {
   }[sourceKind] || "Вложение");
   return <div className={"message " + message.sender_role}>
     <div className="message-topline">
-      <b>{message.sender} <small>{ROLE[message.sender_role] || message.sender_role}</small></b>
+      {!(viewerRole === "teacher" && message.sender_role !== "admin") && <b>{message.sender}{message.sender_role !== "admin" && viewerRole !== "teacher" && <small>{ROLE[message.sender_role] || message.sender_role}</small>}</b>}
       <div className="message-tools">
         <time className="message-time">{formatLocalTime(message.created_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</time>
         {message.can_delete && <button type="button" className="message-delete-btn" onClick={() => onDelete?.(message)} title="Удалить своё сообщение у всех" aria-label="Удалить своё сообщение"><Trash2 size={14}/></button>}
@@ -870,7 +870,7 @@ export default function App() {
             })}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">{profile?.role === "admin" ? "Учитель не найден" : "По выбранному фильтру ничего не найдено"}</div>}</div></div>
             <div className="chat-detail">{selectedChat ? <>
               <div className="chat-head"><button type="button" className="mobile-chat-back" onClick={() => { setSelectedChat(null); setMessages([]); }} aria-label="Назад к списку диалогов"><ArrowLeft size={19}/><span>Диалоги</span></button><div className="chat-head-person"><b>{selectedChat.student.full_name}</b>{profile?.role === "admin" && <small>{selectedChat.teacher.full_name}</small>}</div><div className="chat-head-tools"><select aria-label="Фильтр сообщений" value={messageFilter} onChange={e => setMessageFilter(e.target.value)}><option value="all">Все сообщения</option><option value="media">Все вложения</option><option value="audio">Аудио</option><option value="photos">Фото</option><option value="files">Файлы и видео</option></select>{selectedChat.status !== "active" && <span className="role-tag">Закрыта</span>}</div></div>
-              <div className="messages" ref={messagesViewportRef}>{visibleMessages.map(message => <MessageBubble message={message} key={message.id} onDelete={setDeleteMessageCandidate} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}{!!messages.length && !visibleMessages.length && <div className="empty-state">Нет сообщений этого типа</div>}</div>
+              <div className="messages" ref={messagesViewportRef}>{visibleMessages.map(message => <MessageBubble message={message} key={message.id} onDelete={setDeleteMessageCandidate} viewerRole={profile?.role} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}{!!messages.length && !visibleMessages.length && <div className="empty-state">Нет сообщений этого типа</div>}</div>
               {selectedChat.status === "active" && <form className="chat-composer" onSubmit={sendChatMessage}>
                 <textarea value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder={profile?.role === "admin" ? "Сообщение от администратора обеим сторонам…" : "Ответить ученику…"} rows={2} maxLength={4000}/>
                 <div className="composer-footer">
