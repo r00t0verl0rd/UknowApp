@@ -9222,3 +9222,88 @@ body,
 :root:not([data-theme="dark-soft"]) .chat-item.selected {
   background: #ece7f4;
 }
+
+
+/* Graph surfaces: warm the remaining near-white islands in the light theme. */
+:root:not([data-theme="dark-soft"]) .graph-panel .graph-legend-row > .graph-legend {
+  background: #f0edf5;
+  border: 1px solid #e4deec;
+  border-radius: 12px;
+}
+:root:not([data-theme="dark-soft"]) .graph-panel .graph-legend-item b {
+  background: #e7e0f0;
+  color: #57477a;
+}
+:root:not([data-theme="dark-soft"]) .graph-panel .root-node {
+  background: linear-gradient(112deg, #e5f0e2 0%, #edf3e9 100%) !important;
+  border-color: #c8ddc3 !important;
+  box-shadow: 0 4px 14px rgba(83, 132, 88, .07);
+}
+:root:not([data-theme="dark-soft"]) .graph-panel .teacher-card {
+  background: linear-gradient(112deg, #eee4fb 0%, #f4effa 100%) !important;
+  border-color: #d3c0ed !important;
+}
+:root:not([data-theme="dark-soft"]) .graph-panel .student-card {
+  background: linear-gradient(112deg, #fff0cf 0%, #fff5e2 100%) !important;
+  border-color: #e9cf98 !important;
+}
+:root:not([data-theme="dark-soft"]) .graph-panel .empty-students {
+  background: #f5f2f8;
+  border-color: #e5dfeb;
+}
+:root:not([data-theme="dark-soft"]) .graph-panel .teacher-branch {
+  background: #f5f2f8;
+  border: 1px solid #e7e1ed;
+  border-radius: 16px;
+  padding: 12px;
+}
+
+/* Dark graph cards must retain the same role hues as dark chat bubbles.
+   More specific selectors override the generic dark card surface rule above. */
+:root[data-theme="dark-soft"] .graph-panel .root-node {
+  background: linear-gradient(112deg, #304536 0%, #293a31 100%) !important;
+  border-color: #56785c !important;
+  color: #edf0f5 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .teacher-card,
+:root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card:not(.student) {
+  background: linear-gradient(112deg, #403653 0%, #332d45 100%) !important;
+  border-color: #705b91 !important;
+  color: #edf0f5 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .student-card,
+:root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card.student {
+  background: linear-gradient(112deg, #493b2c 0%, #3b332b 100%) !important;
+  border-color: #806640 !important;
+  color: #edf0f5 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .root-node small,
+:root[data-theme="dark-soft"] .graph-panel .person-info small,
+:root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card small {
+  color: #c0c7d4 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .teacher-avatar,
+:root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card:not(.student) .avatar {
+  background: #403653 !important;
+  color: #b69be8 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .student-avatar,
+:root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card.student .avatar {
+  background: #493b2c !important;
+  color: #e4b65f !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .graph-legend-row > .graph-legend {
+  background: #252f3f;
+  border: 1px solid #3a4659;
+  border-radius: 12px;
+}
+:root[data-theme="dark-soft"] .graph-panel .graph-legend-item b {
+  background: #343e50 !important;
+  color: #e4e8f0 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .teacher-branch {
+  background: #1d2634;
+  border: 1px solid #354154;
+  border-radius: 16px;
+  padding: 12px;
+}
