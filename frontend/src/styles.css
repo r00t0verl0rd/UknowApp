@@ -9435,3 +9435,14 @@ body,
 :root[data-theme="dark-soft"] .chat-detail .message.admin {
   background-image: none !important;
 }
+
+
+/* Users page: dark-theme role icons follow the shared student/teacher palette. */
+:root[data-theme="dark-soft"] .user-list .user-row > .avatar.student {
+  background: var(--role-student-soft) !important;
+  color: var(--role-student) !important;
+}
+:root[data-theme="dark-soft"] .user-list .user-row > .avatar.teacher {
+  background: var(--role-teacher-soft) !important;
+  color: var(--role-teacher) !important;
+}
