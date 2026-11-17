@@ -9401,3 +9401,37 @@ body,
 :root:not([data-theme="dark-soft"]) .card {
   border-color: #e7dfef;
 }
+
+
+/* Dark theme: soften semantic accents so color supports hierarchy without
+   competing with content. Keep the student/teacher/admin distinction intact. */
+:root[data-theme="dark-soft"] {
+  --purple: #9b91c2;
+  --purple2: #897eaf;
+  --lavender: #9b90c4;
+  --purple-glow: rgba(155, 144, 196, .11);
+
+  --role-student: #c9aa70;
+  --role-student-soft: #39342e;
+  --role-student-border: #625440;
+  --role-teacher: #aa9bcf;
+  --role-teacher-soft: #35313f;
+  --role-teacher-border: #554b68;
+  --role-admin: #91b18d;
+  --role-admin-soft: #303a32;
+  --role-admin-border: #4c6250;
+
+  --button-primary: linear-gradient(110deg, #5e567e, #70678f);
+  --button-primary-hover: linear-gradient(110deg, #696087, #7b729a);
+  --ui-focus: 0 0 0 3px rgba(155, 144, 196, .14);
+}
+:root[data-theme="dark-soft"] .chat-detail .message.student,
+:root[data-theme="dark-soft"] .teacher-readonly-graph .student-card,
+:root[data-theme="dark-soft"] .graph-panel .student-card {
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .chat-detail .message.student,
+:root[data-theme="dark-soft"] .chat-detail .message.teacher,
+:root[data-theme="dark-soft"] .chat-detail .message.admin {
+  background-image: none !important;
+}
