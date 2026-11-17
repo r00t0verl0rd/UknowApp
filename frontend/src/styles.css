@@ -9007,20 +9007,24 @@ body,
 .graph-panel .teacher-toggle .person-main {
   min-width: 0;
 }
-.graph-panel .teacher-toggle-chevron {
-  flex: 0 0 auto;
+/* CSS-drawn chevron: no extra SVG or wrapper element in the DOM. */
+.graph-panel .teacher-toggle::after {
+  content: "›";
+  display: block;
+  flex: 0 0 17px;
+  width: 17px;
   margin-left: auto;
   color: var(--muted, #9ca3b2);
+  font: 400 25px/1 Arial, sans-serif;
+  text-align: center;
   opacity: .8;
+  transform: rotate(0deg);
   transition: transform .18s ease, opacity .18s ease;
 }
-.graph-panel .teacher-toggle:hover .teacher-toggle-chevron {
+.graph-panel .teacher-toggle:hover::after {
   opacity: 1;
 }
-.graph-panel .teacher-branch.is-collapsed .teacher-toggle-chevron {
-  transform: rotate(0deg);
-}
-.graph-panel .teacher-branch:not(.is-collapsed) .teacher-toggle-chevron {
+.graph-panel .teacher-branch:not(.is-collapsed) .teacher-toggle::after {
   transform: rotate(90deg);
 }
 .graph-panel .student-list[hidden] {
@@ -9196,9 +9200,6 @@ body,
   outline: none !important;
   box-shadow: none !important;
 }
-.graph-panel .teacher-card > .teacher-toggle .teacher-toggle-chevron {
-  display: block !important;
-}
 
 /* One shared teacher-card treatment at every viewport width. */
 .graph-panel .teacher-branch > .teacher-card {
@@ -9273,13 +9274,5 @@ body,
   }
 }
 
-/* The chevron must not paint its own surface; let the teacher card show through. */
-.graph-panel .teacher-branch > .teacher-card > .teacher-toggle > .teacher-toggle-chevron {
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  color: inherit !important;
-}
+/* The chevron is drawn by .teacher-toggle::after; no separate element is rendered. */
 
