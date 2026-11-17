@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo } from "react";
-import { useAuthState, useChatState, useDirectoryState, useGraphState, useUiState } from "./useAppState.js";
+import { useAuthState, useChatState, useDirectoryState, useGraphState, useUiState, useUserActionState, useUserEditorState } from "./useAppState.js";
 import Activity from "lucide-react/dist/esm/icons/activity.js";
 import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left.js";
 import ArrowUpDown from "lucide-react/dist/esm/icons/arrow-up-down.js";
@@ -70,15 +70,18 @@ export default function App() {
     messageFilter, setMessageFilter,
   } = useChatState();
   const {
+    users, setUsers, overview, setOverview, search, setSearch, userSort, setUserSort, userInfo, setUserInfo,
+  } = useDirectoryState();
+  const {
     issuedCredential, setIssuedCredential, savingUser, setSavingUser,
-    users, setUsers, overview, setOverview, search, setSearch,
-    userSort, setUserSort, userInfo, setUserInfo,
+    name, setName, teacherLogin, setTeacherLogin, role, setRole,
+    telegramId, setTelegramId, teacherId, setTeacherId, studentId, setStudentId, code, setCode,
+  } = useUserEditorState();
+  const {
     deleteCandidate, setDeleteCandidate, deletingUser, setDeletingUser,
     deleteMessageCandidate, setDeleteMessageCandidate, deletingMessage, setDeletingMessage,
     disconnectCandidate, setDisconnectCandidate, disconnectingTelegram, setDisconnectingTelegram,
-    name, setName, teacherLogin, setTeacherLogin, role, setRole,
-    telegramId, setTelegramId, teacherId, setTeacherId, studentId, setStudentId, code, setCode,
-  } = useDirectoryState();
+  } = useUserActionState();
   const {
     page, setPage, error, setError, toast, setToast, busy, setBusy, modal, setModal,
   } = useUiState();
