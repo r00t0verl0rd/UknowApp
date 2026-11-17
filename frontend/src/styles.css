@@ -9272,3 +9272,12 @@ body,
     -webkit-text-fill-color: #c0c7d4 !important;
   }
 }
+
+/* Keep the teacher expand chevron consistent in the mobile dark theme. */
+@media (max-width: 767px) {
+  :root[data-theme="dark-soft"] .graph-panel .teacher-branch > .teacher-card > .teacher-toggle > .teacher-toggle-chevron {
+    color: #9ba6b8 !important;
+    -webkit-text-fill-color: #9ba6b8 !important;
+  }
+}
+
