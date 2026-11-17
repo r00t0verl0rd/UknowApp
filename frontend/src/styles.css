@@ -9268,7 +9268,7 @@ body,
   }
 
   :root[data-theme="dark-soft"] .graph-panel .teacher-branch > .teacher-card > .teacher-toggle > .person-main > .person-info > small {
-    color: var(--muted) !important;
-    -webkit-text-fill-color: var(--muted) !important;
+    color: #c0c7d4 !important;
+    -webkit-text-fill-color: #c0c7d4 !important;
   }
 }
