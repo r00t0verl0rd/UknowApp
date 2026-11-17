@@ -314,80 +314,78 @@ async def bind_student_group(message: TgMessage, bot: Bot):
 
 async def _handle_unlinked_sender(message: TgMessage, bot: Bot, db) -> None:
     """Handle activation-code attempts and guide users without a linked account."""
-    if not sender:
-        if message.from_user and not _unlinked_message_allowed(message.from_user.id):
-            return
-        text = (message.text or "").strip()
-        normalized = re.sub(r"[\s-]", "", text).upper()
-        if CONNECTION_CODE_RE.fullmatch(normalized):
-            telegram_id = message.from_user.id
-            if not _connection_code_attempt_allowed(telegram_id):
-                await message.answer(
-                    "Слишком много попыток подключения. Попробуйте снова через 15 минут."
-                )
-                return
-            try:
-                linked_user, result = claim_connection_code(db, normalized, telegram_id)
-            except Exception:
-                db.rollback()
-                logger.exception(
-                    "Failed to process Telegram connection code for telegram_id=%s",
-                    message.from_user.id,
-                )
-                await message.answer(
-                    "Не удалось обработать код из-за внутренней ошибки. "
-                    "Попробуйте ещё раз через минуту; администратор может посмотреть ошибку в терминале backend."
-                )
-                return
-            logger.info(
-                "Telegram connection code processed: telegram_id=%s result=%s",
-                telegram_id,
-                result,
-            )
-            if result == "ok" and linked_user:
-                _connection_code_limiter.clear(telegram_id)
-                if linked_user.role == "teacher":
-                    await message.answer(
-                        "✅ Telegram подключён к аккаунту «" + linked_user.full_name + "»."
-                    )
-                    await update_teacher_panel(bot, db, linked_user)
-                elif linked_user.role == "student":
-                    conversation = current_student_conversation(db, linked_user.id)
-                    if conversation and conversation.status == "active":
-                        await message.answer(
-                            "😊 Вы подключены к UknowApp.\n"
-                            "🎓 Ваш учитель: " + conversation.assignment.teacher.full_name + ".\n\n"
-                            "Пишите сюда и отправляйте файлы — всё попадёт вашему учителю."
-                        )
-                    else:
-                        await message.answer(
-                            "✅ Telegram подключён к аккаунту «" + linked_user.full_name + "».\n"
-                            "Учитель пока не назначен. Как только администратор создаст связь, здесь можно будет начать переписку."
-                        )
-            elif result == "expired":
-                _record_connection_code_attempt(telegram_id)
-                await message.answer("Срок действия кода истёк. Попросите администратора создать новый код.")
-            elif result == "used":
-                _record_connection_code_attempt(telegram_id)
-                await message.answer("Этот код уже недействителен. Попросите администратора создать новый.")
-            elif result == "telegram_already_linked":
-                _record_connection_code_attempt(telegram_id)
-                await message.answer("Этот Telegram-аккаунт уже привязан к другому пользователю UknowApp.")
-            elif result == "account_already_linked":
-                _record_connection_code_attempt(telegram_id)
-                await message.answer("К аккаунту уже привязан другой Telegram. Обратитесь к администратору.")
-            elif result == "inactive":
-                _record_connection_code_attempt(telegram_id)
-                await message.answer("Этот аккаунт UknowApp отключён. Обратитесь к администратору.")
-            else:
-                _record_connection_code_attempt(telegram_id)
-                await message.answer("Код не найден или был заменён. Проверьте его или запросите новый у администратора.")
-        else:
-            await message.answer(
-                "Аккаунт ещё не подключён. Попросите администратора сгенерировать код в UknowApp, "
-                "затем отправьте сюда 8 символов кода (можно с дефисом)."
-            )
+    if not _unlinked_message_allowed(message.from_user.id):
         return
+    text = (message.text or "").strip()
+    normalized = re.sub(r"[\s-]", "", text).upper()
+    if CONNECTION_CODE_RE.fullmatch(normalized):
+        telegram_id = message.from_user.id
+        if not _connection_code_attempt_allowed(telegram_id):
+            await message.answer(
+                "Слишком много попыток подключения. Попробуйте снова через 15 минут."
+            )
+            return
+        try:
+            linked_user, result = claim_connection_code(db, normalized, telegram_id)
+        except Exception:
+            db.rollback()
+            logger.exception(
+                "Failed to process Telegram connection code for telegram_id=%s",
+                telegram_id,
+            )
+            await message.answer(
+                "Не удалось обработать код из-за внутренней ошибки. "
+                "Попробуйте ещё раз через минуту; администратор может посмотреть ошибку в терминале backend."
+            )
+            return
+        logger.info(
+            "Telegram connection code processed: telegram_id=%s result=%s",
+            telegram_id,
+            result,
+        )
+        if result == "ok" and linked_user:
+            _connection_code_limiter.clear(telegram_id)
+            if linked_user.role == "teacher":
+                await message.answer(
+                    "✅ Telegram подключён к аккаунту «" + linked_user.full_name + "»."
+                )
+                await update_teacher_panel(bot, db, linked_user)
+            elif linked_user.role == "student":
+                conversation = current_student_conversation(db, linked_user.id)
+                if conversation and conversation.status == "active":
+                    await message.answer(
+                        "😊 Вы подключены к UknowApp.\n"
+                        "🎓 Ваш учитель: " + conversation.assignment.teacher.full_name + ".\n\n"
+                        "Пишите сюда и отправляйте файлы — всё попадёт вашему учителю."
+                    )
+                else:
+                    await message.answer(
+                        "✅ Telegram подключён к аккаунту «" + linked_user.full_name + "».\n"
+                        "Учитель пока не назначен. Как только администратор создаст связь, здесь можно будет начать переписку."
+                    )
+        elif result == "expired":
+            _record_connection_code_attempt(telegram_id)
+            await message.answer("Срок действия кода истёк. Попросите администратора создать новый код.")
+        elif result == "used":
+            _record_connection_code_attempt(telegram_id)
+            await message.answer("Этот код уже недействителен. Попросите администратора создать новый.")
+        elif result == "telegram_already_linked":
+            _record_connection_code_attempt(telegram_id)
+            await message.answer("Этот Telegram-аккаунт уже привязан к другому пользователю UknowApp.")
+        elif result == "account_already_linked":
+            _record_connection_code_attempt(telegram_id)
+            await message.answer("К аккаунту уже привязан другой Telegram. Обратитесь к администратору.")
+        elif result == "inactive":
+            _record_connection_code_attempt(telegram_id)
+            await message.answer("Этот аккаунт UknowApp отключён. Обратитесь к администратору.")
+        else:
+            _record_connection_code_attempt(telegram_id)
+            await message.answer("Код не найден или был заменён. Проверьте его или запросите новый у администратора.")
+    else:
+        await message.answer(
+            "Аккаунт ещё не подключён. Попросите администратора сгенерировать код в UknowApp, "
+            "затем отправьте сюда 8 символов кода (можно с дефисом)."
+        )
 
 
 @router.message()
