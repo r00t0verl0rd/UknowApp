@@ -620,9 +620,13 @@ img, video, audio { max-width: 100%; }
 
 .chat-head-tools { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .chat-head-tools select { max-width: 155px; min-width: 0; border: 1px solid var(--line); border-radius: 9px; padding: 7px 9px; background: #faf9fc; color: var(--ink); font-size: 10px; }
-.message-delivery { display: block; margin-top: 7px; color: #a49bad; font-size: 9px; }
-
-.message-delivery { color: #b45a37; line-height: 1.4; }
+.message-delivery {
+  display: block;
+  margin-top: 7px;
+  font-size: 9px;
+  color: #b45a37;
+  line-height: 1.4;
+}
 
 /* Graph-level participant action, placed after the relationship map. */
 .graph-panel .graph-actions {
@@ -3237,14 +3241,9 @@ body {
   }
 
   .chat-composer textarea {
-    min-height: 50px;
-    max-height: 100px;
-  }
-
-  .chat-composer textarea {
-    min-height: 58px;
-    max-height: 112px;
-  }
+  min-height: 58px;
+  max-height: 112px;
+}
 
   .chat-layout {
     min-height: 620px;
@@ -4567,17 +4566,12 @@ body {
   }
 
 .sidebar-bottom .logout svg {
-    width: 19px;
-    height: 19px;
-    min-width: 19px;
-    min-height: 19px;
-    stroke-width: 2;
-  }
-
-.sidebar-bottom .logout svg {
-    width: 19px;
-    height: 19px;
-  }
+  min-width: 19px;
+  min-height: 19px;
+  stroke-width: 2;
+  width: 19px;
+  height: 19px;
+}
 
 .graph-panel .graph-legend-row {
     display: flex;
