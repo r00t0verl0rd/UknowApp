@@ -9209,7 +9209,7 @@ body,
   padding: 12px 13px !important;
   border: 1px solid #e3d8f1 !important;
   border-radius: 13px !important;
-  background: linear-gradient(110deg, #f0e9fb, #fff 78%) !important;
+  background: #f0ecf5 !important;
   box-shadow: 0 3px 10px rgba(87,62,153,.045) !important;
 }
 :root[data-theme="dark-soft"] .graph-panel .teacher-branch > .teacher-card {
