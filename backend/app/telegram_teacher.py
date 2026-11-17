@@ -528,12 +528,6 @@ async def handle_teacher_keyboard_message(
     teacher: User,
 ) -> bool:
     body = (message.text or "").strip()
-    keyboard_controls = {
-        TEACHER_BACK_LABEL,
-        TEACHER_REFRESH_LABEL,
-        TEACHER_PREVIOUS_PAGE_LABEL,
-        TEACHER_NEXT_PAGE_LABEL,
-    }
     if not body:
         return False
 
@@ -561,8 +555,8 @@ async def handle_teacher_keyboard_message(
     if body not in actions and body in legacy_student_labels:
         try:
             await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Could not delete legacy teacher keyboard message (error_type=%s)", type(exc).__name__)
         await update_teacher_panel(bot, db, teacher, force_keyboard_refresh=True)
         return True
 
