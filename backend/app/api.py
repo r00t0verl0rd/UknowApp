@@ -964,7 +964,7 @@ async def _store_panel_attachment(request: Request, file: UploadFile, conversati
     original_name = (file.filename or "attachment").replace("\\", "/").rsplit("/", 1)[-1]
     original_name = "".join(
         char for char in original_name
-        if ord(char) >= 32 and char not in "\\r\\n"
+        if ord(char) >= 32 and char not in "\r\n"
     )[:180].strip() or "attachment"
     suffix = re.sub(r"[^A-Za-z0-9.]", "", Path(original_name).suffix)[:12]
     if not suffix:
@@ -1140,9 +1140,6 @@ async def send_panel_attachment(
     ).all()
     student_target = _panel_student_telegram_target(db, conversation, rows[:-1])
 
-    recipients = [(student, "student")]
-    if principal["role"] == "admin":
-        recipients.append((teacher, "teacher"))
     bot = getattr(request.app.state, "telegram_bot", None)
     delivery_errors = []
     delivered = []
