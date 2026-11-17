@@ -1,0 +1,19 @@
+{
+  "id": "/",
+  "name": "UknowApp",
+  "short_name": "UknowApp",
+  "description": "UknowApp",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#171b25",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
