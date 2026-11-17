@@ -912,45 +912,6 @@ def panel_message_media(message_id: int, principal: PanelUser, db: Db):
     )
 
 
-def _panel_sender_and_recipients(db: Session, principal: dict, conversation: Conversation):
-    """Resolve the persisted sender and Telegram recipients for a panel message."""
-    student = conversation.assignment.student
-    teacher = conversation.assignment.teacher
-    if principal["role"] == "teacher":
-        sender = db.get(User, principal["user_id"])
-        recipients = [(student, "student")]
-    else:
-        sender = db.scalar(select(User).where(User.role == "admin").order_by(User.id).limit(1))
-        if not sender:
-            sender = User(full_name="Администратор", role="admin", active=True)
-            db.add(sender)
-            db.flush()
-        recipients = [(student, "student"), (teacher, "teacher")]
-    if not sender:
-        raise HTTPException(status_code=401, detail="Учётная запись недоступна")
-    return sender, recipients, student, teacher
-
-
-def _save_panel_delivery_result(
-    db: Session,
-    row: Message,
-    conversation: Conversation,
-    delivered: list[dict],
-    delivery_errors: list[str],
-) -> None:
-    metadata = json.loads(row.metadata_json or "{}")
-    metadata["telegram_deliveries"] = delivered
-    if delivery_errors:
-        metadata["telegram_delivery_errors"] = delivery_errors
-    row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-    row.delivery_status = (
-        "delivered" if delivered and not delivery_errors
-        else ("partial" if delivered else "failed")
-    )
-    db.commit()
-    publish_chat_update(conversation.id)
-
-
 async def _refresh_teacher_panel_after_web_delivery(bot, db: Session, teacher: User, conversation: Conversation) -> None:
     """Refresh the teacher's Telegram panel after a web message has been persisted."""
     if not bot or not teacher.telegram_id:
@@ -986,7 +947,18 @@ async def send_panel_message(
     if not body:
         raise HTTPException(status_code=400, detail="Введите текст сообщения")
 
-    sender, recipients, student, teacher = _panel_sender_and_recipients(db, principal, conversation)
+    student = conversation.assignment.student
+    teacher = conversation.assignment.teacher
+    if principal["role"] == "teacher":
+        sender = db.get(User, principal["user_id"])
+        recipients = [(student, "student")]
+    else:
+        sender = db.scalar(select(User).where(User.role == "admin").order_by(User.id).limit(1))
+        if not sender:
+            sender = User(full_name="Администратор", role="admin", active=True)
+            db.add(sender)
+            db.flush()
+        recipients = [(student, "student"), (teacher, "teacher")]
 
     rows = db.scalars(
         select(Message).where(Message.conversation_id == conversation.id)
@@ -1039,31 +1011,44 @@ async def send_panel_message(
     else:
         delivery_errors.append("Telegram-бот не подключён к веб-приложению")
 
-    _save_panel_delivery_result(db, row, conversation, delivered, delivery_errors)
+    metadata = json.loads(row.metadata_json or "{}")
+    metadata["telegram_deliveries"] = delivered
+    if delivery_errors:
+        metadata["telegram_delivery_errors"] = delivery_errors
+    row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+    row.delivery_status = "delivered" if delivered and not delivery_errors else ("partial" if delivered else "failed")
+    db.commit()
+    publish_chat_update(conversation.id)
 
     await _refresh_teacher_panel_after_web_delivery(bot, db, teacher, conversation)
 
     return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"), principal=principal)
 
 
-def _store_panel_attachment(request: Request, file: UploadFile, conversation_id: int):
-    """Validate and persist an uploaded attachment; return its normalized metadata."""
-    content_length = request.headers.get("content-length")
-        if content_length:
-            try:
-                if int(content_length) > 22 * 1024 * 1024:
-                    raise HTTPException(status_code=413, detail="Максимальный размер файла — 20 МБ")
-            except ValueError:
-                raise HTTPException(status_code=400, detail="Некорректный Content-Length")
-        content = await file.read(20 * 1024 * 1024 + 1)
-        if len(content) > 20 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail="Максимальный размер файла — 20 МБ")
-        if not content:
-            raise HTTPException(status_code=400, detail="Фа    content, original_name, relative, mime_type, kind = _store_panel_attachment(
-        request, file, conversation.id
-    ) len(text or "") > 3900:
+@router.post("/panel/conversations/{conversation_id}/attachments", status_code=201)
+async def send_panel_attachment(
+    conversation_id: int,
+    request: Request,
+    principal: PanelUser,
+    db: Db,
+    file: UploadFile = File(...),
+    text: str = Form(default=""),
+):
+    # Ограничиваем размер до чтения файла целиком и сохраняем локальную копию для веб-панели.
+    conversation = _panel_visible_conversation(db, principal, conversation_id)
+    if len(text or "") > 3900:
         raise HTTPException(status_code=400, detail="Текст к вложению слишком длинный")
-    sender, recipients, student, teacher = _panel_sender_and_recipients(db, principal, conversation)
+    student = conversation.assignment.student
+    teacher = conversation.assignment.teacher
+    sender = db.get(User, principal["user_id"]) if principal["role"] == "teacher" else None
+    if principal["role"] == "admin":
+        sender = db.scalar(select(User).where(User.role == "admin").order_by(User.id).limit(1))
+        if not sender:
+            sender = User(full_name="Администратор", role="admin", active=True)
+            db.add(sender)
+            db.flush()
+    if not sender:
+        raise HTTPException(status_code=401, detail="Учётная запись недоступна")
 
     if text_contains_contact_data((text or "").strip()):
         raise HTTPException(status_code=400, detail="Контактные данные нельзя отправлять через чат UknowApp")
@@ -1209,7 +1194,14 @@ def _store_panel_attachment(request: Request, file: UploadFile, conversation_id:
     else:
         delivery_errors.append("Telegram-бот не подключён к веб-приложению")
 
-    _save_panel_delivery_result(db, row, conversation, delivered, delivery_errors)
+    metadata = json.loads(row.metadata_json or "{}")
+    metadata["telegram_deliveries"] = delivered
+    if delivery_errors:
+        metadata["telegram_delivery_errors"] = delivery_errors
+    row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+    row.delivery_status = "delivered" if delivered and not delivery_errors else ("partial" if delivered else "failed")
+    db.commit()
+    publish_chat_update(conversation.id)
 
     await _refresh_teacher_panel_after_web_delivery(bot, db, teacher, conversation)
     return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"), principal=principal)
