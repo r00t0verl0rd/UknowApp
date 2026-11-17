@@ -8982,3 +8982,134 @@ body,
 :root:not([data-theme="dark-soft"]) .chat-detail > .messages {
   background: #f5f1f9 !important;
 }
+
+
+
+/* Structure graph: quieter role colors and a clear, accessible teacher toggle. */
+.graph-panel .teacher-toggle {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.graph-panel .teacher-toggle:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+.graph-panel .teacher-toggle .person-main {
+  min-width: 0;
+}
+.graph-panel .teacher-toggle-chevron {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--muted, #9ca3b2);
+  opacity: .8;
+  transition: transform .18s ease, opacity .18s ease;
+}
+.graph-panel .teacher-toggle:hover .teacher-toggle-chevron {
+  opacity: 1;
+}
+.graph-panel .teacher-branch.is-collapsed .teacher-toggle-chevron {
+  transform: rotate(0deg);
+}
+.graph-panel .teacher-branch:not(.is-collapsed) .teacher-toggle-chevron {
+  transform: rotate(90deg);
+}
+.graph-panel .student-list[hidden] {
+  display: none !important;
+}
+
+/* Muted dark palette: retain role recognition without large saturated blocks. */
+:root[data-theme="dark-soft"] .graph-panel .teacher-branch {
+  background: #242c38 !important;
+  border-color: #374253 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .teacher-branch:hover {
+  background: #262f3c !important;
+  border-color: #465267 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .teacher-card {
+  background: #30313e !important;
+  border-color: #484858 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .teacher-card .avatar {
+  background: #3a3949 !important;
+  color: #b8add5 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .student-card {
+  background: #30343b !important;
+  border-color: #484d55 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .student-card .avatar {
+  background: #3b3e45 !important;
+  color: #c3aaa2 !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .root-node {
+  background: #2e3933 !important;
+  border-color: #485c4d !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .teacher-dot {
+  background: #a99bc8 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .student-dot {
+  background: #c4a879 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .graph-legend-item b {
+  background: #343b49 !important;
+  color: #d4d8e2 !important;
+}
+
+/* Muted light palette: pale lavender for teachers, soft sand for students. */
+:root:not([data-theme="dark-soft"]) .graph-panel .teacher-branch {
+  background: #f7f4fa !important;
+  border-color: #e7e0ed !important;
+  box-shadow: 0 2px 8px rgba(56, 43, 77, .035) !important;
+}
+:root:not([data-theme="dark-soft"]) .graph-panel .teacher-card {
+  background: #f0ecf5 !important;
+  border-color: #ded6e8 !important;
+  box-shadow: none !important;
+}
+:root:not([data-theme="dark-soft"]) .graph-panel .teacher-card .avatar {
+  background: #e7e0ef !important;
+  color: #85769e !important;
+}
+:root:not([data-theme="dark-soft"]) .graph-panel .student-card {
+  background: #f5f1eb !important;
+  border-color: #e7ded1 !important;
+  box-shadow: none !important;
+}
+:root:not([data-theme="dark-soft"]) .graph-panel .student-card .avatar {
+  background: #ebe4da !important;
+  color: #9c8567 !important;
+}
+:root:not([data-theme="dark-soft"]) .graph-panel .root-node {
+  background: #eaf0e9 !important;
+  border-color: #d2dfd0 !important;
+  box-shadow: none !important;
+}
+:root:not([data-theme="dark-soft"]) .graph-panel .teacher-dot {
+  background: #a99ac2 !important;
+  box-shadow: none !important;
+}
+:root:not([data-theme="dark-soft"]) .graph-panel .student-dot {
+  background: #c5aa7e !important;
+  box-shadow: none !important;
+}
+:root:not([data-theme="dark-soft"]) .graph-panel .graph-legend-item b {
+  background: #ebe6f0 !important;
+  color: #655a75 !important;
+}
