@@ -13,7 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from .database import SessionLocal
 from .event_hub import publish_chat_update
 from .media_storage import archive_telegram_media
-from .models import StudentTelegramGroup, TeacherPanel, TeacherSession
+from .models import Conversation, Message, StudentTelegramGroup, TeacherPanel, TeacherSession, User
 from .rate_limit import SlidingWindowLimiter
 from .telegram_common import (
     CONNECTION_CODE_RE,
