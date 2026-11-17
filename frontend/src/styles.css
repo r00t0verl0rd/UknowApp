@@ -9007,25 +9007,29 @@ body,
 .graph-panel .teacher-toggle .person-main {
   min-width: 0;
 }
-/* CSS-drawn chevron: no extra SVG or wrapper element in the DOM. */
+/* Compact CSS chevron, sized and weighted like the neighboring line icons. */
 .graph-panel .teacher-toggle::after {
-  content: "›";
+  content: "";
   display: block;
-  flex: 0 0 17px;
-  width: 17px;
+  box-sizing: border-box;
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
   margin-left: auto;
+  margin-right: 5px;
+  border-right: 1.7px solid currentColor;
+  border-bottom: 1.7px solid currentColor;
   color: var(--muted, #9ca3b2);
-  font: 400 25px/1 Arial, sans-serif;
-  text-align: center;
-  opacity: .8;
-  transform: rotate(0deg);
+  opacity: .85;
+  transform: rotate(-45deg);
   transition: transform .18s ease, opacity .18s ease;
 }
 .graph-panel .teacher-toggle:hover::after {
   opacity: 1;
 }
 .graph-panel .teacher-branch:not(.is-collapsed) .teacher-toggle::after {
-  transform: rotate(90deg);
+  transform: rotate(45deg);
 }
 .graph-panel .student-list[hidden] {
   display: none !important;
