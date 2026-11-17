@@ -9307,7 +9307,15 @@ body,
   display: block !important;
   width: 16px !important;
   height: 16px !important;
-  stroke-width: 1.8 !important;
+}
+
+/* Keep Lucide pencil strokes optically identical across the 1024px breakpoint. */
+.person-actions button:not(.danger-icon) svg *,
+.user-action-btn.edit-btn svg * {
+  stroke-width: 1.8px !important;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .person-actions button:not(.danger-icon),
