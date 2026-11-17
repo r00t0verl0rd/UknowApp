@@ -490,7 +490,7 @@ async def route_message(message: TgMessage, bot: Bot):
                     result,
                 )
                 if result == "ok" and linked_user:
-                    _connection_code_attempts.pop(telegram_id, None)
+                    _connection_code_limiter.clear(telegram_id)
                     if linked_user.role == "teacher":
                         await message.answer(
                             "✅ Telegram подключён к аккаунту «" + linked_user.full_name + "»."
