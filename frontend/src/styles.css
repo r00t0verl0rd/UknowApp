@@ -9358,3 +9358,37 @@ body,
   color: #ef9da9 !important;
 }
 
+/* Touch screens: never leave edit controls in a hover-highlighted state. */
+@media (hover: none), (pointer: coarse) {
+  .person-actions button:not(.danger-icon),
+  .user-action-btn.edit-btn {
+    background: transparent !important;
+    border-color: transparent !important;
+    color: var(--muted) !important;
+    box-shadow: none !important;
+  }
+
+  .person-actions button:not(.danger-icon):hover,
+  .person-actions button:not(.danger-icon):active,
+  .user-action-btn.edit-btn:hover,
+  .user-action-btn.edit-btn:active {
+    background: transparent !important;
+    border-color: transparent !important;
+    color: var(--muted) !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+
+  :root[data-theme="dark-soft"] .person-actions button:not(.danger-icon),
+  :root[data-theme="dark-soft"] .user-action-btn.edit-btn,
+  :root[data-theme="dark-soft"] .person-actions button:not(.danger-icon):hover,
+  :root[data-theme="dark-soft"] .person-actions button:not(.danger-icon):active,
+  :root[data-theme="dark-soft"] .user-action-btn.edit-btn:hover,
+  :root[data-theme="dark-soft"] .user-action-btn.edit-btn:active {
+    background: transparent !important;
+    border-color: transparent !important;
+    color: var(--button-text) !important;
+    box-shadow: none !important;
+  }
+}
+
