@@ -62,7 +62,6 @@ export default function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem("uknowapp-theme-v2") || "dark-soft");
   const [profile, setProfile] = useState(null);
   const [teacherGraph, setTeacherGraph] = useState(null);
-  const [collapsedTeacherIds, setCollapsedTeacherIds] = useState(() => new Set());
   const [draft, setDraft] = useState("");
   const [attachment, setAttachment] = useState(null);
   const [issuedCredential, setIssuedCredential] = useState(null);
@@ -610,21 +609,20 @@ export default function App() {
             <div className="root-node"><img src="/logo.png" alt=""/><div><b>Администратор</b><small>Полное управление</small></div></div>
             <div className="teacher-grid">
               {activeTeachers.map(teacher => {
-                const isCollapsed = collapsedTeacherIds.has(teacher.id);
                 const students = overview?.teachers.find(t => t.id === teacher.id)?.students || [];
-                return <section className={"teacher-branch" + (isCollapsed ? " is-collapsed" : "")} key={teacher.id}>
+                return <section className="teacher-branch" key={teacher.id}>
                 <div className="person-card teacher-card">
-                  <button
-                    type="button"
-                    className="teacher-toggle"
-                    aria-expanded={!isCollapsed}
-                    aria-controls={"teacher-students-" + teacher.id}
-                    onClick={() => setCollapsedTeacherIds(current => {
-                      const next = new Set(current);
-                      if (next.has(teacher.id)) next.delete(teacher.id);
-                      else next.add(teacher.id);
-                      return next;
-                    })}
+                  <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap/></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель · {students.length} учен.</small></div></div>
+                  <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(teacher)}><Trash2/></button></div>
+                </div>
+                <div className="student-list">
+                  {students.map(student => <div className="person-card student-card" key={student.id}>
+                    <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small></div></div>
+                    <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div>
+                  </div>)}
+                </div>
+              </section>;
+              })}       })}
                   >
                     <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap/></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель · {students.length} учен.</small></div></div>
                     
