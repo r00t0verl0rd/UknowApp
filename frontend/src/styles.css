@@ -9113,3 +9113,65 @@ body,
   background: #ebe6f0 !important;
   color: #655a75 !important;
 }
+
+/* Fix teacher cards after making the heading itself a collapse button.
+   Keep the button constrained to the content row so it cannot stretch the card. */
+.graph-panel .teacher-card {
+  min-width: 0;
+  min-height: 64px;
+  align-items: center;
+}
+.graph-panel .teacher-card > .teacher-toggle {
+  display: flex !important;
+  flex: 1 1 0 !important;
+  width: 0;
+  min-width: 0;
+  min-height: 40px;
+  height: auto;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  color: inherit;
+  font: inherit;
+  line-height: normal;
+  text-align: left;
+  white-space: normal;
+}
+.graph-panel .teacher-card > .teacher-toggle > .person-main {
+  display: flex;
+  flex: 1 1 auto;
+  width: 0;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+  overflow: hidden;
+}
+.graph-panel .teacher-card > .teacher-toggle .person-info {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  overflow: hidden;
+}
+.graph-panel .teacher-card > .teacher-toggle .person-info b,
+.graph-panel .teacher-card > .teacher-toggle .person-info small {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.graph-panel .teacher-card > .teacher-toggle .person-info b {
+  color: var(--ink);
+}
+.graph-panel .teacher-card > .teacher-toggle .person-info small {
+  color: var(--muted);
+}
+.graph-panel .teacher-card > .person-actions {
+  flex: 0 0 auto;
+}
+
