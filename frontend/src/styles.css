@@ -9307,3 +9307,97 @@ body,
   border-radius: 16px;
   padding: 12px;
 }
+
+
+/* Light theme harmony pass: replace cool grey patches with the warm,
+   softly tinted surfaces used by the dark theme's layered palette. */
+:root:not([data-theme="dark-soft"]) {
+  --canvas: #f2eff7;
+  --surface: #faf8fd;
+  --ui-control-bg: #f1edf8;
+  --ui-control-hover: #eae3f4;
+  --line: #e6deef;
+  --ui-border: #e5deed;
+  --ui-border-strong: #cfc2e2;
+}
+
+/* Apply the same lavender-tinted canvas consistently across every section. */
+:root:not([data-theme="dark-soft"]) body,
+:root:not([data-theme="dark-soft"]) .chats-shell,
+:root:not([data-theme="dark-soft"]) .chats-main {
+  background: #f2eff7 !important;
+}
+:root:not([data-theme="dark-soft"]) .sidebar,
+:root:not([data-theme="dark-soft"]) .topbar,
+:root:not([data-theme="dark-soft"]) .metric,
+:root:not([data-theme="dark-soft"]) .graph-panel,
+:root:not([data-theme="dark-soft"]) .user-list > .user-row,
+:root:not([data-theme="dark-soft"]) .chat-layout,
+:root:not([data-theme="dark-soft"]) .chat-list,
+:root:not([data-theme="dark-soft"]) .chat-detail,
+:root:not([data-theme="dark-soft"]) .modal,
+:root:not([data-theme="dark-soft"]) .login-card,
+:root:not([data-theme="dark-soft"]) .user-info-popover,
+:root:not([data-theme="dark-soft"]) .credential-modal {
+  background-color: #faf8fd !important;
+}
+
+/* Chat list and conversation canvas: no isolated white or cold-grey blocks. */
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item {
+  background: #f7f3fb !important;
+  border-color: #e9e1f1 !important;
+}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item:hover {
+  background: #f1ebf8 !important;
+  border-color: #dfd3ec !important;
+}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item.selected {
+  background: #ece4f5 !important;
+  border-color: #d9cbe9 !important;
+}
+:root:not([data-theme="dark-soft"]) .chat-detail > .messages {
+  background: #f5f1fa !important;
+}
+:root:not([data-theme="dark-soft"]) .chat-detail .message:not(.student):not(.teacher):not(.admin) {
+  background: #eee9f5 !important;
+  border-color: #dfd6e9 !important;
+}
+:root:not([data-theme="dark-soft"]) .chat-composer {
+  background: #f8f5fb !important;
+  border-color: #e7dfef !important;
+}
+:root:not([data-theme="dark-soft"]) .chat-composer textarea,
+:root:not([data-theme="dark-soft"]) .search,
+:root:not([data-theme="dark-soft"]) .chat-search-control,
+:root:not([data-theme="dark-soft"]) .stack input,
+:root:not([data-theme="dark-soft"]) .stack select {
+  background: #fdfbff !important;
+  border-color: #e6deed !important;
+}
+
+/* Graph panels and their nested islands use the same soft surface hierarchy. */
+:root:not([data-theme="dark-soft"]) .graph-panel {
+  background: #faf8fd !important;
+  border-color: #e7dfef !important;
+}
+:root:not([data-theme="dark-soft"]) .graph-panel .graph-legend-row > .graph-legend {
+  background: #f0eaf7 !important;
+  border-color: #e2d8ed !important;
+}
+:root:not([data-theme="dark-soft"]) .graph-panel .teacher-branch,
+:root:not([data-theme="dark-soft"]) .graph-panel .empty-students {
+  background: #f4eff9 !important;
+  border-color: #e4daef !important;
+}
+
+/* Inputs, secondary tiles and hover states follow the same tinted hierarchy. */
+:root:not([data-theme="dark-soft"]) .sidebar nav button:not(.active):hover,
+:root:not([data-theme="dark-soft"]) .chat-item.selected {
+  background: #eee8f6 !important;
+}
+:root:not([data-theme="dark-soft"]) .metric,
+:root:not([data-theme="dark-soft"]) .user-row,
+:root:not([data-theme="dark-soft"]) .panel,
+:root:not([data-theme="dark-soft"]) .card {
+  border-color: #e7dfef;
+}
