@@ -948,42 +948,48 @@ def _save_panel_delivery_result(db: Session, row: Message, conversation: Convers
 async def _store_panel_attachment(request: Request, file: UploadFile, conversation_id: int):
     """Validate and persist an uploaded attachment; return normalized metadata."""
     content_length = request.headers.get("content-length")
-        if content_length:
-            try:
-                if int(content_length) > 22 * 1024 * 1024:
-                    raise HTTPException(status_code=413, detail="Максимальный размер файла — 20 МБ")
-            except ValueError:
-                raise HTTPException(status_code=400, detail="Некорректный Content-Length")
-        content = await file.read(20 * 1024 * 1024 + 1)
-        if len(content) > 20 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail="Максимальный размер файла — 20 МБ")
-        if not content:
-            raise HTTPException(status_code=400, detail="Файл пустой")
-        original_name = (file.filename or "attachment").replace("\\", "/").rsplit("/", 1)[-1]
-        original_name = "".join(char for char in original_name if ord(char) >= 32 and char not in "\r\n")[:180].strip() or "attachment"
-        suffix = re.sub(r"[^A-Za-z0-9.]", "", Path(original_name).suffix)[:12]
-        if not suffix:
-            suffix = mimetypes.guess_extension(file.content_type or "") or ".bin"
-        relative = Path(str(conversation.id)) / (uuid.uuid4().hex + suffix)
-        target_path = (MEDIA_DIR / relative).resolve()
-        root = MEDIA_DIR.resolve()
-        if root not in target_path.parents:
-            raise HTTPException(status_code=400, detail="Недопустимое имя файла")
-        target_path.parent.mkdir(parents=True, exist_ok=True)
-        target_path.write_bytes(content)
-    
-        reported_mime_type = file.content_type or mimetypes.guess_type(original_name)[0]
-        mime_type = safe_media_type(reported_mime_type)
-        if mime_type == "image/gif":
-            kind = "animation"
-        elif mime_type.startswith("image/"):
-            kind = "photo"
-        elif mime_type.startswith("video/"):
-            kind = "video"
-        elif mime_type.startswith("audio/"):
-            kind = "voice" if mime_type in {"audio/ogg", "audio/opus"} else "audio"
-        else:
-            kind = "document"
+    if content_length:
+        try:
+            if int(content_length) > 22 * 1024 * 1024:
+                raise HTTPException(status_code=413, detail="Максимальный размер файла — 20 МБ")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Некорректный Content-Length")
+
+    content = await file.read(20 * 1024 * 1024 + 1)
+    if len(content) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Максимальный размер файла — 20 МБ")
+    if not content:
+        raise HTTPException(status_code=400, detail="Файл пустой")
+
+    original_name = (file.filename or "attachment").replace("\\", "/").rsplit("/", 1)[-1]
+    original_name = "".join(
+        char for char in original_name
+        if ord(char) >= 32 and char not in "\\r\\n"
+    )[:180].strip() or "attachment"
+    suffix = re.sub(r"[^A-Za-z0-9.]", "", Path(original_name).suffix)[:12]
+    if not suffix:
+        suffix = mimetypes.guess_extension(file.content_type or "") or ".bin"
+
+    relative = Path(str(conversation_id)) / (uuid.uuid4().hex + suffix)
+    target_path = (MEDIA_DIR / relative).resolve()
+    root = MEDIA_DIR.resolve()
+    if root not in target_path.parents:
+        raise HTTPException(status_code=400, detail="Недопустимое имя файла")
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    target_path.write_bytes(content)
+
+    reported_mime_type = file.content_type or mimetypes.guess_type(original_name)[0]
+    mime_type = safe_media_type(reported_mime_type)
+    if mime_type == "image/gif":
+        kind = "animation"
+    elif mime_type.startswith("image/"):
+        kind = "photo"
+    elif mime_type.startswith("video/"):
+        kind = "video"
+    elif mime_type.startswith("audio/"):
+        kind = "voice" if mime_type in {"audio/ogg", "audio/opus"} else "audio"
+    else:
+        kind = "document"
     return content, original_name, relative, mime_type, kind
 
 
