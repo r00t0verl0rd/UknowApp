@@ -9402,3 +9402,21 @@ body,
   }
 }
 
+
+
+/* Teacher student-list toggle uses the same compact danger control surface as the trash icon. */
+.graph-panel .person-actions button.teacher-collapse-btn {
+  flex: 0 0 28px !important;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+}
+.graph-panel .person-actions button.teacher-collapse-btn svg {
+  width: 15px !important;
+  height: 15px !important;
+  transition: transform .18s ease;
+}
+.graph-panel .person-actions button.teacher-collapse-btn.is-expanded svg {
+  transform: rotate(90deg);
+}
