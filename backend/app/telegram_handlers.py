@@ -51,9 +51,7 @@ _bind_group_limiter = SlidingWindowLimiter()
 
 
 def _connection_code_attempt_allowed(telegram_id: int) -> bool:
-    return _connection_code_limiter.is_allowed(
-        telegram_id, _CONNECTION_CODE_LIMIT, _CONNECTION_CODE_WINDOW
-    )
+    return _connection_code_limiter.is_allowed(telegram_id, _CONNECTION_CODE_LIMIT, _CONNECTION_CODE_WINDOW)
 
 
 def _record_connection_code_attempt(telegram_id: int) -> None:
@@ -61,15 +59,11 @@ def _record_connection_code_attempt(telegram_id: int) -> None:
 
 
 def _unlinked_message_allowed(telegram_id: int) -> bool:
-    return _unlinked_message_limiter.allow_and_record(
-        telegram_id, _UNLINKED_MESSAGE_LIMIT, _UNLINKED_MESSAGE_WINDOW
-    )
+    return _unlinked_message_limiter.allow_and_record(telegram_id, _UNLINKED_MESSAGE_LIMIT, _UNLINKED_MESSAGE_WINDOW)
 
 
 def _bind_group_attempt_allowed(telegram_id: int, chat_id: int) -> bool:
-    return _bind_group_limiter.allow_and_record(
-        (telegram_id, chat_id), _BIND_GROUP_LIMIT, _BIND_GROUP_WINDOW
-    )
+    return _bind_group_limiter.allow_and_record((telegram_id, chat_id), _BIND_GROUP_LIMIT, _BIND_GROUP_WINDOW)
 
 
 @router.message(CommandStart())
@@ -318,84 +312,6 @@ async def bind_student_group(message: TgMessage, bot: Bot):
     )
 
 
-async def _handle_unlinked_sender(message: TgMessage, bot: Bot, db) -> None:
-    """Handle activation-code attempts and guide users who have not linked an account."""
-    if not sender:
-        if message.from_user and not _unlinked_message_allowed(message.from_user.id):
-            return
-        text = (message.text or "").strip()
-        normalized = re.sub(r"[\s-]", "", text).upper()
-        if CONNECTION_CODE_RE.fullmatch(normalized):
-            telegram_id = message.from_user.id
-            if not _connection_code_attempt_allowed(telegram_id):
-                await message.answer(
-                    "Слишком много попыток подключения. Попробуйте снова через 15 минут."
-                )
-                return
-            try:
-                linked_user, result = claim_connection_code(db, normalized, telegram_id)
-            except Exception:
-                db.rollback()
-                logger.exception(
-                    "Failed to process Telegram connection code for telegram_id=%s",
-                    message.from_user.id,
-                )
-                await message.answer(
-                    "Не удалось обработать код из-за внутренней ошибки. "
-                    "Попробуйте ещё раз через минуту; администратор может посмотреть ошибку в терминале backend."
-                )
-                return
-            logger.info(
-                "Telegram connection code processed: telegram_id=%s result=%s",
-                telegram_id,
-                result,
-            )
-            if result == "ok" and linked_user:
-                _connection_code_limiter.clear(telegram_id)
-                if linked_user.role == "teacher":
-                    await message.answer(
-                        "✅ Telegram подключён к аккаунту «" + linked_user.full_name + "»."
-                    )
-                    await update_teacher_panel(bot, db, linked_user)
-                elif linked_user.role == "student":
-                    conversation = current_student_conversation(db, linked_user.id)
-                    if conversation and conversation.status == "active":
-                        await message.answer(
-                            "😊 Вы подключены к UknowApp.\n"
-                            "🎓 Ваш учитель: " + conversation.assignment.teacher.full_name + ".\n\n"
-                            "Пишите сюда и отправляйте файлы — всё попадёт вашему учителю."
-                        )
-                    else:
-                        await message.answer(
-                            "✅ Telegram подключён к аккаунту «" + linked_user.full_name + "».\n"
-                            "Учитель пока не назначен. Как только администратор создаст связь, здесь можно будет начать переписку."
-                        )
-            elif result == "expired":
-                _record_connection_code_attempt(telegram_id)
-                await message.answer("Срок действия кода истёк. Попросите администратора создать новый код.")
-            elif result == "used":
-                _record_connection_code_attempt(telegram_id)
-                await message.answer("Этот код уже недействителен. Попросите администратора создать новый.")
-            elif result == "telegram_already_linked":
-                _record_connection_code_attempt(telegram_id)
-                await message.answer("Этот Telegram-аккаунт уже привязан к другому пользователю UknowApp.")
-            elif result == "account_already_linked":
-                _record_connection_code_attempt(telegram_id)
-                await message.answer("К аккаунту уже привязан другой Telegram. Обратитесь к администратору.")
-            elif result == "inactive":
-                _record_connection_code_attempt(telegram_id)
-                await message.answer("Этот аккаунт UknowApp отключён. Обратитесь к администратору.")
-            else:
-                _record_connection_code_attempt(telegram_id)
-                await message.answer("Код не найден или был заменён. Проверьте его или запросите новый у администратора.")
-        else:
-            await message.answer(
-                "Аккаунт ещё не подключён. Попросите администратора сгенерировать код в UknowApp, "
-                "затем отправьте сюда 8 символов кода (можно с дефисом)."
-            )
-        return
-
-
 @router.message()
 async def route_message(message: TgMessage, bot: Bot):
     sender_chat = message.sender_chat
@@ -459,10 +375,87 @@ async def route_message(message: TgMessage, bot: Bot):
                         if existing_student_binding:
                             existing_student_binding.chat_id = message.chat.id
                             existing_student_binding.thread_id = message.message_thread_id
-                            existing_student_binding        if not sender:
-            await _handle_unlinked_sender(message, bot, db)
+                            existing_student_binding.group_title = message.chat.title
+                            group_binding = existing_student_binding
+                            event_name = "TELEGRAM_GROUP_AUTO_REBOUND"
+                        else:
+                            group_binding = StudentTelegramGroup(
+                                student_id=sender.id,
+                                chat_id=message.chat.id,
+                                thread_id=message.message_thread_id,
+                                group_title=message.chat.title,
+                            )
+                            db.add(group_binding)
+                            event_name = "TELEGRAM_GROUP_AUTO_BOUND"
+
+                        try:
+                            db.commit()
+                            logger.warning(
+                                "%s student_id=%s telegram_id=%s chat_id=%s thread_id=%s",
+                                event_name,
+                                sender.id,
+                                message.from_user.id,
+                                message.chat.id,
+                                message.message_thread_id,
+                            )
+                        except IntegrityError:
+                            # Another student/update may have claimed the topic
+                            # concurrently. Re-read only this student's exact
+                            # target binding; never attribute a foreign topic.
+                            db.rollback()
+                            group_binding = db.scalar(
+                                select(StudentTelegramGroup).where(
+                                    StudentTelegramGroup.chat_id == message.chat.id,
+                                    StudentTelegramGroup.thread_id == message.message_thread_id,
+                                    StudentTelegramGroup.student_id == sender.id,
+                                )
+                            )
+                            if not group_binding:
+                                logger.warning(
+                                    "TELEGRAM_GROUP_AUTO_BIND_CONFLICT student_id=%s "
+                                    "chat_id=%s thread_id=%s",
+                                    sender.id,
+                                    message.chat.id,
+                                    message.message_thread_id,
+                                )
+                    elif occupied_topic and occupied_topic.student_id != sender.id:
+                        logger.warning(
+                            "TELEGRAM_GROUP_AUTO_BIND_DENIED topic_already_bound "
+                            "student_id=%s owner_student_id=%s chat_id=%s thread_id=%s",
+                            sender.id,
+                            occupied_topic.student_id,
+                            message.chat.id,
+                            message.message_thread_id,
+                        )
+
+            # Anonymous group posts have no verified Telegram user identity.
+            # They must not impersonate the student assigned to this topic.
+            if not sender or sender.role != "student" or not group_binding:
+                logger.warning(
+                    "TELEGRAM_GROUP_MESSAGE_IGNORED telegram_id=%s sender_chat_id=%s "
+                    "chat_id=%s thread_id=%s has_from_user=%s",
+                    message.from_user.id if message.from_user else None,
+                    sender_chat.id if sender_chat else None,
+                    message.chat.id,
+                    message.message_thread_id,
+                    bool(message.from_user),
+                )
+                return
+            # The forum topic is an additional input channel for the student.
+            # It uses the same persistence, moderation and teacher-inbox path as DM.
+        elif not sender and not message.from_user:
+            # A private message without a Telegram user identity cannot be
+            # linked to an account. In a private chat, normal user messages
+            # still continue to the activation-code flow below.
+            logger.warning(
+                "TELEGRAM_MESSAGE_IGNORED_NO_LINKED_USER chat_id=%s sender_chat_id=%s",
+                message.chat.id,
+                sender_chat.id if sender_chat else None,
+            )
             return
-  return
+        if not sender:
+            if message.from_user and not _unlinked_message_allowed(message.from_user.id):
+                return
             text = (message.text or "").strip()
             normalized = re.sub(r"[\s-]", "", text).upper()
             if CONNECTION_CODE_RE.fullmatch(normalized):
