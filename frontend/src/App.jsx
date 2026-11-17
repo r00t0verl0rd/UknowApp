@@ -627,7 +627,7 @@ export default function App() {
                     })}
                   >
                     <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap/></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель · {students.length} учен.</small></div></div>
-                    <ChevronRight className="teacher-toggle-chevron" size={17}/>
+                    
                   </button>
                   <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(teacher)}><Trash2/></button></div>
                 </div>
