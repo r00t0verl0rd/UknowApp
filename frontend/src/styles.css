@@ -9175,3 +9175,48 @@ body,
   flex: 0 0 auto;
 }
 
+/* Mobile: keep the teacher collapse control visually seamless inside its card. */
+@media (max-width: 760px) {
+  .graph-panel .teacher-card {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+  .graph-panel .teacher-card > .teacher-toggle {
+    -webkit-appearance: none;
+    appearance: none;
+    display: flex !important;
+    flex: 1 1 0 !important;
+    width: 0;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    padding: 0 !important;
+    margin: 0;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: inherit;
+  }
+  .graph-panel .teacher-card > .teacher-toggle::before,
+  .graph-panel .teacher-card > .teacher-toggle::after {
+    content: none !important;
+    display: none !important;
+  }
+  .graph-panel .teacher-card > .teacher-toggle .teacher-toggle-chevron {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .graph-panel .teacher-card > .person-actions {
+    flex: 0 0 auto;
+    margin-left: 2px;
+  }
+}
+
