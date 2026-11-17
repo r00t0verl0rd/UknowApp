@@ -9220,3 +9220,28 @@ body,
   }
 }
 
+/* The teacher collapse control is interaction-only: never render button chrome. */
+.graph-panel .teacher-card > .teacher-toggle,
+.graph-panel .teacher-card > .teacher-toggle:hover,
+.graph-panel .teacher-card > .teacher-toggle:active {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none;
+  color: inherit !important;
+}
+.graph-panel .teacher-card > .teacher-toggle:focus,
+.graph-panel .teacher-card > .teacher-toggle:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.graph-panel .teacher-card > .teacher-toggle .teacher-toggle-chevron {
+  display: none !important;
+}
+
