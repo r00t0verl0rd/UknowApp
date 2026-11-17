@@ -3,8 +3,6 @@
 import json
 import logging
 import re
-import time
-from collections import deque
 
 from aiogram import Bot, F, Router
 from aiogram.filters import Command, CommandStart
@@ -16,6 +14,7 @@ from .database import SessionLocal
 from .event_hub import publish_chat_update
 from .media_storage import archive_telegram_media
 from .models import StudentTelegramGroup, TeacherPanel, TeacherSession
+from .rate_limit import SlidingWindowLimiter
 from .telegram_common import (
     CONNECTION_CODE_RE,
     claim_connection_code,
@@ -41,70 +40,36 @@ router = Router()
 
 _CONNECTION_CODE_WINDOW = 15 * 60
 _CONNECTION_CODE_LIMIT = 5
-_connection_code_attempts: dict[int, deque[float]] = {}
 _UNLINKED_MESSAGE_WINDOW = 60
 _UNLINKED_MESSAGE_LIMIT = 12
-_unlinked_message_attempts: dict[int, deque[float]] = {}
 _BIND_GROUP_WINDOW = 60
 _BIND_GROUP_LIMIT = 5
-_bind_group_attempts: dict[tuple[int, int], deque[float]] = {}
+
+_connection_code_limiter = SlidingWindowLimiter()
+_unlinked_message_limiter = SlidingWindowLimiter()
+_bind_group_limiter = SlidingWindowLimiter()
 
 
 def _connection_code_attempt_allowed(telegram_id: int) -> bool:
-    now = time.monotonic()
-    attempts = _connection_code_attempts.setdefault(telegram_id, deque())
-    while attempts and now - attempts[0] >= _CONNECTION_CODE_WINDOW:
-        attempts.popleft()
-    return len(attempts) < _CONNECTION_CODE_LIMIT
+    return _connection_code_limiter.is_allowed(
+        telegram_id, _CONNECTION_CODE_LIMIT, _CONNECTION_CODE_WINDOW
+    )
 
 
 def _record_connection_code_attempt(telegram_id: int) -> None:
-    now = time.monotonic()
-    attempts = _connection_code_attempts.setdefault(telegram_id, deque())
-    while attempts and now - attempts[0] >= _CONNECTION_CODE_WINDOW:
-        attempts.popleft()
-    attempts.append(now)
-    if len(_connection_code_attempts) > 10_000:
-        for user_id, bucket in list(_connection_code_attempts.items()):
-            while bucket and now - bucket[0] >= _CONNECTION_CODE_WINDOW:
-                bucket.popleft()
-            if not bucket:
-                _connection_code_attempts.pop(user_id, None)
+    _connection_code_limiter.record(telegram_id, _CONNECTION_CODE_WINDOW)
 
 
 def _unlinked_message_allowed(telegram_id: int) -> bool:
-    now = time.monotonic()
-    attempts = _unlinked_message_attempts.setdefault(telegram_id, deque())
-    while attempts and now - attempts[0] >= _UNLINKED_MESSAGE_WINDOW:
-        attempts.popleft()
-    if len(attempts) >= _UNLINKED_MESSAGE_LIMIT:
-        return False
-    attempts.append(now)
-    if len(_unlinked_message_attempts) > 10_000:
-        for user_id, bucket in list(_unlinked_message_attempts.items()):
-            while bucket and now - bucket[0] >= _UNLINKED_MESSAGE_WINDOW:
-                bucket.popleft()
-            if not bucket:
-                _unlinked_message_attempts.pop(user_id, None)
-    return True
+    return _unlinked_message_limiter.allow_and_record(
+        telegram_id, _UNLINKED_MESSAGE_LIMIT, _UNLINKED_MESSAGE_WINDOW
+    )
 
 
 def _bind_group_attempt_allowed(telegram_id: int, chat_id: int) -> bool:
-    now = time.monotonic()
-    key = (telegram_id, chat_id)
-    attempts = _bind_group_attempts.setdefault(key, deque())
-    while attempts and now - attempts[0] >= _BIND_GROUP_WINDOW:
-        attempts.popleft()
-    if len(attempts) >= _BIND_GROUP_LIMIT:
-        return False
-    attempts.append(now)
-    if len(_bind_group_attempts) > 10_000:
-        for cached_key, bucket in list(_bind_group_attempts.items()):
-            while bucket and now - bucket[0] >= _BIND_GROUP_WINDOW:
-                bucket.popleft()
-            if not bucket:
-                _bind_group_attempts.pop(cached_key, None)
-    return True
+    return _bind_group_limiter.allow_and_record(
+        (telegram_id, chat_id), _BIND_GROUP_LIMIT, _BIND_GROUP_WINDOW
+    )
 
 
 @router.message(CommandStart())
