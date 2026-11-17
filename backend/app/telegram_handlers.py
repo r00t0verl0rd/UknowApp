@@ -644,7 +644,12 @@ async def route_message(message: TgMessage, bot: Bot):
                             message_id=message.message_id,
                             caption=label_caption[:1024],
                         )
-                    except Exception:
+                    except Exception as copy_error:
+                        logger.info(
+                            "Telegram copy with caption failed; retrying without caption "
+                            "(conversation_id=%s error_type=%s)",
+                            conversation.id, type(copy_error).__name__,
+                        )
                         # Some Telegram message types (for example stickers) do not
                         # accept captions. In that case send a clearly paired label.
                         notice = await bot.send_message(
@@ -664,13 +669,12 @@ async def route_message(message: TgMessage, bot: Bot):
                 row.delivery_status = "delivered"
                 db.commit()
                 publish_chat_update(conversation.id)
-                if sender.role == "student":
-                    teacher_session = db.get(TeacherSession, recipient.id)
-                    if teacher_session and teacher_session.conversation_id != conversation.id:
-                        # A new message from another student returns the teacher to
-                        # the grouped inbox so a different student's attachment or
-                        # text never appears to belong to the currently open chat.
-                        clear_teacher_session(db, recipient)
+                teacher_session = db.get(TeacherSession, recipient.id)
+                if teacher_session and teacher_session.conversation_id != conversation.id:
+                    # A new message from another student returns the teacher to
+                    # the grouped inbox so a different student's attachment or
+                    # text never appears to belong to the currently open chat.
+                    clear_teacher_session(db, recipient)
                 try:
                     await update_teacher_panel(bot, db, recipient)
                 except Exception as exc:
