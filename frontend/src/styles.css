@@ -9257,3 +9257,18 @@ body,
 .graph-panel .teacher-branch > .teacher-card > .teacher-toggle .person-info small {
   color: var(--muted) !important;
 }
+
+
+
+/* iOS mobile Safari: keep teacher toggle text colors explicit in dark mode. */
+@media (max-width: 767px) {
+  :root[data-theme="dark-soft"] .graph-panel .teacher-branch > .teacher-card > .teacher-toggle > .person-main > .person-info > b {
+    color: var(--ink) !important;
+    -webkit-text-fill-color: var(--ink) !important;
+  }
+
+  :root[data-theme="dark-soft"] .graph-panel .teacher-branch > .teacher-card > .teacher-toggle > .person-main > .person-info > small {
+    color: var(--muted) !important;
+    -webkit-text-fill-color: var(--muted) !important;
+  }
+}
