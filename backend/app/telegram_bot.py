@@ -1,12 +1,9 @@
-"""Public Telegram bot entry point.
-
-Implementation is split into common helpers, teacher UI and update handlers.
-The imports below keep the former telegram_bot module API available.
-"""
+"""Telegram polling entry point used by the FastAPI application."""
 
 from aiogram import Dispatcher
 
 from .telegram_handlers import router
+
 
 class ConflictAwareDispatcher(Dispatcher):
     """Stop polling on TelegramConflictError instead of aiogram's endless retry.
