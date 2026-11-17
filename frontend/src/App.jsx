@@ -62,6 +62,7 @@ export default function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem("uknowapp-theme-v2") || "dark-soft");
   const [profile, setProfile] = useState(null);
   const [teacherGraph, setTeacherGraph] = useState(null);
+  const [collapsedTeacherIds, setCollapsedTeacherIds] = useState(() => new Set());
   const [draft, setDraft] = useState("");
   const [attachment, setAttachment] = useState(null);
   const [issuedCredential, setIssuedCredential] = useState(null);
@@ -608,20 +609,39 @@ export default function App() {
             </div>
             <div className="root-node"><img src="/logo.png" alt=""/><div><b>Администратор</b><small>Полное управление</small></div></div>
             <div className="teacher-grid">
-              {activeTeachers.map(teacher => <section className="teacher-branch" key={teacher.id}>
+              {activeTeachers.map(teacher => {
+                const isCollapsed = collapsedTeacherIds.has(teacher.id);
+                const students = overview?.teachers.find(t => t.id === teacher.id)?.students || [];
+                return <section className={"teacher-branch" + (isCollapsed ? " is-collapsed" : "")} key={teacher.id}>
                 <div className="person-card teacher-card">
-                  <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap/></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель</small></div></div>
+                  <button
+                    type="button"
+                    className="teacher-toggle"
+                    aria-expanded={!isCollapsed}
+                    aria-controls={"teacher-students-" + teacher.id}
+                    onClick={() => setCollapsedTeacherIds(current => {
+                      const next = new Set(current);
+                      if (next.has(teacher.id)) next.delete(teacher.id);
+                      else next.add(teacher.id);
+                      return next;
+                    })}
+                  >
+                    <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap/></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель · {students.length} учен.</small></div></div>
+                    <ChevronRight className="teacher-toggle-chevron" size={17}/>
+                  </button>
                   <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(teacher)}><Trash2/></button></div>
                 </div>
-                <div className="student-list">
-                  {(overview?.teachers.find(t => t.id === teacher.id)?.students || []).map(student => <div className="person-card student-card" key={student.id}>
+                <div className="student-list" id={"teacher-students-" + teacher.id} hidden={isCollapsed}>
+                  {students.map(student => <div className="person-card student-card" key={student.id}>
                     <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small></div></div>
                     <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div>
                   </div>)}
                   {!(overview?.teachers.find(t => t.id === teacher.id)?.students || []).length && <div className="empty-students">Нет назначенных учеников</div>}
                 </div>
                 <button className="add-student" onClick={() => { setTeacherId(String(teacher.id)); setStudentId(activeStudents[0]?.id ? String(activeStudents[0].id) : ""); setModal({ mode: "assign" }); }}><Plus/>Назначить ученика</button>
-              </section>)}
+              </section>;
+              })}
+
             </div>
             {!activeTeachers.length && <div className="empty-state"><GraduationCap/><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span></div>}
             {!!unassignedStudents.length && <section className="unassigned"><div className="section-head"><h2>Ученики без назначения</h2></div><div className="unassigned-grid">{unassignedStudents.map(student => <div className="person-card student-card unassigned-student-card" key={student.id}>
