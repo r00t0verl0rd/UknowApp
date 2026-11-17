@@ -6,13 +6,19 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#171b25",
   "theme_color": "#171b25",
   "icons": [
     {
-      "src": "/apple-touch-icon.png",
-      "sizes": "180x180",
-      "type": "image/png",
+      "src": "/icon-light.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-dark.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
