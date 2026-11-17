@@ -312,6 +312,76 @@ async def bind_student_group(message: TgMessage, bot: Bot):
     )
 
 
+def _auto_bind_student_forum_topic(db, message: TgMessage, sender):
+    """Resolve or safely auto-bind the student's current Telegram forum topic."""
+    group_binding = db.scalar(
+        select(StudentTelegramGroup).where(
+            StudentTelegramGroup.chat_id == message.chat.id,
+            StudentTelegramGroup.thread_id == message.message_thread_id,
+            StudentTelegramGroup.student_id == sender.id,
+        )
+    )
+    if group_binding or not message.chat.is_forum:
+        return group_binding
+
+    existing_student_binding = db.get(StudentTelegramGroup, sender.id)
+    occupied_topic = db.scalar(
+        select(StudentTelegramGroup).where(
+            StudentTelegramGroup.chat_id == message.chat.id,
+            StudentTelegramGroup.thread_id == message.message_thread_id,
+        )
+    )
+    active_conversation = current_student_conversation(db, sender.id)
+    if occupied_topic and occupied_topic.student_id != sender.id:
+        logger.warning(
+            "TELEGRAM_GROUP_AUTO_BIND_DENIED topic_already_bound "
+            "student_id=%s owner_student_id=%s chat_id=%s thread_id=%s",
+            sender.id, occupied_topic.student_id, message.chat.id, message.message_thread_id,
+        )
+        return None
+    if occupied_topic is not None or not active_conversation or active_conversation.status != "active":
+        return None
+
+    if existing_student_binding:
+        existing_student_binding.chat_id = message.chat.id
+        existing_student_binding.thread_id = message.message_thread_id
+        existing_student_binding.group_title = message.chat.title
+        group_binding = existing_student_binding
+        event_name = "TELEGRAM_GROUP_AUTO_REBOUND"
+    else:
+        group_binding = StudentTelegramGroup(
+            student_id=sender.id,
+            chat_id=message.chat.id,
+            thread_id=message.message_thread_id,
+            group_title=message.chat.title,
+        )
+        db.add(group_binding)
+        event_name = "TELEGRAM_GROUP_AUTO_BOUND"
+
+    try:
+        db.commit()
+        logger.warning(
+            "%s student_id=%s telegram_id=%s chat_id=%s thread_id=%s",
+            event_name, sender.id, message.from_user.id,
+            message.chat.id, message.message_thread_id,
+        )
+    except IntegrityError:
+        db.rollback()
+        group_binding = db.scalar(
+            select(StudentTelegramGroup).where(
+                StudentTelegramGroup.chat_id == message.chat.id,
+                StudentTelegramGroup.thread_id == message.message_thread_id,
+                StudentTelegramGroup.student_id == sender.id,
+            )
+        )
+        if not group_binding:
+            logger.warning(
+                "TELEGRAM_GROUP_AUTO_BIND_CONFLICT student_id=%s chat_id=%s thread_id=%s",
+                sender.id, message.chat.id, message.message_thread_id,
+            )
+    return group_binding
+
+
 async def _handle_unlinked_sender(message: TgMessage, bot: Bot, db) -> None:
     """Handle activation-code attempts and guide users without a linked account."""
     if not _unlinked_message_allowed(message.from_user.id):
@@ -416,93 +486,8 @@ async def route_message(message: TgMessage, bot: Bot):
                 )
                 return
 
-            # The student's Telegram ID is the primary identity. If this
-            # student has not bound a topic yet, bind the first forum topic
-            # where they send a message, provided it is not already owned by
-            # another student. This replaces the manual /bind_group step.
             if sender and sender.role == "student":
-                group_binding = db.scalar(
-                    select(StudentTelegramGroup).where(
-                        StudentTelegramGroup.chat_id == message.chat.id,
-                        StudentTelegramGroup.thread_id == message.message_thread_id,
-                        StudentTelegramGroup.student_id == sender.id,
-                    )
-                )
-
-                if not group_binding and message.chat.is_forum:
-                    existing_student_binding = db.get(StudentTelegramGroup, sender.id)
-                    occupied_topic = db.scalar(
-                        select(StudentTelegramGroup).where(
-                            StudentTelegramGroup.chat_id == message.chat.id,
-                            StudentTelegramGroup.thread_id == message.message_thread_id,
-                        )
-                    )
-                    active_conversation = current_student_conversation(db, sender.id)
-
-                    if (
-                        occupied_topic is None
-                        and active_conversation
-                        and active_conversation.status == "active"
-                    ):
-                        # The linked Telegram account identifies the student.
-                        # Automatically move their topic binding when they start
-                        # writing in another free forum topic; no /bind_group step
-                        # should be required from the student.
-                        if existing_student_binding:
-                            existing_student_binding.chat_id = message.chat.id
-                            existing_student_binding.thread_id = message.message_thread_id
-                            existing_student_binding.group_title = message.chat.title
-                            group_binding = existing_student_binding
-                            event_name = "TELEGRAM_GROUP_AUTO_REBOUND"
-                        else:
-                            group_binding = StudentTelegramGroup(
-                                student_id=sender.id,
-                                chat_id=message.chat.id,
-                                thread_id=message.message_thread_id,
-                                group_title=message.chat.title,
-                            )
-                            db.add(group_binding)
-                            event_name = "TELEGRAM_GROUP_AUTO_BOUND"
-
-                        try:
-                            db.commit()
-                            logger.warning(
-                                "%s student_id=%s telegram_id=%s chat_id=%s thread_id=%s",
-                                event_name,
-                                sender.id,
-                                message.from_user.id,
-                                message.chat.id,
-                                message.message_thread_id,
-                            )
-                        except IntegrityError:
-                            # Another student/update may have claimed the topic
-                            # concurrently. Re-read only this student's exact
-                            # target binding; never attribute a foreign topic.
-                            db.rollback()
-                            group_binding = db.scalar(
-                                select(StudentTelegramGroup).where(
-                                    StudentTelegramGroup.chat_id == message.chat.id,
-                                    StudentTelegramGroup.thread_id == message.message_thread_id,
-                                    StudentTelegramGroup.student_id == sender.id,
-                                )
-                            )
-                            if not group_binding:
-                                logger.warning(
-                                    "TELEGRAM_GROUP_AUTO_BIND_CONFLICT student_id=%s "
-                                    "chat_id=%s thread_id=%s",
-                                    sender.id,
-                                    message.chat.id,
-                                    message.message_thread_id,
-                                )
-                    elif occupied_topic and occupied_topic.student_id != sender.id:
-                        logger.warning(
-                            "TELEGRAM_GROUP_AUTO_BIND_DENIED topic_already_bound "
-                            "student_id=%s owner_student_id=%s chat_id=%s thread_id=%s",
-                            sender.id,
-                            occupied_topic.student_id,
-                            message.chat.id,
-                            message.message_thread_id,
-                        )
+                group_binding = _auto_bind_student_forum_topic(db, message, sender)
 
             # Anonymous group posts have no verified Telegram user identity.
             # They must not impersonate the student assigned to this topic.
