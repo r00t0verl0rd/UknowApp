@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo } from "react";
+import { useAuthState, useChatState, useDirectoryState, useGraphState, useUiState } from "./useAppState.js";
 import Activity from "lucide-react/dist/esm/icons/activity.js";
 import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left.js";
 import ArrowUpDown from "lucide-react/dist/esm/icons/arrow-up-down.js";
@@ -25,8 +26,6 @@ import Info from "lucide-react/dist/esm/icons/info.js";
 import MessageBubble from "./MessageBubble.jsx";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
-const initialAuth = () => localStorage.getItem("uknowapp-auth") === "1" || sessionStorage.getItem("uknowapp-auth") === "1" ? "1" : "";
-
 async function copyText(value) {
   try {
     if (window.isSecureContext && navigator.clipboard?.writeText) {
@@ -58,34 +57,31 @@ async function copyText(value) {
 
 // Главный экран панели: здесь хранятся состояние разделов, данные API и действия пользователя.
 export default function App() {
-  const [auth, setAuth] = useState(initialAuth);
-  const [theme, setTheme] = useState(() => localStorage.getItem("uknowapp-theme-v2") || "dark-soft");
-  const [profile, setProfile] = useState(null);
-  const [teacherGraph, setTeacherGraph] = useState(null);
-  const [draft, setDraft] = useState("");
-  const [attachment, setAttachment] = useState(null);
-  const [issuedCredential, setIssuedCredential] = useState(null);
-  const [savingUser, setSavingUser] = useState(false);
-  const [login, setLogin] = useState("");
-  const [password, setPassword] = useState("");
-  const [page, setPage] = useState("graph");
-  const [collapsedTeacherIds, setCollapsedTeacherIds] = useState(() => new Set());
-  const [users, setUsers] = useState([]);
-  const [overview, setOverview] = useState(null);
-  const [chats, setChats] = useState([]);
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const messagesViewportRef = useRef(null);
-  const [search, setSearch] = useState("");
-  const [userSort, setUserSort] = useState("students");
-  const [userInfo, setUserInfo] = useState(null);
-  const [chatSearch, setChatSearch] = useState("");
-  const [chatFilter, setChatFilter] = useState("all");
-  const [messageFilter, setMessageFilter] = useState("all");
-  const [error, setError] = useState("");
-  const [toast, setToast] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [modal, setModal] = useState(null);
+  const {
+    auth, setAuth, theme, setTheme, profile, setProfile, login, setLogin, password, setPassword,
+  } = useAuthState();
+  const {
+    teacherGraph, setTeacherGraph, collapsedTeacherIds, setCollapsedTeacherIds,
+  } = useGraphState();
+  const {
+    draft, setDraft, attachment, setAttachment, chats, setChats,
+    selectedChat, setSelectedChat, messages, setMessages, messagesViewportRef,
+    chatSearch, setChatSearch, chatFilter, setChatFilter,
+    messageFilter, setMessageFilter,
+  } = useChatState();
+  const {
+    issuedCredential, setIssuedCredential, savingUser, setSavingUser,
+    users, setUsers, overview, setOverview, search, setSearch,
+    userSort, setUserSort, userInfo, setUserInfo,
+    deleteCandidate, setDeleteCandidate, deletingUser, setDeletingUser,
+    deleteMessageCandidate, setDeleteMessageCandidate, deletingMessage, setDeletingMessage,
+    disconnectCandidate, setDisconnectCandidate, disconnectingTelegram, setDisconnectingTelegram,
+    name, setName, teacherLogin, setTeacherLogin, role, setRole,
+    telegramId, setTelegramId, teacherId, setTeacherId, studentId, setStudentId, code, setCode,
+  } = useDirectoryState();
+  const {
+    page, setPage, error, setError, toast, setToast, busy, setBusy, modal, setModal,
+  } = useUiState();
 
   useEffect(() => {
     if (userInfo === null) return undefined;
