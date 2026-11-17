@@ -98,20 +98,6 @@ export default function App() {
       document.removeEventListener("keydown", closeInfoOnEscape);
     };
   }, [userInfo]);
-  const [deleteCandidate, setDeleteCandidate] = useState(null);
-  const [deletingUser, setDeletingUser] = useState(false);
-  const [deleteMessageCandidate, setDeleteMessageCandidate] = useState(null);
-  const [deletingMessage, setDeletingMessage] = useState(false);
-  const [disconnectCandidate, setDisconnectCandidate] = useState(null);
-  const [disconnectingTelegram, setDisconnectingTelegram] = useState(false);
-  const [name, setName] = useState("");
-  const [teacherLogin, setTeacherLogin] = useState("");
-  const [role, setRole] = useState("teacher");
-  const [telegramId, setTelegramId] = useState("");
-  const [teacherId, setTeacherId] = useState("");
-  const [studentId, setStudentId] = useState("");
-  const [code, setCode] = useState(null);
-
   // Единая точка HTTP-запросов: добавляет cookie-сессию и приводит ошибки API к понятному сообщению.
   const request = useCallback(async (path, options = {}) => {
     const response = await fetch(API + path, {
