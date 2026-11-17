@@ -3173,7 +3173,7 @@ body {
     border-radius: 11px;
   }
   .graph-panel .teacher-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
     gap: 13px;
   }
 
@@ -9175,51 +9175,6 @@ body,
   flex: 0 0 auto;
 }
 
-/* Mobile: keep the teacher collapse control visually seamless inside its card. */
-@media (max-width: 760px) {
-  .graph-panel .teacher-card {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-  }
-  .graph-panel .teacher-card > .teacher-toggle {
-    -webkit-appearance: none;
-    appearance: none;
-    display: flex !important;
-    flex: 1 1 0 !important;
-    width: 0;
-    min-width: 0;
-    min-height: 0;
-    height: auto;
-    padding: 0 !important;
-    margin: 0;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    color: inherit;
-  }
-  .graph-panel .teacher-card > .teacher-toggle::before,
-  .graph-panel .teacher-card > .teacher-toggle::after {
-    content: none !important;
-    display: none !important;
-  }
-  .graph-panel .teacher-card > .teacher-toggle .teacher-toggle-chevron {
-    width: 17px;
-    height: 17px;
-    flex: 0 0 17px;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-  .graph-panel .teacher-card > .person-actions {
-    flex: 0 0 auto;
-    margin-left: 2px;
-  }
-}
-
 /* The teacher collapse control is interaction-only: never render button chrome. */
 .graph-panel .teacher-card > .teacher-toggle,
 .graph-panel .teacher-card > .teacher-toggle:hover,
@@ -9245,53 +9200,51 @@ body,
   display: block !important;
 }
 
-/* Match the desktop teacher card on mobile; only the layout may shrink, not its visual treatment. */
-@media (max-width: 760px) {
-  .graph-panel .teacher-branch > .teacher-card {
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    min-height: 76px !important;
-    padding: 12px 13px !important;
-    border: 1px solid #e3d8f1 !important;
-    border-radius: 13px !important;
-    background: linear-gradient(110deg, #f0e9fb, #fff 78%) !important;
-    box-shadow: 0 3px 10px rgba(87,62,153,.045) !important;
-  }
-  :root[data-theme="dark-soft"] .graph-panel .teacher-branch > .teacher-card {
-    background: #30313e !important;
-    border-color: #484858 !important;
-    box-shadow: none !important;
-  }
-  .graph-panel .teacher-branch > .teacher-card > .teacher-toggle,
-  .graph-panel .teacher-branch > .teacher-card > .teacher-toggle:hover,
-  .graph-panel .teacher-branch > .teacher-card > .teacher-toggle:active {
-    display: flex !important;
-    flex: 1 1 0 !important;
-    width: 0 !important;
-    min-width: 0 !important;
-    min-height: 40px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    background-color: transparent !important;
-    background-image: none !important;
-    box-shadow: none !important;
-    color: inherit !important;
-  }
-  .graph-panel .teacher-branch > .teacher-card > .teacher-toggle .teacher-toggle-chevron {
-    display: block !important;
-    flex: 0 0 17px !important;
-    width: 17px !important;
-    height: 17px !important;
-    margin-left: auto !important;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-  }
+/* One shared teacher-card treatment at every viewport width. */
+.graph-panel .teacher-branch > .teacher-card {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 76px !important;
+  padding: 12px 13px !important;
+  border: 1px solid #e3d8f1 !important;
+  border-radius: 13px !important;
+  background: linear-gradient(110deg, #f0e9fb, #fff 78%) !important;
+  box-shadow: 0 3px 10px rgba(87,62,153,.045) !important;
+}
+:root[data-theme="dark-soft"] .graph-panel .teacher-branch > .teacher-card {
+  background: #30313e !important;
+  border-color: #484858 !important;
+  box-shadow: none !important;
+}
+.graph-panel .teacher-branch > .teacher-card > .teacher-toggle,
+.graph-panel .teacher-branch > .teacher-card > .teacher-toggle:hover,
+.graph-panel .teacher-branch > .teacher-card > .teacher-toggle:active {
+  display: flex !important;
+  flex: 1 1 0 !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  min-height: 40px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  color: inherit !important;
+}
+.graph-panel .teacher-branch > .teacher-card > .teacher-toggle .teacher-toggle-chevron {
+  display: block !important;
+  flex: 0 0 17px !important;
+  width: 17px !important;
+  height: 17px !important;
+  margin-left: auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
