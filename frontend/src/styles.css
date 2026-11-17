@@ -9016,3 +9016,58 @@ button:focus-visible, a:focus-visible {
   background: linear-gradient(110deg, #edf6ec, #f8fcf6 78%);
   border-color: #d7e8d3;
 }
+
+
+/* iPhone standalone: keep the brand below the transparent iOS status area. */
+@media (max-width: 1024px) {
+  .chats-main > .topbar {
+    box-sizing: border-box;
+    height: calc(54px + env(safe-area-inset-top, 0px));
+    min-height: calc(54px + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .chat-composer .composer-send > .btn {
+    transform: translateY(-6px);
+  }
+}
+
+/* The same participant palette is used in both themes, with slightly richer contrast. */
+:root:not([data-theme="dark-soft"]) .chat-detail .message.student {
+  background: linear-gradient(110deg, #fff1cf 0%, #fff8e9 100%);
+  border-color: #efd69e;
+}
+:root:not([data-theme="dark-soft"]) .chat-detail .message.teacher {
+  background: linear-gradient(110deg, #e9ddfb 0%, #f5efff 100%);
+  border-color: #d4c0f1;
+}
+:root:not([data-theme="dark-soft"]) .chat-detail .message.admin {
+  background: linear-gradient(110deg, #dff0dc 0%, #eff8ec 100%);
+  border-color: #c4dfbe;
+}
+
+:root[data-theme="dark-soft"] .chat-detail .message.student {
+  background: linear-gradient(110deg, #493b2c 0%, #3b332b 100%) !important;
+  border-color: #79603c !important;
+}
+:root[data-theme="dark-soft"] .chat-detail .message.teacher {
+  background: linear-gradient(110deg, #403653 0%, #332d45 100%) !important;
+  border-color: #65527f !important;
+}
+:root[data-theme="dark-soft"] .chat-detail .message.admin {
+  background: linear-gradient(110deg, #304536 0%, #293a31 100%) !important;
+  border-color: #4d7055 !important;
+}
+:root[data-theme="dark-soft"] .chat-detail .message b,
+:root[data-theme="dark-soft"] .chat-detail .message p {
+  color: #edf0f5 !important;
+}
+:root[data-theme="dark-soft"] .chat-detail .message b small,
+:root[data-theme="dark-soft"] .chat-detail .message-time {
+  color: #b3bdcb !important;
+}
+
+/* Messages without a visible sender keep their timestamp aligned to the right. */
+.chat-detail .message-topline:not(:has(> b)) {
+  justify-content: flex-end;
+}
