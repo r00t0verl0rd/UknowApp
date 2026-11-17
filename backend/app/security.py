@@ -1,8 +1,5 @@
 import hashlib
 import secrets
-import threading
-import time
-from collections import deque
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -12,6 +9,7 @@ from sqlalchemy import select
 from .config import ADMIN_PASSWORD, ADMIN_USERNAME, ALLOWED_ORIGINS
 from .database import SessionLocal
 from .models import PanelSession, User
+from .rate_limit import SlidingWindowLimiter
 
 SESSION_COOKIE = "uknowapp_session"
 SECURE_SESSION_COOKIE = "__Host-uknowapp_session"
@@ -20,8 +18,7 @@ SESSION_MAX_AGE = int(SESSION_TTL.total_seconds())
 _LOGIN_WINDOW_SECONDS = 15 * 60
 _LOGIN_USER_LIMIT = 8
 _LOGIN_IP_LIMIT = 60
-_login_attempts: dict[str, deque[float]] = {}
-_login_attempts_lock = threading.Lock()
+_login_rate_limiter = SlidingWindowLimiter()
 
 
 def verify_admin(username: str, password: str) -> bool:
@@ -99,53 +96,30 @@ def _login_keys(request: Request, username: str) -> tuple[str, str]:
     return "ip:" + ip, "user:" + ip + ":" + normalized
 
 
-def _prune_attempts(bucket: deque[float], now: float) -> None:
-    while bucket and now - bucket[0] >= _LOGIN_WINDOW_SECONDS:
-        bucket.popleft()
-
-
 # Ограничиваем частоту входов отдельно по IP и по паре IP/логин.
 def check_login_rate_limit(request: Request, username: str) -> None:
-    now = time.monotonic()
     ip_key, user_key = _login_keys(request, username)
-    with _login_attempts_lock:
-        ip_bucket = _login_attempts.setdefault(ip_key, deque())
-        user_bucket = _login_attempts.setdefault(user_key, deque())
-        _prune_attempts(ip_bucket, now)
-        _prune_attempts(user_bucket, now)
-        retry_after = 0
-        if len(ip_bucket) >= _LOGIN_IP_LIMIT:
-            retry_after = int(_LOGIN_WINDOW_SECONDS - (now - ip_bucket[0])) + 1
-        elif len(user_bucket) >= _LOGIN_USER_LIMIT:
-            retry_after = int(_LOGIN_WINDOW_SECONDS - (now - user_bucket[0])) + 1
-        if retry_after:
-            raise HTTPException(
-                status_code=429,
-                detail="Слишком много неудачных попыток входа. Попробуйте позже.",
-                headers={"Retry-After": str(max(1, retry_after))},
-            )
+    retry_after = max(
+        _login_rate_limiter.retry_after(ip_key, _LOGIN_IP_LIMIT, _LOGIN_WINDOW_SECONDS),
+        _login_rate_limiter.retry_after(user_key, _LOGIN_USER_LIMIT, _LOGIN_WINDOW_SECONDS),
+    )
+    if retry_after:
+        raise HTTPException(
+            status_code=429,
+            detail="Слишком много неудачных попыток входа. Попробуйте позже.",
+            headers={"Retry-After": str(retry_after)},
+        )
 
 
 def record_failed_login(request: Request, username: str) -> None:
-    now = time.monotonic()
     ip_key, user_key = _login_keys(request, username)
-    with _login_attempts_lock:
-        _login_attempts.setdefault(ip_key, deque()).append(now)
-        _login_attempts.setdefault(user_key, deque()).append(now)
-        if len(_login_attempts) > 10_000:
-            stale_keys = []
-            for key, bucket in _login_attempts.items():
-                _prune_attempts(bucket, now)
-                if not bucket:
-                    stale_keys.append(key)
-            for key in stale_keys:
-                _login_attempts.pop(key, None)
+    _login_rate_limiter.record(ip_key, _LOGIN_WINDOW_SECONDS)
+    _login_rate_limiter.record(user_key, _LOGIN_WINDOW_SECONDS)
 
 
 def clear_username_failures(request: Request, username: str) -> None:
     _, user_key = _login_keys(request, username)
-    with _login_attempts_lock:
-        _login_attempts.pop(user_key, None)
+    _login_rate_limiter.clear(user_key)
 
 
 def _credential_fingerprint(db, role: str, user_id: Optional[int]) -> Optional[str]:
