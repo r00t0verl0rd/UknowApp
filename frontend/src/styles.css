@@ -9321,6 +9321,8 @@ body,
 .person-actions button:not(.danger-icon),
 .user-action-btn.edit-btn {
   color: var(--muted) !important;
+  /* The edit pencil stays borderless on desktop and touch devices alike. */
+  border-color: transparent !important;
 }
 
 .person-actions button:not(.danger-icon):hover:not(:disabled),
