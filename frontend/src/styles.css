@@ -78,7 +78,6 @@
   --line: #e9e3f2;
   --surface: #ffffff;
   --canvas: #f7f5fb;
-  --lavender: #c299ff;
   --lavender-soft: #f0e9fb;
   --purple-glow: rgba(194, 153, 255, .34);
   --red-glow: rgba(231, 37, 48, .20);
@@ -1844,10 +1843,6 @@ img, video, audio { max-width: 100%; }
   background: #262f3d !important;
 }
 
-:root[data-theme="dark-soft"] .user-sort {
-  background: #262f3d;
-  border-color: #414e62;
-}
 
 :root[data-theme="dark-soft"] .user-sort select {
   color: #e4e8f0;
@@ -3165,7 +3160,7 @@ body {
   .sidebar nav button { font-size: 11px; }
   .main { margin: 0; }
   .content { padding: 23px 15px; }
-  .graph-panel { padding: 17px; }
+
   .root-node { max-width: 100%; }
 
   .graph-panel {
@@ -3413,7 +3408,7 @@ body {
   .teacher-graph-student-grid { grid-template-columns: minmax(0,1fr); gap: 8px; }
 
   .sidebar nav { grid-template-columns: repeat(auto-fit,minmax(105px,1fr)); }
-  .chat-head-tools { flex-wrap: wrap; }
+
   .chat-head-tools select { max-width: 145px; }
 
   .chat-list-tools { grid-template-columns: minmax(0,1fr); padding: 10px 8px; }
@@ -3694,10 +3689,6 @@ body {
     box-shadow: 0 5px 18px rgba(0, 0, 0, .16) !important;
   }
 
-  :root[data-theme="dark-soft"] .chat-list-tools {
-    background: #1d2430 !important;
-    border-bottom-color: #39465a !important;
-  }
 
   :root[data-theme="dark-soft"] .chat-detail {
     background: #202633 !important;
@@ -3757,10 +3748,6 @@ body {
     padding: 7px 9px;
   }
 
-  .graph-panel .graph-legend-item {
-    gap: 6px;
-    font-size: 10px;
-  }
 
   .graph-panel .graph-legend-row {
     margin-bottom: 14px;
@@ -4528,11 +4515,6 @@ body {
     white-space: nowrap;
   }
 
-  .graph-panel .graph-legend .graph-legend-item > span {
-    flex: 0 0 7px;
-    width: 7px;
-    height: 7px;
-  }
 
   .graph-panel .graph-legend .graph-legend-item b {
     flex: 0 0 auto;
@@ -5110,11 +5092,6 @@ input::placeholder, textarea::placeholder { color: #a49daf; }/* Cards and worksp
     flex-basis: 44px;
   }
 
-  .user-row > .user-person-info {
-    grid-column: 2;
-    grid-row: 1;
-    min-width: 0;
-  }
 
   .user-row > .user-actions {
     grid-column: 1 / -1;
@@ -6953,16 +6930,11 @@ button:focus-visible, .btn:focus-visible {
   --line: #e9e5ef;
   --surface: #ffffff;
   --canvas: #f7f6fa;
-  --lavender: #b9a4eb;
   --lavender-soft: #f1edfa;
   --purple-glow: rgba(96, 70, 165, .16);
   --red: #df5967;
   --red-soft: #fff0f1;
   --red-border: #f2d6da;
-  --success: #25845b;
-  --success-soft: #eaf6ef;
-  --warning: #a87322;
-  --warning-soft: #fff5e3;
   --ui-border: #e6e1ed;
   --ui-border-strong: #cfc3e2;
   --ui-control-bg: #f5f3f8;
@@ -6992,16 +6964,11 @@ button:focus-visible, .btn:focus-visible {
   --line: #343d4d;
   --surface: #222b39;
   --canvas: #171d28;
-  --lavender: #a996df;
   --lavender-soft: #343047;
   --purple-glow: rgba(169, 150, 223, .18);
   --red: #e58c98;
   --red-soft: #402d37;
   --red-border: #65404b;
-  --success: #83c9a3;
-  --success-soft: #293e38;
-  --warning: #e4b66f;
-  --warning-soft: #443a2d;
   --ui-border: #3b4658;
   --ui-border-strong: #58647a;
   --ui-control-bg: #2b3443;
@@ -8544,7 +8511,6 @@ button:focus-visible, a:focus-visible {
   --role-teacher: #8a65c5;
   --role-teacher-soft: #eee4fb;
   --role-teacher-border: #d3c0ed;
-  --role-admin: #548b5d;
   --role-admin-soft: #e2f0df;
   --role-admin-border: #c0d9bb;
 }
@@ -8563,7 +8529,6 @@ button:focus-visible, a:focus-visible {
   --role-teacher: #b69be8;
   --role-teacher-soft: #403653;
   --role-teacher-border: #705b91;
-  --role-admin: #91c58e;
   --role-admin-soft: #304536;
   --role-admin-border: #56785c;
 }
@@ -8841,9 +8806,7 @@ body,
 :root:not([data-theme="dark-soft"]) .sidebar nav button:not(.active):hover,
 :root:not([data-theme="dark-soft"]) .chat-item.selected {
   background: #eee8f6 !important;
-}:root:not([data-theme="dark-soft"]) .user-row,
-:root:not([data-theme="dark-soft"]) .panel,
-:root:not([data-theme="dark-soft"]) .card
+}:root:not([data-theme="dark-soft"]) .user-row
 {
   border-color: #e7dfef;
 }
@@ -8853,7 +8816,6 @@ body,
 :root[data-theme="dark-soft"] {
   --purple: #9b91c2;
   --purple2: #897eaf;
-  --lavender: #9b90c4;
   --purple-glow: rgba(155, 144, 196, .11);
 
   --role-student: #c9aa70;
@@ -8862,7 +8824,6 @@ body,
   --role-teacher: #aa9bcf;
   --role-teacher-soft: #35313f;
   --role-teacher-border: #554b68;
-  --role-admin: #91b18d;
   --role-admin-soft: #303a32;
   --role-admin-border: #4c6250;
 
