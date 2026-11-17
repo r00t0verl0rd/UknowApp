@@ -9446,3 +9446,123 @@ body,
   background: var(--role-teacher-soft) !important;
   color: var(--role-teacher) !important;
 }
+
+
+/* Conversation picker: calm surface hierarchy, clear selection and unread states. */
+.chat-items-scroll > .chat-item {
+  position: relative;
+  overflow: hidden;
+  transition: background-color .16s ease, border-color .16s ease, transform .16s ease;
+}
+.chat-items-scroll > .chat-item:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 2px;
+}
+.chat-items-scroll > .chat-item.has-unread {
+  border-left: 3px solid var(--role-student, #c9a45f) !important;
+  padding-left: 11px;
+}
+.chat-items-scroll > .chat-item.has-unread .chat-item-participants {
+  font-weight: 700;
+}
+.chat-items-scroll > .chat-item.has-unread .chat-item-meta {
+  font-weight: 700;
+}
+.chat-items-scroll > .chat-item .unread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 21px;
+  min-height: 21px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--role-student-soft, #f6edda);
+  color: var(--role-student, #9a702b) !important;
+  font-size: 10px;
+  font-weight: 800;
+}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item {
+  background: #f8f5fb !important;
+  border: 1px solid #e9e2f0 !important;
+  color: #393346;
+}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item:hover {
+  background: #f1ebf7 !important;
+  border-color: #ded3e9 !important;
+}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item.selected {
+  background: #eee7f6 !important;
+  border-color: #d8cbe7 !important;
+  color: #51436d;
+}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item.has-unread {
+  background: #faf6ed !important;
+  border-color: #eadfc9 !important;
+  border-left-color: #c49a50 !important;
+}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item.has-unread.selected {
+  background: #f2ebf5 !important;
+  border-color: #d8cbe7 !important;
+  border-left-color: #b18a49 !important;
+}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item .chat-item-meta {
+  color: #777084;
+}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item .unread-badge {
+  background: #f2e8d3;
+  color: #876126 !important;
+}
+:root[data-theme="dark-soft"] .chat-layout {
+  background: #202631 !important;
+  border-color: #343d4c !important;
+}
+:root[data-theme="dark-soft"] .chat-list,
+:root[data-theme="dark-soft"] .chat-detail {
+  background: #242c38 !important;
+}
+:root[data-theme="dark-soft"] .chat-items-scroll > .chat-item {
+  background: #293240 !important;
+  border: 1px solid #354052 !important;
+  color: #e2e5ed !important;
+}
+:root[data-theme="dark-soft"] .chat-items-scroll > .chat-item:hover {
+  background: #30394a !important;
+  border-color: #46516a !important;
+}
+:root[data-theme="dark-soft"] .chat-items-scroll > .chat-item.selected {
+  background: #38364b !important;
+  border-color: #625878 !important;
+  color: #f0edf8 !important;
+}
+:root[data-theme="dark-soft"] .chat-items-scroll > .chat-item.has-unread {
+  background: #34332f !important;
+  border-color: #514a3e !important;
+  border-left-color: #c5a66d !important;
+}
+:root[data-theme="dark-soft"] .chat-items-scroll > .chat-item.has-unread.selected {
+  background: #3b3745 !important;
+  border-color: #625878 !important;
+  border-left-color: #c5a66d !important;
+}
+:root[data-theme="dark-soft"] .chat-items-scroll > .chat-item .chat-item-meta {
+  color: #b3bdcc !important;
+}
+:root[data-theme="dark-soft"] .chat-items-scroll > .chat-item .unread-badge {
+  background: #494234 !important;
+  color: #e1c48b !important;
+}
+:root[data-theme="dark-soft"] .chat-list-tools {
+  border-bottom-color: #3a4555 !important;
+}
+:root[data-theme="dark-soft"] .chat-list-tools input,
+:root[data-theme="dark-soft"] .chat-search-control {
+  background: #202936 !important;
+  border-color: #3a4555 !important;
+  color: #e2e5ed !important;
+}
+:root[data-theme="dark-soft"] .chat-detail > .messages {
+  background: #202834 !important;
+}
+:root:not([data-theme="dark-soft"]) .chat-detail > .messages {
+  background: #f5f1f9 !important;
+}
