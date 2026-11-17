@@ -9117,10 +9117,22 @@ body,
 :root[data-theme="dark-soft"] .graph-panel .student-card {
   box-shadow: none !important;
 }
-:root[data-theme="dark-soft"] .chat-detail .message.student,
-:root[data-theme="dark-soft"] .chat-detail .message.teacher,
-:root[data-theme="dark-soft"] .chat-detail .message.admin {
+/* Keep role-specific conversation colors visible in the dark theme.
+   Disable gradients for a calm finish, but retain each role's tinted surface. */
+:root[data-theme="dark-soft"] .chat-detail .message.student {
+  background-color: #40382f !important;
   background-image: none !important;
+  border-color: #625440 !important;
+}
+:root[data-theme="dark-soft"] .chat-detail .message.teacher {
+  background-color: #3b3549 !important;
+  background-image: none !important;
+  border-color: #554b68 !important;
+}
+:root[data-theme="dark-soft"] .chat-detail .message.admin {
+  background-color: #303d34 !important;
+  background-image: none !important;
+  border-color: #4c6250 !important;
 }
 
 /* Users page: dark-theme role icons follow the shared student/teacher palette. */
