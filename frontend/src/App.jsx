@@ -221,7 +221,7 @@ function MessageBubble({ message, onDelete, viewerRole }) {
 // Главный экран панели: здесь хранятся состояние разделов, данные API и действия пользователя.
 export default function App() {
   const [auth, setAuth] = useState(initialAuth);
-  const [theme, setTheme] = useState(() => localStorage.getItem("uknowapp-theme") || "dark-soft");
+  const [theme, setTheme] = useState(() => localStorage.getItem("uknowapp-theme-v2") || "dark-soft");
   const [profile, setProfile] = useState(null);
   const [teacherGraph, setTeacherGraph] = useState(null);
   const [draft, setDraft] = useState("");
@@ -329,7 +329,7 @@ export default function App() {
   useEffect(() => { refresh(); }, [refresh]);
 
   useEffect(() => {
-    localStorage.setItem("uknowapp-theme", theme);
+    localStorage.setItem("uknowapp-theme-v2", theme);
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
