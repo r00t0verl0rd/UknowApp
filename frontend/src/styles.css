@@ -9279,33 +9279,3 @@ body,
 }
 
 /* The chevron is drawn by .teacher-toggle::after; no separate element is rendered. */
-
-
-
-/* Unified teacher card surface: the branch wrapper and its inner card
-   share one exact fill and border at every viewport size. */
-:root {
-  --teacher-card-surface: #f0ecf5;
-  --teacher-card-border: #e3d8f1;
-}
-:root[data-theme="dark-soft"] {
-  --teacher-card-surface: #30313e;
-  --teacher-card-border: #484858;
-}
-.graph-panel .teacher-branch,
-.graph-panel .teacher-branch:hover,
-:root[data-theme="dark-soft"] .graph-panel .teacher-branch,
-:root[data-theme="dark-soft"] .graph-panel .teacher-branch:hover {
-  background: var(--teacher-card-surface) !important;
-  background-image: none !important;
-  border-color: var(--teacher-card-border) !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-.graph-panel .teacher-branch > .teacher-card,
-:root[data-theme="dark-soft"] .graph-panel .teacher-branch > .teacher-card {
-  background: var(--teacher-card-surface) !important;
-  background-image: none !important;
-  border-color: var(--teacher-card-border) !important;
-  box-shadow: none !important;
-}
