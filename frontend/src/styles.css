@@ -9279,3 +9279,82 @@ body,
 }
 
 /* The chevron is drawn by .teacher-toggle::after; no separate element is rendered. */
+
+/* Shared edit/delete icon controls across graph, user list and all viewports. */
+.person-actions button,
+.user-action-btn.edit-btn,
+.user-action-btn.user-delete {
+  display: inline-grid !important;
+  place-items: center !important;
+  box-sizing: border-box !important;
+  flex: 0 0 34px !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  max-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease !important;
+}
+
+.person-actions button svg,
+.user-action-btn.edit-btn svg,
+.user-action-btn.user-delete svg {
+  display: block !important;
+  width: 16px !important;
+  height: 16px !important;
+  stroke-width: 1.8 !important;
+}
+
+.person-actions button:not(.danger-icon),
+.user-action-btn.edit-btn {
+  color: var(--muted) !important;
+}
+
+.person-actions button:not(.danger-icon):hover:not(:disabled),
+.user-action-btn.edit-btn:hover:not(:disabled) {
+  background: var(--button-bg-hover) !important;
+  border-color: var(--button-border-hover) !important;
+  color: var(--purple) !important;
+}
+
+.person-actions button.danger-icon,
+.user-action-btn.user-delete {
+  color: var(--button-danger-text) !important;
+}
+
+.person-actions button.danger-icon:hover:not(:disabled),
+.user-action-btn.user-delete:hover:not(:disabled) {
+  background: var(--button-danger-bg) !important;
+  border-color: var(--button-danger-border) !important;
+  color: var(--red, #c45d6b) !important;
+}
+
+:root[data-theme="dark-soft"] .person-actions button:not(.danger-icon),
+:root[data-theme="dark-soft"] .user-action-btn.edit-btn {
+  color: var(--button-text) !important;
+}
+
+:root[data-theme="dark-soft"] .person-actions button:not(.danger-icon):hover:not(:disabled),
+:root[data-theme="dark-soft"] .user-action-btn.edit-btn:hover:not(:disabled) {
+  background: var(--button-bg-hover) !important;
+  border-color: var(--button-border-hover) !important;
+  color: #e1dafa !important;
+}
+
+:root[data-theme="dark-soft"] .person-actions button.danger-icon,
+:root[data-theme="dark-soft"] .user-action-btn.user-delete {
+  color: var(--button-danger-text) !important;
+}
+
+:root[data-theme="dark-soft"] .person-actions button.danger-icon:hover:not(:disabled),
+:root[data-theme="dark-soft"] .user-action-btn.user-delete:hover:not(:disabled) {
+  background: var(--button-danger-bg) !important;
+  border-color: var(--button-danger-border) !important;
+  color: #ef9da9 !important;
+}
+
