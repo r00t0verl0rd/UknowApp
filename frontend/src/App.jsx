@@ -27,7 +27,7 @@ import Pause from "lucide-react/dist/esm/icons/pause.js";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 const ROLE = { teacher: "Учитель", student: "Ученик", admin: "Администратор" };
-const initialAuth = () => sessionStorage.getItem("uknowapp-auth") === "1" ? "1" : "";
+const initialAuth = () => localStorage.getItem("uknowapp-auth") === "1" || sessionStorage.getItem("uknowapp-auth") === "1" ? "1" : "";
 
 // Высоты декоративной звуковой волны общие для всех плееров — не создаём массив при каждом рендере.
 const AUDIO_WAVE_BARS = [4, 7, 10, 6, 13, 8, 15, 10, 6, 12, 17, 9, 5, 13, 8, 16, 11, 6, 14, 9, 17, 7, 12, 5, 15, 9, 13, 6, 11, 16, 8, 12, 5, 14, 9, 7];
@@ -221,7 +221,7 @@ function MessageBubble({ message, onDelete, viewerRole }) {
 // Главный экран панели: здесь хранятся состояние разделов, данные API и действия пользователя.
 export default function App() {
   const [auth, setAuth] = useState(initialAuth);
-  const [theme, setTheme] = useState(() => localStorage.getItem("uknowapp-theme") === "dark-soft" ? "dark-soft" : "light");
+  const [theme, setTheme] = useState(() => localStorage.getItem("uknowapp-theme") || "dark-soft");
   const [profile, setProfile] = useState(null);
   const [teacherGraph, setTeacherGraph] = useState(null);
   const [draft, setDraft] = useState("");
@@ -319,7 +319,7 @@ export default function App() {
     } catch (e) {
       setError(e.message);
       if (String(e.message).toLowerCase().includes("учитель") || String(e.message).toLowerCase().includes("логин") || String(e.message).toLowerCase().includes("сессия") || String(e.message).toLowerCase().includes("войдите") || String(e.message).includes("401")) {
-        sessionStorage.removeItem("uknowapp-auth");
+        localStorage.removeItem("uknowapp-auth"); sessionStorage.removeItem("uknowapp-auth");
         setAuth("");
         setProfile(null);
       }
@@ -494,7 +494,7 @@ export default function App() {
           : typeof result.detail === "string" ? result.detail : "Не удалось войти";
         throw new Error(detail);
       }
-      sessionStorage.setItem("uknowapp-auth", "1"); setProfile(result); setPage("graph"); setAuth("1"); setPassword("");
+      localStorage.setItem("uknowapp-auth", "1"); sessionStorage.removeItem("uknowapp-auth"); setProfile(result); setPage("graph"); setAuth("1"); setPassword("");
     } catch (e) {
       setError(e.message || "Не удалось войти");
     }
@@ -506,7 +506,7 @@ export default function App() {
     } catch {
       // Clear the local view even when the server is temporarily unreachable.
     }
-    sessionStorage.removeItem("uknowapp-auth"); setAuth(""); setProfile(null); setTeacherGraph(null); setUsers([]); setOverview(null); setChats([]); setMessages([]); setSelectedChat(null); setDraft(""); setAttachment(null); setIssuedCredential(null);
+    localStorage.removeItem("uknowapp-auth"); sessionStorage.removeItem("uknowapp-auth"); setAuth(""); setProfile(null); setTeacherGraph(null); setUsers([]); setOverview(null); setChats([]); setMessages([]); setSelectedChat(null); setDraft(""); setAttachment(null); setIssuedCredential(null);
   }
 
   function openCreate(defaultRole = "student") {
