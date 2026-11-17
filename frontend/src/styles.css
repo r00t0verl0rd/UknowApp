@@ -9221,9 +9221,6 @@ body,
 .graph-panel .teacher-branch > .teacher-card > .teacher-toggle:hover,
 .graph-panel .teacher-branch > .teacher-card > .teacher-toggle:active {
   display: flex !important;
-  background: inherit !important;
-  background-color: inherit !important;
-
   flex: 1 1 0 !important;
   width: 0 !important;
   min-width: 0 !important;
@@ -9232,9 +9229,9 @@ body,
   margin: 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
+  background: inherit !important;
+  background-color: inherit !important;
+  background-image: inherit !important;
   box-shadow: none !important;
   color: inherit !important;
 }
