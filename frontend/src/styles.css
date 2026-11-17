@@ -4,10 +4,7 @@
 .shell{min-height:100vh}.sidebar{position:fixed;inset:0 auto 0 0;width:250px;background:#fff;border-right:1px solid var(--line);padding:25px 18px;display:flex;flex-direction:column;z-index:2}.brand{display:flex;align-items:center;gap:10px;padding:0 8px 32px;font-size:22px;font-weight:800;color:var(--purple)}.brand img{width:42px;height:42px;object-fit:contain}.brand span span{color:var(--red)}.school-label,.eyebrow{font-size:10px;letter-spacing:1.5px;font-weight:800;color:#a49bb4}.school-label{padding:0 11px 12px}.sidebar nav{display:grid;gap:6px}.sidebar nav button,.logout{display:flex;align-items:center;gap:12px;border:0;background:transparent;color:#716b80;padding:12px;border-radius:11px;text-align:left;font-size:13px;font-weight:700}.sidebar nav button svg,.logout svg{width:18px;height:18px}.sidebar nav button.active{background:#f0ebf9;color:var(--purple)}.sidebar nav button i{margin-left:auto;font-style:normal;font-size:11px;background:#f2eff6;padding:3px 7px;border-radius:20px}.logout{margin-top:12px;width:100%}.main{margin-left:250px;min-height:100vh}.topbar{height:70px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 34px}.topbar>div{display:flex;align-items:center;gap:9px;color:#a39bad;font-size:12px}.topbar svg{width:15px}.topbar b{color:var(--ink)}.content{max-width:1400px;margin:auto;padding:34px}.page-title{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:25px}.page-title h1{font-size:29px;letter-spacing:-1px;margin:7px 0}.page-title p,.section-head p{color:var(--muted);font-size:12px;margin:0}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:800;background:#fff;color:var(--ink)}.btn svg{width:16px;height:16px}.btn.primary{background:var(--purple);border-color:var(--purple);color:white;box-shadow:0 6px 18px #59439a24}.btn.primary:hover{background:#483581}.btn.ghost{background:#faf9fc}.btn.small{padding:8px 10px;font-size:11px}.btn.outline{color:var(--purple)}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:20px}.metric{background:white;border:1px solid var(--line);border-radius:15px;padding:17px;display:grid;grid-template-columns:34px 1fr;align-items:center;column-gap:10px}.metric svg{grid-row:span 2;width:22px;color:var(--purple)}.metric span{font-size:11px;color:var(--muted)}.metric b{font-size:22px}.graph-panel,.user-list,.chat-layout{background:white;border:1px solid var(--line);border-radius:17px;padding:22px}.section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:25px}.section-head h2{font-size:17px;margin:0 0 5px}.legend{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:10px}.legend span{width:8px;height:8px;border-radius:50%;margin-left:9px}.teacher-dot{background:var(--purple)}.student-dot{background:#e84b56}.root-node{width:230px;margin:auto;display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #e7dff3;background:#faf8fd;border-radius:13px}.root-node img{width:40px;height:40px;object-fit:contain}.root-node b,.root-node small{display:block}.root-node b{font-size:12px}.root-node small{font-size:10px;color:var(--muted);margin-top:3px}.root-node>span{margin-left:auto;font-size:9px;font-weight:800;color:var(--purple);background:#eee8f7;padding:5px 7px;border-radius:6px}.teacher-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:18px;align-items:start}.teacher-branch{position:relative;padding-top:0}.person-card{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}.teacher-card{border-color:#e4dcf1;background:#fcfaff}.person-main{display:flex;align-items:center;gap:9px;min-width:0}.avatar{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;flex:none;background:#f0eafa;color:var(--purple)}.avatar svg{width:18px}.teacher-avatar{background:#eee8f8;color:var(--purple)}.student-avatar,.avatar.student{background:#fff0f1;color:var(--red)}.person-info{min-width:0}.person-info b,.person-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.person-info b{font-size:12px}.person-info small{font-size:9px;color:var(--muted);margin-top:4px}.person-actions{display:flex;gap:4px;flex:none}.person-actions button,.icon-btn{width:30px;height:30px;border:1px solid transparent;border-radius:8px;background:transparent;color:#898198;display:grid;place-items:center}.person-actions button:hover,.icon-btn:hover{background:#f3eff8;color:var(--purple)}.person-actions svg,.icon-btn svg{width:15px;height:15px}.person-actions .danger-icon:hover,.danger-icon:hover{background:#fff0f1;color:var(--red)}.student-list{display:grid;gap:7px;margin:12px 0 0 22px;padding-left:14px;border-left:1px solid #e6dfea}.student-card{padding:9px 10px}.empty-students{padding:13px;border:1px dashed #e7e1ec;border-radius:10px;color:#a69fb0;font-size:10px;text-align:center}.add-student{margin:10px 0 0 36px;border:0;background:transparent;color:var(--purple);font-size:10px;font-weight:800;display:flex;align-items:center;gap:6px;padding:5px}.add-student svg{width:14px}.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:40px 15px;text-align:center;color:var(--muted);font-size:12px}.empty-state>svg{width:30px;height:30px;color:var(--purple)}.empty-state b{color:var(--ink)}.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;color:var(--muted);font-size:11px}.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:0 10px;width:min(360px,100%);height:40px}.search svg{width:16px;color:#aaa2b5}.search input{border:0;outline:0;width:100%;font-size:11px}.user-list{padding:0}.user-row{display:flex;align-items:center;gap:12px;padding:13px 17px;border-bottom:1px solid #f1eef4}.user-row:last-child{border:0}.user-row .person-info{flex:1}.role-tag{font-size:10px;font-weight:800;padding:5px 8px;border-radius:7px;background:#f0eafa;color:var(--purple)}.role-tag.student{background:#fff0f1;color:var(--red)}.chat-layout{display:grid;grid-template-columns:310px minmax(0,1fr);padding:0;min-height:500px;overflow:hidden}.chat-list{border-right:1px solid var(--line);padding:8px}.chat-item{display:grid;gap:6px;width:100%;text-align:left;padding:13px;border:0;border-radius:10px;background:white;color:var(--ink)}.chat-item.selected,.chat-item:hover{background:#f7f4fb}.chat-item b{font-size:11px}.chat-item small{font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chat-item span{font-size:9px;color:var(--purple)}.chat-detail{min-width:0}.chat-head{padding:17px;border-bottom:1px solid var(--line)}.chat-head b,.chat-head small{display:block}.chat-head b{font-size:12px}.chat-head small{font-size:10px;color:var(--muted);margin-top:4px}.messages{padding:18px;display:grid;align-content:start;gap:10px;max-height:600px;overflow:auto}.message{max-width:85%;padding:10px 12px;background:#f6f3fa;border-radius:10px}.message.teacher{justify-self:end;background:#fff0f1}.message b{font-size:10px}.message b small{font-weight:500;color:var(--muted);margin-left:6px}.message p{font-size:11px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0}.main footer{padding:0 34px 25px;color:#aaa3b4;font-size:10px}.main footer span{color:var(--red);padding:0 4px}
 .stack{display:grid;gap:14px}.stack label{display:grid;gap:7px;color:#6e687b;font-size:11px;font-weight:700}.stack input,.stack select{height:42px;border:1px solid var(--line);border-radius:9px;padding:0 11px;background:white;color:var(--ink);outline:0}.stack input:focus,.stack select:focus{border-color:#a997cf;box-shadow:0 0 0 3px #7856bd16}.alert{background:#fff0f1;color:#b82c3b;border:1px solid #f6d4d8;padding:11px 13px;border-radius:9px;font-size:11px}.alert-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.alert-row button{border:0;background:none;color:inherit}.alert-row svg{width:15px}.overlay{position:fixed;inset:0;background:#241b3580;backdrop-filter:blur(5px);display:grid;place-items:center;padding:20px;z-index:5}.modal{width:min(440px,100%);background:white;border-radius:18px;padding:24px;box-shadow:0 25px 90px #21163145}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px}.modal-head h2{font-size:19px;margin:6px 0 0}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}.hint{font-size:10px;color:var(--muted);line-height:1.5;margin:0}.invite-code{font:800 28px ui-monospace,monospace;letter-spacing:4px;text-align:center;color:var(--purple);background:#f5f0fb;border:1px dashed #cfc0e3;padding:18px;border-radius:12px;margin-bottom:13px}.toast{position:fixed;right:24px;bottom:24px;display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:11px;background:#2f2446;color:white;font-size:11px;z-index:8;box-shadow:0 10px 30px #21163135}.toast svg{width:16px;color:#e9a0a8}.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 
-
-
 .unassigned{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}.unassigned .section-head{margin-bottom:12px}.unassigned .section-head h2{font-size:14px}.unassigned-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:9px}.unassigned-grid .person-card{flex-wrap:wrap;background:#fffafa;border-color:#f2e5e7}
-
 
 /* Readability and layout refinement */
 :root { font-size: 15px; }
@@ -70,8 +67,6 @@
 .messages { gap: 13px; padding: 22px; }
 .message { padding: 13px 15px; }
 
-
-
 /* Connected Telegram accounts are highlighted; the disconnected label stays neutral. */
 .telegram-connected { color: #16834a; font-weight: 700; }
 
@@ -80,8 +75,6 @@
 .user-row .avatar.teacher { background: #eee8f8; color: var(--purple); }
 .user-row .role-tag.student { background: #e8f7ee; color: #16834a; }
 .user-row .role-tag.teacher { background: #eee8f8; color: var(--purple); }
-
-
 
 /* UknowApp brand theme: school purple + signal red, with restrained neon details. */
 :root {
@@ -357,7 +350,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   outline-offset: 2px;
 }
 
-
 /* Telegram disconnect action stays clear but visually secondary to delete. */
 .btn.disconnect {
   color: #a34b43;
@@ -377,11 +369,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .chat-media-download { display: inline-block; margin-top: 9px; color: var(--purple); font-weight: 650; overflow-wrap: anywhere; }
 .chat-media-status { display: block; margin-top: 8px; color: #8a6b3c; }
 
-
-
-
-
-
 /* Light decorative background for the school graph. No connector lines are drawn. */
 .graph-panel {
   background-color: #fff;
@@ -394,7 +381,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .graph-panel .student-list {
   border-left: 0;
 }
-
 
 /* Graph polish: retain the light UknowApp palette, remove visual clutter. */
 .graph-panel {
@@ -562,37 +548,22 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   margin-bottom: 11px;
 }
 
-
-
 /* Mobile layout: prevent horizontal overflow and turn dense rows into touch-friendly cards. */
 html, body, #root { width: 100%; min-height: 100%; }
 body { overflow-x: hidden; }
 .shell, .main, .content { min-width: 0; max-width: 100%; }
 img, video, audio { max-width: 100%; }
 
-
-
-
-
 /* Mobile browsers may render buttons with a transparent native appearance.
    Set explicit surfaces so controls keep the same soft-grey treatment as desktop. */
 
-
-
-
 /* Final mobile control surfaces: placed after every theme rule. */
 
-
-
 /* Preserve selected/variant states against the general mobile button rule. */
-
-
 
 /* Touch devices: give every interactive control a visible surface.
    Use pointer capability as well as viewport width because mobile browsers
    can report a wider CSS viewport when desktop-site mode is enabled. */
-
-
 
 /* Teacher/admin shared inbox */
 .topbar-user { margin-left: 12px; color: var(--purple); font-weight: 700; font-size: 11px; }
@@ -620,8 +591,6 @@ img, video, audio { max-width: 100%; }
 .composer-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .composer-footer small { color: var(--muted); font-size: 10px; line-height: 1.4; }
 
-
-
 .chat-list-tools { display: grid; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
 .chat-list-tools input, .chat-list-tools select { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); padding: 10px 11px; font-size: 12px; outline: none; }
 .chat-list-tools input:focus, .chat-list-tools select:focus { border-color: #b6a3d7; box-shadow: 0 0 0 3px #59439a12; }
@@ -633,8 +602,6 @@ img, video, audio { max-width: 100%; }
 .selected-file button { display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 6px; background: transparent; padding: 3px; color: #766d84; }
 .composer-send { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .message-time { display: block; color: #a49bad; font-size: 9px; font-weight: 500; margin-top: 3px; }
-
-
 
 .teacher-readonly-graph { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 24px; }
 .teacher-graph-root { max-width: 960px; margin: 20px auto; }
@@ -651,15 +618,11 @@ img, video, audio { max-width: 100%; }
 .teacher-graph-summary svg { color: var(--purple); }
 .teacher-graph-summary b { color: var(--ink); font-size: 18px; }
 
-
-
 .chat-head-tools { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .chat-head-tools select { max-width: 155px; min-width: 0; border: 1px solid var(--line); border-radius: 9px; padding: 7px 9px; background: #faf9fc; color: var(--ink); font-size: 10px; }
 .message-delivery { display: block; margin-top: 7px; color: #a49bad; font-size: 9px; }
 
-
 .message-delivery { color: #b45a37; line-height: 1.4; }
-
 
 /* Graph-level participant action, placed after the relationship map. */
 .graph-panel .graph-actions {
@@ -669,8 +632,6 @@ img, video, audio { max-width: 100%; }
   padding-top: 18px;
   border-top: 1px solid #eee8f4;
 }
-
-
 
 /* Friendly conversation search and filter controls */
 .chat-list-tools {
@@ -819,8 +780,6 @@ img, video, audio { max-width: 100%; }
   text-align: center;
 }
 
-
-
 /* Personal display preferences: timezone selector and soft dark theme. */
 .topbar-actions {
   display: flex;
@@ -876,7 +835,6 @@ img, video, audio { max-width: 100%; }
   box-shadow: 0 3px 8px rgba(87, 62, 153, .10);
 }
 
-
 /* Desktop and tablet actions stay in the sidebar footer / top bar. */
 .sidebar-bottom { margin-top: auto; }
 .sidebar-bottom > .desktop-logout { display: flex; }
@@ -911,7 +869,6 @@ img, video, audio { max-width: 100%; }
   border-color: #a99bcc;
   box-shadow: 0 0 0 3px #59439a12;
 }
-
 
 /* A calm, low-contrast dark palette. It is activated by the theme button and
    intentionally avoids pure black and highly saturated accent colours. */
@@ -1173,7 +1130,6 @@ img, video, audio { max-width: 100%; }
 /* The legacy mobile rules force pale surfaces with !important; this final
    theme layer keeps the selected dark palette consistent on touch screens. */
 
-
 :root[data-theme="dark-soft"] .chat-search-control input {
   background: transparent !important;
   border: 0 !important;
@@ -1364,32 +1320,17 @@ img, video, audio { max-width: 100%; }
   transform: none;
 }
 
-
-
-
-
 /* Mobile inbox: the conversation picker and open chat are separate scroll
    surfaces. The outer page can still scroll normally around both cards. */
 
-
 /* On short phones leave enough room for the message stream and composer. */
 
-
 /* Keep the two mobile cards distinct in the soft-dark theme as well. */
-
-
 
 /* Desktop inbox keeps a fixed frame regardless of conversation length.
    Only the chat list and message history scroll inside that frame. */
 
-
-
 /* Compact workspace layout: keep the user's work area ahead of decorative headers. */
-
-
-
-
-
 
 /* Unread conversations stay easy to spot without dominating the inbox. */
 .chat-item-heading {
@@ -1490,10 +1431,6 @@ img, video, audio { max-width: 100%; }
 
 /* Slightly roomier message composer; manual resizing remains disabled. */
 
-
-
-
-
 /* Teacher and student totals are part of the graph legend, not separate cards. */
 .graph-panel .graph-legend {
   display: flex;
@@ -1544,9 +1481,6 @@ img, video, audio { max-width: 100%; }
   color: #e4e8f0 !important;
 }
 
-
-
-
 /* Round Telegram video messages should retain their native circular presentation. */
 .chat-media-video.chat-media-video-note {
   width: min(100%, 260px);
@@ -1556,7 +1490,6 @@ img, video, audio { max-width: 100%; }
   border-radius: 50%;
   background: #17131f;
 }
-
 
 /* Graph legend stays at the upper-left edge of the graph workspace. */
 .graph-panel .graph-legend-row {
@@ -1701,9 +1634,6 @@ img, video, audio { max-width: 100%; }
   height: 3px;
 }
 
-
-
-
 /* Keep the primary graph action at the top beside the legend. */
 .graph-panel .graph-legend-row {
   align-items: center;
@@ -1717,9 +1647,6 @@ img, video, audio { max-width: 100%; }
   padding: 9px 13px;
   white-space: nowrap;
 }
-
-
-
 
 /* Final graph-card sizing: keep the admin identity on one compact row and
    make student cards shrink safely inside narrow teacher branches. */
@@ -1838,11 +1765,6 @@ img, video, audio { max-width: 100%; }
   width: 27px;
   height: 27px;
 }
-
-
-
-
-
 
 /* Preserve comfortable teacher columns; only the card contents may shrink. */
 .graph-panel .teacher-grid {
@@ -2053,11 +1975,6 @@ img, video, audio { max-width: 100%; }
   color: #f0f2f7;
 }
 
-
-
-
-
-
 /* Teacher cards use the same responsive name wrapping as student cards.
    Keep avatar and action buttons fixed while the name column takes the
    remaining width and can wrap at any viewport/zoom level. */
@@ -2126,11 +2043,6 @@ img, video, audio { max-width: 100%; }
   height: 28px;
 }
 
-
-
-
-
-
 /* Make graph totals easy to notice: clear, positive number chips with
    enough visual weight to encourage progress without competing with the graph. */
 .graph-panel .graph-legend {
@@ -2183,14 +2095,8 @@ img, video, audio { max-width: 100%; }
   box-shadow: 0 3px 12px rgba(0, 0, 0, .16);
 }
 
-
-
-
-
-
 /* Conversation picker: search/filter stay above a separate scrollable list
    so items cannot slide underneath the controls on mobile screens. */
-
 
 /* A little more room to compose messages on every screen size. */
 .chat-composer textarea {
@@ -2198,8 +2104,6 @@ img, video, audio { max-width: 100%; }
   max-height: 132px;
   resize: none;
 }
-
-
 
 /* Light theme: clearer panel/control outlines and softer text contrast. */
 :root:not([data-theme="dark-soft"]) {
@@ -2480,13 +2384,6 @@ img, video, audio { max-width: 100%; }
   background: #a94e60;
 }
 
-
-
-
-
-
-
-
 /* Compact participant details: opened from the info icon, not shown inline. */
 .user-list {
   overflow: visible;
@@ -2729,11 +2626,6 @@ img, video, audio { max-width: 100%; }
   color: #edf0f6;
 }
 
-
-
-
-
-
 /* Unassigned students follow the same column rhythm and card proportions
    as the main teacher branches. */
 .graph-panel .unassigned {
@@ -2858,11 +2750,6 @@ img, video, audio { max-width: 100%; }
   border-color: #66728c !important;
 }
 
-
-
-
-
-
 /* Branded in-app confirmation for destructive participant actions. */
 .confirm-delete-modal .modal-head {
   align-items: center;
@@ -2924,9 +2811,6 @@ img, video, audio { max-width: 100%; }
   box-shadow: 0 5px 16px rgba(0, 0, 0, .22);
 }
 
-
-
-
 /* Onest keeps the interface crisp and friendly while supporting Cyrillic well. */
 html,
 body,
@@ -2944,13 +2828,8 @@ textarea {
   line-height: 1.35;
 }
 
-
-
 /* Desktop inbox: keep the conversation picker in its own scroll area.
    Flex sizing prevents chat rows from sharing/overlapping the same grid track. */
-
-
-
 
 /* The conversation workspace follows the available viewport height. */
 .chat-layout {
@@ -2995,16 +2874,7 @@ textarea {
   overflow-y: auto;
 }
 
-
-
-
-
-
 /* Chat workspace fills the remaining browser viewport below the app header. */
-
-
-
-
 
 /* Final narrow-screen safeguards (including iPhone mini widths). */
 html,
@@ -3044,22 +2914,10 @@ body {
   max-width: 100%;
 }
 
-
-
-
-
-
 /* Keep the mobile sign-out control compact and clear of nearby controls. */
-
-
-
-
 
 /* Mobile layout: keep the graph action on the right and constrain every dialog
    to the viewport, including long forms and confirmation windows. */
-
-
-
 
 /* Keep the graph counters and add-participant action on one line, even on
    extra-narrow phones. Both sides may compact, but must never wrap. */
@@ -3107,14 +2965,7 @@ body {
   height: 14px;
 }
 
-
-
-
 /* The create-participant form stays fully inside short, narrow mobile viewports. */
-
-
-
-
 
 /* Graph header: keep the counters at their natural width and match the
    add-participant button height to the counter block. */
@@ -3138,15 +2989,10 @@ body {
   box-sizing: border-box;
 }
 
-
-
-
 /* Prevent graph counter badges from escaping their compact column on phones. */
 
 /* Responsive layout: exactly three viewport-width ranges. */
 @media (min-width: 1025px) {
-
-  
 
   .chat-layout {
     height: clamp(480px, calc(100dvh - 300px), 760px);
@@ -3195,8 +3041,6 @@ body {
   .chat-composer {
     flex: 0 0 auto;
   }
-
-
 
   .sidebar {
     width: 232px;
@@ -3397,14 +3241,10 @@ body {
     max-height: 100px;
   }
 
-
-
   .chat-composer textarea {
     min-height: 58px;
     max-height: 112px;
   }
-
-
 
   .chat-layout {
     min-height: 620px;
@@ -3459,7 +3299,6 @@ body {
     box-sizing: border-box;
   }
 
-
 @media (max-height: 650px) {
 
   .chat-layout {
@@ -3467,7 +3306,6 @@ body {
   }
 
 }
-
 
   .chats-shell {
     height: 100dvh;
@@ -3502,23 +3340,16 @@ body {
   .content { padding-inline: clamp(30px, 2.5vw, 42px); }
 }
 
-
-
 @media (max-width: 1024px) {
-
-  
 
 .sidebar{width:210px}.main{margin-left:210px}.content{padding:25px}.metrics{grid-template-columns:repeat(2,1fr)}
 
 .sidebar{position:static;width:auto;height:auto;padding:12px;display:block;border-right:0;border-bottom:1px solid var(--line)}.brand{padding:0 4px 12px}.brand img{width:32px;height:32px}.school-label{display:none}.sidebar nav{display:flex;gap:5px}.sidebar nav button{flex:1;justify-content:center;padding:10px 5px;font-size:10px}.sidebar nav button i{display:none}.main{margin:0}.topbar{height:54px;padding:0 16px}.content{padding:20px 14px}.page-title{align-items:flex-start;flex-direction:column}.page-title h1{font-size:25px}.metrics{gap:8px}.metric{padding:12px}.graph-panel{padding:14px}.section-head{align-items:flex-start;flex-direction:column}.teacher-grid{grid-template-columns:1fr}.user-row{flex-wrap:wrap}.user-row .person-info{min-width:calc(100% - 65px)}.role-tag{margin-left:45px}.chat-layout{grid-template-columns:1fr}.chat-list{border-right:0;border-bottom:1px solid var(--line);max-height:220px;overflow:auto}.main footer{padding:0 14px 18px}.login-card{padding:26px}.login-logo{width:90px;height:90px}
 
-
   .sidebar { width: 230px; }
   .main { margin-left: 230px; }
   .content { padding: 28px 24px; }
   .brand img { width: 52px; height: 52px; }
-
-
 
   .sidebar { width: auto; padding: 14px; }
   .brand { font-size: 22px; padding-bottom: 14px; }
@@ -3531,8 +3362,6 @@ body {
   .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .metric { min-height: 60px; }
   .root-node { max-width: 100%; }
-
-
 
   .graph-panel {
     padding: 17px;
@@ -3547,8 +3376,6 @@ body {
     grid-template-columns: 1fr;
     gap: 13px;
   }
-
-
 
   .sidebar {
     position: sticky;
@@ -3660,8 +3487,6 @@ body {
   .stack input, .stack select { width: 100%; min-width: 0; }
   .main footer { padding: 0 12px 16px; }
 
-
-
   .sidebar nav button { font-size: 10px; gap: 4px; }
   .sidebar nav button svg { width: 14px; height: 14px; }
   .content { padding-right: 9px; padding-left: 9px; }
@@ -3672,8 +3497,6 @@ body {
   .graph-panel .person-actions button { width: 28px; height: 28px; }
   .metric { grid-template-columns: 21px minmax(0, 1fr); padding: 9px 7px; }
   .metric svg { width: 17px; }
-
-
 
   button,
   .btn,
@@ -3721,8 +3544,6 @@ body {
     border-color: #e2d8ef;
   }
 
-
-
   button:not(.primary):not(.disconnect):not(.danger-icon),
   .btn:not(.primary):not(.disconnect),
   .sidebar nav button,
@@ -3758,8 +3579,6 @@ body {
     color: #b82c3b !important;
   }
 
-
-
   .sidebar nav button.active:not(.primary):not(.disconnect):not(.danger-icon) {
     background: linear-gradient(105deg, #573e99, #7856bd) !important;
     border-color: transparent !important;
@@ -3778,8 +3597,6 @@ body {
     color: var(--purple) !important;
   }
 
-
-
   .topbar-user { display: none; }
   .chat-layout { grid-template-columns: minmax(0,1fr); min-height: 0; }
   .chat-list { max-height: 190px; border-right: 0; border-bottom: 1px solid var(--line); padding: 8px; }
@@ -3790,14 +3607,10 @@ body {
   .composer-footer .btn { width: 100%; }
   .message { max-width: 94%; }
 
-
-
   .chat-list-tools { grid-template-columns: minmax(0,1fr) minmax(110px,.8fr); gap: 6px; }
   .chat-list-tools input, .chat-list-tools select { font-size: 11px; padding: 9px 7px; }
   .composer-send { align-items: stretch; flex-direction: column; }
   .composer-send .btn { width: 100%; }
-
-
 
   .teacher-readonly-graph { padding: 14px; }
   .teacher-graph-card { padding: 12px; gap: 9px; }
@@ -3805,29 +3618,19 @@ body {
   .teacher-graph-card .readonly-tag { font-size: 9px; padding: 5px 7px; }
   .teacher-graph-student-grid { grid-template-columns: minmax(0,1fr); gap: 8px; }
 
-
-
   .sidebar nav { grid-template-columns: repeat(auto-fit,minmax(105px,1fr)); }
   .chat-head-tools { flex-wrap: wrap; }
   .chat-head-tools select { max-width: 145px; }
 
-
-
   .graph-panel .graph-actions .btn { width: 100%; justify-content: center; }
-
-
 
   .chat-list-tools { grid-template-columns: minmax(0,1fr); padding: 10px 8px; }
   .chat-filter-segment button { font-size: 9px; gap: 4px; }
   .credential-password b { font-size: 24px; }
 
-
-
   .topbar-actions { gap: 5px; }
   .theme-toggle { width: 33px; height: 33px; flex: 0 0 33px; }
   .timezone-control select { height: 36px; }
-
-
 
   :root[data-theme="dark-soft"] button:not(.primary):not(.disconnect):not(.danger-icon),
   :root[data-theme="dark-soft"] .btn:not(.primary):not(.disconnect):not(.danger-icon),
@@ -3855,8 +3658,6 @@ body {
     border-color: #514b6d !important;
     color: #d1c9f4 !important;
   }
-
-
 
   .content { padding: 16px 12px; }
   .graph-panel {
@@ -3938,15 +3739,11 @@ body {
     transform: none;
   }
 
-
-
   .content { padding: 12px 9px; }
   .graph-panel { padding: 9px; }
   .graph-panel .teacher-branch { padding: 7px; }
   .graph-panel .person-card { padding: 7px; gap: 5px; }
   .graph-panel .person-actions button { width: 28px; height: 28px; flex-basis: 28px; }
-
-
 
   .chat-layout {
     display: grid;
@@ -4071,7 +3868,6 @@ body {
     box-sizing: border-box;
   }
 
-
 @media (max-height: 700px) {
 
   .chat-list {
@@ -4094,7 +3890,6 @@ body {
   }
 
 }
-
 
   :root[data-theme="dark-soft"] .chat-layout {
     background: transparent !important;
@@ -4128,8 +3923,6 @@ body {
   :root[data-theme="dark-soft"] .messages {
     background: #191f2a !important;
   }
-
-
 
   .content {
     padding: 12px 10px 16px;
@@ -4173,14 +3966,10 @@ body {
     margin: 10px 0 0;
   }
 
-
-
   .chat-composer textarea {
     min-height: 54px;
     max-height: 120px;
   }
-
-
 
   .graph-panel .graph-legend {
     gap: 9px;
@@ -4191,8 +3980,6 @@ body {
     gap: 6px;
     font-size: 10px;
   }
-
-
 
   .graph-panel .graph-legend-row {
     margin-bottom: 14px;
@@ -4210,8 +3997,6 @@ body {
     height: 28px;
   }
 
-
-
   .graph-panel .graph-legend-row {
     align-items: flex-start;
     flex-wrap: wrap;
@@ -4220,8 +4005,6 @@ body {
   .graph-panel .graph-add-participant {
     min-height: 36px;
   }
-
-
 
   .graph-panel .root-node {
     width: fit-content;
@@ -4255,8 +4038,6 @@ body {
     width: 25px;
     height: 25px;
   }
-
-
 
   .graph-panel .root-node {
     gap: 8px;
@@ -4311,8 +4092,6 @@ body {
     max-width: 100%;
   }
 
-
-
   .user-meta {
     gap: 4px 7px;
   }
@@ -4331,8 +4110,6 @@ body {
     flex-basis: 28px;
   }
 
-
-
   .graph-panel .teacher-card {
     gap: 6px;
   }
@@ -4347,8 +4124,6 @@ body {
     height: 27px;
   }
 
-
-
   .graph-panel .teacher-card {
     gap: 5px;
     padding: 7px;
@@ -4359,8 +4134,6 @@ body {
     width: 25px;
     height: 25px;
   }
-
-
 
   .graph-panel .graph-legend {
     gap: 12px;
@@ -4379,8 +4152,6 @@ body {
     border-radius: 9px;
   }
 
-
-
   .graph-panel .graph-legend {
     gap: 8px;
   }
@@ -4396,8 +4167,6 @@ body {
     padding: 0 8px;
     font-size: 14px;
   }
-
-
 
   .chat-list {
     display: flex;
@@ -4447,8 +4216,6 @@ body {
     background: #1d2430 !important;
     border-bottom-color: #39465a !important;
   }
-
-
 
   .chat-composer textarea {
     min-height: 62px;
@@ -4551,8 +4318,6 @@ body {
     padding: 12px 10px;
   }
 
-
-
   .user-action-btn.connect-toggle {
     min-width: 118px;
     height: 40px;
@@ -4565,13 +4330,9 @@ body {
     flex-basis: 40px;
   }
 
-
-
   .user-info-popover {
     right: -48px;
   }
-
-
 
   .graph-panel .unassigned-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -4588,8 +4349,6 @@ body {
     width: 32px;
     height: 32px;
   }
-
-
 
   .graph-panel .unassigned-student-card {
     padding: 10px;
@@ -4614,8 +4373,6 @@ body {
     padding: 7px 10px;
   }
 
-
-
   .confirm-delete-modal .modal-actions {
     flex-wrap: nowrap;
   }
@@ -4625,13 +4382,9 @@ body {
     min-width: 0;
   }
 
-
-
   .user-person-info > b {
     font-size: 15px;
   }
-
-
 
   .chat-layout {
     height: clamp(520px, calc(100dvh - 205px), 1000px);
@@ -4655,8 +4408,6 @@ body {
   .chat-detail > .messages {
     max-height: none;
   }
-
-
 
   .chats-shell {
     height: 100dvh;
@@ -4695,8 +4446,6 @@ body {
     max-height: none;
     grid-template-rows: clamp(130px, 25dvh, 210px) minmax(0, 1fr);
   }
-
-
 
   .login-screen {
     padding: 14px;
@@ -4792,8 +4541,6 @@ body {
     text-align: center;
   }
 
-
-
   .login-card {
     padding: 24px 16px 20px;
   }
@@ -4818,8 +4565,6 @@ body {
   .chat-layout {
     padding: 9px;
   }
-
-
 
 .sidebar-bottom .logout svg {
     width: 19px;
@@ -4910,8 +4655,6 @@ body {
     overflow-wrap: anywhere;
   }
 
-
-
   .overlay {
     padding: 8px;
   }
@@ -4926,8 +4669,6 @@ body {
     padding: 8px 10px;
     font-size: 11px;
   }
-
-
 
   .graph-panel .graph-legend-row {
     gap: 3px;
@@ -4944,8 +4685,6 @@ body {
     font-size: 9px;
     gap: 3px;
   }
-
-
 
   .overlay:has(.create-participant-modal) {
     display: flex;
@@ -5000,8 +4739,6 @@ body {
     min-height: 42px;
   }
 
-
-
   .overlay > .create-participant-modal {
     padding: 14px;
     border-radius: 14px;
@@ -5015,8 +4752,6 @@ body {
     gap: 8px;
   }
 
-
-
   .graph-panel .graph-legend-row > .graph-legend {
     max-width: 48%;
   }
@@ -5024,8 +4759,6 @@ body {
   .graph-panel .graph-add-participant {
     max-width: 52%;
   }
-
-
 
   .graph-panel .graph-legend-row > .graph-legend {
     flex: 0 1 48%;
@@ -5057,8 +4790,6 @@ body {
     padding: 2px 4px;
     font-size: 9px;
   }
-
-
 
   .graph-panel .graph-legend-row > .graph-legend {
     padding-inline: 4px;
@@ -6098,8 +5829,6 @@ button:disabled,
   }
 }
 
-
-
 /* Compact action groups across Structure, Users and Conversations. */
 .page-title > .btn,
 .page-title > .btn-group {
@@ -6384,7 +6113,6 @@ button:disabled,
   }
 }
 
-
 /* Calm, consistent button language — refined hierarchy and lighter surfaces. */
 :root {
   --button-bg: #fff;
@@ -6630,7 +6358,6 @@ button:focus-visible, .btn:focus-visible {
   box-shadow: none !important;
 }
 
-
 /* Users toolbar: stable alignment, static count, equal-height search and sort. */
 .toolbar.user-toolbar {
   display: grid !important;
@@ -6772,7 +6499,6 @@ button:focus-visible, .btn:focus-visible {
   }
 }
 
-
 /* User count: a quiet information chip, visually aligned with search and sort. */
 .toolbar.user-toolbar > .user-count {
   min-height: 42px !important;
@@ -6823,7 +6549,6 @@ button:focus-visible, .btn:focus-visible {
   }
 }
 
-
 /* Very narrow phones: give the count and add action their own full-width rows. */
 @media (max-width: 480px) {
   .toolbar.user-toolbar {
@@ -6868,7 +6593,6 @@ button:focus-visible, .btn:focus-visible {
     flex: 0 0 auto !important;
   }
 }
-
 
 /* Keep the navigation shell fixed while only the active section viewport changes. */
 .chats-main > .content:not(.chats-content) {
@@ -6926,7 +6650,6 @@ button:focus-visible, .btn:focus-visible {
     padding-bottom: 14px;
   }
 }
-
 
 /* Touch-first viewport and dialog behavior for tablet and mobile layouts. */
 @media (max-width: 1024px) {
@@ -7096,10 +6819,8 @@ button:focus-visible, .btn:focus-visible {
   }
 }
 
-
 /* Responsive inbox workspace: keep the composer visible and scroll only
    the conversation list and message history on touch-sized screens. */
-
 
 @media (max-width: 1024px) {
   .chats-main > .content.chats-content {
@@ -7348,7 +7069,6 @@ button:focus-visible, .btn:focus-visible {
   background: #222b39;
 }
 
-
 /* Mobile chat proportions: prioritize the conversation history over the picker. */
 @media (max-width: 1024px) {
   .chats-content > .chat-layout {
@@ -7370,14 +7090,12 @@ button:focus-visible, .btn:focus-visible {
   }
 }
 
-
 /* Give the mobile conversation picker enough height for its controls and several chats. */
 @media (max-width: 1024px) {
   .chats-content > .chat-layout {
     grid-template-rows: minmax(150px, min(30dvh, 230px)) minmax(0, 1fr);
   }
 }
-
 
 /* Custom audio controls with a clear play target and animated waveform. */
 .chat-audio-player {
@@ -7477,7 +7195,6 @@ button:focus-visible, .btn:focus-visible {
   .chat-audio-wave { height: 23px; }
   .chat-audio-seek { height: 23px; }
 }
-
 
 /* --------------------------------------------------------------------------
    UknowApp visual system — final shared palette for every screen and state.
@@ -7728,7 +7445,6 @@ button:focus-visible, a:focus-visible {
   }
 }
 
-
 /* Stable user rows on tablets: identity and actions occupy predictable
    grid tracks; long names never compete with the action controls. */
 .user-list,
@@ -7843,10 +7559,8 @@ button:focus-visible, a:focus-visible {
   }
 }
 
-
 /* Seamless responsive workspace: tablet bounds and single-line user actions. */
 /* Keep every workspace inside the viewport at tablet widths. */
-
 
 /* User identity and controls stay on the same row at every screen size. */
 .user-row {
@@ -7998,18 +7712,13 @@ button:focus-visible, a:focus-visible {
   }
 }
 
-
 /* Tablet fix: the desktop sidebar is fixed to the viewport. At tablet
    widths it must return to normal flow, otherwise its full-width layer
    covers the workspace and makes the active section appear empty. */
 
-
-
 /* Tablet workspace: keep the navigation in a compact left rail and reserve
    the remaining viewport for the active page. This avoids the full-width
    sidebar consuming the entire tablet height at intermediate breakpoints. */
-
-
 
 /* Mobile chat: keep the conversation history as the primary workspace.
    The picker stays usable but compact; the composer uses a two-column footer
@@ -8150,7 +7859,6 @@ button:focus-visible, a:focus-visible {
     font-size: 12px;
   }
 }
-
 
 /* Mobile inbox navigation: list and conversation are separate full-height
    screens. This avoids squeezing both into the same small viewport. */
@@ -8415,7 +8123,6 @@ button:focus-visible, a:focus-visible {
   .mobile-chat-back { display: none; }
 }
 
-
 /* Align mobile composer note and send action in a predictable footer grid. */
 @media (max-width: 1024px) {
   .chat-composer .composer-footer {
@@ -8494,7 +8201,6 @@ button:focus-visible, a:focus-visible {
   }
 }
 
-
 /* Mobile chat uses the available viewport directly, without nested card frames. */
 @media (max-width: 1024px) {
   .chats-main > .content.chats-content {
@@ -8566,7 +8272,6 @@ button:focus-visible, a:focus-visible {
     min-height: 42px;
   }
 }
-
 
 /* Shared full-viewport workspace for Structure, Users and Conversations.
    Keep useful inner cards (people, metrics, controls), flatten only redundant
@@ -8668,8 +8373,6 @@ button:focus-visible, a:focus-visible {
   }
 }
 
-
-
 @media (max-width: 1024px) {
   .chats-shell {
     height: 100dvh;
@@ -8710,7 +8413,6 @@ button:focus-visible, a:focus-visible {
     padding: 0;
   }
 }
-
 
 /* Restore the graph's soft rounded surfaces while keeping the workspace full width. */
 .chats-main > .content:not(.chats-content) > .graph-panel,
@@ -8830,7 +8532,6 @@ button:focus-visible, a:focus-visible {
   }
 }
 
-
 /* Message ownership actions */
 .message-topline {
   display: flex;
@@ -8889,7 +8590,6 @@ button:focus-visible, a:focus-visible {
   color: #ff9ca7;
 }
 
-
 /* Desktop and tablet: keep attachment controls and the send action on one row. */
 @media (min-width: 1025px) {
   .chat-composer .composer-footer {
@@ -8939,7 +8639,6 @@ button:focus-visible, a:focus-visible {
   letter-spacing: .1px;
   opacity: .82;
 }
-
 
 /* Light theme: softer conversation list and clearer message surfaces. */
 :root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item {
@@ -9000,7 +8699,6 @@ button:focus-visible, a:focus-visible {
   color: #817b8d;
 }
 
-
 /* Match light-theme message colors to the participant cards in the graph. */
 :root:not([data-theme="dark-soft"]) .chat-detail .message.student {
   background: linear-gradient(105deg, #fff8e9, #fffdf7 78%);
@@ -9016,7 +8714,6 @@ button:focus-visible, a:focus-visible {
   background: linear-gradient(110deg, #edf6ec, #f8fcf6 78%);
   border-color: #d7e8d3;
 }
-
 
 /* iPhone standalone: keep the brand below the transparent iOS status area. */
 @media (max-width: 1024px) {
@@ -9071,7 +8768,6 @@ button:focus-visible, a:focus-visible {
 .chat-detail .message-topline:not(:has(> b)) {
   justify-content: flex-end;
 }
-
 
 /* --------------------------------------------------------------------------
    UknowApp role-first color language — shared by graph, chats and user lists.
@@ -9223,7 +8919,6 @@ body,
   background: #ece7f4;
 }
 
-
 /* Graph surfaces: warm the remaining near-white islands in the light theme. */
 :root:not([data-theme="dark-soft"]) .graph-panel .graph-legend-row > .graph-legend {
   background: #f0edf5;
@@ -9307,7 +9002,6 @@ body,
   border-radius: 16px;
   padding: 12px;
 }
-
 
 /* Light theme harmony pass: replace cool grey patches with the warm,
    softly tinted surfaces used by the dark theme's layered palette. */
@@ -9402,7 +9096,6 @@ body,
   border-color: #e7dfef;
 }
 
-
 /* Dark theme: soften semantic accents so color supports hierarchy without
    competing with content. Keep the student/teacher/admin distinction intact. */
 :root[data-theme="dark-soft"] {
@@ -9436,7 +9129,6 @@ body,
   background-image: none !important;
 }
 
-
 /* Users page: dark-theme role icons follow the shared student/teacher palette. */
 :root[data-theme="dark-soft"] .user-list .user-row > .avatar.student {
   background: var(--role-student-soft) !important;
@@ -9446,7 +9138,6 @@ body,
   background: var(--role-teacher-soft) !important;
   color: var(--role-teacher) !important;
 }
-
 
 /* Conversation picker: calm surface hierarchy, clear selection and unread states. */
 .chat-items-scroll > .chat-item {
