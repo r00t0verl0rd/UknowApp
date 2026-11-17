@@ -9248,3 +9248,12 @@ body,
   box-shadow: none !important;
 }
 
+
+
+/* Keep teacher identity text aligned with the active theme palette. */
+.graph-panel .teacher-branch > .teacher-card > .teacher-toggle .person-info b {
+  color: var(--ink) !important;
+}
+.graph-panel .teacher-branch > .teacher-card > .teacher-toggle .person-info small {
+  color: var(--muted) !important;
+}
