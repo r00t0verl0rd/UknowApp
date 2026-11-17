@@ -15,7 +15,7 @@ from .models import PanelSession, User
 
 SESSION_COOKIE = "uknowapp_session"
 SECURE_SESSION_COOKIE = "__Host-uknowapp_session"
-SESSION_TTL = timedelta(hours=8)
+SESSION_TTL = timedelta(days=30)
 SESSION_MAX_AGE = int(SESSION_TTL.total_seconds())
 _LOGIN_WINDOW_SECONDS = 15 * 60
 _LOGIN_USER_LIMIT = 8
