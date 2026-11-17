@@ -9273,11 +9273,11 @@ body,
   }
 }
 
-/* Keep the teacher expand chevron consistent in the mobile dark theme. */
+/* Match the chevron foreground to dark-theme person-card / teacher-card text. */
 @media (max-width: 767px) {
   :root[data-theme="dark-soft"] .graph-panel .teacher-branch > .teacher-card > .teacher-toggle > .teacher-toggle-chevron {
-    color: #9ba6b8 !important;
-    -webkit-text-fill-color: #9ba6b8 !important;
+    color: #e4e8f0 !important;
+    -webkit-text-fill-color: #e4e8f0 !important;
   }
 }
 
