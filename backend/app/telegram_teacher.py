@@ -542,8 +542,8 @@ async def handle_teacher_keyboard_message(
     if body.startswith("Написать · "):
         try:
             await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Could not delete stale teacher keyboard message (error_type=%s)", type(exc).__name__)
         await update_teacher_panel(bot, db, teacher, force_keyboard_refresh=True)
         return True
 
@@ -575,8 +575,8 @@ async def handle_teacher_keyboard_message(
             )
             try:
                 await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Could not delete ambiguous teacher keyboard message (error_type=%s)", type(exc).__name__)
             await update_teacher_panel(bot, db, teacher)
             return True
         valid = get_teacher_conversation(db, teacher, conversation.id)
@@ -599,15 +599,6 @@ async def handle_teacher_keyboard_message(
         if panel:
             panel.page_index = min(total_pages - 1, page + 1)
             db.commit()
-    elif body.startswith("Написать · "):
-        # A stale button from a previous keyboard layout must never be forwarded
-        # as a message to whichever student happened to be selected earlier.
-        try:
-            await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
-        except Exception:
-            pass
-        await update_teacher_panel(bot, db, teacher)
-        return True
     else:
         return False
 
