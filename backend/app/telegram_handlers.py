@@ -458,6 +458,137 @@ async def _handle_unlinked_sender(message: TgMessage, bot: Bot, db) -> None:
         )
 
 
+async def _deliver_student_message_to_teacher(
+    db, bot: Bot, message: TgMessage, row: Message,
+    conversation: Conversation, sender: User, teacher: User,
+) -> None:
+    """Deliver a student's message and its native media to the teacher inbox."""
+    attachment_metadata = json.loads(row.metadata_json or "{}")
+    if attachment_metadata.get("media"):
+        original_caption = (message.caption or "").strip()
+        label_caption = "📎 От ученика: " + sender.full_name
+        if original_caption:
+            label_caption += "\n" + original_caption
+        try:
+            copied = await bot.copy_message(
+                chat_id=teacher.telegram_id,
+                from_chat_id=message.chat.id,
+                message_id=message.message_id,
+                caption=label_caption[:1024],
+            )
+        except Exception as copy_error:
+            logger.info(
+                "Telegram copy with caption failed; retrying without caption "
+                "(conversation_id=%s error_type=%s)",
+                conversation.id, type(copy_error).__name__,
+            )
+            notice = await bot.send_message(
+                chat_id=teacher.telegram_id,
+                text="📎 Вложение от ученика: " + sender.full_name,
+            )
+            copied = await bot.copy_message(
+                chat_id=teacher.telegram_id,
+                from_chat_id=message.chat.id,
+                message_id=message.message_id,
+            )
+            attachment_metadata["teacher_inbox_notice_message_id"] = notice.message_id
+
+        attachment_metadata["teacher_inbox_media_message_id"] = copied.message_id
+        row.metadata_json = json.dumps(attachment_metadata, ensure_ascii=False)
+
+    row.delivery_status = "delivered"
+    db.commit()
+    publish_chat_update(conversation.id)
+    teacher_session = db.get(TeacherSession, teacher.id)
+    if teacher_session and teacher_session.conversation_id != conversation.id:
+        # A message from another student returns the teacher to the grouped inbox.
+        clear_teacher_session(db, teacher)
+    try:
+        await update_teacher_panel(bot, db, teacher)
+    except Exception as exc:
+        logger.warning("Could not refresh teacher panel (error_type=%s)", type(exc).__name__)
+
+
+async def _deliver_teacher_reply(
+    db, bot: Bot, message: TgMessage, row: Message,
+    conversation: Conversation, teacher: User, student: User,
+    unanswered_before_reply: list[Message],
+) -> None:
+    """Copy a teacher reply to the student's latest active Telegram channel."""
+    destination_chat_id = student.telegram_id
+    destination_thread_id = None
+    for pending in reversed(unanswered_before_reply):
+        pending_metadata = json.loads(pending.metadata_json or "{}")
+        if pending_metadata.get("source_mode") == "group_topic":
+            destination_chat_id = int(pending_metadata["source_chat_id"])
+            destination_thread_id = int(pending_metadata["source_thread_id"])
+            break
+        if pending_metadata.get("source_mode", "private") == "private":
+            destination_chat_id = student.telegram_id
+            destination_thread_id = None
+            break
+
+    if not unanswered_before_reply:
+        current_binding = db.get(StudentTelegramGroup, student.id)
+        if current_binding:
+            destination_chat_id = current_binding.chat_id
+            destination_thread_id = current_binding.thread_id
+
+    copy_kwargs = {
+        "chat_id": destination_chat_id,
+        "from_chat_id": message.chat.id,
+        "message_id": message.message_id,
+    }
+    if destination_thread_id is not None:
+        copy_kwargs["message_thread_id"] = destination_thread_id
+    copied = await bot.copy_message(**copy_kwargs)
+    row.destination_message_id = copied.message_id
+    delivery_metadata = json.loads(row.metadata_json or "{}")
+    delivery_metadata["telegram_deliveries"] = [{
+        "user_id": student.id,
+        "telegram_message_id": copied.message_id,
+        "chat_id": destination_chat_id,
+        "thread_id": destination_thread_id,
+    }]
+    row.metadata_json = json.dumps(delivery_metadata, ensure_ascii=False)
+    row.delivery_status = "delivered"
+    db.commit()
+    publish_chat_update(conversation.id)
+
+    # Remove ordinary text after it is captured in the persistent panel.
+    # Native media remains visible in the teacher's Telegram chat.
+    if message.text:
+        try:
+            await bot.delete_message(chat_id=teacher.telegram_id, message_id=message.message_id)
+        except Exception as exc:
+            logger.info(
+                "Could not remove teacher's sent text from the bot chat (error_type=%s)",
+                type(exc).__name__,
+            )
+
+    # A successful teacher reply closes the pending batch.
+    for pending in unanswered_before_reply:
+        inbox_message_id = pending.destination_message_id
+        if not inbox_message_id:
+            continue
+        try:
+            await bot.delete_message(
+                chat_id=teacher.telegram_id,
+                message_id=int(inbox_message_id),
+            )
+        except Exception as exc:
+            logger.info(
+                "Could not remove handled student message %s from teacher inbox "
+                "(telegram_message_id=%s error_type=%s)",
+                pending.id, inbox_message_id, type(exc).__name__,
+            )
+    mark_messages_read_by_teacher(db, unanswered_before_reply)
+    try:
+        await update_teacher_panel(bot, db, teacher)
+    except Exception as exc:
+        logger.warning("Could not refresh teacher inbox (error_type=%s)", type(exc).__name__)
+
+
 @router.message()
 async def route_message(message: TgMessage, bot: Bot):
     sender_chat = message.sender_chat
@@ -576,144 +707,14 @@ async def route_message(message: TgMessage, bot: Bot):
             return
         try:
             if sender.role == "student":
-                # Keep text in the persistent conversation panel, and copy each
-                # recognized attachment into the teacher's private bot chat.
-                # copy_message preserves the original Telegram media type and caption,
-                # including photos, videos, voice notes, audio, documents, stickers,
-                # animations and video notes.
-                attachment_metadata = json.loads(row.metadata_json or "{}")
-                if attachment_metadata.get("media"):
-                    original_caption = (message.caption or "").strip()
-                    label_caption = "📎 От ученика: " + sender.full_name
-                    if original_caption:
-                        label_caption += "\n" + original_caption
-                    try:
-                        copied = await bot.copy_message(
-                            chat_id=recipient.telegram_id,
-                            from_chat_id=message.chat.id,
-                            message_id=message.message_id,
-                            caption=label_caption[:1024],
-                        )
-                    except Exception as copy_error:
-                        logger.info(
-                            "Telegram copy with caption failed; retrying without caption "
-                            "(conversation_id=%s error_type=%s)",
-                            conversation.id, type(copy_error).__name__,
-                        )
-                        # Some Telegram message types (for example stickers) do not
-                        # accept captions. In that case send a clearly paired label.
-                        notice = await bot.send_message(
-                            chat_id=recipient.telegram_id,
-                            text="📎 Вложение от ученика: " + sender.full_name,
-                        )
-                        copied = await bot.copy_message(
-                            chat_id=recipient.telegram_id,
-                            from_chat_id=message.chat.id,
-                            message_id=message.message_id,
-                        )
-                        attachment_metadata["teacher_inbox_notice_message_id"] = notice.message_id
-
-                    attachment_metadata["teacher_inbox_media_message_id"] = copied.message_id
-                    row.metadata_json = json.dumps(attachment_metadata, ensure_ascii=False)
-
-                row.delivery_status = "delivered"
-                db.commit()
-                publish_chat_update(conversation.id)
-                teacher_session = db.get(TeacherSession, recipient.id)
-                if teacher_session and teacher_session.conversation_id != conversation.id:
-                    # A new message from another student returns the teacher to
-                    # the grouped inbox so a different student's attachment or
-                    # text never appears to belong to the currently open chat.
-                    clear_teacher_session(db, recipient)
-                try:
-                    await update_teacher_panel(bot, db, recipient)
-                except Exception as exc:
-                    logger.warning("Could not refresh teacher panel (error_type=%s)", type(exc).__name__)
+                await _deliver_student_message_to_teacher(
+                    db, bot, message, row, conversation, sender, recipient
+                )
             else:
-                # Reply in the same channel where the student's latest
-                # unanswered message arrived: forum topic or private bot chat.
-                destination_chat_id = recipient.telegram_id
-                destination_thread_id = None
-                for pending in reversed(unanswered_before_reply):
-                    pending_metadata = json.loads(pending.metadata_json or "{}")
-                    if pending_metadata.get("source_mode") == "group_topic":
-                        destination_chat_id = int(pending_metadata["source_chat_id"])
-                        destination_thread_id = int(pending_metadata["source_thread_id"])
-                        break
-                    # Messages stored before topic support have no
-                    # source marker; treat them as private-chat messages.
-                    if pending_metadata.get("source_mode", "private") == "private":
-                        destination_chat_id = recipient.telegram_id
-                        destination_thread_id = None
-                        break
-
-                # With no unanswered message to infer the channel from, use
-                # the student's current verified forum-topic binding. This
-                # also lets a teacher initiate a new conversation in that topic.
-                if not unanswered_before_reply:
-                    current_binding = db.get(StudentTelegramGroup, recipient.id)
-                    if current_binding:
-                        destination_chat_id = current_binding.chat_id
-                        destination_thread_id = current_binding.thread_id
-
-                copy_kwargs = {
-                    "chat_id": destination_chat_id,
-                    "from_chat_id": message.chat.id,
-                    "message_id": message.message_id,
-                }
-                if destination_thread_id is not None:
-                    copy_kwargs["message_thread_id"] = destination_thread_id
-                copied = await bot.copy_message(**copy_kwargs)
-                row.destination_message_id = copied.message_id
-                delivery_metadata = json.loads(row.metadata_json or "{}")
-                delivery_metadata["telegram_deliveries"] = [{
-                    "user_id": recipient.id,
-                    "telegram_message_id": copied.message_id,
-                    "chat_id": destination_chat_id,
-                    "thread_id": destination_thread_id,
-                }]
-                row.metadata_json = json.dumps(delivery_metadata, ensure_ascii=False)
-                row.delivery_status = "delivered"
-                db.commit()
-                publish_chat_update(conversation.id)
-
-                # Remove ordinary text after it is captured in the persistent panel.
-                # Keep native media in the teacher's chat so sent photos, documents,
-                # videos, voice notes, round videos and stickers remain visible/openable.
-                if message.text:
-                    try:
-                        await bot.delete_message(chat_id=sender.telegram_id, message_id=message.message_id)
-                    except Exception:
-                        logger.info("Could not remove teacher's sent text from the bot chat")
-
-                # A successful teacher reply closes the pending batch.
-                pending_rows = unanswered_before_reply
-                for pending in pending_rows:
-                    pending_metadata = json.loads(pending.metadata_json or "{}")
-                    # Keep new native attachment copies and their student labels
-                    # in the teacher's Telegram history. Only legacy transient
-                    # inbox copies stored in destination_message_id are removed.
-                    inbox_message_ids = [pending.destination_message_id]
-                    for inbox_message_id in inbox_message_ids:
-                        if not inbox_message_id:
-                            continue
-                        try:
-                            await bot.delete_message(
-                                chat_id=sender.telegram_id,
-                                message_id=int(inbox_message_id),
-                            )
-                        except Exception:
-                            logger.info(
-                                "Could not remove handled student message %s from teacher inbox (telegram_message_id=%s)",
-                                pending.id,
-                                inbox_message_id,
-                            )
-                mark_messages_read_by_teacher(db, pending_rows)
-                # Keep the selected conversation active after replying.
-                try:
-                    await update_teacher_panel(bot, db, sender)
-                except Exception as exc:
-                    logger.warning("Could not refresh teacher inbox (error_type=%s)", type(exc).__name__)
+                await _deliver_teacher_reply(
+                    db, bot, message, row, conversation, sender, recipient,
+                    unanswered_before_reply,
+                )
         except Exception as exc:
             row.delivery_status = "failed"
             db.commit()
