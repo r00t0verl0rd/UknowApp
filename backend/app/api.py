@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Resp
 from fastapi.responses import FileResponse, StreamingResponse
 from aiogram.types import BufferedInputFile
 from sqlalchemy import and_, case, func, or_, select
-from sqlalchemy.orm import aliased, selectinload
+from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -593,76 +593,6 @@ def assign_student(payload: AssignmentCreate, _: Admin, db: Db):
     return conversation_dict(db, conversation)
 
 
-@router.get("/admin/conversations")
-def list_conversations(_: Admin, db: Db):
-    # Keep this list in sync with the school graph:
-    # only active assignments between active teachers and active students are visible.
-    teacher = aliased(User)
-    student = aliased(User)
-    conversations = db.scalars(
-        select(Conversation)
-        .options(
-            selectinload(Conversation.assignment).selectinload(Assignment.teacher),
-            selectinload(Conversation.assignment).selectinload(Assignment.student),
-        )
-        .join(Assignment, Conversation.assignment_id == Assignment.id)
-        .join(teacher, Assignment.teacher_id == teacher.id)
-        .join(student, Assignment.student_id == student.id)
-        .where(
-            Assignment.active.is_(True),
-            teacher.active.is_(True),
-            student.active.is_(True),
-        )
-        .order_by(Conversation.created_at.desc())
-    ).all()
-    return [conversation_dict(db, item) for item in conversations]
-
-
-@router.get("/admin/conversations/{conversation_id}/messages")
-def list_messages(conversation_id: int, _: Admin, db: Db):
-    conversation = db.get(Conversation, conversation_id)
-    if not conversation:
-        raise HTTPException(status_code=404, detail="Переписка не найдена")
-    rows = db.scalars(
-        select(Message).where(Message.conversation_id == conversation_id)
-        .order_by(Message.created_at, Message.id)
-    ).all()
-    return [{
-        "id": item.id,
-        "sender": item.sender.full_name,
-        "sender_role": item.sender_role,
-        "content_type": item.content_type,
-        "text": item.text,
-        "metadata": json.loads(item.metadata_json or "{}"),
-        "delivery_status": item.delivery_status,
-        "created_at": item.created_at.isoformat(),
-    } for item in rows]
-
-
-
-@router.get("/admin/messages/{message_id}/media")
-def get_message_media(message_id: int, _: Admin, db: Db):
-    item = db.get(Message, message_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Сообщение не найдено")
-    metadata = json.loads(item.metadata_json or "{}")
-    media = metadata.get("media") or {}
-    relative = media.get("local_path")
-    if not relative or media.get("archive_status") != "stored":
-        raise HTTPException(status_code=404, detail="Локальная копия вложения недоступна")
-    root = MEDIA_DIR.resolve()
-    path = (root / relative).resolve()
-    if root not in path.parents or not path.is_file():
-        raise HTTPException(status_code=404, detail="Файл вложения не найден")
-    return FileResponse(
-        path,
-        media_type=safe_media_type(media.get("mime_type")),
-        filename=media.get("file_name") or path.name,
-        content_disposition_type=media_content_disposition(media.get("kind"), media.get("mime_type")),
-        headers={"X-Content-Type-Options": "nosniff", "Content-Security-Policy": "sandbox"},
-    )
-
-
 def _panel_conversation_dict(db: Session, conversation: Conversation, principal: dict) -> dict:
     return conversation_dict(
         db, conversation, include_telegram_ids=(principal["role"] == "admin")
@@ -982,6 +912,25 @@ def panel_message_media(message_id: int, principal: PanelUser, db: Db):
     )
 
 
+async def _refresh_teacher_panel_after_web_delivery(bot, db: Session, teacher: User, conversation: Conversation) -> None:
+    """Refresh the teacher's Telegram panel after a web message has been persisted."""
+    if not bot or not teacher.telegram_id:
+        return
+    try:
+        from .telegram_teacher import clear_teacher_session, update_teacher_panel
+        current_session = db.get(TeacherSession, teacher.id)
+        if current_session and current_session.conversation_id != conversation.id:
+            clear_teacher_session(db, teacher)
+        await update_teacher_panel(bot, db, teacher)
+    except Exception as exc:
+        # Delivery is already committed; a panel refresh failure must not undo it.
+        logger.warning(
+            "Could not refresh teacher panel after web delivery "
+            "(teacher_id=%s conversation_id=%s error_type=%s)",
+            teacher.id, conversation.id, type(exc).__name__,
+        )
+
+
 @router.post("/panel/conversations/{conversation_id}/messages", status_code=201)
 async def send_panel_message(
     conversation_id: int,
@@ -1071,16 +1020,7 @@ async def send_panel_message(
     db.commit()
     publish_chat_update(conversation.id)
 
-    if bot and teacher.telegram_id:
-        try:
-            from .telegram_teacher import clear_teacher_session, update_teacher_panel
-            current_session = db.get(TeacherSession, teacher.id)
-            if current_session and current_session.conversation_id != conversation.id:
-                clear_teacher_session(db, teacher)
-            await update_teacher_panel(bot, db, teacher)
-        except Exception:
-            # Message is already persisted; a panel refresh failure must not undo it.
-            pass
+    await _refresh_teacher_panel_after_web_delivery(bot, db, teacher, conversation)
 
     return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"), principal=principal)
 
@@ -1263,15 +1203,7 @@ async def send_panel_attachment(
     db.commit()
     publish_chat_update(conversation.id)
 
-    if bot and teacher.telegram_id:
-        try:
-            from .telegram_teacher import clear_teacher_session, update_teacher_panel
-            current_session = db.get(TeacherSession, teacher.id)
-            if current_session and current_session.conversation_id != conversation.id:
-                clear_teacher_session(db, teacher)
-            await update_teacher_panel(bot, db, teacher)
-        except Exception:
-            pass
+    await _refresh_teacher_panel_after_web_delivery(bot, db, teacher, conversation)
     return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"), principal=principal)
 
 
