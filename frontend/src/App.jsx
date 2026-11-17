@@ -453,13 +453,12 @@ export default function App() {
 
   const visibleChats = useMemo(() => {
     const query = chatSearch.trim().toLocaleLowerCase("ru");
+    // API отдаёт диалоги в порядке последней активности: сохраняем этот порядок
+    // для всех ролей, чтобы самый недавно обновлённый диалог всегда был первым.
     if (profile?.role === "admin") {
-      return [...chats]
-        .filter(chat => !query || (chat.teacher.full_name + " " + chat.student.full_name).toLocaleLowerCase("ru").includes(query))
-        .sort((a, b) =>
-          a.teacher.full_name.localeCompare(b.teacher.full_name, "ru", { sensitivity: "base" }) ||
-          a.student.full_name.localeCompare(b.student.full_name, "ru", { sensitivity: "base" })
-        );
+      return chats.filter(chat =>
+        !query || (chat.teacher.full_name + " " + chat.student.full_name).toLocaleLowerCase("ru").includes(query)
+      );
     }
     return chats.filter(chat => {
       const names = (chat.student.full_name + " " + chat.teacher.full_name).toLowerCase();
