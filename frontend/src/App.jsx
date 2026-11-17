@@ -69,6 +69,7 @@ export default function App() {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [page, setPage] = useState("graph");
+  const [collapsedTeacherIds, setCollapsedTeacherIds] = useState(() => new Set());
   const [users, setUsers] = useState([]);
   const [overview, setOverview] = useState(null);
   const [chats, setChats] = useState([]);
@@ -610,19 +611,23 @@ export default function App() {
             <div className="teacher-grid">
               {activeTeachers.map(teacher => {
                 const students = overview?.teachers.find(t => t.id === teacher.id)?.students || [];
-                return <section className="teacher-branch" key={teacher.id}>
+                const studentsCollapsed = collapsedTeacherIds.has(teacher.id);
+                return <section className={`teacher-branch${studentsCollapsed ? " is-collapsed" : ""}`} key={teacher.id}>
                 <div className="person-card teacher-card">
                   <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap/></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель · {students.length} учен.</small></div></div>
-                  <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(teacher)}><Trash2/></button></div>
+                  <div className="person-actions">
+                    <button className={`danger-icon teacher-collapse-btn${studentsCollapsed ? "" : " is-expanded"}`} title={studentsCollapsed ? "Показать учеников" : "Скрыть учеников"} aria-label={studentsCollapsed ? "Показать учеников" : "Скрыть учеников"} aria-expanded={!studentsCollapsed} onClick={() => setCollapsedTeacherIds(current => { const next = new Set(current); if (next.has(teacher.id)) next.delete(teacher.id); else next.add(teacher.id); return next; })}><ChevronRight/></button>
+                    <button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(teacher)}><Trash2/></button>
+                  </div>
                 </div>
-                <div className="student-list">
+                {!studentsCollapsed && <div className="student-list">
                   {students.map(student => <div className="person-card student-card" key={student.id}>
                     <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small></div></div>
                     <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div>
                   </div>)}
                   {!students.length && <div className="empty-students">Нет назначенных учеников</div>}
-                </div>
-                <button className="add-student" onClick={() => { setTeacherId(String(teacher.id)); setStudentId(activeStudents[0]?.id ? String(activeStudents[0].id) : ""); setModal({ mode: "assign" }); }}><Plus/>Назначить ученика</button>
+                </div>}
+                {!studentsCollapsed && <button className="add-student" onClick={() => { setTeacherId(String(teacher.id)); setStudentId(activeStudents[0]?.id ? String(activeStudents[0].id) : ""); setModal({ mode: "assign" }); }}><Plus/>Назначить ученика</button>}
               </section>;
               })}
             </div>
