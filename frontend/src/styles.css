@@ -9071,3 +9071,154 @@ button:focus-visible, a:focus-visible {
 .chat-detail .message-topline:not(:has(> b)) {
   justify-content: flex-end;
 }
+
+
+/* --------------------------------------------------------------------------
+   UknowApp role-first color language — shared by graph, chats and user lists.
+   The same three semantic colors identify people everywhere in the product.
+   -------------------------------------------------------------------------- */
+:root {
+  /* Slightly warm, muted light surfaces reduce glare without looking grey. */
+  --canvas: #eeedf3;
+  --surface: #f8f7fb;
+  --ui-control-bg: #f0eef5;
+  --ui-control-hover: #e8e4f0;
+  --line: #e2deea;
+  --ui-border: #e1dce8;
+  --ui-border-strong: #c9bfd9;
+
+  --role-student: #c58c2e;
+  --role-student-soft: #fff0cf;
+  --role-student-border: #e9cf98;
+  --role-teacher: #8a65c5;
+  --role-teacher-soft: #eee4fb;
+  --role-teacher-border: #d3c0ed;
+  --role-admin: #548b5d;
+  --role-admin-soft: #e2f0df;
+  --role-admin-border: #c0d9bb;
+}
+:root[data-theme="dark-soft"] {
+  --canvas: #171d28;
+  --surface: #202938;
+  --ui-control-bg: #293344;
+  --ui-control-hover: #343f53;
+  --line: #374254;
+  --ui-border: #3a4659;
+  --ui-border-strong: #596780;
+
+  --role-student: #e4b65f;
+  --role-student-soft: #493b2c;
+  --role-student-border: #806640;
+  --role-teacher: #b69be8;
+  --role-teacher-soft: #403653;
+  --role-teacher-border: #705b91;
+  --role-admin: #91c58e;
+  --role-admin-soft: #304536;
+  --role-admin-border: #56785c;
+}
+
+/* The canvas is intentionally not pure white; elevated surfaces stay distinct. */
+body,
+.chats-shell,
+.chats-main {
+  background: var(--canvas);
+}
+.sidebar,
+.topbar,
+.metric,
+.graph-panel,
+.user-list > .user-row,
+.chat-layout,
+.chat-list,
+.chat-detail,
+.modal,
+.login-card,
+.user-info-popover,
+.credential-modal {
+  background-color: var(--surface);
+}
+
+/* Structure graph: role colors match the corresponding conversation bubbles. */
+.teacher-card,
+.teacher-readonly-graph .teacher-graph-card:not(.student) {
+  background: linear-gradient(112deg, var(--role-teacher-soft), color-mix(in srgb, var(--surface) 76%, var(--role-teacher-soft))) !important;
+  border-color: var(--role-teacher-border) !important;
+}
+.teacher-card .avatar,
+.teacher-readonly-graph .teacher-graph-card:not(.student) .avatar,
+.avatar.teacher,
+.teacher-avatar {
+  background: var(--role-teacher-soft) !important;
+  color: var(--role-teacher) !important;
+}
+.student-card,
+.unassigned-grid .student-card,
+.teacher-readonly-graph .teacher-graph-card.student {
+  background: linear-gradient(112deg, var(--role-student-soft), color-mix(in srgb, var(--surface) 76%, var(--role-student-soft))) !important;
+  border-color: var(--role-student-border) !important;
+}
+.student-card .avatar,
+.avatar.student,
+.student-avatar,
+.user-row .avatar.student,
+.teacher-readonly-graph .teacher-graph-card.student .avatar {
+  background: var(--role-student-soft) !important;
+  color: var(--role-student) !important;
+}
+.root-node {
+  background: linear-gradient(112deg, var(--role-admin-soft), color-mix(in srgb, var(--surface) 76%, var(--role-admin-soft))) !important;
+  border-color: var(--role-admin-border) !important;
+}
+.teacher-dot { background: var(--role-teacher) !important; box-shadow: 0 0 8px color-mix(in srgb, var(--role-teacher) 35%, transparent) !important; }
+.student-dot { background: var(--role-student) !important; box-shadow: 0 0 8px color-mix(in srgb, var(--role-student) 35%, transparent) !important; }
+.student-list { border-left-color: var(--role-student-border) !important; }
+.add-student { color: var(--role-student) !important; }
+.add-student:hover { background: var(--role-student-soft) !important; }
+.teacher-card:hover { border-color: var(--role-teacher) !important; }
+.student-card:hover { border-color: var(--role-student) !important; }
+
+/* User directory uses exactly the same semantic role mapping. */
+.user-row .avatar.teacher,
+.user-row .role-tag.teacher {
+  background: var(--role-teacher-soft) !important;
+  color: var(--role-teacher) !important;
+}
+.user-row .avatar.student,
+.user-row .role-tag.student {
+  background: var(--role-student-soft) !important;
+  color: var(--role-student) !important;
+}
+
+/* Conversation bubbles and graph cards share identical role hues in both themes. */
+.chat-detail .message.student {
+  background: linear-gradient(110deg, var(--role-student-soft), color-mix(in srgb, var(--surface) 24%, var(--role-student-soft))) !important;
+  border-color: var(--role-student-border) !important;
+}
+.chat-detail .message.teacher {
+  background: linear-gradient(110deg, var(--role-teacher-soft), color-mix(in srgb, var(--surface) 24%, var(--role-teacher-soft))) !important;
+  border-color: var(--role-teacher-border) !important;
+}
+.chat-detail .message.admin {
+  background: linear-gradient(110deg, var(--role-admin-soft), color-mix(in srgb, var(--surface) 24%, var(--role-admin-soft))) !important;
+  border-color: var(--role-admin-border) !important;
+}
+
+/* Keep supporting controls and chat lists within the softened light palette. */
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item,
+:root:not([data-theme="dark-soft"]) .search,
+:root:not([data-theme="dark-soft"]) .chat-search-control,
+:root:not([data-theme="dark-soft"]) .stack input,
+:root:not([data-theme="dark-soft"]) .stack select,
+:root:not([data-theme="dark-soft"]) .chat-composer textarea {
+  background-color: #fdfcff;
+}
+:root:not([data-theme="dark-soft"]) .chat-detail > .messages {
+  background: #f1eff5;
+}
+:root:not([data-theme="dark-soft"]) .chat-composer {
+  background: #f6f4f9;
+}
+:root:not([data-theme="dark-soft"]) .sidebar nav button:not(.active):hover,
+:root:not([data-theme="dark-soft"]) .chat-item.selected {
+  background: #ece7f4;
+}
