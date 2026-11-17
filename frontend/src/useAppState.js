@@ -34,19 +34,17 @@ export function useChatState() {
 }
 
 export function useDirectoryState() {
-  const [issuedCredential, setIssuedCredential] = useState(null);
-  const [savingUser, setSavingUser] = useState(false);
   const [users, setUsers] = useState([]);
   const [overview, setOverview] = useState(null);
   const [search, setSearch] = useState("");
   const [userSort, setUserSort] = useState("students");
   const [userInfo, setUserInfo] = useState(null);
-  const [deleteCandidate, setDeleteCandidate] = useState(null);
-  const [deletingUser, setDeletingUser] = useState(false);
-  const [deleteMessageCandidate, setDeleteMessageCandidate] = useState(null);
-  const [deletingMessage, setDeletingMessage] = useState(false);
-  const [disconnectCandidate, setDisconnectCandidate] = useState(null);
-  const [disconnectingTelegram, setDisconnectingTelegram] = useState(false);
+  return { users, setUsers, overview, setOverview, search, setSearch, userSort, setUserSort, userInfo, setUserInfo };
+}
+
+export function useUserEditorState() {
+  const [issuedCredential, setIssuedCredential] = useState(null);
+  const [savingUser, setSavingUser] = useState(false);
   const [name, setName] = useState("");
   const [teacherLogin, setTeacherLogin] = useState("");
   const [role, setRole] = useState("teacher");
@@ -56,13 +54,22 @@ export function useDirectoryState() {
   const [code, setCode] = useState(null);
   return {
     issuedCredential, setIssuedCredential, savingUser, setSavingUser,
-    users, setUsers, overview, setOverview, search, setSearch,
-    userSort, setUserSort, userInfo, setUserInfo,
+    name, setName, teacherLogin, setTeacherLogin, role, setRole,
+    telegramId, setTelegramId, teacherId, setTeacherId, studentId, setStudentId, code, setCode,
+  };
+}
+
+export function useUserActionState() {
+  const [deleteCandidate, setDeleteCandidate] = useState(null);
+  const [deletingUser, setDeletingUser] = useState(false);
+  const [deleteMessageCandidate, setDeleteMessageCandidate] = useState(null);
+  const [deletingMessage, setDeletingMessage] = useState(false);
+  const [disconnectCandidate, setDisconnectCandidate] = useState(null);
+  const [disconnectingTelegram, setDisconnectingTelegram] = useState(false);
+  return {
     deleteCandidate, setDeleteCandidate, deletingUser, setDeletingUser,
     deleteMessageCandidate, setDeleteMessageCandidate, deletingMessage, setDeletingMessage,
     disconnectCandidate, setDisconnectCandidate, disconnectingTelegram, setDisconnectingTelegram,
-    name, setName, teacherLogin, setTeacherLogin, role, setRole,
-    telegramId, setTelegramId, teacherId, setTeacherId, studentId, setStudentId, code, setCode,
   };
 }
 
