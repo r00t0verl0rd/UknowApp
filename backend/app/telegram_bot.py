@@ -6,49 +6,7 @@ The imports below keep the former telegram_bot module API available.
 
 from aiogram import Dispatcher
 
-from .telegram_common import (
-    CONNECTION_CODE_RE,
-    claim_connection_code,
-    contact_would_be_exposed,
-    current_student_conversation,
-    get_linked_user,
-    message_metadata,
-    persist_message,
-)
-from .telegram_handlers import (
-    choose_conversation,
-    handle_panel_callback,
-    open_menu,
-    route_message,
-    router,
-    start,
-)
-from .telegram_teacher import (
-    TEACHER_BACK_LABEL,
-    conversation_messages,
-    message_preview,
-    pending_student_messages,
-    TEACHER_KEYBOARD_VERSION,
-    TEACHER_NEXT_PAGE_LABEL,
-    TEACHER_PAGE_SIZE,
-    TEACHER_PREVIOUS_PAGE_LABEL,
-    TEACHER_REFRESH_LABEL,
-    _teacher_button_labels,
-    _teacher_keyboard,
-    _teacher_page,
-    _update_teacher_panel_locked,
-    clear_teacher_session,
-    get_teacher_conversation,
-    handle_teacher_keyboard_message,
-    set_teacher_session,
-    teacher_chat_view,
-    teacher_conversations,
-    teacher_keyboard_actions,
-    teacher_keyboard_signature,
-    teacher_panel_view,
-    update_teacher_panel,
-)
-
+from .telegram_handlers import router
 
 class ConflictAwareDispatcher(Dispatcher):
     """Stop polling on TelegramConflictError instead of aiogram's endless retry.
@@ -125,38 +83,4 @@ def create_dispatcher() -> Dispatcher:
     return dispatcher
 
 
-__all__ = [
-    "CONNECTION_CODE_RE",
-    "TEACHER_BACK_LABEL",
-    "TEACHER_KEYBOARD_VERSION",
-    "TEACHER_NEXT_PAGE_LABEL",
-    "TEACHER_PAGE_SIZE",
-    "TEACHER_PREVIOUS_PAGE_LABEL",
-    "TEACHER_REFRESH_LABEL",
-    "claim_connection_code",
-    "choose_conversation",
-    "clear_teacher_session",
-    "contact_would_be_exposed",
-    "conversation_messages",
-    "create_dispatcher",
-    "current_student_conversation",
-    "get_linked_user",
-    "get_teacher_conversation",
-    "handle_panel_callback",
-    "handle_teacher_keyboard_message",
-    "message_metadata",
-    "message_preview",
-    "open_menu",
-    "pending_student_messages",
-    "persist_message",
-    "route_message",
-    "router",
-    "set_teacher_session",
-    "start",
-    "teacher_chat_view",
-    "teacher_conversations",
-    "teacher_keyboard_actions",
-    "teacher_keyboard_signature",
-    "teacher_panel_view",
-    "update_teacher_panel",
-]
+__all__ = ["create_dispatcher"]
