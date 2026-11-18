@@ -621,10 +621,10 @@ img, video, audio { max-width: 100%;}
 
 .graph-panel .unassigned-student-actions > .graph-person-action { flex: 0 0 34px !important; width: 34px !important; height: 34px !important; min-width: 34px !important; min-height: 34px !important; padding: 0 !important;}
 .graph-panel .unassigned-student-actions .btn { flex: 0 0 auto; min-height: 36px; padding: 8px 13px; white-space: nowrap;}
-.graph-panel .unassigned-grid .unassigned-student-card { background: #fff; border-color: #e9e3f2;}
+.graph-panel .unassigned-grid .unassigned-student-card { background: #f3e8d4; border-color: #ddc69d;}
 .graph-panel .unassigned-grid .unassigned-student-card:hover { border-color: #d8c8eb; box-shadow: 0 5px 17px rgba(87, 62, 153, .08);}
-:root[data-theme="dark-soft"] .graph-panel .unassigned-grid .unassigned-student-card { background: #2b3541 !important; background-image: none !important; border-color: #4a5864 !important; box-shadow: none !important; color: #e4e8f0 !important;}
-:root[data-theme="dark-soft"] .graph-panel .unassigned-grid .unassigned-student-card .avatar { background: #41414b !important; color: #e0b1a8 !important;}
+:root[data-theme="dark-soft"] .graph-panel .unassigned-grid .unassigned-student-card { background: #40382d !important; background-image: none !important; border-color: #746044 !important; box-shadow: none !important; color: #e4e8f0 !important;}
+:root[data-theme="dark-soft"] .graph-panel .unassigned-grid .unassigned-student-card .avatar { background: #574a38 !important; color: #e5c995 !important;}
 :root[data-theme="dark-soft"] .graph-panel .unassigned-grid .unassigned-student-card:hover { background: #30394a !important; border-color: #66728c !important;}
 /* Branded in-app confirmation for destructive participant actions. */
 .confirm-delete-modal .modal-head { align-items: center; margin-bottom: 14px;}
