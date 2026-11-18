@@ -338,16 +338,16 @@ img, video, audio { max-width: 100%;}
 .credential-modal .modal-head > div { min-width: 0;}
 .credential-modal .modal-head .eyebrow { max-width: 100%; color: var(--purple); font-size: 9px; font-weight: 800; letter-spacing: .11em; line-height: 1.35; overflow-wrap: anywhere;}
 .credential-modal .modal-head h2 { margin-top: 6px; line-height: 1.2; overflow-wrap: anywhere;}
-.credential-field { display: grid; grid-template-rows: auto 34px; align-content: center; box-sizing: border-box; width: 100%; min-height: 78px; gap: 7px; min-width: 0; padding: 10px 14px; border: 1px solid var(--ui-border); border-radius: 13px; background: var(--surface); box-shadow: 0 2px 8px rgba(50, 38, 75, .035);}
-.credential-field-label { color: var(--muted); font-size: 11px; font-weight: 750; line-height: 1.2;}
-.credential-field-value { display: flex; align-items: center; justify-content: center; gap: 10px; min-width: 0;}
-.credential-field-value b { flex: 1 1 auto; min-width: 0; color: var(--ink); font-size: 15px; font-weight: 750; text-align: center; overflow-wrap: anywhere;}
+.credential-field { display: flex; align-items: center; box-sizing: border-box; width: 100%; min-height: 58px; gap: 12px; min-width: 0; padding: 10px 14px; border: 1px solid var(--ui-border); border-radius: 13px; background: var(--surface); box-shadow: 0 2px 8px rgba(50, 38, 75, .035);}
+.credential-field-label { flex: 0 0 auto; color: var(--muted); font-size: 11px; font-weight: 750; line-height: 1.2; white-space: nowrap;}
+.credential-field-value { display: flex; flex: 1 1 auto; align-items: center; justify-content: flex-end; gap: 10px; min-width: 0;}
+.credential-field-value b { flex: 1 1 auto; min-width: 0; color: var(--ink); font-size: 15px; font-weight: 750; text-align: right; overflow-wrap: anywhere;}
 .credential-field-value .icon-btn { flex: 0 0 34px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px;}
 .credential-field-code { border-color: #ded1ef; background: linear-gradient(115deg, #f7f3fc 0%, #f1ebf9 100%);}
-.credential-field-code .credential-field-value b { color: #7656a5; font: 800 24px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 2px; white-space: nowrap;}
- .credential-actions { display: flex; justify-content: center; margin-top: 2px;}
-.credential-actions .btn { min-width: 0; min-height: 42px; white-space: nowrap; border-radius: 10px;}
- .credential-actions .btn.primary { flex: 0 1 250px;}
+.credential-field-code .credential-field-value b { color: #7656a5; font: 800 20px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 1.5px; white-space: nowrap;}
+.credential-actions { display: flex; justify-content: center; margin-top: 2px;}
+.credential-actions .btn { min-width: 0; min-height: 42px; margin-inline: auto; white-space: nowrap; border-radius: 10px;}
+.credential-actions .btn.primary { flex: 0 1 250px;}
 :root[data-theme="dark-soft"] .credential-field { background: #252d3b; border-color: #394457; box-shadow: none;}
 :root[data-theme="dark-soft"] .credential-field-code { background: linear-gradient(115deg, #302d42 0%, #2b2d3e 100%); border-color: #4b4662;}
 :root[data-theme="dark-soft"] .credential-field-code .credential-field-value b { color: #c9c0ef;}
