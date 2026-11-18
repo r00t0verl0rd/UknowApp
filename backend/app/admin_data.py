@@ -298,12 +298,15 @@ def cleanup_dialogues(days: int, _: Admin, db: Session = Depends(_get_db)):
     ).delete(synchronize_session=False)
     db.query(Message).filter(Message.created_at < cutoff).delete(synchronize_session=False)
     db.commit()
+    deleted_files = 0
+    media_root = MEDIA_DIR.resolve()
     for row in old_rows:
+        relative = (json.loads(row.metadata_json or "{}").get("media") or {}).get("local_path")
+        if relative:
+            target = (media_root / _safe_relative(relative)).resolve()
+            if media_root in target.parents and target.is_file():
+                deleted_files += 1
         delete_message_media(row.metadata_json)
-    deleted_files = sum(
-        1 for row in old_rows
-        if (json.loads(row.metadata_json or "{}").get("media") or {}).get("local_path")
-    )
     if MEDIA_DIR.exists():
         for path in sorted(MEDIA_DIR.rglob("*"), reverse=True):
             if path.is_dir():
