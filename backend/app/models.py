@@ -83,6 +83,8 @@ class PersonalMessage(Base):
     sender_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
     sender_role: Mapped[str] = mapped_column(String(20), nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
+    admin_read_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    participant_read_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
     sender: Mapped[Optional[User]] = relationship()
