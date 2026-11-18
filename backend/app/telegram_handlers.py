@@ -445,9 +445,6 @@ async def _handle_unlinked_sender(message: TgMessage, bot: Bot, db) -> None:
         elif result == "account_already_linked":
             _record_connection_code_attempt(telegram_id)
             await message.answer("К аккаунту уже привязан другой Telegram. Обратитесь к администратору.")
-        elif result == "inactive":
-            _record_connection_code_attempt(telegram_id)
-            await message.answer("Этот аккаунт UknowApp отключён. Обратитесь к администратору.")
         else:
             _record_connection_code_attempt(telegram_id)
             await message.answer("Код не найден или был заменён. Проверьте его или запросите новый у администратора.")
