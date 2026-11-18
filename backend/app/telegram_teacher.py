@@ -366,7 +366,7 @@ async def _update_teacher_panel_locked(
     teacher: User,
     force_keyboard_refresh: bool = False,
 ) -> bool:
-    """Edit the teacher panel in place and replace its keyboard only when layout changes."""
+    """Update the panel and replace its keyboard only when its content changes."""
     if not teacher.telegram_id:
         return False
 
