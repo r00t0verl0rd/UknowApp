@@ -305,9 +305,12 @@ export default function App() {
     };
   }, [selectedChat?.id, messageFilter, visibleMessages]);
 
+  const safePersonalChats = Array.isArray(personalChats)
+    ? personalChats.filter(chat => chat && typeof chat === "object")
+    : [];
   const visibleChats = useMemo(() => {
     const query = chatSearch.trim().toLocaleLowerCase("ru");
-    const personal = personalChats.filter(chat => {
+    const personal = safePersonalChats.filter(chat => {
       const title = String(chat.title || chat.participant?.full_name || "");
       return (!query || title.toLocaleLowerCase("ru").includes(query))
         && (chatFilter === "all" || Number(chat.unread_count || 0) > 0);
@@ -322,7 +325,7 @@ export default function App() {
       return matchesSearch && matchesFilter;
     });
     return profile?.role === "admin" ? regular : [...regular, ...personal];
-  }, [chats, personalChats, chatSection, chatSearch, chatFilter, profile?.role]);
+  }, [chats, safePersonalChats, chatSection, chatSearch, chatFilter, profile?.role]);
 
   function toggleTheme() {
     setTheme(current => current === "dark-soft" ? "light" : "dark-soft");
@@ -716,7 +719,7 @@ export default function App() {
         </>}
 
         {page === "chats" && <>
-          <div className={"chat-layout" + (selectedChat ? " chat-layout-conversation-open" : " chat-layout-list-open")}><div className="chat-list">{profile?.role === "admin" && <div className="chat-filter-segment admin-chat-sections" role="group" aria-label="Раздел диалогов"><button type="button" className={chatSection === "participants" ? "active" : ""} onClick={() => { setChatSection("participants"); setSelectedChat(null); setMessages([]); }}>Чаты участников</button><button type="button" className={chatSection === "personal" ? "active" : ""} onClick={() => { setChatSection("personal"); setChatFilter("all"); setSelectedChat(null); setMessages([]); }}>Личные{personalChats.some(chat => Number(chat.unread_count) > 0) && <span className="unread-badge">{personalChats.reduce((sum, chat) => sum + (Number(chat.unread_count) || 0), 0) > 99 ? "99+" : personalChats.reduce((sum, chat) => sum + (Number(chat.unread_count) || 0), 0)}</span>}</button></div>}{profile?.role === "admin" && chatSection === "personal" && <button type="button" className="btn primary personal-chat-create" onClick={openCreatePersonalChat}><Plus size={15}/>Создать диалог</button>}{profile?.role !== "student" && <>
+          <div className={"chat-layout" + (selectedChat ? " chat-layout-conversation-open" : " chat-layout-list-open")}><div className="chat-list">{profile?.role === "admin" && <div className="chat-filter-segment admin-chat-sections" role="group" aria-label="Раздел диалогов"><button type="button" className={chatSection === "participants" ? "active" : ""} onClick={() => { setChatSection("participants"); setSelectedChat(null); setMessages([]); }}>Чаты участников</button><button type="button" className={chatSection === "personal" ? "active" : ""} onClick={() => { setChatSection("personal"); setChatFilter("all"); setSelectedChat(null); setMessages([]); }}>Личные{safePersonalChats.some(chat => Number(chat.unread_count) > 0) && <span className="unread-badge">{safePersonalChats.reduce((sum, chat) => sum + (Number(chat.unread_count) || 0), 0) > 99 ? "99+" : personalChats.reduce((sum, chat) => sum + (Number(chat.unread_count) || 0), 0)}</span>}</button></div>}{profile?.role === "admin" && chatSection === "personal" && <button type="button" className="btn primary personal-chat-create" onClick={openCreatePersonalChat}><Plus size={15}/>Создать диалог</button>}{profile?.role !== "student" && <>
               <div className="chat-search-control">
                 <Search size={17}/>
                 <input aria-label="Поиск по имени" placeholder="Поиск по имени" value={chatSearch} onChange={e => setChatSearch(e.target.value)}/>
