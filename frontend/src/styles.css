@@ -234,7 +234,7 @@ input:focus-visible, select:focus-visible { outline-offset: 2px;}
 .graph-panel .root-node b { letter-spacing: -.2px;}
 .graph-panel .root-node small { color: #89809b;}
 .graph-panel .teacher-grid { align-items: stretch; gap: 17px;}
-.graph-panel .teacher-branch { min-width: 0; padding: 13px; border: 1px solid #e9e2f2; border-radius: 17px; background: linear-gradient(155deg, rgba(250,247,255,.96), rgba(255,255,255,.97) 54%, rgba(255,252,248,.94)); box-shadow: 0 5px 18px rgba(67,47,105,.045), inset 0 1px 0 rgba(255,255,255,.95); transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;}
+.graph-panel .teacher-branch { min-width: 0; padding: 13px; border: 1px solid #e9e2f2; border-radius: 17px; background: #f7f4fa; box-shadow: 0 5px 18px rgba(67,47,105,.045), inset 0 1px 0 rgba(255,255,255,.95); transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;}
 .graph-panel .teacher-branch:hover { border-color: #d8c9ed; box-shadow: 0 9px 24px rgba(87,62,153,.085); transform: translateY(-1px);}
 .graph-panel .teacher-card { padding: 12px 13px; border: 1px solid #e3d8f1; border-radius: 13px; background: linear-gradient(110deg, #f0e9fb, #fff 78%); box-shadow: 0 3px 10px rgba(87,62,153,.045);}
 .graph-panel .teacher-card .avatar { width: 42px; height: 42px; border-radius: 12px; background: #e7dcf7; color: #62459b;}
