@@ -542,14 +542,12 @@ def generate_connection_code(user_id: int, _: Admin, db: Db):
         raise HTTPException(status_code=404, detail="Учитель или ученик не найден")
     if not user.active:
         raise HTTPException(status_code=400, detail="Нельзя подключить отключённого пользователя")
-    if user.role == "teacher":
-        # A teacher has one persistent access code for both web login and Telegram.
-        # Rotating it invalidates the previous web credential and any unused legacy
-        # one-time codes; an existing Telegram binding remains intact.
-        access_code = generate_teacher_access_code()
+    if user.role in {"teacher", "student"}:
+        # Both panel roles use the same persistent code for web login and Telegram.
+        access_code = generate_panel_access_code()
         user.web_password_hash = hash_web_password(access_code)
         db.query(PanelSession).filter(
-            PanelSession.role == "teacher",
+            PanelSession.role == user.role,
             PanelSession.user_id == user.id,
         ).delete(synchronize_session=False)
         now = datetime.now(timezone.utc)
@@ -559,7 +557,7 @@ def generate_connection_code(user_id: int, _: Admin, db: Db):
         ).update({ConnectionCode.used_at: now}, synchronize_session=False)
         db.add(ConnectionCode(
             user_id=user.id,
-            code_hash=hashlib.sha256(access_code.encode("utf-8")).hexdigest(),
+            code_hash=hashlib.sha256(access_code.replace("-", "").encode("utf-8")).hexdigest(),
             created_at=now,
             expires_at=now + timedelta(days=36500),
         ))
