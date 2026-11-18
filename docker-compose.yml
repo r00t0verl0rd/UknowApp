@@ -8,6 +8,7 @@ services:
     environment:
       DATABASE_URL: sqlite:////app/data/uknowapp.db
       PYTHONPATH: /app/backend
+      TMPDIR: /app/data
     volumes:
       - app_data:/app/data
     init: true
