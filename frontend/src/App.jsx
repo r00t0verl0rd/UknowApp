@@ -757,8 +757,8 @@ export default function App() {
         {role === "teacher" && <>
           <div className="teacher-credentials-panel">
             <div className="teacher-credential-row teacher-login-edit-row">
-              <span>Логин веб-панели</span>
-              <input value={teacherLogin || name} onChange={e => setTeacherLogin(e.target.value)} minLength="2" maxLength="160" required autoComplete="off" />
+              <label htmlFor="teacher-web-login">Логин веб-панели</label>
+              <input id="teacher-web-login" value={teacherLogin || name} onChange={e => setTeacherLogin(e.target.value)} minLength="2" maxLength="160" required autoComplete="off" />
             </div>
             {modal.mode === "edit" && users.find(u => u.id === modal.id)?.role === "teacher" && <div className="teacher-credential-row teacher-access-row">
               <span>Код доступа</span>
