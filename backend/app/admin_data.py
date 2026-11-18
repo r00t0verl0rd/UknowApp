@@ -18,7 +18,7 @@ from starlette.background import BackgroundTask
 from .database import SessionLocal, engine
 from .event_hub import publish_chat_update
 from .media_storage import MEDIA_DIR, delete_message_media
-from .models import Conversation, Message, PersonalConversation, PersonalMessage, User
+from .models import Assignment, ConnectionCode, Conversation, Message, PanelSession, PersonalConversation, PersonalMessage, StudentTelegramGroup, TeacherPanel, TeacherSession, User
 from .security import require_admin
 
 router = APIRouter(prefix="/admin/data", tags=["admin-data"])
@@ -88,12 +88,59 @@ def data_stats(_: Admin):
         database_size = backup_path.stat().st_size
     finally:
         backup_path.unlink(missing_ok=True)
-    return {
-        "database_bytes": database_size,
-        "media_bytes": _folder_size(MEDIA_DIR),
-        "messages": _count_rows(Message),
-        "personal_messages": _count_rows(PersonalMessage),
-    }
+
+    with SessionLocal() as db:
+        users = db.query(User).all()
+        assignments = db.query(Assignment).all()
+        media_counts = {"images": 0, "audio": 0, "videos": 0, "other": 0}
+        for row in db.query(Message.metadata_json).all():
+            try:
+                media = (json.loads(row[0] or "{}").get("media") or {})
+                relative = media.get("local_path")
+                if not relative:
+                    continue
+                path = (MEDIA_DIR / _safe_relative(relative)).resolve()
+                if MEDIA_DIR.resolve() not in path.parents or not path.is_file():
+                    continue
+                mime = (media.get("mime_type") or "").lower()
+                kind = (media.get("kind") or "").lower()
+                if mime.startswith("image/") or kind in {"photo", "sticker"}:
+                    media_counts["images"] += 1
+                elif mime.startswith("audio/") or kind in {"audio", "voice"}:
+                    media_counts["audio"] += 1
+                elif mime.startswith("video/") or kind in {"video", "video_note", "animation", "video_sticker"}:
+                    media_counts["videos"] += 1
+                else:
+                    media_counts["other"] += 1
+            except (TypeError, ValueError, OSError):
+                continue
+
+        message_count = db.query(Message).count()
+        personal_message_count = db.query(PersonalMessage).count()
+        active_assignments = sum(1 for item in assignments if item.active)
+        return {
+            "database_bytes": database_size,
+            "media_bytes": _folder_size(MEDIA_DIR),
+            "users": len(users),
+            "active_users": sum(1 for item in users if item.active),
+            "teachers": sum(1 for item in users if item.role == "teacher"),
+            "students": sum(1 for item in users if item.role == "student"),
+            "assignments": len(assignments),
+            "active_assignments": active_assignments,
+            "closed_assignments": len(assignments) - active_assignments,
+            "conversations": db.query(Conversation).count(),
+            "personal_conversations": db.query(PersonalConversation).count(),
+            "messages": message_count,
+            "personal_messages": personal_message_count,
+            "total_messages": message_count + personal_message_count,
+            "telegram_groups": db.query(StudentTelegramGroup).count(),
+            "teacher_panels": db.query(TeacherPanel).count(),
+            "teacher_sessions": db.query(TeacherSession).count(),
+            "panel_sessions": db.query(PanelSession).count(),
+            "connection_codes": db.query(ConnectionCode).count(),
+            "media_files": sum(media_counts.values()),
+            **{f"media_{key}": value for key, value in media_counts.items()},
+        }
 
 
 @router.get("/database")
