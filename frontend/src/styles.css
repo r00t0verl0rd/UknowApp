@@ -329,16 +329,16 @@ img, video, audio { max-width: 100%;}
 .chat-filter-segment button svg { flex: 0 0 auto;}
 .chat-filter-segment button span { min-width: 18px; padding: 2px 5px; border-radius: 20px; background: #eee9f5; color: #74658e; font-size: 9px; line-height: 1.2; text-align: center;}
 .chat-filter-segment button.active span { background: #eee7f8; color: var(--purple);}
-.teacher-credentials-panel { display: flex; flex-direction: column; width: 100%; min-width: 0; box-sizing: border-box; padding: 4px 14px; border: 1px solid #e9e4ef; border-radius: 12px; background: #f8f7fb;}
-.teacher-credential-row { display: flex; flex-direction: column; align-items: stretch; gap: 7px; min-width: 0; padding: 10px 0;}
-.teacher-credential-row + .teacher-credential-row { border-top: 1px solid var(--line);}
-.teacher-credential-row > span, .teacher-credential-row > label { display: block; min-width: 0; margin: 0; color: #817b8d; font-size: 11px; font-weight: 650; line-height: 1.25; letter-spacing: .01em;}
-.teacher-login-edit-row > input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 36px; margin: 0; padding: 7px 10px; border: 1px solid #e8e3ef; border-radius: 8px; background: #fff; color: var(--ink); font-size: 12px; font-weight: 550; text-align: left; box-shadow: none;}
-.teacher-login-edit-row > input:focus { border-color: #c8b8e3; background: #fff; outline: 2px solid rgba(133, 104, 184, .10); outline-offset: 1px;}
-.teacher-access-value { display: flex; align-items: center; justify-content: space-between; gap: 10px; box-sizing: border-box; width: 100%; min-width: 0; min-height: 38px; padding: 3px 5px 3px 10px; border: 1px solid #e8e3ef; border-radius: 8px; background: #fff;}
-.teacher-access-value b { min-width: 0; color: #75629a; font: 800 13px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 1.8px; white-space: nowrap;}
-.teacher-access-value .password-code-refresh { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 6px; min-height: 30px; padding: 5px 9px; border-radius: 7px; font-size: 10px; font-weight: 650; white-space: nowrap;}
-.teacher-access-value .password-code-refresh svg { width: 11px; height: 11px;}
+.panel-credentials-panel { display: flex; flex-direction: column; width: 100%; min-width: 0; box-sizing: border-box; padding: 4px 14px; border: 1px solid #e9e4ef; border-radius: 12px; background: #f8f7fb;}
+.panel-credential-row { display: flex; flex-direction: column; align-items: stretch; gap: 7px; min-width: 0; padding: 10px 0;}
+.panel-credential-row + .panel-credential-row { border-top: 1px solid var(--line);}
+.panel-credential-row > span, .panel-credential-row > label { display: block; min-width: 0; margin: 0; color: #817b8d; font-size: 11px; font-weight: 650; line-height: 1.25; letter-spacing: .01em;}
+.panel-login-edit-row > input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 36px; margin: 0; padding: 7px 10px; border: 1px solid #e8e3ef; border-radius: 8px; background: #fff; color: var(--ink); font-size: 12px; font-weight: 550; text-align: left; box-shadow: none;}
+.panel-login-edit-row > input:focus { border-color: #c8b8e3; background: #fff; outline: 2px solid rgba(133, 104, 184, .10); outline-offset: 1px;}
+.panel-access-value { display: flex; align-items: center; justify-content: space-between; gap: 10px; box-sizing: border-box; width: 100%; min-width: 0; min-height: 38px; padding: 3px 5px 3px 10px; border: 1px solid #e8e3ef; border-radius: 8px; background: #fff;}
+.panel-access-value b { min-width: 0; color: #75629a; font: 800 13px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 1.8px; white-space: nowrap;}
+.panel-access-value .password-code-refresh { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 6px; min-height: 30px; padding: 5px 9px; border-radius: 7px; font-size: 10px; font-weight: 650; white-space: nowrap;}
+.panel-access-value .password-code-refresh svg { width: 11px; height: 11px;}
 .password-info { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.4;}
 .credential-modal { width: min(470px,100%);}
 .credential-row { display: flex; align-items: center; gap: 12px; padding: 12px 13px; border: 1px solid var(--line); border-radius: 11px; background: #fbfaff;}
@@ -380,13 +380,13 @@ img, video, audio { max-width: 100%;}
 :root[data-theme="dark-soft"] .message.admin { background: #393445 !important; border-color: #66546a !important;}
 :root[data-theme="dark-soft"] .message p { color: #e4e8f0 !important;}
 :root[data-theme="dark-soft"] .chat-composer, :root[data-theme="dark-soft"] .chat-head { background: #202633 !important;}
-:root[data-theme="dark-soft"] .teacher-credentials-panel { background: #222a37 !important; border-color: #394456 !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.025);}
-:root[data-theme="dark-soft"] .teacher-credential-row + .teacher-credential-row { border-top-color: #394456;}
-:root[data-theme="dark-soft"] .teacher-credential-row > span, :root[data-theme="dark-soft"] .teacher-credential-row > label { color: #a4afc0 !important;}
-:root[data-theme="dark-soft"] .teacher-login-edit-row > input, :root[data-theme="dark-soft"] .teacher-access-value { background: #293140 !important; border-color: #414c60 !important; color: #e0e5ee !important;}
-:root[data-theme="dark-soft"] .teacher-login-edit-row > input:focus { background: #30394a !important; border-color: #69758e !important; color: #f0f2f7 !important;}
-:root[data-theme="dark-soft"] .teacher-access-value b { color: #b9afe8 !important;}
-:root[data-theme="dark-soft"] .teacher-access-value .password-code-refresh { background: #30394a !important; border-color: #465268 !important; color: #c8c0e4 !important;}
+:root[data-theme="dark-soft"] .panel-credentials-panel { background: #222a37 !important; border-color: #394456 !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.025);}
+:root[data-theme="dark-soft"] .panel-credential-row + .panel-credential-row { border-top-color: #394456;}
+:root[data-theme="dark-soft"] .panel-credential-row > span, :root[data-theme="dark-soft"] .panel-credential-row > label { color: #a4afc0 !important;}
+:root[data-theme="dark-soft"] .panel-login-edit-row > input, :root[data-theme="dark-soft"] .panel-access-value { background: #293140 !important; border-color: #414c60 !important; color: #e0e5ee !important;}
+:root[data-theme="dark-soft"] .panel-login-edit-row > input:focus { background: #30394a !important; border-color: #69758e !important; color: #f0f2f7 !important;}
+:root[data-theme="dark-soft"] .panel-access-value b { color: #b9afe8 !important;}
+:root[data-theme="dark-soft"] .panel-access-value .password-code-refresh { background: #30394a !important; border-color: #465268 !important; color: #c8c0e4 !important;}
 :root[data-theme="dark-soft"] input, :root[data-theme="dark-soft"] select, :root[data-theme="dark-soft"] textarea { background: #262f3d !important; color: #e4e8f0 !important; border-color: #414c60 !important;}
 :root[data-theme="dark-soft"] input::placeholder, :root[data-theme="dark-soft"] textarea::placeholder, :root[data-theme="dark-soft"] .chat-search-control input::placeholder { color: #8793a7 !important;}
 :root[data-theme="dark-soft"] .chat-search-control:focus-within, :root[data-theme="dark-soft"] .chat-composer textarea:focus { background: #2b3545 !important; border-color: #8579b7 !important; box-shadow: 0 0 0 3px rgba(170, 160, 216, .13) !important;}
