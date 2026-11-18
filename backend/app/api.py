@@ -907,6 +907,7 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db):
                 changed = True
         if changed:
             db.commit()
+            publish_chat_update(conversation.id)
     return [
         _panel_message_dict(
             item,
