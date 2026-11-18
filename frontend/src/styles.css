@@ -1569,7 +1569,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 }
 /* Message ownership actions */
 .message-topline { display: flex; align-items: center; justify-content: space-between; gap: 12px;}
-.message-tools { display: inline-flex; align-items: center; gap: 7px; flex: none;}
+.message-tools { display: inline-flex; align-items: center; gap: 5px; flex: none;}
+.message-read-status { display: inline-flex; align-items: center; color: #9299a6; line-height: 1;}
+.message-read-status.is-read { color: #3398ed;}
 .message-time { color: var(--muted, #89839b); font-size: 10px; white-space: nowrap;}
 .message-delete-btn { display: grid; place-items: center; width: 25px; height: 25px; padding: 0; border: 0; border-radius: 7px; background: transparent; color: #9b93a8;}
 .message-delete-btn:hover { background: #fff0f1; color: #d63848;}
