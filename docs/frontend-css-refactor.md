@@ -28,12 +28,18 @@ These are lexical counts, not a parsed CSS dependency graph. Repeated selectors 
 - Extracted the global light and dark theme roots into `tokens.css`.
 - Kept legacy token names and their current effective values so existing selectors continue to resolve without mass edits.
 - Imported tokens before component styles; all remaining selectors stay in their original order.
+- Reviewed relevant Git history, including the earlier removal of the `.teacher-toggle` implementation. Removed its now-empty mobile media query and stale explanatory comment.
+- Compared CSS class selectors with the current `App.jsx` and `MessageBubble.jsx` markup. Removed the retired `.password-actions` and `.password-code-label` rules, including their dark-theme and shared-button references.
+- Current `styles.css`: 9,322 lines and 252,623 characters (down from 9,392 lines / 254,213 characters at the start of this cleanup pass).
+- Static checks after cleanup: no empty CSS blocks; no class tokens absent from the current React markup; no remaining references to `.password-actions`, `.password-code-label` or `.teacher-toggle`.
+
+The cleanup above is limited to selectors verified as unused against the current React source and a component implementation already removed in Git history. It does not treat repeated selectors or `!important` declarations as dead code.
 
 ## Next phases
 
-1. Establish screenshot fixtures and a reproducible demo dataset.
-2. Introduce semantic aliases for surfaces, text, borders, role colors and states; migrate components in small batches.
-3. Consolidate each component's base, responsive and dark-theme rules without changing cascade order accidentally.
-4. Reduce specificity and `!important` only where the owning component can be verified.
-5. Split the stylesheet by responsibility after dependencies are mapped.
-6. Add Stylelint and CI gates incrementally, starting with newly introduced CSS and token files rather than failing the legacy baseline immediately.
+1. Continue reviewing stylesheet history and current component markup to identify obsolete rules with clear evidence.
+2. Consolidate component base, responsive and dark-theme rules in place, preserving effective cascade order.
+3. Establish screenshot fixtures and a reproducible demo dataset before broader cascade changes.
+4. Reduce specificity and `!important` only where the owning component and visual effect can be verified.
+5. Introduce semantic aliases for surfaces, text, borders, role colors and states in small component batches.
+6. Split the stylesheet by responsibility only after dependencies are mapped; keep Stylelint/CI scoped to the verified baseline until legacy CSS is cleaned.
