@@ -1028,7 +1028,7 @@ def _panel_sender_and_recipients(db: Session, principal: dict, conversation: Con
     return sender, recipients, student, teacher
 
 
-def _save_panel_delivery_result(db: Session, row: Message, conversation: Conversation, delivered: list[dict], delivery_errors: list[str]) -> None:
+def _save_panel_delivery_result(db: Session, row: Message, conversation: Conversation, delivered: list[dict], delivery_errors: list[dict]) -> None:
     metadata = json.loads(row.metadata_json or "{}")
     metadata["telegram_deliveries"] = delivered
     if delivery_errors:
@@ -1155,12 +1155,12 @@ async def send_panel_message(
     if bot:
         for recipient, recipient_role in recipients:
             if not recipient.active or not recipient.telegram_id:
-                delivery_errors.append(recipient.full_name + ": Telegram не подключён")
+                delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                 continue
             try:
                 target = student_target if recipient_role == "student" else {"chat_id": recipient.telegram_id}
                 if not target:
-                    delivery_errors.append(recipient.full_name + ": Telegram не подключён")
+                    delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                     continue
                 # The student already knows this is the teacher's private chat.
                 # Deliver teacher text naturally; only label a separate admin role.
@@ -1179,9 +1179,9 @@ async def send_panel_message(
                 })
             except Exception as exc:
                 logger.warning("Telegram delivery failed for conversation_id=%s: %s", conversation.id, type(exc).__name__)
-                delivery_errors.append(recipient.full_name + ": ошибка Telegram (" + type(exc).__name__ + ")")
+                delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "ошибка Telegram (" + type(exc).__name__ + ")"})
     else:
-        delivery_errors.append("Telegram-бот не подключён к веб-приложению")
+        delivery_errors.append({"name": "", "role": "", "reason": "Telegram-бот не подключён к веб-приложению"})
 
     _save_panel_delivery_result(db, row, conversation, delivered, delivery_errors)
 
@@ -1251,11 +1251,11 @@ async def send_panel_attachment(
     if bot:
         for recipient, recipient_role in recipients:
             if not recipient.active or not recipient.telegram_id:
-                delivery_errors.append(recipient.full_name + ": Telegram не подключён")
+                delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                 continue
             target = student_target if recipient_role == "student" else {"chat_id": recipient.telegram_id}
             if not target:
-                delivery_errors.append(recipient.full_name + ": Telegram не подключён")
+                delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                 continue
             # Teacher and student already share this conversation; avoid repeating
             # a sender label on every teacher attachment.
@@ -1316,9 +1316,9 @@ async def send_panel_attachment(
                     })
                 except Exception as exc:
                     logger.warning("Telegram delivery failed for conversation_id=%s: %s", conversation.id, type(exc).__name__)
-                    delivery_errors.append(recipient.full_name + ": ошибка Telegram (" + type(exc).__name__ + ")")
+                    delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "ошибка Telegram (" + type(exc).__name__ + ")"})
     else:
-        delivery_errors.append("Telegram-бот не подключён к веб-приложению")
+        delivery_errors.append({"name": "", "role": "", "reason": "Telegram-бот не подключён к веб-приложению"})
 
     _save_panel_delivery_result(db, row, conversation, delivered, delivery_errors)
 
