@@ -73,7 +73,7 @@ export default function App() {
   } = useDirectoryState();
   const {
     issuedCredential, setIssuedCredential, savingUser, setSavingUser,
-    name, setName, panelLogin, setPanelLogin, role, setRole,
+    name, setName, panelLogin, setPanelLogin, role, setRole, additionalInfo, setAdditionalInfo,
     telegramId, setTelegramId, teacherId, setTeacherId, studentId, setStudentId, code, setCode,
   } = useUserEditorState();
   const {
@@ -367,10 +367,10 @@ export default function App() {
   }
 
   function openCreate(defaultRole = "student") {
-    setIssuedCredential(null); setModal({ mode: "create", id: null }); setName(""); setPanelLogin(""); setRole(defaultRole); setTelegramId(""); setError("");
+    setIssuedCredential(null); setModal({ mode: "create", id: null }); setName(""); setPanelLogin(""); setRole(defaultRole); setAdditionalInfo(""); setTelegramId(""); setError("");
   }
   function openEdit(user) {
-    setModal({ mode: "edit", id: user.id }); setName(user.full_name); setPanelLogin(user.web_username || user.full_name); setRole(user.role); setTelegramId(user.telegram_id ? String(user.telegram_id) : ""); setError("");
+    setModal({ mode: "edit", id: user.id }); setName(user.full_name); setPanelLogin(user.web_username || user.full_name); setRole(user.role); setAdditionalInfo(user.additional_info || ""); setTelegramId(user.telegram_id ? String(user.telegram_id) : ""); setError("");
   }
 
   async function saveUser(event) {
@@ -378,6 +378,7 @@ export default function App() {
     setSavingUser(true);
     setError("");
     const body = { full_name: name.trim(), role, telegram_id: telegramId.trim() ? Number(telegramId) : null };
+    if (role === "student") body.additional_info = additionalInfo.trim();
     if (role === "teacher" || role === "student") body.web_username = (panelLogin || name).trim();
     try {
       const saved = modal.mode === "create"
@@ -626,7 +627,7 @@ export default function App() {
               <div className="teacher-graph-student-grid">
                 {(teacherGraph?.students || []).map(student => <div className="teacher-graph-card student" key={student.id}>
                   <div className="avatar student-avatar"><Smile/></div>
-                  <div><b>{student.full_name}</b><small>Ученик</small></div>
+                  <div><b>{student.full_name}</b><small>Ученик</small>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div>
                 </div>)}
               </div>
               {!(teacherGraph?.students || []).length && <div className="empty-state">Пока нет назначенных учеников</div>}
@@ -658,7 +659,7 @@ export default function App() {
                 {!studentsCollapsed && <button className="add-student" onClick={() => { setTeacherId(String(teacher.id)); setStudentId(activeStudents[0]?.id ? String(activeStudents[0].id) : ""); setModal({ mode: "assign" }); }}><Plus/>Назначить ученика</button>}
                 {!studentsCollapsed && <div className="student-list">
                   {students.map(student => <div className="person-card student-card" key={student.id}>
-                    <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small></div></div>
+                    <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
                     <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button>
                   </div>)}
                   {!students.length && <div className="empty-students">Нет назначенных учеников</div>}
@@ -668,7 +669,7 @@ export default function App() {
             </div>
             {!activeTeachers.length && <div className="empty-state"><GraduationCap/><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span></div>}
             {!!unassignedStudents.length && <section className="unassigned"><h2 className="unassigned-title">Ученики без назначения</h2><div className="unassigned-grid">{unassignedStudents.map(student => <div className="person-card student-card unassigned-student-card" key={student.id}>
-              <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small></div></div>
+              <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
               <div className="unassigned-student-actions">
                 <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button>
                 <button className="btn small outline" disabled={!activeTeachers.length} onClick={() => { setStudentId(String(student.id)); setTeacherId(String(activeTeachers[0]?.id || "")); setModal({ mode: "assign" }); }}>Назначить</button>
@@ -776,6 +777,7 @@ export default function App() {
         <button className="btn primary" disabled={!activeStudents.length}>Создать связь</button>
       </form> : <form className="stack" onSubmit={saveUser}>
         <label>Имя и фамилия<input value={name} onChange={e => { const nextName = e.target.value; setName(nextName); if (!panelLogin || panelLogin === name) setPanelLogin(nextName); }} minLength="2" maxLength="160" required autoFocus/></label>
+        {role === "student" && <label>Доп. инфо<input value={additionalInfo} onChange={e => setAdditionalInfo(e.target.value)} maxLength="500" placeholder="Дополнительная информация"/></label>}
         <label>Роль<select value={role} onChange={e => setRole(e.target.value)}><option value="teacher">Учитель</option><option value="student">Ученик</option></select></label>
         <label>Telegram ID <input type="text" inputMode="numeric" pattern="[0-9]*" value={telegramId} onChange={e => setTelegramId(e.target.value)} placeholder="Не подключён"/></label>
         {["teacher", "student"].includes(role) && <>
