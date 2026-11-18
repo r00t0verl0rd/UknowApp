@@ -1146,7 +1146,7 @@ def panel_message_media(message_id: int, principal: PanelUser, db: Db):
 
 def _panel_sender_and_recipients(db: Session, principal: dict, conversation: Conversation):
     """Resolve the sender and Telegram recipients for a panel message."""
-    student = conversation.assignment.student
+    student = conversation.student
     teacher = conversation.teacher
     if principal["role"] == "teacher":
         sender = teacher
