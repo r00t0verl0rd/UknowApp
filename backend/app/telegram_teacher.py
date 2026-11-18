@@ -282,7 +282,7 @@ def teacher_panel_view(
         for item in visible:
             student_name = escape(item["student"].full_name)
             notice = " · " + str(item["unanswered"]) + " новых" if item["unanswered"] else ""
-            lines.append("🟠 " + student_name + notice)
+            lines.append("🟣 " + student_name + notice)
             for row in item["unread"][-3:]:
                 lines.append("   " + escape(message_preview(row)))
             if item["unanswered"] > 3:
