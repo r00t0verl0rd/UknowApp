@@ -619,5 +619,8 @@ async def handle_teacher_keyboard_message(
     except Exception:
         logger.debug("Could not remove teacher keyboard selection message_id=%s", message.message_id)
 
-    await update_teacher_panel(bot, db, teacher)
+    await update_teacher_panel(
+        bot, db, teacher,
+        force_keyboard_refresh=body == TEACHER_BACK_LABEL,
+    )
     return True
