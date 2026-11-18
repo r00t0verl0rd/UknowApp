@@ -30,3 +30,11 @@ class AssignmentCreate(BaseModel):
 
 class PanelMessageCreate(BaseModel):
     text: str = Field(min_length=1, max_length=3900)
+
+
+class PersonalConversationCreate(BaseModel):
+    user_id: int = Field(gt=0)
+
+
+class PersonalMessageCreate(BaseModel):
+    text: str = Field(min_length=1, max_length=3900)
