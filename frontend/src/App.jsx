@@ -777,7 +777,7 @@ export default function App() {
         <button className="btn primary" disabled={!activeStudents.length}>Создать связь</button>
       </form> : <form className="stack" onSubmit={saveUser}>
         <label>Имя и фамилия<input value={name} onChange={e => { const nextName = e.target.value; setName(nextName); if (!panelLogin || panelLogin === name) setPanelLogin(nextName); }} minLength="2" maxLength="160" required autoFocus/></label>
-        {role === "student" && <label>Доп. инфо<input value={additionalInfo} onChange={e => setAdditionalInfo(e.target.value)} maxLength="500" placeholder="Дополнительная информация"/></label>}
+        {role === "student" && <label>Доп. инфо<input value={additionalInfo} onChange={e => setAdditionalInfo(e.target.value)} maxLength="500"/></label>}
         <label>Роль<select value={role} onChange={e => setRole(e.target.value)}><option value="teacher">Учитель</option><option value="student">Ученик</option></select></label>
         <label>Telegram ID <input type="text" inputMode="numeric" pattern="[0-9]*" value={telegramId} onChange={e => setTelegramId(e.target.value)} placeholder="Не подключён"/></label>
         {["teacher", "student"].includes(role) && <>
