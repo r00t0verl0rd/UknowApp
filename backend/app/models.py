@@ -64,6 +64,29 @@ class Conversation(Base):
     assignment: Mapped[Assignment] = relationship(back_populates="conversation")
 
 
+class PersonalConversation(Base):
+    __tablename__ = "personal_conversations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    participant_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True, nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+    participant: Mapped[User] = relationship()
+
+
+class PersonalMessage(Base):
+    __tablename__ = "personal_messages"
+    __table_args__ = (Index("ix_personal_messages_conversation_created_id", "conversation_id", "created_at", "id"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    conversation_id: Mapped[int] = mapped_column(ForeignKey("personal_conversations.id"), nullable=False)
+    sender_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    sender_role: Mapped[str] = mapped_column(String(20), nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+    sender: Mapped[Optional[User]] = relationship()
+
 class TeacherSession(Base):
     __tablename__ = "teacher_sessions"
 
