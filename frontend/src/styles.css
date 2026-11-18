@@ -9311,3 +9311,18 @@ body,
   border-color: #414a5a !important;
   color: #aeb8c8 !important;
 }
+
+
+.password-code-label .password-code-refresh {
+  min-height: 27px;
+  margin-left: 8px;
+  padding: 0 8px;
+  gap: 4px;
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 600;
+}
+.password-code-label .password-code-refresh svg {
+  width: 12px;
+  height: 12px;
+}
