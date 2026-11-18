@@ -63,7 +63,7 @@ export default function App() {
     teacherGraph, setTeacherGraph, collapsedTeacherIds, setCollapsedTeacherIds,
   } = useGraphState();
   const {
-    draft, setDraft, attachment, setAttachment, chats, setChats,
+    draft, setDraft, attachment, setAttachment, chats, setChats, personalChats, setPersonalChats, chatSection, setChatSection,
     selectedChat, setSelectedChat, messages, setMessages, messagesViewportRef,
     chatSearch, setChatSearch, chatFilter, setChatFilter,
     messageFilter, setMessageFilter,
@@ -132,11 +132,10 @@ export default function App() {
       const roleRequest = who.role === "admin"
         ? Promise.all([request("/api/admin/users"), request("/api/admin/overview")])
         : who.role === "teacher" ? request("/api/panel/graph") : Promise.resolve(null);
-      const [conversations, roleData] = await Promise.all([
-        request("/api/panel/conversations"),
-        roleRequest,
+      const [conversations, roleData, personal] = await Promise.all([
+        request("/api/panel/conversations"), roleRequest, request("/api/panel/personal-conversations"),
       ]);
-      setChats(conversations);
+      setChats(conversations); setPersonalChats(personal);
       if (who.role === "admin") {
         const [people, summary] = roleData;
         setUsers(people); setOverview(summary);
@@ -205,9 +204,9 @@ export default function App() {
         }
         // Loading messages marks them read for teachers. Fetch the list after
         // that write so unread counters are correct in the same refresh cycle.
-        const conversations = await request("/api/panel/conversations");
+        const [conversations, personal] = await Promise.all([request("/api/panel/conversations"), request("/api/panel/personal-conversations")]);
         if (!active) return;
-        setChats(conversations);
+        setChats(conversations); setPersonalChats(personal);
       } catch {
         // Keep the current conversation visible during brief network interruptions.
       } finally {
@@ -307,6 +306,7 @@ export default function App() {
   }, [selectedChat?.id, messageFilter, visibleMessages]);
 
   const visibleChats = useMemo(() => {
+    if (selectedChat?.type === "personal" || chatSection === "personal") return personalChats.filter(chat => !chatSearch.trim() || chat.title.toLocaleLowerCase("ru").includes(chatSearch.trim().toLocaleLowerCase("ru")));
     if (profile?.role === "student") return chats.slice(0, 1);
     const query = chatSearch.trim().toLocaleLowerCase("ru");
     // API отдаёт диалоги в порядке последней активности: сохраняем этот порядок
@@ -322,7 +322,7 @@ export default function App() {
       const matchesFilter = chatFilter === "all" || Number(chat.unread_count || 0) > 0;
       return matchesSearch && matchesFilter;
     });
-  }, [chats, chatSearch, chatFilter, profile?.role]);
+  }, [chats, personalChats, chatSection, chatSearch, chatFilter, profile?.role, selectedChat?.type]);
 
   function toggleTheme() {
     setTheme(current => current === "dark-soft" ? "light" : "dark-soft");
@@ -362,7 +362,7 @@ export default function App() {
     } catch {
       // Clear the local view even when the server is temporarily unreachable.
     }
-    localStorage.removeItem("uknowapp-auth"); sessionStorage.removeItem("uknowapp-auth"); setAuth(""); setProfile(null); setTeacherGraph(null); setUsers([]); setOverview(null); setChats([]); setMessages([]); setSelectedChat(null); setDraft(""); setAttachment(null); setIssuedCredential(null);
+    localStorage.removeItem("uknowapp-auth"); sessionStorage.removeItem("uknowapp-auth"); setAuth(""); setProfile(null); setTeacherGraph(null); setUsers([]); setOverview(null); setChats([]); setPersonalChats([]); setMessages([]); setSelectedChat(null); setDraft(""); setAttachment(null); setIssuedCredential(null);
   }
 
   function openCreate(defaultRole = "student") {
@@ -484,10 +484,19 @@ export default function App() {
   async function openChat(chat) {
     setSelectedChat(chat); setPage("chats"); setDraft(""); setAttachment(null); setMessageFilter("all");
     try {
-      setMessages(await request("/api/panel/conversations/" + chat.id + "/messages"));
+      const base = chat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
+      setMessages(await request(base + chat.id + "/messages"));
       if (profile?.role === "teacher") setChats(await request("/api/panel/conversations"));
-    }
-    catch (e) { setError(e.message); }
+    } catch (e) { setError(e.message); }
+  }
+
+  async function createPersonalChat(userId) {
+    try {
+      const chat = await request("/api/panel/personal-conversations", { method: "POST", body: JSON.stringify({ user_id: Number(userId) }) });
+      setPersonalChats(await request("/api/panel/personal-conversations"));
+      setChatSection("personal");
+      await openChat(chat);
+    } catch (e) { setError(e.message); }
   }
 
   async function confirmDeleteMessage() {
@@ -496,10 +505,11 @@ export default function App() {
     setDeletingMessage(true);
     setError("");
     try {
-      const result = await request("/api/panel/messages/" + message.id, { method: "DELETE" });
+      const result = selectedChat?.type === "personal" ? await request("/api/panel/personal-messages/" + message.id, { method: "DELETE" }) : await request("/api/panel/messages/" + message.id, { method: "DELETE" });
       setMessages(current => current.filter(item => item.id !== message.id));
       setDeleteMessageCandidate(null);
-      if (selectedChat) setChats(await request("/api/panel/conversations"));
+      if (selectedChat?.type === "personal") setPersonalChats(await request("/api/panel/personal-conversations"));
+      else if (selectedChat) setChats(await request("/api/panel/conversations"));
       if (result.telegram_failed > 0) {
         notify("Удалено из UknowApp. Не удалось удалить копии в Telegram: " + result.telegram_failed + ". Возможно, Telegram уже не разрешает их удаление.");
       } else {
@@ -517,7 +527,10 @@ export default function App() {
     if (!selectedChat || (!draft.trim() && !attachment)) return;
     try {
       let sentMessage;
-      if (attachment) {
+      if (selectedChat.type === "personal") {
+        if (attachment) throw new Error("В личных диалогах доступны только текстовые сообщения");
+        sentMessage = await request("/api/panel/personal-conversations/" + selectedChat.id + "/messages", { method: "POST", body: JSON.stringify({ text: draft.trim() }) });
+      } else if (attachment) {
         const form = new FormData();
         form.append("file", attachment);
         form.append("text", draft.trim());
@@ -535,9 +548,11 @@ export default function App() {
         });
       }
       setDraft(""); setAttachment(null);
-      setMessages(await request("/api/panel/conversations/" + selectedChat.id + "/messages"));
-      setChats(await request("/api/panel/conversations"));
-      if (profile?.role === "admin" && sentMessage?.delivery_status !== "delivered") {
+      setMessages(await request((selectedChat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/") + selectedChat.id + "/messages"));
+      if (selectedChat.type === "personal") setPersonalChats(await request("/api/panel/personal-conversations"));
+      else setChats(await request("/api/panel/conversations"));
+      if (selectedChat.type === "personal") notify("Сообщение отправлено внутри UknowApp");
+      else if (profile?.role === "admin" && sentMessage?.delivery_status !== "delivered") {
         notify("Сообщение сохранено. Подробности доставки доступны в переписке.");
       } else if (sentMessage?.delivery_status === "delivered" && profile?.role !== "teacher") {
         notify("Сообщение отправлено");
