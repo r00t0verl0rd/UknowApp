@@ -1131,8 +1131,7 @@ button:disabled, .btn:disabled { opacity: .48 !important; cursor: not-allowed !i
 .toolbar.user-toolbar > * { min-width: 0; max-width: 100%; box-sizing: border-box;}
 .toolbar.user-toolbar > .search { width: 100%; min-width: 0; max-width: none; flex: none;}
 .toolbar.user-toolbar > .search input { width: 100%; min-width: 0;}
-.toolbar.user-toolbar > .user-sort { width: 100%; min-width: 0; max-width: 100%; overflow: hidden; box-sizing: border-box;}
-.toolbar.user-toolbar > .user-sort { display: block; width: 100%; min-width: 0; max-width: 100%; text-overflow: ellipsis; white-space: nowrap;}
+.toolbar.user-toolbar > .user-sort { display: block; width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; text-overflow: ellipsis; white-space: nowrap;}
 .toolbar.user-toolbar > .user-count { min-width: 0; max-width: 100%; overflow-wrap: normal;}
 .toolbar.user-toolbar > .user-add-btn { width: auto; min-width: 0; max-width: 100%; line-height: 1.2;}
 /* On narrow desktop windows the search gets its own row, with the other
