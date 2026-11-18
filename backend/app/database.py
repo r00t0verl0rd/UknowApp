@@ -49,6 +49,7 @@ def create_tables() -> None:
             column["name"] for column in inspect(connection).get_columns("conversations")
         }
         if "teacher_id" not in conversation_columns or "student_id" not in conversation_columns:
+            connection.commit()
             connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
             transaction = connection.begin()
             try:
