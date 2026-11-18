@@ -222,10 +222,10 @@ input:focus-visible, select:focus-visible { outline-offset: 2px;}
 
 /* Graph polish: retain the light UknowApp palette, remove visual clutter. */
 /* Fine monochrome dithering hides visible color steps in large graph gradients. */
-.graph-panel { isolation: isolate;}
-.graph-panel::after { content: ""; position: absolute; z-index: 0; inset: 0; pointer-events: none; opacity: .32; mix-blend-mode: soft-light; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 256px 256px;}
+
+
 .graph-panel > * { position: relative; z-index: 1;}
-.graph-panel { position: relative; overflow: hidden; padding: 27px; border: 1px solid #e8e0f2; background: radial-gradient(ellipse at 4% 2%, rgba(194, 153, 255, .22), transparent 34%), radial-gradient(ellipse at 96% 98%, rgba(255, 220, 176, .23), transparent 31%), radial-gradient(ellipse at 86% 0%, rgba(231, 37, 48, .045), transparent 25%), linear-gradient(145deg, #fff 0%, #fdfbff 54%, #fffdfa 100%); box-shadow: 0 12px 34px rgba(66, 45, 105, .055), inset 0 1px rgba(255,255,255,.95);}
+.graph-panel { position: relative; overflow: hidden; padding: 27px; border: 1px solid #e8e0f2; background: #faf8fd; box-shadow: 0 12px 34px rgba(66, 45, 105, .055), inset 0 1px rgba(255,255,255,.95);}
 .graph-panel .legend { padding: 8px 11px; border: 1px solid rgba(226, 218, 239, .9); border-radius: 999px; background: rgba(255,255,255,.76);}
 .graph-panel .legend span { width: 9px; height: 9px;}
 .graph-panel .root-node { position: relative; overflow: hidden; border: 1px solid #ded2f0; border-radius: 17px; background: linear-gradient(112deg, rgba(243,236,255,.97), rgba(255,255,255,.98) 62%, rgba(255,247,246,.96)); box-shadow: 0 8px 22px rgba(86, 61, 139, .09), inset 0 1px 0 rgba(255,255,255,.95);}
@@ -419,7 +419,7 @@ img, video, audio { max-width: 100%;}
    theme layer keeps the selected dark palette consistent on touch screens. */
 :root[data-theme="dark-soft"] .chat-search-control input { background: transparent !important; border: 0 !important; box-shadow: none !important;}
 /* Refined soft-dark surfaces for the school graph and user directory. */
-:root[data-theme="dark-soft"] .graph-panel { background-color: #1e2531 !important; background-image: radial-gradient(ellipse at 12% 0%, rgba(126, 109, 174, .11), transparent 38%), radial-gradient(ellipse at 100% 100%, rgba(121, 75, 87, .08), transparent 34%) !important; border: 1px solid #3a4659 !important; box-shadow: 0 10px 30px rgba(0, 0, 0, .2) !important;}
+:root[data-theme="dark-soft"] .graph-panel { background: #1e2531 !important; border: 1px solid #3a4659 !important; box-shadow: 0 10px 30px rgba(0, 0, 0, .2) !important;}
 :root[data-theme="dark-soft"] .graph-panel .legend { color: #d1d7e3 !important; background: #2a3342 !important; border: 1px solid #46536a !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .root-node {  border: 1px solid #49566d !important;}
 :root[data-theme="dark-soft"] .graph-panel .root-node:before { background: #9687c7 !important; opacity: .9;}
@@ -1565,7 +1565,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 }
 /* Restore the graph's soft rounded surfaces while keeping the workspace full width. */
 .chats-main > .content:not(.chats-content) > .graph-panel, .chats-main > .content:not(.chats-content) > .teacher-readonly-graph { border: 1px solid var(--line, #e8e0f2); border-radius: 20px; background-color: var(--surface, #fff); box-shadow: 0 8px 28px rgba(47, 31, 84, .045); overflow: hidden;}
-.chats-main > .content:not(.chats-content) > .graph-panel { padding: clamp(16px, 2vw, 28px); background-image: radial-gradient(ellipse at 4% 2%, rgba(194, 153, 255, .18), transparent 34%), radial-gradient(ellipse at 96% 98%, rgba(255, 220, 176, .16), transparent 34%), radial-gradient(circle, rgba(118, 84, 189, .055) .8px, transparent 1px); background-size: auto, auto, 20px 20px;}
+.chats-main > .content:not(.chats-content) > .graph-panel { padding: clamp(16px, 2vw, 28px); background-image: none !important;}
 .chats-main > .content:not(.chats-content) > .teacher-readonly-graph { padding: clamp(14px, 1.8vw, 24px);}
 .chats-main > .content:not(.chats-content) > .graph-panel .teacher-branch, .chats-main > .content:not(.chats-content) > .graph-panel .person-card, .chats-main > .content:not(.chats-content) > .teacher-readonly-graph .teacher-graph-card { border-radius: 14px;}
 @media (max-width: 1024px) {
@@ -1689,7 +1689,7 @@ body, .chats-shell, .chats-main { background: var(--canvas);}
 :root:not([data-theme="dark-soft"]) .chat-composer { background: #f8f5fb !important; border-color: #e7dfef !important;}
 :root:not([data-theme="dark-soft"]) .chat-composer textarea, :root:not([data-theme="dark-soft"]) .search, :root:not([data-theme="dark-soft"]) .chat-search-control, :root:not([data-theme="dark-soft"]) .stack input, :root:not([data-theme="dark-soft"]) .stack select { background: #fdfbff !important; border-color: #e6deed !important;}
 /* Graph panels and their nested islands use the same soft surface hierarchy. */
-:root:not([data-theme="dark-soft"]) .graph-panel { background-color: #faf8fd !important; background-image: radial-gradient(ellipse 90% 110% at 0% 0%, rgba(194, 153, 255, .105) 0%, rgba(194, 153, 255, .085) 18%, rgba(194, 153, 255, .055) 42%, rgba(194, 153, 255, .025) 66%, transparent 88%), radial-gradient(ellipse 88% 108% at 100% 100%, rgba(255, 220, 176, .095) 0%, rgba(255, 220, 176, .075) 20%, rgba(255, 220, 176, .045) 44%, rgba(255, 220, 176, .02) 68%, transparent 90%), linear-gradient(135deg, #faf8fd 0%, #f9f7fc 52%, #fbf8f6 100%) !important; border-color: #e7dfef !important;}
+:root:not([data-theme="dark-soft"]) .graph-panel { background: #faf8fd !important; background-image: none !important; border-color: #e7dfef !important;}
 :root:not([data-theme="dark-soft"]) .graph-panel .graph-legend-row > .graph-legend { background: #f0eaf7 !important; border-color: #e2d8ed !important;}
 :root:not([data-theme="dark-soft"]) .graph-panel .empty-students { background: #f4eff9 !important; border-color: #e4daef !important;}
 /* Inputs, secondary tiles and hover states follow the same tinted hierarchy. */
