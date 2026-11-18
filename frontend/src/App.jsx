@@ -867,7 +867,7 @@ export default function App() {
               <small>{dataStats?.users ?? "—"} пользователей · {dataStats?.active_users ?? "—"} активных</small>
               <div className="data-stat-details">
                 <span>Учителя: <b>{dataStats?.teachers ?? "—"}</b></span><span>Ученики: <b>{dataStats?.students ?? "—"}</b></span>
-                <span>Связи учитель–ученик: <b>{dataStats?.assignments ?? "—"}</b> ({dataStats?.active_assignments ?? "—"} активных)</span>
+                <span>Связи учитель–ученик: <b>{dataStats?.assignments ?? "—"}</b></span>
                 <span>Диалоги: <b>{dataStats?.conversations ?? "—"}</b> ученических · <b>{dataStats?.personal_conversations ?? "—"}</b> личных</span>
                 <span>Сообщения: <b>{dataStats?.total_messages ?? "—"}</b> всего</span>
                 <span className="data-stat-subline">Ученические: {dataStats?.messages ?? "—"} · Личные: {dataStats?.personal_messages ?? "—"}</span>
