@@ -665,7 +665,7 @@ export default function App() {
 
         {page === "users" && <>
           <div className="toolbar user-toolbar">
-            <div className="search"><Search/><input placeholder="Поиск по имени или Telegram ID" value={search} onChange={e => setSearch(e.target.value)}/></div>
+            <div className="search"><Search/><input placeholder="Поиск по имени" value={search} onChange={e => setSearch(e.target.value)}/></div>
             <label className="user-sort"><ArrowUpDown size={15}/><select aria-label="Сортировка пользователей" value={userSort} onChange={e => setUserSort(e.target.value)}>
               <option value="name-asc">По имени</option><option value="name-desc">Имя: Я — А</option><option value="teachers">Сначала учителя</option><option value="students">Сначала ученики</option><option value="active">Сначала активные</option><option value="inactive">Сначала отключённые</option>
             </select></label>
