@@ -639,9 +639,9 @@ img, video, audio { max-width: 100%;}
 .confirm-delete-modal .btn.danger svg { width: 16px; height: 16px;}
 :root[data-theme="dark-soft"] .confirm-delete-modal .modal-head h2, :root[data-theme="dark-soft"] .confirm-delete-modal > .hint b { color: #edf0f6;}
 :root[data-theme="dark-soft"] .confirm-delete-modal .btn.danger { color: #fff; border-color: #97505c; background: linear-gradient(110deg, #934656, #aa5967); box-shadow: 0 5px 16px rgba(0, 0, 0, .22);}
-/* Inter keeps long-form interface text highly legible; Manrope gives headings a warm, modern educational character. */
+/* Inter keeps interface text readable; Sora adds character to headings and participant names. */
 html, body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;}
-h1, h2, h3, .brand, .root-node b, .person-info b, .chat-head b, .modal-head h2, .user-person-info { font-family: Manrope, Inter, sans-serif;}
+h1, h2, h3, .brand, .root-node b, .person-info b, .chat-head b, .modal-head h2, .user-person-info { font-family: Sora, Inter, sans-serif;}
 .user-person-info { font-size: 16px; font-weight: 600; letter-spacing: -.18px; line-height: 1.35;}
 /* Desktop inbox: keep the conversation picker in its own scroll area.
    Flex sizing prevents chat rows from sharing/overlapping the same grid track. */
