@@ -272,7 +272,7 @@ def _teacher_keyboard(
         is_persistent=True,
         one_time_keyboard=False,
         input_field_placeholder=(
-            "Отправить сообщение ученику: " + selected_student_name
+            "Написать " + selected_student_name
             if selected_student_name
             else "Выберите ученика для отправки сообщения"
         )[:64],
