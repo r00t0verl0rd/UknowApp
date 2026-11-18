@@ -9303,3 +9303,11 @@ body,
     flex-wrap: wrap;
   }
 }
+
+
+/* Keep the access-code chip subdued in the dark theme. */
+:root[data-theme="dark-soft"] .password-code-label {
+  background: #292f3d !important;
+  border-color: #414a5a !important;
+  color: #aeb8c8 !important;
+}
