@@ -693,27 +693,21 @@ img, video, audio { max-width: 100%; }
   text-align: center;
 }
 .chat-filter-segment button.active span { background: #eee7f8; color: var(--purple); }
-.teacher-login-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: start;
-  gap: 10px;
+.teacher-login-edit-row > span {
+  flex: 0 0 auto;
 }
-.teacher-login-row > label {
+.teacher-login-edit-row > input {
+  flex: 1 1 auto;
+  width: 0;
   min-width: 0;
-}
-.teacher-login-label > span {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--muted);
+  min-height: 28px;
+  margin: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
   font-size: 12px;
-  font-weight: 600;
-  line-height: 1.4;
-}
-.teacher-login-label > span b {
-  color: var(--purple);
-  font-weight: 750;
-  overflow-wrap: anywhere;
 }
 .password-actions {
   display: flex;
@@ -9310,10 +9304,6 @@ body,
 
 /* Teacher credentials stay aligned without crowding the modal. */
 @media (max-width: 560px) {
-  .teacher-login-row {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
-  }
   .password-code-label {
     justify-self: start;
     min-height: 38px;
