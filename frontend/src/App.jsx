@@ -538,12 +538,10 @@ export default function App() {
       setDraft(""); setAttachment(null);
       setMessages(await request("/api/panel/conversations/" + selectedChat.id + "/messages"));
       setChats(await request("/api/panel/conversations"));
-      if (sentMessage?.delivery_status === "delivered") {
-        if (profile?.role !== "teacher") notify("Сообщение отправлено");
-      } else if (sentMessage?.delivery_status === "partial") {
-        notify("Сообщение доставлено не всем участникам");
-      } else {
-        notify("Сохранено в истории, но Telegram-доставка не удалась");
+      if (profile?.role === "admin" && sentMessage?.delivery_status !== "delivered") {
+        notify("Сообщение сохранено. Подробности доставки доступны в переписке.");
+      } else if (sentMessage?.delivery_status === "delivered" && profile?.role !== "teacher") {
+        notify("Сообщение отправлено");
       }
     } catch (e) { setError(e.message); }
   }
