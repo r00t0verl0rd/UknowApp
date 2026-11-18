@@ -226,11 +226,6 @@ def _teacher_page(items: list[dict], page: int) -> tuple[int, int, list[dict]]:
     return total_pages, current_page, items[start:start + TEACHER_PAGE_SIZE]
 
 
-def _teacher_button_labels(items: list[dict]) -> list[str]:
-    """Use the same friendly student label in the keyboard and message router."""
-    return [item["student"].full_name.strip() for item in items]
-
-
 def _teacher_keyboard(
     all_items: list[dict],
     visible: list[dict],
@@ -238,15 +233,7 @@ def _teacher_keyboard(
     total_pages: int,
     selected_student_name: Optional[str] = None,
 ) -> ReplyKeyboardMarkup:
-    all_labels = _teacher_button_labels(all_items)
-    labels_by_conversation = {
-        item["conversation"].id: label
-        for item, label in zip(all_items, all_labels)
-    }
-    labels = [
-        labels_by_conversation[item["conversation"].id]
-        for item in visible
-    ]
+    labels = [item["student"].full_name.strip() for item in visible]
     rows = []
     for index in range(0, len(labels), 2):
         row = [KeyboardButton(text=label) for label in labels[index:index + 2]]
@@ -594,8 +581,5 @@ async def handle_teacher_keyboard_message(
     except Exception:
         logger.debug("Could not remove teacher keyboard selection message_id=%s", message.message_id)
 
-    await update_teacher_panel(
-        bot, db, teacher,
-        force_keyboard_refresh=body == TEACHER_BACK_LABEL or body in actions,
-    )
+    await update_teacher_panel(bot, db, teacher)
     return True
