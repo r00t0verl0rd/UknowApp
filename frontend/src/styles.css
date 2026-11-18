@@ -1768,6 +1768,9 @@ border-color: transparent !important;}
 .data-stat-card > span { color: var(--muted); font-size: 12px; font-weight: 700;}
 .data-stat-card > b { font-size: 25px; font-variant-numeric: tabular-nums;}
 .data-stat-card > small { color: var(--muted); font-size: 11px;}
+.data-stat-details { display: grid; gap: 6px; margin-top: 5px; padding-top: 11px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; line-height: 1.45;}
+.data-stat-details b { color: var(--ink); font-weight: 650; font-variant-numeric: tabular-nums;}
+.data-stat-details .data-stat-subline { padding-left: 10px; font-size: 10px;}
 .data-tools-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;}
 .data-tool-card { display: flex; flex-direction: column; align-items: flex-start; gap: 12px;}
 .data-tool-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; background: var(--button-bg, #f1edf7); color: var(--purple); }
