@@ -146,11 +146,10 @@ export default function App() {
       } else {
         setTeacherGraph(null); setUsers([]); setOverview(null);
         setPage("chats");
-        const onlyChat = conversations[0] || null;
-        setSelectedChat(onlyChat);
-        setMessages(onlyChat
-          ? await request("/api/panel/conversations/" + onlyChat.id + "/messages")
-          : []);
+        // Keep the inbox visible on entry. Fetching messages marks them read,
+        // so only an explicit student click should clear the unread counter.
+        setSelectedChat(null);
+        setMessages([]);
       }
     } catch (e) {
       setError(e.message);
