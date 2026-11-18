@@ -353,7 +353,7 @@ img, video, audio { max-width: 100%;}
 .theme-toggle svg { width: 17px; height: 17px;}
 /* Keep desktop theme and refresh controls visually consistent with the compact touch controls. */
 .topbar-actions > .theme-toggle:hover, .topbar-actions > .icon-btn:hover { background: #eae4f4; border-color: #d8c9ed; color: #573e99; box-shadow: 0 3px 8px rgba(87, 62, 153, .10);}
-/* Desktop and tablet actions stay in the sidebar footer / top bar. */
+/* Desktop actions stay in the sidebar footer / top bar. */
 .sidebar-bottom { margin-top: auto;}
 .sidebar-bottom > .desktop-logout { display: flex;}
 .mobile-quick-actions { display: none;}
@@ -682,7 +682,7 @@ html, body { overflow-x: clip;}
 .graph-panel .graph-legend-row > .graph-legend { flex: 0 0 auto; width: fit-content; max-width: calc(100% - 150px); align-self: stretch; box-sizing: border-box;}
 .graph-panel .graph-add-participant { flex: 0 0 auto; align-self: stretch; min-height: 0; height: auto; box-sizing: border-box;}
 /* Prevent graph counter badges from escaping their compact column on phones. */
-/* Responsive layout: exactly three viewport-width ranges. */
+/* Two main layout modes: mobile through 1024px, desktop from 1025px. */
 @media (min-width: 1025px) {
 .chat-layout {  overflow: hidden;}
 .chat-detail {   min-width: 0;}
@@ -1008,8 +1008,8 @@ button:disabled { opacity: .5 !important;}
 }
 /* --------------------------------------------------------------------------
    UknowApp unified visual system
-   Shared component surfaces and interaction states across desktop, tablet,
-   mobile, and both color themes. Layout-specific sizing remains above.
+   Shared component surfaces and interaction states across desktop and
+   mobile layouts, and both color themes. Layout-specific sizing remains above.
    -------------------------------------------------------------------------- */
 /* Consistent focus and motion without changing component geometry. */
 button, input, select, textarea { font-family: inherit;}
@@ -1062,7 +1062,7 @@ input::placeholder, textarea::placeholder { color: #a49daf;}
 :root[data-theme="dark-soft"] .modal { border-color: #39465a; box-shadow: 0 22px 70px rgba(0, 0, 0, .32);}
 :root[data-theme="dark-soft"] .user-row { border-bottom-color: #303b4c;}
 :root[data-theme="dark-soft"] .person-card { box-shadow: none;}
-/* Users page: responsive layout rules shared by desktop, tablet and mobile. */
+/* Users page: responsive layout rules shared by desktop and mobile. */
 .user-toolbar { display: grid; grid-template-columns: minmax(180px, 1fr) auto auto auto; align-items: center; gap: 10px; width: 100%; min-width: 0; box-sizing: border-box;}
 .user-toolbar > .search { width: auto; min-width: 0; max-width: none; flex: none; box-sizing: border-box;}
 .user-toolbar > .user-sort { min-width: 0; max-width: 100%; box-sizing: border-box;}
@@ -1074,8 +1074,7 @@ input::placeholder, textarea::placeholder { color: #a49daf;}
 .user-person-info, .user-actions, .user-info-wrap { min-width: 0;}
 .user-actions { max-width: 100%;}
 .user-info-popover { right: 0; box-sizing: border-box;}
-/* Narrow desktop windows and tablets: controls wrap instead of forcing
-   the page wider than the space left beside the sidebar. */
+/* Narrow desktop windows: wrap controls before they overflow beside the sidebar. */
 @media (min-width: 1025px) and (max-width: 1200px) {
 .user-toolbar { grid-template-columns: minmax(0, 1fr) minmax(0, auto); gap: 9px;}
 .user-toolbar > .search { grid-column: 1 / -1;}
@@ -1105,7 +1104,7 @@ input::placeholder, textarea::placeholder { color: #a49daf;}
 .user-toolbar > .user-count { justify-content: space-between;}
 .user-row > .user-actions { justify-content: flex-start;}
 }
-/* Final button system: the same component styles on desktop, tablet and mobile.
+/* One button system for desktop and mobile.
    Breakpoints may change layout/size, but never replace button colours or surfaces. */
 /* Neutral buttons */
 .btn:not(.primary):not(.danger):not(.disconnect), .sidebar nav button:not(.active), .logout, .icon-btn, .theme-toggle, .person-actions button:not(.danger-icon), .user-action-btn:not(.connect):not(.disconnect):not(.user-delete), .add-student, .graph-add-participant, .attach-control, .chat-filter-segment button, .user-info-popover-head button, .selected-file button { -webkit-appearance: none !important; appearance: none !important; background: var(--button-bg) !important; border: 1px solid var(--button-border) !important; color: var(--button-text) !important; box-shadow: var(--ui-shadow-soft, 0 2px 6px rgba(41,34,63,.06)) !important;}
@@ -1138,8 +1137,8 @@ button:disabled, .btn:disabled { opacity: .48 !important; cursor: not-allowed !i
 .toolbar.user-toolbar > .user-sort select { display: block; flex: 1 1 0; width: 0; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
 .toolbar.user-toolbar > .user-count { min-width: 0; max-width: 100%; overflow-wrap: normal;}
 .toolbar.user-toolbar > .user-add-btn { width: auto; min-width: 0; max-width: 100%; line-height: 1.2;}
-/* On tablets the search gets its own row; the remaining controls stay
-   in a compact two-column grid rather than spreading across the screen. */
+/* On narrow desktop windows the search gets its own row, with the other
+   controls arranged below rather than spreading beyond the available width. */
 @media (min-width: 1025px) and (max-width: 1200px) {
 .toolbar.user-toolbar > .user-count { white-space: normal; text-align: right;}
 }
@@ -1244,7 +1243,7 @@ button:focus-visible, .btn:focus-visible { outline: 2px solid #aa95d0 !important
 .toolbar.user-toolbar > .user-sort select { height: 100% !important; min-height: 0 !important; padding-block: 0 !important; line-height: normal !important;}
 .toolbar.user-toolbar > .user-count { justify-self: start !important; box-shadow: none !important;}
 .toolbar.user-toolbar > .user-add-btn { justify-self: end !important; margin-left: auto !important; min-height: 42px !important; height: 42px !important; padding: 0 15px !important; white-space: nowrap !important;}
-/* Tablet: two fixed rows, so controls never wrap unpredictably. */
+/* Narrow desktop windows: two fixed rows keep toolbar controls aligned. */
 @media (min-width: 1025px) and (max-width: 1200px) {
 .toolbar.user-toolbar { grid-template-columns: minmax(0, 1fr) minmax(190px, .8fr) !important; grid-template-rows: 42px 42px !important;}
 .toolbar.user-toolbar > .search { grid-column: 1 !important; grid-row: 1 !important; width: 100% !important;}
@@ -1275,8 +1274,6 @@ button:focus-visible, .btn:focus-visible { outline: 2px solid #aa95d0 !important
 .toolbar.user-toolbar > .user-count b, .toolbar.user-toolbar > .user-add-btn svg{ flex: 0 0 auto !important;}
 }
 /* Keep the navigation shell fixed while only the active section viewport changes. */
-@media (max-width: 1024px) {
-}
 /* Shared workspace rhythm: every section starts on the same grid and uses
    the same responsive outer spacing. */
 .chats-main > .content { width: 100%; max-width: 1680px; margin-inline: auto; padding: clamp(18px, 2vw, 28px) clamp(16px, 2.2vw, 34px); box-sizing: border-box; min-width: 0;}
@@ -1285,7 +1282,7 @@ button:focus-visible, .btn:focus-visible { outline: 2px solid #aa95d0 !important
 @media (max-width: 1024px) {
 .chats-main > .content { padding: 12px clamp(9px, 3vw, 14px) 14px;}
 
-/* Touch-first viewport and dialog behavior for tablet and mobile layouts. */
+/* Touch-first viewport and dialog behavior for the mobile layout through 1024px. */
 html, body, #root { min-height: 100%; height: 100%; overflow: hidden;}
 .chats-shell { display: flex; flex-direction: column; width: 100%;  overscroll-behavior: none;}
 .chats-shell > .sidebar { z-index: 40;}
@@ -1412,8 +1409,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 @media (prefers-reduced-motion: reduce) {
 *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important;}
 }
-/* Stable user rows on tablets: identity and actions occupy predictable
-   grid tracks; long names never compete with the action controls. */
+/* Stable user rows: identity and actions occupy predictable grid tracks;
+   long names never compete with the action controls. */
 .user-list, .user-row { min-width: 0; max-width: 100%; box-sizing: border-box;}
 .user-row > .user-person-info { overflow-wrap: anywhere;}
 .user-row > .user-person-info > b { display: block; max-width: 100%; overflow-wrap: anywhere;}
@@ -1461,12 +1458,6 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .user-row > .user-actions { gap: 3px;}
 .user-row > .user-actions > .user-action-btn, .user-row > .user-actions > .user-info-wrap > .user-action-btn, .user-row > .user-actions .connect-toggle { width: 29px; min-width: 29px; height: 29px; min-height: 29px;}
 }
-/* Tablet fix: the desktop sidebar is fixed to the viewport. At tablet
-   widths it must return to normal flow, otherwise its full-width layer
-   covers the workspace and makes the active section appear empty. */
-/* Tablet workspace: keep the navigation in a compact left rail and reserve
-   the remaining viewport for the active page. This avoids the full-width
-   sidebar consuming the entire tablet height at intermediate breakpoints. */
 /* Mobile chat: keep the conversation history as the primary workspace.
    The picker stays usable but compact; the composer uses a two-column footer
    so it does not consume the message viewport. */
@@ -1583,7 +1574,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 @media (max-width: 1024px) {
 .chats-main > .content:not(.chats-content) > .graph-panel, .chats-main > .content:not(.chats-content) > .teacher-readonly-graph { border-radius: 16px; padding: 13px;}
 }
-/* Keep assigned student cards strictly inside their teacher branch on desktop and tablet. */
+/* Keep assigned student cards strictly inside their teacher branch on desktop. */
 @media (min-width: 1025px) {
 .chats-main > .content:not(.chats-content) > .graph-panel .teacher-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 255px), 1fr)); min-width: 0;}
 .chats-main > .content:not(.chats-content) > .graph-panel .teacher-branch { min-width: 0; max-width: 100%; box-sizing: border-box;}
@@ -1610,7 +1601,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .message-delete-preview { max-height: 120px; overflow: auto; margin: 14px 0; padding: 12px 14px; border: 1px solid var(--line, #ebe7f1); border-radius: 10px; background: var(--surface-soft, #f7f5fa); color: var(--ink, #29223f); font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere;}
 :root[data-theme="dark-soft"] .message-delete-preview { background: var(--ui-control-bg); border-color: var(--ui-border); color: var(--ink);}
 :root[data-theme="dark-soft"] .message-delete-btn:hover { background: #4a2933; color: #ff9ca7;}
-/* Desktop and tablet: keep attachment controls and the send action on one row. */
+/* Desktop: keep attachment controls and the send action on one row. */
 @media (min-width: 1025px) {
 .chat-composer .composer-footer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; justify-content: stretch; gap: 12px; width: 100%; min-width: 0;}
 .chat-composer .composer-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0;}
