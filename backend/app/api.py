@@ -1165,7 +1165,7 @@ def _save_panel_delivery_result(db: Session, row: Message, conversation: Convers
         metadata["telegram_delivery_errors"] = delivery_errors
     row.metadata_json = json.dumps(metadata, ensure_ascii=False)
     row.delivery_status = (
-        "delivered" if delivered and not delivery_errors
+        "delivered" if (delivered or row.sender_role == "teacher") and not delivery_errors
         else ("partial" if delivered else "failed")
     )
     db.commit()
@@ -1284,13 +1284,18 @@ async def send_panel_message(
     delivered = []
     if bot:
         for recipient, recipient_role in recipients:
-            if not recipient.active or not recipient.telegram_id:
+            if not recipient.active:
                 delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
+                continue
+            if not recipient.telegram_id:
+                if not (principal["role"] == "teacher" and recipient_role == "student"):
+                    delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                 continue
             try:
                 target = student_target if recipient_role == "student" else {"chat_id": recipient.telegram_id}
                 if not target:
-                    delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
+                    if not (principal["role"] == "teacher" and recipient_role == "student"):
+                        delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                     continue
                 # The student already knows this is the teacher's private chat.
                 # Deliver teacher text naturally; only label a separate admin role.
@@ -1380,12 +1385,17 @@ async def send_panel_attachment(
     delivered = []
     if bot:
         for recipient, recipient_role in recipients:
-            if not recipient.active or not recipient.telegram_id:
+            if not recipient.active:
                 delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
+                continue
+            if not recipient.telegram_id:
+                if not (principal["role"] == "teacher" and recipient_role == "student"):
+                    delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                 continue
             target = student_target if recipient_role == "student" else {"chat_id": recipient.telegram_id}
             if not target:
-                delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
+                if not (principal["role"] == "teacher" and recipient_role == "student"):
+                    delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                 continue
             # Teacher and student already share this conversation; avoid repeating
             # a sender label on every teacher attachment.
