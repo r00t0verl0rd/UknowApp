@@ -74,7 +74,7 @@ export default function App() {
   } = useDirectoryState();
   const {
     issuedCredential, setIssuedCredential, savingUser, setSavingUser,
-    name, setName, teacherLogin, setTeacherLogin, role, setRole,
+    name, setName, panelLogin, setPanelLogin, role, setRole,
     telegramId, setTelegramId, teacherId, setTeacherId, studentId, setStudentId, code, setCode,
   } = useUserEditorState();
   const {
@@ -130,23 +130,32 @@ export default function App() {
       setProfile(who);
 
       // Independent panel datasets are fetched together to avoid serial network waits.
+      const roleRequest = who.role === "admin"
+        ? Promise.all([request("/api/admin/users"), request("/api/admin/overview")])
+        : who.role === "teacher" ? request("/api/panel/graph") : Promise.resolve(null);
       const [conversations, roleData] = await Promise.all([
         request("/api/panel/conversations"),
-        who.role === "admin"
-          ? Promise.all([request("/api/admin/users"), request("/api/admin/overview")])
-          : request("/api/panel/graph")
+        roleRequest,
       ]);
       setChats(conversations);
       if (who.role === "admin") {
         const [people, summary] = roleData;
         setUsers(people); setOverview(summary);
-      } else {
+      } else if (who.role === "teacher") {
         setTeacherGraph(roleData);
         setUsers([]); setOverview(null);
+      } else {
+        setTeacherGraph(null); setUsers([]); setOverview(null);
+        setPage("chats");
+        const onlyChat = conversations[0] || null;
+        setSelectedChat(onlyChat);
+        setMessages(onlyChat
+          ? await request("/api/panel/conversations/" + onlyChat.id + "/messages")
+          : []);
       }
     } catch (e) {
       setError(e.message);
-      if (String(e.message).toLowerCase().includes("учитель") || String(e.message).toLowerCase().includes("логин") || String(e.message).toLowerCase().includes("сессия") || String(e.message).toLowerCase().includes("войдите") || String(e.message).includes("401")) {
+      if (["учитель", "ученик", "логин", "сессия", "войдите", "учётная запись"].some(term => String(e.message).toLowerCase().includes(term)) || String(e.message).includes("401")) {
         localStorage.removeItem("uknowapp-auth"); sessionStorage.removeItem("uknowapp-auth");
         setAuth("");
         setProfile(null);
@@ -342,7 +351,7 @@ export default function App() {
           : typeof result.detail === "string" ? result.detail : "Не удалось войти";
         throw new Error(detail);
       }
-      localStorage.setItem("uknowapp-auth", "1"); sessionStorage.removeItem("uknowapp-auth"); setProfile(result); setPage("graph"); setAuth("1"); setPassword("");
+      localStorage.setItem("uknowapp-auth", "1"); sessionStorage.removeItem("uknowapp-auth"); setProfile(result); setPage(result.role === "student" ? "chats" : "graph"); setAuth("1"); setPassword("");
     } catch (e) {
       setError(e.message || "Не удалось войти");
     }
@@ -358,10 +367,10 @@ export default function App() {
   }
 
   function openCreate(defaultRole = "student") {
-    setIssuedCredential(null); setModal({ mode: "create", id: null }); setName(""); setTeacherLogin(""); setRole(defaultRole); setTelegramId(""); setError("");
+    setIssuedCredential(null); setModal({ mode: "create", id: null }); setName(""); setPanelLogin(""); setRole(defaultRole); setTelegramId(""); setError("");
   }
   function openEdit(user) {
-    setModal({ mode: "edit", id: user.id }); setName(user.full_name); setTeacherLogin(user.web_username || user.full_name); setRole(user.role); setTelegramId(user.telegram_id ? String(user.telegram_id) : ""); setError("");
+    setModal({ mode: "edit", id: user.id }); setName(user.full_name); setPanelLogin(user.web_username || user.full_name); setRole(user.role); setTelegramId(user.telegram_id ? String(user.telegram_id) : ""); setError("");
   }
 
   async function saveUser(event) {
@@ -369,7 +378,7 @@ export default function App() {
     setSavingUser(true);
     setError("");
     const body = { full_name: name.trim(), role, telegram_id: telegramId.trim() ? Number(telegramId) : null };
-    if (role === "teacher") body.web_username = (teacherLogin || name).trim();
+    if (role === "teacher" || role === "student") body.web_username = (panelLogin || name).trim();
     try {
       const saved = modal.mode === "create"
         ? await request("/api/admin/users", { method: "POST", body: JSON.stringify(body) })
@@ -380,7 +389,8 @@ export default function App() {
         setIssuedCredential({
           full_name: saved.full_name,
           username: saved.web_username || saved.full_name,
-          code: saved.issued_access_code
+          code: saved.issued_access_code,
+          role: saved.role,
         });
       } else {
         notify(modal.mode === "create" ? "Участник добавлен" : "Изменения сохранены");
@@ -392,8 +402,8 @@ export default function App() {
     }
   }
 
-  async function regenerateTeacherAccessCode() {
-    if (!modal || modal.mode !== "edit" || role !== "teacher") return;
+  async function regeneratePanelAccessCode() {
+    if (!modal || modal.mode !== "edit" || !["teacher", "student"].includes(role)) return;
     setSavingUser(true);
     setError("");
     try {
@@ -402,7 +412,8 @@ export default function App() {
       setIssuedCredential({
         full_name: issued.full_name,
         username: issued.web_username || issued.full_name,
-        code: issued.issued_access_code
+        code: issued.issued_access_code,
+        role: issued.role,
       });
       void refresh();
     } catch (e) {
@@ -556,14 +567,12 @@ export default function App() {
   return <div className="shell chats-shell">
     <aside className="sidebar">
       <div className="brand"><img src="/logo.png" alt="" /><span>Uknow<span>App</span></span></div>
-      <div className="school-label">{profile?.role === "admin" ? "УПРАВЛЕНИЕ ШКОЛОЙ" : "РАБОЧЕЕ МЕСТО УЧИТЕЛЯ"}</div>
+      <div className="school-label">{profile?.role === "admin" ? "УПРАВЛЕНИЕ ШКОЛОЙ" : profile?.role === "student" ? "ЛИЧНЫЙ КАБИНЕТ УЧЕНИКА" : "РАБОЧЕЕ МЕСТО УЧИТЕЛЯ"}</div>
       <nav>
-        <>
+        {profile?.role !== "student" && <>
           <button className={page === "graph" ? "active" : ""} onClick={() => setPage("graph")}><Activity/>Структура</button>
-          {profile?.role === "admin" && <>
-          <button className={page === "users" ? "active" : ""} onClick={() => setPage("users")}><Users/>Пользователи</button>
-          </>}
-        </>
+          {profile?.role === "admin" && <button className={page === "users" ? "active" : ""} onClick={() => setPage("users")}><Users/>Пользователи</button>}
+        </>}
         <button className={page === "chats" ? "active" : ""} onClick={() => setPage("chats")}><MessageCircle/>Переписки</button>
       </nav>
       <div className="sidebar-bottom">
@@ -686,7 +695,7 @@ export default function App() {
                   <div className="user-info-line"><span className={"user-status-dot " + (user.active ? "is-active" : "is-inactive")}/><span>{user.active ? "Активен" : "Отключён"}</span></div>
                   <div className="user-info-line"><Link2 size={14}/><span>{user.telegram_id ? "Telegram подключён" : "Telegram не подключён"}</span></div>
                   <div className="user-info-login"><span>Telegram ID</span><b>{user.telegram_id || "Не подключён"}</b></div>
-                  {user.role === "teacher" && <div className="user-info-login"><span>Логин</span><b>{user.web_username || user.full_name}</b></div>}
+                  {["teacher", "student"].includes(user.role) && <div className="user-info-login"><span>Логин</span><b>{user.web_username || user.full_name}</b></div>}
                 </div>}
               </div>
               <button className="user-action-btn edit-btn" onClick={() => openEdit(user)} title="Изменить профиль" aria-label="Изменить профиль"><Pencil/></button>
@@ -697,12 +706,12 @@ export default function App() {
 
         {page === "chats" && <>
           <div className={"chat-layout" + (selectedChat ? " chat-layout-conversation-open" : " chat-layout-list-open")}><div className="chat-list"><div className="chat-list-tools">
-              <div className="chat-search-control">
+              {profile?.role !== "student" && <div className="chat-search-control">
                 <Search size={17}/>
                 <input aria-label="Поиск по имени" placeholder="Поиск по имени" value={chatSearch} onChange={e => setChatSearch(e.target.value)}/>
                 {chatSearch && <button type="button" onClick={() => setChatSearch("")} aria-label="Очистить поиск"><X size={14}/></button>}
-              </div>
-              {profile?.role !== "admin" && <div className="chat-filter-segment" role="group" aria-label="Фильтр диалогов">
+              </div>}
+              {profile?.role === "teacher" && <div className="chat-filter-segment" role="group" aria-label="Фильтр диалогов">
                 <button type="button" className={chatFilter === "all" ? "active" : ""} aria-pressed={chatFilter === "all"} onClick={() => setChatFilter("all")}>
                   <MessageCircle size={14}/>Все диалоги
                 </button>
@@ -717,7 +726,7 @@ export default function App() {
                 <div className="chat-item-heading">
                   <div className="chat-item-participants">
                     {profile?.role === "admin" && <span>{chat.teacher.full_name}</span>}
-                    <span>{chat.student.full_name}</span>
+                    <span>{profile?.role === "student" ? chat.teacher.full_name : chat.student.full_name}</span>
                   </div>
                   {profile?.role === "teacher" && unreadCount > 0 && <span className="unread-badge" title="Непрочитанные сообщения" aria-label={unreadCount + " непрочитанных сообщений"}>{unreadCount > 99 ? "99+" : unreadCount}</span>}
                 </div>
@@ -725,10 +734,10 @@ export default function App() {
               </button>;
             })}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">{profile?.role === "admin" ? "Учитель не найден" : "По выбранному фильтру ничего не найдено"}</div>}</div></div>
             <div className="chat-detail">{selectedChat ? <>
-              <div className="chat-head"><button type="button" className="mobile-chat-back" onClick={() => { setSelectedChat(null); setMessages([]); }} aria-label="Назад к списку диалогов"><ArrowLeft size={19}/><span>Диалоги</span></button><div className="chat-head-person"><b>{selectedChat.student.full_name}</b>{profile?.role === "admin" && <small>{selectedChat.teacher.full_name}</small>}</div><div className="chat-head-tools"><select aria-label="Фильтр сообщений" value={messageFilter} onChange={e => setMessageFilter(e.target.value)}><option value="all">Все сообщения</option><option value="media">Все вложения</option><option value="audio">Аудио</option><option value="photos">Фото</option><option value="files">Файлы и видео</option></select>{selectedChat.status !== "active" && <span className="role-tag">Закрыта</span>}</div></div>
+              <div className="chat-head"><button type="button" className="mobile-chat-back" onClick={() => { setSelectedChat(null); setMessages([]); }} aria-label="Назад к списку диалогов"><ArrowLeft size={19}/><span>Диалоги</span></button><div className="chat-head-person"><b>{profile?.role === "student" ? selectedChat.teacher.full_name : selectedChat.student.full_name}</b>{profile?.role === "admin" && <small>{selectedChat.teacher.full_name}</small>}{profile?.role === "student" && <small>Ваш учитель</small>}</div><div className="chat-head-tools"><select aria-label="Фильтр сообщений" value={messageFilter} onChange={e => setMessageFilter(e.target.value)}><option value="all">Все сообщения</option><option value="media">Все вложения</option><option value="audio">Аудио</option><option value="photos">Фото</option><option value="files">Файлы и видео</option></select>{selectedChat.status !== "active" && <span className="role-tag">Закрыта</span>}</div></div>
               <div className="messages" ref={messagesViewportRef}>{visibleMessages.map(message => <MessageBubble message={message} key={message.id} onDelete={setDeleteMessageCandidate} viewerRole={profile?.role} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}{!!messages.length && !visibleMessages.length && <div className="empty-state">Нет сообщений этого типа</div>}</div>
               {selectedChat.status === "active" && <form className="chat-composer" onSubmit={sendChatMessage}>
-                <textarea value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder={profile?.role === "admin" ? "Сообщение от администратора обеим сторонам…" : "Ответить ученику…"} rows={2} maxLength={4000}/>
+                <textarea value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder={profile?.role === "admin" ? "Сообщение от администратора обеим сторонам…" : profile?.role === "student" ? "Сообщение учителю…" : "Ответить ученику…"} rows={2} maxLength={4000}/>
                 <div className="composer-footer">
                   <div className="composer-tools">
                     <label className="attach-control"><Paperclip size={16}/> Прикрепить файл<input type="file" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" onChange={e => setAttachment(e.target.files?.[0] || null)}/></label>
@@ -737,7 +746,7 @@ export default function App() {
                   <div className="composer-send"><button className="btn primary" disabled={!draft.trim() && !attachment}>Отправить <ChevronRight size={16}/></button></div>
                 </div>
               </form>}
-            </> : <div className="empty-state">Выберите ученика слева</div>}</div>
+            </> : <div className="empty-state">{profile?.role === "student" ? "Ваша переписка с учителем появится здесь" : "Выберите ученика слева"}</div>}</div>
           </div>
         </>}
       </div>
@@ -751,18 +760,18 @@ export default function App() {
         <p className="hint">Если у ученика уже есть активное назначение, оно будет заменено новым.</p>
         <button className="btn primary" disabled={!activeStudents.length}>Создать связь</button>
       </form> : <form className="stack" onSubmit={saveUser}>
-        <label>Имя и фамилия<input value={name} onChange={e => { const nextName = e.target.value; setName(nextName); if (!teacherLogin || teacherLogin === name) setTeacherLogin(nextName); }} minLength="2" maxLength="160" required autoFocus/></label>
+        <label>Имя и фамилия<input value={name} onChange={e => { const nextName = e.target.value; setName(nextName); if (!panelLogin || panelLogin === name) setPanelLogin(nextName); }} minLength="2" maxLength="160" required autoFocus/></label>
         <label>Роль<select value={role} onChange={e => setRole(e.target.value)}><option value="teacher">Учитель</option><option value="student">Ученик</option></select></label>
         <label>Telegram ID <input type="text" inputMode="numeric" pattern="[0-9]*" value={telegramId} onChange={e => setTelegramId(e.target.value)} placeholder="Не подключён"/></label>
-        {role === "teacher" && <>
-          <div className="teacher-credentials-panel">
-            <div className="teacher-credential-row teacher-login-edit-row">
-              <label htmlFor="teacher-web-login">Логин веб-панели</label>
-              <input id="teacher-web-login" value={teacherLogin || name} onChange={e => setTeacherLogin(e.target.value)} minLength="2" maxLength="160" required autoComplete="off" />
+        {["teacher", "student"].includes(role) && <>
+          <div className="panel-credentials-panel">
+            <div className="panel-credential-row panel-login-edit-row">
+              <label htmlFor="panel-web-login">Логин веб-панели</label>
+              <input id="panel-web-login" value={panelLogin || name} onChange={e => setPanelLogin(e.target.value)} minLength="2" maxLength="160" required autoComplete="off" />
             </div>
-            {modal.mode === "edit" && users.find(u => u.id === modal.id)?.role === "teacher" && <div className="teacher-credential-row teacher-access-row">
+            {modal.mode === "edit" && users.find(u => u.id === modal.id)?.role === role && <div className="panel-credential-row panel-access-row">
               <span>Код доступа</span>
-              <div className="teacher-access-value"><b>XXX-XXX</b><button type="button" className="btn outline password-code-refresh" onClick={regenerateTeacherAccessCode} disabled={savingUser} title="Старый код сразу перестанет действовать"><RefreshCw size={12}/>Обновить код</button></div>
+              <div className="panel-access-value"><b>XXXX-XXXX</b><button type="button" className="btn outline password-code-refresh" onClick={regeneratePanelAccessCode} disabled={savingUser} title="Старый код сразу перестанет действовать"><RefreshCw size={12}/>Обновить код</button></div>
             </div>}
           </div>
           {modal.mode === "create" && <p className="password-info">Код доступа создастся автоматически — один для веб-панели и Telegram.</p>}
@@ -815,10 +824,10 @@ export default function App() {
       </section>
     </div>}
     {issuedCredential && <div className="overlay" onMouseDown={() => setIssuedCredential(null)}><section className="modal credential-modal" onMouseDown={e => e.stopPropagation()}>
-      <div className="modal-head"><div><div className="eyebrow">ЕДИНЫЙ КОД ДОСТУПА УЧИТЕЛЯ</div><h2>{issuedCredential.full_name}</h2></div><button className="icon-btn" onClick={() => setIssuedCredential(null)}><X/></button></div>
+      <div className="modal-head"><div><div className="eyebrow">{issuedCredential.role === "student" ? "ЕДИНЫЙ КОД ДОСТУПА УЧЕНИКА" : "ЕДИНЫЙ КОД ДОСТУПА УЧИТЕЛЯ"}</div><h2>{issuedCredential.full_name}</h2></div><button className="icon-btn" onClick={() => setIssuedCredential(null)}><X/></button></div>
       <div className="credential-row"><span>Логин</span><b>{issuedCredential.username}</b><button type="button" className="icon-btn" onClick={async () => notify(await copyText(issuedCredential.username) ? "Логин скопирован" : "Не удалось скопировать логин")} aria-label="Скопировать логин"><Copy size={16}/></button></div>
       <div className="credential-password"><span>Код доступа</span><b>{issuedCredential.code}</b></div>
-      <p className="hint">Передайте учителю логин и этот код. Для веб-панели он вводит логин + код, а для подключения Telegram отправляет только код боту. Новый код заменяет старый сразу в обоих местах.</p>
+      <p className="hint">Передайте {issuedCredential.role === "student" ? "ученику" : "учителю"} логин и этот код. Для входа в веб-панель он вводит логин + код, а для подключения Telegram отправляет только код боту. Новый код заменяет старый сразу в обоих местах.</p>
       <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setIssuedCredential(null)}>Закрыть</button><button type="button" className="btn primary" onClick={async () => notify(await copyText("Логин: " + issuedCredential.username + "\nКод доступа: " + issuedCredential.code) ? "Данные для входа скопированы" : "Не удалось скопировать данные")}><Copy/>Скопировать</button></div>
     </section></div>}
     {code && <div className="overlay" onMouseDown={() => setCode(null)}><section className="modal" onMouseDown={e => e.stopPropagation()}><div className="modal-head"><div><div className="eyebrow">ПОДКЛЮЧЕНИЕ TELEGRAM</div><h2>{code.full_name}</h2></div><button className="icon-btn" onClick={() => setCode(null)}><X/></button></div><div className="invite-code">{code.code}</div><p className="hint">{code.shared_access ? "Это единый код учителя: он подходит для входа в веб-панель вместе с логином и для подключения Telegram. Он действует, пока администратор не заменит его новым." : "Передайте этот код ученику для подключения Telegram. Он действует до первого успешного подключения и используется один раз."}</p><div className="modal-actions"><button className="btn ghost" onClick={() => setCode(null)}>Закрыть</button><button className="btn primary" onClick={async () => notify(await copyText(code.code) ? "Код скопирован" : "Не удалось скопировать код")}><Copy/>Скопировать</button></div></section></div>}
