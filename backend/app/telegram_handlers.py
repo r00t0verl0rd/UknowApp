@@ -734,10 +734,14 @@ async def route_message(message: TgMessage, bot: Bot):
                         type(exc).__name__,
                     )
             else:
-                row.delivery_status = "failed"
+                # The message is already available to the teacher in UknowApp.
+                # Missing Telegram linkage only prevents the optional Telegram
+                # copy; it must not be reported as a failed message to the student.
+                row.delivery_status = "delivered" if recipient.active and not recipient.telegram_id else "failed"
                 db.commit()
                 publish_chat_update(conversation.id)
-                await message.answer("Не удалось отправить сообщение. Попробуйте позже.")
+                if row.delivery_status == "failed":
+                    await message.answer("Не удалось отправить сообщение. Попробуйте позже.")
             return
         try:
             if sender.role == "student":
