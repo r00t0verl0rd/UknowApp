@@ -311,7 +311,7 @@ img, video, audio { max-width: 100%;}
 .message-delivery-name.student { color: var(--role-student);}
 .message-delivery-name.admin { color: var(--role-admin);}
 .message-delivery-dash { color: #8b8496;}
-.message-delivery-reason { color: #d34b4b;}
+.message-delivery-reason { color: #8b8496;}
 /* Graph-level participant action, placed after the relationship map. */
 /* Friendly conversation search and filter controls */
 .chat-list-tools { display: grid; gap: 11px; padding: 13px 10px 12px; border-bottom: 1px solid #eeeaf3;}
@@ -449,7 +449,10 @@ img, video, audio { max-width: 100%;}
 .chat-item-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 9px; min-width: 0;}
 .chat-item-participants { display: flex; flex: 1 1 auto; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; text-align: left;}
 .chat-item-participants > span { display: block; width: 100%; min-width: 0; overflow: hidden; color: inherit; font-weight: 700; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap;}
-.chat-item-participants small { display: inline-block; margin-right: 6px; color: #91899d; font-size: 10px; font-weight: 600;}
+.chat-item-participants small { display: inline-block; color: #91899d; font-size: 10px; font-weight: 600; white-space: nowrap;}
+.chat-item-participants.is-student-view { flex-direction: row; align-items: center; gap: 8px;}
+.chat-item-participants.is-student-view > span { flex: 1 1 auto; width: auto;}
+.chat-item-participants.is-student-view > small { flex: 0 0 auto;}
 :root[data-theme="dark-soft"] .chat-item-participants small { color: #a7a0b7;}
 .chat-item .unread-badge { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: #d99532; color: #fff !important; font-size: 10px; line-height: 1; font-weight: 800; box-shadow: 0 2px 6px rgba(180, 119, 31, .18);}
 .chat-item.has-unread:not(.selected) { background: #fffaf0; border: 1px solid #f0d9ab; border-left: 3px solid #d99532; padding-left: 12px;}
