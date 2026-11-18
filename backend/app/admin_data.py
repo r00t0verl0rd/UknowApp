@@ -73,6 +73,39 @@ def _count_rows(model: type) -> int:
         return db.query(model).count()
 
 
+def _create_database_snapshot(destination: Path) -> None:
+    database = _database_path()
+    with sqlite3.connect(database) as source, sqlite3.connect(destination) as target:
+        source.backup(target)
+
+
+def _add_media_files(archive: zipfile.ZipFile) -> int:
+    count = 0
+    if not MEDIA_DIR.exists():
+        return count
+    media_root = MEDIA_DIR.resolve()
+    for path in MEDIA_DIR.rglob("*"):
+        if not path.is_file():
+            continue
+        resolved = path.resolve()
+        if media_root not in resolved.parents:
+            continue
+        archive.write(resolved, "media/" + resolved.relative_to(media_root).as_posix())
+        count += 1
+    return count
+
+
+def _validate_database(path: Path) -> None:
+    try:
+        with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as uploaded:
+            integrity = uploaded.execute("PRAGMA integrity_check").fetchone()
+            tables = {row[0] for row in uploaded.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    except sqlite3.Error as exc:
+        raise HTTPException(status_code=400, detail="Не удалось прочитать базу данных в резервной копии") from exc
+    if not integrity or integrity[0] != "ok" or not {"users", "messages", "conversations"}.issubset(tables):
+        raise HTTPException(status_code=400, detail="Архив не содержит корректную базу данных UknowApp")
+
+
 @router.get("/stats")
 def data_stats(_: Admin):
     database = _database_path()
@@ -162,6 +195,131 @@ def download_database(_: Admin):
     except Exception:
         backup_path.unlink(missing_ok=True)
         raise
+
+
+@router.get("/full")
+def download_full_backup(_: Admin):
+    database = _database_path()
+    handle = tempfile.NamedTemporaryFile(prefix="uknowapp-full-", suffix=".zip", dir=database.parent, delete=False)
+    archive_path = Path(handle.name)
+    handle.close()
+    snapshot_path = archive_path.with_suffix(".sqlite3")
+    try:
+        _create_database_snapshot(snapshot_path)
+        with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("manifest.json", json.dumps({
+                "format": "uknowapp-full-backup-v1",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }, ensure_ascii=False))
+            archive.write(snapshot_path, "database.sqlite3")
+            _add_media_files(archive)
+        return FileResponse(
+            archive_path, media_type="application/zip",
+            filename="uknowapp-full-backup.zip",
+            background=BackgroundTask(_remove_temp, str(archive_path)),
+        )
+    except Exception:
+        archive_path.unlink(missing_ok=True)
+        raise
+    finally:
+        snapshot_path.unlink(missing_ok=True)
+
+
+@router.get("/media")
+def download_media_archive(_: Admin):
+    database = _database_path()
+    handle = tempfile.NamedTemporaryFile(prefix="uknowapp-media-", suffix=".zip", dir=database.parent, delete=False)
+    archive_path = Path(handle.name)
+    handle.close()
+    try:
+        with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("manifest.json", json.dumps({
+                "format": "uknowapp-media-v1",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }, ensure_ascii=False))
+            _add_media_files(archive)
+        return FileResponse(
+            archive_path, media_type="application/zip",
+            filename="uknowapp-media.zip",
+            background=BackgroundTask(_remove_temp, str(archive_path)),
+        )
+    except Exception:
+        archive_path.unlink(missing_ok=True)
+        raise
+
+
+@router.post("/full")
+async def restore_full_backup(_: Admin, file: UploadFile = File(...)):
+    if not (file.filename or "").lower().endswith(".zip"):
+        raise HTTPException(status_code=400, detail="Загрузите ZIP-файл полной резервной копии")
+    data_dir = _database_path().parent
+    handle = tempfile.NamedTemporaryFile(prefix="uknowapp-full-upload-", suffix=".zip", dir=data_dir, delete=False)
+    upload_path = Path(handle.name)
+    stage = Path(tempfile.mkdtemp(prefix="uknowapp-full-stage-", dir=data_dir))
+    old_media = data_dir / ("uknowapp-media-before-restore-" + next(tempfile._get_candidate_names()))
+    try:
+        total = 0
+        with handle:
+            while chunk := await file.read(1024 * 1024):
+                total += len(chunk)
+                if total > MAX_ARCHIVE_BYTES:
+                    raise HTTPException(status_code=413, detail="Архив превышает 2 ГБ")
+                handle.write(chunk)
+        database_copy = stage / "database.sqlite3"
+        staged_media = stage / "media"
+        staged_media.mkdir()
+        try:
+            with zipfile.ZipFile(upload_path) as archive:
+                entries = archive.infolist()
+                if len(entries) > 100000 or sum(item.file_size for item in entries) > MAX_UNPACKED_ARCHIVE_BYTES:
+                    raise HTTPException(status_code=413, detail="Содержимое архива слишком велико")
+                names = {item.filename for item in entries}
+                if not {"manifest.json", "database.sqlite3"}.issubset(names):
+                    raise HTTPException(status_code=400, detail="В архиве отсутствует база данных UknowApp")
+                for item in entries:
+                    parts = PurePosixPath(item.filename).parts
+                    if PurePosixPath(item.filename).is_absolute() or ".." in parts:
+                        raise HTTPException(status_code=400, detail="Архив содержит небезопасный путь")
+                manifest = json.loads(archive.read("manifest.json"))
+                if manifest.get("format") != "uknowapp-full-backup-v1":
+                    raise HTTPException(status_code=400, detail="Формат полной резервной копии не поддерживается")
+                with database_copy.open("wb") as target:
+                    shutil.copyfileobj(archive.open("database.sqlite3"), target)
+                for item in entries:
+                    if item.filename.startswith("media/") and not item.is_dir():
+                        relative = _safe_relative(item.filename[6:])
+                        destination = (staged_media / relative).resolve()
+                        if staged_media.resolve() not in destination.parents:
+                            raise HTTPException(status_code=400, detail="Недопустимый путь к медиафайлу")
+                        destination.parent.mkdir(parents=True, exist_ok=True)
+                        with archive.open(item) as source, destination.open("wb") as target:
+                            shutil.copyfileobj(source, target)
+            _validate_database(database_copy)
+            database = _database_path()
+            if MEDIA_DIR.exists():
+                MEDIA_DIR.rename(old_media)
+            try:
+                if staged_media.exists():
+                    MEDIA_DIR.parent.mkdir(parents=True, exist_ok=True)
+                    staged_media.rename(MEDIA_DIR)
+                engine.dispose()
+                with sqlite3.connect(database_copy) as source, sqlite3.connect(database) as target:
+                    source.backup(target)
+                    target.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            except Exception:
+                if MEDIA_DIR.exists():
+                    shutil.rmtree(MEDIA_DIR, ignore_errors=True)
+                if old_media.exists():
+                    old_media.rename(MEDIA_DIR)
+                raise
+            shutil.rmtree(old_media, ignore_errors=True)
+            return {"ok": True, "message": "Полная резервная копия восстановлена. Перезагрузите панель."}
+        except zipfile.BadZipFile as exc:
+            raise HTTPException(status_code=400, detail="Файл не является корректным ZIP-архивом") from exc
+    finally:
+        upload_path.unlink(missing_ok=True)
+        shutil.rmtree(stage, ignore_errors=True)
+        await file.close()
 
 
 @router.post("/database")
