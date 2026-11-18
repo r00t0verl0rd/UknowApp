@@ -40,7 +40,6 @@ from .security import (
     verify_request_origin,
 )
 from .telegram_common import text_contains_contact_data
-from .telegram_teacher import mark_messages_read_by_teacher
 
 logger = logging.getLogger(__name__)
 
@@ -721,6 +720,14 @@ def _panel_message_dict(
         "text": item.text,
         "metadata": metadata,
         "delivery_status": item.delivery_status,
+        "panel_read_at": (
+            metadata.get("student_read_at") if item.sender_role == "teacher"
+            else metadata.get("teacher_read_at") if item.sender_role == "student"
+            else (
+                metadata.get("teacher_read_at") and metadata.get("student_read_at")
+                if item.sender_role == "admin" else None
+            )
+        ),
         "created_at": item.created_at.isoformat(),
     }
 
@@ -885,11 +892,21 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db):
         select(Message).where(Message.conversation_id == conversation.id)
         .order_by(Message.created_at, Message.id)
     ).all()
-    if principal["role"] == "teacher":
-        mark_messages_read_by_teacher(
-            db,
-            [row for row in rows if row.sender_role == "student" and row.delivery_status == "delivered"],
-        )
+    if principal["role"] in {"teacher", "student"}:
+        read_key = "teacher_read_at" if principal["role"] == "teacher" else "student_read_at"
+        sender_roles = {"student", "admin"} if principal["role"] == "teacher" else {"teacher", "admin"}
+        now = datetime.now(timezone.utc).isoformat()
+        changed = False
+        for row in rows:
+            if row.sender_role not in sender_roles:
+                continue
+            metadata = json.loads(row.metadata_json or "{}")
+            if metadata.get(read_key) is None:
+                metadata[read_key] = now
+                row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+                changed = True
+        if changed:
+            db.commit()
     return [
         _panel_message_dict(
             item,
