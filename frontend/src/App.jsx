@@ -168,7 +168,7 @@ export default function App() {
     let inFlight = false;
     let refreshPending = false;
 
-    const syncChats = async () => {
+    const syncChats = async event => {
       if (!active) return;
       if (inFlight) {
         refreshPending = true;
@@ -176,9 +176,18 @@ export default function App() {
       }
       inFlight = true;
       try {
-        let rows = null;
-        if (selectedChat?.id) {
-          rows = await request("/api/panel/conversations/" + selectedChat.id + "/messages");
+        let eventConversationId = null;
+        if (event?.data) {
+          try {
+            eventConversationId = Number(JSON.parse(event.data).conversation_id) || null;
+          } catch {
+            // An empty or malformed event is treated as a general refresh.
+          }
+        }
+        const shouldRefreshMessages = selectedChat?.id
+          && (!event || !eventConversationId || eventConversationId === Number(selectedChat.id));
+        if (shouldRefreshMessages) {
+          const rows = await request("/api/panel/conversations/" + selectedChat.id + "/messages");
           if (!active) return;
           setMessages(rows);
         }
