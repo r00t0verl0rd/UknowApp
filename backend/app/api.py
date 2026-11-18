@@ -64,7 +64,6 @@ def user_dict(user: User, include_telegram_id: bool = True, include_additional_i
         "web_username": (user.web_username or user.full_name) if user.role in {"teacher", "student"} else None,
         "role": user.role,
         "telegram_id": user.telegram_id if include_telegram_id else None,
-        "active": user.active,
         "created_at": user.created_at.isoformat() if user.created_at else None,
         "has_access_code": bool(user.web_password_hash),
     }
@@ -236,21 +235,18 @@ def overview(_: Admin, db: Db):
 
     students_by_teacher: dict[int, list[dict]] = {}
     for assignment in assignments:
-        if not assignment.teacher.active or not assignment.student.active:
-            continue
         students_by_teacher.setdefault(assignment.teacher_id, []).append(user_dict(assignment.student, include_additional_info=True))
 
     teachers = []
     for user in users:
-        if user.role != "teacher" or not user.active:
-            continue
+        if user.role != "teacher":
         teachers.append({**user_dict(user), "students": students_by_teacher.get(user.id, [])})
 
     return {
         "admin": {"label": "Администратор", "role": "admin"},
         "counts": {
-            "teachers": sum(1 for user in users if user.role == "teacher" and user.active),
-            "students": sum(1 for user in users if user.role == "student" and user.active),
+            "teachers": sum(1 for user in users if user.role == "teacher"),
+            "students": sum(1 for user in users if user.role == "student"),
             "assignments": len(assignments),
             "conversations": active_conversation_count,
             "messages": db.query(Message).count(),
@@ -366,18 +362,6 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
             if len(value) < 2:
                 raise HTTPException(status_code=400, detail="Имя должно содержать минимум два символа")
         setattr(user, field, value)
-    if changes.get("active") is False:
-        related = db.scalars(
-            select(Assignment).where(
-                Assignment.active.is_(True),
-                (Assignment.teacher_id == user.id) | (Assignment.student_id == user.id),
-            )
-        ).all()
-        for assignment in related:
-            assignment.active = False
-            assignment.closed_at = datetime.now(timezone.utc)
-            if assignment.conversation:
-                assignment.conversation.status = "closed"
     if issued_access_code:
         now = datetime.now(timezone.utc)
         db.query(ConnectionCode).filter(
@@ -536,8 +520,6 @@ def generate_connection_code(user_id: int, _: Admin, db: Db):
     user = db.get(User, user_id)
     if not user or user.role not in {"teacher", "student"}:
         raise HTTPException(status_code=404, detail="Учитель или ученик не найден")
-    if not user.active:
-        raise HTTPException(status_code=400, detail="Нельзя подключить отключённого пользователя")
     if user.role in {"teacher", "student"}:
         # Both panel roles use the same persistent code for web login and Telegram.
         access_code = generate_panel_access_code()
@@ -612,10 +594,10 @@ def generate_connection_code(user_id: int, _: Admin, db: Db):
 def assign_student(payload: AssignmentCreate, _: Admin, db: Db):
     teacher = db.get(User, payload.teacher_id)
     student = db.get(User, payload.student_id)
-    if not teacher or teacher.role != "teacher" or not teacher.active:
-        raise HTTPException(status_code=400, detail="Выберите активного учителя")
-    if not student or student.role != "student" or not student.active:
-        raise HTTPException(status_code=400, detail="Выберите активного ученика")
+    if not teacher or teacher.role != "teacher":
+        raise HTTPException(status_code=400, detail="Выберите учителя")
+    if not student or student.role != "student":
+        raise HTTPException(status_code=400, detail="Выберите ученика")
 
     previous = db.scalars(
         select(Assignment).where(Assignment.student_id == student.id, Assignment.active.is_(True))
@@ -654,8 +636,6 @@ def _panel_visible_conversation(db: Session, principal: dict, conversation_id: i
         )
         if (
             participant_id != principal["user_id"]
-            or not conversation.teacher.active
-            or not conversation.student.active
             or conversation.status != "active"
         ):
             raise HTTPException(status_code=404, detail="Переписка не найдена")
@@ -667,7 +647,6 @@ def _panel_visible_conversation(db: Session, principal: dict, conversation_id: i
                 .where(
                     Assignment.student_id == principal["user_id"],
                     Assignment.active.is_(True),
-                    User.active.is_(True),
                     Conversation.status == "active",
                 )
                 .order_by(Conversation.created_at.desc(), Conversation.id.desc())
@@ -815,7 +794,6 @@ def panel_me(principal: PanelUser, db: Db):
     user = db.get(User, principal["user_id"])
     if (
         not user
-        or not user.active
         or user.role != principal["role"]
         or user.role not in {"teacher", "student"}
     ):
@@ -869,8 +847,6 @@ def panel_conversations(principal: PanelUser, db: Db):
         .join(User, Assignment.student_id == User.id)
         .where(
             Assignment.active.is_(True),
-            User.active.is_(True),
-            Assignment.teacher.has(User.active.is_(True)),
             Conversation.status == "active",
         )
         .order_by(Conversation.created_at.desc(), Conversation.id.desc())
@@ -929,8 +905,8 @@ def create_personal_conversation(payload: PersonalConversationCreate, principal:
     if principal["role"] != "admin":
         raise HTTPException(status_code=403, detail="Создавать личные диалоги может только администратор")
     participant = db.get(User, payload.user_id)
-    if not participant or participant.role not in {"teacher", "student"} or not participant.active:
-        raise HTTPException(status_code=404, detail="Активный участник не найден")
+    if not participant or participant.role not in {"teacher", "student"}:
+        raise HTTPException(status_code=404, detail="Участник не найден")
     item = db.scalar(select(PersonalConversation).where(PersonalConversation.participant_id == participant.id))
     if not item:
         item = PersonalConversation(participant_id=participant.id)
@@ -1163,7 +1139,7 @@ def _panel_sender_and_recipients(db: Session, principal: dict, conversation: Con
     else:
         sender = db.scalar(select(User).where(User.role == "admin").order_by(User.id).limit(1))
         if not sender:
-            sender = User(full_name="Администратор", role="admin", active=True)
+            sender = User(full_name="Администратор", role="admin")
             db.add(sender)
             db.flush()
         recipients = [(student, "student"), (teacher, "teacher")]
@@ -1298,9 +1274,6 @@ async def send_panel_message(
     delivered = []
     if bot:
         for recipient, recipient_role in recipients:
-            if not recipient.active:
-                delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
-                continue
             if not recipient.telegram_id:
                 delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                 continue
@@ -1400,9 +1373,6 @@ async def send_panel_attachment(
     delivered = []
     if bot:
         for recipient, recipient_role in recipients:
-            if not recipient.active:
-                delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
-                continue
             if not recipient.telegram_id:
                 delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                 continue
@@ -1487,7 +1457,7 @@ def panel_graph(principal: PanelUser, db: Db):
     if principal["role"] != "teacher":
         raise HTTPException(status_code=403, detail="Граф учителя доступен только учителю")
     teacher = db.get(User, principal["user_id"])
-    if not teacher or teacher.role != "teacher" or not teacher.active:
+    if not teacher or teacher.role != "teacher":
         raise HTTPException(status_code=404, detail="Учитель не найден")
     assignments = db.scalars(
         select(Assignment)
@@ -1497,20 +1467,18 @@ def panel_graph(principal: PanelUser, db: Db):
     students = []
     for assignment in assignments:
         student = assignment.student
-        if student and student.active and assignment.conversation and assignment.conversation.status == "active":
+        if student and assignment.conversation and assignment.conversation.status == "active":
             students.append({
                 "id": student.id,
                 "full_name": student.full_name,
                 "additional_info": student.additional_info,
                 "role": "student",
-                "active": student.active,
             })
     return {
         "teacher": {
             "id": teacher.id,
             "full_name": teacher.full_name,
             "role": "teacher",
-            "active": teacher.active,
         },
         "students": students,
         "counts": {"students": len(students)},
