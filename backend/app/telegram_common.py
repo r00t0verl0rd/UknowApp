@@ -118,8 +118,8 @@ def claim_connection_code(
         return None, "invalid"
 
     user = db.get(User, connection_code.user_id)
-    if not user or not user.active or user.role not in {"teacher", "student"}:
-        return None, "inactive"
+    if not user or user.role not in {"teacher", "student"}:
+        return None, "invalid"
 
     now = datetime.now(timezone.utc)
     expires_at = connection_code.expires_at
@@ -187,7 +187,7 @@ def claim_connection_code(
 
 
 def get_linked_user(db: Session, telegram_id: int) -> Optional[User]:
-    return db.scalar(select(User).where(User.telegram_id == telegram_id, User.active.is_(True)))
+    return db.scalar(select(User).where(User.telegram_id == telegram_id))
 
 
 def current_student_conversation(db: Session, student_id: int) -> Optional[Conversation]:
@@ -195,6 +195,6 @@ def current_student_conversation(db: Session, student_id: int) -> Optional[Conve
         select(Assignment).where(Assignment.student_id == student_id, Assignment.active.is_(True))
         .order_by(Assignment.created_at.desc())
     )
-    if not assignment or not assignment.teacher.active:
+    if not assignment:
         return None
     return assignment.conversation
