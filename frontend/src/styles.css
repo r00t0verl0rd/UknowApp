@@ -693,10 +693,19 @@ img, video, audio { max-width: 100%; }
   text-align: center;
 }
 .chat-filter-segment button.active span { background: #eee7f8; color: var(--purple); }
+.teacher-login-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+}
+.teacher-login-row > label {
+  flex: 1;
+  min-width: 0;
+}
 .password-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 12px;
   flex-wrap: wrap;
 }
@@ -712,6 +721,8 @@ img, video, audio { max-width: 100%; }
   font-size: 10px;
 }
 .password-code-label {
+  flex: 0 0 auto;
+  padding-bottom: 10px;
   color: var(--ink);
   font-size: 13px;
   font-weight: 600;
