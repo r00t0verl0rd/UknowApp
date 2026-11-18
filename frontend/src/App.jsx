@@ -730,11 +730,16 @@ export default function App() {
         <label>Роль<select value={role} onChange={e => setRole(e.target.value)}><option value="teacher">Учитель</option><option value="student">Ученик</option></select></label>
         <label>Telegram ID <input type="text" inputMode="numeric" pattern="[0-9]*" value={telegramId} onChange={e => setTelegramId(e.target.value)} placeholder="Не подключён"/></label>
         {role === "teacher" && <>
-          <div className="password-code-label teacher-login-edit-row">
-            <span>Логин веб-панели:</span>
-            <input value={teacherLogin || name} onChange={e => setTeacherLogin(e.target.value)} minLength="2" maxLength="160" required autoComplete="off" />
+          <div className="teacher-credentials-panel">
+            <div className="teacher-credential-row teacher-login-edit-row">
+              <span>Логин веб-панели</span>
+              <input value={teacherLogin || name} onChange={e => setTeacherLogin(e.target.value)} minLength="2" maxLength="160" required autoComplete="off" />
+            </div>
+            {modal.mode === "edit" && users.find(u => u.id === modal.id)?.role === "teacher" && <div className="teacher-credential-row teacher-access-row">
+              <span>Код доступа</span>
+              <div className="teacher-access-value"><b>XXX-XXX</b><button type="button" className="btn outline password-code-refresh" onClick={regenerateTeacherAccessCode} disabled={savingUser} title="Старый код сразу перестанет действовать"><RefreshCw size={12}/>Обновить код</button></div>
+            </div>}
           </div>
-          {modal.mode === "edit" && users.find(u => u.id === modal.id)?.role === "teacher" && <div className="password-code-label"><span>Код доступа: <b>XXX-XXX</b></span><button type="button" className="btn outline password-code-refresh" onClick={regenerateTeacherAccessCode} disabled={savingUser} title="Старый код сразу перестанет действовать"><RefreshCw size={12}/>Обновить код</button></div>}
           {modal.mode === "create" && <p className="password-info">Код доступа создастся автоматически — один для веб-панели и Telegram.</p>}
         </>}
         {modal.mode === "edit" && role !== users.find(u => u.id === modal.id)?.role && <p className="hint">При смене роли активные назначения будут закрыты. История переписок сохранится.</p>}
