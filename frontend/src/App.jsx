@@ -309,6 +309,7 @@ export default function App() {
   }, [selectedChat?.id, messageFilter, visibleMessages]);
 
   const visibleChats = useMemo(() => {
+    if (profile?.role === "student") return chats.slice(0, 1);
     const query = chatSearch.trim().toLocaleLowerCase("ru");
     // API отдаёт диалоги в порядке последней активности: сохраняем этот порядок
     // для всех ролей, чтобы самый недавно обновлённый диалог всегда был первым.
