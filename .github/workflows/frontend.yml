@@ -1,15 +1,17 @@
-name: Frontend checks
+name: Project checks
 
 on:
   pull_request:
     paths:
       - "frontend/**"
+      - "backend/**"
       - ".stylelintrc.json"
       - ".github/workflows/frontend.yml"
   push:
     branches: [main]
     paths:
       - "frontend/**"
+      - "backend/**"
       - ".stylelintrc.json"
       - ".github/workflows/frontend.yml"
 
@@ -30,3 +32,19 @@ jobs:
       - run: npm run build
       - name: Lint design tokens
         run: npx --yes stylelint@16 src/tokens.css --config ../.stylelintrc.json
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: python -m pip install -r requirements.txt
+      - run: python -m compileall -q app
+      - run: python -c "from app.main import app; assert app.title == 'UknowApp API'"
