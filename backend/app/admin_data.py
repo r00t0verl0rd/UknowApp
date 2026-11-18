@@ -53,6 +53,11 @@ def _message_data(row, fields: tuple[str, ...]) -> dict:
     return result
 
 
+def _get_db():
+    with SessionLocal() as db:
+        yield db
+
+
 def _safe_relative(value: str) -> Path:
     candidate = PurePosixPath(value)
     if candidate.is_absolute() or not candidate.parts or any(part in {"", ".", ".."} for part in candidate.parts):
@@ -237,7 +242,7 @@ async def restore_dialogues(_: Admin, file: UploadFile = File(...), db: Session 
                     metadata = json.loads(item.get("metadata_json") or "{}")
                     relative = (metadata.get("media") or {}).get("local_path")
                     if relative:
-                        source = (stage / _safe_relative(relative)).resolve()
+                        source = (stage / "media" / _safe_relative(relative)).resolve()
                         if stage.resolve() not in source.parents or not source.is_file():
                             metadata["media"].pop("local_path", None)
                             metadata["media"]["archive_status"] = "missing_in_archive"
@@ -278,23 +283,18 @@ async def restore_dialogues(_: Admin, file: UploadFile = File(...), db: Session 
         await file.close()
 
 
-def _get_db():
-    with SessionLocal() as db:
-        yield db
-
-
 @router.delete("/dialogues")
 def cleanup_dialogues(days: int, _: Admin, db: Session = Depends(_get_db)):
     if days not in {30, 60, 120}:
         raise HTTPException(status_code=400, detail="Выберите срок 30, 60 или 120 дней")
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     old_rows = db.scalars(select(Message).where(Message.created_at < cutoff)).all()
-    for row in old_rows:
-        delete_message_media(row.metadata_json)
     deleted_messages = len(old_rows)
     deleted_personal = db.query(PersonalMessage).filter(PersonalMessage.created_at < cutoff).delete(synchronize_session=False)
     db.query(Message).filter(Message.created_at < cutoff).delete(synchronize_session=False)
     db.commit()
+    for row in old_rows:
+        delete_message_media(row.metadata_json)
     deleted_files = sum(
         1 for row in old_rows
         if (json.loads(row.metadata_json or "{}").get("media") or {}).get("local_path")
