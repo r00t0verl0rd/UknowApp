@@ -655,6 +655,7 @@ export default function App() {
                     <button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil/></button>
                   </div>
                 </div>
+                {!studentsCollapsed && <button className="add-student" onClick={() => { setTeacherId(String(teacher.id)); setStudentId(activeStudents[0]?.id ? String(activeStudents[0].id) : ""); setModal({ mode: "assign" }); }}><Plus/>Назначить ученика</button>}
                 {!studentsCollapsed && <div className="student-list">
                   {students.map(student => <div className="person-card student-card" key={student.id}>
                     <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small></div></div>
@@ -662,7 +663,6 @@ export default function App() {
                   </div>)}
                   {!students.length && <div className="empty-students">Нет назначенных учеников</div>}
                 </div>}
-                {!studentsCollapsed && <button className="add-student" onClick={() => { setTeacherId(String(teacher.id)); setStudentId(activeStudents[0]?.id ? String(activeStudents[0].id) : ""); setModal({ mode: "assign" }); }}><Plus/>Назначить ученика</button>}
               </section>;
               })}
             </div>
