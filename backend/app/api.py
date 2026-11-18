@@ -967,7 +967,7 @@ def send_personal_message(
     db.add(row)
     db.commit()
     db.refresh(row)
-    publish_chat_update(item.id)
+    publish_chat_update(0)
     return {
         "id": row.id,
         "sender": row.sender.full_name if row.sender else "Администратор",
@@ -976,7 +976,7 @@ def send_personal_message(
         "content_type": "text",
         "text": row.text,
         "metadata": {},
-        "delivery_status": "in_app",
+        "delivery_status": "delivered",
         "created_at": row.created_at.isoformat(),
     }
 
