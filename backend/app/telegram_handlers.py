@@ -706,7 +706,7 @@ async def route_message(message: TgMessage, bot: Bot):
         db.commit()
         publish_chat_update(conversation.id)
         await archive_telegram_media(bot, message, row)
-        if not recipient.telegram_id or not recipient.active:
+        if not recipient.telegram_id:
             if sender.role == "teacher":
                 # The message is already persisted in UknowApp. Telegram is
                 # only an additional delivery channel, so an unlinked student
@@ -715,10 +715,7 @@ async def route_message(message: TgMessage, bot: Bot):
                 metadata["telegram_delivery_errors"] = [{
                     "name": recipient.full_name,
                     "role": "student",
-                    "reason": (
-                        "Аккаунт ученика не подключён к Telegram"
-                        if recipient.active else "Аккаунт ученика отключён"
-                    ),
+                    "reason": "Аккаунт ученика не подключён к Telegram",
                 }]
                 row.metadata_json = json.dumps(metadata, ensure_ascii=False)
                 row.delivery_status = "delivered"
@@ -747,7 +744,7 @@ async def route_message(message: TgMessage, bot: Bot):
                 # The message is already available to the teacher in UknowApp.
                 # Missing Telegram linkage only prevents the optional Telegram
                 # copy; it must not be reported as a failed message to the student.
-                row.delivery_status = "delivered" if recipient.active and not recipient.telegram_id else "failed"
+                row.delivery_status = "failed"
                 db.commit()
                 publish_chat_update(conversation.id)
                 if row.delivery_status == "failed":
