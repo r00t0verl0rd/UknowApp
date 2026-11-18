@@ -6,7 +6,6 @@ import Play from "lucide-react/dist/esm/icons/play.js";
 import Pause from "lucide-react/dist/esm/icons/pause.js";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
-const ROLE = { teacher: "Учитель", student: "Ученик", admin: "Администратор" };
 
 // Высоты декоративной звуковой волны общие для всех плееров — не создаём массив при каждом рендере.
 const AUDIO_WAVE_BARS = [4, 7, 10, 6, 13, 8, 15, 10, 6, 12, 17, 9, 5, 13, 8, 16, 11, 6, 14, 9, 17, 7, 12, 5, 15, 9, 13, 6, 11, 16, 8, 12, 5, 14, 9, 7];
@@ -151,7 +150,7 @@ function MessageBubble({ message, onDelete, viewerRole }) {
   }[sourceKind] || "Вложение");
   return <div className={"message " + message.sender_role}>
     <div className="message-topline">
-      {!(viewerRole === "teacher" && message.sender_role !== "admin") && <b>{message.sender}{message.sender_role !== "admin" && viewerRole !== "teacher" && <small>{ROLE[message.sender_role] || message.sender_role}</small>}</b>}
+      {!(viewerRole === "teacher" && message.sender_role !== "admin") && <b>{message.sender}</b>}
       <div className="message-tools">
         <time className="message-time">{formatLocalTime(message.created_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</time>
         {message.sender_role === viewerRole && viewerRole !== "admin" && <span className={"message-read-status" + (message.panel_read_at ? " is-read" : "")} title={message.panel_read_at ? "Прочитано" : message.delivery_status === "pending" ? "Отправляется" : "Доставлено"}>
