@@ -310,7 +310,7 @@ img, video, audio { max-width: 100%;}
 .message-delivery-name.teacher { color: var(--role-teacher);}
 .message-delivery-name.student { color: var(--role-student);}
 .message-delivery-name.admin { color: var(--role-admin);}
-.message-delivery-dash { color: var(--text-muted);}
+.message-delivery-dash { color: #8b8496;}
 .message-delivery-reason { color: #d34b4b;}
 /* Graph-level participant action, placed after the relationship map. */
 /* Friendly conversation search and filter controls */
