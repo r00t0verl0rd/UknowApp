@@ -328,7 +328,7 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     changes = payload.model_dump(exclude_unset=True)
     requested_web_username = changes.pop("web_username", None)
-    # Teacher access codes are generated server-side and only their hashes are stored.
+    # Panel access codes are generated server-side and only their hashes are stored.
     target_role = changes.get("role", user.role)
     issued_access_code = None
 
