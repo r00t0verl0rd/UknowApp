@@ -705,7 +705,7 @@ export default function App() {
         </>}
 
         {page === "chats" && <>
-          <div className={"chat-layout" + (selectedChat ? " chat-layout-conversation-open" : " chat-layout-list-open")}><div className="chat-list"><div className="chat-list-tools">
+          <div className={"chat-layout" + (selectedChat ? " chat-layout-conversation-open" : " chat-layout-list-open")}><div className="chat-list">{profile?.role !== "student" && <div className="chat-list-tools">
               {profile?.role !== "student" && <div className="chat-search-control">
                 <Search size={17}/>
                 <input aria-label="Поиск по имени" placeholder="Поиск по имени" value={chatSearch} onChange={e => setChatSearch(e.target.value)}/>
@@ -720,7 +720,8 @@ export default function App() {
                 </button>
               </div>}
               
-            </div><div className="chat-items-scroll">{visibleChats.map(chat => {
+            </div>}
+            <div className="chat-items-scroll">{visibleChats.map(chat => {
               const unreadCount = Number(chat.unread_count) || 0;
               return <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected " : "") + (unreadCount > 0 ? "has-unread" : "")} onClick={() => openChat(chat)}>
                 <div className="chat-item-heading">
@@ -732,7 +733,7 @@ export default function App() {
                 </div>
                 <span className="chat-item-meta">{chat.message_count} сообщений</span>
               </button>;
-            })}{!chats.length && <div className="empty-state">Пока нет активных переписок</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">{profile?.role === "admin" ? "Учитель не найден" : "По выбранному фильтру ничего не найдено"}</div>}</div></div>
+            })}{!chats.length && <div className="empty-state">{profile?.role === "student" ? "Пока нет активной переписки с учителем" : "Пока нет активных переписок"}</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">{profile?.role === "admin" ? "Учитель не найден" : "По выбранному фильтру ничего не найдено"}</div>}</div></div>
             <div className="chat-detail">{selectedChat ? <>
               <div className="chat-head"><button type="button" className="mobile-chat-back" onClick={() => { setSelectedChat(null); setMessages([]); }} aria-label="Назад к списку диалогов"><ArrowLeft size={19}/><span>Диалоги</span></button><div className="chat-head-person"><b>{profile?.role === "student" ? selectedChat.teacher.full_name : selectedChat.student.full_name}</b>{profile?.role === "admin" && <small>{selectedChat.teacher.full_name}</small>}{profile?.role === "student" && <small>Ваш учитель</small>}</div><div className="chat-head-tools"><select aria-label="Фильтр сообщений" value={messageFilter} onChange={e => setMessageFilter(e.target.value)}><option value="all">Все сообщения</option><option value="media">Все вложения</option><option value="audio">Аудио</option><option value="photos">Фото</option><option value="files">Файлы и видео</option></select>{selectedChat.status !== "active" && <span className="role-tag">Закрыта</span>}</div></div>
               <div className="messages" ref={messagesViewportRef}>{visibleMessages.map(message => <MessageBubble message={message} key={message.id} onDelete={setDeleteMessageCandidate} viewerRole={profile?.role} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}{!!messages.length && !visibleMessages.length && <div className="empty-state">Нет сообщений этого типа</div>}</div>
