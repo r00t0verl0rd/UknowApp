@@ -403,6 +403,7 @@ export default function App() {
         setMessages([]);
       }
       setDeleteCandidate(null);
+      if (modal?.mode === "edit" && modal.id === user.id) setModal(null);
       await refresh();
       notify("Пользователь удалён");
     } catch (e) {
@@ -602,13 +603,13 @@ export default function App() {
                   <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap/></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель · {students.length} учен.</small></div></div>
                   <div className="person-actions">
                     <button className={`danger-icon teacher-collapse-btn${studentsCollapsed ? "" : " is-expanded"}`} title={studentsCollapsed ? "Показать учеников" : "Скрыть учеников"} aria-label={studentsCollapsed ? "Показать учеников" : "Скрыть учеников"} aria-expanded={!studentsCollapsed} onClick={() => setCollapsedTeacherIds(current => { const next = new Set(current); if (next.has(teacher.id)) next.delete(teacher.id); else next.add(teacher.id); return next; })}><ChevronRight/></button>
-                    <button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(teacher)}><Trash2/></button>
+                    <button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil/></button>
                   </div>
                 </div>
                 {!studentsCollapsed && <div className="student-list">
                   {students.map(student => <div className="person-card student-card" key={student.id}>
                     <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small></div></div>
-                    <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div>
+                    <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button></div>
                   </div>)}
                   {!students.length && <div className="empty-students">Нет назначенных учеников</div>}
                 </div>}
@@ -620,7 +621,7 @@ export default function App() {
             {!!unassignedStudents.length && <section className="unassigned"><div className="section-head"><h2>Ученики без назначения</h2></div><div className="unassigned-grid">{unassignedStudents.map(student => <div className="person-card student-card unassigned-student-card" key={student.id}>
               <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small></div></div>
               <div className="unassigned-student-actions">
-                <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button><button className="danger-icon" title="Удалить" onClick={() => removeUser(student)}><Trash2/></button></div>
+                <div className="person-actions"><button title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button></div>
                 <button className="btn small outline" disabled={!activeTeachers.length} onClick={() => { setStudentId(String(student.id)); setTeacherId(String(activeTeachers[0]?.id || "")); setModal({ mode: "assign" }); }}>Назначить</button>
               </div>
             </div>)}</div></section>}
@@ -740,7 +741,10 @@ export default function App() {
               </div>}
         </>}
         {modal.mode === "edit" && role !== users.find(u => u.id === modal.id)?.role && <p className="hint">При смене роли активные назначения будут закрыты. История переписок сохранится.</p>}
-        <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setModal(null)} disabled={savingUser}>Отмена</button><button className="btn primary" disabled={savingUser}>{savingUser ? "Сохраняем…" : <><Check/>Сохранить</>}</button></div>
+        <div className="edit-modal-footer">
+          {modal.mode === "edit" && <button type="button" className="btn danger" onClick={() => removeUser(users.find(u => u.id === modal.id))} disabled={savingUser}><Trash2 size={15}/>Удалить</button>}
+          <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setModal(null)} disabled={savingUser}>Отмена</button><button className="btn primary" disabled={savingUser}>{savingUser ? "Сохраняем…" : <><Check/>Сохранить</>}</button></div>
+        </div>
       </form>}
     </section></div>}
 
