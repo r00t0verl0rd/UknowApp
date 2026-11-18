@@ -87,3 +87,35 @@ A whitespace-only token-stream comparison confirmed that no non-whitespace CSS c
 | CSS blocks in styles.css | 1,598 | 1,598 |
 
 The stylesheet is now within the requested 1,000–2,000-line range. It is not yet within a 1,000–2,000-byte or equivalent complexity budget: 1,598 CSS blocks remain, so future reductions must come from genuine component-level consolidation and proven obsolete-rule removal, not formatting alone. No browser build or visual regression test has been performed in this pass.
+
+## Latest substantive cleanup pass (2026-11-18)
+
+This pass went beyond formatting and removed only cascade-audited redundancy:
+
+- Removed 105 declarations shadowed by later declarations for the exact same selector in the same conditional context.
+- Removed 20 obsolete generic graph rules and 23 declarations that were superseded by the graph-specific component styles. Those classes are only rendered inside the graph panel in the current React markup.
+- Removed the 66 empty rules left by those deletions.
+- Merged 14 identical rule blocks into shared selector lists where intervening rules could not affect the same properties.
+- Removed 27 responsive declarations that duplicated the same exact selector/property/value already supplied by an unconditional base rule, after checking intervening rules for selector/property conflicts.
+- A final repeated-selector audit found no remaining directly shadowed declarations for the same selector within the same media/supports context. Only `teacher` and `admin` remain unmatched by a static class-string scan; both are role-derived classes.
+
+### Latest measured source
+
+| Metric | Current value |
+|---|---:|
+| `styles.css` lines | 1,799 |
+| `tokens.css` lines | 110 |
+| **Combined lines** | **1,909** |
+| `styles.css` characters | 182,961 |
+| `tokens.css` characters | 3,194 |
+| **Combined characters** | **186,155** |
+| Style rules (excluding at-rules) | 1,450 |
+| Media-query wrappers | 41 |
+| `!important` occurrences | 801 |
+| Empty style rules | 0 |
+
+Compared with the compacted starting point for this pass (1,855 `styles.css` lines, 189,519 characters and 1,555 style rules), this reduced the file by 56 lines, 6,558 characters and 105 style rules. Combined CSS is now 1,909 lines / 186,155 characters. The code has **not** been reduced by another half: the rule count fell by about 6.8% in this pass.
+
+The remaining rules mostly represent distinct chat, directory, graph, modal, theme and responsive states. 248 selectors currently include the dark-theme root selector, 41 media wrappers remain, and 801 `!important` declarations remain. Merging or deleting large groups of those rules without visual regression fixtures risks changing mobile layout, the chat viewport, or the light/dark palette. A true 50% reduction requires a planned component-level CSS redesign with screenshot coverage, not more cascade-only deletion.
+
+No production build or light/dark mobile/tablet/desktop visual regression run has been performed for this pass. CSS braces are balanced, no empty style rules remain, and the source class audit still accounts for the two role-derived class names.
