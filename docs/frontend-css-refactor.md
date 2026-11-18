@@ -37,13 +37,17 @@ These are lexical counts, not a parsed CSS dependency graph. Repeated selectors 
 
 | File | Lines | Characters |
 |---|---:|---:|
-| `styles.css` | 7,887 | 204,179 |
+| `styles.css` | 7,880 | 203,663 |
 | `tokens.css` | 113 | 3,264 |
-| **Combined** | **8,000** | **207,443** |
+| **Combined** | **7,993** | **206,927** |
 
-Compared with the combined starting point for this pass (9,428 lines / 255,060 characters), the source is down by 1,428 lines (15.1%) and 47,617 characters (18.7%). The requested 3x reduction has **not** been reached. The remaining 4,324 declarations include real layout, responsive, media, and theme behavior; reaching a third of the current size safely will require component-level simplification and visual regression coverage, not blind deletion or minification.
+Compared with the combined starting point for this pass (9,428 lines / 255,060 characters), the source is down by 1,435 lines (15.2%) and 48,133 characters (18.9%). The requested 3x reduction has **not** been reached.
 
-Current structural counts: 1,612 parsed style rules, 41 media-query blocks and 817 `!important` declarations. These are source counts, not a runtime CSS coverage report.
+Latest additional cleanup merged 14 non-adjacent repeated rule blocks into shared selector lists. Each group had identical declarations in the same media context, and an intervening-rule scan found no declarations affecting those properties between the original rules. No declarations were removed in that step.
+
+Current structural counts: 1,555 top-level style rules, 41 media-query blocks and 816 `!important` declarations. The CSS contains no empty style rules. The source count is not a runtime CSS coverage report.
+
+The class-name audit accounted for dynamic class values as well as literal strings: role-derived `teacher`/`admin` classes and conditional `create-participant-modal`/`is-expanded` classes are live. No CSS class was removed solely because a naive literal search failed to find it.
 
 No production build or light/dark mobile/tablet/desktop visual regression run has been performed for this cleanup.
 
