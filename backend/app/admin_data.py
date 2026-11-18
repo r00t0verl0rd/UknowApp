@@ -256,7 +256,7 @@ async def restore_full_backup(_: Admin, file: UploadFile = File(...)):
     handle = tempfile.NamedTemporaryFile(prefix="uknowapp-full-upload-", suffix=".zip", dir=data_dir, delete=False)
     upload_path = Path(handle.name)
     stage = Path(tempfile.mkdtemp(prefix="uknowapp-full-stage-", dir=data_dir))
-    old_media = data_dir / ("uknowapp-media-before-restore-" + next(tempfile._get_candidate_names()))
+    old_media = stage / "previous-media"
     try:
         total = 0
         with handle:
@@ -283,8 +283,11 @@ async def restore_full_backup(_: Admin, file: UploadFile = File(...)):
                 manifest = json.loads(archive.read("manifest.json"))
                 if manifest.get("format") != "uknowapp-full-backup-v1":
                     raise HTTPException(status_code=400, detail="Формат полной резервной копии не поддерживается")
-                with database_copy.open("wb") as target:
-                    shutil.copyfileobj(archive.open("database.sqlite3"), target)
+                database_info = archive.getinfo("database.sqlite3")
+                if database_info.file_size > MAX_DATABASE_BYTES:
+                    raise HTTPException(status_code=413, detail="База данных в архиве превышает 1 ГБ")
+                with archive.open("database.sqlite3") as source, database_copy.open("wb") as target:
+                    shutil.copyfileobj(source, target)
                 for item in entries:
                     if item.filename.startswith("media/") and not item.is_dir():
                         relative = _safe_relative(item.filename[6:])
