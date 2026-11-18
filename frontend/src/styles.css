@@ -4796,7 +4796,7 @@ button, input, select, textarea {
 button, .btn, .icon-btn, .theme-toggle, .logout,
 .person-actions button, .add-student, .chat-item,
 .chat-filter-segment button, .attach-control, .composer-send,
-.user-action-btn, .password-actions button {
+.user-action-btn {
   transition: background-color .16s ease, border-color .16s ease,
     color .16s ease, box-shadow .16s ease, transform .16s ease;
 }
@@ -4809,11 +4809,11 @@ button, .btn, .icon-btn, .theme-toggle, .logout,
 .btn, .theme-toggle, .icon-btn, .logout,
 .person-actions button, .add-student, .graph-add-participant,
 .user-action-btn, .attach-control, .composer-send,
-.password-actions button, .modal-head button, .alert-row button,
+.modal-head button, .alert-row button,
 .chat-filter-segment button {
   border-radius: var(--ui-radius-sm);
 }
-.btn, .user-action-btn, .attach-control, .password-actions button {
+.btn, .user-action-btn, .attach-control {
   border-color: var(--ui-border);
   box-shadow: var(--ui-shadow-soft);
 }
