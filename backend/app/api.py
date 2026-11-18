@@ -485,7 +485,13 @@ def delete_user(user_id: int, _: Admin, db: Db):
             (Assignment.teacher_id == user.id) | (Assignment.student_id == user.id)
         )
     ).all()
-    conversation_ids = [item.conversation.id for item in assignments if item.conversation]
+    conversation_ids = set(db.scalars(
+        select(Conversation.id).where(
+            (Conversation.teacher_id == user.id) | (Conversation.student_id == user.id)
+        )
+    ).all())
+    conversation_ids.update(item.conversation.id for item in assignments if item.conversation)
+    conversation_ids = list(conversation_ids)
     if conversation_ids:
         media_rows = db.scalars(select(Message).where(Message.conversation_id.in_(conversation_ids))).all()
         for media_row in media_rows:
