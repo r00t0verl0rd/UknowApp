@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from starlette.background import BackgroundTask
 
 from .database import SessionLocal, engine
+from .event_hub import publish_chat_update
 from .media_storage import MEDIA_DIR, delete_message_media
 from .models import Conversation, Message, PersonalConversation, PersonalMessage, User
 from .security import require_admin
@@ -262,6 +263,10 @@ async def restore_dialogues(_: Admin, file: UploadFile = File(...), db: Session 
             except Exception:
                 db.rollback()
                 raise
+            for conversation_id, in db.query(Conversation.id).all():
+                publish_chat_update(conversation_id)
+            for conversation_id, in db.query(PersonalConversation.id).all():
+                publish_chat_update(conversation_id)
             for row in old_rows:
                 delete_message_media(row.metadata_json)
             for item in messages:
@@ -293,12 +298,16 @@ def cleanup_dialogues(days: int, _: Admin, db: Session = Depends(_get_db)):
         raise HTTPException(status_code=400, detail="Выберите срок 30, 60 или 120 дней")
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     old_rows = db.scalars(select(Message).where(Message.created_at < cutoff)).all()
+    old_personal_rows = db.scalars(select(PersonalMessage).where(PersonalMessage.created_at < cutoff)).all()
     deleted_messages = len(old_rows)
-    deleted_personal = db.query(PersonalMessage).filter(
-        PersonalMessage.created_at < cutoff
-    ).delete(synchronize_session=False)
+    deleted_personal = len(old_personal_rows)
+    changed_conversation_ids = {row.conversation_id for row in old_rows}
+    changed_personal_ids = {row.conversation_id for row in old_personal_rows}
+    db.query(PersonalMessage).filter(PersonalMessage.created_at < cutoff).delete(synchronize_session=False)
     db.query(Message).filter(Message.created_at < cutoff).delete(synchronize_session=False)
     db.commit()
+    for conversation_id in changed_conversation_ids | changed_personal_ids:
+        publish_chat_update(conversation_id)
     deleted_files = 0
     media_root = MEDIA_DIR.resolve()
     for row in old_rows:
