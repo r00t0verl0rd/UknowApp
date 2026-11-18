@@ -2777,12 +2777,10 @@ body {
 
   .teacher-readonly-graph {
     padding: 18px;
-  }.teacher-graph-root
-{
-    max-width: none;
   }
 
   .teacher-graph-root {
+    max-width: none;
     margin: 10px 0;
   }
 
@@ -3433,12 +3431,10 @@ body {
 
   .teacher-readonly-graph {
     padding: 12px;
-  }.teacher-graph-root
-{
-    max-width: none;
   }
 
   .teacher-graph-root {
+    max-width: none;
     margin: 10px 0;
   }
 
