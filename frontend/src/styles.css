@@ -1667,6 +1667,7 @@ body, .chats-shell, .chats-main { background: var(--canvas);}
 /* Graph surfaces: warm the remaining near-white islands in the light theme. */
 :root:not([data-theme="dark-soft"]) .graph-panel .graph-legend-row > .graph-legend { border: 1px solid #e4deec; border-radius: 12px;}
 
+:root:not([data-theme="dark-soft"]) .graph-panel .teacher-grid { background: #faf8fd !important; background-image: none !important;}
 :root:not([data-theme="dark-soft"]) .graph-panel .teacher-branch { border: 1px solid #e7e1ed; border-radius: 16px; padding: 12px;}
 /* Dark graph cards must retain the same role hues as dark chat bubbles.
    More specific selectors override the generic dark card surface rule above. */
@@ -1730,6 +1731,7 @@ body, .chats-shell, .chats-main { background: var(--canvas);}
 :root:not([data-theme="dark-soft"]) .chat-detail > .messages { background: #f5f1f9 !important;}
 .graph-panel .student-list[hidden] { display: none !important;}
 /* Muted dark palette: retain role recognition without large saturated blocks. */
+:root[data-theme="dark-soft"] .graph-panel .teacher-grid { background: #202633 !important; background-image: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .teacher-branch { background: #242c38 !important; border-color: #374253 !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .teacher-branch:hover { background: #262f3c !important; border-color: #465267 !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .root-node { background: #2e3933 !important; border-color: #485c4d !important; box-shadow: none !important;}
