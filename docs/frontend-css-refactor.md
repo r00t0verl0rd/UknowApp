@@ -43,11 +43,23 @@ These are lexical counts, not a parsed CSS dependency graph. Repeated selectors 
 
 Compared with the combined starting point for this pass (9,428 lines / 255,060 characters), the source is down by 1,435 lines (15.2%) and 48,133 characters (18.9%). The requested 3x reduction has **not** been reached.
 
-Latest additional cleanup merged 14 non-adjacent repeated rule blocks into shared selector lists. Each group had identical declarations in the same media context, and an intervening-rule scan found no declarations affecting those properties between the original rules. No declarations were removed in that step.
+Latest cleanup merged 14 non-adjacent repeated rule blocks into shared selector lists. Each group had identical declarations in the same media context, and an intervening-rule scan found no declarations affecting those properties between the original rules.
 
-Current structural counts: 1,555 top-level style rules, 41 media-query blocks and 816 `!important` declarations. The CSS contains no empty style rules. The source count is not a runtime CSS coverage report.
+A follow-up token audit removed three unused palette variables: `--amber`, `--amber-dark` and `--amber-soft`. All remaining defined custom properties are referenced; both declared keyframe animations are used. The grouped-selector cascade audit was rerun after consolidation and found no additional fully superseded declarations. No empty style rules remain.
 
-The class-name audit accounted for dynamic class values as well as literal strings: role-derived `teacher`/`admin` classes and conditional `create-participant-modal`/`is-expanded` classes are live. No CSS class was removed solely because a naive literal search failed to find it.
+### Updated measured size after the token audit
+
+| File | Lines | Characters |
+|---|---:|---:|
+| `styles.css` | 7,880 | 203,663 |
+| `tokens.css` | 110 | 3,194 |
+| **Combined** | **7,990** | **206,857** |
+
+Against the original combined baseline (9,428 lines / 255,060 characters), this is a reduction of 1,438 lines (15.3%) and 48,203 characters (18.9%). The 3x reduction target has not yet been reached.
+
+Current structural counts: 1,555 top-level style rules, 41 media-query blocks and 816 `!important` declarations. The stylesheet defines no unused custom properties and has no empty style rules. The unresolved `--bar-index` reference is provided inline by the audio player; `--surface-soft` has a local fallback. These are source counts, not a runtime CSS coverage report.
+
+The class-name audit accounts for dynamic values: role-derived `teacher`/`admin` classes and conditional `create-participant-modal`/`is-expanded` classes are live. Both keyframes, `spin` and `chat-audio-wave-pulse`, are referenced by animation declarations.
 
 No production build or light/dark mobile/tablet/desktop visual regression run has been performed for this cleanup.
 
