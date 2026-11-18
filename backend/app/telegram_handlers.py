@@ -697,12 +697,36 @@ async def route_message(message: TgMessage, bot: Bot):
         publish_chat_update(conversation.id)
         await archive_telegram_media(bot, message, row)
         if not recipient.telegram_id or not recipient.active:
-            row.delivery_status = "failed"
-            db.commit()
-            publish_chat_update(conversation.id)
             if sender.role == "teacher":
-                await message.answer("Не удалось доставить сообщение: аккаунт ученика не подключён.")
+                # The message is already persisted in UknowApp. Telegram is
+                # only an additional delivery channel, so an unlinked student
+                # must not turn a successful in-app delivery into a failure.
+                row.delivery_status = "delivered"
+                db.commit()
+                publish_chat_update(conversation.id)
+                mark_messages_read_by_teacher(db, unanswered_before_reply)
+                if message.text:
+                    try:
+                        await bot.delete_message(
+                            chat_id=sender.telegram_id,
+                            message_id=message.message_id,
+                        )
+                    except Exception as exc:
+                        logger.info(
+                            "Could not remove teacher text after in-app delivery "
+                            "(error_type=%s)", type(exc).__name__,
+                        )
+                try:
+                    await update_teacher_panel(bot, db, sender)
+                except Exception as exc:
+                    logger.warning(
+                        "Could not refresh teacher panel (error_type=%s)",
+                        type(exc).__name__,
+                    )
             else:
+                row.delivery_status = "failed"
+                db.commit()
+                publish_chat_update(conversation.id)
                 await message.answer("Не удалось отправить сообщение. Попробуйте позже.")
             return
         try:
