@@ -1,7 +1,6 @@
 """Администрирование резервных копий, архива переписок и очистки данных."""
 
 import json
-import os
 import shutil
 import sqlite3
 import tempfile
@@ -13,20 +12,25 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from starlette.background import BackgroundTask
 
 from .database import SessionLocal, engine
 from .media_storage import MEDIA_DIR, delete_message_media
-from .models import Conversation, Message, PersonalConversation, PersonalMessage
+from .models import Conversation, Message, PersonalConversation, PersonalMessage, User
 from .security import require_admin
 
 router = APIRouter(prefix="/admin/data", tags=["admin-data"])
 Admin = Annotated[str, Depends(require_admin)]
 MAX_DATABASE_BYTES = 1024 * 1024 * 1024
 MAX_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024
+MAX_UNPACKED_ARCHIVE_BYTES = 4 * 1024 * 1024 * 1024
 ARCHIVE_FORMAT = "uknowapp-dialogues-v1"
+
+
+def _get_db():
+    with SessionLocal() as db:
+        yield db
 
 
 def _database_path() -> Path:
@@ -45,19 +49,6 @@ def _folder_size(path: Path) -> int:
     return sum(item.stat().st_size for item in path.rglob("*") if item.is_file())
 
 
-def _message_data(row, fields: tuple[str, ...]) -> dict:
-    result = {}
-    for field in fields:
-        value = getattr(row, field)
-        result[field] = value.isoformat() if isinstance(value, datetime) else value
-    return result
-
-
-def _get_db():
-    with SessionLocal() as db:
-        yield db
-
-
 def _safe_relative(value: str) -> Path:
     candidate = PurePosixPath(value)
     if candidate.is_absolute() or not candidate.parts or any(part in {"", ".", ".."} for part in candidate.parts):
@@ -65,13 +56,29 @@ def _safe_relative(value: str) -> Path:
     return Path(*candidate.parts)
 
 
+def _parse_datetime(value: str | None):
+    return datetime.fromisoformat(value) if value else None
+
+
+def _message_data(row, fields: tuple[str, ...]) -> dict:
+    return {
+        field: getattr(row, field).isoformat() if isinstance(getattr(row, field), datetime) else getattr(row, field)
+        for field in fields
+    }
+
+
+def _count_rows(model: type) -> int:
+    with SessionLocal() as db:
+        return db.query(model).count()
+
+
 @router.get("/stats")
 def data_stats(_: Admin):
     database = _database_path()
     database_size = sum(
-        candidate.stat().st_size for candidate in (
+        item.stat().st_size for item in (
             database, Path(str(database) + "-wal"), Path(str(database) + "-shm")
-        ) if candidate.is_file()
+        ) if item.is_file()
     )
     return {
         "database_bytes": database_size,
@@ -79,11 +86,6 @@ def data_stats(_: Admin):
         "messages": _count_rows(Message),
         "personal_messages": _count_rows(PersonalMessage),
     }
-
-
-def _count_rows(model: type) -> int:
-    with SessionLocal() as db:
-        return db.query(model).count()
 
 
 @router.get("/database")
@@ -95,7 +97,6 @@ def download_database(_: Admin):
     backup_path = Path(handle.name)
     handle.close()
     try:
-        engine.dispose()
         with sqlite3.connect(database) as source, sqlite3.connect(backup_path) as target:
             source.backup(target)
         return FileResponse(
@@ -169,11 +170,11 @@ def download_dialogues(_: Admin):
                     relative = (metadata.get("media") or {}).get("local_path")
                     if not relative or relative in archived_paths:
                         continue
-                    safe_relative = _safe_relative(relative)
-                    source = (MEDIA_DIR / safe_relative).resolve()
+                    relative_path = _safe_relative(relative)
+                    source = (MEDIA_DIR / relative_path).resolve()
                     if MEDIA_DIR.resolve() not in source.parents or not source.is_file():
                         continue
-                    archive.write(source, "media/" + safe_relative.as_posix())
+                    archive.write(source, "media/" + relative_path.as_posix())
                     archived_paths.add(relative)
             return FileResponse(
                 archive_path, media_type="application/zip",
@@ -186,7 +187,7 @@ def download_dialogues(_: Admin):
 
 
 @router.post("/dialogues")
-async def restore_dialogues(_: Admin, file: UploadFile = File(...), db: Session = Depends(lambda: next(_db_session()))):
+async def restore_dialogues(_: Admin, file: UploadFile = File(...), db: Session = Depends(_get_db)):
     if not (file.filename or "").lower().endswith(".zip"):
         raise HTTPException(status_code=400, detail="Загрузите ZIP-архив переписок")
     handle = tempfile.NamedTemporaryFile(prefix="uknowapp-dialogues-upload-", suffix=".zip", delete=False)
@@ -202,25 +203,27 @@ async def restore_dialogues(_: Admin, file: UploadFile = File(...), db: Session 
         stage = Path(tempfile.mkdtemp(prefix="uknowapp-dialogues-stage-"))
         try:
             with zipfile.ZipFile(temp_path) as archive:
-                names = archive.namelist()
-                if len(names) > 100000:
-                    raise HTTPException(status_code=413, detail="В архиве слишком много файлов")
-                for name in names:
+                entries = archive.infolist()
+                if len(entries) > 100000 or sum(item.file_size for item in entries) > MAX_UNPACKED_ARCHIVE_BYTES:
+                    raise HTTPException(status_code=413, detail="Содержимое архива слишком велико")
+                names = {item.filename for item in entries}
+                if not {"manifest.json", "messages.json", "personal_messages.json"}.issubset(names):
+                    raise HTTPException(status_code=400, detail="Это не архив переписок UknowApp")
+                for item in entries:
+                    name = item.filename
                     if name.startswith("/") or ".." in PurePosixPath(name).parts:
                         raise HTTPException(status_code=400, detail="Архив содержит небезопасный путь")
-                required = {"manifest.json", "messages.json", "personal_messages.json"}
-                if not required.issubset(set(names)):
-                    raise HTTPException(status_code=400, detail="Это не архив переписок UknowApp")
                 manifest = json.loads(archive.read("manifest.json"))
                 if manifest.get("format") != ARCHIVE_FORMAT:
                     raise HTTPException(status_code=400, detail="Версия архива не поддерживается")
-                for name in names:
-                    if name.startswith("media/"):
-                        destination = (stage / name[6:]).resolve()
+                for item in entries:
+                    if item.filename.startswith("media/") and not item.is_dir():
+                        relative = _safe_relative(item.filename[6:])
+                        destination = (stage / "media" / relative).resolve()
                         if stage.resolve() not in destination.parents:
                             raise HTTPException(status_code=400, detail="Недопустимый путь к медиафайлу")
                         destination.parent.mkdir(parents=True, exist_ok=True)
-                        with archive.open(name) as source, destination.open("wb") as target:
+                        with archive.open(item) as source, destination.open("wb") as target:
                             shutil.copyfileobj(source, target)
                 messages = json.loads(archive.read("messages.json"))
                 personal_messages = json.loads(archive.read("personal_messages.json"))
@@ -228,51 +231,51 @@ async def restore_dialogues(_: Admin, file: UploadFile = File(...), db: Session 
                 raise HTTPException(status_code=400, detail="Некорректная структура архива")
             conversation_ids = {row[0] for row in db.query(Conversation.id).all()}
             personal_ids = {row[0] for row in db.query(PersonalConversation.id).all()}
+            user_ids = {row[0] for row in db.query(User.id).all()}
             if any(int(item["conversation_id"]) not in conversation_ids for item in messages):
                 raise HTTPException(status_code=409, detail="В базе отсутствуют переписки из архива. Сначала восстановите базу данных.")
             if any(int(item["conversation_id"]) not in personal_ids for item in personal_messages):
                 raise HTTPException(status_code=409, detail="В базе отсутствуют личные диалоги из архива. Сначала восстановите базу данных.")
-            user_ids = {row[0] for row in db.query(__import__(".models", fromlist=["User"]).User.id).all()}
-            if any(item.get("sender_id") is not None and int(item["sender_id"]) not in user_ids for item in personal_messages):
+            if any(item.get("sender_id") is not None and int(item["sender_id"]) not in user_ids for item in messages + personal_messages):
                 raise HTTPException(status_code=409, detail="В базе отсутствуют пользователи из архива. Сначала восстановите базу данных.")
-            new_media = []
             old_rows = db.scalars(select(Message)).all()
+            for item in messages:
+                metadata = json.loads(item.get("metadata_json") or "{}")
+                relative = (metadata.get("media") or {}).get("local_path")
+                if relative:
+                    source = (stage / "media" / _safe_relative(relative)).resolve()
+                    if stage.resolve() not in source.parents or not source.is_file():
+                        metadata["media"].pop("local_path", None)
+                        metadata["media"]["archive_status"] = "missing_in_archive"
+                        item["metadata_json"] = json.dumps(metadata, ensure_ascii=False)
+                item["created_at"] = _parse_datetime(item.get("created_at"))
+            for item in personal_messages:
+                for field in ("created_at", "admin_read_at", "participant_read_at"):
+                    item[field] = _parse_datetime(item.get(field))
+            db.query(Message).delete(synchronize_session=False)
+            db.query(PersonalMessage).delete(synchronize_session=False)
             try:
-                for item in messages:
-                    metadata = json.loads(item.get("metadata_json") or "{}")
-                    relative = (metadata.get("media") or {}).get("local_path")
-                    if relative:
-                        source = (stage / "media" / _safe_relative(relative)).resolve()
-                        if stage.resolve() not in source.parents or not source.is_file():
-                            metadata["media"].pop("local_path", None)
-                            metadata["media"]["archive_status"] = "missing_in_archive"
-                            item["metadata_json"] = json.dumps(metadata, ensure_ascii=False)
-                db.query(Message).delete(synchronize_session=False)
-                db.query(PersonalMessage).delete(synchronize_session=False)
                 db.bulk_insert_mappings(Message, messages)
                 db.bulk_insert_mappings(PersonalMessage, personal_messages)
                 db.commit()
-                for item in messages:
-                    metadata = json.loads(item.get("metadata_json") or "{}")
-                    relative = (metadata.get("media") or {}).get("local_path")
-                    if not relative:
-                        continue
-                    rel_path = _safe_relative(relative)
-                    source = (stage / rel_path).resolve()
-                    if source.is_file():
-                        destination = (MEDIA_DIR / rel_path).resolve()
-                        if MEDIA_DIR.resolve() not in destination.parents:
-                            continue
-                        destination.parent.mkdir(parents=True, exist_ok=True)
-                        shutil.copy2(source, destination)
-                        new_media.append(destination)
-                for row in old_rows:
-                    delete_message_media(row.metadata_json)
             except Exception:
                 db.rollback()
-                for path in new_media:
-                    path.unlink(missing_ok=True)
                 raise
+            for row in old_rows:
+                delete_message_media(row.metadata_json)
+            for item in messages:
+                metadata = json.loads(item.get("metadata_json") or "{}")
+                relative = (metadata.get("media") or {}).get("local_path")
+                if not relative:
+                    continue
+                relative_path = _safe_relative(relative)
+                source = (stage / "media" / relative_path).resolve()
+                if source.is_file():
+                    destination = (MEDIA_DIR / relative_path).resolve()
+                    if MEDIA_DIR.resolve() not in destination.parents:
+                        continue
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(source, destination)
             return {"ok": True, "messages": len(messages), "personal_messages": len(personal_messages)}
         finally:
             shutil.rmtree(stage, ignore_errors=True)
@@ -290,7 +293,9 @@ def cleanup_dialogues(days: int, _: Admin, db: Session = Depends(_get_db)):
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     old_rows = db.scalars(select(Message).where(Message.created_at < cutoff)).all()
     deleted_messages = len(old_rows)
-    deleted_personal = db.query(PersonalMessage).filter(PersonalMessage.created_at < cutoff).delete(synchronize_session=False)
+    deleted_personal = db.query(PersonalMessage).filter(
+        PersonalMessage.created_at < cutoff
+    ).delete(synchronize_session=False)
     db.query(Message).filter(Message.created_at < cutoff).delete(synchronize_session=False)
     db.commit()
     for row in old_rows:
