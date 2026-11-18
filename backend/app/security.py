@@ -60,10 +60,7 @@ def authenticate_panel_user(username: str, password: str) -> Optional[dict]:
         return None
     with SessionLocal() as db:
         users = db.scalars(
-            select(User).where(
-                User.role.in_(["teacher", "student"]),
-                User.active.is_(True),
-            )
+            select(User).where(User.role.in_(["teacher", "student"]))
         ).all()
         matches = [
             user for user in users
@@ -130,7 +127,7 @@ def _credential_fingerprint(db, role: str, user_id: Optional[int]) -> Optional[s
         value = ADMIN_USERNAME + "\0" + ADMIN_PASSWORD
     elif role in {"teacher", "student"} and user_id is not None:
         user = db.get(User, user_id)
-        if not user or user.role != role or not user.active or not user.web_password_hash:
+        if not user or user.role != role or not user.web_password_hash:
             return None
         value = user.web_password_hash
     else:
@@ -261,7 +258,6 @@ def _load_panel_identity(request: Request) -> Optional[dict]:
             valid = (
                 valid
                 and user is not None
-                and user.active
                 and user.role == session.role
                 and expected_fingerprint is not None
                 and secrets.compare_digest(
