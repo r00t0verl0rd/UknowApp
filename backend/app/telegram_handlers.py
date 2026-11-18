@@ -711,6 +711,16 @@ async def route_message(message: TgMessage, bot: Bot):
                 # The message is already persisted in UknowApp. Telegram is
                 # only an additional delivery channel, so an unlinked student
                 # must not turn a successful in-app delivery into a failure.
+                metadata = json.loads(row.metadata_json or "{}")
+                metadata["telegram_delivery_errors"] = [{
+                    "name": recipient.full_name,
+                    "role": "student",
+                    "reason": (
+                        "Аккаунт ученика не подключён к Telegram"
+                        if recipient.active else "Аккаунт ученика отключён"
+                    ),
+                }]
+                row.metadata_json = json.dumps(metadata, ensure_ascii=False)
                 row.delivery_status = "delivered"
                 db.commit()
                 publish_chat_update(conversation.id)
