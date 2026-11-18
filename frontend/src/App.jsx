@@ -332,8 +332,8 @@ export default function App() {
   }
 
   // Списки участников пересчитываются только при изменении массива пользователей.
-  const activeTeachers = useMemo(() => users.filter(u => u.active && u.role === "teacher"), [users]);
-  const activeStudents = useMemo(() => users.filter(u => u.active && u.role === "student"), [users]);
+  const allTeachers = useMemo(() => users.filter(u => u.role === "teacher"), [users]);
+  const allStudents = useMemo(() => users.filter(u => u.role === "student"), [users]);
   const studentsByTeacherId = useMemo(
     () => new Map((overview?.teachers || []).map(teacher => [teacher.id, teacher.students || []])),
     [overview]
@@ -343,13 +343,11 @@ export default function App() {
     .sort((a, b) => {
       if (userSort === "teachers") return (a.role === "teacher" ? 0 : 1) - (b.role === "teacher" ? 0 : 1) || a.full_name.localeCompare(b.full_name, "ru");
       if (userSort === "students") return (a.role === "student" ? 0 : 1) - (b.role === "student" ? 0 : 1) || a.full_name.localeCompare(b.full_name, "ru");
-      if (userSort === "active") return Number(b.active) - Number(a.active) || a.full_name.localeCompare(b.full_name, "ru");
-      if (userSort === "inactive") return Number(a.active) - Number(b.active) || a.full_name.localeCompare(b.full_name, "ru");
       return a.full_name.localeCompare(b.full_name, "ru", { sensitivity: "base" }) * (userSort === "name-desc" ? -1 : 1);
     }), [users, search, userSort]);
   // Один раз собираем ID уже назначенных учеников, чтобы быстро найти свободных.
   const assignedStudentIds = useMemo(() => new Set((overview?.teachers || []).flatMap(t => t.students.map(s => s.id))), [overview]);
-  const unassignedStudents = useMemo(() => activeStudents.filter(student => !assignedStudentIds.has(student.id)), [activeStudents, assignedStudentIds]);
+  const unassignedStudents = useMemo(() => allStudents.filter(student => !assignedStudentIds.has(student.id)), [allStudents, assignedStudentIds]);
   const visibleMessages = useMemo(() => messages.filter(message => {
     const kind = message.metadata?.media?.kind || message.content_type;
     if (messageFilter === "all") return true;
@@ -740,7 +738,7 @@ export default function App() {
             </div>
             <div className="root-node"><img src="/logo.png" alt=""/><div><b>Администратор</b><small>Полное управление</small></div></div>
             <div className="teacher-grid">
-              {activeTeachers.map(teacher => {
+              {allTeachers.map(teacher => {
                 const students = studentsByTeacherId.get(teacher.id) || [];
                 const studentsCollapsed = collapsedTeacherIds.has(teacher.id);
                 return <section className={`teacher-branch${studentsCollapsed ? " is-collapsed" : ""}`} key={teacher.id}>
@@ -751,7 +749,7 @@ export default function App() {
                     <button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil/></button>
                   </div>
                 </div>
-                {!studentsCollapsed && <button className="add-student" onClick={() => { setTeacherId(String(teacher.id)); setStudentId(activeStudents[0]?.id ? String(activeStudents[0].id) : ""); setModal({ mode: "assign" }); }}><Plus/>Назначить ученика</button>}
+                {!studentsCollapsed && <button className="add-student" onClick={() => { setTeacherId(String(teacher.id)); setStudentId(allStudents[0]?.id ? String(allStudents[0].id) : ""); setModal({ mode: "assign" }); }}><Plus/>Назначить ученика</button>}
                 {!studentsCollapsed && <div className="student-list">
                   {students.map(student => <div className="person-card student-card" key={student.id}>
                     <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
@@ -762,12 +760,12 @@ export default function App() {
               </section>;
               })}
             </div>
-            {!activeTeachers.length && <div className="empty-state"><GraduationCap/><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span></div>}
+            {!allTeachers.length && <div className="empty-state"><GraduationCap/><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span></div>}
             {!!unassignedStudents.length && <section className="unassigned"><h2 className="unassigned-title">Ученики без назначения</h2><div className="unassigned-grid">{unassignedStudents.map(student => <div className="person-card student-card unassigned-student-card" key={student.id}>
               <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
               <div className="unassigned-student-actions">
                 <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button>
-                <button className="btn small outline" disabled={!activeTeachers.length} onClick={() => { setStudentId(String(student.id)); setTeacherId(String(activeTeachers[0]?.id || "")); setModal({ mode: "assign" }); }}>Назначить</button>
+                <button className="btn small outline" disabled={!allTeachers.length} onClick={() => { setStudentId(String(student.id)); setTeacherId(String(allTeachers[0]?.id || "")); setModal({ mode: "assign" }); }}>Назначить</button>
               </div>
             </div>)}</div></section>}
           </section>
@@ -777,7 +775,7 @@ export default function App() {
           <div className="toolbar user-toolbar">
             <div className="search"><Search/><input placeholder="Поиск по имени" value={search} onChange={e => setSearch(e.target.value)}/></div>
             <select className="user-sort" aria-label="Сортировка пользователей" value={userSort} onChange={e => setUserSort(e.target.value)}>
-              <option value="name-asc">По имени</option><option value="name-desc">Имя: Я — А</option><option value="teachers">Сначала учителя</option><option value="students">Сначала ученики</option><option value="active">Сначала активные</option><option value="inactive">Сначала отключённые</option>
+              <option value="name-asc">По имени</option><option value="name-desc">Имя: Я — А</option><option value="teachers">Сначала учителя</option><option value="students">Сначала ученики</option>
             </select>
             <span className="user-count">Количество пользователей: <b>{visibleUsers.length}</b></span>
             <button className="btn primary user-add-btn" onClick={() => openCreate()}><Plus/>Добавить пользователя</button>
@@ -788,7 +786,7 @@ export default function App() {
             <div className="user-actions">
               {user.telegram_id
                 ? <button className="user-action-btn connect-toggle disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram" aria-label="Отключить Telegram"><Unlink/><span>Отключить</span></button>
-                : <button className="user-action-btn connect-toggle connect" disabled={!user.active} onClick={() => makeCode(user)} title={user.active ? "Создать код для подключения" : "Сначала активируйте участника"} aria-label="Подключить участника"><Link2/><span>Подключить</span></button>}
+                : <button className="user-action-btn connect-toggle connect" onClick={() => makeCode(user)} title="Создать код для подключения" aria-label="Подключить участника"><Link2/><span>Подключить</span></button>}
               <div className="user-info-wrap">
                 <button
                   className={"user-action-btn user-info-btn" + (userInfo === user.id ? " is-open" : "")}
@@ -801,7 +799,6 @@ export default function App() {
                 ><Info/></button>
                 {userInfo === user.id && <div className="user-info-popover" id={"user-info-" + user.id} role="status">
                   <div className="user-info-popover-head"><b>Информация</b><button type="button" onClick={() => setUserInfo(null)} aria-label="Закрыть"><X size={14}/></button></div>
-                  <div className="user-info-line"><span className={"user-status-dot " + (user.active ? "is-active" : "is-inactive")}/><span>{user.active ? "Активен" : "Отключён"}</span></div>
                   <div className="user-info-line"><Link2 size={14}/><span>{user.telegram_id ? "Telegram подключён" : "Telegram не подключён"}</span></div>
                   <div className="user-info-login"><span>Telegram ID</span><b>{user.telegram_id || "Не подключён"}</b></div>
                   {["teacher", "student"].includes(user.role) && <div className="user-info-login"><span>Логин</span><b>{user.web_username || user.full_name}</b></div>}
@@ -942,10 +939,10 @@ export default function App() {
     {modal && modal.mode !== "create-personal" && <div className="overlay" onMouseDown={() => setModal(null)}><section className={`modal${modal.mode === "create" ? " create-participant-modal" : ""}`} onMouseDown={e => e.stopPropagation()}>
       <div className="modal-head"><div><div className="eyebrow">{modal.mode === "create" ? "НОВЫЙ УЧАСТНИК" : modal.mode === "edit" ? "ПРОФИЛЬ УЧАСТНИКА" : "СВЯЗЬ УЧЕНИКА И УЧИТЕЛЯ"}</div><h2>{modal.mode === "create" ? "Добавить участника" : modal.mode === "edit" ? "Редактировать" : "Назначить ученика"}</h2></div><button className="icon-btn" onClick={() => setModal(null)}><X/></button></div>
       {modal.mode === "assign" ? <form className="stack" onSubmit={assign}>
-        <label>Учитель<select value={teacherId} onChange={e => setTeacherId(e.target.value)} required>{activeTeachers.map(t => <option value={t.id} key={t.id}>{t.full_name}</option>)}</select></label>
-        <label>Ученик<select value={studentId} onChange={e => setStudentId(e.target.value)} required>{activeStudents.map(s => <option value={s.id} key={s.id}>{s.full_name}</option>)}</select></label>
+        <label>Учитель<select value={teacherId} onChange={e => setTeacherId(e.target.value)} required>{allTeachers.map(t => <option value={t.id} key={t.id}>{t.full_name}</option>)}</select></label>
+        <label>Ученик<select value={studentId} onChange={e => setStudentId(e.target.value)} required>{allStudents.map(s => <option value={s.id} key={s.id}>{s.full_name}</option>)}</select></label>
         <p className="hint">Если у ученика уже есть активное назначение, оно будет заменено новым.</p>
-        <button className="btn primary" disabled={!activeStudents.length}>Создать связь</button>
+        <button className="btn primary" disabled={!allStudents.length}>Создать связь</button>
       </form> : <form className="stack" onSubmit={saveUser}>
         <label>Имя и фамилия<input value={name} onChange={e => { const nextName = e.target.value; setName(nextName); if (!panelLogin || panelLogin === name) setPanelLogin(nextName); }} minLength="2" maxLength="160" required autoFocus/></label>
         {role === "student" && <label>Доп. инфо<input value={additionalInfo} onChange={e => setAdditionalInfo(e.target.value)} maxLength="500"/></label>}
@@ -973,12 +970,12 @@ export default function App() {
       <form className="stack" onSubmit={event => {
         event.preventDefault();
         const value = event.currentTarget.elements.participant.value.trim().toLocaleLowerCase("ru");
-        const selected = users.find(user => user.active && ["teacher", "student"].includes(user.role) && user.full_name.trim().toLocaleLowerCase("ru") === value);
+        const selected = users.find(user => ["teacher", "student"].includes(user.role) && user.full_name.trim().toLocaleLowerCase("ru") === value);
         if (selected) void createPersonalChat(selected.id);
-        else setError("Выберите участника из списка активных учителей и учеников");
+        else setError("Выберите участника из списка учителей и учеников");
       }}>
         <label>Участник<input name="participant" list="personal-participant-options" placeholder="Начните вводить имя" autoComplete="off" autoFocus required/></label>
-        <datalist id="personal-participant-options">{users.filter(user => user.active && ["teacher", "student"].includes(user.role)).map(user => <option value={user.full_name} key={user.id}>{user.role === "teacher" ? "Учитель" : "Ученик"}</option>)}</datalist>
+        <datalist id="personal-participant-options">{users.filter(user => ["teacher", "student"].includes(user.role)).map(user => <option value={user.full_name} key={user.id}>{user.role === "teacher" ? "Учитель" : "Ученик"}</option>)}</datalist>
         <p className="hint">Начните вводить имя и выберите нужного участника. Личный диалог будет доступен только внутри UknowApp.</p>
         {error && <p className="form-error" role="alert">{error}</p>}
         <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setModal(null)}>Отмена</button><button type="submit" className="btn primary">Создать диалог</button></div>
