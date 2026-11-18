@@ -592,6 +592,7 @@ export default function App() {
         <button className={page === "chats" ? "active" : ""} onClick={() => setPage("chats")}><MessageCircle/>Диалоги</button>
       </nav>
       <div className="sidebar-bottom">
+        {profile?.role === "admin" && <button type="button" className={`logout desktop-admin-extra${page === "additional" ? " active" : ""}`} onClick={() => setPage("additional")}><Info size={18}/>Дополнительно</button>}
         <button className="logout desktop-logout" onClick={signOut} title="Выйти" aria-label="Выйти"><LogOut/>Выйти</button>
         <div className="mobile-quick-actions">
           <button type="button" className="theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
@@ -765,6 +766,7 @@ export default function App() {
             </> : <div className="empty-state">{profile?.role === "student" ? "Ваша переписка с учителем появится здесь" : "Выберите ученика слева"}</div>}</div>
           </div>
         </>}
+        {page === "additional" && profile?.role === "admin" && <section className="graph-panel additional-panel"><h2>Дополнительно</h2></section>}
       </div>
     </main>
 
