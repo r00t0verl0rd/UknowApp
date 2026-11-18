@@ -263,10 +263,7 @@ async def restore_dialogues(_: Admin, file: UploadFile = File(...), db: Session 
             except Exception:
                 db.rollback()
                 raise
-            for conversation_id, in db.query(Conversation.id).all():
-                publish_chat_update(conversation_id)
-            for conversation_id, in db.query(PersonalConversation.id).all():
-                publish_chat_update(conversation_id)
+            publish_chat_update(0)
             for row in old_rows:
                 delete_message_media(row.metadata_json)
             for item in messages:
@@ -306,8 +303,8 @@ def cleanup_dialogues(days: int, _: Admin, db: Session = Depends(_get_db)):
     db.query(PersonalMessage).filter(PersonalMessage.created_at < cutoff).delete(synchronize_session=False)
     db.query(Message).filter(Message.created_at < cutoff).delete(synchronize_session=False)
     db.commit()
-    for conversation_id in changed_conversation_ids | changed_personal_ids:
-        publish_chat_update(conversation_id)
+    if changed_conversation_ids or changed_personal_ids:
+        publish_chat_update(0)
     deleted_files = 0
     media_root = MEDIA_DIR.resolve()
     for row in old_rows:
