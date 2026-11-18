@@ -933,7 +933,7 @@ export default function App() {
           <div className="data-backup-hint"><b>Для обычного резервного копирования достаточно одной кнопки.</b><span>Скачайте полную резервную копию ZIP. В ней уже есть база данных, переписки и медиафайлы. Отдельные файлы предназначены для специальных случаев.</span></div>
           <article className="data-cleanup-card">
             <div><div className="eyebrow">ХРАНЕНИЕ И ОЧИСТКА</div><h3>Удаление старых переписок и медиа</h3><p>Удаляются сообщения старше выбранного срока и связанные с ними архивные вложения. Аккаунты, назначения и сами диалоги сохраняются.</p></div>
-            <div className="data-cleanup-actions"><label>Удалять старше<select value={retentionDays} onChange={e => setRetentionDays(e.target.value)} disabled={dataBusy}><option value="30">30 дней</option><option value="60">60 дней</option><option value="120">120 дней</option></select></label><button type="button" className="btn danger" onClick={cleanupOldDialogues} disabled={dataBusy}><Trash2 size={15}/>Удалить старые данные</button></div>
+            <div className="data-cleanup-actions"><label>Удалять старше<select value={retentionDays} onChange={e => setRetentionDays(e.target.value)} disabled={dataBusy}><option value="30">30 дней</option><option value="60">60 дней</option><option value="120">120 дней</option><option value="360">360 дней</option></select></label><button type="button" className="btn danger" onClick={cleanupOldDialogues} disabled={dataBusy}><Trash2 size={15}/>Удалить старые данные</button></div>
           </article>
         </section>}
       </div>
