@@ -1302,14 +1302,12 @@ async def send_panel_message(
                 delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                 continue
             if not recipient.telegram_id:
-                if not (principal["role"] == "teacher" and recipient_role == "student"):
-                    delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
+                delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                 continue
             try:
                 target = student_target if recipient_role == "student" else {"chat_id": recipient.telegram_id}
                 if not target:
-                    if not (principal["role"] == "teacher" and recipient_role == "student"):
-                        delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
+                    delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Не удалось определить Telegram-чат ученика"})
                     continue
                 # The student already knows this is the teacher's private chat.
                 # Deliver teacher text naturally; only label a separate admin role.
@@ -1330,7 +1328,10 @@ async def send_panel_message(
                 logger.warning("Telegram delivery failed for conversation_id=%s: %s", conversation.id, type(exc).__name__)
                 delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "ошибка Telegram (" + type(exc).__name__ + ")"})
     else:
-        delivery_errors.append({"name": "", "role": "", "reason": "Telegram-бот не подключён к веб-приложению"})
+        delivery_errors.extend(
+            {"name": recipient.full_name, "role": recipient_role, "reason": "Telegram-бот не подключён к веб-приложению"}
+            for recipient, recipient_role in recipients
+        )
 
     _save_panel_delivery_result(db, row, conversation, delivered, delivery_errors)
 
@@ -1403,13 +1404,11 @@ async def send_panel_attachment(
                 delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                 continue
             if not recipient.telegram_id:
-                if not (principal["role"] == "teacher" and recipient_role == "student"):
-                    delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
+                delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                 continue
             target = student_target if recipient_role == "student" else {"chat_id": recipient.telegram_id}
             if not target:
-                if not (principal["role"] == "teacher" and recipient_role == "student"):
-                    delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
+                delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Не удалось определить Telegram-чат ученика"})
                 continue
             # Teacher and student already share this conversation; avoid repeating
             # a sender label on every teacher attachment.
@@ -1472,7 +1471,10 @@ async def send_panel_attachment(
                     logger.warning("Telegram delivery failed for conversation_id=%s: %s", conversation.id, type(exc).__name__)
                     delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "ошибка Telegram (" + type(exc).__name__ + ")"})
     else:
-        delivery_errors.append({"name": "", "role": "", "reason": "Telegram-бот не подключён к веб-приложению"})
+        delivery_errors.extend(
+            {"name": recipient.full_name, "role": recipient_role, "reason": "Telegram-бот не подключён к веб-приложению"}
+            for recipient, recipient_role in recipients
+        )
 
     _save_panel_delivery_result(db, row, conversation, delivered, delivery_errors)
 
