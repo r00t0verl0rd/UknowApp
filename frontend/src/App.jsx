@@ -721,9 +721,10 @@ export default function App() {
               const unreadCount = Number(chat.unread_count) || 0;
               return <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected " : "") + (unreadCount > 0 ? "has-unread" : "")} onClick={() => openChat(chat)}>
                 <div className="chat-item-heading">
-                  <div className="chat-item-participants">
+                  <div className={"chat-item-participants" + (profile?.role === "student" ? " is-student-view" : "")}>
                     {profile?.role === "admin" && <span>{chat.teacher.full_name}</span>}
-                    <span>{profile?.role === "student" ? chat.teacher.full_name : chat.student.full_name}{profile?.role === "student" && <small>Учитель</small>}</span>
+                    <span>{profile?.role === "student" ? chat.teacher.full_name : chat.student.full_name}</span>
+                    {profile?.role === "student" && <small>Учитель</small>}
                   </div>
                   {profile?.role === "teacher" && unreadCount > 0 && <span className="unread-badge" title="Непрочитанные сообщения" aria-label={unreadCount + " непрочитанных сообщений"}>{unreadCount > 99 ? "99+" : unreadCount}</span>}
                 </div>
