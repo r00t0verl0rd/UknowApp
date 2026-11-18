@@ -1622,10 +1622,10 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 body, .chats-shell, .chats-main { background: var(--canvas);}
 .sidebar, .topbar, .graph-panel, .user-list > .user-row, .chat-layout, .chat-list, .chat-detail, .modal, .login-card, .user-info-popover, .credential-modal { background-color: var(--surface);}
 /* Structure graph: role colors match the corresponding conversation bubbles. */
-.teacher-card, .teacher-readonly-graph .teacher-graph-card:not(.student) { background: linear-gradient(112deg, var(--role-teacher-soft), color-mix(in srgb, var(--surface) 76%, var(--role-teacher-soft))) !important; border-color: var(--role-teacher-border) !important;}
-.teacher-card .avatar, .teacher-readonly-graph .teacher-graph-card:not(.student) .avatar, .avatar.teacher, .teacher-avatar { background: var(--role-teacher-soft) !important; color: var(--role-teacher) !important;}
-.student-card, .unassigned-grid .student-card, .teacher-readonly-graph .teacher-graph-card.student { background: linear-gradient(112deg, var(--role-student-soft), color-mix(in srgb, var(--surface) 76%, var(--role-student-soft))) !important; border-color: var(--role-student-border) !important;}
-.student-card .avatar, .avatar.student, .student-avatar, .teacher-readonly-graph .teacher-graph-card.student .avatar { background: var(--role-student-soft) !important; color: var(--role-student) !important;}
+.teacher-card, .teacher-readonly-graph .teacher-graph-card:not(.student) { background: linear-gradient(112deg, #e9e0f0, #f5f1f7) !important; border-color: #cdbbd9 !important;}
+.teacher-card .avatar, .teacher-readonly-graph .teacher-graph-card:not(.student) .avatar, .avatar.teacher, .teacher-avatar { background: #ded0e9 !important; color: #684b86 !important;}
+.student-card, .unassigned-grid .student-card, .teacher-readonly-graph .teacher-graph-card.student { background: linear-gradient(112deg, #f3e8d4, #faf5eb) !important; border-color: #ddc69d !important;}
+.student-card .avatar, .avatar.student, .student-avatar, .teacher-readonly-graph .teacher-graph-card.student .avatar { background: #ead9b9 !important; color: #87652f !important;}
 
 .teacher-dot { background: var(--role-teacher) !important; box-shadow: 0 0 8px color-mix(in srgb, var(--role-teacher) 35%, transparent) !important;}
 .student-dot { background: var(--role-student) !important; box-shadow: 0 0 8px color-mix(in srgb, var(--role-student) 35%, transparent) !important;}
@@ -1650,11 +1650,11 @@ body, .chats-shell, .chats-main { background: var(--canvas);}
 /* Dark graph cards must retain the same role hues as dark chat bubbles.
    More specific selectors override the generic dark card surface rule above. */
 :root[data-theme="dark-soft"] .graph-panel .root-node { color: #edf0f5 !important;}
-:root[data-theme="dark-soft"] .graph-panel .teacher-card, :root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card:not(.student) { background: linear-gradient(112deg, #403653 0%, #332d45 100%) !important; border-color: #705b91 !important; color: #edf0f5 !important;}
-:root[data-theme="dark-soft"] .graph-panel .student-card, :root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card.student { background: linear-gradient(112deg, #493b2c 0%, #3b332b 100%) !important; border-color: #806640 !important; color: #edf0f5 !important;}
+:root[data-theme="dark-soft"] .graph-panel .teacher-card, :root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card:not(.student) { background: #393247 !important; border-color: #675879 !important; color: #edf0f5 !important;}
+:root[data-theme="dark-soft"] .graph-panel .student-card, :root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card.student { background: #40382d !important; border-color: #746044 !important; color: #edf0f5 !important;}
 :root[data-theme="dark-soft"] .graph-panel .root-node small, :root[data-theme="dark-soft"] .graph-panel .person-info small, :root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card small { color: #c0c7d4 !important;}
-:root[data-theme="dark-soft"] .graph-panel .teacher-avatar, :root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card:not(.student) .avatar { background: #403653 !important; color: #b69be8 !important;}
-:root[data-theme="dark-soft"] .graph-panel .student-avatar, :root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card.student .avatar { background: #493b2c !important; color: #e4b65f !important;}
+:root[data-theme="dark-soft"] .graph-panel .teacher-avatar, :root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card:not(.student) .avatar { background: #514465 !important; color: #d0bce9 !important;}
+:root[data-theme="dark-soft"] .graph-panel .student-avatar, :root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card.student .avatar { background: #574a38 !important; color: #e5c995 !important;}
 :root[data-theme="dark-soft"] .graph-panel .graph-legend-row > .graph-legend { background: #252f3f; border: 1px solid #3a4659; border-radius: 12px;}
 :root[data-theme="dark-soft"] .graph-panel .teacher-branch { border-radius: 16px; padding: 12px;}
 /* Light theme harmony pass: replace cool grey patches with the warm,
@@ -1711,20 +1711,12 @@ body, .chats-shell, .chats-main { background: var(--canvas);}
 /* Muted dark palette: retain role recognition without large saturated blocks. */
 :root[data-theme="dark-soft"] .graph-panel .teacher-branch { background: #242c38 !important; border-color: #374253 !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .teacher-branch:hover { background: #262f3c !important; border-color: #465267 !important; box-shadow: none !important;}
-:root[data-theme="dark-soft"] .graph-panel .teacher-card { background: #30313e !important; border-color: #484858 !important;}
-:root[data-theme="dark-soft"] .graph-panel .teacher-card .avatar { background: #3a3949 !important; color: #b8add5 !important;}
-:root[data-theme="dark-soft"] .graph-panel .student-card { background: #30343b !important; border-color: #484d55 !important;}
-:root[data-theme="dark-soft"] .graph-panel .student-card .avatar { background: #3b3e45 !important; color: #c3aaa2 !important;}
 :root[data-theme="dark-soft"] .graph-panel .root-node { background: #2e3933 !important; border-color: #485c4d !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .teacher-dot { background: #a99bc8 !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .student-dot { background: #c4a879 !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .graph-legend-item b { background: #343b49 !important; color: #d4d8e2 !important;}
 /* Muted light palette: pale lavender for teachers, soft sand for students. */
 :root:not([data-theme="dark-soft"]) .graph-panel .teacher-branch { background: #f7f4fa !important; border-color: #e7e0ed !important; box-shadow: 0 2px 8px rgba(56, 43, 77, .035) !important;}
-:root:not([data-theme="dark-soft"]) .graph-panel .teacher-card { background: linear-gradient(110deg, #f0e9fb, #fff 78%) !important; border-color: #ded6e8 !important; box-shadow: none !important;}
-:root:not([data-theme="dark-soft"]) .graph-panel .teacher-card .avatar { background: #e7e0ef !important; color: #85769e !important;}
-:root:not([data-theme="dark-soft"]) .graph-panel .student-card { background: #f5f1eb !important; border-color: #e7ded1 !important; box-shadow: none !important;}
-:root:not([data-theme="dark-soft"]) .graph-panel .student-card .avatar { background: #ebe4da !important; color: #9c8567 !important;}
 :root:not([data-theme="dark-soft"]) .graph-panel .root-node { background: #eaf0e9 !important; border-color: #d2dfd0 !important; box-shadow: none !important;}
 :root:not([data-theme="dark-soft"]) .graph-panel .teacher-dot { background: #a99ac2 !important; box-shadow: none !important;}
 :root:not([data-theme="dark-soft"]) .graph-panel .student-dot { background: #c5aa7e !important; box-shadow: none !important;}
@@ -1734,8 +1726,7 @@ body, .chats-shell, .chats-main { background: var(--canvas);}
 .graph-panel .teacher-card { min-width: 0; min-height: 64px; align-items: center;}
 .graph-panel .teacher-card > .person-actions { flex: 0 0 auto;}
 /* One shared teacher-card treatment at every viewport width. */
-.graph-panel .teacher-branch > .teacher-card { display: flex !important; align-items: center !important; gap: 8px !important; min-height: 76px !important; padding: 12px 13px !important; border: 1px solid #e3d8f1 !important; border-radius: 13px !important; background: #f0ecf5 !important; box-shadow: 0 3px 10px rgba(87,62,153,.045) !important;}
-:root[data-theme="dark-soft"] .graph-panel .teacher-branch > .teacher-card { background: #30313e !important; border-color: #484858 !important; box-shadow: none !important;}
+.graph-panel .teacher-branch > .teacher-card { display: flex !important; align-items: center !important; gap: 8px !important; min-height: 76px !important; padding: 12px 13px !important; border-radius: 13px !important; }
 /* Shared edit/delete icon controls across graph, user list and all viewports. */
 .person-actions button, .user-action-btn.edit-btn, .user-action-btn.user-delete { display: inline-grid !important; place-items: center !important; box-sizing: border-box !important; flex: 0 0 34px !important; width: 34px !important; min-width: 34px !important; max-width: 34px !important; height: 34px !important; min-height: 34px !important; padding: 0 !important; border: 1px solid transparent !important; border-radius: 9px !important; background: transparent !important; box-shadow: none !important; transition: background-color .16s ease, border-color .16s ease, color .16s ease !important;}
 .person-actions button svg, .user-action-btn.edit-btn svg, .user-action-btn.user-delete svg { display: block !important; width: 16px !important; height: 16px !important;}
