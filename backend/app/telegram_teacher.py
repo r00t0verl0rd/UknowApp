@@ -592,7 +592,7 @@ async def handle_teacher_keyboard_message(
         valid = get_teacher_conversation(db, teacher, conversation.id)
         if valid:
             set_teacher_session(db, teacher, valid)
-            await mark_visible_messages_read_by_teacher(bot, db, valid)
+            mark_visible_messages_read_by_teacher(db, valid)
         else:
             clear_teacher_session(db, teacher)
     elif body == TEACHER_BACK_LABEL:
