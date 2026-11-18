@@ -508,6 +508,10 @@ def delete_user(user_id: int, _: Admin, db: Db):
         db.query(Assignment).filter(
             Assignment.id.in_([item.id for item in assignments])
         ).delete(synchronize_session=False)
+    personal_chat = db.scalar(select(PersonalConversation).where(PersonalConversation.participant_id == user.id))
+    if personal_chat:
+        db.query(PersonalMessage).filter(PersonalMessage.conversation_id == personal_chat.id).delete(synchronize_session=False)
+        db.delete(personal_chat)
     db.query(ConnectionCode).filter(
         ConnectionCode.user_id == user.id
     ).delete(synchronize_session=False)
