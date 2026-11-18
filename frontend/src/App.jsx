@@ -742,8 +742,7 @@ export default function App() {
         </>}
         {modal.mode === "edit" && role !== users.find(u => u.id === modal.id)?.role && <p className="hint">При смене роли активные назначения будут закрыты. История переписок сохранится.</p>}
         <div className="edit-modal-footer">
-          {modal.mode === "edit" && <button type="button" className="btn danger" onClick={() => removeUser(users.find(u => u.id === modal.id))} disabled={savingUser}><Trash2 size={15}/>Удалить</button>}
-          <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setModal(null)} disabled={savingUser}>Отмена</button><button className="btn primary" disabled={savingUser}>{savingUser ? "Сохраняем…" : <><Check/>Сохранить</>}</button></div>
+          <div className="modal-actions">{modal.mode === "edit" && <button type="button" className="btn danger" onClick={() => removeUser(users.find(u => u.id === modal.id))} disabled={savingUser}><Trash2 size={15}/>Удалить</button>}<button type="button" className="btn ghost" onClick={() => setModal(null)} disabled={savingUser}>Отмена</button><button className="btn primary" disabled={savingUser}>{savingUser ? "Сохраняем…" : <><Check/>Сохранить</>}</button></div>
         </div>
       </form>}
     </section></div>}
