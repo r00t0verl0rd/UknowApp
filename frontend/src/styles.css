@@ -756,54 +756,11 @@ img, video, audio { max-width: 100%; }
   width: 11px;
   height: 11px;
 }
-.password-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: -4px;
-}
 .password-info {
   margin: 0;
   color: var(--muted);
   font-size: 10px;
   line-height: 1.4;
-}
-.password-actions .btn {
-  min-height: 34px;
-  padding: 0 11px;
-  font-size: 10px;
-}
-.password-code-label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  min-height: 38px;
-  padding: 5px 10px;
-  gap: 10px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--surface-soft, #f8f6fb);
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.4;
-}
-.password-code-label > span {
-  min-width: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.password-code-label b {
-  margin-left: 0;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 1.5px;
-  color: var(--purple);
 }
 .credential-modal { width: min(470px,100%); }
 .credential-row {
@@ -9220,12 +9177,6 @@ body,
 
 
 
-/* iOS mobile Safari: keep teacher toggle text colors explicit in dark mode. */
-@media (max-width: 767px) {
-}
-
-/* The chevron is drawn by .teacher-toggle::after; no separate element is rendered. */
-
 /* Shared edit/delete icon controls across graph, user list and all viewports. */
 .person-actions button,
 .user-action-btn.edit-btn,
@@ -9368,24 +9319,3 @@ body,
 }
 
 
-/* Keep the access-code chip subdued in the dark theme. */
-:root[data-theme="dark-soft"] .password-code-label {
-  background: #292f3d !important;
-  border-color: #414a5a !important;
-  color: #aeb8c8 !important;
-}
-
-
-.password-code-label .password-code-refresh {
-  min-height: 27px;
-  margin-left: auto;
-  padding: 0 8px;
-  gap: 4px;
-  font-size: 9px;
-  line-height: 1;
-  font-weight: 600;
-}
-.password-code-label .password-code-refresh svg {
-  width: 12px;
-  height: 12px;
-}
