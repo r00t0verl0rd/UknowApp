@@ -14,7 +14,6 @@ from aiogram.types import (
     KeyboardButton,
     Message as TgMessage,
     ReplyKeyboardMarkup,
-    ReplyKeyboardRemove,
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -482,6 +481,10 @@ async def _update_teacher_panel_locked(
                 teacher.id,
                 old_message_id,
             )
+        # Telegram Desktop clears the active keyboard when its source message
+        # is deleted. Give the client time to receive the replacement keyboard
+        # first, otherwise deleting the previous panel can clear its placeholder.
+        await asyncio.sleep(0.8)
         try:
             await bot.delete_message(chat_id=old_chat_id, message_id=old_message_id)
         except Exception:
