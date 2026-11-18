@@ -126,10 +126,9 @@ def claim_connection_code(
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
 
-    # Persistent teacher codes use a long validity horizon and are shared with
-    # web-panel login. Older teacher activation codes retain their original
-    # one-time / 15-minute behavior until replaced.
-    if user.role == "teacher" and expires_at > now + timedelta(days=365):
+    # Persistent panel codes are shared with web login for both participant roles.
+    # Older student activation codes remain one-time until they are replaced.
+    if user.web_password_hash and expires_at > now + timedelta(days=365):
         if connection_code.used_at is not None:
             return None, "used"
         existing_user = db.scalar(select(User).where(User.telegram_id == telegram_id))
