@@ -170,7 +170,11 @@ def data_stats(_: Admin):
             "teacher_panels": db.query(TeacherPanel).count(),
             "teacher_sessions": db.query(TeacherSession).count(),
             "panel_sessions": db.query(PanelSession).count(),
-            "connection_codes": db.query(ConnectionCode).count(),
+            "connection_codes": db.query(ConnectionCode).join(User, ConnectionCode.user_id == User.id).filter(
+                User.active.is_(True),
+                ConnectionCode.used_at.is_(None),
+                ConnectionCode.expires_at > datetime.now(timezone.utc),
+            ).count(),
             "media_files": sum(media_counts.values()),
             **{f"media_{key}": value for key, value in media_counts.items()},
         }
