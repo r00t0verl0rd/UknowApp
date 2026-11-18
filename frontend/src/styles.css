@@ -381,6 +381,9 @@ img, video, audio { max-width: 100%;}
 :root[data-theme="dark-soft"] input, :root[data-theme="dark-soft"] select, :root[data-theme="dark-soft"] textarea { background: #262f3d !important; color: #e4e8f0 !important; border-color: #414c60 !important;}
 :root[data-theme="dark-soft"] input::placeholder, :root[data-theme="dark-soft"] textarea::placeholder, :root[data-theme="dark-soft"] .chat-search-control input::placeholder { color: #8793a7 !important;}
 :root[data-theme="dark-soft"] .chat-search-control:focus-within, :root[data-theme="dark-soft"] .chat-composer textarea:focus { background: #2b3545 !important; border-color: #8579b7 !important; box-shadow: 0 0 0 3px rgba(170, 160, 216, .13) !important;}
+:root[data-theme="dark-soft"] .chat-head, :root[data-theme="dark-soft"] .chat-composer, :root[data-theme="dark-soft"] .user-row { border-color: #343d4d !important;}
+:root[data-theme="dark-soft"] .chat-search-control { background: #202936 !important; border-color: #3a4555 !important; color: #e2e5ed !important;}
+:root[data-theme="dark-soft"] .chat-search-control button { background: #2b3443 !important; color: #c6cddd !important; border-color: #414c60 !important;}
 :root[data-theme="dark-soft"] .chat-filter-segment button { color: #a4aec0 !important;}
 :root[data-theme="dark-soft"] .chat-filter-segment button span { background: #424057 !important; color: #d1c9f4 !important;}
 :root[data-theme="dark-soft"] .btn.primary { color: #fff !important; box-shadow: 0 5px 16px rgba(0, 0, 0, .18) !important;}
@@ -1452,6 +1455,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .chats-content > .chat-layout > .chat-list { display: flex; flex-direction: column; gap: 8px;}
 .chat-list > .chat-search-control, .chat-list > .chat-filter-segment { position: relative; z-index: 1; width: 100%; box-sizing: border-box;}
 .chat-list > .chat-filter-segment { padding-bottom: 9px; border-bottom: 1px solid var(--line);}
+:root[data-theme="dark-soft"] .chat-list > .chat-filter-segment { border-bottom-color: #3a4555 !important;}
 .chat-search-control { min-height: 44px; padding-inline: 12px;}
 .chat-search-control input { min-height: 42px; font-size: 16px;}
 .chat-filter-segment { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px;}
