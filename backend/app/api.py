@@ -1505,3 +1505,8 @@ def panel_graph(principal: PanelUser, db: Db):
         "students": students,
         "counts": {"students": len(students)},
     }
+
+
+from .admin_data import router as admin_data_router
+
+router.include_router(admin_data_router)
