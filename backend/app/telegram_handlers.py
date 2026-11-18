@@ -666,6 +666,16 @@ async def route_message(message: TgMessage, bot: Bot):
             session = db.get(TeacherSession, sender.id)
             conversation = get_teacher_conversation(db, sender, session.conversation_id) if session else None
             if not conversation:
+                try:
+                    await bot.delete_message(
+                        chat_id=message.chat.id,
+                        message_id=message.message_id,
+                    )
+                except Exception as exc:
+                    logger.debug(
+                        "Could not remove teacher message sent from student list "
+                        "(error_type=%s)", type(exc).__name__,
+                    )
                 await update_teacher_panel(bot, db, sender)
                 return
             recipient = conversation.assignment.student
