@@ -878,7 +878,7 @@ export default function App() {
             </article>
             <article className="data-stat-card">
               <span>Файлы из диалогов, сохранённые на сервере</span><b>{dataStats ? formatBytes(dataStats.media_bytes) : "—"}</b>
-              <small>{dataStats?.media_files ?? "—"} файлов · учитываются только реально существующие вложения</small>
+              <small>{dataStats?.media_files ?? "—"} файлов</small>
               <div className="data-stat-details">
                 <span>Изображения: <b>{dataStats?.media_images ?? "—"}</b></span>
                 <span>Аудио и голосовые: <b>{dataStats?.media_audio ?? "—"}</b></span>
