@@ -96,6 +96,7 @@ def conversation_dicts(
     db: Session,
     conversations: list[Conversation],
     include_telegram_ids: bool = True,
+    viewer_role: str = "teacher",
 ) -> list[dict]:
     if not conversations:
         return []
@@ -119,48 +120,32 @@ def conversation_dicts(
     ).all()
     latest_by_conversation = {item.conversation_id: item for item in latest_messages}
 
-    last_teacher = (
-        select(
-            Message.conversation_id.label("conversation_id"),
-            Message.created_at.label("created_at"),
-            Message.id.label("id"),
-            func.row_number().over(
-                partition_by=Message.conversation_id,
-                order_by=[Message.created_at.desc(), Message.id.desc()],
-            ).label("position"),
-        )
-        .where(
-            Message.conversation_id.in_(conversation_ids),
-            Message.sender_role == "teacher",
+    if viewer_role == "student":
+        unread_condition = and_(
+            Message.sender_role.in_(("teacher", "admin")),
             Message.delivery_status == "delivered",
+            func.json_extract(Message.metadata_json, "$.student_read_at").is_(None),
         )
-        .subquery()
-    )
-    unread_condition = and_(
-        Message.sender_role == "student",
-        Message.delivery_status == "delivered",
-        func.json_extract(Message.metadata_json, "$.teacher_read_at").is_(None),
-        or_(
-            last_teacher.c.id.is_(None),
-            Message.created_at > last_teacher.c.created_at,
-            and_(
-                Message.created_at == last_teacher.c.created_at,
-                Message.id > last_teacher.c.id,
+    elif viewer_role == "admin":
+        unread_condition = and_(
+            Message.sender_role.in_(("teacher", "student")),
+            Message.delivery_status == "delivered",
+            or_(
+                func.json_extract(Message.metadata_json, "$.teacher_read_at").is_(None),
+                func.json_extract(Message.metadata_json, "$.student_read_at").is_(None),
             ),
-        ),
-    )
+        )
+    else:
+        unread_condition = and_(
+            Message.sender_role.in_(("student", "admin")),
+            Message.delivery_status == "delivered",
+            func.json_extract(Message.metadata_json, "$.teacher_read_at").is_(None),
+        )
     statistics = db.execute(
         select(
             Message.conversation_id,
             func.count(Message.id),
             func.coalesce(func.sum(case((unread_condition, 1), else_=0)), 0),
-        )
-        .outerjoin(
-            last_teacher,
-            and_(
-                Message.conversation_id == last_teacher.c.conversation_id,
-                last_teacher.c.position == 1,
-            ),
         )
         .where(Message.conversation_id.in_(conversation_ids))
         .group_by(Message.conversation_id)
@@ -881,7 +866,10 @@ def panel_conversations(principal: PanelUser, db: Db):
         statement = statement.where(Assignment.student_id == principal["user_id"]).limit(1)
     conversations = db.scalars(statement).all()
     return conversation_dicts(
-        db, conversations, include_telegram_ids=(principal["role"] == "admin")
+        db,
+        conversations,
+        include_telegram_ids=(principal["role"] == "admin"),
+        viewer_role=principal["role"],
     )
 
 
