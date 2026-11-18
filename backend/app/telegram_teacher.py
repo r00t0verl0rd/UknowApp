@@ -300,7 +300,7 @@ def teacher_panel_view(
         if total_pages > 1:
             lines.append("Страница " + str(page + 1) + " из " + str(total_pages) + ".")
     return "\n".join(lines), _teacher_keyboard(
-        items, visible, page, total_pages, selected_student_name
+        visible, page, total_pages, selected_student_name
     ), page
 
 
