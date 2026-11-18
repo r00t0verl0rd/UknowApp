@@ -621,6 +621,6 @@ async def handle_teacher_keyboard_message(
 
     await update_teacher_panel(
         bot, db, teacher,
-        force_keyboard_refresh=body == TEACHER_BACK_LABEL,
+        force_keyboard_refresh=body == TEACHER_BACK_LABEL or body in actions,
     )
     return True
