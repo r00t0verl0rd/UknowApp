@@ -307,7 +307,11 @@ export default function App() {
 
   const visibleChats = useMemo(() => {
     const query = chatSearch.trim().toLocaleLowerCase("ru");
-    const personal = personalChats.filter(chat => (!query || chat.title.toLocaleLowerCase("ru").includes(query)) && (chatFilter === "all" || Number(chat.unread_count || 0) > 0));
+    const personal = personalChats.filter(chat => {
+      const title = String(chat.title || chat.participant?.full_name || "");
+      return (!query || title.toLocaleLowerCase("ru").includes(query))
+        && (chatFilter === "all" || Number(chat.unread_count || 0) > 0);
+    });
     if (profile?.role === "admin" && chatSection === "personal") return personal;
     const regular = profile?.role === "student" ? chats.slice(0, 1) : chats.filter(chat => {
       const names = profile?.role === "admin"
@@ -735,7 +739,7 @@ export default function App() {
               return <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id && (selectedChat?.type === "personal") === personal ? "selected " : "") + (unreadCount > 0 && !showMessageCount ? "has-unread" : "")} onClick={() => openChat(chat)}>
                 <div className="chat-item-heading">
                   <div className={"chat-item-participants" + (profile?.role === "student" ? " is-student-view" : "")}>
-                    {personal ? <span>{chat.title}</span> : <>{profile?.role === "admin" && <span>{chat.teacher.full_name}</span>}<span>{profile?.role === "student" ? chat.teacher.full_name : chat.student.full_name}</span>{profile?.role === "student" && <small>Учитель</small>}</>}
+                    {personal ? <span>{chat.title || chat.participant?.full_name || "Личный диалог"}</span> : <>{profile?.role === "admin" && <span>{chat.teacher.full_name}</span>}<span>{profile?.role === "student" ? chat.teacher.full_name : chat.student.full_name}</span>{profile?.role === "student" && <small>Учитель</small>}</>}
                     {personal && <small>Личный диалог</small>}
                   </div>
                   {(showMessageCount || unreadCount > 0) && <span className={showMessageCount ? "message-count-badge" : "unread-badge"} title={showMessageCount ? "Всего сообщений" : "Непрочитанные сообщения"} aria-label={showMessageCount ? displayedCount + " сообщений всего" : displayedCount + " непрочитанных сообщений"}>{displayedCount > 99 ? "99+" : displayedCount}</span>}
