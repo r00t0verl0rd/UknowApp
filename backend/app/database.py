@@ -43,6 +43,12 @@ def create_tables() -> None:
 
     Base.metadata.create_all(bind=engine)
 
+    # Remove the obsolete soft-disable flag from existing user tables.
+    with engine.begin() as connection:
+        user_columns = {column["name"] for column in inspect(connection).get_columns("users")}
+        if "active" in user_columns:
+            connection.execute(text("ALTER TABLE users DROP COLUMN active"))
+
     # Archived conversations retain participant IDs without keeping obsolete assignments.
     with engine.connect() as connection:
         conversation_columns = {
