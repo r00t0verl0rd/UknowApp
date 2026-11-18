@@ -298,7 +298,7 @@ img, video, audio { max-width: 100%;}
 .attach-control input { display: none;}
 .selected-file { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; color: #625b70; background: #f2eff6; border-radius: 8px; padding: 7px 9px; font-size: 11px; overflow-wrap: anywhere;}
 .selected-file button { display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 6px; background: transparent; padding: 3px; color: #766d84;}
-.composer-send { display: flex; align-items: center;}
+.composer-send { display: inline-flex; align-items: center; justify-content: center;}
 .message-time { display: block; font-weight: 500; margin-top: 3px;}
 .teacher-readonly-graph { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 24px;}
 .teacher-graph-root { max-width: 960px; margin: 20px auto;}
@@ -511,8 +511,8 @@ img, video, audio { max-width: 100%;}
 .user-row { border-bottom: 1px solid var(--line); transition: background .15s ease;}
 .user-row:hover { background: #f8f7fb;}
 .user-row:last-child { border-bottom: 0;}
-.user-person-info { flex: 1 1 auto; min-width: 0;}
-.user-person-info > b { display: block; overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap;}
+.user-person-info { display: block; flex: 1 1 auto; min-width: 0; overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap;}
+
 .user-status-dot { flex: 0 0 7px; border-radius: 50%; background: #9ba3b2;}
 .user-status-dot.is-active { background: #35b47b; box-shadow: 0 0 0 3px rgba(53, 180, 123, .12);}
 .user-status-dot.is-inactive { background: #d49a46;}
@@ -646,7 +646,7 @@ img, video, audio { max-width: 100%;}
 :root[data-theme="dark-soft"] .confirm-delete-modal .btn.danger { color: #fff; border-color: #97505c; background: linear-gradient(110deg, #934656, #aa5967); box-shadow: 0 5px 16px rgba(0, 0, 0, .22);}
 /* Onest keeps the interface crisp and friendly while supporting Cyrillic well. */
 html, body { font-family: Onest, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;}
-.user-person-info > b { font-size: 16px; font-weight: 700; letter-spacing: -.18px; line-height: 1.35;}
+.user-person-info { font-size: 16px; font-weight: 700; letter-spacing: -.18px; line-height: 1.35;}
 /* Desktop inbox: keep the conversation picker in its own scroll area.
    Flex sizing prevents chat rows from sharing/overlapping the same grid track. */
 /* The conversation workspace follows the available viewport height. */
@@ -692,14 +692,14 @@ html, body { overflow-x: clip;}
 .sidebar nav { gap: 4px;}
 .sidebar nav button, .logout { gap: 10px; padding: 11px; font-size: 13px;}
 .topbar { height: 56px; padding: 0 22px;}
-.topbar-context b { font-size: 13px; font-weight: 800;}
+
 .topbar-user { margin-left: 0; font-size: 10px;}
 .content { width: 100%; max-width: 1900px; padding: 14px 20px 18px;}
 .graph-panel { padding: 19px; border-radius: 16px;}
 .graph-panel .section-head { margin-bottom: 12px;}
 .graph-panel .root-node { min-height: 68px; margin-bottom: 14px; padding: 10px 14px;}
 .graph-panel .root-node img { width: 44px; height: 44px;}
-.topbar-context, .graph-panel .teacher-grid{ gap: 12px;}
+.graph-panel .teacher-grid{ gap: 12px;}
 .graph-panel .teacher-branch { padding: 10px; border-radius: 13px;}
 .graph-panel .teacher-card { min-height: 64px; padding: 9px 11px;}
 .graph-panel .student-list { gap: 6px; margin: 9px 0 0 20px;}
@@ -820,9 +820,9 @@ button:not(.primary):not(.disconnect):not(.danger-icon), .btn:not(.primary):not(
 .btn.ghost:not(.primary):not(.disconnect):not(.danger-icon) { background-color: #eae7ef !important;}
 .btn.outline:not(.primary):not(.disconnect):not(.danger-icon), button.add-student:not(.primary):not(.disconnect):not(.danger-icon) { background-color: #f1edf7 !important; color: var(--purple) !important;}
 button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { background-color: #eae4f4 !important; color: var(--purple) !important;}
-.composer-footer .btn, .composer-send .btn{ width: 100%;}
+.composer-footer .btn, .composer-send { width: 100%;}
 .chat-list-tools input, .chat-list-tools select { font-size: 11px; padding: 9px 7px;}
-.composer-footer, .composer-send{ align-items: stretch; flex-direction: column;}
+.composer-footer{ align-items: stretch; flex-direction: column;}
 .teacher-graph-card { padding: 12px; gap: 9px;}
 .teacher-graph-card b { font-size: 12px; overflow-wrap: anywhere;}
 .teacher-graph-card .readonly-tag { font-size: 9px; padding: 5px 7px;}
@@ -872,8 +872,8 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 :root[data-theme="dark-soft"] .messages { background: #191f2a !important;}
 .content { padding: 12px 10px 16px;}
 .topbar { height: 46px; padding: 0 12px;}
-.topbar-context { gap: 7px;}
-.topbar-context b { font-size: 12px;}
+
+
 .graph-panel .section-head { margin-bottom: 10px;}
 .teacher-readonly-graph { padding: 12px;}
 .teacher-graph-root { max-width: none; margin: 10px 0;}
@@ -917,7 +917,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .graph-panel .unassigned-student-actions .btn { padding: 7px 10px;}
 .confirm-delete-modal .modal-actions { flex-wrap: nowrap;}
 .confirm-delete-modal .modal-actions .btn { flex: 1 1 0; min-width: 0;}
-.user-person-info > b { font-size: 15px;}
+.user-person-info { font-size: 15px;}
 .chat-layout { height: clamp(520px, calc(100dvh - 205px), 1000px); min-height: 0; grid-template-rows: clamp(150px, 27dvh, 245px) minmax(0, 1fr);}
 .chat-list { height: 100%;}
 /* Match Users and Structure: remove the empty mobile profile row above chats. */
@@ -1092,7 +1092,7 @@ input::placeholder, textarea::placeholder { color: #a49daf;}
 .user-row { display: grid; align-items: center; gap: 8px 10px;}
 .user-row > .avatar { grid-column: 1; grid-row: 1; flex-basis: 38px;}
 .user-row > .user-person-info { grid-column: 2; grid-row: 1; min-width: 0;}
-.user-row > .user-person-info > b { white-space: normal; overflow-wrap: anywhere;}
+.user-row > .user-person-info { white-space: normal; overflow-wrap: anywhere;}
 .user-row > .user-actions { grid-column: 1 / -1; grid-row: 2; margin: 0; padding-top: 9px; border-top: 1px solid var(--line);}
 .user-action-btn.connect-toggle { max-width: 100%;}
 }
@@ -1148,8 +1148,8 @@ button:disabled, .btn:disabled { opacity: .48 !important; cursor: not-allowed !i
 .toolbar.user-toolbar > .user-add-btn { justify-content: center;}
 }
 /* Compact action groups across Structure, Users and Conversations. */
-.graph-add-participant, .user-add-btn, .composer-send > .btn { min-height: 38px; padding: 8px 12px; gap: 7px; border-radius: 10px;}
-.person-actions, .user-actions, .unassigned-student-actions, .modal-actions, .chat-filter-segment, .composer-tools, .composer-send { display: flex; align-items: center; gap: 6px;}
+.graph-add-participant, .user-add-btn, .composer-send { min-height: 38px; padding: 8px 12px; gap: 7px; border-radius: 10px;}
+.person-actions, .user-actions, .unassigned-student-actions, .modal-actions, .chat-filter-segment, .composer-tools { display: flex; align-items: center; gap: 6px;}
 .icon-btn, .user-action-btn { flex: 0 0 auto;}
 .person-actions button { width: 32px; height: 32px; border-radius: 9px;}
 .add-student { min-height: 32px;   gap: 6px;}
@@ -1162,10 +1162,9 @@ button:disabled, .btn:disabled { opacity: .48 !important; cursor: not-allowed !i
 .user-action-btn.connect-toggle { min-height: 34px; padding: 6px 10px; gap: 6px; font-size: 11px; white-space: nowrap;}
 .chat-filter-segment button { min-height: 32px; padding: 6px 9px; gap: 5px; border-radius: 8px; font-size: 11px;}
 .chat-composer .composer-footer { gap: 10px;}
-.composer-tools, .composer-send { min-width: 0; flex-wrap: wrap;}
+.composer-tools { min-width: 0; flex-wrap: wrap;}
 .attach-control { min-height: 34px; padding: 6px 10px; gap: 6px; border-radius: 9px; font-size: 11px;}
-.composer-send { justify-content: flex-end; gap: 9px;}
-.composer-send > small { min-width: 0;}
+.composer-send { justify-content: center;}
 .modal-actions { justify-content: flex-end; flex-wrap: wrap; gap: 7px;}
 .modal-actions .btn { padding: 8px 12px;}
 /* Keep action groups dense without shrinking tap targets or causing overflow. */
@@ -1173,7 +1172,7 @@ button:disabled, .btn:disabled { opacity: .48 !important; cursor: not-allowed !i
 .person-actions button { width: 34px; height: 34px;}
 .user-actions { gap: 5px;}
 .user-action-btn.connect-toggle { padding-inline: 8px;}
-.composer-send { align-items: flex-end;}
+
 }
 @media (max-width: 1024px) {
 .graph-add-participant { min-height: 36px; padding: 7px 10px;}
@@ -1183,16 +1182,14 @@ button:disabled, .btn:disabled { opacity: .48 !important; cursor: not-allowed !i
 .user-action-btn.connect-toggle { min-height: 36px; min-width: 0; padding: 7px 9px;}
 
 .composer-send { width: 100%;}
-.composer-send > small { flex: 1 1 150px;}
-.composer-send > .btn { flex: 0 0 auto;}
+.composer-send { flex: 0 0 auto;}
 }
 @media (max-width: 480px) {
 .unassigned-student-actions { width: 100%; justify-content: flex-start;}
 .user-actions { justify-content: flex-start;}
 .user-action-btn.connect-toggle { flex: 1 1 auto;}
-.composer-send { align-items: stretch; flex-direction: column;}
-.composer-send > small { flex-basis: auto;}
-.composer-send > .btn { width: 100%;}
+
+.composer-send { width: 100%;}
 .modal-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));}
 .modal-actions .btn { width: 100%; min-width: 0;}
 }
@@ -1325,9 +1322,8 @@ html, body, #root { min-height: 100%; height: 100%; overflow: hidden;}
 .composer-tools { min-width: 0; gap: 6px;}
 .attach-control { min-height: 34px; padding: 6px 9px; font-size: 10px;}
 .selected-file { min-width: 0; max-width: 100%; font-size: 10px;}
-.composer-send { display: grid; grid-template-columns: minmax(0, 1fr); justify-content: stretch; gap: 6px;}
-.composer-send > small { display: block; max-width: 100%; font-size: 9px; line-height: 1.25;}
-.composer-send > .btn { width: 100%; min-height: 40px; justify-content: center;}
+.composer-send { display: inline-flex; align-items: center; justify-content: center; width: 100%;}
+.composer-send { width: 100%; min-height: 40px; justify-content: center;}
 }
 :root[data-theme="dark-soft"] .chat-composer { background: #222b39;}
 /* Mobile chat proportions: prioritize the conversation history over the picker. */
@@ -1412,7 +1408,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
    long names never compete with the action controls. */
 .user-list, .user-row { min-width: 0; max-width: 100%; box-sizing: border-box;}
 .user-row > .user-person-info { overflow-wrap: anywhere;}
-.user-row > .user-person-info > b { display: block; max-width: 100%; overflow-wrap: anywhere;}
+.user-row > .user-person-info { display: block; max-width: 100%; overflow-wrap: anywhere;}
 .user-row > .user-actions { box-sizing: border-box;}
 .user-row > .user-actions > .user-info-wrap { min-width: 0;}
 .user-row > .user-actions > .user-action-btn, .user-row > .user-actions > .user-info-wrap > .user-action-btn { max-width: 100%; box-sizing: border-box;}
@@ -1434,7 +1430,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .user-row { display: grid !important; grid-template-columns: clamp(32px, 4vw, 44px) minmax(0, 1fr) auto; align-items: center; column-gap: clamp(6px, 1.2vw, 12px); row-gap: 0; min-width: 0;}
 .user-row > .avatar { grid-column: 1; grid-row: 1; width: clamp(32px, 4vw, 44px); height: clamp(32px, 4vw, 44px); flex: 0 0 auto;}
 .user-row > .user-person-info { grid-column: 2; grid-row: 1; min-width: 0; width: auto; flex: initial;}
-.user-row > .user-person-info > b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.user-row > .user-person-info { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
 .user-row > .user-actions { grid-column: 3; grid-row: 1; display: flex; flex: 0 0 auto; flex-wrap: nowrap !important; align-items: center; justify-content: flex-end; gap: clamp(3px, .7vw, 7px); min-width: 0; width: auto; max-width: 100%; margin: 0; padding: 0; border: 0;}
 .user-row > .user-actions > .user-action-btn, .user-row > .user-actions > .user-info-wrap > .user-action-btn { flex: 0 0 auto; width: clamp(30px, 3.2vw, 36px); height: clamp(30px, 3.2vw, 36px); min-width: 0; padding: 0;}
 .user-row > .user-actions > .user-info-wrap { display: flex; flex: 0 0 auto;}
@@ -1469,7 +1465,6 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .chat-composer .attach-control { width: fit-content;}
 .chat-composer .selected-file { min-width: 0;}
 .chat-composer .composer-send { justify-content: center;}
-.chat-composer .composer-send > small { display: block;}
 /* Mobile inbox navigation: list and conversation are separate full-height
    screens. This avoids squeezing both into the same small viewport. */
 .chats-content > .chat-layout { display: block; position: relative; overflow: hidden;}
@@ -1501,8 +1496,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .chat-composer .composer-tools { min-width: 0;}
 .chat-composer .attach-control { display: inline-flex; align-items: center; min-height: 38px; padding: 6px 8px; font-size: 11px; white-space: nowrap;}
 .chat-composer .selected-file { max-width: 100%; overflow-wrap: anywhere;}
-.chat-composer .composer-send { flex-direction: column; min-width: 0;}
-.chat-composer .composer-send > .btn { padding: 7px 12px; font-size: 12px;}
+.chat-composer .composer-send { min-width: 0;}
+.chat-composer .composer-send { padding: 7px 12px; font-size: 12px;}
 }
 @media (min-width: 1025px) {
 .mobile-chat-back { display: none;}
@@ -1511,15 +1506,13 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 @media (max-width: 1024px) {
 .chat-composer .composer-footer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(118px, 38%); align-items: center; gap: 8px; width: 100%; min-width: 0;}
 .chat-composer .composer-tools, .chat-composer .composer-send { min-width: 0; width: 100%; box-sizing: border-box;}
-.chat-composer .composer-send { grid-template-columns: minmax(0, 1fr); justify-items: stretch; gap: 6px;}
-.chat-composer .composer-send > small { width: 100%; max-width: none; margin: 0; text-align: center; overflow-wrap: anywhere; font-size: 9px; line-height: 1.25;}
-.chat-composer .composer-send > .btn { display: inline-flex; max-width: 100%; box-sizing: border-box; justify-content: center; white-space: nowrap;}
+.chat-composer .composer-send { display: inline-flex; align-items: center; justify-content: center;}
+.chat-composer .composer-send { display: inline-flex; max-width: 100%; box-sizing: border-box; justify-content: center; white-space: nowrap;}
 .chat-composer .attach-control { max-width: 100%; min-width: 0; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis;}
 }
 @media (max-width: 360px) {
 .chat-composer .composer-footer { grid-template-columns: minmax(0, 1fr) minmax(108px, 40%); gap: 6px;}
-.chat-composer .composer-send > small { font-size: 8px;}
-.chat-composer .composer-send > .btn { padding-inline: 6px; font-size: 11px;}
+.chat-composer .composer-send { padding-inline: 6px; font-size: 11px;}
 .chat-composer .attach-control { gap: 4px; padding-inline: 6px; font-size: 10px;}
 }
 /* Mobile chat uses the available viewport directly, without nested card frames. */
@@ -1532,8 +1525,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .chat-head { padding: 10px 12px; border-bottom: 1px solid var(--line);}
 .chat-detail > .messages { padding: 14px 12px;}
 .chat-composer { padding: 9px 12px max(12px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line);}
-.chat-composer .composer-send { display: flex; width: 100%; align-items: stretch;}
-.chat-composer .composer-send > .btn { width: 100%; min-width: 0; min-height: 42px;}
+.chat-composer .composer-send { display: inline-flex; width: 100%; align-items: center; justify-content: center;}
+.chat-composer .composer-send { width: 100%; min-width: 0; min-height: 42px;}
 }
 /* Shared full-viewport workspace for Structure, Users and Conversations.
    Keep useful inner cards (people, metrics, controls), flatten only redundant
@@ -1602,8 +1595,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 @media (min-width: 1025px) {
 .chat-composer .composer-footer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; justify-content: stretch; gap: 12px; width: 100%; min-width: 0;}
 .chat-composer .composer-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0;}
-.chat-composer .composer-send { display: flex; align-items: center; justify-content: flex-end; align-self: center; min-width: max-content; margin: 0;}
-.chat-composer .composer-send > .btn { display: inline-flex; align-items: center; justify-content: center; width: auto; min-width: 124px; min-height: 40px; margin: 0; white-space: nowrap;}
+.chat-composer .composer-send { display: inline-flex; align-items: center; justify-content: center; align-self: center; min-width: max-content; margin: 0;}
+.chat-composer .composer-send { width: auto; min-width: 124px; min-height: 40px; margin: 0; white-space: nowrap;}
 }
 /* Login field hints: lighter, cleaner typography. */
 .login-card .stack input::placeholder { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; font-weight: 400; letter-spacing: .1px; opacity: .82;}
@@ -1620,7 +1613,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 /* iPhone standalone: keep the brand below the transparent iOS status area. */
 @media (max-width: 1024px) {
 .chats-main > .topbar { box-sizing: border-box; height: calc(54px + env(safe-area-inset-top, 0px)); min-height: calc(54px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px);}
-.chat-composer .composer-send > .btn { transform: translateY(-6px);}
+.chat-composer .composer-send { transform: translateY(-6px);}
 }
 /* The same participant palette is used in both themes, with slightly richer contrast. */
 :root:not([data-theme="dark-soft"]) .chat-detail .message.student { background: linear-gradient(110deg, #fff1cf 0%, #fff8e9 100%); border-color: #efd69e;}
