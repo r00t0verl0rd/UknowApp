@@ -2,7 +2,8 @@
 *{box-sizing:border-box}body{margin:0;min-width:320px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}
 .login-screen{display:grid;place-items:center;background:radial-gradient(circle at 20% 20%,#fce8ed,transparent 35%),radial-gradient(circle at 85% 85%,#e9e2f8,transparent 35%),#f8f7fb}.login-card{box-shadow:0 24px 80px #39245c12}.login-logo{object-fit:contain;display:block;margin:0 auto 22px}.login-card h1{text-align:center;margin:7px 0}.login-card>.eyebrow{text-align:center}
 .shell{min-height:100vh}.sidebar{position:fixed;inset:0 auto 0 0;display:flex;flex-direction:column;z-index:2}.brand{display:flex;align-items:center;font-weight:800;color:var(--purple)}.brand img{object-fit:contain}.brand span span{color:var(--red)}.school-label,.eyebrow{font-weight:800;color:#a49bb4}.school-label{padding:0 11px 12px}.sidebar nav{display:grid;gap:6px}.sidebar nav button,.logout{display:flex;align-items:center;gap:12px;border:0;background:transparent;text-align:left;font-weight:700}.sidebar nav button svg,.logout svg{height:18px}.sidebar nav button.active{color:var(--purple)}.sidebar nav button i{margin-left:auto;font-style:normal;font-size:11px;background:#f2eff6;padding:3px 7px;border-radius:20px}.logout{margin-top:12px;width:100%}.main{min-height:100vh}.topbar{height:70px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 34px}.topbar>div{display:flex;align-items:center;gap:9px;color:#a39bad;font-size:12px}.topbar svg{width:15px}.topbar b{color:var(--ink)}.content{margin:auto;padding:34px}.section-head p
-{margin:0}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:800;color:var(--ink)}.btn svg{width:16px;height:16px}.btn.primary{box-shadow:0 6px 18px #59439a24}.btn.primary:hover{background:#483581}.btn.ghost{background:#faf9fc}.btn.small{padding:8px 10px;font-size:11px}.btn.outline{color:var(--purple)}.graph-panel,.user-list,.chat-layout{border:1px solid var(--line);padding:22px}.section-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:25px}.section-head h2{margin:0 0 5px}.legend{display:flex;align-items:center;gap:7px;font-size:10px}.legend span{width:8px;height:8px;border-radius:50%;margin-left:9px}.teacher-dot{background:var(--purple)}.student-dot{background:#e84b56}.root-node{margin:auto;display:flex;align-items:center;border-radius:13px}.root-node img{object-fit:contain}.root-node b,.root-node small{display:block}.root-node b{font-size:12px}.root-node small{color:var(--muted);margin-top:3px}.root-node>span{margin-left:auto;font-size:9px;font-weight:800;color:var(--purple);background:#eee8f7;padding:5px 7px;border-radius:6px}.teacher-grid{display:grid;align-items:start}.teacher-branch{position:relative;padding-top:0}.person-card{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);background:#fff}.teacher-card{background:#fcfaff}.person-main{display:flex;align-items:center;min-width:0}.avatar{display:grid;place-items:center;flex:none;background:#f0eafa;color:var(--purple)}.avatar svg{width:18px}.teacher-avatar{background:#eee8f8;color:var(--purple)}.student-avatar,.avatar.student{color:var(--red)}.person-info{min-width:0}.person-info b,.person-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.person-info b{font-size:12px}.person-info small{color:var(--muted);margin-top:4px}.person-actions{display:flex;flex:none}.person-actions button,.icon-btn{display:grid;place-items:center}.person-actions button:hover,.icon-btn:hover{color:var(--purple)}.person-actions svg,.icon-btn svg{height:15px}.person-actions .danger-icon:hover,.danger-icon:hover{color:var(--red)}.student-list{display:grid;border-left:1px solid #e6dfea}.student-card{padding:9px 10px}.empty-students{border:1px dashed #e7e1ec;text-align:center}.add-student{border:0;background:transparent;font-weight:800;display:flex;align-items:center;padding:5px}.add-student svg{width:14px}.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:40px 15px;text-align:center;font-size:12px}.empty-state>svg{width:30px;height:30px;color:var(--purple)}.empty-state b{color:var(--ink)}.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;font-size:11px}.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);padding:0 10px;width:min(360px,100%);height:40px}.search svg{width:16px;color:#aaa2b5}.search input{border:0;outline:0;width:100%;font-size:11px}.user-list{padding:0}.user-row{border-bottom:1px solid #f1eef4}.user-row:last-child{border:0}.user-row .person-info{flex:1}.role-tag{font-weight:800;color:var(--purple)}.role-tag.student{color:var(--red)}.chat-layout{overflow:hidden}.chat-list{padding:8px}.chat-item{color:var(--ink)}.chat-item.selected,.chat-item:hover{background:#f7f4fb}.chat-item b{font-size:11px}.chat-item small{font-size:10px;white-space:nowrap}.chat-item span{color:var(--purple)}.chat-detail{min-width:0}.chat-head{border-bottom:1px solid var(--line)}.chat-head b,.chat-head small{display:block}.chat-head b{font-size:12px}.chat-head small{margin-top:4px}.messages{align-content:start;overflow:auto}.message{border-radius:10px}.message.teacher{justify-self:end;background:#fff0f1}.message b{font-size:10px}.message b small{font-weight:500;color:var(--muted);margin-left:6px}.message p{font-size:11px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0}.main footer{padding:0 34px 25px;font-size:10px}.main footer span{padding:0 4px}
+{margin:0}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:800;color:var(--ink)}.btn svg{width:16px;height:16px}.btn.primary{box-shadow:0 6px 18px #59439a24}.btn.primary:hover{background:#483581}.btn.ghost{background:#faf9fc}.btn.small{padding:8px 10px;font-size:11px}.btn.outline{color:var(--purple)}.user-list,
+  .chat-layout {border:1px solid var(--line);padding:22px}.section-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:25px}.section-head h2{margin:0 0 5px}.legend{display:flex;align-items:center;gap:7px;font-size:10px}.legend span{width:8px;height:8px;border-radius:50%;margin-left:9px}.teacher-dot{background:var(--purple)}.student-dot{background:#e84b56}.root-node{margin:auto;display:flex;align-items:center;border-radius:13px}.root-node img{object-fit:contain}.root-node b,.root-node small{display:block}.root-node b{font-size:12px}.root-node small{color:var(--muted);margin-top:3px}.root-node>span{margin-left:auto;font-size:9px;font-weight:800;color:var(--purple);background:#eee8f7;padding:5px 7px;border-radius:6px}.teacher-grid{display:grid;align-items:start}.teacher-branch{position:relative;padding-top:0}.person-card{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);background:#fff}.teacher-card{background:#fcfaff}.person-main{display:flex;align-items:center;min-width:0}.avatar{display:grid;place-items:center;flex:none;background:#f0eafa;color:var(--purple)}.avatar svg{width:18px}.teacher-avatar{background:#eee8f8;color:var(--purple)}.student-avatar,.avatar.student{color:var(--red)}.person-info{min-width:0}.person-info b,.person-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.person-info b{font-size:12px}.person-info small{color:var(--muted);margin-top:4px}.person-actions{display:flex;flex:none}.icon-btn {display:grid;place-items:center}.person-actions button:hover,.icon-btn:hover{color:var(--purple)}.person-actions svg,.icon-btn svg{height:15px}.person-actions .danger-icon:hover,.danger-icon:hover{color:var(--red)}.student-list{display:grid;border-left:1px solid #e6dfea}.student-card{padding:9px 10px}.empty-students{border:1px dashed #e7e1ec;text-align:center}.add-student{border:0;background:transparent;font-weight:800;display:flex;align-items:center;padding:5px}.add-student svg{width:14px}.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:40px 15px;text-align:center;font-size:12px}.empty-state>svg{width:30px;height:30px;color:var(--purple)}.empty-state b{color:var(--ink)}.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;font-size:11px}.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);padding:0 10px;width:min(360px,100%);height:40px}.search svg{width:16px;color:#aaa2b5}.search input{border:0;outline:0;width:100%;font-size:11px}.user-list{padding:0}.user-row{border-bottom:1px solid #f1eef4}.user-row:last-child{border:0}.user-row .person-info{flex:1}.role-tag{font-weight:800;color:var(--purple)}.role-tag.student{color:var(--red)}.chat-layout{overflow:hidden}.chat-list{padding:8px}.chat-item{color:var(--ink)}.chat-item.selected,.chat-item:hover{background:#f7f4fb}.chat-item b{font-size:11px}.chat-item small{font-size:10px;white-space:nowrap}.chat-item span{color:var(--purple)}.chat-detail{min-width:0}.chat-head{border-bottom:1px solid var(--line)}.chat-head b,.chat-head small{display:block}.chat-head b{font-size:12px}.chat-head small{margin-top:4px}.messages{align-content:start;overflow:auto}.message{border-radius:10px}.message.teacher{justify-self:end;background:#fff0f1}.message b{font-size:10px}.message b small{font-weight:500;color:var(--muted);margin-left:6px}.message p{font-size:11px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0}.main footer{padding:0 34px 25px;font-size:10px}.main footer span{padding:0 4px}
 .stack{display:grid;gap:14px}.stack label{display:grid;gap:7px;font-weight:700}.stack input,.stack select{border:1px solid var(--line);padding:0 11px;outline:0}.stack input:focus,.stack select:focus{box-shadow:0 0 0 3px #7856bd16}.alert{border:1px solid #f6d4d8;padding:11px 13px;font-size:11px}.alert-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.alert-row button{border:0;background:none;color:inherit}.alert-row svg{width:15px}.overlay{position:fixed;inset:0;backdrop-filter:blur(5px);display:grid;place-items:center;padding:20px;z-index:5}.modal{width:min(440px,100%);padding:24px;box-shadow:0 25px 90px #21163145}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px}.modal-head h2{font-size:19px;margin:6px 0 0}.modal-actions{display:flex;margin-top:4px}.hint{font-size:10px;line-height:1.5;margin:0}.invite-code{font:800 28px ui-monospace,monospace;letter-spacing:4px;text-align:center;border:1px dashed #cfc0e3;padding:18px;border-radius:12px;margin-bottom:13px}.toast{position:fixed;right:24px;bottom:24px;display:flex;align-items:center;gap:8px;padding:12px 16px;color:white;font-size:11px;z-index:8;box-shadow:0 10px 30px #21163135}.toast svg{width:16px;color:#e9a0a8}.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 
 .unassigned{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}.unassigned .section-head{margin-bottom:12px}.unassigned .section-head h2{font-size:14px}.unassigned-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:9px}.unassigned-grid .person-card{flex-wrap:wrap;border-color:#f2e5e7}
@@ -56,8 +57,9 @@
 .user-row .person-info small,
 
 .role-tag { font-size: 11px; }
-.chat-item b, .chat-head b, .message b { font-size: 13px; }
-.chat-item small, .chat-head small, .message p { font-size: 12px; }
+.message b { font-size: 13px; }
+.chat-item small,
+  .message p { font-size: 12px; }
 
 /* Connected Telegram accounts are highlighted; the disconnected label stays neutral. */
 
@@ -91,11 +93,11 @@
   border-right: 1px solid var(--line);
   box-shadow: 8px 0 28px rgba(47,31,84,.035);
 }
-.sidebar nav button, .logout {
+.sidebar nav button {
   color: #706982;
   transition: background .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease;
 }
-.sidebar nav button:hover, .logout:hover {
+.sidebar nav button:hover {
   background: #f6f1fc;
   color: var(--purple);
 }
@@ -139,7 +141,8 @@
 .btn.ghost { background: #f7f4fb; }
 .btn.outline { color: var(--purple); border-color: #d8c9ed; background: #faf7ff; }
 .btn.outline:hover { background: #f0e9fb; }
-.graph-panel, .user-list, .chat-layout {
+.user-list,
+  .chat-layout {
   background: #fff;
 }
 .graph-panel { border-radius: 20px; }
@@ -201,10 +204,10 @@
 .search input::placeholder { color: #aaa3b4; }
 
 
-.user-row .avatar.student, .user-row .avatar.student-avatar {
+.user-row .avatar.student-avatar {
   background: #fff0ce; color: #a76d16;
 }
-.user-row .avatar.teacher, .user-row .avatar.teacher-avatar {
+.user-row .avatar.teacher-avatar {
   background: #eee6fb; color: #6847a8;
 }
 .role-tag {
@@ -215,7 +218,7 @@
 .role-tag.teacher { background: #eee6fb; color: #6847a8; }
 
 
-.person-actions .danger-icon:hover, .danger-icon:hover {
+.person-actions .danger-icon:hover {
   background: #fff0f1;
   color: var(--red);
   box-shadow: 0 0 10px var(--red-glow);
@@ -257,7 +260,8 @@
 .empty-state b { color: var(--ink); }
 .main footer { color: #a49caf; }
 .main footer span { color: var(--red); }
-button:focus-visible, input:focus-visible, select:focus-visible {
+input:focus-visible,
+  select:focus-visible {
   outline-offset: 2px;
 }
 
@@ -816,13 +820,11 @@ img, video, audio { max-width: 100%; }
 {
   color: #e4e8f0 !important;
 }
-:root[data-theme="dark-soft"] .sidebar nav button,
-:root[data-theme="dark-soft"] .logout {
+:root[data-theme="dark-soft"] .sidebar nav button {
   background: transparent !important;
   color: #aeb7c7 !important;
 }
-:root[data-theme="dark-soft"] .sidebar nav button:hover,
-:root[data-theme="dark-soft"] .logout:hover {
+:root[data-theme="dark-soft"] .sidebar nav button:hover {
   background: #293142 !important;
   color: #e4e8f0 !important;
 }
@@ -847,8 +849,7 @@ img, video, audio { max-width: 100%; }
   color: #e4e8f0 !important;
   border-color: #394457 !important;
 }
-:root[data-theme="dark-soft"] .chat-item:hover,
-:root[data-theme="dark-soft"] .chat-item.selected {
+:root[data-theme="dark-soft"] .chat-item:hover {
   background: #343449 !important;
   border-color: #514b6d !important;
   color: #d1c9f4 !important;
@@ -905,13 +906,9 @@ img, video, audio { max-width: 100%; }
   border-color: #465268 !important;
   color: #c8c0e4 !important;
 }
-:root[data-theme="dark-soft"] .chat-composer textarea,
 :root[data-theme="dark-soft"] input,
-:root[data-theme="dark-soft"] select,
-:root[data-theme="dark-soft"] textarea,
-:root[data-theme="dark-soft"] .chat-search-control,
-:root[data-theme="dark-soft"] .chat-head-tools select
-{
+  :root[data-theme="dark-soft"] select,
+  :root[data-theme="dark-soft"] textarea {
   background: #262f3d !important;
   color: #e4e8f0 !important;
   border-color: #414c60 !important;
@@ -943,13 +940,10 @@ img, video, audio { max-width: 100%; }
   color: #d1c9f4 !important;
 }
 :root[data-theme="dark-soft"] .btn:not(.primary):not(.disconnect),
-:root[data-theme="dark-soft"] .icon-btn,
-:root[data-theme="dark-soft"] .person-actions button,
-:root[data-theme="dark-soft"] .chat-list-tools button,
-:root[data-theme="dark-soft"] .theme-toggle,
-:root[data-theme="dark-soft"] .modal-head button,
-:root[data-theme="dark-soft"] .attach-control,
-:root[data-theme="dark-soft"] .selected-file {
+  :root[data-theme="dark-soft"] .person-actions button,
+  :root[data-theme="dark-soft"] .chat-list-tools button,
+  :root[data-theme="dark-soft"] .modal-head button,
+  :root[data-theme="dark-soft"] .selected-file {
   background: #2b3443 !important;
   color: #c6cddd !important;
   border-color: #414c60 !important;
@@ -961,8 +955,7 @@ img, video, audio { max-width: 100%; }
 :root[data-theme="dark-soft"] .btn.primary:hover {
   background: #8176b0 !important;
 }
-:root[data-theme="dark-soft"] .btn.outline,
-:root[data-theme="dark-soft"] .add-student {
+:root[data-theme="dark-soft"] .btn.outline {
   background: #353149 !important;
   border-color: #514b6d !important;
   color: #c9c0ef !important;
@@ -1777,21 +1770,17 @@ img, video, audio { max-width: 100%; }
 }
 
 :root:not([data-theme="dark-soft"]) .topbar,
-:root:not([data-theme="dark-soft"]) .sidebar,
-:root:not([data-theme="dark-soft"]) .graph-panel,
-:root:not([data-theme="dark-soft"]) .user-list,
-:root:not([data-theme="dark-soft"]) .chat-layout,
-:root:not([data-theme="dark-soft"]) .chat-list,
-:root:not([data-theme="dark-soft"]) .chat-detail {
+  :root:not([data-theme="dark-soft"]) .sidebar,
+  :root:not([data-theme="dark-soft"]) .user-list,
+  :root:not([data-theme="dark-soft"]) .chat-layout,
+  :root:not([data-theme="dark-soft"]) .chat-list,
+  :root:not([data-theme="dark-soft"]) .chat-detail {
   border-color: #ded9e5;
 }
 
 :root:not([data-theme="dark-soft"]) .person-card,
-:root:not([data-theme="dark-soft"]) .chat-item,
-:root:not([data-theme="dark-soft"]) .search,
-:root:not([data-theme="dark-soft"]) .chat-search-control,
-:root:not([data-theme="dark-soft"]) .chat-composer textarea,
-:root:not([data-theme="dark-soft"]) .chat-head-tools select {
+  :root:not([data-theme="dark-soft"]) .chat-item,
+  :root:not([data-theme="dark-soft"]) .chat-head-tools select {
   border-color: #dcd6e3;
 }
 
@@ -2393,11 +2382,7 @@ img, video, audio { max-width: 100%; }
 
 /* Onest keeps the interface crisp and friendly while supporting Cyrillic well. */
 html,
-body,
-button,
-input,
-select,
-textarea {
+  body {
   font-family: Onest, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -2988,11 +2973,9 @@ body {
 
   button,
   .btn,
-  .sidebar nav button,
   .logout,
   .person-actions button,
-  .icon-btn,
-  .add-student {
+  .icon-btn {
     -webkit-appearance: none;
     appearance: none;
   }
@@ -3732,10 +3715,8 @@ body {
 {
     overflow-wrap: anywhere;
   }.person-card,
-.user-row,
-.chat-head-tools,
-.composer-footer
-{
+  .user-row,
+  .composer-footer {
     min-width: 0;
   }
 
@@ -3772,7 +3753,6 @@ body {
     padding-left: 8px;
   }
 
-  .graph-panel,
   .user-list,
   .chat-layout {
     padding: 9px;
@@ -4051,7 +4031,6 @@ button,
 :root[data-theme="dark-soft"] button:not(.primary):not(.disconnect):not(.danger-icon),
   :root[data-theme="dark-soft"] .btn:not(.primary):not(.disconnect):not(.danger-icon),
   :root[data-theme="dark-soft"] .sidebar nav button,
-  :root[data-theme="dark-soft"] .person-actions button:not(.danger-icon),
   :root[data-theme="dark-soft"] .icon-btn:not(.danger-icon),
   :root[data-theme="dark-soft"] .add-student,
   :root[data-theme="dark-soft"] .chat-item,
@@ -4097,10 +4076,13 @@ button,
 button, input, select, textarea {
   font-family: inherit;
 }
-button, .btn, .icon-btn, .theme-toggle, .logout,
-.person-actions button, .add-student, .chat-item,
-.chat-filter-segment button, .attach-control, .composer-send,
-.user-action-btn {
+button,
+  .btn,
+  .logout,
+  .add-student,
+  .chat-item,
+  .composer-send,
+  .user-action-btn {
   transition: background-color .16s ease, border-color .16s ease,
     color .16s ease, box-shadow .16s ease, transform .16s ease;
 }
@@ -4110,30 +4092,29 @@ button, .btn, .icon-btn, .theme-toggle, .logout,
 }
 
 /* Buttons share one quiet, rounded control language. */
-.btn, .theme-toggle, .icon-btn, .logout,
-.person-actions button, .add-student, .graph-add-participant,
-.user-action-btn, .attach-control, .composer-send,
-.modal-head button, .alert-row button,
-.chat-filter-segment button {
+.btn,
+  .logout,
+  .modal-head button,
+  .alert-row button {
   border-radius: var(--ui-radius-sm);
 }
-.btn, .user-action-btn, .attach-control {
+.btn,
+  .user-action-btn {
   border-color: var(--ui-border);
   box-shadow: var(--ui-shadow-soft);
 }
 .btn:not(.primary):not(.disconnect):not(.danger),
-.user-action-btn:not(.danger):not(.disconnect),
-.theme-toggle, .icon-btn, .person-actions button,
-.logout, .chat-filter-segment button {
+  .user-action-btn:not(.danger):not(.disconnect),
+  .icon-btn,
+  .person-actions button,
+  .logout {
   background: var(--ui-control-bg);
   border-color: var(--ui-border);
   color: var(--ui-control-text);
 }
 .btn:not(.primary):not(.disconnect):not(.danger):hover,
-.user-action-btn:not(.danger):not(.disconnect):hover,
-.theme-toggle:hover, .icon-btn:hover,
-.person-actions button:hover, .logout:hover,
-.chat-filter-segment button:hover {
+  .user-action-btn:not(.danger):not(.disconnect):hover,
+  .person-actions button:hover {
   background: var(--ui-control-hover);
   border-color: var(--ui-border-strong);
   color: var(--purple);
@@ -4144,15 +4125,15 @@ button, .btn, .icon-btn, .theme-toggle, .logout,
   border-radius: var(--ui-radius-sm);
   box-shadow: 0 4px 13px rgba(87, 62, 153, .18);
 }
-.btn.danger, .btn.disconnect, .user-action-btn.danger,
-.user-action-btn.disconnect, .danger-icon {
+.user-action-btn.danger {
   border-color: #f0d5d9;
   background: #fff0f1;
   color: #b82c3b;
 }
-.btn.danger:hover, .btn.disconnect:hover,
-.user-action-btn.danger:hover, .user-action-btn.disconnect:hover,
-.danger-icon:hover {
+.btn.danger:hover,
+  .btn.disconnect:hover,
+  .user-action-btn.danger:hover,
+  .user-action-btn.disconnect:hover {
   background: #ffe5e8;
   border-color: #eebfc6;
   color: #a92332;
@@ -4219,12 +4200,7 @@ input::placeholder, textarea::placeholder { color: #a49daf; }/* Cards and worksp
 .chat-detail
 {
   border-radius: var(--ui-radius-lg);
-}.graph-panel,
-.user-list,
-.chat-layout,
-.user-info-popover,
-.teacher-graph-card
-{
+}.teacher-graph-card {
   border-color: var(--line);
   box-shadow: var(--ui-shadow-card);
 }
@@ -4274,37 +4250,26 @@ input::placeholder, textarea::placeholder { color: #a49daf; }/* Cards and worksp
 /* The soft-dark theme uses the same components, with coordinated dark surfaces. */
 
 :root[data-theme="dark-soft"] .btn:not(.primary):not(.disconnect):not(.danger),
-:root[data-theme="dark-soft"] .user-action-btn:not(.danger):not(.disconnect),
-:root[data-theme="dark-soft"] .theme-toggle,
-:root[data-theme="dark-soft"] .icon-btn,
-:root[data-theme="dark-soft"] .logout,
-:root[data-theme="dark-soft"] .person-actions button:not(.danger-icon),
-:root[data-theme="dark-soft"] .chat-filter-segment button,
-:root[data-theme="dark-soft"] .topbar-actions > .theme-toggle,
-:root[data-theme="dark-soft"] .topbar-actions > .icon-btn,
-:root[data-theme="dark-soft"] .mobile-quick-actions > .theme-toggle,
-:root[data-theme="dark-soft"] .mobile-quick-actions > .icon-btn {
+  :root[data-theme="dark-soft"] .user-action-btn:not(.danger):not(.disconnect),
+  :root[data-theme="dark-soft"] .topbar-actions > .theme-toggle,
+  :root[data-theme="dark-soft"] .topbar-actions > .icon-btn,
+  :root[data-theme="dark-soft"] .mobile-quick-actions > .theme-toggle,
+  :root[data-theme="dark-soft"] .mobile-quick-actions > .icon-btn {
   background: var(--ui-control-bg) !important;
   border-color: var(--ui-border) !important;
   color: var(--ui-control-text) !important;
   box-shadow: none !important;
 }
-:root[data-theme="dark-soft"] .btn:not(.primary):hover,
-:root[data-theme="dark-soft"] .theme-toggle:hover,
-:root[data-theme="dark-soft"] .icon-btn:hover,
-:root[data-theme="dark-soft"] .person-actions button:hover,
-:root[data-theme="dark-soft"] .logout:hover {
+:root[data-theme="dark-soft"] .btn:not(.primary):hover {
   background: var(--ui-control-hover) !important;
   border-color: var(--ui-border-strong) !important;
 }:root[data-theme="dark-soft"] .stack input,
-:root[data-theme="dark-soft"] .stack select,
-:root[data-theme="dark-soft"] .stack textarea,
-:root[data-theme="dark-soft"] .search,
-:root[data-theme="dark-soft"] .user-sort,
-:root[data-theme="dark-soft"] .chat-search-control,
-:root[data-theme="dark-soft"] .chat-head-tools select,
-:root[data-theme="dark-soft"] .chat-composer textarea
-{
+  :root[data-theme="dark-soft"] .stack select,
+  :root[data-theme="dark-soft"] .stack textarea,
+  :root[data-theme="dark-soft"] .search,
+  :root[data-theme="dark-soft"] .user-sort,
+  :root[data-theme="dark-soft"] .chat-head-tools select,
+  :root[data-theme="dark-soft"] .chat-composer textarea {
   background: #202a38 !important;
   border-color: #414c60 !important;
   color: #e0e5ee !important;
@@ -4317,11 +4282,7 @@ input::placeholder, textarea::placeholder { color: #a49daf; }/* Cards and worksp
   border-color: #514b6d !important;
   color: #d1c9f4 !important;
 }
-:root[data-theme="dark-soft"] .btn.danger,
-:root[data-theme="dark-soft"] .btn.disconnect,
-:root[data-theme="dark-soft"] .user-action-btn.danger,
-:root[data-theme="dark-soft"] .user-action-btn.disconnect,
-:root[data-theme="dark-soft"] .danger-icon {
+:root[data-theme="dark-soft"] .user-action-btn.danger {
   background: #432d39 !important;
   border-color: #69404c !important;
   color: #f0aab3 !important;
@@ -4574,19 +4535,12 @@ input::placeholder, textarea::placeholder { color: #a49daf; }/* Cards and worksp
   box-shadow: var(--ui-shadow-soft, 0 2px 6px rgba(41,34,63,.06)) !important;
 }
 
-.btn:not(.primary):not(.danger):not(.disconnect):hover:not(:disabled),
 .sidebar nav button:not(.active):hover,
-.logout:hover,
-.icon-btn:hover,
-.theme-toggle:hover,
-.person-actions button:not(.danger-icon):hover,
-.user-action-btn:not(.connect):not(.disconnect):not(.user-delete):hover,
-.add-student:hover,
-.graph-add-participant:hover,
-.attach-control:hover,
-.chat-filter-segment button:hover,
-.user-info-popover-head button:hover,
-.selected-file button:hover {
+  .logout:hover,
+  .icon-btn:hover,
+  .user-action-btn:not(.connect):not(.disconnect):not(.user-delete):hover,
+  .add-student:hover,
+  .chat-filter-segment button:hover {
   background: var(--button-bg-hover) !important;
   border-color: var(--button-border-hover) !important;
   color: var(--purple) !important;
@@ -4671,36 +4625,19 @@ button:disabled,
 
 /* Matching surfaces in the soft-dark theme. */
 
-:root[data-theme="dark-soft"] .btn:not(.primary):not(.danger):not(.disconnect),
 :root[data-theme="dark-soft"] .sidebar nav button:not(.active),
-:root[data-theme="dark-soft"] .logout,
-:root[data-theme="dark-soft"] .icon-btn,
-:root[data-theme="dark-soft"] .theme-toggle,
-:root[data-theme="dark-soft"] .person-actions button:not(.danger-icon),
-:root[data-theme="dark-soft"] .user-action-btn:not(.connect):not(.disconnect):not(.user-delete),
-:root[data-theme="dark-soft"] .add-student,
-:root[data-theme="dark-soft"] .graph-add-participant,
-:root[data-theme="dark-soft"] .attach-control,
-:root[data-theme="dark-soft"] .chat-filter-segment button,
-:root[data-theme="dark-soft"] .user-info-popover-head button,
-:root[data-theme="dark-soft"] .selected-file button,
-:root[data-theme="dark-soft"] .chat-item:not(.selected) {
+  :root[data-theme="dark-soft"] .logout,
+  :root[data-theme="dark-soft"] .add-student,
+  :root[data-theme="dark-soft"] .chat-item:not(.selected) {
   background: var(--button-bg) !important;
   border-color: var(--button-border) !important;
   color: var(--button-text) !important;
   box-shadow: none !important;
 }
-:root[data-theme="dark-soft"] .btn:not(.primary):not(.danger):not(.disconnect):hover,
 :root[data-theme="dark-soft"] .sidebar nav button:not(.active):hover,
-:root[data-theme="dark-soft"] .logout:hover,
-:root[data-theme="dark-soft"] .icon-btn:hover,
-:root[data-theme="dark-soft"] .theme-toggle:hover,
-:root[data-theme="dark-soft"] .person-actions button:hover,
-:root[data-theme="dark-soft"] .user-action-btn:hover,
-:root[data-theme="dark-soft"] .add-student:hover,
-:root[data-theme="dark-soft"] .graph-add-participant:hover,
-:root[data-theme="dark-soft"] .attach-control:hover,
-:root[data-theme="dark-soft"] .chat-item:not(.selected):hover {
+  :root[data-theme="dark-soft"] .logout:hover,
+  :root[data-theme="dark-soft"] .add-student:hover,
+  :root[data-theme="dark-soft"] .chat-item:not(.selected):hover {
   background: var(--button-bg-hover) !important;
   border-color: var(--button-border-hover) !important;
   color: #e0d8ff !important;
@@ -4711,19 +4648,13 @@ button:disabled,
   border-color: #8b80b8 !important;
   color: #fff !important;
 }
-:root[data-theme="dark-soft"] .btn.danger,
-:root[data-theme="dark-soft"] .btn.disconnect,
 :root[data-theme="dark-soft"] .user-action-btn.disconnect,
-:root[data-theme="dark-soft"] .user-action-btn.user-delete,
-:root[data-theme="dark-soft"] .person-actions button.danger-icon,
-:root[data-theme="dark-soft"] .icon-btn.danger-icon,
-:root[data-theme="dark-soft"] .danger-icon {
+  :root[data-theme="dark-soft"] .icon-btn.danger-icon {
   background: var(--button-danger-bg) !important;
   border-color: var(--button-danger-border) !important;
   color: var(--button-danger-text) !important;
 }
-:root[data-theme="dark-soft"] .chat-item.selected,
-:root[data-theme="dark-soft"] .chat-filter-segment button.active {
+:root[data-theme="dark-soft"] .chat-item.selected {
   background: #39354d !important;
   border-color: #62577e !important;
   color: #ddd5ff !important;
@@ -4813,9 +4744,7 @@ button:disabled,
 @media (max-width: 480px) {
   
   .toolbar.user-toolbar > .search,
-  .toolbar.user-toolbar > .user-sort,
-  .toolbar.user-toolbar > .user-count,
-  .toolbar.user-toolbar > .user-add-btn {
+  .toolbar.user-toolbar > .user-sort {
     grid-column: 1;
     width: 100%;
     justify-self: stretch;
@@ -4850,9 +4779,8 @@ button:disabled,
 }
 
 
-.person-actions button,
 .icon-btn,
-.user-action-btn {
+  .user-action-btn {
   flex: 0 0 auto;
 }
 
@@ -5089,16 +5017,12 @@ button:disabled,
   box-shadow: none !important;
   transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s ease !important;
 }
-.btn:not(.primary):not(.danger):not(.disconnect):hover:not(:disabled),
 .icon-btn:hover:not(:disabled),
-.theme-toggle:hover:not(:disabled),
-.person-actions button:not(.danger-icon):hover:not(:disabled),
-.user-action-btn:not(.connect):not(.disconnect):not(.user-delete):hover:not(:disabled),
-.graph-add-participant:hover:not(:disabled),
-.attach-control:hover,
-.chat-filter-segment button:hover:not(:disabled),
-.user-info-popover-head button:hover,
-.selected-file button:hover {
+  .theme-toggle:hover:not(:disabled),
+  .person-actions button:not(.danger-icon):hover:not(:disabled),
+  .graph-add-participant:hover:not(:disabled),
+  .user-info-popover-head button:hover,
+  .selected-file button:hover {
   background: #f5f1fa !important;
   border-color: #d9cde9 !important;
   color: #594091 !important;
@@ -5125,10 +5049,9 @@ button:disabled,
 .btn.primary:active:not(:disabled) { transform: translateY(1px); }
 
 /* Icon actions are intentionally quiet until the user points at them. */
-.person-actions button,
 .user-action-btn:not(.connect-toggle),
-.icon-btn,
-.theme-toggle {
+  .icon-btn,
+  .theme-toggle {
   width: 34px;
   height: 34px;
   min-width: 34px;
@@ -5145,9 +5068,8 @@ button:disabled,
   border-color: transparent !important;
   box-shadow: none !important;
 }
-.person-actions button:not(.danger-icon):hover,
 .user-action-btn:not(.connect):not(.disconnect):not(.user-delete):hover,
-.icon-btn:not(.danger-icon):hover {
+  .icon-btn:not(.danger-icon):hover {
   background: #f2edf8 !important;
   border-color: #eee7f6 !important;
 }
@@ -5170,8 +5092,7 @@ button:disabled,
   color: #a66a75 !important;
   box-shadow: none !important;
 }
-.user-action-btn.connect-toggle.disconnect:hover:not(:disabled),
-.btn.disconnect:hover:not(:disabled) {
+.user-action-btn.connect-toggle.disconnect:hover:not(:disabled) {
   background: #fff3f4 !important;
   border-color: #f0dadd !important;
   color: #a64d5b !important;
@@ -5861,8 +5782,6 @@ button:focus-visible, .btn:focus-visible {
   }
 }
 
-:root[data-theme="dark-soft"] .chat-list,
-:root[data-theme="dark-soft"] .chat-detail,
 :root[data-theme="dark-soft"] .chat-composer {
   background: #222b39;
 }
@@ -6017,8 +5936,12 @@ body { background: var(--canvas); color: var(--ink); }.sidebar,
 {
   box-shadow: var(--ui-shadow-card);
 }
-.person-card, .teacher-card, .student-card, .root-node,
-.empty-students, .chat-item, .message, .chat-head, .chat-composer {
+.person-card,
+  .empty-students,
+  .chat-item,
+  .message,
+  .chat-head,
+  .chat-composer {
   border-color: var(--ui-border);
 }
 
@@ -6063,10 +5986,11 @@ body { background: var(--canvas); color: var(--ink); }.sidebar,
   color: var(--button-danger-text) !important;
   box-shadow: none !important;
 }
-.btn.danger:hover:not(:disabled), .btn.disconnect:hover:not(:disabled),
-.user-action-btn.user-delete:hover:not(:disabled),
-.user-action-btn.disconnect:hover:not(:disabled),
-.person-actions button.danger-icon:hover, .danger-icon:hover {
+.btn.danger:hover:not(:disabled),
+  .btn.disconnect:hover:not(:disabled),
+  .user-action-btn.disconnect:hover:not(:disabled),
+  .person-actions button.danger-icon:hover,
+  .danger-icon:hover {
   background: var(--red-soft) !important;
   border-color: var(--red-border) !important;
   color: var(--red) !important;
@@ -6101,16 +6025,14 @@ button:focus-visible, a:focus-visible {
   color: var(--purple);
 }
 
-.student-card, .unassigned-grid .person-card {
+.unassigned-grid .person-card {
   background: var(--surface);
   border-color: var(--ui-border);
 }
 
 
 .role-tag { background: var(--lavender-soft); color: var(--purple); }
-.role-tag.student,
-
-.user-row .role-tag.student { background: var(--red-soft); color: var(--red); }
+.role-tag.student { background: var(--red-soft); color: var(--red); }
 .user-row .role-tag.teacher { background: var(--lavender-soft); color: var(--purple); }
 
 /* Semantic feedback colors stay consistent and are not used as decoration. */
@@ -7240,7 +7162,6 @@ button:focus-visible, a:focus-visible {
   color: #393346;
 }
 
-:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item .chat-item-meta,
 :root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item small {
   color: #817b8d;
 }
@@ -7363,10 +7284,9 @@ body,
   border-color: var(--role-student-border) !important;
 }
 .student-card .avatar,
-.avatar.student,
-.student-avatar,
-.user-row .avatar.student,
-.teacher-readonly-graph .teacher-graph-card.student .avatar {
+  .avatar.student,
+  .student-avatar,
+  .teacher-readonly-graph .teacher-graph-card.student .avatar {
   background: var(--role-student-soft) !important;
   color: var(--role-student) !important;
 }
@@ -7535,7 +7455,6 @@ body,
   background: #f0eaf7 !important;
   border-color: #e2d8ed !important;
 }
-:root:not([data-theme="dark-soft"]) .graph-panel .teacher-branch,
 :root:not([data-theme="dark-soft"]) .graph-panel .empty-students {
   background: #f4eff9 !important;
   border-color: #e4daef !important;
