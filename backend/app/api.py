@@ -638,6 +638,7 @@ def assign_student(payload: AssignmentCreate, _: Admin, db: Db):
     db.add(conversation)
     db.commit()
     db.refresh(conversation)
+    publish_chat_update(conversation.id)
     return conversation_dict(db, conversation)
 
 
