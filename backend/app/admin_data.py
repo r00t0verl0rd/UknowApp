@@ -155,7 +155,6 @@ def data_stats(_: Admin):
             "database_bytes": database_size,
             "media_bytes": _folder_size(MEDIA_DIR),
             "users": len(users),
-            "active_users": sum(1 for item in users if item.active),
             "teachers": sum(1 for item in users if item.role == "teacher"),
             "students": sum(1 for item in users if item.role == "student"),
             "assignments": len(assignments),
@@ -171,7 +170,6 @@ def data_stats(_: Admin):
             "teacher_sessions": db.query(TeacherSession).count(),
             "panel_sessions": db.query(PanelSession).count(),
             "connection_codes": db.query(ConnectionCode).join(User, ConnectionCode.user_id == User.id).filter(
-                User.active.is_(True),
                 ConnectionCode.used_at.is_(None),
                 ConnectionCode.expires_at > datetime.now(timezone.utc),
             ).count(),
