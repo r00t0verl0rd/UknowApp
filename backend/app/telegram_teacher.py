@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 TEACHER_PAGE_SIZE = 6
 TEACHER_KEYBOARD_VERSION = 8
-TEACHER_BACK_LABEL = "← К списку учеников"
+TEACHER_BACK_LABEL = "К списку учеников"
 TEACHER_REFRESH_LABEL = "↻ Обновить"
 TEACHER_PREVIOUS_PAGE_LABEL = "← Предыдущая"
 TEACHER_NEXT_PAGE_LABEL = "Следующая →"
