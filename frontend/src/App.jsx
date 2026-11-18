@@ -729,14 +729,16 @@ export default function App() {
             </>}
             <div className="chat-items-scroll">{visibleChats.map(chat => {
               const personal = chat.type === "personal";
+              const showMessageCount = profile?.role === "admin" && chatSection === "participants" && !personal;
               const unreadCount = Number(chat.unread_count) || 0;
-              return <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id && (selectedChat?.type === "personal") === personal ? "selected " : "") + (unreadCount > 0 ? "has-unread" : "")} onClick={() => openChat(chat)}>
+              const displayedCount = showMessageCount ? Number(chat.message_count) || 0 : unreadCount;
+              return <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id && (selectedChat?.type === "personal") === personal ? "selected " : "") + (unreadCount > 0 && !showMessageCount ? "has-unread" : "")} onClick={() => openChat(chat)}>
                 <div className="chat-item-heading">
                   <div className={"chat-item-participants" + (profile?.role === "student" ? " is-student-view" : "")}>
                     {personal ? <span>{chat.title}</span> : <>{profile?.role === "admin" && <span>{chat.teacher.full_name}</span>}<span>{profile?.role === "student" ? chat.teacher.full_name : chat.student.full_name}</span>{profile?.role === "student" && <small>Учитель</small>}</>}
                     {personal && <small>Личный диалог</small>}
                   </div>
-                  {unreadCount > 0 && <span className="unread-badge" title="Непрочитанные сообщения" aria-label={unreadCount + " непрочитанных сообщений"}>{unreadCount > 99 ? "99+" : unreadCount}</span>}
+                  {(showMessageCount || unreadCount > 0) && <span className={showMessageCount ? "message-count-badge" : "unread-badge"} title={showMessageCount ? "Всего сообщений" : "Непрочитанные сообщения"} aria-label={showMessageCount ? displayedCount + " сообщений всего" : displayedCount + " непрочитанных сообщений"}>{displayedCount > 99 ? "99+" : displayedCount}</span>}
                 </div>
               </button>;
             })}{!visibleChats.length && <div className="empty-state">{profile?.role === "admin" && chatSection === "personal" ? "Личных диалогов пока нет" : profile?.role === "student" ? "Пока нет активной переписки с учителем" : profile?.role === "admin" ? "Активных диалогов участников нет" : "По выбранному фильтру ничего не найдено"}</div>}</div></div>
