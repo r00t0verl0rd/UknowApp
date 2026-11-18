@@ -277,7 +277,7 @@ export default function App() {
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
-      URL.revokeObjectURL(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
       notify("Файл подготовлен к скачиванию");
     } catch (e) {
       setError(e.message);
@@ -286,6 +286,10 @@ export default function App() {
 
   async function uploadAdminFile(kind, file) {
     if (!file) return;
+    const warning = kind === "database"
+      ? "Заменить текущую базу данных загруженной копией? Все текущие данные будут перезаписаны."
+      : "Заменить текущую историю сообщений архивом? Текущие сообщения и медиафайлы будут заменены.";
+    if (!window.confirm(warning)) return;
     setDataBusy(true);
     setError("");
     try {
