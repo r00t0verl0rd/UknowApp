@@ -76,11 +76,18 @@ def _count_rows(model: type) -> int:
 @router.get("/stats")
 def data_stats(_: Admin):
     database = _database_path()
-    database_size = sum(
-        item.stat().st_size for item in (
-            database, Path(str(database) + "-wal"), Path(str(database) + "-shm")
-        ) if item.is_file()
+    handle = tempfile.NamedTemporaryFile(
+        prefix="uknowapp-db-stats-", suffix=".sqlite3",
+        dir=database.parent, delete=False,
     )
+    backup_path = Path(handle.name)
+    handle.close()
+    try:
+        with sqlite3.connect(database) as source, sqlite3.connect(backup_path) as target:
+            source.backup(target)
+        database_size = backup_path.stat().st_size
+    finally:
+        backup_path.unlink(missing_ok=True)
     return {
         "database_bytes": database_size,
         "media_bytes": _folder_size(MEDIA_DIR),
