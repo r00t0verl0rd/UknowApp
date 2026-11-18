@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo } from "react";
 import { useAuthState, useChatState, useDirectoryState, useGraphState, useUiState, useUserActionState, useUserEditorState } from "./useAppState.js";
 import Activity from "lucide-react/dist/esm/icons/activity.js";
 import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left.js";
@@ -305,16 +305,9 @@ export default function App() {
     };
   }, [selectedChat?.id, messageFilter, visibleMessages]);
 
-  const safePersonalChats = Array.isArray(personalChats)
-    ? personalChats.filter(chat => chat && typeof chat === "object")
-    : [];
   const visibleChats = useMemo(() => {
     const query = chatSearch.trim().toLocaleLowerCase("ru");
-    const personal = safePersonalChats.filter(chat => {
-      const title = String(chat.title || chat.participant?.full_name || "");
-      return (!query || title.toLocaleLowerCase("ru").includes(query))
-        && (chatFilter === "all" || Number(chat.unread_count || 0) > 0);
-    });
+    const personal = personalChats.filter(chat => (!query || chat.title.toLocaleLowerCase("ru").includes(query)) && (chatFilter === "all" || Number(chat.unread_count || 0) > 0));
     if (profile?.role === "admin" && chatSection === "personal") return personal;
     const regular = profile?.role === "student" ? chats.slice(0, 1) : chats.filter(chat => {
       const names = profile?.role === "admin"
@@ -325,7 +318,7 @@ export default function App() {
       return matchesSearch && matchesFilter;
     });
     return profile?.role === "admin" ? regular : [...regular, ...personal];
-  }, [chats, safePersonalChats, chatSection, chatSearch, chatFilter, profile?.role]);
+  }, [chats, personalChats, chatSection, chatSearch, chatFilter, profile?.role]);
 
   function toggleTheme() {
     setTheme(current => current === "dark-soft" ? "light" : "dark-soft");
@@ -719,7 +712,7 @@ export default function App() {
         </>}
 
         {page === "chats" && <>
-          <div className={"chat-layout" + (selectedChat ? " chat-layout-conversation-open" : " chat-layout-list-open")}><div className="chat-list">{profile?.role === "admin" && <div className="chat-filter-segment admin-chat-sections" role="group" aria-label="Раздел диалогов"><button type="button" className={chatSection === "participants" ? "active" : ""} onClick={() => { setChatSection("participants"); setSelectedChat(null); setMessages([]); }}>Чаты участников</button><button type="button" className={chatSection === "personal" ? "active" : ""} onClick={() => { setChatSection("personal"); setChatFilter("all"); setSelectedChat(null); setMessages([]); }}>Личные{safePersonalChats.some(chat => Number(chat.unread_count) > 0) && <span className="unread-badge">{safePersonalChats.reduce((sum, chat) => sum + (Number(chat.unread_count) || 0), 0) > 99 ? "99+" : personalChats.reduce((sum, chat) => sum + (Number(chat.unread_count) || 0), 0)}</span>}</button></div>}{profile?.role === "admin" && chatSection === "personal" && <button type="button" className="btn primary personal-chat-create" onClick={openCreatePersonalChat}><Plus size={15}/>Создать диалог</button>}{profile?.role !== "student" && <>
+          <div className={"chat-layout" + (selectedChat ? " chat-layout-conversation-open" : " chat-layout-list-open")}><div className="chat-list">{profile?.role === "admin" && <div className="chat-filter-segment admin-chat-sections" role="group" aria-label="Раздел диалогов"><button type="button" className={chatSection === "participants" ? "active" : ""} onClick={() => { setChatSection("participants"); setSelectedChat(null); setMessages([]); }}>Чаты участников</button><button type="button" className={chatSection === "personal" ? "active" : ""} onClick={() => { setChatSection("personal"); setChatFilter("all"); setSelectedChat(null); setMessages([]); }}>Личные{personalChats.some(chat => Number(chat.unread_count) > 0) && <span className="unread-badge">{personalChats.reduce((sum, chat) => sum + (Number(chat.unread_count) || 0), 0) > 99 ? "99+" : personalChats.reduce((sum, chat) => sum + (Number(chat.unread_count) || 0), 0)}</span>}</button></div>}{profile?.role === "admin" && chatSection === "personal" && <select className="personal-chat-create" aria-label="Создать личный диалог" value="" onChange={e => e.target.value && createPersonalChat(e.target.value)}><option value="">+ Новый личный диалог</option>{users.filter(user => user.active && ["teacher","student"].includes(user.role)).map(user => <option value={user.id} key={user.id}>{user.full_name} · {user.role === "teacher" ? "Учитель" : "Ученик"}</option>)}</select>}{profile?.role !== "student" && <>
               <div className="chat-search-control">
                 <Search size={17}/>
                 <input aria-label="Поиск по имени" placeholder="Поиск по имени" value={chatSearch} onChange={e => setChatSearch(e.target.value)}/>
@@ -742,7 +735,7 @@ export default function App() {
               return <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id && (selectedChat?.type === "personal") === personal ? "selected " : "") + (unreadCount > 0 && !showMessageCount ? "has-unread" : "")} onClick={() => openChat(chat)}>
                 <div className="chat-item-heading">
                   <div className={"chat-item-participants" + (profile?.role === "student" ? " is-student-view" : "")}>
-                    {personal ? <span>{chat.title || chat.participant?.full_name || "Личный диалог"}</span> : <>{profile?.role === "admin" && <span>{chat.teacher.full_name}</span>}<span>{profile?.role === "student" ? chat.teacher.full_name : chat.student.full_name}</span>{profile?.role === "student" && <small>Учитель</small>}</>}
+                    {personal ? <span>{chat.title}</span> : <>{profile?.role === "admin" && <span>{chat.teacher.full_name}</span>}<span>{profile?.role === "student" ? chat.teacher.full_name : chat.student.full_name}</span>{profile?.role === "student" && <small>Учитель</small>}</>}
                     {personal && <small>Личный диалог</small>}
                   </div>
                   {(showMessageCount || unreadCount > 0) && <span className={showMessageCount ? "message-count-badge" : "unread-badge"} title={showMessageCount ? "Всего сообщений" : "Непрочитанные сообщения"} aria-label={showMessageCount ? displayedCount + " сообщений всего" : displayedCount + " непрочитанных сообщений"}>{displayedCount > 99 ? "99+" : displayedCount}</span>}
@@ -768,14 +761,9 @@ export default function App() {
       </div>
     </main>
 
-    {modal && <div className="overlay" onMouseDown={() => setModal(null)}><section className={`modal${["create", "create-personal"].includes(modal.mode) ? " create-participant-modal" : ""}`} onMouseDown={e => e.stopPropagation()}>
-      <div className="modal-head"><div><div className="eyebrow">{modal.mode === "create-personal" ? "ЛИЧНЫЕ СООБЩЕНИЯ" : modal.mode === "create" ? "НОВЫЙ УЧАСТНИК" : modal.mode === "edit" ? "ПРОФИЛЬ УЧАСТНИКА" : "СВЯЗЬ УЧЕНИКА И УЧИТЕЛЯ"}</div><h2>{modal.mode === "create-personal" ? "Создать диалог" : modal.mode === "create" ? "Добавить участника" : modal.mode === "edit" ? "Редактировать" : "Назначить ученика"}</h2></div><button className="icon-btn" onClick={() => setModal(null)}><X/></button></div>
-      {modal.mode === "create-personal" ? <form className="stack" onSubmit={event => { event.preventDefault(); const selected = users.find(user => user.active && ["teacher", "student"].includes(user.role) && user.full_name === event.currentTarget.elements.participant.value); if (selected) void createPersonalChat(selected.id); }}>
-        <label>Поиск участника по имени<input name="participant" list="personal-participant-options" value={personalUserSearch} onChange={event => setPersonalUserSearch(event.target.value)} placeholder="Начните вводить имя" autoComplete="off" autoFocus required/></label>
-        <datalist id="personal-participant-options">{users.filter(user => user.active && ["teacher", "student"].includes(user.role) && user.full_name.toLocaleLowerCase("ru").includes(personalUserSearch.trim().toLocaleLowerCase("ru"))).map(user => <option value={user.full_name} key={user.id}>{user.role === "teacher" ? "Учитель" : "Ученик"}</option>)}</datalist>
-        <p className="hint">Выберите активного учителя или ученика. Диалог будет доступен только внутри UknowApp.</p>
-        <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setModal(null)}>Отмена</button><button className="btn primary" disabled={!users.some(user => user.active && ["teacher", "student"].includes(user.role) && user.full_name === personalUserSearch.trim())}>Создать диалог</button></div>
-      </form> : modal.mode === "assign" ? <form className="stack" onSubmit={assign}>
+    {modal && <div className="overlay" onMouseDown={() => setModal(null)}><section className={`modal${modal.mode === "create" ? " create-participant-modal" : ""}`} onMouseDown={e => e.stopPropagation()}>
+      <div className="modal-head"><div><div className="eyebrow">{modal.mode === "create" ? "НОВЫЙ УЧАСТНИК" : modal.mode === "edit" ? "ПРОФИЛЬ УЧАСТНИКА" : "СВЯЗЬ УЧЕНИКА И УЧИТЕЛЯ"}</div><h2>{modal.mode === "create" ? "Добавить участника" : modal.mode === "edit" ? "Редактировать" : "Назначить ученика"}</h2></div><button className="icon-btn" onClick={() => setModal(null)}><X/></button></div>
+      {modal.mode === "assign" ? <form className="stack" onSubmit={assign}>
         <label>Учитель<select value={teacherId} onChange={e => setTeacherId(e.target.value)} required>{activeTeachers.map(t => <option value={t.id} key={t.id}>{t.full_name}</option>)}</select></label>
         <label>Ученик<select value={studentId} onChange={e => setStudentId(e.target.value)} required>{activeStudents.map(s => <option value={s.id} key={s.id}>{s.full_name}</option>)}</select></label>
         <p className="hint">Если у ученика уже есть активное назначение, оно будет заменено новым.</p>
