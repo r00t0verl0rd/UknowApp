@@ -227,7 +227,6 @@ def _teacher_page(items: list[dict], page: int) -> tuple[int, int, list[dict]]:
 
 
 def _teacher_keyboard(
-    all_items: list[dict],
     visible: list[dict],
     page: int,
     total_pages: int,
