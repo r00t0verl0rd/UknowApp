@@ -150,7 +150,6 @@ def teacher_conversations(db: Session, teacher: User) -> list[dict]:
         .where(
             Assignment.teacher_id == teacher.id,
             Assignment.active.is_(True),
-            User.active.is_(True),
             Conversation.status == "active",
         )
         .join(Conversation, Assignment.id == Conversation.assignment_id)
@@ -191,11 +190,10 @@ def teacher_conversations(db: Session, teacher: User) -> list[dict]:
 def get_teacher_conversation(db: Session, teacher: User, conversation_id: int) -> Optional[Conversation]:
     conversation = db.get(Conversation, conversation_id)
     if (
-        not teacher or teacher.role != "teacher" or not teacher.active
+        not teacher or teacher.role != "teacher"
         or not conversation or conversation.status != "active"
         or not conversation.assignment.active
         or conversation.assignment.teacher_id != teacher.id
-        or not conversation.assignment.student.active
     ):
         return None
     return conversation
