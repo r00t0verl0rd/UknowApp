@@ -53,7 +53,8 @@
 .empty-students { padding: 16px; font-size: 12px; }
 .add-student { margin: 13px 0 0 43px; font-size: 12px; }
 .toolbar, .user-row .person-info b { font-size: 13px; }
-.user-row .person-info small { font-size: 11px; }
+.user-row .person-info small,
+
 .role-tag { font-size: 11px; }
 .chat-item b, .chat-head b, .message b { font-size: 13px; }
 .chat-item small, .chat-head small, .message p { font-size: 12px; }
@@ -111,7 +112,8 @@
   box-shadow: 0 4px 18px rgba(47,31,84,.025);
 }
 .topbar > div { color: #9a91aa; }
-.topbar b { color: var(--ink); }
+.topbar b,
+
 .content { color: var(--ink); }.section-head p
 { color: var(--muted); }
 .btn {
@@ -2529,9 +2531,8 @@ body,
   max-width: 100%;
 }
 
-html {
-  overflow-x: clip;
-}
+html,
+
 
 body {
   overflow-x: clip;
@@ -4096,11 +4097,8 @@ button,
     color: #573e99 !important;
   }
 
-  .btn.disconnect {
-    background: #fff0f1 !important;
-    border-color: #f2d5d9 !important;
-    color: #b82c3b !important;
-  }
+  .btn.disconnect,
+
 
   .person-actions button.danger-icon,
   .icon-btn.danger-icon {
@@ -6083,7 +6081,8 @@ button:focus-visible, .btn:focus-visible {
 @media (max-width: 1024px) {
   .chat-audio-player { width: 100%; max-width: 100%; gap: 10px; padding: 9px 10px; }
   .chat-audio-play { flex-basis: 36px; width: 36px; height: 36px; }
-  .chat-audio-wave { height: 23px; }
+  .chat-audio-wave,
+
   .chat-audio-seek { height: 23px; }
 }
 
@@ -6215,7 +6214,8 @@ button:focus-visible, a:focus-visible {
 
 
 .role-tag { background: var(--lavender-soft); color: var(--purple); }
-.role-tag.student { background: var(--red-soft); color: var(--red); }
+.role-tag.student,
+
 .user-row .role-tag.student { background: var(--red-soft); color: var(--red); }
 .user-row .role-tag.teacher { background: var(--lavender-soft); color: var(--purple); }
 
@@ -6246,10 +6246,8 @@ button:focus-visible, a:focus-visible {
 :root[data-theme="dark-soft"] .student-card .avatar,
 :root[data-theme="dark-soft"] .avatar.student,
 :root[data-theme="dark-soft"] .student-avatar,
-:root[data-theme="dark-soft"] .user-row .avatar.student {
-  background: #402d37 !important;
-  color: #e58c98 !important;
-}
+:root[data-theme="dark-soft"] .user-row .avatar.student,
+
 :root[data-theme="dark-soft"] .role-tag.student,
 :root[data-theme="dark-soft"] .user-row .role-tag.student {
   background: #402d37 !important;
@@ -6701,9 +6699,8 @@ button:focus-visible, a:focus-visible {
     font-size: 11px;
   }
 
-  .chats-content > .chat-layout.chat-layout-conversation-open > .chat-list {
-    display: none;
-  }
+  .chats-content > .chat-layout.chat-layout-conversation-open > .chat-list,
+
 
   .chats-content > .chat-layout.chat-layout-list-open > .chat-detail {
     display: none;
@@ -7710,9 +7707,8 @@ body,
   border-left: 3px solid var(--role-student, #c9a45f) !important;
   padding-left: 11px;
 }
-.chat-items-scroll > .chat-item.has-unread .chat-item-participants {
-  font-weight: 700;
-}
+.chat-items-scroll > .chat-item.has-unread .chat-item-participants,
+
 .chat-items-scroll > .chat-item.has-unread .chat-item-meta {
   font-weight: 700;
 }
