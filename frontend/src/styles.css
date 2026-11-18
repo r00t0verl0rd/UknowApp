@@ -332,16 +332,25 @@ img, video, audio { max-width: 100%;}
 .panel-access-value .password-code-refresh { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 6px; min-height: 30px; padding: 5px 9px; border-radius: 7px; font-size: 10px; font-weight: 650; white-space: nowrap;}
 .panel-access-value .password-code-refresh svg { width: 11px; height: 11px;}
 .password-info { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.4;}
-.credential-modal { width: min(470px,100%);}
-.credential-row { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 5px 10px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 11px; background: #fbfaff;}
-.credential-row span { grid-column: 1 / -1; color: var(--muted); font-size: 10px; font-weight: 700; text-align: left;}
-.credential-row b { grid-column: 1; grid-row: 2; min-width: 0; color: var(--ink); font-size: 13px; text-align: center; overflow-wrap: anywhere;}
-.credential-row .icon-btn { grid-column: 2; grid-row: 2;}
-.credential-password { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 8px 10px; margin: 9px 0 12px; padding: 12px 13px; border: 1px dashed #cfc0e3; border-radius: 12px; background: #f5f0fb;}
-.credential-password > span { grid-column: 1; grid-row: 1; min-width: 0; color: var(--muted); font-size: 10px; font-weight: 700; text-align: left;}
-.credential-code-value { display: contents;}
-.credential-code-value b { grid-column: 1; grid-row: 2; min-width: 0; color: var(--purple); font: 800 27px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 3px; text-align: center; overflow-wrap: anywhere;}
-.credential-code-value .icon-btn { grid-column: 2; grid-row: 1;}
+.credential-modal { width: min(440px,100%); padding: 22px; gap: 12px;}
+.credential-modal .modal-head { align-items: flex-start; margin-bottom: 2px;}
+.credential-modal .modal-head > div { min-width: 0;}
+.credential-modal .modal-head .eyebrow { max-width: 100%; font-size: 9px; letter-spacing: .09em; line-height: 1.35; overflow-wrap: anywhere;}
+.credential-modal .modal-head h2 { margin-top: 5px; line-height: 1.2; overflow-wrap: anywhere;}
+.credential-field { display: grid; gap: 7px; min-width: 0; padding: 11px 12px; border: 1px solid var(--ui-border); border-radius: 12px; background: var(--surface);}
+.credential-field-label { color: var(--muted); font-size: 11px; font-weight: 700; line-height: 1.2;}
+.credential-field-value { display: flex; align-items: center; justify-content: center; gap: 10px; min-width: 0;}
+.credential-field-value b { flex: 1 1 auto; min-width: 0; color: var(--ink); font-size: 14px; font-weight: 750; text-align: center; overflow-wrap: anywhere;}
+.credential-field-value .icon-btn { flex: 0 0 34px; width: 34px; height: 34px; display: grid; place-items: center;}
+.credential-field-code { border-color: #d9cbea; background: #f5f0fb;}
+.credential-field-code .credential-field-value b { color: var(--purple); font: 800 25px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 2.5px; white-space: nowrap;}
+.credential-help { display: grid; gap: 5px; margin: 0; padding: 10px 12px; border-radius: 11px; background: var(--ui-surface-soft, #f5f2f8); color: var(--muted); font-size: 11px; line-height: 1.4;}
+.credential-help p, .credential-help small { margin: 0;}
+.credential-help b { color: var(--ink); font-weight: 750;}
+.credential-help small { font-size: 10px;}
+.credential-actions { display: flex; gap: 9px; margin-top: 2px;}
+.credential-actions .btn { min-width: 0; min-height: 40px; white-space: nowrap;}
+.credential-actions .btn.primary { flex: 1 1 auto;}
 /* Personal display preferences: timezone selector and soft dark theme. */
 .topbar-actions { display: flex; align-items: center; gap: 8px;}
 .theme-toggle { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 10px; background: #faf9fc; color: var(--purple); transition: background .18s, border-color .18s, transform .18s;}
