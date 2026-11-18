@@ -862,8 +862,29 @@ export default function App() {
         {page === "additional" && profile?.role === "admin" && <section className="graph-panel additional-panel">
           <div className="additional-heading"><div><div className="eyebrow">ОБСЛУЖИВАНИЕ ДАННЫХ</div><h2>Дополнительно</h2></div><button type="button" className="btn outline" onClick={loadDataStats} disabled={dataBusy}><RefreshCw size={15}/>Обновить</button></div>
           <div className="data-stats-grid">
-            <article className="data-stat-card"><span>База данных</span><b>{dataStats ? formatBytes(dataStats.database_bytes) : "—"}</b><small>SQLite · {dataStats?.messages ?? "—"} сообщений</small></article>
-            <article className="data-stat-card"><span>Медиафайлы</span><b>{dataStats ? formatBytes(dataStats.media_bytes) : "—"}</b><small>Файлы, сохранённые на сервере</small></article>
+            <article className="data-stat-card">
+              <span>База данных SQLite</span><b>{dataStats ? formatBytes(dataStats.database_bytes) : "—"}</b>
+              <small>{dataStats?.users ?? "—"} пользователей · {dataStats?.active_users ?? "—"} активных</small>
+              <div className="data-stat-details">
+                <span>Учителя: <b>{dataStats?.teachers ?? "—"}</b></span><span>Ученики: <b>{dataStats?.students ?? "—"}</b></span>
+                <span>Связи учитель–ученик: <b>{dataStats?.assignments ?? "—"}</b> ({dataStats?.active_assignments ?? "—"} активных)</span>
+                <span>Диалоги: <b>{dataStats?.conversations ?? "—"}</b> ученических · <b>{dataStats?.personal_conversations ?? "—"}</b> личных</span>
+                <span>Сообщения: <b>{dataStats?.total_messages ?? "—"}</b> всего</span>
+                <span className="data-stat-subline">Ученические: {dataStats?.messages ?? "—"} · Личные: {dataStats?.personal_messages ?? "—"}</span>
+                <span>Telegram-группы: <b>{dataStats?.telegram_groups ?? "—"}</b></span>
+                <span>Коды подключения: <b>{dataStats?.connection_codes ?? "—"}</b></span>
+              </div>
+            </article>
+            <article className="data-stat-card">
+              <span>Файлы из диалогов, сохранённые на сервере</span><b>{dataStats ? formatBytes(dataStats.media_bytes) : "—"}</b>
+              <small>{dataStats?.media_files ?? "—"} файлов · учитываются только реально существующие вложения</small>
+              <div className="data-stat-details">
+                <span>Изображения: <b>{dataStats?.media_images ?? "—"}</b></span>
+                <span>Аудио и голосовые: <b>{dataStats?.media_audio ?? "—"}</b></span>
+                <span>Видео: <b>{dataStats?.media_videos ?? "—"}</b></span>
+                <span>Другие файлы: <b>{dataStats?.media_other ?? "—"}</b></span>
+              </div>
+            </article>
           </div>
           <div className="data-tools-grid">
             <article className="data-tool-card">
