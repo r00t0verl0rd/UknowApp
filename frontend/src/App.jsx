@@ -1036,7 +1036,6 @@ export default function App() {
       <div className="credential-help">
         <p><b>Веб-панель:</b> логин + код доступа.</p>
         <p><b>Telegram:</b> отправьте боту только код доступа.</p>
-        <small>Новый код сразу заменяет предыдущий в обоих местах.</small>
       </div>
       <div className="modal-actions credential-actions"><button type="button" className="btn ghost" onClick={() => setIssuedCredential(null)}>Закрыть</button><button type="button" className="btn primary" onClick={async () => notify(await copyText("Логин: " + issuedCredential.username + "\nКод доступа: " + issuedCredential.code) ? "Данные для входа скопированы" : "Не удалось скопировать данные")}><Copy size={16}/>Скопировать данные</button></div>
     </section></div>}
