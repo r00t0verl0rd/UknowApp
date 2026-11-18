@@ -729,7 +729,7 @@ export default function App() {
             <div className="chat-items-scroll">{visibleChats.map(chat => {
               const personal = chat.type === "personal";
               const unreadCount = Number(chat.unread_count) || 0;
-              return <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected " : "") + (unreadCount > 0 ? "has-unread" : "")} onClick={() => openChat(chat)}>
+              return <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id && (selectedChat?.type === "personal") === personal ? "selected " : "") + (unreadCount > 0 ? "has-unread" : "")} onClick={() => openChat(chat)}>
                 <div className="chat-item-heading">
                   <div className={"chat-item-participants" + (profile?.role === "student" ? " is-student-view" : "")}>
                     {personal ? <span>{chat.title}</span> : <>{profile?.role === "admin" && <span>{chat.teacher.full_name}</span>}<span>{profile?.role === "student" ? chat.teacher.full_name : chat.student.full_name}</span>{profile?.role === "student" && <small>Учитель</small>}</>}
