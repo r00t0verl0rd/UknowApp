@@ -699,71 +699,73 @@ img, video, audio { max-width: 100%; }
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  padding: 3px 12px;
-  border: 1px solid #e7e1ef;
-  border-radius: 10px;
-  background: #faf9fc;
+  padding: 5px 14px;
+  border: 1px solid #e9e4ef;
+  border-radius: 12px;
+  background: #f8f7fb;
 }
 .teacher-credential-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0,  .8fr) minmax(0, 1.2fr);
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
-  min-height: 40px;
+  min-height: 46px;
 }
 .teacher-credential-row + .teacher-credential-row {
   border-top: 1px solid var(--line);
 }
 .teacher-credential-row > span {
-  flex: 0 0 116px;
-  color: var(--muted);
-  font-size: 12px;
+  min-width: 0;
+  color: #817b8d;
+  font-size: 11px;
   font-weight: 650;
+  letter-spacing: .01em;
 }
 .teacher-login-edit-row > input {
-  flex: 0 1 62%;
-  width: 62%;
-  min-width: 110px;
-  max-width: 230px;
-  min-height: 27px;
-  margin: 0 8px 0 auto;
-  padding: 3px 8px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: #f2f0f6;
-  color: #625b70;
-  font-size: 11px;
-  text-align: right;
+  justify-self: stretch;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  margin: 0;
+  padding: 5px 10px;
+  border: 1px solid #e8e3ef;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 550;
+  text-align: left;
   box-shadow: none;
-  transition: background .18s, border-color .18s, color .18s;
 }
 .teacher-login-edit-row > input:focus {
+  border-color: #c8b8e3;
   background: #fff;
-  border-color: #d8cdec;
-  color: var(--ink);
-  outline: none;
+  outline: 2px solid rgba(133, 104, 184, .10);
+  outline-offset: 1px;
 }
 .teacher-access-value {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex: 1 1 0;
-  width: 0;
+  justify-content: flex-start;
+  gap: 10px;
   min-width: 0;
 }
 .teacher-access-value b {
-  color: var(--purple);
-  font-size: 14px;
+  min-width: 72px;
+  color: #75629a;
+  font-size: 13px;
   font-weight: 800;
-  letter-spacing: 1.5px;
+  letter-spacing: 1.8px;
   white-space: nowrap;
 }
 .teacher-access-value .password-code-refresh {
-  min-height: 28px;
-  padding: 4px 8px;
+  min-height: 29px;
+  padding: 4px 9px;
+  border-radius: 8px;
   font-size: 10px;
+  font-weight: 600;
   white-space: nowrap;
 }
 .teacher-access-value .password-code-refresh svg {
@@ -1049,25 +1051,25 @@ img, video, audio { max-width: 100%; }
   border-top-color: #394456;
 }
 :root[data-theme="dark-soft"] .teacher-credential-row > span {
-  color: #a4afc0;
+  color: #a4afc0 !important;
 }
 :root[data-theme="dark-soft"] .teacher-login-edit-row > input {
   background: #293140 !important;
-  border-color: transparent !important;
-  color: #aeb8c8 !important;
+  border-color: #414c60 !important;
+  color: #e0e5ee !important;
 }
 :root[data-theme="dark-soft"] .teacher-login-edit-row > input:focus {
   background: #30394a !important;
-  border-color: #59647b !important;
-  color: #e0e5ee !important;
+  border-color: #69758e !important;
+  color: #f0f2f7 !important;
 }
 :root[data-theme="dark-soft"] .teacher-access-value b {
-  color: #b4a9e4;
+  color: #b9afe8 !important;
 }
 :root[data-theme="dark-soft"] .teacher-access-value .password-code-refresh {
   background: #30394a !important;
   border-color: #465268 !important;
-  color: #c3badf !important;
+  color: #c8c0e4 !important;
 }
 :root[data-theme="dark-soft"] .chat-composer textarea,
 :root[data-theme="dark-soft"] input,
@@ -9392,32 +9394,6 @@ body,
 }
 
 
-/* Teacher credentials stay aligned without crowding the modal. */
-@media (max-width: 560px) {
-  .teacher-credential-row > span {
-    flex-basis: 104px;
-    font-size: 11px;
-  }
-  .teacher-access-value {
-    gap: 6px;
-  }
-  .teacher-access-value .password-code-refresh {
-    padding: 4px 6px;
-    font-size: 9px;
-  }
-  .password-code-label {
-    justify-self: start;
-    min-height: 38px;
-  }
-  .password-actions {
-    margin-top: 0;
-  }
-  .modal-actions {
-    flex-wrap: wrap;
-  }
-}
-
-
 /* Keep the access-code chip subdued in the dark theme. */
 :root[data-theme="dark-soft"] .password-code-label {
   background: #292f3d !important;
@@ -9438,112 +9414,4 @@ body,
 .password-code-label .password-code-refresh svg {
   width: 12px;
   height: 12px;
-}
-
-
-/* Teacher credentials: compact, calm and consistently aligned. */
-.teacher-credentials-panel {
-  gap: 0;
-  padding: 5px 14px;
-  border: 1px solid #e9e4ef;
-  border-radius: 12px;
-  background: #f8f7fb;
-}
-.teacher-credential-row {
-  display: grid;
-  grid-template-columns: minmax(112px,  .8fr) minmax(0, 1.2fr);
-  align-items: center;
-  gap: 12px;
-  min-height: 46px;
-}
-.teacher-credential-row > span {
-  flex: initial;
-  color: #817b8d;
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: .01em;
-}
-.teacher-login-edit-row > input {
-  justify-self: stretch;
-  box-sizing: border-box;
-  width: 100%;
-  min-width: 0;
-  max-width: none;
-  min-height: 32px;
-  margin: 0;
-  padding: 5px 10px;
-  border: 1px solid #e8e3ef;
-  border-radius: 8px;
-  background: #fff;
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 550;
-  text-align: left;
-  box-shadow: none;
-}
-.teacher-login-edit-row > input:focus {
-  border-color: #c8b8e3;
-  background: #fff;
-  outline: 2px solid rgba(133, 104, 184, .10);
-  outline-offset: 1px;
-}
-.teacher-access-value {
-  justify-content: flex-start;
-  gap: 10px;
-  width: auto;
-}
-.teacher-access-value b {
-  min-width: 72px;
-  color: #75629a;
-  font-size: 13px;
-  letter-spacing: 1.8px;
-}
-.teacher-access-value .password-code-refresh {
-  min-height: 29px;
-  padding: 4px 9px;
-  border-radius: 8px;
-  font-size: 10px;
-  font-weight: 600;
-}
-:root[data-theme="dark-soft"] .teacher-credentials-panel {
-  background: #222a37 !important;
-  border-color: #394456 !important;
-}
-:root[data-theme="dark-soft"] .teacher-credential-row > span {
-  color: #a4afc0 !important;
-}
-:root[data-theme="dark-soft"] .teacher-login-edit-row > input {
-  background: #293140 !important;
-  border-color: #414c60 !important;
-  color: #e0e5ee !important;
-}
-:root[data-theme="dark-soft"] .teacher-login-edit-row > input:focus {
-  background: #30394a !important;
-  border-color: #69758e !important;
-  color: #f0f2f7 !important;
-}
-:root[data-theme="dark-soft"] .teacher-access-value b {
-  color: #b9afe8 !important;
-}
-:root[data-theme="dark-soft"] .teacher-access-value .password-code-refresh {
-  background: #30394a !important;
-  border-color: #465268 !important;
-  color: #c8c0e4 !important;
-}
-@media (max-width: 560px) {
-  .teacher-credentials-panel { padding: 4px 11px; }
-  .teacher-credential-row {
-    grid-template-columns: minmax(94px, .75fr) minmax(0, 1.25fr);
-    gap: 9px;
-    min-height: 44px;
-  }
-  .teacher-credential-row > span { font-size: 10px; }
-  .teacher-login-edit-row > input { min-height: 31px; font-size: 11px; }
-  .teacher-access-value { gap: 7px; }
-  .teacher-access-value b { min-width: 62px; font-size: 12px; }
-  .teacher-access-value .password-code-refresh {
-    min-height: 28px;
-    padding: 4px 7px;
-    font-size: 9px;
-  }
 }
