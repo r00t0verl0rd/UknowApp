@@ -1,0 +1,35 @@
+/* Design tokens: shared light palette and its dark-theme counterpart. */
+:root {
+  font-family: Onest, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #29223f;
+  background: #f7f6fb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  color-scheme: light;
+  --purple: #573e99;
+  --purple2: #7654bd;
+  --red: #e72530;
+  --ink: #29223f;
+  --muted: #817b91;
+  --line: #e9e3f2;
+  --surface: #ffffff;
+  --canvas: #f7f5fb;
+  --lavender-soft: #f0e9fb;
+  --purple-glow: rgba(194, 153, 255, .34);
+  --red-glow: rgba(231, 37, 48, .20);
+  --amber: #e4a12f;
+  --amber-dark: #986116;
+  --amber-soft: #fff2d8;
+}
+
+:root[data-theme="dark-soft"] {
+  color-scheme: dark;
+  color: #e4e8f0;
+  background: #171b25;
+  --purple: #aaa0d8;
+  --purple2: #9185c4;
+  --red: #d97883;
+  --ink: #e4e8f0;
+  --muted: #9ba6b8;
+  --line: #343d4d;
+}
