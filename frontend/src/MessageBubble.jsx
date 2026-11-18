@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
+import Check from "lucide-react/dist/esm/icons/check.js";
+import CheckCheck from "lucide-react/dist/esm/icons/check-check.js";
 import Play from "lucide-react/dist/esm/icons/play.js";
 import Pause from "lucide-react/dist/esm/icons/pause.js";
 
@@ -152,6 +154,9 @@ function MessageBubble({ message, onDelete, viewerRole }) {
       {!(viewerRole === "teacher" && message.sender_role !== "admin") && <b>{message.sender}{message.sender_role !== "admin" && viewerRole !== "teacher" && <small>{ROLE[message.sender_role] || message.sender_role}</small>}</b>}
       <div className="message-tools">
         <time className="message-time">{formatLocalTime(message.created_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</time>
+        {message.sender_role === viewerRole && viewerRole !== "admin" && <span className={"message-read-status" + (message.panel_read_at ? " is-read" : "")} title={message.panel_read_at ? "Прочитано" : message.delivery_status === "pending" ? "Отправляется" : "Доставлено"}>
+          {message.delivery_status === "pending" ? <Check size={14}/> : <CheckCheck size={15}/>}
+        </span>}
         {message.can_delete && <button type="button" className="message-delete-btn" onClick={() => onDelete?.(message)} title="Удалить своё сообщение у всех" aria-label="Удалить своё сообщение"><Trash2 size={14}/></button>}
       </div>
     </div>
