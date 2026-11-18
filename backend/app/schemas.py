@@ -22,7 +22,6 @@ class UserUpdate(BaseModel):
     role: Optional[Literal["teacher", "student"]] = None
     web_username: Optional[str] = Field(default=None, min_length=2, max_length=160)
     telegram_id: Optional[int] = Field(default=None, gt=0)
-    active: Optional[bool] = None
 
 
 class AssignmentCreate(BaseModel):
