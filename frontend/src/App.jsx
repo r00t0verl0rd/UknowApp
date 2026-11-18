@@ -761,7 +761,7 @@ export default function App() {
       </div>
     </main>
 
-    {modal && <div className="overlay" onMouseDown={() => setModal(null)}><section className={`modal${modal.mode === "create" ? " create-participant-modal" : ""}`} onMouseDown={e => e.stopPropagation()}>
+    {modal && <div className="overlay" onMouseDown={() => setModal(null)}><section className={`modal${["create", "create-personal"].includes(modal.mode) ? " create-participant-modal" : ""}`} onMouseDown={e => e.stopPropagation()}>
       <div className="modal-head"><div><div className="eyebrow">{modal.mode === "create-personal" ? "ЛИЧНЫЕ СООБЩЕНИЯ" : modal.mode === "create" ? "НОВЫЙ УЧАСТНИК" : modal.mode === "edit" ? "ПРОФИЛЬ УЧАСТНИКА" : "СВЯЗЬ УЧЕНИКА И УЧИТЕЛЯ"}</div><h2>{modal.mode === "create-personal" ? "Создать диалог" : modal.mode === "create" ? "Добавить участника" : modal.mode === "edit" ? "Редактировать" : "Назначить ученика"}</h2></div><button className="icon-btn" onClick={() => setModal(null)}><X/></button></div>
       {modal.mode === "create-personal" ? <form className="stack" onSubmit={event => { event.preventDefault(); const selected = users.find(user => user.active && ["teacher", "student"].includes(user.role) && user.full_name === event.currentTarget.elements.participant.value); if (selected) void createPersonalChat(selected.id); }}>
         <label>Поиск участника по имени<input name="participant" list="personal-participant-options" value={personalUserSearch} onChange={event => setPersonalUserSearch(event.target.value)} placeholder="Начните вводить имя" autoComplete="off" autoFocus required/></label>
