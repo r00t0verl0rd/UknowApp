@@ -888,16 +888,43 @@ export default function App() {
           </div>
           <div className="data-tools-grid">
             <article className="data-tool-card">
-              <div className="data-tool-icon"><DatabaseIcon/></div><div><h3>База данных</h3><p>Полная резервная копия пользователей, назначений, переписок и настроек.</p></div>
-              <div className="data-tool-actions"><button type="button" className="btn primary" onClick={() => downloadAdminFile("database")} disabled={dataBusy}>Скачать базу</button><label className="btn outline data-upload-label">{dataBusy ? "Загрузка…" : "Загрузить базу"}<input type="file" accept=".db,.sqlite,.sqlite3" disabled={dataBusy} onChange={e => { uploadAdminFile("database", e.target.files?.[0]); e.target.value = ""; }}/></label></div>
-              <p className="data-warning">Восстановление заменит текущую базу целиком. Перед загрузкой сохраните текущую копию.</p>
+              <div className="data-tool-icon"><DatabaseIcon/></div>
+              <div className="data-tool-copy">
+                <div className="data-tool-kicker">ФАЙЛ SQLITE · .SQLITE3</div>
+                <h3>1. Резервная копия базы данных</h3>
+                <p>Снимок структуры и данных UknowApp. Это не архив медиафайлов.</p>
+                <div className="data-includes">
+                  <b><Check size={14}/> Что входит</b>
+                  <ul><li>Пользователи, роли и учётные данные</li><li>Связи учителей и учеников, диалоги</li><li>Текстовые сообщения и история переписки</li><li>Настройки, служебные записи и данные вложений</li></ul>
+                  <b className="data-excludes"><X size={14}/> Чего нет</b>
+                  <p>Сами файлы фотографий, аудио, видео и документов. Для них скачайте архив переписок ZIP.</p>
+                </div>
+              </div>
+              <div className="data-tool-actions">
+                <button type="button" className="btn primary" onClick={() => downloadAdminFile("database")} disabled={dataBusy}>Скачать базу данных</button>
+                <label className="btn outline data-upload-label">{dataBusy ? "Обработка…" : "Восстановить базу из файла"}<input type="file" accept=".db,.sqlite,.sqlite3" disabled={dataBusy} onChange={e => { uploadAdminFile("database", e.target.files?.[0]); e.target.value = ""; }}/></label>
+              </div>
+              <p className="data-warning">Восстановление полностью заменит текущую базу данных. Сначала скачайте её текущую копию. После восстановления перезагрузите панель.</p>
             </article>
             <article className="data-tool-card">
-              <div className="data-tool-icon"><ArchiveIcon/></div><div><h3>Архив переписок</h3><p>Сообщения личных и ученических диалогов вместе с сохранёнными вложениями. Архив можно восстановить на этой установке UknowApp.</p></div>
-              <div className="data-tool-actions"><button type="button" className="btn primary" onClick={() => downloadAdminFile("dialogues")} disabled={dataBusy}>Скачать архив</button><label className="btn outline data-upload-label">{dataBusy ? "Загрузка…" : "Загрузить архив"}<input type="file" accept=".zip" disabled={dataBusy} onChange={e => { uploadAdminFile("dialogues", e.target.files?.[0]); e.target.value = ""; }}/></label></div>
-              <p className="data-warning">Восстановление заменит историю сообщений в существующих диалогах. Сначала восстановите базу, если диалоги или участники были удалены.</p>
+              <div className="data-tool-icon"><ArchiveIcon/></div>
+              <div className="data-tool-copy">
+                <div className="data-tool-kicker">АРХИВ ZIP · .ZIP</div>
+                <h3>2. Архив переписок и вложений</h3>
+                <p>Отдельный архив содержимого диалогов. Именно этот файл нужен, если вы хотите сохранить или перенести фотографии и другие отправленные файлы.</p>
+                <div className="data-includes">
+                  <b><Check size={14}/> Что входит</b>
+                  <ul><li>Текстовые сообщения личных и ученических диалогов</li><li>Фотографии и другие изображения</li><li>Голосовые сообщения и аудиофайлы</li><li>Видеозаписи и видео-сообщения</li><li>Документы и остальные сохранённые вложения</li></ul>
+                </div>
+              </div>
+              <div className="data-tool-actions">
+                <button type="button" className="btn primary" onClick={() => downloadAdminFile("dialogues")} disabled={dataBusy}>Скачать переписки и медиа (ZIP)</button>
+                <label className="btn outline data-upload-label">{dataBusy ? "Обработка…" : "Восстановить переписки из ZIP"}<input type="file" accept=".zip" disabled={dataBusy} onChange={e => { uploadAdminFile("dialogues", e.target.files?.[0]); e.target.value = ""; }}/></label>
+              </div>
+              <p className="data-warning">Восстановление заменит сообщения и связанные с ними вложения в существующих диалогах. Для восстановления удалённых пользователей или диалогов сначала нужна база SQLite.</p>
             </article>
           </div>
+          <div className="data-backup-hint"><b>Для полной резервной копии UknowApp скачайте оба файла.</b><span>SQLite сохраняет данные системы, ZIP — историю сообщений и сами медиафайлы. Для полного восстановления сначала загрузите SQLite, затем ZIP.</span></div>
           <article className="data-cleanup-card">
             <div><div className="eyebrow">ХРАНЕНИЕ И ОЧИСТКА</div><h3>Удаление старых переписок и медиа</h3><p>Удаляются сообщения старше выбранного срока и связанные с ними архивные вложения. Аккаунты, назначения и сами диалоги сохраняются.</p></div>
             <div className="data-cleanup-actions"><label>Удалять старше<select value={retentionDays} onChange={e => setRetentionDays(e.target.value)} disabled={dataBusy}><option value="30">30 дней</option><option value="60">60 дней</option><option value="120">120 дней</option></select></label><button type="button" className="btn danger" onClick={cleanupOldDialogues} disabled={dataBusy}><Trash2 size={15}/>Удалить старые данные</button></div>
