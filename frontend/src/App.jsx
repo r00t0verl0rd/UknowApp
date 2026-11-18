@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useAuthState, useChatState, useDirectoryState, useGraphState, useUiState, useUserActionState, useUserEditorState } from "./useAppState.js";
 import Activity from "lucide-react/dist/esm/icons/activity.js";
 import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left.js";
@@ -22,9 +22,18 @@ import Sun from "lucide-react/dist/esm/icons/sun.js";
 import Smile from "lucide-react/dist/esm/icons/smile.js";
 import Link2 from "lucide-react/dist/esm/icons/link-2.js";
 import Info from "lucide-react/dist/esm/icons/info.js";
+import DatabaseIcon from "lucide-react/dist/esm/icons/database.js";
+import ArchiveIcon from "lucide-react/dist/esm/icons/archive.js";
 import MessageBubble from "./MessageBubble.jsx";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
+function formatBytes(bytes) {
+  if (!bytes) return "0 Б";
+  const units = ["Б", "КБ", "МБ", "ГБ", "ТБ"];
+  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  return (bytes / (1024 ** index)).toLocaleString("ru-RU", { maximumFractionDigits: index ? 1 : 0 }) + " " + units[index];
+}
+
 async function copyText(value) {
   try {
     if (window.isSecureContext && navigator.clipboard?.writeText) {
@@ -84,6 +93,9 @@ export default function App() {
   const {
     page, setPage, error, setError, toast, setToast, busy, setBusy, modal, setModal,
   } = useUiState();
+  const [dataStats, setDataStats] = useState(null);
+  const [dataBusy, setDataBusy] = useState(false);
+  const [retentionDays, setRetentionDays] = useState("30");
 
   useEffect(() => {
     if (userInfo === null) return undefined;
@@ -238,6 +250,83 @@ export default function App() {
   }, [auth, page, selectedChat?.id, request]);
 
   const notify = (message) => { setToast(message); window.setTimeout(() => setToast(""), 2600); };
+  const loadDataStats = useCallback(async () => {
+    try {
+      setDataStats(await request("/api/admin/data/stats"));
+    } catch (e) {
+      setError(e.message);
+    }
+  }, [request]);
+
+  useEffect(() => {
+    if (auth && profile?.role === "admin" && page === "additional") void loadDataStats();
+  }, [auth, profile?.role, page, loadDataStats]);
+
+  async function downloadAdminFile(kind) {
+    try {
+      const response = await fetch(API + "/api/admin/data/" + kind, { credentials: "include" });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.detail || "Не удалось скачать файл");
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = kind === "database" ? "uknowapp-backup.sqlite3" : "uknowapp-dialogues.zip";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      notify("Файл подготовлен к скачиванию");
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function uploadAdminFile(kind, file) {
+    if (!file) return;
+    setDataBusy(true);
+    setError("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const response = await fetch(API + "/api/admin/data/" + kind, {
+        method: "POST", credentials: "include", body: form,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || "Не удалось загрузить файл");
+      notify(kind === "database" ? "База данных восстановлена. Перезагрузите панель." : "Архив переписок восстановлен");
+      await loadDataStats();
+      if (kind === "dialogues") {
+        setSelectedChat(null);
+        setMessages([]);
+        await refresh();
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setDataBusy(false);
+    }
+  }
+
+  async function cleanupOldDialogues() {
+    const days = Number(retentionDays);
+    if (!window.confirm("Удалить переписки и медиафайлы старше " + days + " дней? Действие необратимо.")) return;
+    setDataBusy(true);
+    setError("");
+    try {
+      const result = await request("/api/admin/data/dialogues?days=" + days, { method: "DELETE" });
+      notify("Удалено сообщений: " + result.deleted_messages + ", личных: " + result.deleted_personal_messages + ", медиафайлов: " + result.deleted_media_files);
+      await loadDataStats();
+      await refresh();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setDataBusy(false);
+    }
+  }
+
   // Списки участников пересчитываются только при изменении массива пользователей.
   const activeTeachers = useMemo(() => users.filter(u => u.active && u.role === "teacher"), [users]);
   const activeStudents = useMemo(() => users.filter(u => u.active && u.role === "student"), [users]);
@@ -766,7 +855,29 @@ export default function App() {
             </> : <div className="empty-state">{profile?.role === "student" ? "Ваша переписка с учителем появится здесь" : "Выберите ученика слева"}</div>}</div>
           </div>
         </>}
-        {page === "additional" && profile?.role === "admin" && <section className="graph-panel additional-panel"><h2>Дополнительно</h2></section>}
+        {page === "additional" && profile?.role === "admin" && <section className="graph-panel additional-panel">
+          <div className="additional-heading"><div><div className="eyebrow">ОБСЛУЖИВАНИЕ ДАННЫХ</div><h2>Дополнительно</h2></div><button type="button" className="btn outline" onClick={loadDataStats} disabled={dataBusy}><RefreshCw size={15}/>Обновить</button></div>
+          <div className="data-stats-grid">
+            <article className="data-stat-card"><span>База данных</span><b>{dataStats ? formatBytes(dataStats.database_bytes) : "—"}</b><small>SQLite · {dataStats?.messages ?? "—"} сообщений</small></article>
+            <article className="data-stat-card"><span>Медиафайлы</span><b>{dataStats ? formatBytes(dataStats.media_bytes) : "—"}</b><small>Файлы, сохранённые на сервере</small></article>
+          </div>
+          <div className="data-tools-grid">
+            <article className="data-tool-card">
+              <div className="data-tool-icon"><DatabaseIcon/></div><div><h3>База данных</h3><p>Полная резервная копия пользователей, назначений, переписок и настроек.</p></div>
+              <div className="data-tool-actions"><button type="button" className="btn primary" onClick={() => downloadAdminFile("database")} disabled={dataBusy}>Скачать базу</button><label className="btn outline data-upload-label">{dataBusy ? "Загрузка…" : "Загрузить базу"}<input type="file" accept=".db,.sqlite,.sqlite3" disabled={dataBusy} onChange={e => { uploadAdminFile("database", e.target.files?.[0]); e.target.value = ""; }}/></label></div>
+              <p className="data-warning">Восстановление заменит текущую базу целиком. Перед загрузкой сохраните текущую копию.</p>
+            </article>
+            <article className="data-tool-card">
+              <div className="data-tool-icon"><ArchiveIcon/></div><div><h3>Архив переписок</h3><p>Сообщения личных и ученических диалогов вместе с сохранёнными вложениями. Архив можно восстановить на этой установке UknowApp.</p></div>
+              <div className="data-tool-actions"><button type="button" className="btn primary" onClick={() => downloadAdminFile("dialogues")} disabled={dataBusy}>Скачать архив</button><label className="btn outline data-upload-label">{dataBusy ? "Загрузка…" : "Загрузить архив"}<input type="file" accept=".zip" disabled={dataBusy} onChange={e => { uploadAdminFile("dialogues", e.target.files?.[0]); e.target.value = ""; }}/></label></div>
+              <p className="data-warning">Восстановление заменит историю сообщений в существующих диалогах. Сначала восстановите базу, если диалоги или участники были удалены.</p>
+            </article>
+          </div>
+          <article className="data-cleanup-card">
+            <div><div className="eyebrow">ХРАНЕНИЕ И ОЧИСТКА</div><h3>Удаление старых переписок и медиа</h3><p>Удаляются сообщения старше выбранного срока и связанные с ними архивные вложения. Аккаунты, назначения и сами диалоги сохраняются.</p></div>
+            <div className="data-cleanup-actions"><label>Удалять старше<select value={retentionDays} onChange={e => setRetentionDays(e.target.value)} disabled={dataBusy}><option value="30">30 дней</option><option value="60">60 дней</option><option value="120">120 дней</option></select></label><button type="button" className="btn danger" onClick={cleanupOldDialogues} disabled={dataBusy}><Trash2 size={15}/>Удалить старые данные</button></div>
+          </article>
+        </section>}
       </div>
     </main>
 
