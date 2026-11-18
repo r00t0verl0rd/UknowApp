@@ -167,26 +167,31 @@ export default function App() {
     let active = true;
     let inFlight = false;
     let refreshPending = false;
+    let refreshMessagesPending = false;
 
-    const syncChats = async event => {
+    const syncChats = async (event, forceMessages = false) => {
       if (!active) return;
-      if (inFlight) {
-        refreshPending = true;
-        return;
-      }
-      inFlight = true;
-      try {
+      let shouldRefreshMessages = forceMessages;
+      if (event) {
         let eventConversationId = null;
-        if (event?.data) {
+        if (event.data) {
           try {
             eventConversationId = Number(JSON.parse(event.data).conversation_id) || null;
           } catch {
             // An empty or malformed event is treated as a general refresh.
           }
         }
-        const shouldRefreshMessages = selectedChat?.id
-          && (!event || !eventConversationId || eventConversationId === Number(selectedChat.id));
-        if (shouldRefreshMessages) {
+        shouldRefreshMessages = !eventConversationId
+          || eventConversationId === Number(selectedChat?.id);
+      }
+      if (inFlight) {
+        refreshPending = true;
+        refreshMessagesPending ||= Boolean(selectedChat?.id && shouldRefreshMessages);
+        return;
+      }
+      inFlight = true;
+      try {
+        if (selectedChat?.id && shouldRefreshMessages) {
           const rows = await request("/api/panel/conversations/" + selectedChat.id + "/messages");
           if (!active) return;
           setMessages(rows);
@@ -201,8 +206,10 @@ export default function App() {
       } finally {
         inFlight = false;
         if (refreshPending && active) {
+          const reloadMessages = refreshMessagesPending;
           refreshPending = false;
-          void syncChats();
+          refreshMessagesPending = false;
+          void syncChats(null, reloadMessages);
         }
       }
     };
@@ -213,7 +220,7 @@ export default function App() {
     eventSource.addEventListener("update", syncChats);
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") void syncChats();
+      if (document.visibilityState === "visible") void syncChats(null, true);
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
