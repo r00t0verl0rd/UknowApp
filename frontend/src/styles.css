@@ -3,100 +3,88 @@ body{margin:0;min-width:320px}
 button,input,select{font:inherit}
 button{cursor:pointer}
 button:disabled{opacity:.45;cursor:not-allowed}
-.login-screen{display:grid;place-items:center;background:radial-gradient(circle at 20% 20%,#fce8ed,transparent 35%),radial-gradient(circle at 85% 85%,#e9e2f8,transparent 35%),#f8f7fb}
-.login-card{box-shadow:0 24px 80px #39245c12}
+.login-screen{display:grid;place-items:center;}
+
 .login-logo{object-fit:contain;display:block;margin:0 auto 22px}
 .login-card h1{text-align:center;margin:7px 0}
 .login-card>.eyebrow{text-align:center}
 .sidebar{position:fixed;inset:0 auto 0 0;display:flex;flex-direction:column;z-index:2}
-.brand{display:flex;align-items:center;font-weight:800;color:var(--purple)}
-.brand span span{color:var(--red)}
+.brand{display:flex;align-items:center;font-weight:800;}
+
 .school-label,.eyebrow{font-weight:800;color:#a49bb4}
 .school-label{padding:0 11px 12px}
 .sidebar nav{display:grid;gap:6px}
 .sidebar nav button,.logout{display:flex;align-items:center;gap:12px;border:0;background:transparent;text-align:left;font-weight:700}
 .sidebar nav button svg,.logout svg{height:18px}
-.sidebar nav button.active{color:var(--purple)}
+
 .sidebar nav button i{margin-left:auto;font-style:normal;font-size:11px;background:#f2eff6;padding:3px 7px;border-radius:20px}
 .logout{margin-top:12px;width:100%}
 .shell, .main{min-height:100vh}
-.topbar{height:70px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 34px}
+.topbar{height:70px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
 .topbar>div{display:flex;align-items:center;gap:9px;color:#a39bad;font-size:12px}
 .topbar svg{width:15px}
 .topbar b{color:var(--ink)}
-.content{margin:auto;padding:34px}
+.content{margin:auto;}
 .section-head p {margin:0}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:800;color:var(--ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:800;}
 .btn svg{width:16px;height:16px}
-.btn.primary{box-shadow:0 6px 18px #59439a24}
-.btn.primary:hover{background:#483581}
-.btn.ghost{background:#faf9fc}
-.btn.small{padding:8px 10px;font-size:11px}
-.btn.outline{color:var(--purple)}
+
+.btn.small{padding:8px 10px;}
+
 .user-list, .chat-layout {border:1px solid var(--line);padding:22px}
-.section-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:25px}
+.section-head{display:flex;justify-content:space-between;gap:12px;}
 .section-head h2{margin:0 0 5px}
-.legend{display:flex;align-items:center;gap:7px;font-size:10px}
+.legend{display:flex;align-items:center;gap:7px;}
 .legend span{width:8px;height:8px;border-radius:50%;margin-left:9px}
-.teacher-dot{background:var(--purple)}
-.student-dot{background:#e84b56}
-.root-node{margin:auto;display:flex;align-items:center;border-radius:13px}
+
 .brand img, .root-node img{object-fit:contain}
 .root-node b,.root-node small{display:block}
-.root-node b{font-size:12px}
-.root-node small{color:var(--muted);margin-top:3px}
-.root-node>span{margin-left:auto;font-size:9px;font-weight:800;color:var(--purple);background:#eee8f7;padding:5px 7px;border-radius:6px}
-.teacher-grid{display:grid;align-items:start}
-.teacher-branch{position:relative;padding-top:0}
-.person-card{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);background:#fff}
-.teacher-card{background:#fcfaff}
+
+.teacher-grid{display:grid;}
+.teacher-branch{position:relative;}
+.person-card{display:flex;align-items:center;justify-content:space-between;}
+
 .person-main{display:flex;align-items:center;min-width:0}
 .avatar{display:grid;place-items:center;flex:none;background:#f0eafa;color:var(--purple)}
-.avatar svg{width:18px}
+
 .teacher-avatar{background:#eee8f8;color:var(--purple)}
 .student-avatar,.avatar.student{color:var(--red)}
 .person-info b,.person-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.person-info b{font-size:12px}
+
 .person-info small{color:var(--muted);margin-top:4px}
 .person-actions{display:flex;flex:none}
 .icon-btn {display:grid;place-items:center}
 .person-actions button:hover,.icon-btn:hover{color:var(--purple)}
 .person-actions svg,.icon-btn svg{height:15px}
 .person-actions .danger-icon:hover,.danger-icon:hover{color:var(--red)}
-.student-list{display:grid;border-left:1px solid #e6dfea}
-.student-card{padding:9px 10px}
-.empty-students{border:1px dashed #e7e1ec;text-align:center}
-.add-student{border:0;background:transparent;font-weight:800;display:flex;align-items:center;padding:5px}
+
+.empty-students{text-align:center}
+.add-student{font-weight:800;display:flex;align-items:center;}
 .add-student svg{width:14px}
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:40px 15px;text-align:center;font-size:12px}
 .empty-state>svg{width:30px;height:30px;color:var(--purple)}
-.empty-state b{color:var(--ink)}
+
 .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;font-size:11px}
 .search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);padding:0 10px;width:min(360px,100%);height:40px}
-.search svg{width:16px;color:#aaa2b5}
+.search svg{width:16px;}
 .search input{border:0;outline:0;width:100%;font-size:11px}
-.user-list{padding:0}
-.user-row{border-bottom:1px solid #f1eef4}
+
 .user-row:last-child{border:0}
 .user-row .person-info{flex:1}
-.role-tag{font-weight:800;color:var(--purple)}
-.role-tag.student{color:var(--red)}
-.chat-layout{overflow:hidden}
-.chat-list{padding:8px}
-.chat-item{color:var(--ink)}
+.role-tag{font-weight:800;}
+
 .chat-item.selected,.chat-item:hover{background:#f7f4fb}
-.chat-item b{font-size:11px}
-.chat-item small{font-size:10px;white-space:nowrap}
-.chat-item span{color:var(--purple)}
+
+.chat-item small{font-size:10px;}
+
 .person-info, .chat-detail{min-width:0}
-.chat-head{border-bottom:1px solid var(--line)}
+
 .chat-head b,.chat-head small{display:block}
-.chat-head b{font-size:12px}
-.chat-head small{margin-top:4px}
-.messages{align-content:start;overflow:auto}
-.message{border-radius:10px}
-.message.teacher{justify-self:end;background:#fff0f1}
-.message b{font-size:10px}
+
+.messages{align-content:start;}
+
+.message.teacher{justify-self:end;}
+
 .message b small{font-weight:500;color:var(--muted);margin-left:6px}
 .message p{font-size:11px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0}
 .main footer{padding:0 34px 25px;font-size:10px}
@@ -110,14 +98,14 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .alert-row button{border:0;background:none;color:inherit}
 .alert-row svg{width:15px}
 .overlay{position:fixed;inset:0;backdrop-filter:blur(5px);display:grid;place-items:center;padding:20px;z-index:5}
-.modal{width:min(440px,100%);padding:24px;box-shadow:0 25px 90px #21163145}
+.modal{width:min(440px,100%);padding:24px;}
 .modal-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px}
 .modal-head h2{font-size:19px;margin:6px 0 0}
 .modal-actions{display:flex;margin-top:4px}
 .hint{font-size:10px;line-height:1.5;margin:0}
 .invite-code{font:800 28px ui-monospace,monospace;letter-spacing:4px;text-align:center;border:1px dashed #cfc0e3;padding:18px;border-radius:12px;margin-bottom:13px}
-.toast{position:fixed;right:24px;bottom:24px;display:flex;align-items:center;gap:8px;padding:12px 16px;color:white;font-size:11px;z-index:8;box-shadow:0 10px 30px #21163135}
-.toast svg{width:16px;color:#e9a0a8}
+.toast{position:fixed;right:24px;bottom:24px;display:flex;align-items:center;gap:8px;padding:12px 16px;color:white;font-size:11px;z-index:8;}
+.toast svg{width:16px;}
 .spin{animation:spin 1s linear infinite}
 @keyframes spin{
 to{transform:rotate(360deg)}
@@ -126,7 +114,7 @@ to{transform:rotate(360deg)}
 .unassigned .section-head{margin-bottom:12px}
 .unassigned .section-head h2{font-size:14px}
 .unassigned-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:9px}
-.unassigned-grid .person-card{flex-wrap:wrap;border-color:#f2e5e7}
+.unassigned-grid .person-card{flex-wrap:wrap;}
 /* Readability and layout refinement */
 .sidebar { width: 280px; padding: 28px 20px;}
 .main { margin-left: 280px;}
@@ -140,9 +128,8 @@ to{transform:rotate(360deg)}
 .stack label { font-size: 13px;}
 .stack input, .stack select { height: 46px; font-size: 14px;}
 .topbar { padding: 0 40px;}
-.topbar > div { font-size: 14px;}
+.topbar > div, .section-head p{ font-size: 14px;}
 .content { max-width: 1680px; padding: 38px 42px;}
-.section-head p { font-size: 14px;}
 .btn { font-size: 13px; padding: 12px 16px;}
 .btn.small { font-size: 12px;}
 .eyebrow, .school-label { font-size: 11px; letter-spacing: 1.6px;}
@@ -151,23 +138,17 @@ to{transform:rotate(360deg)}
 .section-head { margin-bottom: 31px;}
 .section-head h2 { font-size: 20px;}
 .legend { font-size: 12px;}
-.root-node { width: 290px; padding: 16px; gap: 13px;}
-.root-node img { width: 55px; height: 55px;}
-.root-node b { font-size: 15px;}
-.root-node small { font-size: 12px;}
-.teacher-grid { grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 26px;}
-.person-card { padding: 16px; gap: 12px;}
-.teacher-card { min-height: 82px;}
+
+.teacher-grid {  gap: 26px;}
+
 .person-main { gap: 12px;}
 .avatar { width: 44px; height: 44px;}
 .avatar svg { width: 21px; height: 21px;}
 .person-info b { font-size: 14px;}
 .person-info small { font-size: 11px;}
 .person-actions svg, .icon-btn svg { width: 17px; height: 17px;}
-.student-list { gap: 9px; margin: 14px 0 0 27px; padding-left: 17px;}
-.student-card { padding: 13px 14px;}
-.empty-students { padding: 16px; font-size: 12px;}
-.add-student { margin: 13px 0 0 43px; font-size: 12px;}
+
+.empty-students, .add-student{  font-size: 12px;}
 .toolbar, .user-row .person-info b { font-size: 13px;}
 .user-row .person-info small, .role-tag { font-size: 11px;}
 .message b { font-size: 13px;}
@@ -195,7 +176,7 @@ to{transform:rotate(360deg)}
 .btn { background: #fff; color: var(--ink); border: 1px solid #e5deef; border-radius: 11px; transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease;}
 .btn:hover { transform: translateY(-1px); background: #faf7ff; border-color: #cdb9eb; box-shadow: 0 5px 16px rgba(87,62,153,.10);}
 .btn:active { transform: translateY(0);}
-.btn.primary { border-color: transparent;}
+
 .btn.primary:hover { background: linear-gradient(105deg, #493281, #6949aa); box-shadow: 0 8px 22px rgba(87,62,153,.30), 0 0 20px rgba(194,153,255,.24);}
 .btn.ghost { background: #f7f4fb;}
 .btn.outline { color: var(--purple); border-color: #d8c9ed; background: #faf7ff;}
@@ -203,18 +184,16 @@ to{transform:rotate(360deg)}
 .user-list, .chat-layout { background: #fff;}
 .graph-panel { border-radius: 20px;}
 .section-head h2 { color: var(--ink);}
-.legend { color: var(--muted);}
-.root-node { border: 1px solid #dfd1f3; border-radius: 15px; box-shadow: 0 0 20px rgba(194,153,255,.13);}
-.person-card { background: #fff; border-color: #e9e3f2; border-radius: 13px; transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;}
+.legend, .toolbar{ color: var(--muted);}
+
 .person-card:hover { border-color: #cdb9eb; transform: translateY(-1px);}
-.teacher-card { background: linear-gradient(115deg, #faf7ff, #fff); border-color: #dfd2f0; box-shadow: 0 0 0 1px rgba(194,153,255,.07);}
+
 .teacher-card:hover { box-shadow: 0 0 18px rgba(194,153,255,.23);}
-.student-card { background: linear-gradient(115deg, #fffaf0, #fff); border-color: #f0dfb9;}
+
 .student-card:hover { box-shadow: 0 0 16px rgba(228,161,47,.17);}
-.empty-students { border-color: #eee2c9; background: #fffcf5; color: #95866b; border-radius: 11px;}
+
 .unassigned { border-top-color: #eee2c9;}
-.unassigned-grid .person-card { background: #fffbf2; border-color: #f0dfb9;}
-.toolbar { color: var(--muted);}
+
 .search { background: #fff; border-color: #e5deef; border-radius: 11px;}
 .search:focus-within { border-color: #a98bd8; box-shadow: 0 0 0 3px rgba(118,84,189,.12), 0 0 14px rgba(194,153,255,.14);}
 .search svg { color: #998eaa;}
@@ -250,8 +229,7 @@ input:focus-visible, select:focus-visible { outline-offset: 2px;}
 .chat-media-download { display: inline-block; margin-top: 9px; color: var(--purple); font-weight: 650; overflow-wrap: anywhere;}
 .chat-media-status { display: block; margin-top: 8px; color: #8a6b3c;}
 /* Light decorative background for the school graph. No connector lines are drawn. */
-.graph-panel { background-color: #fff; background-image: radial-gradient(ellipse at 10% 0%, rgba(194, 153, 255, .19), transparent 38%), radial-gradient(ellipse at 100% 100%, rgba(231, 37, 48, .055), transparent 34%), radial-gradient(circle, rgba(118, 84, 189, .075) .8px, transparent 1px); background-size: auto, auto, 20px 20px;}
-.graph-panel .student-list { border-left: 0;}
+
 /* Graph polish: retain the light UknowApp palette, remove visual clutter. */
 .graph-panel { position: relative; overflow: hidden; padding: 27px; border: 1px solid #e8e0f2; background: radial-gradient(ellipse at 4% 2%, rgba(194, 153, 255, .22), transparent 34%), radial-gradient(ellipse at 96% 98%, rgba(255, 220, 176, .23), transparent 31%), radial-gradient(ellipse at 86% 0%, rgba(231, 37, 48, .045), transparent 25%), linear-gradient(145deg, #fff 0%, #fdfbff 54%, #fffdfa 100%); box-shadow: 0 12px 34px rgba(66, 45, 105, .055), inset 0 1px rgba(255,255,255,.95);}
 .graph-panel .section-head { align-items: center; margin-bottom: 23px;}
@@ -315,7 +293,7 @@ img, video, audio { max-width: 100%;}
 .chat-composer textarea:focus { border-color: #b6a3d7; box-shadow: 0 0 0 3px #59439a12;}
 .composer-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px;}
 .composer-footer small { color: var(--muted); font-size: 10px; line-height: 1.4;}
-.chat-list-tools { padding-bottom: 8px;}
+
 .chat-list-tools input, .chat-list-tools select { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); padding: 10px 11px; font-size: 12px; outline: none;}
 .chat-list-tools input:focus, .chat-list-tools select:focus { border-color: #b6a3d7; box-shadow: 0 0 0 3px #59439a12;}
 .chat-composer .composer-footer { display: grid;}
@@ -328,7 +306,7 @@ img, video, audio { max-width: 100%;}
 .message-time { display: block; font-weight: 500; margin-top: 3px;}
 .teacher-readonly-graph { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 24px;}
 .teacher-graph-root { max-width: 960px; margin: 20px auto;}
-.teacher-graph-card { display: flex; align-items: center; gap: 13px; min-width: 0; padding: 16px; border: 1px solid #ded2ef; background: linear-gradient(110deg,#f8f5fc,#fff); border-radius: 14px; box-shadow: 0 4px 14px rgba(41,34,63,.035);}
+.teacher-graph-card { display: flex; align-items: center; gap: 13px; min-width: 0; padding: 16px; border: 1px solid #ded2ef; background: linear-gradient(110deg,#f8f5fc,#fff); border-radius: 14px; }
 .teacher-graph-card .avatar { flex: 0 0 44px; width: 44px; height: 44px;}
 .teacher-graph-card b, .teacher-graph-card small { display: block;}
 .teacher-graph-card b { font-size: 14px;}
@@ -383,7 +361,7 @@ img, video, audio { max-width: 100%;}
 .sidebar-bottom { margin-top: auto;}
 .sidebar-bottom > .desktop-logout { display: flex;}
 .mobile-quick-actions { display: none;}
-.login-card { position: relative;}
+.login-card, .user-row, .user-actions{ position: relative;}
 .login-theme-toggle { position: absolute; top: 15px; right: 15px;}
 /* A calm, low-contrast dark palette. It is activated by the theme button and
    intentionally avoids pure black and highly saturated accent colours. */
@@ -436,15 +414,15 @@ img, video, audio { max-width: 100%;}
 /* Refined soft-dark surfaces for the school graph and user directory. */
 :root[data-theme="dark-soft"] .graph-panel { background-color: #1e2531 !important; background-image: radial-gradient(ellipse at 12% 0%, rgba(126, 109, 174, .11), transparent 38%), radial-gradient(ellipse at 100% 100%, rgba(121, 75, 87, .08), transparent 34%) !important; border: 1px solid #3a4659 !important; box-shadow: 0 10px 30px rgba(0, 0, 0, .2) !important;}
 :root[data-theme="dark-soft"] .graph-panel .legend { color: #d1d7e3 !important; background: #2a3342 !important; border: 1px solid #46536a !important; box-shadow: none !important;}
-:root[data-theme="dark-soft"] .graph-panel .root-node { background-image: none !important; border: 1px solid #49566d !important;}
+:root[data-theme="dark-soft"] .graph-panel .root-node {  border: 1px solid #49566d !important;}
 :root[data-theme="dark-soft"] .graph-panel .root-node:before { background: #9687c7 !important; opacity: .9;}
 :root[data-theme="dark-soft"] .graph-panel .root-node img { background: transparent !important; box-shadow: none !important; border-radius: 0 !important;}
 :root[data-theme="dark-soft"] .graph-panel .root-node b { color: #edf0f6 !important;}
 :root[data-theme="dark-soft"] .graph-panel .root-node small { color: #aab4c5 !important;}
-:root[data-theme="dark-soft"] .graph-panel .teacher-branch { background-image: none !important; border: 1px solid #3f4d61 !important; transform: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .teacher-branch {  border: 1px solid #3f4d61 !important; transform: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .teacher-branch:hover { transform: none !important;}
-:root[data-theme="dark-soft"] .graph-panel .teacher-card { background-image: none !important; border: 1px solid #4c4b69 !important; box-shadow: none !important;}
-:root[data-theme="dark-soft"] .graph-panel .student-card { background-image: none !important; border: 1px solid #4a5864 !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .teacher-card {  border: 1px solid #4c4b69 !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .student-card {  border: 1px solid #4a5864 !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .empty-students { background: #252e3a !important; border: 1px dashed #566176 !important; color: #aab4c5 !important;}
 :root[data-theme="dark-soft"] .graph-panel .add-student { background: #303448 !important; border: 1px solid #4b4c69 !important; color: #c7bdf0 !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .add-student:hover { background: #3b3a55 !important; border-color: #77729d !important;}
@@ -609,12 +587,10 @@ img, video, audio { max-width: 100%;}
 :root[data-theme="dark-soft"] .user-action-btn.user-delete:hover { color: #fff; background: #a94e60;}
 /* Compact participant details: opened from the info icon, not shown inline. */
 .user-list { overflow: visible;}
-.user-row { position: relative;}
 .user-row.is-info-open { z-index: 12;}
-.user-actions { position: relative;}
 .user-action-btn.connect-toggle { width: auto; min-width: 126px; height: 42px; flex: 0 0 auto; font-weight: 800;}
 .user-action-btn.connect-toggle svg { width: 17px; height: 17px;}
-.user-action-btn.connect-toggle.connect { border-color: #d9ccef;}
+
 .user-action-btn.connect-toggle.connect:hover:not(:disabled) { color: #503483;}
 .user-action-btn.connect-toggle.disconnect { color: #b85f6b; border-color: #efd1d6; background: #fff3f5;}
 .user-action-btn.connect-toggle.disconnect:hover { color: #a34654; border-color: #e3b2ba; background: #ffe9ec;}
@@ -765,30 +741,16 @@ html, body { overflow-x: clip;}
 .content { padding-inline: clamp(30px, 2.5vw, 42px);}
 }
 @media (max-width: 1024px) {
-.sidebar{width:210px}
-.main{margin-left:210px}
-.content{padding:25px}
-.sidebar{border-bottom:1px solid var(--line)}
-.brand{padding:0 4px 12px}
-.brand img{height:32px}
-.sidebar nav{gap:5px}
-.sidebar nav button{flex:1;font-size:10px}
+
+.sidebar nav button{flex:1;}
 .school-label, .sidebar nav button i{display:none}
-.main{margin:0}
-.topbar{padding:0 16px}
-.content{padding:20px 14px}
-.graph-panel{padding:14px}
+
 .section-head{align-items:flex-start;flex-direction:column}
-.user-row{flex-wrap:wrap}
+
 .user-row .person-info{min-width:calc(100% - 65px)}
 .role-tag{margin-left:45px}
 .teacher-grid, .chat-layout{grid-template-columns:1fr}
-.chat-list{overflow:auto}
-.main footer{padding:0 14px 18px}
-.login-card{padding:26px}
-.login-logo{height:90px}
-.main { margin-left: 230px;}
-.brand { padding-bottom: 14px;}
+
 .root-node { max-width: 100%;}
 .sidebar { top: 0; inset: auto; z-index: 30; display: block; width: 100%; height: auto; padding: 10px 12px 9px; border-right: 0; border-bottom: 1px solid var(--line); box-shadow: 0 5px 18px rgba(47,31,84,.07);}
 .brand { padding: 0 42px 9px 2px; font-size: 19px; gap: 8px;}
@@ -809,14 +771,13 @@ html, body { overflow-x: clip;}
 .topbar > .topbar-actions { display: none !important;}
 .main { margin: 0; width: 100%; min-width: 0;}
 /* Remove the empty profile strip between mobile navigation and the page workspace. */
-.shell:not(.chats-shell) > .main > .topbar { display: none;}
+.shell:not(.chats-shell) > .main > .topbar, .topbar > div span{ display: none;}
 .topbar > div { min-width: 0; gap: 5px; font-size: 11px;}
-.topbar > div span { display: none;}
 .content { width: 100%;}
 .graph-panel, .user-list, .chat-layout { width: 100%; border-radius: 15px;}
 .graph-panel { overflow: hidden;}
 .graph-panel .section-head { flex-direction: column; gap: 10px;}
-.graph-panel .legend { flex-wrap: wrap;}
+.graph-panel .legend, .modal-actions, .user-row{ flex-wrap: wrap;}
 .graph-panel .person-card { min-width: 0;}
 .graph-panel .person-main { min-width: 0; flex: 1;}
 .graph-panel .person-info { min-width: 0;}
@@ -843,7 +804,6 @@ html, body { overflow-x: clip;}
 .modal { width: 100%; max-width: 100%; max-height: calc(100dvh - 20px); overflow-y: auto; padding: 18px; border-radius: 18px;}
 .modal-head { gap: 10px;}
 .modal-head h2 { font-size: 20px; overflow-wrap: anywhere;}
-.modal-actions { flex-wrap: wrap;}
 .modal-actions .btn { flex: 1 1 120px;}
 .stack input, .stack select { width: 100%; min-width: 0;}
 .main footer { padding: 0 12px 16px;}
@@ -867,10 +827,9 @@ button:not(.primary):not(.disconnect):not(.danger-icon), .btn:not(.primary):not(
 .btn.outline:not(.primary):not(.disconnect):not(.danger-icon), button.add-student:not(.primary):not(.disconnect):not(.danger-icon) { background-color: #f1edf7 !important; color: var(--purple) !important;}
 button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { background-color: #eae4f4 !important; color: var(--purple) !important;}
 .topbar-user { display: none;}
-.composer-footer .btn { width: 100%;}
+.composer-footer .btn, .composer-send .btn{ width: 100%;}
 .chat-list-tools input, .chat-list-tools select { font-size: 11px; padding: 9px 7px;}
 .composer-footer, .composer-send{ align-items: stretch; flex-direction: column;}
-.composer-send .btn { width: 100%;}
 .teacher-graph-card { padding: 12px; gap: 9px;}
 .teacher-graph-card b { font-size: 12px; overflow-wrap: anywhere;}
 .teacher-graph-card .readonly-tag { font-size: 9px; padding: 5px 7px;}
@@ -900,13 +859,13 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .user-row:hover, .person-card:hover, .teacher-branch:hover { transform: none;}
 .graph-panel .person-actions button { flex-basis: 28px;}
 .chat-layout { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 12px; min-width: 0; padding: 0; overflow: visible; border: 0; border-radius: 0; background: transparent; box-shadow: none;}
-.chat-list { grid-template-columns: minmax(0, 1fr); align-content: start; width: 100%; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; touch-action: pan-y;}
+.chat-list { grid-template-columns: minmax(0, 1fr); align-content: start; width: 100%;   overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; touch-action: pan-y;}
 .chat-item { min-width: 0; width: 100%;}
 .chat-head { z-index: 1; background: inherit;}
 .chat-head > div:first-child { min-width: 0;}
 .chat-head-tools { justify-content: flex-end;}
 .messages { flex: 1 1 0; min-width: 0; min-height: 0; height: auto; max-height: none; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; padding: 12px; touch-action: pan-y;}
-.chat-composer { overflow-x: hidden; overflow-y: auto;}
+
 .chat-composer textarea { resize: none; box-sizing: border-box;}
 @media (max-height: 700px) {
 .chat-list { max-height: min(34dvh, 230px);}
@@ -952,9 +911,8 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .user-count { min-height: 42px; padding: 0 10px;}
 .user-add-btn { min-height: 44px; padding: 0 13px;}
 .user-row { min-height: 80px;}
-.user-actions { margin-left: auto;}
+
 .user-action-btn { width: 40px; height: 40px; flex-basis: 40px;}
-.user-row { flex-wrap: wrap;}
 .user-row > .user-person-info { flex: 1 1 calc(100% - 58px);}
 .user-actions { flex: 1 1 100%; justify-content: flex-end; margin: 2px 0 0; padding-top: 10px; border-top: 1px solid var(--line);}
 .user-sort { padding: 0 9px;}
@@ -969,7 +927,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .confirm-delete-modal .modal-actions .btn { flex: 1 1 0; min-width: 0;}
 .user-person-info > b { font-size: 15px;}
 .chat-layout { height: clamp(520px, calc(100dvh - 205px), 1000px); min-height: 0; grid-template-rows: clamp(150px, 27dvh, 245px) minmax(0, 1fr);}
-.chat-list { height: 100%; border-right: 0; border-bottom: 1px solid var(--line);}
+.chat-list { height: 100%;  }
 /* Match Users and Structure: remove the empty mobile profile row above chats. */
 .chats-content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding-bottom: 14px;}
 .chats-content > .chat-layout { flex: 1 1 auto;}
@@ -983,7 +941,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .sidebar nav { grid-template-columns: repeat(3, minmax(0, 1fr));}
 .sidebar nav button { min-width: 0; padding-inline: 2px; white-space: normal; overflow-wrap: anywhere;}
 .content, .topbar, .graph-panel, .user-list, .chat-layout, .chat-detail, .chat-list, .modal { min-width: 0; max-width: 100%;}
-.section-head h2, .user-row, .message, .chat-head, .chat-item { overflow-wrap: anywhere;}
+.section-head h2, .user-row, .message, .chat-head, .chat-item, .overlay > .modal{ overflow-wrap: anywhere;}
 .person-card, .user-row, .composer-footer { min-width: 0;}
 .chat-head-tools { flex-wrap: wrap;}
 .toast { right: 10px; bottom: 10px; left: 10px; max-width: calc(100% - 20px); justify-content: center; text-align: center;}
@@ -995,7 +953,6 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .sidebar-bottom .logout svg { min-width: 19px; min-height: 19px; stroke-width: 2; width: 19px; height: 19px;}
 .graph-panel .graph-legend-row { display: flex; justify-content: space-between; flex-wrap: wrap;}
 .overlay { place-items: center;}
-.overlay > .modal { overflow-wrap: anywhere;}
 .modal *, .modal *::before, .modal *::after { box-sizing: border-box; min-width: 0;}
 .modal .stack, .modal .stack label, .modal .stack input, .modal .stack select, .modal .stack textarea { width: 100%; max-width: 100%;}
 .modal .modal-head { gap: 10px;}
@@ -1004,7 +961,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .modal .modal-actions > .btn { min-width: 0; max-width: 100%;}
 .modal .invite-code { max-width: 100%; font-size: clamp(20px, 7vw, 28px); letter-spacing: clamp(2px, 1vw, 4px); overflow-wrap: anywhere;}
 .graph-panel .graph-legend-row .legend { font-size: 9px; gap: 3px;}
-.graph-panel .graph-add-participant { padding-inline: 5px;}
+
 .overlay:has(.create-participant-modal) { display: flex; align-items: flex-start; justify-content: center; padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain;}
 .overlay > .create-participant-modal { flex: 0 1 auto; width: min(100%, 420px); max-width: 420px; max-height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom))); min-height: 0; margin: auto 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;}
 .create-participant-modal .modal-head { gap: 8px;}
@@ -1012,8 +969,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .create-participant-modal .stack label { gap: 5px; font-size: 12px;}
 .create-participant-modal .stack input, .create-participant-modal .stack select { height: 42px; min-height: 42px; font-size: 16px;}
 .create-participant-modal .modal-actions, .create-participant-modal .stack > .btn { min-height: 42px;}
-.graph-panel .graph-legend-row > .graph-legend { padding-inline: 4px;}
-.graph-panel .graph-legend .graph-legend-item b { padding-inline: 3px;}
+
 /* Fluid sizing replaces the former 360/380/420/520px micro-breakpoints. */
 .sidebar nav button { font-size: clamp(9px, 2.8vw, 11px); gap: clamp(3px, 1vw, 6px);}
 .content { padding-inline: clamp(8px, 2vw, 15px);}
@@ -1073,10 +1029,9 @@ button, .btn, .logout, .add-student, .chat-item, .composer-send, .user-action-bt
 .btn.primary, .composer-send { border-color: transparent; border-radius: var(--ui-radius-sm); box-shadow: 0 4px 13px rgba(87, 62, 153, .18);}
 .user-action-btn.danger { border-color: #f0d5d9; background: #fff0f1; color: #b82c3b;}
 .btn.danger:hover, .btn.disconnect:hover, .user-action-btn.danger:hover, .user-action-btn.disconnect:hover { background: #ffe5e8; border-color: #eebfc6; color: #a92332;}
-.sidebar nav button { border-radius: var(--ui-radius-md);}
+.sidebar nav button, .chat-item{ border-radius: var(--ui-radius-md);}
 .sidebar nav button:not(.active) { border: 1px solid transparent;}
 .sidebar nav button:not(.active):hover { background: var(--ui-control-hover); border-color: var(--ui-border);}
-.chat-item { border-radius: var(--ui-radius-md);}
 .chat-item.selected { border-color: var(--ui-border-strong); box-shadow: inset 3px 0 0 var(--purple);}
 /* Inputs, search, filters, and composer use matching borders and focus states. */
 .stack input, .stack select, .stack textarea, .search, .search input, .user-sort, .user-sort select, .chat-search-control, .chat-search-control input, .chat-head-tools select, .chat-composer textarea, input, select, textarea { border-radius: var(--ui-radius-sm);}
@@ -1108,7 +1063,7 @@ input::placeholder, textarea::placeholder { color: #a49daf;}
 :root[data-theme="dark-soft"] .btn:not(.primary):hover { background: var(--ui-control-hover) !important; border-color: var(--ui-border-strong) !important;}
 :root[data-theme="dark-soft"] .stack input, :root[data-theme="dark-soft"] .stack select, :root[data-theme="dark-soft"] .stack textarea, :root[data-theme="dark-soft"] .search, :root[data-theme="dark-soft"] .user-sort, :root[data-theme="dark-soft"] .chat-head-tools select, :root[data-theme="dark-soft"] .chat-composer textarea { background: #202a38 !important; border-color: #414c60 !important; color: #e0e5ee !important;}
 :root[data-theme="dark-soft"] .chat-item { border-color: transparent;}
-:root[data-theme="dark-soft"] .chat-item.selected { background: #343449 !important; border-color: #514b6d !important; color: #d1c9f4 !important;}
+
 :root[data-theme="dark-soft"] .user-action-btn.danger { background: #432d39 !important; border-color: #69404c !important; color: #f0aab3 !important;}
 :root[data-theme="dark-soft"] .modal { border-color: #39465a; box-shadow: 0 22px 70px rgba(0, 0, 0, .32);}
 :root[data-theme="dark-soft"] .user-row { border-bottom-color: #303b4c;}
@@ -1133,8 +1088,8 @@ input::placeholder, textarea::placeholder { color: #a49daf;}
 .user-toolbar > .user-sort { grid-column: 1;}
 .user-toolbar > .user-count { grid-column: 2; justify-self: end;}
 .user-toolbar > .user-add-btn { grid-column: 1 / -1; justify-self: end;}
-.user-row { gap: 8px 12px; padding-inline: clamp(10px, 1.6vw, 18px);}
-.user-row > .avatar { flex-basis: 44px;}
+.user-row { gap: 8px 12px; }
+
 }
 /* Mobile: two compact columns for filter/count, with a full-width add action. */
 @media (max-width: 1024px) {
@@ -1185,7 +1140,7 @@ button:disabled, .btn:disabled { opacity: .48 !important; cursor: not-allowed !i
 .toolbar.user-toolbar > * { min-width: 0; max-width: 100%; box-sizing: border-box;}
 .toolbar.user-toolbar > .search { width: 100%; min-width: 0; max-width: none; flex: none;}
 .toolbar.user-toolbar > .search input { width: 100%; min-width: 0;}
-.toolbar.user-toolbar > .user-sort { gap: 7px; width: 100%; min-width: 0; max-width: 100%; overflow: hidden; padding-inline: 9px; box-sizing: border-box;}
+.toolbar.user-toolbar > .user-sort { gap: 7px; width: 100%; min-width: 0; max-width: 100%; overflow: hidden;  box-sizing: border-box;}
 .toolbar.user-toolbar > .user-sort select { display: block; flex: 1 1 0; width: 0; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
 .toolbar.user-toolbar > .user-count { min-width: 0; max-width: 100%; overflow-wrap: normal;}
 .toolbar.user-toolbar > .user-add-btn { width: auto; min-width: 0; max-width: 100%; line-height: 1.2;}
@@ -1207,7 +1162,7 @@ button:disabled, .btn:disabled { opacity: .48 !important; cursor: not-allowed !i
 .person-actions, .user-actions, .unassigned-student-actions, .modal-actions, .chat-filter-segment, .composer-tools, .composer-send { display: flex; align-items: center; gap: 6px;}
 .icon-btn, .user-action-btn { flex: 0 0 auto;}
 .person-actions button { width: 32px; height: 32px; border-radius: 9px;}
-.add-student { min-height: 32px; margin-top: 8px; padding: 5px 9px; gap: 6px; border-radius: 8px;}
+.add-student { min-height: 32px;   gap: 6px; }
 .unassigned-student-actions { flex-wrap: wrap; justify-content: flex-end; gap: 7px;}
 .unassigned-student-actions .person-actions { gap: 5px;}
 .unassigned-student-actions > .btn { min-height: 32px; padding: 6px 10px;}
@@ -1232,15 +1187,14 @@ button:disabled, .btn:disabled { opacity: .48 !important; cursor: not-allowed !i
 }
 @media (max-width: 1024px) {
 .graph-add-participant { min-height: 36px; padding: 7px 10px;}
-.person-actions { gap: 6px;}
+.person-actions, .modal-actions{ gap: 6px;}
 .user-actions { flex-wrap: wrap; gap: 6px;}
 .person-actions button, .user-action-btn:not(.connect-toggle){ width: 36px; height: 36px;}
 .user-action-btn.connect-toggle { min-height: 36px; min-width: 0; padding: 7px 9px;}
-.chat-filter-segment button { padding-inline: 6px;}
+
 .composer-send { width: 100%;}
 .composer-send > small { flex: 1 1 150px;}
 .composer-send > .btn { flex: 0 0 auto;}
-.modal-actions { gap: 6px;}
 }
 @media (max-width: 480px) {
 .unassigned-student-actions { width: 100%; justify-content: flex-start;}
@@ -1337,7 +1291,7 @@ button:focus-visible, .btn:focus-visible { outline: 2px solid #aa95d0 !important
 .chats-content > .chat-layout { flex: 1 1 auto; min-height: 0; height: auto; max-height: none;}
 @media (max-width: 1024px) {
 .chats-main > .content { padding: 12px clamp(9px, 3vw, 14px) 14px;}
-.chats-main > .content.chats-content { padding-bottom: 14px;}
+
 /* Touch-first viewport and dialog behavior for tablet and mobile layouts. */
 html, body, #root { min-height: 100%; height: 100%; overflow: hidden;}
 .chats-shell { display: flex; flex-direction: column; width: 100%; overflow: hidden; overscroll-behavior: none;}
@@ -1350,7 +1304,7 @@ html, body, #root { min-height: 100%; height: 100%; overflow: hidden;}
 .overlay > .modal .stack { min-width: 0;}
 .overlay > .modal .stack label, .overlay > .modal .stack input, .overlay > .modal .stack select { min-width: 0; max-width: 100%;}
 .chats-shell > .sidebar { position: relative; top: auto; flex: 0 0 auto;}
-.chats-main > .content:not(.chats-content) { padding-bottom: max(16px, env(safe-area-inset-bottom));}
+
 .overlay { align-items: flex-start; padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));}
 .overlay > .modal { width: 100%; max-width: 480px; max-height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom))); margin: auto 0; padding: 14px; border-radius: 16px;}
 .overlay > .modal .modal-head { gap: 8px; margin-bottom: 12px;}
@@ -1367,9 +1321,8 @@ html, body, #root { min-height: 100%; height: 100%; overflow: hidden;}
 .chat-list-tools { position: relative; top: auto;}
 .chat-filter-segment { width: 100%;}
 .chat-filter-segment button { flex: 1 1 0;}
-.chat-items-scroll { min-width: 0;}
+.chat-items-scroll, .chat-item-heading{ min-width: 0;}
 .chat-item { flex: 0 0 auto; min-height: 54px; padding: 8px 10px; gap: 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface, #fff);}
-.chat-item-heading { min-width: 0;}
 .chat-item-participants { overflow: hidden; text-overflow: ellipsis;}
 .chat-detail { display: flex; flex-direction: column; width: 100%; min-width: 0; max-height: none; overflow: hidden; border: 1px solid var(--line); border-radius: 13px; background: var(--surface, #fff); box-shadow: 0 3px 12px rgba(41, 34, 63, .04);}
 .chat-head { position: relative; top: auto; min-width: 0;}
@@ -1527,13 +1480,11 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 @media (max-width: 1024px) {
 .chats-content > .chat-layout { grid-template-rows: clamp(104px, 17dvh, 148px) minmax(0, 1fr); gap: 7px;}
 .chat-list { gap: 4px; padding: 7px;}
-.chat-list-tools { padding-bottom: 5px;}
-.chat-items-scroll { padding-top: 3px;}
-.chat-item-heading { gap: 5px;}
+
+.chat-item-heading, .chat-composer .composer-tools{ gap: 5px;}
 .chat-item-meta { line-height: 1.2;}
 .chat-detail { min-height: 0; height: 100%;}
 .chat-head b { font-size: 13px;}
-.chat-composer .composer-tools { gap: 5px;}
 .chat-composer .attach-control { width: fit-content;}
 .chat-composer .selected-file { min-width: 0;}
 .chat-composer .composer-send { justify-content: center;}
@@ -1713,10 +1664,10 @@ body, .chats-shell, .chats-main { background: var(--canvas);}
 .teacher-card .avatar, .teacher-readonly-graph .teacher-graph-card:not(.student) .avatar, .avatar.teacher, .teacher-avatar { background: var(--role-teacher-soft) !important; color: var(--role-teacher) !important;}
 .student-card, .unassigned-grid .student-card, .teacher-readonly-graph .teacher-graph-card.student { background: linear-gradient(112deg, var(--role-student-soft), color-mix(in srgb, var(--surface) 76%, var(--role-student-soft))) !important; border-color: var(--role-student-border) !important;}
 .student-card .avatar, .avatar.student, .student-avatar, .teacher-readonly-graph .teacher-graph-card.student .avatar { background: var(--role-student-soft) !important; color: var(--role-student) !important;}
-.root-node { background: linear-gradient(112deg, var(--role-admin-soft), color-mix(in srgb, var(--surface) 76%, var(--role-admin-soft))) !important; border-color: var(--role-admin-border) !important;}
+
 .teacher-dot { background: var(--role-teacher) !important; box-shadow: 0 0 8px color-mix(in srgb, var(--role-teacher) 35%, transparent) !important;}
 .student-dot { background: var(--role-student) !important; box-shadow: 0 0 8px color-mix(in srgb, var(--role-student) 35%, transparent) !important;}
-.student-list { border-left-color: var(--role-student-border) !important;}
+
 .add-student { color: var(--role-student) !important;}
 .add-student:hover { background: var(--role-student-soft) !important;}
 .teacher-card:hover { border-color: var(--role-teacher) !important;}
@@ -1732,7 +1683,7 @@ body, .chats-shell, .chats-main { background: var(--canvas);}
 :root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item, :root:not([data-theme="dark-soft"]) .search, :root:not([data-theme="dark-soft"]) .chat-search-control, :root:not([data-theme="dark-soft"]) .stack input, :root:not([data-theme="dark-soft"]) .stack select, :root:not([data-theme="dark-soft"]) .chat-composer textarea { background-color: #fdfcff;}
 /* Graph surfaces: warm the remaining near-white islands in the light theme. */
 :root:not([data-theme="dark-soft"]) .graph-panel .graph-legend-row > .graph-legend { border: 1px solid #e4deec; border-radius: 12px;}
-:root:not([data-theme="dark-soft"]) .graph-panel .empty-students { background: #f5f2f8; border-color: #e5dfeb;}
+
 :root:not([data-theme="dark-soft"]) .graph-panel .teacher-branch { border: 1px solid #e7e1ed; border-radius: 16px; padding: 12px;}
 /* Dark graph cards must retain the same role hues as dark chat bubbles.
    More specific selectors override the generic dark card surface rule above. */
@@ -1750,7 +1701,7 @@ body, .chats-shell, .chats-main { background: var(--canvas);}
 :root:not([data-theme="dark-soft"]) body, :root:not([data-theme="dark-soft"]) .chats-shell, :root:not([data-theme="dark-soft"]) .chats-main { background: #f2eff7 !important;}
 :root:not([data-theme="dark-soft"]) .sidebar, :root:not([data-theme="dark-soft"]) .topbar, :root:not([data-theme="dark-soft"]) .graph-panel, :root:not([data-theme="dark-soft"]) .user-list > .user-row, :root:not([data-theme="dark-soft"]) .chat-layout, :root:not([data-theme="dark-soft"]) .chat-list, :root:not([data-theme="dark-soft"]) .chat-detail, :root:not([data-theme="dark-soft"]) .modal, :root:not([data-theme="dark-soft"]) .login-card, :root:not([data-theme="dark-soft"]) .user-info-popover, :root:not([data-theme="dark-soft"]) .credential-modal { background-color: #faf8fd !important;}
 /* Chat list and conversation canvas: no isolated white or cold-grey blocks. */
-:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item { border-color: #e9e1f1 !important;}
+
 :root:not([data-theme="dark-soft"]) .chat-detail .message:not(.student):not(.teacher):not(.admin) { background: #eee9f5 !important; border-color: #dfd6e9 !important;}
 :root:not([data-theme="dark-soft"]) .chat-composer { background: #f8f5fb !important; border-color: #e7dfef !important;}
 :root:not([data-theme="dark-soft"]) .chat-composer textarea, :root:not([data-theme="dark-soft"]) .search, :root:not([data-theme="dark-soft"]) .chat-search-control, :root:not([data-theme="dark-soft"]) .stack input, :root:not([data-theme="dark-soft"]) .stack select { background: #fdfbff !important; border-color: #e6deed !important;}
