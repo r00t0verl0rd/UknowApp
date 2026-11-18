@@ -730,12 +730,11 @@ export default function App() {
         <label>Telegram ID <input type="text" inputMode="numeric" pattern="[0-9]*" value={telegramId} onChange={e => setTelegramId(e.target.value)} placeholder="Не подключён"/></label>
         {role === "teacher" && <>
           <label>Логин веб-панели<input value={teacherLogin || name} onChange={e => setTeacherLogin(e.target.value)} minLength="2" maxLength="160" required autoComplete="off" /></label>
-          <p className="hint">По умолчанию логин совпадает с именем учителя. Для веб-панели используется этот логин и общий код доступа; в Telegram отправляется только код.</p>
           {modal.mode === "create" || users.find(u => u.id === modal.id)?.role !== "teacher"
-            ? <div className="password-info"><RefreshCw size={16}/><span>При сохранении автоматически создадим единый код вида <b>XXXX-XXXX</b> для входа в веб-панель и подключения Telegram.</span></div>
+            ? <p className="password-info">Код доступа создастся автоматически — один для веб-панели и Telegram.</p>
             : <div className="password-actions">
-                <div className="password-info"><RefreshCw size={16}/><span>Один и тот же код используется для веб-панели и Telegram. Новый код сразу заменит старый в обоих местах.</span></div>
-                <button type="button" className="btn outline" onClick={regenerateTeacherAccessCode} disabled={savingUser}><RefreshCw size={15}/>Сгенерировать новый код</button>
+                <span className="password-info">Единый код для веб-панели и Telegram</span>
+                <button type="button" className="btn outline" onClick={regenerateTeacherAccessCode} disabled={savingUser} title="Старый код сразу перестанет действовать"><RefreshCw size={15}/>Обновить код</button>
               </div>}
         </>}
         {modal.mode === "edit" && role !== users.find(u => u.id === modal.id)?.role && <p className="hint">При смене роли активные назначения будут закрыты. История переписок сохранится.</p>}
