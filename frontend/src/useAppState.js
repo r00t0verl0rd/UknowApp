@@ -46,7 +46,7 @@ export function useUserEditorState() {
   const [issuedCredential, setIssuedCredential] = useState(null);
   const [savingUser, setSavingUser] = useState(false);
   const [name, setName] = useState("");
-  const [panelLogin, setTeacherLogin] = useState("");
+  const [panelLogin, setPanelLogin] = useState("");
   const [role, setRole] = useState("teacher");
   const [telegramId, setTelegramId] = useState("");
   const [teacherId, setTeacherId] = useState("");
@@ -54,7 +54,7 @@ export function useUserEditorState() {
   const [code, setCode] = useState(null);
   return {
     issuedCredential, setIssuedCredential, savingUser, setSavingUser,
-    name, setName, panelLogin, setTeacherLogin, role, setRole,
+    name, setName, panelLogin, setPanelLogin, role, setRole,
     telegramId, setTelegramId, teacherId, setTeacherId, studentId, setStudentId, code, setCode,
   };
 }
