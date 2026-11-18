@@ -440,24 +440,9 @@ async def _update_teacher_panel_locked(
     old_chat_id = panel.chat_id if panel else None
     old_message_id = panel.message_id if panel else None
 
-    # Explicitly clear the previous chat-level keyboard on /start and /menu.
-    # A fresh ReplyKeyboardMarkup is then sent, so Telegram clients cannot keep
-    # rendering cached buttons from an earlier version of the bot.
-    reset_message = None
-    if force_keyboard_refresh:
-        try:
-            reset_message = await bot.send_message(
-                chat_id=teacher.telegram_id,
-                text="Обновляю список учеников…",
-                reply_markup=ReplyKeyboardRemove(),
-            )
-        except Exception as exc:
-            logger.warning(
-                "Could not remove the previous teacher keyboard (teacher_id=%s error_type=%s)",
-                teacher.id,
-                type(exc).__name__,
-            )
-
+    # Sending the new markup directly replaces the chat-level reply keyboard.
+    # Do not remove it in a separate message: some Telegram clients defer the
+    # placeholder redraw until the next user message after a remove/restore pair.
     sent = await bot.send_message(
         chat_id=teacher.telegram_id,
         text=text,
@@ -481,15 +466,6 @@ async def _update_teacher_panel_locked(
             page_index=page,
         ))
     db.commit()
-
-    if reset_message:
-        try:
-            await bot.delete_message(
-                chat_id=teacher.telegram_id,
-                message_id=reset_message.message_id,
-            )
-        except Exception:
-            logger.debug("Could not remove temporary keyboard refresh notice")
 
     if old_chat_id and old_message_id and old_message_id != sent.message_id:
         # Old panel versions used InlineKeyboardMarkup. Remove those buttons
