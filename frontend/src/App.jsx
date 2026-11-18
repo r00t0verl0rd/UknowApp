@@ -701,7 +701,7 @@ export default function App() {
         </>}
 
         {page === "chats" && <>
-          <div className={"chat-layout" + (selectedChat ? " chat-layout-conversation-open" : " chat-layout-list-open")}><div className="chat-list">{profile?.role !== "student" && <div className="chat-list-tools">
+          <div className={"chat-layout" + (selectedChat ? " chat-layout-conversation-open" : " chat-layout-list-open")}><div className="chat-list">{profile?.role !== "student" && <>
               <div className="chat-search-control">
                 <Search size={17}/>
                 <input aria-label="Поиск по имени" placeholder="Поиск по имени" value={chatSearch} onChange={e => setChatSearch(e.target.value)}/>
@@ -715,8 +715,7 @@ export default function App() {
                   <Check size={14}/>Непрочитанные
                 </button>
               </div>}
-              
-            </div>}
+            </>}
             <div className="chat-items-scroll">{visibleChats.map(chat => {
               const unreadCount = Number(chat.unread_count) || 0;
               return <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected " : "") + (unreadCount > 0 ? "has-unread" : "")} onClick={() => openChat(chat)}>
