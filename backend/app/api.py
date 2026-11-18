@@ -123,13 +123,11 @@ def conversation_dicts(
     if viewer_role == "student":
         unread_condition = and_(
             Message.sender_role.in_(("teacher", "admin")),
-            Message.delivery_status == "delivered",
             func.json_extract(Message.metadata_json, "$.student_read_at").is_(None),
         )
     elif viewer_role == "admin":
         unread_condition = and_(
             Message.sender_role.in_(("teacher", "student")),
-            Message.delivery_status == "delivered",
             or_(
                 func.json_extract(Message.metadata_json, "$.teacher_read_at").is_(None),
                 func.json_extract(Message.metadata_json, "$.student_read_at").is_(None),
@@ -138,7 +136,6 @@ def conversation_dicts(
     else:
         unread_condition = and_(
             Message.sender_role.in_(("student", "admin")),
-            Message.delivery_status == "delivered",
             func.json_extract(Message.metadata_json, "$.teacher_read_at").is_(None),
         )
     statistics = db.execute(
