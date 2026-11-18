@@ -2,7 +2,6 @@ import { useCallback, useEffect, useLayoutEffect, useMemo } from "react";
 import { useAuthState, useChatState, useDirectoryState, useGraphState, useUiState, useUserActionState, useUserEditorState } from "./useAppState.js";
 import Activity from "lucide-react/dist/esm/icons/activity.js";
 import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left.js";
-import ArrowUpDown from "lucide-react/dist/esm/icons/arrow-up-down.js";
 import Check from "lucide-react/dist/esm/icons/check.js";
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right.js";
 import GraduationCap from "lucide-react/dist/esm/icons/graduation-cap.js";
@@ -666,7 +665,7 @@ export default function App() {
         {page === "users" && <>
           <div className="toolbar user-toolbar">
             <div className="search"><Search/><input placeholder="Поиск по имени" value={search} onChange={e => setSearch(e.target.value)}/></div>
-            <label className="user-sort"><ArrowUpDown size={15}/><select aria-label="Сортировка пользователей" value={userSort} onChange={e => setUserSort(e.target.value)}>
+            <label className="user-sort"><select aria-label="Сортировка пользователей" value={userSort} onChange={e => setUserSort(e.target.value)}>
               <option value="name-asc">По имени</option><option value="name-desc">Имя: Я — А</option><option value="teachers">Сначала учителя</option><option value="students">Сначала ученики</option><option value="active">Сначала активные</option><option value="inactive">Сначала отключённые</option>
             </select></label>
             <span className="user-count">Количество пользователей: <b>{visibleUsers.length}</b></span>
