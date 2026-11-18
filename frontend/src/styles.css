@@ -1676,7 +1676,7 @@ body, .chats-shell, .chats-main { background: var(--canvas);}
 :root:not([data-theme="dark-soft"]) .chat-composer { background: #f8f5fb !important; border-color: #e7dfef !important;}
 :root:not([data-theme="dark-soft"]) .chat-composer textarea, :root:not([data-theme="dark-soft"]) .search, :root:not([data-theme="dark-soft"]) .chat-search-control, :root:not([data-theme="dark-soft"]) .stack input, :root:not([data-theme="dark-soft"]) .stack select { background: #fdfbff !important; border-color: #e6deed !important;}
 /* Graph panels and their nested islands use the same soft surface hierarchy. */
-:root:not([data-theme="dark-soft"]) .graph-panel { background: #faf8fd !important; border-color: #e7dfef !important;}
+:root:not([data-theme="dark-soft"]) .graph-panel { background-color: #faf8fd !important; background-image: radial-gradient(ellipse 78% 92% at 2% 0%, rgba(194, 153, 255, .13) 0%, rgba(194, 153, 255, .065) 38%, transparent 76%), radial-gradient(ellipse 76% 88% at 100% 100%, rgba(255, 220, 176, .12) 0%, rgba(255, 220, 176, .055) 42%, transparent 78%), linear-gradient(135deg, #faf8fd 0%, #f8f5fb 52%, #fbf8f6 100%) !important; border-color: #e7dfef !important;}
 :root:not([data-theme="dark-soft"]) .graph-panel .graph-legend-row > .graph-legend { background: #f0eaf7 !important; border-color: #e2d8ed !important;}
 :root:not([data-theme="dark-soft"]) .graph-panel .empty-students { background: #f4eff9 !important; border-color: #e4daef !important;}
 /* Inputs, secondary tiles and hover states follow the same tinted hierarchy. */
