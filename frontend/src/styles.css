@@ -348,6 +348,7 @@ img, video, audio { max-width: 100%;}
 /* Desktop actions stay in the sidebar footer / top bar. */
 .sidebar-bottom { margin-top: auto;}
 .sidebar-bottom > .desktop-logout { display: flex;}
+.sidebar-bottom > .desktop-admin-extra { display: none;}
 .mobile-quick-actions { display: none;}
 .login-card, .user-row, .user-actions{ position: relative;}
 .login-theme-toggle { position: absolute; top: 15px; right: 15px;}
@@ -680,6 +681,7 @@ html, body { overflow-x: clip;}
 /* Prevent graph counter badges from escaping their compact column on phones. */
 /* Two main layout modes: mobile through 1024px, desktop from 1025px. */
 @media (min-width: 1025px) {
+.sidebar-bottom > .desktop-admin-extra { display: flex;}
 .chat-layout {  overflow: hidden;}
 .chat-detail {   min-width: 0;}
 .chat-head { position: relative; top: auto;}
