@@ -1129,7 +1129,7 @@ async def send_panel_message(
                 # The student already knows this is the teacher's private chat.
                 # Deliver teacher text naturally; only label a separate admin role.
                 outgoing_text = (
-                    body if principal["role"] == "teacher"
+                    body if principal["role"] in {"teacher", "student"}
                     else "Сообщение от администратора школы:\n" + body
                 )
                 sent = await bot.send_message(**target, text=outgoing_text)
