@@ -627,7 +627,7 @@ export default function App() {
               <div className="teacher-graph-student-grid">
                 {(teacherGraph?.students || []).map(student => <div className="teacher-graph-card student" key={student.id}>
                   <div className="avatar student-avatar"><Smile/></div>
-                  <div><b>{student.full_name}</b><small>Ученик</small>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div>
+                  <div><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div>
                 </div>)}
               </div>
               {!(teacherGraph?.students || []).length && <div className="empty-state">Пока нет назначенных учеников</div>}
@@ -659,7 +659,7 @@ export default function App() {
                 {!studentsCollapsed && <button className="add-student" onClick={() => { setTeacherId(String(teacher.id)); setStudentId(activeStudents[0]?.id ? String(activeStudents[0].id) : ""); setModal({ mode: "assign" }); }}><Plus/>Назначить ученика</button>}
                 {!studentsCollapsed && <div className="student-list">
                   {students.map(student => <div className="person-card student-card" key={student.id}>
-                    <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
+                    <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
                     <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button>
                   </div>)}
                   {!students.length && <div className="empty-students">Нет назначенных учеников</div>}
@@ -669,7 +669,7 @@ export default function App() {
             </div>
             {!activeTeachers.length && <div className="empty-state"><GraduationCap/><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span></div>}
             {!!unassignedStudents.length && <section className="unassigned"><h2 className="unassigned-title">Ученики без назначения</h2><div className="unassigned-grid">{unassignedStudents.map(student => <div className="person-card student-card unassigned-student-card" key={student.id}>
-              <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b><small>Ученик</small>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
+              <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
               <div className="unassigned-student-actions">
                 <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button>
                 <button className="btn small outline" disabled={!activeTeachers.length} onClick={() => { setStudentId(String(student.id)); setTeacherId(String(activeTeachers[0]?.id || "")); setModal({ mode: "assign" }); }}>Назначить</button>
