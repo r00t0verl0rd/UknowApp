@@ -589,7 +589,7 @@ export default function App() {
 
     <main className="main chats-main">
       <header className="topbar">
-        <div className="topbar-context"><small className="topbar-user">{profile?.full_name}</small></div>
+        <small className="topbar-user">{profile?.full_name}</small>
         <div className="topbar-actions">
           <button type="button" className="theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
             {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
@@ -673,9 +673,7 @@ export default function App() {
           </div>
           <div className="user-list">{visibleUsers.map(user => <div className={"user-row" + (userInfo === user.id ? " is-info-open" : "")} key={user.id}>
             <div className={"avatar " + user.role}>{user.role === "teacher" ? <GraduationCap/> : user.role === "student" ? <Smile/> : <Users/>}</div>
-            <div className="person-info user-person-info">
-              <b>{user.full_name}</b>
-            </div>
+            <b className="person-info user-person-info">{user.full_name}</b>
             <div className="user-actions">
               {user.telegram_id
                 ? <button className="user-action-btn connect-toggle disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram" aria-label="Отключить Telegram"><Unlink/><span>Отключить</span></button>
@@ -744,7 +742,7 @@ export default function App() {
                     <label className="attach-control"><Paperclip size={16}/> Прикрепить файл<input type="file" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" onChange={e => setAttachment(e.target.files?.[0] || null)}/></label>
                     {attachment && <span className="selected-file">{attachment.name}<button type="button" onClick={() => setAttachment(null)} aria-label="Убрать файл"><X size={14}/></button></span>}
                   </div>
-                  <div className="composer-send"><button className="btn primary" disabled={!draft.trim() && !attachment}>Отправить <ChevronRight size={16}/></button></div>
+                  <button className="btn primary composer-send" disabled={!draft.trim() && !attachment}>Отправить <ChevronRight size={16}/></button>
                 </div>
               </form>}
             </> : <div className="empty-state">{profile?.role === "student" ? "Ваша переписка с учителем появится здесь" : "Выберите ученика слева"}</div>}</div>
@@ -778,9 +776,7 @@ export default function App() {
           {modal.mode === "create" && <p className="password-info">Код доступа создастся автоматически — один для веб-панели и Telegram.</p>}
         </>}
         {modal.mode === "edit" && role !== users.find(u => u.id === modal.id)?.role && <p className="hint">При смене роли активные назначения будут закрыты. История переписок сохранится.</p>}
-        <div className="edit-modal-footer">
-          <div className="modal-actions"><button className="btn primary" disabled={savingUser}>{savingUser ? "Сохраняем…" : <><Check/>Сохранить</>}</button>{modal.mode === "edit" && <button type="button" className="user-action-btn danger-icon user-delete" onClick={() => removeUser(users.find(u => u.id === modal.id))} disabled={savingUser} title="Удалить пользователя" aria-label="Удалить пользователя"><Trash2 size={16}/></button>}</div>
-        </div>
+        <div className="modal-actions"><button className="btn primary" disabled={savingUser}>{savingUser ? "Сохраняем…" : <><Check/>Сохранить</>}</button>{modal.mode === "edit" && <button type="button" className="user-action-btn danger-icon user-delete" onClick={() => removeUser(users.find(u => u.id === modal.id))} disabled={savingUser} title="Удалить пользователя" aria-label="Удалить пользователя"><Trash2 size={16}/></button>}</div>
       </form>}
     </section></div>}
 
