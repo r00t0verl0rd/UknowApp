@@ -837,7 +837,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .graph-panel .person-actions { gap: 3px;}
 .graph-panel .person-actions button { flex: 0 0 30px;}
 .graph-panel .student-list { gap: 7px; margin-top: 8px;}
-.graph-panel .add-student { min-height: 30px; margin-top: 0; padding: 5px 9px;}
+.graph-panel .add-student { min-height: 30px; margin-top: 5px; padding: 5px 9px;}
 .user-row:hover, .person-card:hover, .teacher-branch:hover { transform: none;}
 .graph-panel .person-actions button { flex-basis: 28px;}
 .chat-layout { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 12px; min-width: 0; padding: 0; overflow: visible; border: 0; border-radius: 0; background: transparent; box-shadow: none;}
