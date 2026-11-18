@@ -660,6 +660,22 @@ def _panel_visible_conversation(db: Session, principal: dict, conversation_id: i
             or conversation.status != "active"
         ):
             raise HTTPException(status_code=404, detail="Переписка не найдена")
+        if principal["role"] == "student":
+            current_conversation_id = db.scalar(
+                select(Conversation.id)
+                .join(Assignment, Conversation.assignment_id == Assignment.id)
+                .join(User, Assignment.teacher_id == User.id)
+                .where(
+                    Assignment.student_id == principal["user_id"],
+                    Assignment.active.is_(True),
+                    User.active.is_(True),
+                    Conversation.status == "active",
+                )
+                .order_by(Conversation.created_at.desc(), Conversation.id.desc())
+                .limit(1)
+            )
+            if current_conversation_id != conversation.id:
+                raise HTTPException(status_code=404, detail="Переписка не найдена")
     return conversation
 
 
