@@ -702,6 +702,19 @@ img, video, audio { max-width: 100%; }
 .teacher-login-row > label {
   min-width: 0;
 }
+.teacher-login-label > span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.teacher-login-label > span b {
+  color: var(--purple);
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
 .password-actions {
   display: flex;
   align-items: center;
