@@ -278,13 +278,13 @@ async def restore_dialogues(_: Admin, file: UploadFile = File(...), db: Session 
         await file.close()
 
 
-def _db_session():
+def _get_db():
     with SessionLocal() as db:
         yield db
 
 
 @router.delete("/dialogues")
-def cleanup_dialogues(days: int, _: Admin, db: Session = Depends(lambda: next(_db_session()))):
+def cleanup_dialogues(days: int, _: Admin, db: Session = Depends(_get_db)):
     if days not in {30, 60, 120}:
         raise HTTPException(status_code=400, detail="Выберите срок 30, 60 или 120 дней")
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
@@ -295,13 +295,11 @@ def cleanup_dialogues(days: int, _: Admin, db: Session = Depends(lambda: next(_d
     deleted_personal = db.query(PersonalMessage).filter(PersonalMessage.created_at < cutoff).delete(synchronize_session=False)
     db.query(Message).filter(Message.created_at < cutoff).delete(synchronize_session=False)
     db.commit()
-    cutoff_timestamp = cutoff.timestamp()
-    deleted_files = 0
+    deleted_files = sum(
+        1 for row in old_rows
+        if (json.loads(row.metadata_json or "{}").get("media") or {}).get("local_path")
+    )
     if MEDIA_DIR.exists():
-        for path in MEDIA_DIR.rglob("*"):
-            if path.is_file() and path.stat().st_mtime < cutoff_timestamp:
-                path.unlink(missing_ok=True)
-                deleted_files += 1
         for path in sorted(MEDIA_DIR.rglob("*"), reverse=True):
             if path.is_dir():
                 try:
