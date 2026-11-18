@@ -2,6 +2,7 @@
 
 import asyncio
 import hashlib
+from collections import defaultdict
 from html import escape
 import json
 import logging
@@ -16,7 +17,7 @@ from aiogram.types import (
     ReplyKeyboardRemove,
 )
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from .models import Assignment, Conversation, Message, TeacherPanel, TeacherSession, User
 
@@ -142,28 +143,46 @@ def mark_visible_messages_read_by_teacher(
 def teacher_conversations(db: Session, teacher: User) -> list[dict]:
     assignments = db.scalars(
         select(Assignment)
-        .where(Assignment.teacher_id == teacher.id, Assignment.active.is_(True))
+        .join(User, Assignment.student_id == User.id)
+        .options(
+            selectinload(Assignment.student),
+            selectinload(Assignment.conversation),
+        )
+        .where(
+            Assignment.teacher_id == teacher.id,
+            Assignment.active.is_(True),
+            User.active.is_(True),
+            Conversation.status == "active",
+        )
+        .join(Conversation, Assignment.id == Conversation.assignment_id)
         .order_by(Assignment.created_at.desc())
     ).all()
+    conversation_ids = [item.conversation.id for item in assignments]
+    messages_by_conversation = defaultdict(list)
+    if conversation_ids:
+        rows = db.scalars(
+            select(Message)
+            .where(Message.conversation_id.in_(conversation_ids))
+            .order_by(Message.conversation_id, Message.created_at, Message.id)
+        ).all()
+        for row in rows:
+            messages_by_conversation[row.conversation_id].append(row)
+
     items = []
     for assignment in assignments:
         student = assignment.student
         conversation = assignment.conversation
-        if (
-            not student or not student.active or not conversation
-            or conversation.status != "active"
-        ):
-            continue
-        rows = conversation_messages(db, conversation.id)
+        rows = messages_by_conversation[conversation.id]
         unread = pending_student_messages(rows)
+        latest = rows[-1] if rows else None
         items.append({
             "student": student,
             "conversation": conversation,
             "unread": unread,
             "unanswered": len(unread),
             "preview": message_preview(unread[-1]) if unread else "",
-            "latest": rows[-1] if rows else None,
-            "last_at": (rows[-1].created_at.isoformat() if rows else assignment.created_at.isoformat()),
+            "latest": latest,
+            "last_at": latest.created_at.isoformat() if latest else assignment.created_at.isoformat(),
         })
     # Keep all assigned students visible; students with unread messages come first.
     items.sort(key=lambda item: (item["unanswered"] > 0, item["last_at"]), reverse=True)
