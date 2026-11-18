@@ -721,26 +721,31 @@ img, video, audio { max-width: 100%; }
   font-size: 10px;
 }
 .password-code-label {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  justify-self: start;
-  flex-wrap: wrap;
-  max-width: 100%;
+  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   min-height: 38px;
   padding: 5px 10px;
-  gap: 4px;
+  gap: 10px;
   border: 1px solid var(--line);
   border-radius: 9px;
   background: var(--surface-soft, #f8f6fb);
   color: var(--muted);
-  white-space: normal;
   font-size: 12px;
   font-weight: 600;
   line-height: 1.4;
 }
+.password-code-label > span {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 .password-code-label b {
-  margin-left: 6px;
+  margin-left: 0;
   font-size: 14px;
   font-weight: 800;
   letter-spacing: 1.5px;
@@ -9319,7 +9324,7 @@ body,
 
 .password-code-label .password-code-refresh {
   min-height: 27px;
-  margin-left: 8px;
+  margin-left: auto;
   padding: 0 8px;
   gap: 4px;
   font-size: 9px;
