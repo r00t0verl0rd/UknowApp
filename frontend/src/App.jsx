@@ -733,7 +733,7 @@ export default function App() {
           {modal.mode === "create" || users.find(u => u.id === modal.id)?.role !== "teacher"
             ? <p className="password-info">Код доступа создастся автоматически — один для веб-панели и Telegram.</p>
             : <div className="password-actions">
-                <span className="password-info">Единый код для веб-панели и Telegram</span>
+                <span className="password-code-label">Код доступа: <b>XXX-XXX</b></span>
                 <button type="button" className="btn outline" onClick={regenerateTeacherAccessCode} disabled={savingUser} title="Старый код сразу перестанет действовать"><RefreshCw size={15}/>Обновить код</button>
               </div>}
         </>}
