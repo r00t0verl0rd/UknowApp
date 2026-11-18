@@ -865,7 +865,7 @@ export default function App() {
           <div className="data-stats-grid">
             <article className="data-stat-card">
               <span>База данных SQLite</span><b>{dataStats ? formatBytes(dataStats.database_bytes) : "—"}</b>
-              <small>{dataStats?.users ?? "—"} пользователей · {dataStats?.active_users ?? "—"} активных</small>
+              <small>{dataStats?.users ?? "—"} пользователей</small>
               <div className="data-stat-details">
                 <span>Учителя: <b>{dataStats?.teachers ?? "—"}</b></span><span>Ученики: <b>{dataStats?.students ?? "—"}</b></span>
                 <span>Связи учитель–ученик: <b>{dataStats?.assignments ?? "—"}</b></span>
@@ -881,7 +881,7 @@ export default function App() {
               <small>{dataStats?.media_files ?? "—"} файлов</small>
               <div className="data-stat-details">
                 <span>Изображения: <b>{dataStats?.media_images ?? "—"}</b></span>
-                <span>Аудио и голосовые: <b>{dataStats?.media_audio ?? "—"}</b></span>
+                <span>Аудио: <b>{dataStats?.media_audio ?? "—"}</b></span>
                 <span>Видео: <b>{dataStats?.media_videos ?? "—"}</b></span>
                 <span>Другие файлы: <b>{dataStats?.media_other ?? "—"}</b></span>
               </div>
