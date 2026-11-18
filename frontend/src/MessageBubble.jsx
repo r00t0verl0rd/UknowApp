@@ -167,7 +167,19 @@ function MessageBubble({ message, onDelete, viewerRole }) {
     {mediaUrl && ["document", "photo"].includes(kind) && <a className="chat-media-download" href={mediaUrl} download={media?.file_name || label}>Скачать файл: {media?.file_name || label}</a>}
     {!mediaUrl && media && <small className="chat-media-status">{media.archive_status === "too_large_for_telegram_download" ? "Файл больше 20 МБ: Telegram не позволяет сохранить копию для веб-панели. Оригинал остаётся в исходном чате Telegram." : media.archive_status === "download_failed" ? "Не удалось сохранить копию вложения. Проверьте оригинал в Telegram." : "Загрузка вложения…"}</small>}
     {!media && !message.text && <p>Вложение: {message.content_type}</p>}
-    {viewerRole === "admin" && message.delivery_status && message.delivery_status !== "delivered" && <small className="message-delivery">{message.delivery_status === "partial" ? "В приложение сохранено. В Telegram доставлено не всем:" : "Доставлено только в приложение. В Telegram не доставлено:"}{message.metadata?.telegram_delivery_errors?.length ? " " + message.metadata.telegram_delivery_errors.map(error => error.includes(":") ? error.replace(/^([^:]+):\s*/, "«$1» — ") : error).join("; ") : " Причина не указана."}</small>}
+    {viewerRole === "admin" && message.delivery_status && message.delivery_status !== "delivered" && <div className="message-delivery">
+      <div className="message-delivery-heading">{message.delivery_status === "partial" ? "В приложение сохранено. В Telegram доставлено не всем." : "Доставлено только в приложение."}</div>
+      {message.metadata?.telegram_delivery_errors?.length ? message.metadata.telegram_delivery_errors.map((error, index) => {
+        const details = typeof error === "string"
+          ? (() => { const separator = error.indexOf(":"); return separator < 0 ? { reason: error } : { name: error.slice(0, separator).trim(), reason: error.slice(separator + 1).trim() }; })()
+          : error;
+        return <div className="message-delivery-error" key={index}>
+          {details.name && <span className={"message-delivery-name" + (details.role ? " " + details.role : "")}>{details.name}</span>}
+          {details.name && <span className="message-delivery-dash"> — </span>}
+          <span className="message-delivery-reason">{details.reason || "Причина не указана."}</span>
+        </div>;
+      }) : <div className="message-delivery-error"><span className="message-delivery-reason">Причина не указана.</span></div>}
+    </div>}
   </div>;
 }
 
