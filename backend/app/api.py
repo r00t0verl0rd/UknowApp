@@ -24,8 +24,8 @@ from .config import ADMIN_USERNAME
 from .database import SessionLocal
 from .event_hub import publish_chat_update, subscribe_chat_updates, unsubscribe_chat_updates
 from .media_storage import MEDIA_DIR, delete_message_media, safe_media_type, media_content_disposition
-from .models import Assignment, ConnectionCode, Conversation, Message, PanelSession, StudentTelegramGroup, TeacherPanel, TeacherSession, User
-from .schemas import AssignmentCreate, LoginRequest, PanelMessageCreate, UserCreate, UserUpdate
+from .models import Assignment, ConnectionCode, Conversation, Message, PanelSession, PersonalConversation, PersonalMessage, StudentTelegramGroup, TeacherPanel, TeacherSession, User
+from .schemas import AssignmentCreate, LoginRequest, PanelMessageCreate, PersonalConversationCreate, PersonalMessageCreate, UserCreate, UserUpdate
 from .security import (
     authenticate_panel_user,
     check_login_rate_limit,
@@ -868,6 +868,133 @@ def panel_conversations(principal: PanelUser, db: Db):
         include_telegram_ids=(principal["role"] == "admin"),
         viewer_role=principal["role"],
     )
+
+
+def _personal_conversation(db: Session, principal: dict, conversation_id: int) -> PersonalConversation:
+    conversation = db.get(PersonalConversation, conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Личный диалог не найден")
+    if principal["role"] != "admin" and conversation.participant_id != principal.get("user_id"):
+        raise HTTPException(status_code=404, detail="Личный диалог не найден")
+    return conversation
+
+
+def _personal_conversation_dict(item: PersonalConversation, viewer_role: str) -> dict:
+    participant = item.participant
+    return {
+        "id": item.id,
+        "type": "personal",
+        "participant": {"id": participant.id, "full_name": participant.full_name, "role": participant.role},
+        "title": participant.full_name if viewer_role == "admin" else "Администратор",
+        "created_at": item.created_at.isoformat(),
+    }
+
+
+@router.get("/panel/personal-conversations")
+def personal_conversations(principal: PanelUser, db: Db):
+    statement = select(PersonalConversation).options(
+        selectinload(PersonalConversation.participant)
+    ).order_by(PersonalConversation.created_at.desc(), PersonalConversation.id.desc())
+    if principal["role"] != "admin":
+        statement = statement.where(PersonalConversation.participant_id == principal["user_id"])
+    return [_personal_conversation_dict(item, principal["role"]) for item in db.scalars(statement).all()]
+
+
+@router.post("/panel/personal-conversations", status_code=201)
+def create_personal_conversation(payload: PersonalConversationCreate, principal: PanelUser, db: Db):
+    if principal["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Создавать личные диалоги может только администратор")
+    participant = db.get(User, payload.user_id)
+    if not participant or participant.role not in {"teacher", "student"} or not participant.active:
+        raise HTTPException(status_code=404, detail="Активный участник не найден")
+    item = db.scalar(select(PersonalConversation).where(PersonalConversation.participant_id == participant.id))
+    if not item:
+        item = PersonalConversation(participant_id=participant.id)
+        db.add(item)
+        db.commit()
+        db.refresh(item)
+    publish_chat_update(item.id)
+    return _personal_conversation_dict(item, principal["role"])
+
+
+@router.get("/panel/personal-conversations/{conversation_id}/messages")
+def personal_messages(conversation_id: int, principal: PanelUser, db: Db):
+    item = _personal_conversation(db, principal, conversation_id)
+    rows = db.scalars(
+        select(PersonalMessage).where(PersonalMessage.conversation_id == item.id)
+        .order_by(PersonalMessage.created_at, PersonalMessage.id)
+    ).all()
+    return [{
+        "id": row.id,
+        "sender": row.sender.full_name if row.sender else "Администратор",
+        "sender_role": row.sender_role,
+        "can_delete": row.sender_role == principal["role"] and (
+            principal["role"] == "admin" or row.sender_id == principal.get("user_id")
+        ),
+        "content_type": "text",
+        "text": row.text,
+        "metadata": {},
+        "delivery_status": "in_app",
+        "created_at": row.created_at.isoformat(),
+    } for row in rows]
+
+
+@router.post("/panel/personal-conversations/{conversation_id}/messages", status_code=201)
+def send_personal_message(
+    conversation_id: int,
+    payload: PersonalMessageCreate,
+    principal: PanelUser,
+    db: Db,
+):
+    item = _personal_conversation(db, principal, conversation_id)
+    if principal["role"] not in {"admin", "teacher", "student"}:
+        raise HTTPException(status_code=403, detail="Недостаточно прав")
+    if principal["role"] == "admin":
+        sender_id = None
+    else:
+        sender = db.get(User, principal["user_id"])
+        if not sender or not sender.active or sender.id != item.participant_id:
+            raise HTTPException(status_code=403, detail="Нет доступа к личному диалогу")
+        sender_id = sender.id
+    row = PersonalMessage(
+        conversation_id=item.id,
+        sender_id=sender_id,
+        sender_role=principal["role"],
+        text=payload.text.strip(),
+    )
+    if not row.text:
+        raise HTTPException(status_code=400, detail="Введите сообщение")
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    publish_chat_update(item.id)
+    return {
+        "id": row.id,
+        "sender": row.sender.full_name if row.sender else "Администратор",
+        "sender_role": row.sender_role,
+        "can_delete": True,
+        "content_type": "text",
+        "text": row.text,
+        "metadata": {},
+        "delivery_status": "in_app",
+        "created_at": row.created_at.isoformat(),
+    }
+
+
+@router.delete("/panel/personal-messages/{message_id}")
+def delete_personal_message(message_id: int, principal: PanelUser, db: Db):
+    row = db.get(PersonalMessage, message_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Сообщение не найдено")
+    _personal_conversation(db, principal, row.conversation_id)
+    if row.sender_role != principal["role"] or (
+        principal["role"] != "admin" and row.sender_id != principal.get("user_id")
+    ):
+        raise HTTPException(status_code=403, detail="Можно удалить только собственное сообщение")
+    db.delete(row)
+    db.commit()
+    publish_chat_update(row.conversation_id)
+    return {"ok": True, "deleted_message_id": message_id}
 
 
 @router.get("/panel/conversations/{conversation_id}/messages")
