@@ -1773,6 +1773,8 @@ border-color: transparent !important;}
 .data-stat-details .data-stat-subline { padding-left: 10px; font-size: 10px;}
 .data-tools-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;}
 .data-tool-card { display: flex; flex-direction: column; align-items: flex-start; gap: 12px;}
+.data-tool-primary { grid-column: 1 / -1;}
+.data-tool-primary .data-tool-actions .btn.primary { min-width: 245px;}
 .data-tool-copy { display: grid; gap: 8px; width: 100%;}
 .data-tool-kicker { color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .08em;}
 .data-includes { display: grid; gap: 7px; width: 100%; margin-top: 3px; padding: 12px; border-radius: 10px; background: var(--surface-soft, var(--panel)); font-size: 12px; line-height: 1.5;}
@@ -1805,6 +1807,7 @@ border-color: transparent !important;}
 }
 @media (max-width: 760px) {
   .data-stats-grid, .data-tools-grid { grid-template-columns: 1fr;}
+  .data-tool-primary { grid-column: auto;}
   .data-cleanup-card { align-items: stretch; flex-direction: column;}
   .data-cleanup-actions { align-items: stretch; flex-direction: column;}
 }
