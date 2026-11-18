@@ -198,7 +198,7 @@ export default function App() {
       inFlight = true;
       try {
         if (selectedChat?.id && shouldRefreshMessages) {
-          const rows = await request("/api/panel/conversations/" + selectedChat.id + "/messages");
+          const rows = await request((selectedChat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/") + selectedChat.id + "/messages");
           if (!active) return;
           setMessages(rows);
         }
