@@ -31,7 +31,7 @@ def verify_admin(username: str, password: str) -> bool:
     )
 
 
-# Храним только PBKDF2-хеш с уникальной солью, а не исходный пароль учителя.
+# Храним только PBKDF2-хеш с уникальной солью, а не исходный код доступа.
 def hash_web_password(password: str) -> str:
     salt = secrets.token_bytes(16)
     digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 310_000)
@@ -59,11 +59,14 @@ def authenticate_panel_user(username: str, password: str) -> Optional[dict]:
     if not normalized_username:
         return None
     with SessionLocal() as db:
-        teachers = db.scalars(
-            select(User).where(User.role == "teacher", User.active.is_(True))
+        users = db.scalars(
+            select(User).where(
+                User.role.in_(["teacher", "student"]),
+                User.active.is_(True),
+            )
         ).all()
         matches = [
-            user for user in teachers
+            user for user in users
             if (user.web_username or user.full_name).strip().casefold() == normalized_username
         ]
         if len(matches) != 1:
@@ -71,7 +74,7 @@ def authenticate_panel_user(username: str, password: str) -> Optional[dict]:
         user = matches[0]
         if not verify_web_password(password, user.web_password_hash):
             return None
-        return {"role": "teacher", "user_id": user.id, "full_name": user.full_name}
+        return {"role": user.role, "user_id": user.id, "full_name": user.full_name}
 
 
 def verify_request_origin(request: Request) -> None:
@@ -125,9 +128,9 @@ def clear_username_failures(request: Request, username: str) -> None:
 def _credential_fingerprint(db, role: str, user_id: Optional[int]) -> Optional[str]:
     if role == "admin":
         value = ADMIN_USERNAME + "\0" + ADMIN_PASSWORD
-    elif role == "teacher" and user_id is not None:
+    elif role in {"teacher", "student"} and user_id is not None:
         user = db.get(User, user_id)
-        if not user or user.role != "teacher" or not user.active or not user.web_password_hash:
+        if not user or user.role != role or not user.active or not user.web_password_hash:
             return None
         value = user.web_password_hash
     else:
@@ -252,21 +255,21 @@ def _load_panel_identity(request: Request) -> Optional[dict]:
                 session.credential_fingerprint, expected_fingerprint or ""
             )
             identity = {"role": "admin", "user_id": None, "full_name": "Администратор"}
-        elif session.role == "teacher" and session.user_id is not None:
+        elif session.role in {"teacher", "student"} and session.user_id is not None:
             user = db.get(User, session.user_id)
-            expected_fingerprint = _credential_fingerprint(db, "teacher", session.user_id)
+            expected_fingerprint = _credential_fingerprint(db, session.role, session.user_id)
             valid = (
                 valid
                 and user is not None
                 and user.active
-                and user.role == "teacher"
+                and user.role == session.role
                 and expected_fingerprint is not None
                 and secrets.compare_digest(
                     session.credential_fingerprint, expected_fingerprint or ""
                 )
             )
             identity = (
-                {"role": "teacher", "user_id": user.id, "full_name": user.full_name}
+                {"role": user.role, "user_id": user.id, "full_name": user.full_name}
                 if valid and user else None
             )
         else:
