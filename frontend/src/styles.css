@@ -451,11 +451,9 @@ img, video, audio { max-width: 100%;}
 .chat-item .unread-badge { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: #d99532; color: #fff !important; font-size: 10px; line-height: 1; font-weight: 800; box-shadow: 0 2px 6px rgba(180, 119, 31, .18);}
 .chat-item.has-unread:not(.selected) { background: #fffaf0; border: 1px solid #f0d9ab; border-left: 3px solid #d99532; padding-left: 12px;}
 .chat-item.has-unread:not(.selected):hover { background: #fff5df;}
-.chat-item .chat-item-meta { color: #8e8798;}
 :root[data-theme="dark-soft"] .chat-item.has-unread:not(.selected) { background: #302d29 !important; border-color: #68543a !important; border-left-color: #d49a46 !important; color: #f0e7d8 !important;}
 :root[data-theme="dark-soft"] .chat-item.has-unread:not(.selected):hover { background: #383228 !important;}
 :root[data-theme="dark-soft"] .chat-item.selected.has-unread { background: #393548 !important; border-color: #756449 !important; border-left-color: #e1ad57 !important; color: #e8e2f6 !important;}
-:root[data-theme="dark-soft"] .chat-item .chat-item-meta { color: #9ba6b8 !important;}
 /* Slightly roomier message composer; manual resizing remains disabled. */
 /* Teacher and student totals are part of the graph legend, not separate cards. */
 .graph-panel .graph-legend { display: flex; align-items: center; flex-wrap: wrap; max-width: 100%;}
@@ -549,7 +547,7 @@ img, video, audio { max-width: 100%;}
 :root:not([data-theme="dark-soft"]) .topbar, :root:not([data-theme="dark-soft"]) .sidebar, :root:not([data-theme="dark-soft"]) .user-list, :root:not([data-theme="dark-soft"]) .chat-layout, :root:not([data-theme="dark-soft"]) .chat-list, :root:not([data-theme="dark-soft"]) .chat-detail { border-color: #ded9e5;}
 :root:not([data-theme="dark-soft"]) .person-card, :root:not([data-theme="dark-soft"]) .chat-item, :root:not([data-theme="dark-soft"]) .chat-head-tools select { border-color: #dcd6e3;}
 :root:not([data-theme="dark-soft"]) .person-info b, :root:not([data-theme="dark-soft"]) .chat-item b, :root:not([data-theme="dark-soft"]) .chat-head b, :root:not([data-theme="dark-soft"]) .message b { color: #56515f;}
-:root:not([data-theme="dark-soft"]) .person-info small, :root:not([data-theme="dark-soft"]) .chat-item small, :root:not([data-theme="dark-soft"]) .chat-item-meta, :root:not([data-theme="dark-soft"]) .chat-head small, :root:not([data-theme="dark-soft"]) .message-time, :root:not([data-theme="dark-soft"]) .toolbar, :root:not([data-theme="dark-soft"]) .hint { color: #918b9a;}
+:root:not([data-theme="dark-soft"]) .person-info small, :root:not([data-theme="dark-soft"]) .chat-item small, :root:not([data-theme="dark-soft"]) .chat-head small, :root:not([data-theme="dark-soft"]) .message-time, :root:not([data-theme="dark-soft"]) .toolbar, :root:not([data-theme="dark-soft"]) .hint { color: #918b9a;}
 .user-sort { min-height: 48px; height: 48px; padding: 0 14px; border-radius: 12px;}
 .user-sort { max-width: 185px; font-size: 13px;}
 .user-count { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; min-height: 44px; padding: 0 13px; border: 1px solid #e4deed; border-radius: 12px; color: #7f788d; background: #faf8fd; font-size: 12px; font-weight: 650; white-space: nowrap;}
@@ -1442,7 +1440,6 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .chat-list { gap: 4px; padding: 7px;}
 
 .chat-item-heading, .chat-composer .composer-tools{ gap: 5px;}
-.chat-item-meta { line-height: 1.2;}
 .chat-detail { min-height: 0; height: 100%;}
 .chat-head b { font-size: 13px;}
 .chat-composer .attach-control { width: fit-content;}
@@ -1464,7 +1461,6 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .chat-items-scroll > .chat-item { display: grid; flex: 0 0 auto; width: 100%; min-height: 68px; gap: 6px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; text-align: left;}
 .chat-item-participants { min-width: 0; gap: 3px;}
 .chat-item-participants span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 1.25;}
-.chat-item-meta { font-size: 11px;}
 .chats-content > .chat-layout.chat-layout-conversation-open > .chat-list, .chats-content > .chat-layout.chat-layout-list-open > .chat-detail { display: none;}
 .chats-content > .chat-layout > .chat-detail { display: flex; flex-direction: column;}
 .chat-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; flex: 0 0 auto;}
@@ -1688,14 +1684,13 @@ body, .chats-shell, .chats-main { background: var(--canvas);}
 .chat-items-scroll > .chat-item { position: relative; overflow: hidden; transition: background-color .16s ease, border-color .16s ease, transform .16s ease;}
 .chat-items-scroll > .chat-item:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px;}
 .chat-items-scroll > .chat-item.has-unread { border-left: 3px solid var(--role-student, #c9a45f) !important; padding-left: 11px;}
-.chat-items-scroll > .chat-item.has-unread .chat-item-participants, .chat-items-scroll > .chat-item.has-unread .chat-item-meta { font-weight: 700;}
+.chat-items-scroll > .chat-item.has-unread .chat-item-participants { font-weight: 700;}
 .chat-items-scroll > .chat-item .unread-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 21px; min-height: 21px; padding: 2px 6px; border-radius: 999px; background: var(--role-student-soft, #f6edda); color: var(--role-student, #9a702b) !important; font-size: 10px; font-weight: 800;}
 :root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item { background: #f8f5fb !important; border: 1px solid #e9e2f0 !important; color: #393346;}
 :root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item:hover { background: #f1ebf7 !important; border-color: #ded3e9 !important;}
 :root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item.selected { background: #eee7f6 !important; border-color: #d8cbe7 !important; color: #51436d;}
 :root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item.has-unread { background: #faf6ed !important; border-color: #eadfc9 !important; border-left-color: #c49a50 !important;}
 :root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item.has-unread.selected { background: #f2ebf5 !important; border-color: #d8cbe7 !important; border-left-color: #b18a49 !important;}
-:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item .chat-item-meta { color: #777084;}
 :root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item .unread-badge { background: #f2e8d3; color: #876126 !important;}
 :root[data-theme="dark-soft"] .chat-layout { background: #202631 !important; border-color: #343d4c !important;}
 :root[data-theme="dark-soft"] .chat-list, :root[data-theme="dark-soft"] .chat-detail { background: #242c38 !important;}
@@ -1704,7 +1699,6 @@ body, .chats-shell, .chats-main { background: var(--canvas);}
 :root[data-theme="dark-soft"] .chat-items-scroll > .chat-item.selected { background: #38364b !important; border-color: #625878 !important; color: #f0edf8 !important;}
 :root[data-theme="dark-soft"] .chat-items-scroll > .chat-item.has-unread { background: #34332f !important; border-color: #514a3e !important; border-left-color: #c5a66d !important;}
 :root[data-theme="dark-soft"] .chat-items-scroll > .chat-item.has-unread.selected { background: #3b3745 !important; border-color: #625878 !important; border-left-color: #c5a66d !important;}
-:root[data-theme="dark-soft"] .chat-items-scroll > .chat-item .chat-item-meta { color: #b3bdcc !important;}
 :root[data-theme="dark-soft"] .chat-items-scroll > .chat-item .unread-badge { background: #494234 !important; color: #e1c48b !important;}
 :root[data-theme="dark-soft"] .chat-detail > .messages { background: #202834 !important;}
 :root:not([data-theme="dark-soft"]) .chat-detail > .messages { background: #f5f1f9 !important;}
