@@ -307,7 +307,7 @@ export default function App() {
 
   const visibleChats = useMemo(() => {
     const query = chatSearch.trim().toLocaleLowerCase("ru");
-    const personal = personalChats.filter(chat => !query || chat.title.toLocaleLowerCase("ru").includes(query));
+    const personal = personalChats.filter(chat => (!query || chat.title.toLocaleLowerCase("ru").includes(query)) && (chatFilter === "all" || Number(chat.unread_count || 0) > 0));
     if (profile?.role === "admin" && chatSection === "personal") return personal;
     const regular = profile?.role === "student" ? chats.slice(0, 1) : chats.filter(chat => {
       const names = profile?.role === "admin"
@@ -711,15 +711,15 @@ export default function App() {
         </>}
 
         {page === "chats" && <>
-          <div className={"chat-layout" + (selectedChat ? " chat-layout-conversation-open" : " chat-layout-list-open")}><div className="chat-list">{profile?.role === "admin" && <div className="chat-filter-segment admin-chat-sections" role="group" aria-label="Раздел диалогов"><button type="button" className={chatSection === "participants" ? "active" : ""} onClick={() => { setChatSection("participants"); setSelectedChat(null); setMessages([]); }}>Чаты участников</button><button type="button" className={chatSection === "personal" ? "active" : ""} onClick={() => { setChatSection("personal"); setSelectedChat(null); setMessages([]); }}>Личные</button></div>}{profile?.role === "admin" && chatSection === "personal" && <select className="personal-chat-create" aria-label="Создать личный диалог" value="" onChange={e => e.target.value && createPersonalChat(e.target.value)}><option value="">+ Новый личный диалог</option>{users.filter(user => user.active && ["teacher","student"].includes(user.role)).map(user => <option value={user.id} key={user.id}>{user.full_name} · {user.role === "teacher" ? "Учитель" : "Ученик"}</option>)}</select>}{profile?.role !== "student" && <>
+          <div className={"chat-layout" + (selectedChat ? " chat-layout-conversation-open" : " chat-layout-list-open")}><div className="chat-list">{profile?.role === "admin" && <div className="chat-filter-segment admin-chat-sections" role="group" aria-label="Раздел диалогов"><button type="button" className={chatSection === "participants" ? "active" : ""} onClick={() => { setChatSection("participants"); setSelectedChat(null); setMessages([]); }}>Чаты участников</button><button type="button" className={chatSection === "personal" ? "active" : ""} onClick={() => { setChatSection("personal"); setChatFilter("all"); setSelectedChat(null); setMessages([]); }}>Личные{personalChats.some(chat => Number(chat.unread_count) > 0) && <span className="unread-badge">{personalChats.reduce((sum, chat) => sum + (Number(chat.unread_count) || 0), 0) > 99 ? "99+" : personalChats.reduce((sum, chat) => sum + (Number(chat.unread_count) || 0), 0)}</span>}</button></div>}{profile?.role === "admin" && chatSection === "personal" && <select className="personal-chat-create" aria-label="Создать личный диалог" value="" onChange={e => e.target.value && createPersonalChat(e.target.value)}><option value="">+ Новый личный диалог</option>{users.filter(user => user.active && ["teacher","student"].includes(user.role)).map(user => <option value={user.id} key={user.id}>{user.full_name} · {user.role === "teacher" ? "Учитель" : "Ученик"}</option>)}</select>}{profile?.role !== "student" && <>
               <div className="chat-search-control">
                 <Search size={17}/>
                 <input aria-label="Поиск по имени" placeholder="Поиск по имени" value={chatSearch} onChange={e => setChatSearch(e.target.value)}/>
                 {chatSearch && <button type="button" onClick={() => setChatSearch("")} aria-label="Очистить поиск"><X size={14}/></button>}
               </div>
-              {profile?.role === "teacher" && <div className="chat-filter-segment" role="group" aria-label="Фильтр диалогов">
+              {(profile?.role === "teacher" || (profile?.role === "admin" && chatSection === "personal")) && <div className="chat-filter-segment" role="group" aria-label="Фильтр диалогов">
                 <button type="button" className={chatFilter === "all" ? "active" : ""} aria-pressed={chatFilter === "all"} onClick={() => setChatFilter("all")}>
-                  <MessageCircle size={14}/>Все диалоги
+                  <MessageCircle size={14}/>{profile?.role === "admin" ? "Все личные" : "Все диалоги"}
                 </button>
                 <button type="button" className={chatFilter === "unread" ? "active" : ""} aria-pressed={chatFilter === "unread"} onClick={() => setChatFilter("unread")}>
                   <Check size={14}/>Непрочитанные
