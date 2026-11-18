@@ -1,9 +1,12 @@
 
 *{box-sizing:border-box}body{margin:0;min-width:320px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}
 .login-screen{display:grid;place-items:center;background:radial-gradient(circle at 20% 20%,#fce8ed,transparent 35%),radial-gradient(circle at 85% 85%,#e9e2f8,transparent 35%),#f8f7fb}.login-card{box-shadow:0 24px 80px #39245c12}.login-logo{object-fit:contain;display:block;margin:0 auto 22px}.login-card h1{text-align:center;margin:7px 0}.login-card>.eyebrow{text-align:center}
-.shell{min-height:100vh}.sidebar{position:fixed;inset:0 auto 0 0;display:flex;flex-direction:column;z-index:2}.brand{display:flex;align-items:center;font-weight:800;color:var(--purple)}.brand img{object-fit:contain}.brand span span{color:var(--red)}.school-label,.eyebrow{font-weight:800;color:#a49bb4}.school-label{padding:0 11px 12px}.sidebar nav{display:grid;gap:6px}.sidebar nav button,.logout{display:flex;align-items:center;gap:12px;border:0;background:transparent;text-align:left;font-weight:700}.sidebar nav button svg,.logout svg{height:18px}.sidebar nav button.active{color:var(--purple)}.sidebar nav button i{margin-left:auto;font-style:normal;font-size:11px;background:#f2eff6;padding:3px 7px;border-radius:20px}.logout{margin-top:12px;width:100%}.main{min-height:100vh}.topbar{height:70px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 34px}.topbar>div{display:flex;align-items:center;gap:9px;color:#a39bad;font-size:12px}.topbar svg{width:15px}.topbar b{color:var(--ink)}.content{margin:auto;padding:34px}.section-head p
+.sidebar{position:fixed;inset:0 auto 0 0;display:flex;flex-direction:column;z-index:2}.brand{display:flex;align-items:center;font-weight:800;color:var(--purple)}.brand span span{color:var(--red)}.school-label,.eyebrow{font-weight:800;color:#a49bb4}.school-label{padding:0 11px 12px}.sidebar nav{display:grid;gap:6px}.sidebar nav button,.logout{display:flex;align-items:center;gap:12px;border:0;background:transparent;text-align:left;font-weight:700}.sidebar nav button svg,.logout svg{height:18px}.sidebar nav button.active{color:var(--purple)}.sidebar nav button i{margin-left:auto;font-style:normal;font-size:11px;background:#f2eff6;padding:3px 7px;border-radius:20px}.logout{margin-top:12px;width:100%}.shell,
+.main{min-height:100vh}.topbar{height:70px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 34px}.topbar>div{display:flex;align-items:center;gap:9px;color:#a39bad;font-size:12px}.topbar svg{width:15px}.topbar b{color:var(--ink)}.content{margin:auto;padding:34px}.section-head p
 {margin:0}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:800;color:var(--ink)}.btn svg{width:16px;height:16px}.btn.primary{box-shadow:0 6px 18px #59439a24}.btn.primary:hover{background:#483581}.btn.ghost{background:#faf9fc}.btn.small{padding:8px 10px;font-size:11px}.btn.outline{color:var(--purple)}.user-list,
-  .chat-layout {border:1px solid var(--line);padding:22px}.section-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:25px}.section-head h2{margin:0 0 5px}.legend{display:flex;align-items:center;gap:7px;font-size:10px}.legend span{width:8px;height:8px;border-radius:50%;margin-left:9px}.teacher-dot{background:var(--purple)}.student-dot{background:#e84b56}.root-node{margin:auto;display:flex;align-items:center;border-radius:13px}.root-node img{object-fit:contain}.root-node b,.root-node small{display:block}.root-node b{font-size:12px}.root-node small{color:var(--muted);margin-top:3px}.root-node>span{margin-left:auto;font-size:9px;font-weight:800;color:var(--purple);background:#eee8f7;padding:5px 7px;border-radius:6px}.teacher-grid{display:grid;align-items:start}.teacher-branch{position:relative;padding-top:0}.person-card{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);background:#fff}.teacher-card{background:#fcfaff}.person-main{display:flex;align-items:center;min-width:0}.avatar{display:grid;place-items:center;flex:none;background:#f0eafa;color:var(--purple)}.avatar svg{width:18px}.teacher-avatar{background:#eee8f8;color:var(--purple)}.student-avatar,.avatar.student{color:var(--red)}.person-info{min-width:0}.person-info b,.person-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.person-info b{font-size:12px}.person-info small{color:var(--muted);margin-top:4px}.person-actions{display:flex;flex:none}.icon-btn {display:grid;place-items:center}.person-actions button:hover,.icon-btn:hover{color:var(--purple)}.person-actions svg,.icon-btn svg{height:15px}.person-actions .danger-icon:hover,.danger-icon:hover{color:var(--red)}.student-list{display:grid;border-left:1px solid #e6dfea}.student-card{padding:9px 10px}.empty-students{border:1px dashed #e7e1ec;text-align:center}.add-student{border:0;background:transparent;font-weight:800;display:flex;align-items:center;padding:5px}.add-student svg{width:14px}.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:40px 15px;text-align:center;font-size:12px}.empty-state>svg{width:30px;height:30px;color:var(--purple)}.empty-state b{color:var(--ink)}.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;font-size:11px}.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);padding:0 10px;width:min(360px,100%);height:40px}.search svg{width:16px;color:#aaa2b5}.search input{border:0;outline:0;width:100%;font-size:11px}.user-list{padding:0}.user-row{border-bottom:1px solid #f1eef4}.user-row:last-child{border:0}.user-row .person-info{flex:1}.role-tag{font-weight:800;color:var(--purple)}.role-tag.student{color:var(--red)}.chat-layout{overflow:hidden}.chat-list{padding:8px}.chat-item{color:var(--ink)}.chat-item.selected,.chat-item:hover{background:#f7f4fb}.chat-item b{font-size:11px}.chat-item small{font-size:10px;white-space:nowrap}.chat-item span{color:var(--purple)}.chat-detail{min-width:0}.chat-head{border-bottom:1px solid var(--line)}.chat-head b,.chat-head small{display:block}.chat-head b{font-size:12px}.chat-head small{margin-top:4px}.messages{align-content:start;overflow:auto}.message{border-radius:10px}.message.teacher{justify-self:end;background:#fff0f1}.message b{font-size:10px}.message b small{font-weight:500;color:var(--muted);margin-left:6px}.message p{font-size:11px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0}.main footer{padding:0 34px 25px;font-size:10px}.main footer span{padding:0 4px}
+  .chat-layout {border:1px solid var(--line);padding:22px}.section-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:25px}.section-head h2{margin:0 0 5px}.legend{display:flex;align-items:center;gap:7px;font-size:10px}.legend span{width:8px;height:8px;border-radius:50%;margin-left:9px}.teacher-dot{background:var(--purple)}.student-dot{background:#e84b56}.root-node{margin:auto;display:flex;align-items:center;border-radius:13px}.brand img,
+.root-node img{object-fit:contain}.root-node b,.root-node small{display:block}.root-node b{font-size:12px}.root-node small{color:var(--muted);margin-top:3px}.root-node>span{margin-left:auto;font-size:9px;font-weight:800;color:var(--purple);background:#eee8f7;padding:5px 7px;border-radius:6px}.teacher-grid{display:grid;align-items:start}.teacher-branch{position:relative;padding-top:0}.person-card{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);background:#fff}.teacher-card{background:#fcfaff}.person-main{display:flex;align-items:center;min-width:0}.avatar{display:grid;place-items:center;flex:none;background:#f0eafa;color:var(--purple)}.avatar svg{width:18px}.teacher-avatar{background:#eee8f8;color:var(--purple)}.student-avatar,.avatar.student{color:var(--red)}.person-info b,.person-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.person-info b{font-size:12px}.person-info small{color:var(--muted);margin-top:4px}.person-actions{display:flex;flex:none}.icon-btn {display:grid;place-items:center}.person-actions button:hover,.icon-btn:hover{color:var(--purple)}.person-actions svg,.icon-btn svg{height:15px}.person-actions .danger-icon:hover,.danger-icon:hover{color:var(--red)}.student-list{display:grid;border-left:1px solid #e6dfea}.student-card{padding:9px 10px}.empty-students{border:1px dashed #e7e1ec;text-align:center}.add-student{border:0;background:transparent;font-weight:800;display:flex;align-items:center;padding:5px}.add-student svg{width:14px}.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:40px 15px;text-align:center;font-size:12px}.empty-state>svg{width:30px;height:30px;color:var(--purple)}.empty-state b{color:var(--ink)}.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;font-size:11px}.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);padding:0 10px;width:min(360px,100%);height:40px}.search svg{width:16px;color:#aaa2b5}.search input{border:0;outline:0;width:100%;font-size:11px}.user-list{padding:0}.user-row{border-bottom:1px solid #f1eef4}.user-row:last-child{border:0}.user-row .person-info{flex:1}.role-tag{font-weight:800;color:var(--purple)}.role-tag.student{color:var(--red)}.chat-layout{overflow:hidden}.chat-list{padding:8px}.chat-item{color:var(--ink)}.chat-item.selected,.chat-item:hover{background:#f7f4fb}.chat-item b{font-size:11px}.chat-item small{font-size:10px;white-space:nowrap}.chat-item span{color:var(--purple)}.person-info,
+.chat-detail{min-width:0}.chat-head{border-bottom:1px solid var(--line)}.chat-head b,.chat-head small{display:block}.chat-head b{font-size:12px}.chat-head small{margin-top:4px}.messages{align-content:start;overflow:auto}.message{border-radius:10px}.message.teacher{justify-self:end;background:#fff0f1}.message b{font-size:10px}.message b small{font-weight:500;color:var(--muted);margin-left:6px}.message p{font-size:11px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0}.main footer{padding:0 34px 25px;font-size:10px}.main footer span{padding:0 4px}
 .stack{display:grid;gap:14px}.stack label{display:grid;gap:7px;font-weight:700}.stack input,.stack select{border:1px solid var(--line);padding:0 11px;outline:0}.stack input:focus,.stack select:focus{box-shadow:0 0 0 3px #7856bd16}.alert{border:1px solid #f6d4d8;padding:11px 13px;font-size:11px}.alert-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.alert-row button{border:0;background:none;color:inherit}.alert-row svg{width:15px}.overlay{position:fixed;inset:0;backdrop-filter:blur(5px);display:grid;place-items:center;padding:20px;z-index:5}.modal{width:min(440px,100%);padding:24px;box-shadow:0 25px 90px #21163145}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px}.modal-head h2{font-size:19px;margin:6px 0 0}.modal-actions{display:flex;margin-top:4px}.hint{font-size:10px;line-height:1.5;margin:0}.invite-code{font:800 28px ui-monospace,monospace;letter-spacing:4px;text-align:center;border:1px dashed #cfc0e3;padding:18px;border-radius:12px;margin-bottom:13px}.toast{position:fixed;right:24px;bottom:24px;display:flex;align-items:center;gap:8px;padding:12px 16px;color:white;font-size:11px;z-index:8;box-shadow:0 10px 30px #21163135}.toast svg{width:16px;color:#e9a0a8}.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 
 .unassigned{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}.unassigned .section-head{margin-bottom:12px}.unassigned .section-head h2{font-size:14px}.unassigned-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:9px}.unassigned-grid .person-card{flex-wrap:wrap;border-color:#f2e5e7}
@@ -207,15 +210,14 @@
 .user-row .avatar.student-avatar {
   background: #fff0ce; color: #a76d16;
 }
-.user-row .avatar.teacher-avatar {
-  background: #eee6fb; color: #6847a8;
-}
+
 .role-tag {
   border-radius: 999px;
   padding: 6px 10px;
 }
 
-.role-tag.teacher { background: #eee6fb; color: #6847a8; }
+.user-row .avatar.teacher-avatar,
+.role-tag.teacher{ background: #eee6fb; color: #6847a8; }
 
 
 .person-actions .danger-icon:hover {
@@ -2561,12 +2563,7 @@ body {
     overflow: hidden;
   }
 
-  .chat-list {
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    scrollbar-width: thin;
-  }
+  
 
   .chat-detail {
     display: flex;
@@ -2579,7 +2576,8 @@ body {
     top: auto;
   }
 
-  .messages {
+  .chat-list,
+.messages{
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior-y: contain;
@@ -2621,9 +2619,7 @@ body {
     padding: 0 22px;
   }
 
-  .topbar-context {
-    gap: 12px;
-  }
+  
 
   .topbar-context b {
     font-size: 13px;
@@ -2661,7 +2657,8 @@ body {
     height: 44px;
   }
 
-  .graph-panel .teacher-grid {
+  .topbar-context,
+.graph-panel .teacher-grid{
     gap: 12px;
   }
 
@@ -2850,7 +2847,9 @@ body {
 
 .sidebar{width:210px}.main{margin-left:210px}.content{padding:25px}
 
-.sidebar{border-bottom:1px solid var(--line)}.brand{padding:0 4px 12px}.brand img{height:32px}.school-label{display:none}.sidebar nav{gap:5px}.sidebar nav button{flex:1;font-size:10px}.sidebar nav button i{display:none}.main{margin:0}.topbar{padding:0 16px}.content{padding:20px 14px}.graph-panel{padding:14px}.section-head{align-items:flex-start;flex-direction:column}.teacher-grid{grid-template-columns:1fr}.user-row{flex-wrap:wrap}.user-row .person-info{min-width:calc(100% - 65px)}.role-tag{margin-left:45px}.chat-layout{grid-template-columns:1fr}.chat-list{overflow:auto}.main footer{padding:0 14px 18px}.login-card{padding:26px}.login-logo{height:90px}
+.sidebar{border-bottom:1px solid var(--line)}.brand{padding:0 4px 12px}.brand img{height:32px}.sidebar nav{gap:5px}.sidebar nav button{flex:1;font-size:10px}.school-label,
+.sidebar nav button i{display:none}.main{margin:0}.topbar{padding:0 16px}.content{padding:20px 14px}.graph-panel{padding:14px}.section-head{align-items:flex-start;flex-direction:column}.user-row{flex-wrap:wrap}.user-row .person-info{min-width:calc(100% - 65px)}.role-tag{margin-left:45px}.teacher-grid,
+.chat-layout{grid-template-columns:1fr}.chat-list{overflow:auto}.main footer{padding:0 14px 18px}.login-card{padding:26px}.login-logo{height:90px}
 
   
   .main { margin-left: 230px; }
@@ -3070,13 +3069,14 @@ body {
   
   
   
-  .composer-footer { align-items: stretch; flex-direction: column; }
+  
   .composer-footer .btn { width: 100%; }
   
 
   
   .chat-list-tools input, .chat-list-tools select { font-size: 11px; padding: 9px 7px; }
-  .composer-send { align-items: stretch; flex-direction: column; }
+  .composer-footer,
+.composer-send{ align-items: stretch; flex-direction: column; }
   .composer-send .btn { width: 100%; }
 
   
@@ -3397,11 +3397,7 @@ body {
     height: 30px;
   }
 
-  .graph-panel .student-card .person-actions button {
-    flex-basis: 25px;
-    width: 25px;
-    height: 25px;
-  }
+  
 
   
 
@@ -3446,7 +3442,8 @@ body {
     padding: 7px;
   }
 
-  .graph-panel .teacher-card .person-actions button {
+  .graph-panel .student-card .person-actions button,
+.graph-panel .teacher-card .person-actions button{
     flex-basis: 25px;
     width: 25px;
     height: 25px;
@@ -4914,17 +4911,15 @@ button:disabled,
     gap: 6px;
   }
 
-  .person-actions button {
-    width: 36px;
-    height: 36px;
-  }
+  
 
   .user-actions {
     flex-wrap: wrap;
     gap: 6px;
   }
 
-  .user-action-btn:not(.connect-toggle) {
+  .person-actions button,
+.user-action-btn:not(.connect-toggle){
     width: 36px;
     height: 36px;
   }
@@ -5028,12 +5023,7 @@ button:disabled,
   color: #594091 !important;
   box-shadow: none !important;
 }
-.btn:not(.primary):not(.danger):not(.disconnect):active:not(:disabled),
-.icon-btn:active:not(:disabled),
-.person-actions button:active:not(:disabled),
-.user-action-btn:active:not(:disabled) {
-  transform: translateY(1px);
-}
+
 .btn.primary {
   background: var(--button-primary) !important;
   border: 1px solid var(--button-primary) !important;
@@ -5046,7 +5036,11 @@ button:disabled,
   border-color: var(--button-primary-hover) !important;
   box-shadow: 0 3px 10px rgba(87,62,153,.17) !important;
 }
-.btn.primary:active:not(:disabled) { transform: translateY(1px); }
+.btn:not(.primary):not(.danger):not(.disconnect):active:not(:disabled),
+.icon-btn:active:not(:disabled),
+.person-actions button:active:not(:disabled),
+.user-action-btn:active:not(:disabled),
+.btn.primary:active:not(:disabled){ transform: translateY(1px); }
 
 /* Icon actions are intentionally quiet until the user points at them. */
 .user-action-btn:not(.connect-toggle),
@@ -5404,9 +5398,7 @@ button:focus-visible, .btn:focus-visible {
     overflow-wrap: anywhere !important;
     line-height: 1.3 !important;
   }
-  .toolbar.user-toolbar > .user-count b {
-    flex: 0 0 auto !important;
-  }
+  
   .toolbar.user-toolbar > .user-add-btn {
     height: auto !important;
     min-height: 42px !important;
@@ -5415,7 +5407,8 @@ button:focus-visible, .btn:focus-visible {
     line-height: 1.25 !important;
     text-align: center !important;
   }
-  .toolbar.user-toolbar > .user-add-btn svg {
+  .toolbar.user-toolbar > .user-count b,
+.toolbar.user-toolbar > .user-add-btn svg{
     flex: 0 0 auto !important;
   }
 }
@@ -5926,14 +5919,14 @@ body { background: var(--canvas); color: var(--ink); }.sidebar,
   background-color: var(--surface);
   border-color: var(--ui-border);
 }
-.sidebar, .topbar { box-shadow: var(--ui-shadow-card); }.graph-panel,
+.sidebar, .topbar,
+.graph-panel,
 .user-list,
 .chat-layout,
 .person-card,
 .modal,
 .user-info-popover,
-.login-card
-{
+.login-card{
   box-shadow: var(--ui-shadow-card);
 }
 .person-card,
