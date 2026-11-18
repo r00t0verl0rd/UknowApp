@@ -46,9 +46,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
 .teacher-avatar{background:#eee8f8;color:var(--purple)}
 .student-avatar,.avatar.student{color:var(--red)}
-.person-info b,.person-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.person-info b,.person-info small:not(.student-additional-info){display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .person-info small{color:var(--muted);margin-top:4px}
+.student-additional-info{display:block;max-width:100%;overflow-wrap:anywhere;white-space:normal!important;line-height:1.35}
 .person-actions{display:flex;flex:none}
 .icon-btn {display:grid;place-items:center}
 .person-actions button:hover,.icon-btn:hover{color:var(--purple)}
