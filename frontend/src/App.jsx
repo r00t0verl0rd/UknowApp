@@ -482,7 +482,8 @@ export default function App() {
     try {
       const base = chat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
       setMessages(await request(base + chat.id + "/messages"));
-      if (profile?.role === "teacher") setChats(await request("/api/panel/conversations"));
+      if (chat.type === "personal") setPersonalChats(await request("/api/panel/personal-conversations"));
+      else if (profile?.role === "teacher") setChats(await request("/api/panel/conversations"));
     } catch (e) { setError(e.message); }
   }
 
