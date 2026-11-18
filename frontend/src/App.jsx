@@ -128,16 +128,20 @@ export default function App() {
     try {
       const who = await request("/api/panel/me");
       setProfile(who);
-      const conversations = await request("/api/panel/conversations");
+
+      // Independent panel datasets are fetched together to avoid serial network waits.
+      const [conversations, roleData] = await Promise.all([
+        request("/api/panel/conversations"),
+        who.role === "admin"
+          ? Promise.all([request("/api/admin/users"), request("/api/admin/overview")])
+          : request("/api/panel/graph")
+      ]);
       setChats(conversations);
       if (who.role === "admin") {
-        const [people, summary] = await Promise.all([
-          request("/api/admin/users"), request("/api/admin/overview")
-        ]);
+        const [people, summary] = roleData;
         setUsers(people); setOverview(summary);
       } else {
-        const graph = await request("/api/panel/graph");
-        setTeacherGraph(graph);
+        setTeacherGraph(roleData);
         setUsers([]); setOverview(null);
       }
     } catch (e) {
@@ -215,6 +219,10 @@ export default function App() {
   // Списки участников пересчитываются только при изменении массива пользователей.
   const activeTeachers = useMemo(() => users.filter(u => u.active && u.role === "teacher"), [users]);
   const activeStudents = useMemo(() => users.filter(u => u.active && u.role === "student"), [users]);
+  const studentsByTeacherId = useMemo(
+    () => new Map((overview?.teachers || []).map(teacher => [teacher.id, teacher.students || []])),
+    [overview]
+  );
   const visibleUsers = useMemo(() => users
     .filter(u => (u.full_name + " " + (u.telegram_id || "")).toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
@@ -374,12 +382,13 @@ export default function App() {
     setError("");
     try {
       const issued = await request("/api/admin/users/" + modal.id + "/access-code", { method: "POST" });
-      await refresh();
+      // Show the issued code immediately; refreshing the rest of the panel is non-blocking.
       setIssuedCredential({
         full_name: issued.full_name,
         username: issued.web_username || issued.full_name,
         code: issued.issued_access_code
       });
+      void refresh();
     } catch (e) {
       setError(e.message || "Не удалось создать новый код доступа");
     } finally {
@@ -596,7 +605,7 @@ export default function App() {
             <div className="root-node"><img src="/logo.png" alt=""/><div><b>Администратор</b><small>Полное управление</small></div></div>
             <div className="teacher-grid">
               {activeTeachers.map(teacher => {
-                const students = overview?.teachers.find(t => t.id === teacher.id)?.students || [];
+                const students = studentsByTeacherId.get(teacher.id) || [];
                 const studentsCollapsed = collapsedTeacherIds.has(teacher.id);
                 return <section className={`teacher-branch${studentsCollapsed ? " is-collapsed" : ""}`} key={teacher.id}>
                 <div className="person-card teacher-card">
