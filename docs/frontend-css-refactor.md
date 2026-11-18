@@ -70,3 +70,17 @@ No production build or light/dark mobile/tablet/desktop visual regression run ha
 3. Establish screenshot fixtures and a reproducible demo dataset before changing the visual rules more aggressively.
 4. Replace repeated component-specific values with semantic tokens and shared component rules only where their behavior is genuinely the same.
 5. Reassess file size after each component migration; retain the 3x goal as a target, not a reason to remove required behavior.
+
+## Latest pass: compact rule layout (2026-11-18)
+
+The stylesheet now uses one CSS rule per line, with each media/container/layer wrapper and its closing brace on separate lines. Comments remain readable on their own lines; declarations, selector lists, source order, media conditions, !important flags and string contents are preserved.
+
+A whitespace-only token-stream comparison confirmed that no non-whitespace CSS characters changed during this pass. The number of opening blocks also remained unchanged (1,598). This is a source-layout change, not a claim that the stylesheet's underlying rule count or visual complexity fell by the same factor.
+
+| File | Before layout pass | After layout pass |
+|---|---:|---:|
+| styles.css lines | 7,880 | 1,855 |
+| styles.css characters | 203,663 | 189,519 |
+| CSS blocks | 1,598 | 1,598 |
+
+The stylesheet is now within the requested 1,000–2,000-line range. It is not yet within a 1,000–2,000-byte or equivalent complexity budget: 1,598 CSS blocks remain, so future reductions must come from genuine component-level consolidation and proven obsolete-rule removal, not formatting alone. No browser build or visual regression test has been performed in this pass.
