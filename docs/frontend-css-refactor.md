@@ -77,10 +77,13 @@ The stylesheet now uses one CSS rule per line, with each media/container/layer w
 
 A whitespace-only token-stream comparison confirmed that no non-whitespace CSS characters changed during this pass. The number of opening blocks also remained unchanged (1,598). This is a source-layout change, not a claim that the stylesheet's underlying rule count or visual complexity fell by the same factor.
 
-| File | Before layout pass | After layout pass |
+| Metric | Before layout pass | After layout pass |
 |---|---:|---:|
 | styles.css lines | 7,880 | 1,855 |
+| tokens.css lines | 110 | 110 |
+| Combined CSS lines | 7,990 | 1,965 |
 | styles.css characters | 203,663 | 189,519 |
-| CSS blocks | 1,598 | 1,598 |
+| Combined CSS characters | 206,857 | 192,713 |
+| CSS blocks in styles.css | 1,598 | 1,598 |
 
 The stylesheet is now within the requested 1,000–2,000-line range. It is not yet within a 1,000–2,000-byte or equivalent complexity budget: 1,598 CSS blocks remain, so future reductions must come from genuine component-level consolidation and proven obsolete-rule removal, not formatting alone. No browser build or visual regression test has been performed in this pass.
