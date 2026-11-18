@@ -505,8 +505,8 @@ img, video, audio { max-width: 100%;}
 .graph-panel .student-card .person-actions button { flex: 0 0 27px; width: 27px; height: 27px;}
 /* Preserve comfortable teacher columns; only the card contents may shrink. */
 .graph-panel .teacher-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));}
-.user-sort { display: inline-flex; align-items: center; flex: 0 0 auto; border: 1px solid var(--line); color: var(--muted); background: #fff;}
-.user-sort select { border: 0; outline: 0; color: var(--ink); background: transparent; font: inherit; cursor: pointer;}
+.user-sort { display: block; flex: 0 1 auto; min-width: 0; border: 1px solid var(--line); color: var(--ink); background: #fff; font: inherit; cursor: pointer;}
+
 .user-list { padding: 0;}
 .user-row { border-bottom: 1px solid var(--line); transition: background .15s ease;}
 .user-row:hover { background: #f8f7fb;}
@@ -522,7 +522,7 @@ img, video, audio { max-width: 100%;}
 .user-action-btn:hover { border-color: var(--line); color: var(--ink); background: rgba(130, 140, 160, .10);}
 .user-action-btn.disconnect:hover { border-color: rgba(217, 120, 132, .28); background: rgba(217, 120, 132, .12);}
 :root[data-theme="dark-soft"] .user-row:hover { background: #262f3d !important;}
-:root[data-theme="dark-soft"] .user-sort select { color: #e4e8f0;}
+:root[data-theme="dark-soft"] .user-sort { color: #e4e8f0;}
 :root[data-theme="dark-soft"] .user-action-btn:hover { background: #303b4d; border-color: #4b5870; color: #f0f2f7;}
 /* Teacher cards use the same responsive name wrapping as student cards.
    Keep avatar and action buttons fixed while the name column takes the
@@ -557,7 +557,7 @@ img, video, audio { max-width: 100%;}
 :root:not([data-theme="dark-soft"]) .person-info small, :root:not([data-theme="dark-soft"]) .chat-item small, :root:not([data-theme="dark-soft"]) .chat-item-meta, :root:not([data-theme="dark-soft"]) .chat-head small, :root:not([data-theme="dark-soft"]) .message-time, :root:not([data-theme="dark-soft"]) .toolbar, :root:not([data-theme="dark-soft"]) .hint { color: #918b9a;}
 :root:not([data-theme="dark-soft"]) .chat-list-tools { border-bottom-color: #ded9e5;}
 .user-sort { min-height: 48px; height: 48px; padding: 0 14px; border-radius: 12px;}
-.user-sort select { max-width: 185px; font-size: 13px;}
+.user-sort { max-width: 185px; font-size: 13px;}
 .user-count { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; min-height: 44px; padding: 0 13px; border: 1px solid #e4deed; border-radius: 12px; color: #7f788d; background: #faf8fd; font-size: 12px; font-weight: 650; white-space: nowrap;}
 .user-count b { display: inline-grid; place-items: center; min-width: 28px; height: 28px; padding: 0 7px; border-radius: 9px; color: #62439d; background: #eee8fa; font-size: 14px; font-weight: 850; font-variant-numeric: tabular-nums;}
 .user-add-btn { min-height: 48px; padding: 0 18px; border-radius: 12px; font-size: 13px; white-space: nowrap;}
@@ -899,7 +899,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .chat-items-scroll > .empty-state { padding: 14px 8px;}
 :root[data-theme="dark-soft"] .chat-list-tools { background: #1d2430 !important; border-bottom-color: #39465a !important;}
 .user-sort { min-height: 44px; height: 44px; flex: 1 1 170px;}
-.user-sort select { max-width: none; width: 100%;}
+.user-sort { max-width: none; width: 100%;}
 .user-count { min-height: 42px; padding: 0 10px;}
 .user-add-btn { min-height: 44px; padding: 0 13px;}
 .user-row { min-height: 80px;}
@@ -1026,9 +1026,9 @@ button, .btn, .logout, .add-student, .chat-item, .composer-send, .user-action-bt
 .sidebar nav button:not(.active):hover { background: var(--ui-control-hover); border-color: var(--ui-border);}
 .chat-item.selected { border-color: var(--ui-border-strong); box-shadow: inset 3px 0 0 var(--purple);}
 /* Inputs, search, filters, and composer use matching borders and focus states. */
-.stack input, .stack select, .stack textarea, .search, .search input, .user-sort, .user-sort select, .chat-search-control, .chat-search-control input, .chat-head-tools select, .chat-composer textarea, input, select, textarea { border-radius: var(--ui-radius-sm);}
+.stack input, .stack select, .stack textarea, .search, .search input, .user-sort, .chat-search-control, .chat-search-control input, .chat-head-tools select, .chat-composer textarea, input, select, textarea { border-radius: var(--ui-radius-sm);}
 .stack input, .stack select, .stack textarea, .search, .user-sort, .chat-search-control, .chat-head-tools select, .chat-composer textarea { border-color: var(--ui-border); background-color: #fff;}
-.stack input:focus, .stack select:focus, .stack textarea:focus, .search:focus-within, .user-sort:focus-within, .chat-search-control:focus-within, .chat-head-tools select:focus, .chat-composer textarea:focus { border-color: #a98bd8; box-shadow: var(--ui-focus); outline: none;}
+.stack input:focus, .stack select:focus, .stack textarea:focus, .search:focus-within, .user-sort:focus, .chat-search-control:focus-within, .chat-head-tools select:focus, .chat-composer textarea:focus { border-color: #a98bd8; box-shadow: var(--ui-focus); outline: none;}
 input::placeholder, textarea::placeholder { color: #a49daf;}
 /* Cards and workspaces share consistent surface depth and corner rhythm. */
 .graph-panel, .user-list, .chat-layout, .person-card, .teacher-graph-card, .user-info-popover, .chat-list, .chat-detail { border-radius: var(--ui-radius-lg);}
@@ -1064,7 +1064,7 @@ input::placeholder, textarea::placeholder { color: #a49daf;}
 .user-toolbar { display: grid; grid-template-columns: minmax(180px, 1fr) auto auto auto; align-items: center; gap: 10px; width: 100%; min-width: 0; box-sizing: border-box;}
 .user-toolbar > .search { width: auto; min-width: 0; max-width: none; flex: none; box-sizing: border-box;}
 .user-toolbar > .user-sort { min-width: 0; max-width: 100%; box-sizing: border-box;}
-.user-toolbar > .user-sort select { width: 100%; min-width: 0; max-width: 100%;}
+
 .user-toolbar > .user-count { min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; box-sizing: border-box;}
 .user-toolbar > .user-add-btn { justify-self: end; min-width: 0; max-width: 100%; padding-inline: clamp(10px, 1.3vw, 18px); white-space: normal; line-height: 1.25; text-align: center; box-sizing: border-box;}
 .user-list { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box;}
@@ -1132,7 +1132,7 @@ button:disabled, .btn:disabled { opacity: .48 !important; cursor: not-allowed !i
 .toolbar.user-toolbar > .search { width: 100%; min-width: 0; max-width: none; flex: none;}
 .toolbar.user-toolbar > .search input { width: 100%; min-width: 0;}
 .toolbar.user-toolbar > .user-sort { width: 100%; min-width: 0; max-width: 100%; overflow: hidden; box-sizing: border-box;}
-.toolbar.user-toolbar > .user-sort select { display: block; flex: 1 1 0; width: 0; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.toolbar.user-toolbar > .user-sort { display: block; width: 100%; min-width: 0; max-width: 100%; text-overflow: ellipsis; white-space: nowrap;}
 .toolbar.user-toolbar > .user-count { min-width: 0; max-width: 100%; overflow-wrap: normal;}
 .toolbar.user-toolbar > .user-add-btn { width: auto; min-width: 0; max-width: 100%; line-height: 1.2;}
 /* On narrow desktop windows the search gets its own row, with the other
@@ -1238,8 +1238,8 @@ button:focus-visible, .btn:focus-visible { outline: 2px solid #aa95d0 !important
 .toolbar.user-toolbar > .search { display: flex !important; align-items: center !important; gap: 9px !important; padding: 0 12px !important; border: 1px solid var(--line) !important; border-radius: 10px !important;}
 .toolbar.user-toolbar > .search > svg { display: block !important; flex: 0 0 16px !important; width: 16px !important; height: 16px !important;}
 .toolbar.user-toolbar > .search > input { flex: 1 1 0 !important; width: 0 !important; min-width: 0 !important; height: 100% !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; border: 0 !important; outline: none !important; box-shadow: none !important; line-height: normal !important;}
-.toolbar.user-toolbar > .user-sort { display: flex !important; align-items: center !important; height: 42px !important; min-height: 42px !important; padding: 0 6px !important; border: 1px solid var(--line) !important; border-radius: 10px !important;}
-.toolbar.user-toolbar > .user-sort select { height: 100% !important; min-height: 0 !important; padding: 0 2px !important; box-sizing: border-box !important; line-height: normal !important;}
+.toolbar.user-toolbar > .user-sort { display: block !important; width: 100% !important; height: 42px !important; min-height: 42px !important; padding: 0 8px !important; border: 1px solid var(--line) !important; border-radius: 10px !important; appearance: auto !important; -webkit-appearance: menulist !important; box-sizing: border-box !important;}
+
 .toolbar.user-toolbar > .user-count { justify-self: start !important; box-shadow: none !important;}
 .toolbar.user-toolbar > .user-add-btn { justify-self: end !important; margin-left: auto !important; min-height: 42px !important; height: 42px !important; padding: 0 15px !important; white-space: nowrap !important;}
 /* Narrow desktop windows: two fixed rows keep toolbar controls aligned. */
