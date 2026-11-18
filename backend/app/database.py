@@ -51,6 +51,13 @@ def create_tables() -> None:
             "ON messages (conversation_id, created_at, id)"
         ))
 
+    # Read markers for private in-app conversations.
+    with engine.begin() as connection:
+        columns = {column["name"] for column in inspect(connection).get_columns("personal_messages")}
+        for column_name in ("admin_read_at", "participant_read_at"):
+            if column_name not in columns:
+                connection.execute(text("ALTER TABLE personal_messages ADD COLUMN " + column_name + " DATETIME"))
+
     # Одноразовые коды и истёкшие сессии не нужны для истории — удаляем старые записи.
     retention_cutoff = datetime.now(timezone.utc) - timedelta(days=30)
     with SessionLocal() as db:
