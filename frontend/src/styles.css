@@ -406,8 +406,8 @@ img, video, audio { max-width: 100%;}
 :root[data-theme="dark-soft"] .btn.outline { background: #353149 !important; border-color: #514b6d !important; color: #c9c0ef !important;}
 :root[data-theme="dark-soft"] .role-tag, :root[data-theme="dark-soft"] .avatar, :root[data-theme="dark-soft"] .teacher-graph-card .readonly-tag { background: #353149 !important; color: #c6bdf0 !important;}
 :root[data-theme="dark-soft"] .teacher-graph-card.student { background: #302d32 !important; border-color: #51474a !important;}
-:root[data-theme="dark-soft"] .password-info, :root[data-theme="dark-soft"] .credential-password, :root[data-theme="dark-soft"] .invite-code { background: #2b2d3e !important; border-color: #4b4662 !important; color: #c6cddd !important;}
-:root[data-theme="dark-soft"] .credential-password b, :root[data-theme="dark-soft"] .password-info b { color: #c9c0ef !important;}
+:root[data-theme="dark-soft"] .password-info, :root[data-theme="dark-soft"] .credential-field-code, :root[data-theme="dark-soft"] .credential-help, :root[data-theme="dark-soft"] .invite-code { background: #2b2d3e !important; border-color: #4b4662 !important; color: #c6cddd !important;}
+:root[data-theme="dark-soft"] .credential-field-code .credential-field-value b, :root[data-theme="dark-soft"] .credential-help b, :root[data-theme="dark-soft"] .password-info b { color: #c9c0ef !important;}
 :root[data-theme="dark-soft"] .empty-state { color: #9ba6b8 !important;}
 :root[data-theme="dark-soft"] .chat-media-status { color: #d59a83 !important;}
 :root[data-theme="dark-soft"] .topbar svg, :root[data-theme="dark-soft"] .theme-toggle svg { color: inherit;}
