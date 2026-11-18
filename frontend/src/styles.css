@@ -1241,7 +1241,7 @@ button:focus-visible, .btn:focus-visible { outline: 2px solid #aa95d0 !important
 .toolbar.user-toolbar > .search > svg { display: block !important; flex: 0 0 16px !important; width: 16px !important; height: 16px !important;}
 .toolbar.user-toolbar > .search > input { flex: 1 1 0 !important; width: 0 !important; min-width: 0 !important; height: 100% !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; border: 0 !important; outline: none !important; box-shadow: none !important; line-height: normal !important;}
 .toolbar.user-toolbar > .user-sort { display: flex !important; align-items: center !important; height: 42px !important; min-height: 42px !important; padding: 0 10px !important; border: 1px solid var(--line) !important; border-radius: 10px !important;}
-.toolbar.user-toolbar > .user-sort select { height: 100% !important; min-height: 0 !important; padding-block: 0 !important; line-height: normal !important;}
+.toolbar.user-toolbar > .user-sort select { height: 100% !important; min-height: 0 !important; padding: 0 24px 0 0 !important; box-sizing: border-box !important; line-height: normal !important;}
 .toolbar.user-toolbar > .user-count { justify-self: start !important; box-shadow: none !important;}
 .toolbar.user-toolbar > .user-add-btn { justify-self: end !important; margin-left: auto !important; min-height: 42px !important; height: 42px !important; padding: 0 15px !important; white-space: nowrap !important;}
 /* Narrow desktop windows: two fixed rows keep toolbar controls aligned. */
