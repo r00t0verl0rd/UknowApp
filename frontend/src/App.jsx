@@ -732,8 +732,8 @@ export default function App() {
         {role === "teacher" && <>
           <div className="teacher-login-row">
             <label>Логин веб-панели<input value={teacherLogin || name} onChange={e => setTeacherLogin(e.target.value)} minLength="2" maxLength="160" required autoComplete="off" /></label>
-            {modal.mode === "edit" && users.find(u => u.id === modal.id)?.role === "teacher" && <span className="password-code-label">Код доступа: <b>XXX-XXX</b><button type="button" className="btn outline password-code-refresh" onClick={regenerateTeacherAccessCode} disabled={savingUser} title="Старый код сразу перестанет действовать"><RefreshCw size={12}/>Обновить код</button></span>}
           </div>
+          {modal.mode === "edit" && users.find(u => u.id === modal.id)?.role === "teacher" && <div className="password-code-label"><span>Код доступа: <b>XXX-XXX</b></span><button type="button" className="btn outline password-code-refresh" onClick={regenerateTeacherAccessCode} disabled={savingUser} title="Старый код сразу перестанет действовать"><RefreshCw size={12}/>Обновить код</button></div>}
           {modal.mode === "create" && <p className="password-info">Код доступа создастся автоматически — один для веб-панели и Telegram.</p>}
         </>}
         {modal.mode === "edit" && role !== users.find(u => u.id === modal.id)?.role && <p className="hint">При смене роли активные назначения будут закрыты. История переписок сохранится.</p>}
