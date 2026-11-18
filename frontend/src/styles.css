@@ -382,7 +382,7 @@ img, video, audio { max-width: 100%;}
 :root[data-theme="dark-soft"] .chat-composer, :root[data-theme="dark-soft"] .chat-head { background: #202633 !important;}
 :root[data-theme="dark-soft"] .teacher-credentials-panel { background: #222a37 !important; border-color: #394456 !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.025);}
 :root[data-theme="dark-soft"] .teacher-credential-row + .teacher-credential-row { border-top-color: #394456;}
-:root[data-theme="dark-soft"] .teacher-credential-row > span { color: #a4afc0 !important;}
+:root[data-theme="dark-soft"] .teacher-credential-row > span, :root[data-theme="dark-soft"] .teacher-credential-row > label { color: #a4afc0 !important;}
 :root[data-theme="dark-soft"] .teacher-login-edit-row > input, :root[data-theme="dark-soft"] .teacher-access-value { background: #293140 !important; border-color: #414c60 !important; color: #e0e5ee !important;}
 :root[data-theme="dark-soft"] .teacher-login-edit-row > input:focus { background: #30394a !important; border-color: #69758e !important; color: #f0f2f7 !important;}
 :root[data-theme="dark-soft"] .teacher-access-value b { color: #b9afe8 !important;}
