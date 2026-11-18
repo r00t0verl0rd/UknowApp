@@ -872,7 +872,7 @@ export default function App() {
                 <span>Сообщения: <b>{dataStats?.total_messages ?? "—"}</b> всего</span>
                 <span className="data-stat-subline">Ученические: {dataStats?.messages ?? "—"} · Личные: {dataStats?.personal_messages ?? "—"}</span>
                 <span>Telegram-группы: <b>{dataStats?.telegram_groups ?? "—"}</b></span>
-                <span>Коды подключения: <b>{dataStats?.connection_codes ?? "—"}</b></span>
+                <span>Действующие коды подключения: <b>{dataStats?.connection_codes ?? "—"}</b></span>
               </div>
             </article>
             <article className="data-stat-card">
