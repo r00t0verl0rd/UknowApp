@@ -866,7 +866,7 @@ def panel_conversations(principal: PanelUser, db: Db):
             Assignment.teacher.has(User.active.is_(True)),
             Conversation.status == "active",
         )
-        .order_by(Conversation.created_at.desc())
+        .order_by(Conversation.created_at.desc(), Conversation.id.desc())
     )
     if principal["role"] == "teacher":
         statement = statement.where(Assignment.teacher_id == principal["user_id"])
@@ -1113,7 +1113,10 @@ async def send_panel_message(
         select(Message).where(Message.conversation_id == conversation.id)
         .order_by(Message.created_at, Message.id)
     ).all()
-    student_target = _panel_student_telegram_target(db, conversation, rows)
+    student_target = (
+        _panel_student_telegram_target(db, conversation, rows)
+        if any(role == "student" for _, role in recipients) else None
+    )
 
     row = Message(
         conversation_id=conversation.id,
@@ -1144,7 +1147,9 @@ async def send_panel_message(
                 # The student already knows this is the teacher's private chat.
                 # Deliver teacher text naturally; only label a separate admin role.
                 outgoing_text = (
-                    body if principal["role"] in {"teacher", "student"}
+                    body if principal["role"] == "teacher"
+                    else "Сообщение от ученика " + student.full_name + ":\n" + body
+                    if principal["role"] == "student"
                     else "Сообщение от администратора школы:\n" + body
                 )
                 sent = await bot.send_message(**target, text=outgoing_text)
@@ -1217,7 +1222,10 @@ async def send_panel_attachment(
         select(Message).where(Message.conversation_id == conversation.id)
         .order_by(Message.created_at, Message.id)
     ).all()
-    student_target = _panel_student_telegram_target(db, conversation, rows[:-1])
+    student_target = (
+        _panel_student_telegram_target(db, conversation, rows[:-1])
+        if any(role == "student" for _, role in recipients) else None
+    )
 
     bot = getattr(request.app.state, "telegram_bot", None)
     delivery_errors = []
@@ -1237,8 +1245,9 @@ async def send_panel_attachment(
                 (row.text or "").strip()[:1024]
                 if principal["role"] == "teacher"
                 else (
-                    "Сообщение от ученика: " + row.text
-                    if principal["role"] == "student" and row.text
+                    "Сообщение от ученика " + student.full_name
+                    + ((": " + row.text) if row.text else "")
+                    if principal["role"] == "student"
                     else ("От администратора школы" + ((": " + row.text) if row.text else ""))
                 )
             )
