@@ -323,13 +323,12 @@ def teacher_keyboard_actions(
     db: Session,
     teacher: User,
     page: int,
-) -> tuple[dict[str, Optional[Conversation]], int, int]:
+) -> tuple[dict[str, Optional[Conversation]], int, int, set[str]]:
     items = teacher_conversations(db, teacher)
     total_pages, page, visible = _teacher_page(items, page)
-    all_labels = _teacher_button_labels(items)
     labels_by_conversation = {
-        item["conversation"].id: label
-        for item, label in zip(items, all_labels)
+        item["conversation"].id: item["student"].full_name.strip()
+        for item in items
     }
     actions: dict[str, Optional[Conversation]] = {}
     for item in visible:
@@ -338,7 +337,7 @@ def teacher_keyboard_actions(
             actions[label] = None
         else:
             actions[label] = item["conversation"]
-    return actions, page, total_pages
+    return actions, page, total_pages, set(labels_by_conversation.values())
 
 
 def teacher_keyboard_signature(markup: ReplyKeyboardMarkup) -> str:
@@ -562,15 +561,13 @@ async def handle_teacher_keyboard_message(
 
     panel = db.get(TeacherPanel, teacher.id)
     page = panel.page_index if panel else 0
-    actions, page, total_pages = teacher_keyboard_actions(db, teacher, page)
+    actions, page, total_pages, legacy_student_labels = teacher_keyboard_actions(
+        db, teacher, page
+    )
 
     # Older Telegram clients may still display the pre-emoji student buttons.
     # Consume those stale taps and refresh the menu instead of routing the name
     # as an ordinary message to the currently selected student.
-    legacy_student_labels = {
-        item["student"].full_name.strip()
-        for item in teacher_conversations(db, teacher)
-    }
     if body not in actions and body in legacy_student_labels:
         try:
             await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
