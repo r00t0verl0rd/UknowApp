@@ -93,79 +93,122 @@ def validate_teacher_username(db: Session, username: str, exclude_user_id: Optio
     return cleaned
 
 
-def conversation_dict(
-    db: Session, conversation: Conversation, include_telegram_ids: bool = True
-) -> dict:
-    # Для карточки диалога читаем только счётчик, последнее сообщение и непрочитанные записи.
-    # Полная история загружается отдельно, когда пользователь открывает переписку.
-    assignment = conversation.assignment
-    last_message = db.scalar(
-        select(Message)
-        .where(Message.conversation_id == conversation.id)
-        .order_by(Message.created_at.desc(), Message.id.desc())
-        .limit(1)
+def conversation_dicts(
+    db: Session,
+    conversations: list[Conversation],
+    include_telegram_ids: bool = True,
+) -> list[dict]:
+    if not conversations:
+        return []
+
+    conversation_ids = [item.id for item in conversations]
+    latest_rank = (
+        select(
+            Message.id.label("message_id"),
+            func.row_number().over(
+                partition_by=Message.conversation_id,
+                order_by=(Message.created_at.desc(), Message.id.desc()),
+            ).label("position"),
+        )
+        .where(Message.conversation_id.in_(conversation_ids))
+        .subquery()
     )
-    last_teacher_reply = db.execute(
-        select(Message.created_at, Message.id)
+    latest_messages = db.scalars(
+        select(Message)
+        .join(latest_rank, Message.id == latest_rank.c.message_id)
+        .where(latest_rank.c.position == 1)
+    ).all()
+    latest_by_conversation = {item.conversation_id: item for item in latest_messages}
+
+    last_teacher = (
+        select(
+            Message.conversation_id.label("conversation_id"),
+            Message.created_at.label("created_at"),
+            Message.id.label("id"),
+            func.row_number().over(
+                partition_by=Message.conversation_id,
+                order_by=(Message.created_at.desc(), Message.id.desc()),
+            ).label("position"),
+        )
         .where(
-            Message.conversation_id == conversation.id,
+            Message.conversation_id.in_(conversation_ids),
             Message.sender_role == "teacher",
             Message.delivery_status == "delivered",
         )
-        .order_by(Message.created_at.desc(), Message.id.desc())
-        .limit(1)
-    ).first()
-
-    # Счётчик всех сообщений и непрочитанных считаем одним агрегатным запросом.
-    unread_conditions = [
+        .subquery()
+    )
+    unread_condition = and_(
         Message.sender_role == "student",
         Message.delivery_status == "delivered",
         func.json_extract(Message.metadata_json, "$.teacher_read_at").is_(None),
-    ]
-    if last_teacher_reply:
-        unread_conditions.append(
-            or_(
-                Message.created_at > last_teacher_reply.created_at,
-                and_(
-                    Message.created_at == last_teacher_reply.created_at,
-                    Message.id > last_teacher_reply.id,
-                ),
-            )
-        )
-    message_count, unread_count = db.execute(
+        or_(
+            last_teacher.c.id.is_(None),
+            Message.created_at > last_teacher.c.created_at,
+            and_(
+                Message.created_at == last_teacher.c.created_at,
+                Message.id > last_teacher.c.id,
+            ),
+        ),
+    )
+    statistics = db.execute(
         select(
+            Message.conversation_id,
             func.count(Message.id),
-            func.coalesce(func.sum(case((and_(*unread_conditions), 1), else_=0)), 0),
-        ).where(Message.conversation_id == conversation.id)
-    ).one()
-
-
-    return {
-        "id": conversation.id,
-        "status": conversation.status,
-        "created_at": conversation.created_at.isoformat(),
-        "teacher": user_dict(assignment.teacher, include_telegram_id=include_telegram_ids),
-        "student": user_dict(assignment.student, include_telegram_id=include_telegram_ids),
-        "last_message": (
-            (last_message.text or "Сообщение") if last_message.content_type == "text"
-            else (
-                (json.loads(last_message.metadata_json or "{}").get("media") or {}).get("file_name")
-                or {
-                    "photo": "🖼 Фотография",
-                    "voice": "🎤 Голосовое сообщение",
-                    "audio": "🎵 Аудио",
-                    "video": "🎬 Видео",
-                    "video_note": "⭕ Видеосообщение",
-                    "document": "📎 Документ",
-                    "sticker": "Стикер",
-                    "animation": "GIF-анимация",
-                }.get(last_message.content_type, "📎 Вложение")
-            ) + ((": " + last_message.text) if last_message.text else "")
-        ) if last_message else "Переписка пока пуста",
-        "last_message_at": last_message.created_at.isoformat() if last_message else None,
-        "message_count": message_count,
-        "unread_count": unread_count,
+            func.coalesce(func.sum(case((unread_condition, 1), else_=0)), 0),
+        )
+        .outerjoin(
+            last_teacher,
+            and_(
+                Message.conversation_id == last_teacher.c.conversation_id,
+                last_teacher.c.position == 1,
+            ),
+        )
+        .where(Message.conversation_id.in_(conversation_ids))
+        .group_by(Message.conversation_id)
+    ).all()
+    stats_by_conversation = {
+        conversation_id: (message_count, unread_count)
+        for conversation_id, message_count, unread_count in statistics
     }
+
+    result = []
+    for conversation in conversations:
+        assignment = conversation.assignment
+        last_message = latest_by_conversation.get(conversation.id)
+        message_count, unread_count = stats_by_conversation.get(conversation.id, (0, 0))
+        result.append({
+            "id": conversation.id,
+            "status": conversation.status,
+            "created_at": conversation.created_at.isoformat(),
+            "teacher": user_dict(assignment.teacher, include_telegram_id=include_telegram_ids),
+            "student": user_dict(assignment.student, include_telegram_id=include_telegram_ids),
+            "last_message": (
+                (last_message.text or "Сообщение") if last_message.content_type == "text"
+                else (
+                    (json.loads(last_message.metadata_json or "{}").get("media") or {}).get("file_name")
+                    or {
+                        "photo": "🖼 Фотография",
+                        "voice": "🎤 Голосовое сообщение",
+                        "audio": "🎵 Аудио",
+                        "video": "🎬 Видео",
+                        "video_note": "⭕ Видеосообщение",
+                        "document": "📎 Документ",
+                        "sticker": "Стикер",
+                        "animation": "GIF-анимация",
+                    }.get(last_message.content_type, "📎 Вложение")
+                ) + ((": " + last_message.text) if last_message.text else "")
+            ) if last_message else "Переписка пока пуста",
+            "last_message_at": last_message.created_at.isoformat() if last_message else None,
+            "message_count": message_count,
+            "unread_count": unread_count,
+        })
+    return result
+
+
+def conversation_dict(
+    db: Session, conversation: Conversation, include_telegram_ids: bool = True
+) -> dict:
+    return conversation_dicts(db, [conversation], include_telegram_ids)[0]
 
 
 @router.post("/auth/login")
@@ -198,9 +241,17 @@ def health():
 def overview(_: Admin, db: Db):
     users = db.scalars(select(User).order_by(User.full_name)).all()
     assignments = db.scalars(
-        select(Assignment).where(Assignment.active.is_(True)).order_by(Assignment.created_at.desc())
+        select(Assignment)
+        .options(
+            selectinload(Assignment.teacher),
+            selectinload(Assignment.student),
+        )
+        .where(Assignment.active.is_(True))
+        .order_by(Assignment.created_at.desc())
     ).all()
-    active_conversations = db.scalars(select(Conversation).where(Conversation.status == "active")).all()
+    active_conversation_count = db.scalar(
+        select(func.count(Conversation.id)).where(Conversation.status == "active")
+    ) or 0
 
     students_by_teacher: dict[int, list[dict]] = {}
     for assignment in assignments:
@@ -220,7 +271,7 @@ def overview(_: Admin, db: Db):
             "teachers": sum(1 for user in users if user.role == "teacher" and user.active),
             "students": sum(1 for user in users if user.role == "student" and user.active),
             "assignments": len(assignments),
-            "conversations": len(active_conversations),
+            "conversations": active_conversation_count,
             "messages": db.query(Message).count(),
         },
         "teachers": teachers,
@@ -799,7 +850,9 @@ def panel_conversations(principal: PanelUser, db: Db):
     if principal["role"] == "teacher":
         statement = statement.where(Assignment.teacher_id == principal["user_id"])
     conversations = db.scalars(statement).all()
-    return [_panel_conversation_dict(db, item, principal) for item in conversations]
+    return conversation_dicts(
+        db, conversations, include_telegram_ids=(principal["role"] == "admin")
+    )
 
 
 @router.get("/panel/conversations/{conversation_id}/messages")
