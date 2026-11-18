@@ -18,6 +18,7 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     full_name: Mapped[str] = mapped_column(String(160), nullable=False)
+    additional_info: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     web_username: Mapped[Optional[str]] = mapped_column(String(160), nullable=True)
     role: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     telegram_id: Mapped[Optional[int]] = mapped_column(BigInteger, unique=True, nullable=True, index=True)
