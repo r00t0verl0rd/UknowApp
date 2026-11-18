@@ -38,7 +38,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .legend span{width:8px;height:8px;border-radius:50%;margin-left:9px}
 
 .brand img, .root-node img{object-fit:contain}
-.root-node b,.root-node small{display:block}
+.root-node b, .root-node small, .chat-head b, .chat-head small{display:block}
 
 .teacher-grid{display:grid;}
 .teacher-branch{position:relative;}
@@ -78,8 +78,6 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .chat-item small{font-size:10px;}
 
 .person-info, .chat-detail{min-width:0}
-
-.chat-head b,.chat-head small{display:block}
 
 .messages{align-content:start;}
 
@@ -131,13 +129,12 @@ to{transform:rotate(360deg)}
 .topbar > div, .section-head p{ font-size: 14px;}
 .content { max-width: 1680px; padding: 38px 42px;}
 .btn { font-size: 13px; padding: 12px 16px;}
-.btn.small { font-size: 12px;}
+.btn.small, .legend, .empty-students, .add-student { font-size: 12px;}
 .eyebrow, .school-label { font-size: 11px; letter-spacing: 1.6px;}
 /* Statistics are intentionally compact to give the hierarchy more space. */
 /* The hierarchy graph is the main workspace. */
 .section-head { margin-bottom: 31px;}
 .section-head h2 { font-size: 20px;}
-.legend { font-size: 12px;}
 
 .teacher-grid {  gap: 26px;}
 
@@ -148,7 +145,6 @@ to{transform:rotate(360deg)}
 .person-info small { font-size: 11px;}
 .person-actions svg, .icon-btn svg { width: 17px; height: 17px;}
 
-.empty-students, .add-student{  font-size: 12px;}
 .toolbar, .user-row .person-info b { font-size: 13px;}
 .user-row .person-info small, .role-tag { font-size: 11px;}
 .message b { font-size: 13px;}
@@ -771,7 +767,7 @@ html, body { overflow-x: clip;}
 .topbar > .topbar-actions { display: none !important;}
 .main { margin: 0; width: 100%; min-width: 0;}
 /* Remove the empty profile strip between mobile navigation and the page workspace. */
-.shell:not(.chats-shell) > .main > .topbar, .topbar > div span{ display: none;}
+.shell:not(.chats-shell) > .main > .topbar, .topbar > div span, .topbar-user, .chats-main > .topbar{ display: none;}
 .topbar > div { min-width: 0; gap: 5px; font-size: 11px;}
 .content { width: 100%;}
 .graph-panel, .user-list, .chat-layout { width: 100%; border-radius: 15px;}
@@ -826,7 +822,6 @@ button:not(.primary):not(.disconnect):not(.danger-icon), .btn:not(.primary):not(
 .btn.ghost:not(.primary):not(.disconnect):not(.danger-icon) { background-color: #eae7ef !important;}
 .btn.outline:not(.primary):not(.disconnect):not(.danger-icon), button.add-student:not(.primary):not(.disconnect):not(.danger-icon) { background-color: #f1edf7 !important; color: var(--purple) !important;}
 button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { background-color: #eae4f4 !important; color: var(--purple) !important;}
-.topbar-user { display: none;}
 .composer-footer .btn, .composer-send .btn{ width: 100%;}
 .chat-list-tools input, .chat-list-tools select { font-size: 11px; padding: 9px 7px;}
 .composer-footer, .composer-send{ align-items: stretch; flex-direction: column;}
@@ -850,7 +845,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .graph-panel .teacher-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px;}
 .graph-panel .teacher-branch { min-width: 0; border-radius: 13px;}
 .graph-panel .teacher-card, .graph-panel .student-card { min-width: 0; min-height: 58px; border-radius: 10px;}
-.graph-panel .person-main, .graph-panel .person-info { min-width: 0;}
+.graph-panel .person-main, .graph-panel .person-info, .chat-head > div:first-child { min-width: 0;}
 .graph-panel .person-info b { overflow-wrap: anywhere; white-space: normal; line-height: 1.35;}
 .graph-panel .person-actions { gap: 3px;}
 .graph-panel .person-actions button { flex: 0 0 30px;}
@@ -862,7 +857,6 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .chat-list { grid-template-columns: minmax(0, 1fr); align-content: start; width: 100%;   overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; touch-action: pan-y;}
 .chat-item { min-width: 0; width: 100%;}
 .chat-head { z-index: 1; background: inherit;}
-.chat-head > div:first-child { min-width: 0;}
 .chat-head-tools { justify-content: flex-end;}
 .messages { flex: 1 1 0; min-width: 0; min-height: 0; height: auto; max-height: none; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; padding: 12px; touch-action: pan-y;}
 
@@ -1282,7 +1276,6 @@ button:focus-visible, .btn:focus-visible { outline: 2px solid #aa95d0 !important
 }
 /* Keep the navigation shell fixed while only the active section viewport changes. */
 @media (max-width: 1024px) {
-.chats-main > .topbar { display: none;}
 }
 /* Shared workspace rhythm: every section starts on the same grid and uses
    the same responsive outer spacing. */
