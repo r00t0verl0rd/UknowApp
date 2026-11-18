@@ -492,7 +492,7 @@ img, video, audio { max-width: 100%;}
 .graph-panel .student-card .person-info { flex: 1 1 0%; width: auto; min-width: 0; max-width: 100%; overflow: hidden;}
 .graph-panel .student-card .person-info b, .graph-panel .student-card .person-info small { max-width: 100%; white-space: normal; overflow-wrap: anywhere; word-break: normal; text-overflow: clip;}
 
-.graph-panel .student-card > .graph-person-action { flex: 0 0 27px; width: 27px; height: 27px; min-width: 27px; padding: 0;}
+.graph-panel .student-card > .graph-person-action { flex: 0 0 27px !important; width: 27px !important; height: 27px !important; min-width: 27px !important; min-height: 27px !important; padding: 0 !important;}
 /* Preserve comfortable teacher columns; only the card contents may shrink. */
 .graph-panel .teacher-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));}
 .user-sort { display: block; flex: 0 1 auto; min-width: 0; border: 1px solid var(--line); color: var(--ink); background: #fff; font: inherit; cursor: pointer;}
@@ -615,7 +615,7 @@ img, video, audio { max-width: 100%;}
 .graph-panel .unassigned-student-card .person-info b { display: block; max-width: 100%; overflow: visible; white-space: normal; overflow-wrap: anywhere; word-break: normal; text-overflow: clip; line-height: 1.25;}
 .graph-panel .unassigned-student-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-width: 0; margin-top: auto;}
 
-.graph-panel .unassigned-student-actions > .graph-person-action { flex: 0 0 34px; width: 34px; height: 34px; padding: 0;}
+.graph-panel .unassigned-student-actions > .graph-person-action { flex: 0 0 34px !important; width: 34px !important; height: 34px !important; min-width: 34px !important; min-height: 34px !important; padding: 0 !important;}
 .graph-panel .unassigned-student-actions .btn { flex: 0 0 auto; min-height: 36px; padding: 8px 13px; white-space: nowrap;}
 .graph-panel .unassigned-grid .unassigned-student-card { background: #fff; border-color: #e9e3f2;}
 .graph-panel .unassigned-grid .unassigned-student-card:hover { border-color: #d8c8eb; box-shadow: 0 5px 17px rgba(87, 62, 153, .08);}
@@ -873,7 +873,8 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .user-actions { align-self: center;}
 .graph-panel .teacher-card > .person-main { gap: 7px;}
 .graph-panel .teacher-card { gap: 5px; padding: 7px;}
-.graph-panel .student-card > .graph-person-action, .graph-panel .teacher-card .person-actions button{ flex-basis: 25px; width: 25px; height: 25px;}
+.graph-panel .student-card > .graph-person-action { flex-basis: 25px !important; width: 25px !important; height: 25px !important; min-width: 25px !important; min-height: 25px !important;}
+.graph-panel .teacher-card .person-actions button{ flex-basis: 25px; width: 25px; height: 25px;}
 .graph-panel .graph-legend-item b { border-radius: 9px;}
 .graph-panel .graph-legend { gap: 8px;}
 .graph-panel .graph-legend-item { gap: 6px; font-size: 10px;}
@@ -897,7 +898,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .user-action-btn.user-info-btn { width: 40px; height: 40px; flex-basis: 40px;}
 .graph-panel .unassigned-grid { grid-template-columns: minmax(0, 1fr); gap: 11px;}
 .graph-panel .unassigned-student-card { min-height: 0;}
-.graph-panel .unassigned-student-actions > .graph-person-action { flex-basis: 32px; width: 32px; height: 32px;}
+.graph-panel .unassigned-student-actions > .graph-person-action { flex-basis: 32px !important; width: 32px !important; height: 32px !important; min-width: 32px !important; min-height: 32px !important;}
 .graph-panel .unassigned-student-actions { gap: 7px;}
 .graph-panel .unassigned-student-actions .btn { padding: 7px 10px;}
 .confirm-delete-modal .modal-actions { flex-wrap: nowrap;}
