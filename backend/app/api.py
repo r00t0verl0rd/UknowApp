@@ -913,7 +913,7 @@ def create_personal_conversation(payload: PersonalConversationCreate, principal:
         db.add(item)
         db.commit()
         db.refresh(item)
-    publish_chat_update(item.id)
+    publish_chat_update(0)
     return _personal_conversation_dict(item, principal["role"])
 
 
@@ -934,7 +934,7 @@ def personal_messages(conversation_id: int, principal: PanelUser, db: Db):
         "content_type": "text",
         "text": row.text,
         "metadata": {},
-        "delivery_status": "in_app",
+        "delivery_status": "delivered",
         "created_at": row.created_at.isoformat(),
     } for row in rows]
 
@@ -993,7 +993,7 @@ def delete_personal_message(message_id: int, principal: PanelUser, db: Db):
         raise HTTPException(status_code=403, detail="Можно удалить только собственное сообщение")
     db.delete(row)
     db.commit()
-    publish_chat_update(row.conversation_id)
+    publish_chat_update(0)
     return {"ok": True, "deleted_message_id": message_id}
 
 
