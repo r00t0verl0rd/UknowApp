@@ -1773,6 +1773,18 @@ border-color: transparent !important;}
 .data-stat-details .data-stat-subline { padding-left: 10px; font-size: 10px;}
 .data-tools-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;}
 .data-tool-card { display: flex; flex-direction: column; align-items: flex-start; gap: 12px;}
+.data-tool-copy { display: grid; gap: 8px; width: 100%;}
+.data-tool-kicker { color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .08em;}
+.data-includes { display: grid; gap: 7px; width: 100%; margin-top: 3px; padding: 12px; border-radius: 10px; background: var(--surface-soft, var(--panel)); font-size: 12px; line-height: 1.5;}
+.data-includes > b { display: flex; align-items: center; gap: 6px; color: var(--ink); font-size: 11px;}
+.data-includes > b svg { color: var(--success, #27845c);}
+.data-includes ul { display: grid; gap: 4px; margin: 0 0 4px; padding-left: 19px; color: var(--muted);}
+.data-includes .data-excludes { margin-top: 2px; color: var(--muted);}
+.data-includes .data-excludes svg { color: var(--danger, #c45b5b);}
+.data-includes > p { margin: -2px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5;}
+.data-backup-hint { display: grid; gap: 5px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); font-size: 12px; line-height: 1.5;}
+.data-backup-hint span { color: var(--muted);}
+
 .data-tool-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; background: var(--button-bg, #f1edf7); color: var(--purple); }
 .data-tool-icon svg { width: 19px; height: 19px;}
 .data-tool-card h3, .data-cleanup-card h3 { margin: 0 0 6px; font-size: 15px;}
