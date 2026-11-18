@@ -83,6 +83,10 @@ def create_tables() -> None:
         with engine.begin() as connection:
             connection.execute(text("ALTER TABLE users ADD COLUMN web_username VARCHAR(160)"))
 
+    if "additional_info" not in user_columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN additional_info VARCHAR(500)"))
+
     # Existing teachers receive their current full name as the initial web login.
     with engine.begin() as connection:
         connection.execute(text(
