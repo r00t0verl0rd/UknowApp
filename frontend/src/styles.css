@@ -239,8 +239,8 @@ input:focus-visible, select:focus-visible { outline-offset: 2px;}
 .graph-panel .student-card { min-height: 61px; padding: 9px 11px; border: 1px solid #f0e5ce; border-radius: 12px; background: linear-gradient(105deg, #fff8e9, #fff 78%); box-shadow: 0 2px 8px rgba(155,113,43,.035);}
 .graph-panel .student-card .avatar { border-radius: 11px; background: #fff0ce; color: #a76d16;}
 .graph-panel .empty-students { margin-top: 11px; padding: 17px 12px; border: 1px dashed #e8dcbf; border-radius: 12px; background: rgba(255,251,241,.82); color: #9b896a;}
-.graph-panel .add-student { align-self: flex-start; margin: 11px 0 0 3px; padding: 8px 10px; border: 1px solid #e5daf2; border-radius: 9px; background: rgba(255,255,255,.76); color: #7052a9; transition: background .18s ease, border-color .18s ease, transform .18s ease;}
-.graph-panel .add-student:hover { border-color: #cdb9eb; background: #f4effb; transform: translateY(-1px);}
+.graph-panel .add-student { display: inline-flex; align-items: center; justify-content: center; align-self: flex-end; gap: 6px; min-height: 30px; margin: 0 0 8px auto; padding: 5px 9px; border: 1px solid #e5dfeb; border-radius: 8px; background: rgba(255,255,255,.76); color: #78698d; font-size: 11px; font-weight: 700; line-height: 1; transition: background .18s ease, border-color .18s ease, transform .18s ease;}
+.graph-panel .add-student:hover { border-color: #d2c6df; background: #f5f1f8; transform: translateY(-1px);}
 .graph-panel .unassigned { margin-top: 23px; padding-top: 19px; border-top: 1px solid #e9e1f1;}
 .graph-panel .unassigned-title { margin-bottom: 11px;}
 /* Mobile layout: prevent horizontal overflow and turn dense rows into touch-friendly cards. */
@@ -699,7 +699,7 @@ html, body { overflow-x: clip;}
 .graph-panel .teacher-card { min-height: 64px; padding: 9px 11px;}
 .graph-panel .student-list { gap: 6px; margin: 9px 0 0 20px;}
 .graph-panel .student-card { min-height: 52px; padding: 7px 9px;}
-.graph-panel .add-student { margin-top: 7px;}
+.graph-panel .add-student { margin-top: 0;}
 .graph-panel .unassigned { margin-top: 15px; padding-top: 13px;}
 .teacher-readonly-graph { padding: 18px;}
 .teacher-graph-root { max-width: none; margin: 10px 0;}
@@ -837,7 +837,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .graph-panel .person-actions { gap: 3px;}
 .graph-panel .person-actions button { flex: 0 0 30px;}
 .graph-panel .student-list { gap: 7px; margin-top: 8px;}
-.graph-panel .add-student { min-height: 36px; margin-top: 8px;}
+.graph-panel .add-student { min-height: 30px; margin-top: 0; padding: 5px 9px;}
 .user-row:hover, .person-card:hover, .teacher-branch:hover { transform: none;}
 .graph-panel .person-actions button { flex-basis: 28px;}
 .chat-layout { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 12px; min-width: 0; padding: 0; overflow: visible; border: 0; border-radius: 0; background: transparent; box-shadow: none;}
@@ -1622,10 +1622,10 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 body, .chats-shell, .chats-main { background: var(--canvas);}
 .sidebar, .topbar, .graph-panel, .user-list > .user-row, .chat-layout, .chat-list, .chat-detail, .modal, .login-card, .user-info-popover, .credential-modal { background-color: var(--surface);}
 /* Structure graph: role colors match the corresponding conversation bubbles. */
-.teacher-card, .teacher-readonly-graph .teacher-graph-card:not(.student) { background: linear-gradient(112deg, #e9e0f0, #f5f1f7) !important; border-color: #cdbbd9 !important;}
-.teacher-card .avatar, .teacher-readonly-graph .teacher-graph-card:not(.student) .avatar, .avatar.teacher, .teacher-avatar { background: #ded0e9 !important; color: #684b86 !important;}
-.student-card, .unassigned-grid .student-card, .teacher-readonly-graph .teacher-graph-card.student { background: linear-gradient(112deg, #f3e8d4, #faf5eb) !important; border-color: #ddc69d !important;}
-.student-card .avatar, .avatar.student, .student-avatar, .teacher-readonly-graph .teacher-graph-card.student .avatar { background: #ead9b9 !important; color: #87652f !important;}
+.teacher-card, .teacher-readonly-graph .teacher-graph-card:not(.student) { background: linear-gradient(112deg, #ebe4f0, #f6f3f7) !important; border-color: #d1c4da !important;}
+.teacher-card .avatar, .teacher-readonly-graph .teacher-graph-card:not(.student) .avatar, .avatar.teacher, .teacher-avatar { background: #e2d7eb !important; color: #705b88 !important;}
+.student-card, .unassigned-grid .student-card, .teacher-readonly-graph .teacher-graph-card.student { background: linear-gradient(112deg, #f4eadb, #faf6ee) !important; border-color: #e0cda9 !important;}
+.student-card .avatar, .avatar.student, .student-avatar, .teacher-readonly-graph .teacher-graph-card.student .avatar { background: #ecdfc6 !important; color: #90764c !important;}
 
 .teacher-dot { background: var(--role-teacher) !important; box-shadow: 0 0 8px color-mix(in srgb, var(--role-teacher) 35%, transparent) !important;}
 .student-dot { background: var(--role-student) !important; box-shadow: 0 0 8px color-mix(in srgb, var(--role-student) 35%, transparent) !important;}
