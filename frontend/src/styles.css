@@ -647,6 +647,8 @@ html, body { font-family: Onest, -apple-system, BlinkMacSystemFont, "Segoe UI", 
 .chat-layout { height: clamp(480px, calc(100dvh - 275px), 1100px); min-height: 0; align-items: stretch;}
 .chat-list { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden;}
 .chat-list > .chat-search-control, .chat-list > .chat-filter-segment, .chat-list > .personal-chat-create { flex: 0 0 auto; min-width: 0;}
+.chat-list > .personal-chat-create { align-self: flex-start; width: fit-content; min-height: 34px; padding: 7px 11px; font-size: 12px; box-shadow: none; }
+.chat-list > .personal-chat-create svg { width: 14px; height: 14px; }
 .chat-items-scroll { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-width: thin;}
 .chat-detail { display: flex; flex-direction: column; min-height: 0; overflow: hidden;}
 .chat-detail > .messages { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto;}
@@ -1452,7 +1454,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .chats-content > .chat-layout { display: block; position: relative; overflow: hidden;}
 .chats-content > .chat-layout > .chat-list, .chats-content > .chat-layout > .chat-detail { min-width: 0; box-sizing: border-box; overflow: hidden; background: var(--surface, #fff);}
 .chats-content > .chat-layout > .chat-list { display: flex; flex-direction: column; gap: 8px;}
-.chat-list > .chat-search-control, .chat-list > .chat-filter-segment, .chat-list > .personal-chat-create { position: relative; z-index: 1; width: 100%; box-sizing: border-box;}
+.chat-list > .chat-search-control, .chat-list > .chat-filter-segment { position: relative; z-index: 1; width: 100%; box-sizing: border-box;}
+.chat-list > .personal-chat-create { position: relative; z-index: 1; width: fit-content; }
 .chat-list > .chat-filter-segment { padding-bottom: 9px; border-bottom: 1px solid var(--line);}
 :root[data-theme="dark-soft"] .chat-list > .chat-filter-segment { border-bottom-color: #3a4555 !important;}
 .chat-search-control { min-height: 44px; padding-inline: 12px;}
