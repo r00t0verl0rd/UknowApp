@@ -641,7 +641,7 @@ img, video, audio { max-width: 100%;}
 :root[data-theme="dark-soft"] .confirm-delete-modal .btn.danger { color: #fff; border-color: #97505c; background: linear-gradient(110deg, #934656, #aa5967); box-shadow: 0 5px 16px rgba(0, 0, 0, .22);}
 /* Onest keeps the interface crisp and friendly while supporting Cyrillic well. */
 html, body { font-family: Onest, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;}
-.user-person-info { font-size: 16px; font-weight: 700; letter-spacing: -.18px; line-height: 1.35;}
+.user-person-info { font-size: 16px; font-weight: 600; letter-spacing: -.18px; line-height: 1.35;}
 /* Desktop inbox: keep the conversation picker in its own scroll area.
    Flex sizing prevents chat rows from sharing/overlapping the same grid track. */
 /* The conversation workspace follows the available viewport height. */
@@ -1221,7 +1221,7 @@ button:focus-visible, .btn:focus-visible { outline: 2px solid #aa95d0 !important
 .toolbar.user-toolbar > .search { display: flex !important; align-items: center !important; gap: 9px !important; padding: 0 12px !important; border: 1px solid var(--line) !important; border-radius: 10px !important;}
 .toolbar.user-toolbar > .search > svg { display: block !important; flex: 0 0 16px !important; width: 16px !important; height: 16px !important;}
 .toolbar.user-toolbar > .search > input { flex: 1 1 0 !important; width: 0 !important; min-width: 0 !important; height: 100% !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; border: 0 !important; outline: none !important; box-shadow: none !important; line-height: normal !important;}
-.toolbar.user-toolbar > .user-sort { display: block !important; width: 100% !important; height: 42px !important; min-height: 42px !important; padding: 0 8px !important; border: 1px solid var(--line) !important; border-radius: 10px !important; appearance: auto !important; -webkit-appearance: menulist !important; box-sizing: border-box !important;}
+.toolbar.user-toolbar > .user-sort { display: block !important; width: 100% !important; height: 42px !important; min-height: 42px !important; padding: 0 8px !important; border: 1px solid var(--line) !important; appearance: auto !important; -webkit-appearance: menulist !important; box-sizing: border-box !important;}
 
 .toolbar.user-toolbar > .user-count { justify-self: start !important; box-shadow: none !important;}
 .toolbar.user-toolbar > .user-add-btn { justify-self: end !important; margin-left: auto !important; min-height: 42px !important; height: 42px !important; padding: 0 15px !important; white-space: nowrap !important;}
