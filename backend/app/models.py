@@ -58,11 +58,15 @@ class Conversation(Base):
     __tablename__ = "conversations"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    assignment_id: Mapped[int] = mapped_column(ForeignKey("assignments.id"), unique=True, nullable=False)
+    assignment_id: Mapped[Optional[int]] = mapped_column(ForeignKey("assignments.id"), unique=True, nullable=True)
+    teacher_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
-    assignment: Mapped[Assignment] = relationship(back_populates="conversation")
+    assignment: Mapped[Optional[Assignment]] = relationship(back_populates="conversation")
+    teacher: Mapped[User] = relationship(foreign_keys=[teacher_id])
+    student: Mapped[User] = relationship(foreign_keys=[student_id])
 
 
 class PersonalConversation(Base):
