@@ -210,6 +210,13 @@ export default function App() {
         const conversations = await request("/api/panel/conversations");
         if (!active) return;
         setChats(conversations);
+        if (profile?.role === "student" && conversations[0]?.id !== selectedChat?.id) {
+          const nextChat = conversations[0] || null;
+          setSelectedChat(nextChat);
+          setMessages(nextChat
+            ? await request("/api/panel/conversations/" + nextChat.id + "/messages")
+            : []);
+        }
       } catch {
         // Keep the current conversation visible during brief network interruptions.
       } finally {
@@ -238,7 +245,7 @@ export default function App() {
       eventSource.close();
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [auth, page, selectedChat?.id, request]);
+  }, [auth, page, selectedChat?.id, profile?.role, request]);
 
   const notify = (message) => { setToast(message); window.setTimeout(() => setToast(""), 2600); };
   // Списки участников пересчитываются только при изменении массива пользователей.
