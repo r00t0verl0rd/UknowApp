@@ -702,7 +702,7 @@ html, body { overflow-x: clip;}
 .user-row { gap: 10px; padding: 9px 14px;}
 .chat-layout { grid-template-columns: minmax(270px, 320px) minmax(0, 1fr);}
 .chat-list { height: 100%; padding: 10px;}
-.chat-item { gap: 4px; padding: 10px;}
+.chat-item { gap: 6px; padding: 13px 10px;}
 .chat-detail { height: 100%; min-height: 0; overflow: hidden;}
 .chat-head { flex: 0 0 auto; padding: 11px 15px;}
 .messages { flex: 1 1 0; height: 0; min-height: 0; max-height: none; padding: 14px 16px;}
