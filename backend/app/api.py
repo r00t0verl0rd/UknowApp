@@ -107,7 +107,7 @@ def conversation_dicts(
             Message.id.label("message_id"),
             func.row_number().over(
                 partition_by=Message.conversation_id,
-                order_by=(Message.created_at.desc(), Message.id.desc()),
+                order_by=[Message.created_at.desc(), Message.id.desc()],
             ).label("position"),
         )
         .where(Message.conversation_id.in_(conversation_ids))
@@ -127,7 +127,7 @@ def conversation_dicts(
             Message.id.label("id"),
             func.row_number().over(
                 partition_by=Message.conversation_id,
-                order_by=(Message.created_at.desc(), Message.id.desc()),
+                order_by=[Message.created_at.desc(), Message.id.desc()],
             ).label("position"),
         )
         .where(
@@ -642,12 +642,6 @@ def assign_student(payload: AssignmentCreate, _: Admin, db: Db):
     db.commit()
     db.refresh(conversation)
     return conversation_dict(db, conversation)
-
-
-def _panel_conversation_dict(db: Session, conversation: Conversation, principal: dict) -> dict:
-    return conversation_dict(
-        db, conversation, include_telegram_ids=(principal["role"] == "admin")
-    )
 
 
 def _panel_visible_conversation(db: Session, principal: dict, conversation_id: int) -> Conversation:
