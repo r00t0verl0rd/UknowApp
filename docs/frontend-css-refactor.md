@@ -23,23 +23,34 @@ These are lexical counts, not a parsed CSS dependency graph. Repeated selectors 
 - Treat every structural CSS change as requiring a production build and visual checks in light/dark themes at mobile, tablet and desktop widths.
 - Do not claim screenshot or runtime validation unless those checks were actually run.
 
-## Completed foundation
+## Completed foundation and history-based cleanup
 
-- Extracted the global light and dark theme roots into `tokens.css`.
-- Kept legacy token names and their current effective values so existing selectors continue to resolve without mass edits.
-- Imported tokens before component styles; all remaining selectors stay in their original order.
-- Reviewed relevant Git history, including the earlier removal of the `.teacher-toggle` implementation. Removed its now-empty mobile media query and stale explanatory comment.
-- Compared CSS class selectors with the current `App.jsx` and `MessageBubble.jsx` markup. Removed the retired `.password-actions` and `.password-code-label` rules, including their dark-theme and shared-button references.
-- Current `styles.css`: 9,322 lines and 252,623 characters (down from 9,392 lines / 254,213 characters at the start of this cleanup pass).
-- Static checks after cleanup: no empty CSS blocks; no class tokens absent from the current React markup; no remaining references to `.password-actions`, `.password-code-label` or `.teacher-toggle`.
+- Extracted the light and dark theme roots into one canonical base and one dark override in `tokens.css`, preserving the effective values after the old scattered overrides.
+- Reviewed the stylesheet history and current React markup. Removed retired credential styles (`.password-actions`, `.password-code-label`) and the old `.teacher-toggle` implementation remnants.
+- Removed 289 identical repeated declarations and 850 earlier declarations superseded by later declarations for the same selector in the same media context.
+- Removed 94 more superseded declarations that were hidden inside grouped selector lists.
+- Pruned 130 fully superseded selectors from 55 grouped rules; a selector was removed only when every declaration for it was supplied by a later rule with the same selector and context.
+- Removed empty rules left by the cascade cleanup, merged five adjacent responsive wrappers, nine adjacent groups with identical declarations, and two adjacent teacher-graph rules.
+- Static verification against `App.jsx` and `MessageBubble.jsx`: 170 distinct CSS class tokens, none absent from those source files; no empty style rules; no remaining retired credential/toggle selectors.
 
-The cleanup above is limited to selectors verified as unused against the current React source and a component implementation already removed in Git history. It does not treat repeated selectors or `!important` declarations as dead code.
+### Current measured size (main, 2026-11-18)
+
+| File | Lines | Characters |
+|---|---:|---:|
+| `styles.css` | 7,887 | 204,179 |
+| `tokens.css` | 113 | 3,264 |
+| **Combined** | **8,000** | **207,443** |
+
+Compared with the combined starting point for this pass (9,428 lines / 255,060 characters), the source is down by 1,428 lines (15.1%) and 47,617 characters (18.7%). The requested 3x reduction has **not** been reached. The remaining 4,324 declarations include real layout, responsive, media, and theme behavior; reaching a third of the current size safely will require component-level simplification and visual regression coverage, not blind deletion or minification.
+
+Current structural counts: 1,612 parsed style rules, 41 media-query blocks and 817 `!important` declarations. These are source counts, not a runtime CSS coverage report.
+
+No production build or light/dark mobile/tablet/desktop visual regression run has been performed for this cleanup.
 
 ## Next phases
 
-1. Continue reviewing stylesheet history and current component markup to identify obsolete rules with clear evidence.
-2. Consolidate component base, responsive and dark-theme rules in place, preserving effective cascade order.
-3. Establish screenshot fixtures and a reproducible demo dataset before broader cascade changes.
-4. Reduce specificity and `!important` only where the owning component and visual effect can be verified.
-5. Introduce semantic aliases for surfaces, text, borders, role colors and states in small component batches.
-6. Split the stylesheet by responsibility only after dependencies are mapped; keep Stylelint/CI scoped to the verified baseline until legacy CSS is cleaned.
+1. Map the remaining responsive rules by component and viewport range, then consolidate each component's base, tablet/mobile and dark-theme treatment in place.
+2. Review high-specificity and `!important` use by component, keeping only cases with a demonstrated cascade requirement.
+3. Establish screenshot fixtures and a reproducible demo dataset before changing the visual rules more aggressively.
+4. Replace repeated component-specific values with semantic tokens and shared component rules only where their behavior is genuinely the same.
+5. Reassess file size after each component migration; retain the 3x goal as a target, not a reason to remove required behavior.
