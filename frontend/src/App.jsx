@@ -723,7 +723,7 @@ export default function App() {
                 <div className="chat-item-heading">
                   <div className="chat-item-participants">
                     {profile?.role === "admin" && <span>{chat.teacher.full_name}</span>}
-                    <span>{profile?.role === "student" ? chat.teacher.full_name : chat.student.full_name}</span>
+                    <span>{profile?.role === "student" ? chat.teacher.full_name : chat.student.full_name}{profile?.role === "student" && <small>Учитель</small>}</span>
                   </div>
                   {profile?.role === "teacher" && unreadCount > 0 && <span className="unread-badge" title="Непрочитанные сообщения" aria-label={unreadCount + " непрочитанных сообщений"}>{unreadCount > 99 ? "99+" : unreadCount}</span>}
                 </div>
