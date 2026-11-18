@@ -10,9 +10,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api import router
-from .config import ALLOWED_ORIGINS, SEED_DEMO_DATA, TELEGRAM_BOT_TOKEN
+from .config import ALLOWED_ORIGINS, SEED_DEMO_DATA, TELEGRAM_BOT_TOKEN, TELEGRAM_PROXY_URL
 from .database import SessionLocal, create_tables
 from .models import Assignment, Conversation, User
+from .telegram_transport import create_telegram_bot
 
 logger = logging.getLogger(__name__)
 
@@ -94,10 +95,9 @@ async def lifespan(app: FastAPI):
     dispatcher = None
     polling_lock_fd = None
     if TELEGRAM_BOT_TOKEN:
-        from aiogram import Bot
         from .telegram_bot import create_dispatcher
 
-        bot = Bot(token=TELEGRAM_BOT_TOKEN)
+        bot = create_telegram_bot(TELEGRAM_BOT_TOKEN, TELEGRAM_PROXY_URL)
         app.state.telegram_bot = bot
 
         # A non-blocking OS lock prevents two local Uvicorn processes (including
