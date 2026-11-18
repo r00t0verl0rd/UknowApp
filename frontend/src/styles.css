@@ -693,21 +693,24 @@ img, video, audio { max-width: 100%; }
   text-align: center;
 }
 .chat-filter-segment button.active span { background: #eee7f8; color: var(--purple); }
-.password-actions { display: grid; gap: 10px; }
-.password-info {
+.password-actions {
   display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 11px 12px;
-  border: 1px solid #e9e1f2;
-  border-radius: 11px;
-  background: #faf8fd;
-  color: #7c718e;
-  font-size: 10px;
-  line-height: 1.5;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
-.password-info svg { flex: 0 0 auto; color: var(--purple); margin-top: 1px; }
-.password-info b { color: var(--purple); letter-spacing: 1px; }
+.password-info {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+.password-actions .btn {
+  min-height: 34px;
+  padding: 0 11px;
+  font-size: 10px;
+}
 .credential-modal { width: min(470px,100%); }
 .credential-row {
   display: flex;
