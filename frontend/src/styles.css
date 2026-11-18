@@ -1431,8 +1431,6 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .user-row > .user-actions { column-gap: 6px; row-gap: 7px;}
 .user-row > .user-actions .connect-toggle { min-width: 112px; padding-inline: 9px;}
 }
-/* Seamless responsive workspace: tablet bounds and single-line user actions. */
-/* Keep every workspace inside the viewport at tablet widths. */
 /* User identity and controls stay on the same row at every screen size. */
 .user-row { display: grid !important; grid-template-columns: clamp(32px, 4vw, 44px) minmax(0, 1fr) auto; align-items: center; column-gap: clamp(6px, 1.2vw, 12px); row-gap: 0; min-width: 0;}
 .user-row > .avatar { grid-column: 1; grid-row: 1; width: clamp(32px, 4vw, 44px); height: clamp(32px, 4vw, 44px); flex: 0 0 auto;}
