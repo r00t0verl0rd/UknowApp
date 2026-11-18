@@ -731,7 +731,7 @@ export default function App() {
         <label>Telegram ID <input type="text" inputMode="numeric" pattern="[0-9]*" value={telegramId} onChange={e => setTelegramId(e.target.value)} placeholder="Не подключён"/></label>
         {role === "teacher" && <>
           <div className="teacher-login-row">
-            <label>Логин веб-панели<input value={teacherLogin || name} onChange={e => setTeacherLogin(e.target.value)} minLength="2" maxLength="160" required autoComplete="off" /></label>
+            <label className="teacher-login-label"><span>Логин веб-панели: <b>{teacherLogin || name}</b></span><input value={teacherLogin || name} onChange={e => setTeacherLogin(e.target.value)} minLength="2" maxLength="160" required autoComplete="off" /></label>
           </div>
           {modal.mode === "edit" && users.find(u => u.id === modal.id)?.role === "teacher" && <div className="password-code-label"><span>Код доступа: <b>XXX-XXX</b></span><button type="button" className="btn outline password-code-refresh" onClick={regenerateTeacherAccessCode} disabled={savingUser} title="Старый код сразу перестанет действовать"><RefreshCw size={12}/>Обновить код</button></div>}
           {modal.mode === "create" && <p className="password-info">Код доступа создастся автоматически — один для веб-панели и Telegram.</p>}
