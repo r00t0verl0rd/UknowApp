@@ -436,9 +436,6 @@ async def _update_teacher_panel_locked(
                 teacher.id, panel.message_id,
             )
 
-    old_chat_id = panel.chat_id if panel else None
-    old_message_id = panel.message_id if panel else None
-
     # Sending the new markup directly replaces the chat-level reply keyboard.
     # Do not remove it in a separate message: some Telegram clients defer the
     # placeholder redraw until the next user message after a remove/restore pair.
@@ -466,33 +463,6 @@ async def _update_teacher_panel_locked(
         ))
     db.commit()
 
-    if old_chat_id and old_message_id and old_message_id != sent.message_id:
-        # Old panel versions used InlineKeyboardMarkup. Remove those buttons
-        # explicitly before attempting to delete the old message.
-        try:
-            await bot.edit_message_reply_markup(
-                chat_id=old_chat_id,
-                message_id=old_message_id,
-                reply_markup=None,
-            )
-        except Exception:
-            logger.debug(
-                "Could not remove old inline keyboard (teacher_id=%s message_id=%s)",
-                teacher.id,
-                old_message_id,
-            )
-        # Telegram Desktop clears the active keyboard when its source message
-        # is deleted. Give the client time to receive the replacement keyboard
-        # first, otherwise deleting the previous panel can clear its placeholder.
-        await asyncio.sleep(0.8)
-        try:
-            await bot.delete_message(chat_id=old_chat_id, message_id=old_message_id)
-        except Exception:
-            logger.info(
-                "Could not remove the previous teacher panel (teacher_id=%s message_id=%s)",
-                teacher.id,
-                old_message_id,
-            )
     return True
 
 
