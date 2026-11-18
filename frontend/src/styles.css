@@ -5558,10 +5558,10 @@ button:focus-visible, .btn:focus-visible {
   .toolbar.user-toolbar > .user-count {
     width: 100% !important;
   }
-}
+
 
 /* Very narrow phones: give the count and add action their own full-width rows. */
-@media (max-width: 480px) {
+
   .toolbar.user-toolbar {
     grid-template-columns: minmax(0, 1fr) !important;
     grid-template-rows: auto !important;
@@ -5649,10 +5649,10 @@ button:focus-visible, .btn:focus-visible {
   .chats-main > .content.chats-content {
     padding-bottom: 14px;
   }
-}
+
 
 /* Touch-first viewport and dialog behavior for tablet and mobile layouts. */
-@media (max-width: 1024px) {
+
   html,
   body,
   #root {
@@ -5728,9 +5728,9 @@ button:focus-visible, .btn:focus-visible {
     min-width: 0;
     max-width: 100%;
   }
-}
 
-@media (max-width: 1024px) {
+
+
   
 
   .chats-shell > .sidebar {
@@ -5798,12 +5798,12 @@ button:focus-visible, .btn:focus-visible {
     padding-inline: 8px;
     white-space: normal;
   }
-}
+
 
 /* Responsive inbox workspace: keep the composer visible and scroll only
    the conversation list and message history on touch-sized screens. */
 
-@media (max-width: 1024px) {
+
   
 
   .chats-content > .chat-layout {
@@ -6606,11 +6606,11 @@ button:focus-visible, a:focus-visible {
   }
 
   
-}
+
 
 /* Mobile inbox navigation: list and conversation are separate full-height
    screens. This avoids squeezing both into the same small viewport. */
-@media (max-width: 1024px) {
+
   .chats-content > .chat-layout {
     display: block;
     position: relative;
