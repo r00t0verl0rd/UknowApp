@@ -673,7 +673,7 @@ export default function App() {
           </div>
           <div className="user-list">{visibleUsers.map(user => <div className={"user-row" + (userInfo === user.id ? " is-info-open" : "")} key={user.id}>
             <div className={"avatar " + user.role}>{user.role === "teacher" ? <GraduationCap/> : user.role === "student" ? <Smile/> : <Users/>}</div>
-            <b className="person-info user-person-info">{user.full_name}</b>
+            <b className="user-person-info">{user.full_name}</b>
             <div className="user-actions">
               {user.telegram_id
                 ? <button className="user-action-btn connect-toggle disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram" aria-label="Отключить Telegram"><Unlink/><span>Отключить</span></button>
