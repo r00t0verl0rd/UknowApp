@@ -56,10 +56,11 @@ PanelUser = Annotated[dict, Depends(require_panel_user)]
 Db = Annotated[Session, Depends(get_db)]
 
 
-def user_dict(user: User, include_telegram_id: bool = True) -> dict:
+def user_dict(user: User, include_telegram_id: bool = True, include_additional_info: bool = False) -> dict:
     return {
         "id": user.id,
         "full_name": user.full_name,
+        **({"additional_info": user.additional_info} if include_additional_info and user.role == "student" else {}),
         "web_username": (user.web_username or user.full_name) if user.role in {"teacher", "student"} else None,
         "role": user.role,
         "telegram_id": user.telegram_id if include_telegram_id else None,
@@ -238,7 +239,7 @@ def overview(_: Admin, db: Db):
     for assignment in assignments:
         if not assignment.teacher.active or not assignment.student.active:
             continue
-        students_by_teacher.setdefault(assignment.teacher_id, []).append(user_dict(assignment.student))
+        students_by_teacher.setdefault(assignment.teacher_id, []).append(user_dict(assignment.student, include_additional_info=True))
 
     teachers = []
     for user in users:
@@ -262,7 +263,7 @@ def overview(_: Admin, db: Db):
 @router.get("/admin/users")
 def list_users(_: Admin, db: Db):
     users = db.scalars(select(User).where(User.role.in_(["teacher", "student"])).order_by(User.role, User.full_name)).all()
-    return [user_dict(user) for user in users]
+    return [user_dict(user, include_additional_info=True) for user in users]
 
 
 @router.post("/admin/users", status_code=201)
@@ -275,6 +276,7 @@ def create_user(payload: UserCreate, _: Admin, db: Db):
     issued_access_code = generate_panel_access_code() if has_web_panel else None
     user = User(
         full_name=full_name,
+        additional_info=((payload.additional_info or '').strip() or None) if payload.role == 'student' else None,
         web_username=web_username,
         role=payload.role,
         telegram_id=payload.telegram_id,
@@ -355,7 +357,11 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
             if assignment.conversation:
                 assignment.conversation.status = "closed"
         db.query(TeacherSession).filter(TeacherSession.teacher_id == user.id).delete(synchronize_session=False)
+    if target_role != "student":
+        user.additional_info = None
     for field, value in changes.items():
+        if field == "additional_info":
+            value = ((value or '').strip() or None) if target_role == 'student' else None
         if field == "full_name" and value is not None:
             value = value.strip()
             if len(value) < 2:
@@ -1485,6 +1491,7 @@ def panel_graph(principal: PanelUser, db: Db):
             students.append({
                 "id": student.id,
                 "full_name": student.full_name,
+                "additional_info": student.additional_info,
                 "role": "student",
                 "active": student.active,
             })
