@@ -25,15 +25,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .topbar svg{width:15px}
 .topbar b{color:var(--ink)}
 .content{margin:auto;}
-.section-head p {margin:0}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:800;}
 .btn svg{width:16px;height:16px}
 
 .btn.small{padding:8px 10px;}
 
 .user-list, .chat-layout {border:1px solid var(--line);padding:22px}
-.section-head{display:flex;justify-content:space-between;gap:12px;}
-.section-head h2{margin:0 0 5px}
 .legend{display:flex;align-items:center;gap:7px;}
 .legend span{width:8px;height:8px;border-radius:50%;margin-left:9px}
 
@@ -109,8 +106,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 to{transform:rotate(360deg)}
 }
 .unassigned{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
-.unassigned .section-head{margin-bottom:12px}
-.unassigned .section-head h2{font-size:14px}
+.unassigned-title { margin: 0 0 12px; color: var(--ink);}
+.unassigned-title { font-size: 14px;}
 .unassigned-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:9px}
 .unassigned-grid .person-card{flex-wrap:wrap;}
 /* Readability and layout refinement */
@@ -126,15 +123,13 @@ to{transform:rotate(360deg)}
 .stack label { font-size: 13px;}
 .stack input, .stack select { height: 46px; font-size: 14px;}
 .topbar { padding: 0 40px;}
-.topbar > div, .section-head p{ font-size: 14px;}
+.topbar > div { font-size: 14px;}
 .content { max-width: 1680px; padding: 38px 42px;}
 .btn { font-size: 13px; padding: 12px 16px;}
 .btn.small, .legend, .empty-students, .add-student { font-size: 12px;}
 .eyebrow, .school-label { font-size: 11px; letter-spacing: 1.6px;}
 /* Statistics are intentionally compact to give the hierarchy more space. */
 /* The hierarchy graph is the main workspace. */
-.section-head { margin-bottom: 31px;}
-.section-head h2 { font-size: 20px;}
 
 .teacher-grid {  gap: 26px;}
 
@@ -168,7 +163,6 @@ to{transform:rotate(360deg)}
 .topbar { background: rgba(255,255,255,.94); border-bottom-color: var(--line); box-shadow: 0 4px 18px rgba(47,31,84,.025);}
 .topbar > div { color: #9a91aa;}
 .topbar b, .content { color: var(--ink);}
-.section-head p { color: var(--muted);}
 .btn { background: #fff; color: var(--ink); border: 1px solid #e5deef; border-radius: 11px; transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease;}
 .btn:hover { transform: translateY(-1px); background: #faf7ff; border-color: #cdb9eb; box-shadow: 0 5px 16px rgba(87,62,153,.10);}
 .btn:active { transform: translateY(0);}
@@ -179,7 +173,6 @@ to{transform:rotate(360deg)}
 .btn.outline:hover { background: #f0e9fb;}
 .user-list, .chat-layout { background: #fff;}
 .graph-panel { border-radius: 20px;}
-.section-head h2 { color: var(--ink);}
 .legend, .toolbar{ color: var(--muted);}
 
 .person-card:hover { border-color: #cdb9eb; transform: translateY(-1px);}
@@ -228,9 +221,6 @@ input:focus-visible, select:focus-visible { outline-offset: 2px;}
 
 /* Graph polish: retain the light UknowApp palette, remove visual clutter. */
 .graph-panel { position: relative; overflow: hidden; padding: 27px; border: 1px solid #e8e0f2; background: radial-gradient(ellipse at 4% 2%, rgba(194, 153, 255, .22), transparent 34%), radial-gradient(ellipse at 96% 98%, rgba(255, 220, 176, .23), transparent 31%), radial-gradient(ellipse at 86% 0%, rgba(231, 37, 48, .045), transparent 25%), linear-gradient(145deg, #fff 0%, #fdfbff 54%, #fffdfa 100%); box-shadow: 0 12px 34px rgba(66, 45, 105, .055), inset 0 1px rgba(255,255,255,.95);}
-.graph-panel .section-head { align-items: center; margin-bottom: 23px;}
-.graph-panel .section-head h2 { font-size: 21px; letter-spacing: -.55px;}
-.graph-panel .section-head p { margin-top: 4px; color: #89819a;}
 .graph-panel .legend { padding: 8px 11px; border: 1px solid rgba(226, 218, 239, .9); border-radius: 999px; background: rgba(255,255,255,.76);}
 .graph-panel .legend span { width: 9px; height: 9px;}
 .graph-panel .root-node { position: relative; overflow: hidden; border: 1px solid #ded2f0; border-radius: 17px; background: linear-gradient(112deg, rgba(243,236,255,.97), rgba(255,255,255,.98) 62%, rgba(255,247,246,.96)); box-shadow: 0 8px 22px rgba(86, 61, 139, .09), inset 0 1px 0 rgba(255,255,255,.95);}
@@ -252,7 +242,7 @@ input:focus-visible, select:focus-visible { outline-offset: 2px;}
 .graph-panel .add-student { align-self: flex-start; margin: 11px 0 0 3px; padding: 8px 10px; border: 1px solid #e5daf2; border-radius: 9px; background: rgba(255,255,255,.76); color: #7052a9; transition: background .18s ease, border-color .18s ease, transform .18s ease;}
 .graph-panel .add-student:hover { border-color: #cdb9eb; background: #f4effb; transform: translateY(-1px);}
 .graph-panel .unassigned { margin-top: 23px; padding-top: 19px; border-top: 1px solid #e9e1f1;}
-.graph-panel .unassigned .section-head { margin-bottom: 11px;}
+.graph-panel .unassigned-title { margin-bottom: 11px;}
 /* Mobile layout: prevent horizontal overflow and turn dense rows into touch-friendly cards. */
 html, body, #root { min-height: 100%;}
 .shell, .main, .content { min-width: 0; max-width: 100%;}
@@ -365,8 +355,8 @@ img, video, audio { max-width: 100%;}
 :root[data-theme="dark-soft"] .login-screen { background: radial-gradient(circle at 18% 18%, #3b2e46 0, transparent 34%), radial-gradient(circle at 86% 84%, #29374b 0, transparent 38%), #171b25 !important;}
 :root[data-theme="dark-soft"] .login-card, :root[data-theme="dark-soft"] .sidebar, :root[data-theme="dark-soft"] .topbar, :root[data-theme="dark-soft"] .graph-panel, :root[data-theme="dark-soft"] .user-list, :root[data-theme="dark-soft"] .chat-layout, :root[data-theme="dark-soft"] .teacher-readonly-graph, :root[data-theme="dark-soft"] .chat-head, :root[data-theme="dark-soft"] .chat-composer, :root[data-theme="dark-soft"] .credential-row, :root[data-theme="dark-soft"] .modal { background: #202633 !important; color: #e4e8f0 !important; border-color: #343d4d !important; box-shadow: 0 12px 35px rgba(0, 0, 0, .16);}
 :root[data-theme="dark-soft"] .main, :root[data-theme="dark-soft"] .shell { background: #171b25 !important;}
-:root[data-theme="dark-soft"] .school-label, :root[data-theme="dark-soft"] .eyebrow, :root[data-theme="dark-soft"] .section-head p, :root[data-theme="dark-soft"] .person-info small, :root[data-theme="dark-soft"] .chat-head small, :root[data-theme="dark-soft"] .chat-item small, :root[data-theme="dark-soft"] .chat-item span, :root[data-theme="dark-soft"] .composer-footer small, :root[data-theme="dark-soft"] .message-time, :root[data-theme="dark-soft"] .credential-row span, :root[data-theme="dark-soft"] .credential-password span { color: #9ba6b8 !important;}
-:root[data-theme="dark-soft"] .topbar > div, :root[data-theme="dark-soft"] .topbar b, :root[data-theme="dark-soft"] .section-head h2, :root[data-theme="dark-soft"] .person-info b, :root[data-theme="dark-soft"] .chat-head b, :root[data-theme="dark-soft"] .chat-item b, :root[data-theme="dark-soft"] .credential-row b, :root[data-theme="dark-soft"] .empty-state b { color: #e4e8f0 !important;}
+:root[data-theme="dark-soft"] .school-label, :root[data-theme="dark-soft"] .eyebrow, :root[data-theme="dark-soft"] .person-info small, :root[data-theme="dark-soft"] .chat-head small, :root[data-theme="dark-soft"] .chat-item small, :root[data-theme="dark-soft"] .chat-item span, :root[data-theme="dark-soft"] .composer-footer small, :root[data-theme="dark-soft"] .message-time, :root[data-theme="dark-soft"] .credential-row span, :root[data-theme="dark-soft"] .credential-password span { color: #9ba6b8 !important;}
+:root[data-theme="dark-soft"] .topbar > div, :root[data-theme="dark-soft"] .topbar b, :root[data-theme="dark-soft"] .person-info b, :root[data-theme="dark-soft"] .chat-head b, :root[data-theme="dark-soft"] .chat-item b, :root[data-theme="dark-soft"] .credential-row b, :root[data-theme="dark-soft"] .empty-state b { color: #e4e8f0 !important;}
 :root[data-theme="dark-soft"] .sidebar nav button { background: transparent !important; color: #aeb7c7 !important;}
 :root[data-theme="dark-soft"] .sidebar nav button:hover { background: #293142 !important; color: #e4e8f0 !important;}
 :root[data-theme="dark-soft"] .sidebar nav button.active { background: #353149 !important; color: #c6bdf0 !important; border-color: #49415f !important;}
@@ -483,8 +473,8 @@ img, video, audio { max-width: 100%;}
 .graph-panel .student-card .avatar { flex: 0 0 34px; width: 34px; height: 34px;}
 .graph-panel .student-card .person-info b { display: block; max-width: 100%; overflow: visible; white-space: normal; overflow-wrap: anywhere; word-break: break-word; text-overflow: clip; line-height: 1.25;}
 .graph-panel .student-card .person-info small { white-space: normal; overflow-wrap: anywhere;}
-.graph-panel .student-card .person-actions { gap: 1px;}
-.graph-panel .student-card .person-actions svg { width: 14px; height: 14px;}
+
+.graph-panel .student-card > .graph-person-action svg { width: 14px; height: 14px;}
 :root[data-theme="dark-soft"] .graph-panel .root-node:before { inset: 0 0 auto; width: 100%; height: 3px;}
 /* Keep the primary graph action at the top beside the legend. */
 /* Final graph-card sizing: keep the admin identity on one compact row and
@@ -501,8 +491,8 @@ img, video, audio { max-width: 100%;}
 .graph-panel .student-card .person-main { display: flex; flex: 1 1 0%; width: auto; min-width: 0; max-width: 100%; overflow: hidden;}
 .graph-panel .student-card .person-info { flex: 1 1 0%; width: auto; min-width: 0; max-width: 100%; overflow: hidden;}
 .graph-panel .student-card .person-info b, .graph-panel .student-card .person-info small { max-width: 100%; white-space: normal; overflow-wrap: anywhere; word-break: normal; text-overflow: clip;}
-.graph-panel .student-card .person-actions { flex: 0 0 auto; min-width: 0;}
-.graph-panel .student-card .person-actions button { flex: 0 0 27px; width: 27px; height: 27px;}
+
+.graph-panel .student-card > .graph-person-action { flex: 0 0 27px; width: 27px; height: 27px; min-width: 27px; padding: 0;}
 /* Preserve comfortable teacher columns; only the card contents may shrink. */
 .graph-panel .teacher-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));}
 .user-sort { display: block; flex: 0 1 auto; min-width: 0; border: 1px solid var(--line); color: var(--ink); background: #fff; font: inherit; cursor: pointer;}
@@ -624,8 +614,8 @@ img, video, audio { max-width: 100%;}
 .graph-panel .unassigned-student-card .person-info { flex: 1 1 0%; width: 0; min-width: 0; max-width: 100%; overflow: hidden;}
 .graph-panel .unassigned-student-card .person-info b { display: block; max-width: 100%; overflow: visible; white-space: normal; overflow-wrap: anywhere; word-break: normal; text-overflow: clip; line-height: 1.25;}
 .graph-panel .unassigned-student-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-width: 0; margin-top: auto;}
-.graph-panel .unassigned-student-actions .person-actions { display: flex; align-items: center; flex: 0 0 auto; gap: 4px;}
-.graph-panel .unassigned-student-actions .person-actions button { flex: 0 0 34px; width: 34px; height: 34px;}
+
+.graph-panel .unassigned-student-actions > .graph-person-action { flex: 0 0 34px; width: 34px; height: 34px; padding: 0;}
 .graph-panel .unassigned-student-actions .btn { flex: 0 0 auto; min-height: 36px; padding: 8px 13px; white-space: nowrap;}
 .graph-panel .unassigned-grid .unassigned-student-card { background: #fff; border-color: #e9e3f2;}
 .graph-panel .unassigned-grid .unassigned-student-card:hover { border-color: #d8c8eb; box-shadow: 0 5px 17px rgba(87, 62, 153, .08);}
@@ -696,7 +686,6 @@ html, body { overflow-x: clip;}
 .topbar-user { margin-left: 0; font-size: 10px;}
 .content { width: 100%; max-width: 1900px; padding: 14px 20px 18px;}
 .graph-panel { padding: 19px; border-radius: 16px;}
-.graph-panel .section-head { margin-bottom: 12px;}
 .graph-panel .root-node { min-height: 68px; margin-bottom: 14px; padding: 10px 14px;}
 .graph-panel .root-node img { width: 44px; height: 44px;}
 .graph-panel .teacher-grid{ gap: 12px;}
@@ -739,7 +728,6 @@ html, body { overflow-x: clip;}
 .sidebar nav button{flex:1;}
 .school-label, .sidebar nav button i{display:none}
 
-.section-head{align-items:flex-start;flex-direction:column}
 
 .user-row .person-info{min-width:calc(100% - 65px)}
 .role-tag{margin-left:45px}
@@ -770,7 +758,6 @@ html, body { overflow-x: clip;}
 .content { width: 100%;}
 .graph-panel, .user-list, .chat-layout { width: 100%; border-radius: 15px;}
 .graph-panel { overflow: hidden;}
-.graph-panel .section-head { flex-direction: column; gap: 10px;}
 .graph-panel .legend, .modal-actions, .user-row{ flex-wrap: wrap;}
 .graph-panel .person-card { min-width: 0;}
 .graph-panel .person-main { min-width: 0; flex: 1;}
@@ -836,7 +823,6 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 :root[data-theme="dark-soft"] .sidebar nav button.active, :root[data-theme="dark-soft"] .btn.primary { background: #71679e !important; border-color: #8b80b8 !important; color: #fff !important;}
 :root[data-theme="dark-soft"] .chat-item.selected, :root[data-theme="dark-soft"] button.chat-item.selected { background: #343449 !important; border-color: #514b6d !important; color: #d1c9f4 !important;}
 .graph-panel { min-width: 0; border-radius: 15px;}
-.graph-panel .section-head { align-items: flex-start;}
 .graph-panel .legend { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; padding: 8px 10px; border-radius: 11px; line-height: 1.3;}
 .graph-panel .root-node { min-height: 66px;}
 .graph-panel .root-node img { flex: 0 0 42px;}
@@ -874,7 +860,6 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .topbar { height: 46px; padding: 0 12px;}
 
 
-.graph-panel .section-head { margin-bottom: 10px;}
 .teacher-readonly-graph { padding: 12px;}
 .teacher-graph-root { max-width: none; margin: 10px 0;}
 .graph-panel .graph-legend { padding: 7px 9px;}
@@ -888,7 +873,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .user-actions { align-self: center;}
 .graph-panel .teacher-card > .person-main { gap: 7px;}
 .graph-panel .teacher-card { gap: 5px; padding: 7px;}
-.graph-panel .student-card .person-actions button, .graph-panel .teacher-card .person-actions button{ flex-basis: 25px; width: 25px; height: 25px;}
+.graph-panel .student-card > .graph-person-action, .graph-panel .teacher-card .person-actions button{ flex-basis: 25px; width: 25px; height: 25px;}
 .graph-panel .graph-legend-item b { border-radius: 9px;}
 .graph-panel .graph-legend { gap: 8px;}
 .graph-panel .graph-legend-item { gap: 6px; font-size: 10px;}
@@ -912,7 +897,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .user-action-btn.user-info-btn { width: 40px; height: 40px; flex-basis: 40px;}
 .graph-panel .unassigned-grid { grid-template-columns: minmax(0, 1fr); gap: 11px;}
 .graph-panel .unassigned-student-card { min-height: 0;}
-.graph-panel .unassigned-student-actions .person-actions button { flex-basis: 32px; width: 32px; height: 32px;}
+.graph-panel .unassigned-student-actions > .graph-person-action { flex-basis: 32px; width: 32px; height: 32px;}
 .graph-panel .unassigned-student-actions { gap: 7px;}
 .graph-panel .unassigned-student-actions .btn { padding: 7px 10px;}
 .confirm-delete-modal .modal-actions { flex-wrap: nowrap;}
@@ -933,7 +918,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .sidebar nav { grid-template-columns: repeat(3, minmax(0, 1fr));}
 .sidebar nav button { min-width: 0; padding-inline: 2px; white-space: normal; overflow-wrap: anywhere;}
 .content, .topbar, .graph-panel, .user-list, .chat-layout, .chat-detail, .chat-list, .modal { min-width: 0; max-width: 100%;}
-.section-head h2, .user-row, .message, .chat-head, .chat-item, .overlay > .modal{ overflow-wrap: anywhere;}
+.user-row, .message, .chat-head, .chat-item, .overlay > .modal{ overflow-wrap: anywhere;}
 .person-card, .user-row, .composer-footer { min-width: 0;}
 .chat-head-tools { flex-wrap: wrap;}
 .toast { right: 10px; bottom: 10px; left: 10px; max-width: calc(100% - 20px); justify-content: center; text-align: center;}
@@ -1033,7 +1018,6 @@ input::placeholder, textarea::placeholder { color: #a49daf;}
 /* Cards and workspaces share consistent surface depth and corner rhythm. */
 .graph-panel, .user-list, .chat-layout, .person-card, .teacher-graph-card, .user-info-popover, .chat-list, .chat-detail { border-radius: var(--ui-radius-lg);}
 .teacher-graph-card { border-color: var(--line); box-shadow: var(--ui-shadow-card);}
-.section-head { align-items: center;}
 .person-card { box-shadow: 0 1px 4px rgba(47, 31, 84, .025);}
 .person-card:hover { box-shadow: 0 5px 15px rgba(87, 62, 153, .075);}
 .user-row { border-bottom-color: #efebf4;}
@@ -1154,7 +1138,7 @@ button:disabled, .btn:disabled { opacity: .48 !important; cursor: not-allowed !i
 .person-actions button { width: 32px; height: 32px; border-radius: 9px;}
 .add-student { min-height: 32px;   gap: 6px;}
 .unassigned-student-actions { flex-wrap: wrap; justify-content: flex-end; gap: 7px;}
-.unassigned-student-actions .person-actions { gap: 5px;}
+
 .unassigned-student-actions > .btn { min-height: 32px; padding: 6px 10px;}
 .user-actions { flex-wrap: nowrap; justify-content: flex-end;}
 .user-action-btn { min-height: 34px; border-radius: 9px;}
