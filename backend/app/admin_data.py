@@ -93,7 +93,7 @@ def download_database(_: Admin):
     database = _database_path()
     if not database.is_file():
         raise HTTPException(status_code=404, detail="Файл базы данных не найден")
-    handle = tempfile.NamedTemporaryFile(prefix="uknowapp-db-", suffix=".sqlite3", delete=False)
+    handle = tempfile.NamedTemporaryFile(prefix="uknowapp-db-", suffix=".sqlite3", dir=database.parent, delete=False)
     backup_path = Path(handle.name)
     handle.close()
     try:
@@ -113,7 +113,8 @@ def download_database(_: Admin):
 async def restore_database(_: Admin, file: UploadFile = File(...)):
     if not (file.filename or "").lower().endswith((".db", ".sqlite", ".sqlite3")):
         raise HTTPException(status_code=400, detail="Загрузите файл SQLite (.db, .sqlite или .sqlite3)")
-    handle = tempfile.NamedTemporaryFile(prefix="uknowapp-restore-", suffix=".sqlite3", delete=False)
+    database = _database_path()
+    handle = tempfile.NamedTemporaryFile(prefix="uknowapp-restore-", suffix=".sqlite3", dir=database.parent, delete=False)
     temp_path = Path(handle.name)
     total = 0
     try:
@@ -128,7 +129,6 @@ async def restore_database(_: Admin, file: UploadFile = File(...)):
             tables = {row[0] for row in uploaded.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             if not integrity or integrity[0] != "ok" or not {"users", "messages", "conversations"}.issubset(tables):
                 raise HTTPException(status_code=400, detail="Файл не является корректной базой данных UknowApp")
-        database = _database_path()
         database.parent.mkdir(parents=True, exist_ok=True)
         engine.dispose()
         with sqlite3.connect(temp_path) as source, sqlite3.connect(database) as target:
@@ -157,7 +157,7 @@ def download_dialogues(_: Admin):
                 "admin_read_at", "participant_read_at", "created_at",
             )) for row in personal_messages],
         }
-        handle = tempfile.NamedTemporaryFile(prefix="uknowapp-dialogues-", suffix=".zip", delete=False)
+        handle = tempfile.NamedTemporaryFile(prefix="uknowapp-dialogues-", suffix=".zip", dir=_database_path().parent, delete=False)
         archive_path = Path(handle.name)
         handle.close()
         try:
@@ -190,7 +190,8 @@ def download_dialogues(_: Admin):
 async def restore_dialogues(_: Admin, file: UploadFile = File(...), db: Session = Depends(_get_db)):
     if not (file.filename or "").lower().endswith(".zip"):
         raise HTTPException(status_code=400, detail="Загрузите ZIP-архив переписок")
-    handle = tempfile.NamedTemporaryFile(prefix="uknowapp-dialogues-upload-", suffix=".zip", delete=False)
+    data_dir = _database_path().parent
+    handle = tempfile.NamedTemporaryFile(prefix="uknowapp-dialogues-upload-", suffix=".zip", dir=data_dir, delete=False)
     temp_path = Path(handle.name)
     total = 0
     try:
@@ -200,7 +201,7 @@ async def restore_dialogues(_: Admin, file: UploadFile = File(...), db: Session 
                 if total > MAX_ARCHIVE_BYTES:
                     raise HTTPException(status_code=413, detail="Архив превышает 2 ГБ")
                 handle.write(chunk)
-        stage = Path(tempfile.mkdtemp(prefix="uknowapp-dialogues-stage-"))
+        stage = Path(tempfile.mkdtemp(prefix="uknowapp-dialogues-stage-", dir=data_dir))
         try:
             with zipfile.ZipFile(temp_path) as archive:
                 entries = archive.infolist()
