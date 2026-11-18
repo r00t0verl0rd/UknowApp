@@ -1,138 +1,43 @@
-# Frontend CSS refactor
+# Frontend CSS maintenance
 
-## Baseline (main, 2026-11-18)
+Last measured on 2026-11-18 from `main`.
 
-Measured from `frontend/src/styles.css` before this refactor:
-
-- 9,418 lines and 255,059 characters.
-- 1,843 selector occurrences.
-- 923 `!important` declarations.
-- 49 media-query blocks.
-- 226 selectors beginning with the dark-theme root selector.
-- 1,209 hex color occurrences and 704 distinct hex values.
-- 390 `var(...)` references.
-- Most repeated selectors: `.user-row` (18), `.content` (16), `.chat-list` (15), `.user-actions` (13), `.chat-head` (12).
-
-These are lexical counts, not a parsed CSS dependency graph. Repeated selectors are not automatically dead code: source order, specificity, media conditions, pseudo-states and `!important` can all affect the cascade.
-
-## Safety constraints
-
-- Preserve rule order until visual regression coverage exists.
-- Do not remove declarations solely because a later declaration appears to override them.
-- Keep the current visual palette unchanged while moving its definitions.
-- Treat every structural CSS change as requiring a production build and visual checks in light/dark themes on mobile (including tablet-width devices using the mobile layout) and desktop widths.
-- Do not claim screenshot or runtime validation unless those checks were actually run.
-
-## Completed foundation and history-based cleanup
-
-- Extracted the light and dark theme roots into one canonical base and one dark override in `tokens.css`, preserving the effective values after the old scattered overrides.
-- Reviewed the stylesheet history and current React markup. Removed retired credential styles (`.password-actions`, `.password-code-label`) and the old `.teacher-toggle` implementation remnants.
-- Removed 289 identical repeated declarations and 850 earlier declarations superseded by later declarations for the same selector in the same media context.
-- Removed 94 more superseded declarations that were hidden inside grouped selector lists.
-- Pruned 130 fully superseded selectors from 55 grouped rules; a selector was removed only when every declaration for it was supplied by a later rule with the same selector and context.
-- Removed empty rules left by the cascade cleanup, merged five adjacent responsive wrappers, nine adjacent groups with identical declarations, and two adjacent teacher-graph rules.
-- Static verification against `App.jsx` and `MessageBubble.jsx`: 170 distinct CSS class tokens, none absent from those source files; no empty style rules; no remaining retired credential/toggle selectors.
-
-### Current measured size (main, 2026-11-18)
+## Current size
 
 | File | Lines | Characters |
 |---|---:|---:|
-| `styles.css` | 7,880 | 203,663 |
-| `tokens.css` | 113 | 3,264 |
-| **Combined** | **7,993** | **206,927** |
+| `frontend/src/styles.css` | 1,788 | 182,242 |
+| `frontend/src/tokens.css` | 110 | 3,194 |
+| **Combined** | **1,898** | **185,436** |
 
-Compared with the combined starting point for this pass (9,428 lines / 255,060 characters), the source is down by 1,435 lines (15.2%) and 48,133 characters (18.9%). The requested 3x reduction has **not** been reached.
+The original measurement for this cleanup was 9,428 combined lines and 255,060 characters. The current source is 7,530 lines shorter, largely because CSS declarations and selectors were compacted to one rule per line. Character count is down by 69,624 (about 27.3%). Line count must not be treated as a proxy for runtime CSS complexity.
 
-Latest cleanup merged 14 non-adjacent repeated rule blocks into shared selector lists. Each group had identical declarations in the same media context, and an intervening-rule scan found no declarations affecting those properties between the original rules.
+Current source checks:
+- 40 media-query blocks.
+- 801 `!important` occurrences.
+- No empty CSS rules.
+- Theme variables are centralized in `tokens.css`; the earlier unused amber variables were removed.
+- The separate tablet layout was removed in commit `485261c`. Tablets up to 1024px use the mobile composition; desktop starts at 1025px. Narrow-desktop refinements are not a third layout.
 
-A follow-up token audit removed three unused palette variables: `--amber`, `--amber-dark` and `--amber-soft`. All remaining defined custom properties are referenced; both declared keyframe animations are used. The grouped-selector cascade audit was rerun after consolidation and found no additional fully superseded declarations. No empty style rules remain.
+## Cleanup already completed
 
-### Updated measured size after the token audit
+- Moved the canonical light/dark theme variables into `tokens.css`.
+- Removed retired credential and teacher-toggle styles.
+- Removed identical and provably superseded declarations after checking selector, specificity, media context and source order.
+- Removed obsolete generic graph styles that were replaced by graph-specific rules.
+- Merged identical rule blocks only where the cascade remained unchanged.
+- Removed empty rules and stale tablet-only comments.
+- Preserved dynamic role classes and conditional modal/expanded classes.
+- Added frontend production-build and design-token lint checks to GitHub Actions.
 
-| File | Lines | Characters |
-|---|---:|---:|
-| `styles.css` | 7,880 | 203,663 |
-| `tokens.css` | 110 | 3,194 |
-| **Combined** | **7,990** | **206,857** |
+## Safety rules for future edits
 
-Against the original combined baseline (9,428 lines / 255,060 characters), this is a reduction of 1,438 lines (15.3%) and 48,203 characters (18.9%). The 3x reduction target has not yet been reached.
+1. Edit the existing component rule in place; do not append corrective overrides to the end of the stylesheet.
+2. Do not reorder rules just to group them.
+3. Do not remove a declaration based only on a later declaration that looks similar. Check specificity, media/theme conditions, pseudo-states and intervening rules.
+4. Keep the two layout modes: mobile (up to 1024px) and desktop (from 1025px).
+5. Require a production build and light/dark visual checks at mobile and desktop widths before considering structural CSS work complete.
 
-Current structural counts: 1,555 top-level style rules, 41 media-query blocks and 816 `!important` declarations. The stylesheet defines no unused custom properties and has no empty style rules. The unresolved `--bar-index` reference is provided inline by the audio player; `--surface-soft` has a local fallback. These are source counts, not a runtime CSS coverage report.
+## Remaining work
 
-The class-name audit accounts for dynamic values: role-derived `teacher`/`admin` classes and conditional `create-participant-modal`/`is-expanded` classes are live. Both keyframes, `spin` and `chat-audio-wave-pulse`, are referenced by animation declarations.
-
-No production build or light/dark mobile/desktop visual regression run has been performed for this cleanup.
-
-## Next phases
-
-1. Map the remaining responsive rules by component and viewport range, then consolidate each component's base, mobile, desktop and dark-theme treatment in place. Do not create a separate tablet mode.
-2. Review high-specificity and `!important` use by component, keeping only cases with a demonstrated cascade requirement.
-3. Establish screenshot fixtures and a reproducible demo dataset before changing the visual rules more aggressively.
-4. Replace repeated component-specific values with semantic tokens and shared component rules only where their behavior is genuinely the same.
-5. Reassess file size after each component migration; retain the 3x goal as a target, not a reason to remove required behavior.
-
-## Latest pass: compact rule layout (2026-11-18)
-
-The stylesheet now uses one CSS rule per line, with each media/container/layer wrapper and its closing brace on separate lines. Comments remain readable on their own lines; declarations, selector lists, source order, media conditions, !important flags and string contents are preserved.
-
-A whitespace-only token-stream comparison confirmed that no non-whitespace CSS characters changed during this pass. The number of opening blocks also remained unchanged (1,598). This is a source-layout change, not a claim that the stylesheet's underlying rule count or visual complexity fell by the same factor.
-
-| Metric | Before layout pass | After layout pass |
-|---|---:|---:|
-| styles.css lines | 7,880 | 1,855 |
-| tokens.css lines | 110 | 110 |
-| Combined CSS lines | 7,990 | 1,965 |
-| styles.css characters | 203,663 | 189,519 |
-| Combined CSS characters | 206,857 | 192,713 |
-| CSS blocks in styles.css | 1,598 | 1,598 |
-
-The stylesheet is now within the requested 1,000–2,000-line range. It is not yet within a 1,000–2,000-byte or equivalent complexity budget: 1,598 CSS blocks remain, so future reductions must come from genuine component-level consolidation and proven obsolete-rule removal, not formatting alone. No browser build or visual regression test has been performed in this pass.
-
-## Latest substantive cleanup pass (2026-11-18)
-
-This pass went beyond formatting and removed only cascade-audited redundancy:
-
-- Removed 105 declarations shadowed by later declarations for the exact same selector in the same conditional context.
-- Removed 20 obsolete generic graph rules and 23 declarations that were superseded by the graph-specific component styles. Those classes are only rendered inside the graph panel in the current React markup.
-- Removed the 66 empty rules left by those deletions.
-- Merged 14 identical rule blocks into shared selector lists where intervening rules could not affect the same properties.
-- Removed 27 responsive declarations that duplicated the same exact selector/property/value already supplied by an unconditional base rule, after checking intervening rules for selector/property conflicts.
-- A final repeated-selector audit found no remaining directly shadowed declarations for the same selector within the same media/supports context. Only `teacher` and `admin` remain unmatched by a static class-string scan; both are role-derived classes.
-
-### Latest measured source
-
-| Metric | Current value |
-|---|---:|
-| `styles.css` lines | 1,788 |
-| `tokens.css` lines | 110 |
-| **Combined lines** | **1,898** |
-| `styles.css` characters | 182,242 |
-| `tokens.css` characters | 3,194 |
-| **Combined characters** | **185,436** |
-| Style rules (excluding at-rules) | 1,450 |
-| Media-query wrappers | 40 |
-| `!important` occurrences | 801 |
-| Empty style rules | 0 |
-
-Compared with the compacted starting point for this pass (1,855 `styles.css` lines, 189,519 characters and 1,555 style rules), this reduced the file by 56 lines, 6,558 characters and 105 style rules. Combined CSS is now 1,909 lines / 186,155 characters. The code has **not** been reduced by another half: the rule count fell by about 6.8% in this pass.
-
-The remaining rules mostly represent distinct chat, directory, graph, modal, theme and responsive states. 248 selectors currently include the dark-theme root selector, 41 media wrappers remain, and 801 `!important` declarations remain. Merging or deleting large groups of those rules without visual regression fixtures risks changing mobile layout, the chat viewport, or the light/dark palette. A true 50% reduction requires a planned component-level CSS redesign with screenshot coverage, not more cascade-only deletion.
-
-No production build or light/dark mobile/tablet/desktop visual regression run has been performed for this pass. CSS braces are balanced, no empty style rules remain, and the source class audit still accounts for the two role-derived class names.
-
-## Responsive layout audit: tablet mode removal (2026-11-18)
-
-The breakpoint history confirms that the separate tablet layout was intentionally removed in commit `485261c` (`Use mobile layout on tablet widths`, 2026-11-16). That change deleted the dedicated `@media (min-width: 761px) and (max-width: 1024px)` workspace and chat rules, and changed former `761px–1200px` desktop/tablet refinements to start at `1025px`.
-
-Current `styles.css` has two main layout modes:
-
-- Mobile layout: `max-width: 1024px`. Tablets in this width range deliberately use the mobile composition; these rules are not an extra tablet mode.
-- Desktop layout: `min-width: 1025px`. The `1025px–1200px` sub-range keeps user toolbars and directory rows from overflowing beside the fixed desktop sidebar. It is a narrow-desktop refinement, not a third layout.
-
-Smaller width rules (`900px`, `480px`, `420px`, `380px`, `360px`) refine control density within the mobile mode. Height, pointer/hover and reduced-motion media queries are orthogonal adjustments, not additional viewport layouts.
-
-Cleanup in this audit removed an empty `@media (max-width: 1024px)` block, obsolete tablet-only fix comments, and outdated references describing the old three-mode layout. No live tablet-specific CSS block remained to delete. A source scan now finds no `tablet` or `761px` references in `styles.css`.
-
-Latest verified CSS size: `styles.css` 1,788 lines / 182,242 characters; `tokens.css` 110 lines / 3,194 characters; combined 1,898 lines / 185,436 characters. The stylesheet has 1,450 style rules, 40 media wrappers, no empty blocks, and balanced braces.
-
-No production build or browser visual regression was run as part of this audit.
+The stylesheet still has substantial component-specific styling and 801 `!important` occurrences. Further large reductions require component-by-component consolidation with screenshot coverage. Do not chase a line-count target by deleting live states or flattening distinct behavior.
