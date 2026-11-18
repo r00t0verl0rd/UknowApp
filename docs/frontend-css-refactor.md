@@ -20,7 +20,7 @@ These are lexical counts, not a parsed CSS dependency graph. Repeated selectors 
 - Preserve rule order until visual regression coverage exists.
 - Do not remove declarations solely because a later declaration appears to override them.
 - Keep the current visual palette unchanged while moving its definitions.
-- Treat every structural CSS change as requiring a production build and visual checks in light/dark themes at mobile, tablet and desktop widths.
+- Treat every structural CSS change as requiring a production build and visual checks in light/dark themes on mobile (including tablet-width devices using the mobile layout) and desktop widths.
 - Do not claim screenshot or runtime validation unless those checks were actually run.
 
 ## Completed foundation and history-based cleanup
@@ -61,11 +61,11 @@ Current structural counts: 1,555 top-level style rules, 41 media-query blocks an
 
 The class-name audit accounts for dynamic values: role-derived `teacher`/`admin` classes and conditional `create-participant-modal`/`is-expanded` classes are live. Both keyframes, `spin` and `chat-audio-wave-pulse`, are referenced by animation declarations.
 
-No production build or light/dark mobile/tablet/desktop visual regression run has been performed for this cleanup.
+No production build or light/dark mobile/desktop visual regression run has been performed for this cleanup.
 
 ## Next phases
 
-1. Map the remaining responsive rules by component and viewport range, then consolidate each component's base, tablet/mobile and dark-theme treatment in place.
+1. Map the remaining responsive rules by component and viewport range, then consolidate each component's base, mobile, desktop and dark-theme treatment in place. Do not create a separate tablet mode.
 2. Review high-specificity and `!important` use by component, keeping only cases with a demonstrated cascade requirement.
 3. Establish screenshot fixtures and a reproducible demo dataset before changing the visual rules more aggressively.
 4. Replace repeated component-specific values with semantic tokens and shared component rules only where their behavior is genuinely the same.
@@ -103,14 +103,14 @@ This pass went beyond formatting and removed only cascade-audited redundancy:
 
 | Metric | Current value |
 |---|---:|
-| `styles.css` lines | 1,799 |
+| `styles.css` lines | 1,788 |
 | `tokens.css` lines | 110 |
-| **Combined lines** | **1,909** |
-| `styles.css` characters | 182,961 |
+| **Combined lines** | **1,898** |
+| `styles.css` characters | 182,242 |
 | `tokens.css` characters | 3,194 |
-| **Combined characters** | **186,155** |
+| **Combined characters** | **185,436** |
 | Style rules (excluding at-rules) | 1,450 |
-| Media-query wrappers | 41 |
+| Media-query wrappers | 40 |
 | `!important` occurrences | 801 |
 | Empty style rules | 0 |
 
@@ -119,3 +119,20 @@ Compared with the compacted starting point for this pass (1,855 `styles.css` lin
 The remaining rules mostly represent distinct chat, directory, graph, modal, theme and responsive states. 248 selectors currently include the dark-theme root selector, 41 media wrappers remain, and 801 `!important` declarations remain. Merging or deleting large groups of those rules without visual regression fixtures risks changing mobile layout, the chat viewport, or the light/dark palette. A true 50% reduction requires a planned component-level CSS redesign with screenshot coverage, not more cascade-only deletion.
 
 No production build or light/dark mobile/tablet/desktop visual regression run has been performed for this pass. CSS braces are balanced, no empty style rules remain, and the source class audit still accounts for the two role-derived class names.
+
+## Responsive layout audit: tablet mode removal (2026-11-18)
+
+The breakpoint history confirms that the separate tablet layout was intentionally removed in commit `485261c` (`Use mobile layout on tablet widths`, 2026-11-16). That change deleted the dedicated `@media (min-width: 761px) and (max-width: 1024px)` workspace and chat rules, and changed former `761px–1200px` desktop/tablet refinements to start at `1025px`.
+
+Current `styles.css` has two main layout modes:
+
+- Mobile layout: `max-width: 1024px`. Tablets in this width range deliberately use the mobile composition; these rules are not an extra tablet mode.
+- Desktop layout: `min-width: 1025px`. The `1025px–1200px` sub-range keeps user toolbars and directory rows from overflowing beside the fixed desktop sidebar. It is a narrow-desktop refinement, not a third layout.
+
+Smaller width rules (`900px`, `480px`, `420px`, `380px`, `360px`) refine control density within the mobile mode. Height, pointer/hover and reduced-motion media queries are orthogonal adjustments, not additional viewport layouts.
+
+Cleanup in this audit removed an empty `@media (max-width: 1024px)` block, obsolete tablet-only fix comments, and outdated references describing the old three-mode layout. No live tablet-specific CSS block remained to delete. A source scan now finds no `tablet` or `761px` references in `styles.css`.
+
+Latest verified CSS size: `styles.css` 1,788 lines / 182,242 characters; `tokens.css` 110 lines / 3,194 characters; combined 1,898 lines / 185,436 characters. The stylesheet has 1,450 style rules, 40 media wrappers, no empty blocks, and balanced braces.
+
+No production build or browser visual regression was run as part of this audit.
