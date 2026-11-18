@@ -883,7 +883,7 @@ def _personal_conversation(db: Session, principal: dict, conversation_id: int) -
     return conversation
 
 
-def _personal_conversation_dict(item: PersonalConversation, viewer_role: str) -> dict:
+def _personal_conversation_dict(item: PersonalConversation, viewer_role: str, unread_count: int = 0) -> dict:
     participant = item.participant
     return {
         "id": item.id,
@@ -891,6 +891,7 @@ def _personal_conversation_dict(item: PersonalConversation, viewer_role: str) ->
         "participant": {"id": participant.id, "full_name": participant.full_name, "role": participant.role},
         "title": participant.full_name if viewer_role == "admin" else "Администратор",
         "created_at": item.created_at.isoformat(),
+        "unread_count": unread_count,
     }
 
 
@@ -901,7 +902,12 @@ def personal_conversations(principal: PanelUser, db: Db):
     ).order_by(PersonalConversation.created_at.desc(), PersonalConversation.id.desc())
     if principal["role"] != "admin":
         statement = statement.where(PersonalConversation.participant_id == principal["user_id"])
-    return [_personal_conversation_dict(item, principal["role"]) for item in db.scalars(statement).all()]
+    result = []
+    read_column = PersonalMessage.admin_read_at if principal["role"] == "admin" else PersonalMessage.participant_read_at
+    for item in db.scalars(statement).all():
+        unread_count = db.scalar(select(func.count(PersonalMessage.id)).where(PersonalMessage.conversation_id == item.id, PersonalMessage.sender_role != principal["role"], read_column.is_(None))) or 0
+        result.append(_personal_conversation_dict(item, principal["role"], unread_count))
+    return result
 
 
 @router.post("/panel/personal-conversations", status_code=201)
@@ -924,6 +930,14 @@ def create_personal_conversation(payload: PersonalConversationCreate, principal:
 @router.get("/panel/personal-conversations/{conversation_id}/messages")
 def personal_messages(conversation_id: int, principal: PanelUser, db: Db):
     item = _personal_conversation(db, principal, conversation_id)
+    read_column = PersonalMessage.admin_read_at if principal["role"] == "admin" else PersonalMessage.participant_read_at
+    incoming = db.scalars(select(PersonalMessage).where(PersonalMessage.conversation_id == item.id, PersonalMessage.sender_role != principal["role"], read_column.is_(None))).all()
+    if incoming:
+        now = datetime.now(timezone.utc)
+        for message in incoming:
+            setattr(message, "admin_read_at" if principal["role"] == "admin" else "participant_read_at", now)
+        db.commit()
+        publish_chat_update(0)
     rows = db.scalars(
         select(PersonalMessage).where(PersonalMessage.conversation_id == item.id)
         .order_by(PersonalMessage.created_at, PersonalMessage.id)
