@@ -306,23 +306,19 @@ export default function App() {
   }, [selectedChat?.id, messageFilter, visibleMessages]);
 
   const visibleChats = useMemo(() => {
-    if (selectedChat?.type === "personal" || chatSection === "personal") return personalChats.filter(chat => !chatSearch.trim() || chat.title.toLocaleLowerCase("ru").includes(chatSearch.trim().toLocaleLowerCase("ru")));
-    if (profile?.role === "student") return chats.slice(0, 1);
     const query = chatSearch.trim().toLocaleLowerCase("ru");
-    // API отдаёт диалоги в порядке последней активности: сохраняем этот порядок
-    // для всех ролей, чтобы самый недавно обновлённый диалог всегда был первым.
-    if (profile?.role === "admin") {
-      return chats.filter(chat =>
-        !query || (chat.teacher.full_name + " " + chat.student.full_name).toLocaleLowerCase("ru").includes(query)
-      );
-    }
-    return chats.filter(chat => {
-      const names = (chat.student.full_name + " " + chat.teacher.full_name).toLowerCase();
+    const personal = personalChats.filter(chat => !query || chat.title.toLocaleLowerCase("ru").includes(query));
+    if (profile?.role === "admin" && chatSection === "personal") return personal;
+    const regular = profile?.role === "student" ? chats.slice(0, 1) : chats.filter(chat => {
+      const names = profile?.role === "admin"
+        ? chat.teacher.full_name + " " + chat.student.full_name
+        : chat.student.full_name + " " + chat.teacher.full_name;
       const matchesSearch = !query || names.toLocaleLowerCase("ru").includes(query);
-      const matchesFilter = chatFilter === "all" || Number(chat.unread_count || 0) > 0;
+      const matchesFilter = profile?.role !== "teacher" || chatFilter === "all" || Number(chat.unread_count || 0) > 0;
       return matchesSearch && matchesFilter;
     });
-  }, [chats, personalChats, chatSection, chatSearch, chatFilter, profile?.role, selectedChat?.type]);
+    return profile?.role === "admin" ? regular : [...regular, ...personal];
+  }, [chats, personalChats, chatSection, chatSearch, chatFilter, profile?.role]);
 
   function toggleTheme() {
     setTheme(current => current === "dark-soft" ? "light" : "dark-soft");
@@ -715,7 +711,7 @@ export default function App() {
         </>}
 
         {page === "chats" && <>
-          <div className={"chat-layout" + (selectedChat ? " chat-layout-conversation-open" : " chat-layout-list-open")}><div className="chat-list">{profile?.role !== "student" && <>
+          <div className={"chat-layout" + (selectedChat ? " chat-layout-conversation-open" : " chat-layout-list-open")}><div className="chat-list">{profile?.role === "admin" && <div className="chat-filter-segment admin-chat-sections" role="group" aria-label="Раздел диалогов"><button type="button" className={chatSection === "participants" ? "active" : ""} onClick={() => { setChatSection("participants"); setSelectedChat(null); setMessages([]); }}>Чаты участников</button><button type="button" className={chatSection === "personal" ? "active" : ""} onClick={() => { setChatSection("personal"); setSelectedChat(null); setMessages([]); }}>Личные</button></div>}{profile?.role === "admin" && chatSection === "personal" && <select className="personal-chat-create" aria-label="Создать личный диалог" value="" onChange={e => e.target.value && createPersonalChat(e.target.value)}><option value="">+ Новый личный диалог</option>{users.filter(user => user.active && ["teacher","student"].includes(user.role)).map(user => <option value={user.id} key={user.id}>{user.full_name} · {user.role === "teacher" ? "Учитель" : "Ученик"}</option>)}</select>}{profile?.role !== "student" && <>
               <div className="chat-search-control">
                 <Search size={17}/>
                 <input aria-label="Поиск по имени" placeholder="Поиск по имени" value={chatSearch} onChange={e => setChatSearch(e.target.value)}/>
@@ -731,26 +727,26 @@ export default function App() {
               </div>}
             </>}
             <div className="chat-items-scroll">{visibleChats.map(chat => {
+              const personal = chat.type === "personal";
               const unreadCount = Number(chat.unread_count) || 0;
               return <button key={chat.id} className={"chat-item " + (selectedChat?.id === chat.id ? "selected " : "") + (unreadCount > 0 ? "has-unread" : "")} onClick={() => openChat(chat)}>
                 <div className="chat-item-heading">
                   <div className={"chat-item-participants" + (profile?.role === "student" ? " is-student-view" : "")}>
-                    {profile?.role === "admin" && <span>{chat.teacher.full_name}</span>}
-                    <span>{profile?.role === "student" ? chat.teacher.full_name : chat.student.full_name}</span>
-                    {profile?.role === "student" && <small>Учитель</small>}
+                    {personal ? <span>{chat.title}</span> : <>{profile?.role === "admin" && <span>{chat.teacher.full_name}</span>}<span>{profile?.role === "student" ? chat.teacher.full_name : chat.student.full_name}</span>{profile?.role === "student" && <small>Учитель</small>}</>}
+                    {personal && <small>Личный диалог</small>}
                   </div>
                   {unreadCount > 0 && <span className="unread-badge" title="Непрочитанные сообщения" aria-label={unreadCount + " непрочитанных сообщений"}>{unreadCount > 99 ? "99+" : unreadCount}</span>}
                 </div>
               </button>;
-            })}{!chats.length && <div className="empty-state">{profile?.role === "student" ? "Пока нет активной переписки с учителем" : "Пока нет активных переписок"}</div>}{!!chats.length && !visibleChats.length && <div className="empty-state">{profile?.role === "admin" ? "Учитель не найден" : "По выбранному фильтру ничего не найдено"}</div>}</div></div>
+            })}{!visibleChats.length && <div className="empty-state">{profile?.role === "admin" && chatSection === "personal" ? "Личных диалогов пока нет" : profile?.role === "student" ? "Пока нет активной переписки с учителем" : profile?.role === "admin" ? "Активных диалогов участников нет" : "По выбранному фильтру ничего не найдено"}</div>}</div></div>
             <div className="chat-detail">{selectedChat ? <>
-              <div className="chat-head"><button type="button" className="mobile-chat-back" onClick={() => { setSelectedChat(null); setMessages([]); }} aria-label="Назад к списку диалогов"><ArrowLeft size={19}/><span>Диалоги</span></button><div className="chat-head-person"><b>{profile?.role === "student" ? selectedChat.teacher.full_name : selectedChat.student.full_name}</b>{profile?.role === "admin" && <small>{selectedChat.teacher.full_name}</small>}{profile?.role === "student" && <small>Ваш учитель</small>}</div><div className="chat-head-tools"><select aria-label="Фильтр сообщений" value={messageFilter} onChange={e => setMessageFilter(e.target.value)}><option value="all">Все сообщения</option><option value="media">Все вложения</option><option value="audio">Аудио</option><option value="photos">Фото</option><option value="files">Файлы и видео</option></select>{selectedChat.status !== "active" && <span className="role-tag">Закрыта</span>}</div></div>
+              <div className="chat-head"><button type="button" className="mobile-chat-back" onClick={() => { setSelectedChat(null); setMessages([]); }} aria-label="Назад к списку диалогов"><ArrowLeft size={19}/><span>Диалоги</span></button><div className="chat-head-person"><b>{selectedChat.type === "personal" ? selectedChat.title : profile?.role === "student" ? selectedChat.teacher.full_name : selectedChat.student.full_name}</b>{selectedChat.type === "personal" && <small>Личный диалог · только UknowApp</small>}{selectedChat.type !== "personal" && profile?.role === "admin" && <small>{selectedChat.teacher.full_name}</small>}{selectedChat.type !== "personal" && profile?.role === "student" && <small>Ваш учитель</small>}</div><div className="chat-head-tools"><select aria-label="Фильтр сообщений" value={messageFilter} onChange={e => setMessageFilter(e.target.value)}><option value="all">Все сообщения</option><option value="media">Все вложения</option><option value="audio">Аудио</option><option value="photos">Фото</option><option value="files">Файлы и видео</option></select>{selectedChat.type !== "personal" && selectedChat.status !== "active" && <span className="role-tag">Закрыта</span>}</div></div>
               <div className="messages" ref={messagesViewportRef}>{visibleMessages.map(message => <MessageBubble message={message} key={message.id} onDelete={setDeleteMessageCandidate} viewerRole={profile?.role} />)}{!messages.length && <div className="empty-state">Сообщений пока нет</div>}{!!messages.length && !visibleMessages.length && <div className="empty-state">Нет сообщений этого типа</div>}</div>
-              {selectedChat.status === "active" && <form className="chat-composer" onSubmit={sendChatMessage}>
-                <textarea value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder={profile?.role === "admin" ? "Сообщение от администратора обеим сторонам…" : profile?.role === "student" ? "Сообщение учителю…" : "Ответить ученику…"} rows={2} maxLength={4000}/>
+              {(selectedChat.type === "personal" || selectedChat.status === "active") && <form className="chat-composer" onSubmit={sendChatMessage}>
+                <textarea value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder={selectedChat.type === "personal" ? "Личное сообщение…" : profile?.role === "admin" ? "Сообщение от администратора обеим сторонам…" : profile?.role === "student" ? "Сообщение учителю…" : "Ответить ученику…"} rows={2} maxLength={4000}/>
                 <div className="composer-footer">
                   <div className="composer-tools">
-                    <label className="attach-control"><Paperclip size={16}/> Прикрепить файл<input type="file" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" onChange={e => setAttachment(e.target.files?.[0] || null)}/></label>
+                    {selectedChat.type !== "personal" && <label className="attach-control"><Paperclip size={16}/> Прикрепить файл<input type="file" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" onChange={e => setAttachment(e.target.files?.[0] || null)}/></label>}
                     {attachment && <span className="selected-file">{attachment.name}<button type="button" onClick={() => setAttachment(null)} aria-label="Убрать файл"><X size={14}/></button></span>}
                   </div>
                   <button className="btn primary composer-send" disabled={!draft.trim() && !attachment}>Отправить <ChevronRight size={16}/></button>
