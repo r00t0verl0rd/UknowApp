@@ -274,7 +274,7 @@ def _teacher_keyboard(
         input_field_placeholder=(
             "Написать " + selected_student_name
             if selected_student_name
-            else "Сначала выберите ученика"
+            else "Сперва выберите ученика"
         )[:64],
     )
 
