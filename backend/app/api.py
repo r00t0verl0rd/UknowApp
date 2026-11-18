@@ -61,7 +61,7 @@ def user_dict(user: User, include_telegram_id: bool = True) -> dict:
     return {
         "id": user.id,
         "full_name": user.full_name,
-        "web_username": (user.web_username or user.full_name) if user.role == "teacher" else None,
+        "web_username": (user.web_username or user.full_name) if user.role in {"teacher", "student"} else None,
         "role": user.role,
         "telegram_id": user.telegram_id if include_telegram_id else None,
         "active": user.active,
@@ -70,26 +70,26 @@ def user_dict(user: User, include_telegram_id: bool = True) -> dict:
     }
 
 
-def generate_teacher_access_code() -> str:
+def generate_panel_access_code() -> str:
     alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
     return "".join(secrets.choice(alphabet) for _ in range(4)) + "-" + "".join(
         secrets.choice(alphabet) for _ in range(4)
     )
 
 
-def validate_teacher_username(db: Session, username: str, exclude_user_id: Optional[int] = None) -> str:
+def validate_panel_username(db: Session, username: str, exclude_user_id: Optional[int] = None) -> str:
     cleaned = (username or "").strip()
     if len(cleaned) < 2 or len(cleaned) > 160:
-        raise HTTPException(status_code=400, detail="Логин учителя должен содержать от 2 до 160 символов")
+        raise HTTPException(status_code=400, detail="Логин должен содержать от 2 до 160 символов")
     if cleaned.casefold() == ADMIN_USERNAME.casefold():
         raise HTTPException(status_code=409, detail="Этот логин зарезервирован для администратора")
-    teachers = db.scalars(select(User).where(User.role == "teacher")).all()
-    for teacher in teachers:
-        if teacher.id == exclude_user_id:
+    users = db.scalars(select(User).where(User.role.in_(["teacher", "student"]))).all()
+    for user in users:
+        if user.id == exclude_user_id:
             continue
-        existing = (teacher.web_username or teacher.full_name).strip()
+        existing = (user.web_username or user.full_name).strip()
         if existing.casefold() == cleaned.casefold():
-            raise HTTPException(status_code=409, detail="Этот логин уже используется другим учителем")
+            raise HTTPException(status_code=409, detail="Этот логин уже используется другим участником")
     return cleaned
 
 
@@ -289,11 +289,9 @@ def create_user(payload: UserCreate, _: Admin, db: Db):
     full_name = payload.full_name.strip()
     if len(full_name) < 2:
         raise HTTPException(status_code=400, detail="Имя должно содержать минимум два символа")
-    web_username = (
-        validate_teacher_username(db, payload.web_username or full_name)
-        if payload.role == "teacher" else None
-    )
-    issued_access_code = generate_teacher_access_code() if payload.role == "teacher" else None
+    has_web_panel = payload.role in {"teacher", "student"}
+    web_username = validate_panel_username(db, payload.web_username or full_name) if has_web_panel else None
+    issued_access_code = generate_panel_access_code() if has_web_panel else None
     user = User(
         full_name=full_name,
         web_username=web_username,
@@ -334,7 +332,8 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
     target_role = changes.get("role", user.role)
     issued_access_code = None
 
-    if target_role == "teacher":
+    has_web_panel = target_role in {"teacher", "student"}
+    if has_web_panel:
         previous_username = user.web_username or user.full_name
         if requested_web_username is not None:
             target_username = requested_web_username
@@ -342,12 +341,12 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
             target_username = changes["full_name"].strip()
         else:
             target_username = previous_username
-        user.web_username = validate_teacher_username(db, target_username, exclude_user_id=user.id)
+        user.web_username = validate_panel_username(db, target_username, exclude_user_id=user.id)
     else:
         user.web_username = None
 
     role_changed = "role" in changes and changes["role"] != user.role
-    active_teacher_codes = db.scalars(
+    active_access_codes = db.scalars(
         select(ConnectionCode).where(
             ConnectionCode.user_id == user.id,
             ConnectionCode.used_at.is_(None),
@@ -357,12 +356,12 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
     has_active_access_code = any(
         (item.expires_at.replace(tzinfo=timezone.utc) if item.expires_at.tzinfo is None else item.expires_at)
         > persistent_code_cutoff
-        for item in active_teacher_codes
+        for item in active_access_codes
     )
-    if target_role == "teacher" and (role_changed or not user.web_password_hash or not has_active_access_code):
-        issued_access_code = generate_teacher_access_code()
+    if has_web_panel and (role_changed or not user.web_password_hash or not has_active_access_code):
+        issued_access_code = generate_panel_access_code()
         user.web_password_hash = hash_web_password(issued_access_code)
-    elif target_role != "teacher":
+    elif not has_web_panel:
         user.web_password_hash = None
 
     if role_changed:
@@ -405,7 +404,7 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
             created_at=now,
             expires_at=now + timedelta(days=36500),
         ))
-    elif target_role != "teacher":
+    elif not has_web_panel:
         db.query(ConnectionCode).filter(
             ConnectionCode.user_id == user.id,
             ConnectionCode.used_at.is_(None),
@@ -423,11 +422,11 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
 
 
 @router.post("/admin/users/{user_id}/access-code")
-def regenerate_teacher_access_code(user_id: int, _: Admin, db: Db):
+def regenerate_panel_access_code(user_id: int, _: Admin, db: Db):
     user = db.get(User, user_id)
-    if not user or user.role != "teacher":
-        raise HTTPException(status_code=404, detail="Учитель не найден")
-    issued_access_code = generate_teacher_access_code()
+    if not user or user.role not in {"teacher", "student"}:
+        raise HTTPException(status_code=404, detail="Участник не найден")
+    issued_access_code = generate_panel_access_code()
     user.web_password_hash = hash_web_password(issued_access_code)
     now = datetime.now(timezone.utc)
     db.query(ConnectionCode).filter(
@@ -441,7 +440,7 @@ def regenerate_teacher_access_code(user_id: int, _: Admin, db: Db):
         expires_at=now + timedelta(days=36500),
     ))
     db.query(PanelSession).filter(
-        PanelSession.role == "teacher",
+        PanelSession.role == user.role,
         PanelSession.user_id == user.id,
     ).delete(synchronize_session=False)
     db.commit()
@@ -649,10 +648,13 @@ def _panel_visible_conversation(db: Session, principal: dict, conversation_id: i
     conversation = db.get(Conversation, conversation_id)
     if not conversation:
         raise HTTPException(status_code=404, detail="Переписка не найдена")
-    if principal["role"] == "teacher":
+    if principal["role"] in {"teacher", "student"}:
         assignment = conversation.assignment
+        participant_id = (
+            assignment.teacher_id if principal["role"] == "teacher" else assignment.student_id
+        )
         if (
-            assignment.teacher_id != principal["user_id"]
+            participant_id != principal["user_id"]
             or not assignment.active
             or not assignment.teacher.active
             or not assignment.student.active
@@ -788,10 +790,15 @@ def _panel_student_telegram_target(
 def panel_me(principal: PanelUser, db: Db):
     if principal["role"] == "admin":
         return {"role": "admin", "full_name": "Администратор"}
-    teacher = db.get(User, principal["user_id"])
-    if not teacher or not teacher.active or teacher.role != "teacher":
+    user = db.get(User, principal["user_id"])
+    if (
+        not user
+        or not user.active
+        or user.role != principal["role"]
+        or user.role not in {"teacher", "student"}
+    ):
         raise HTTPException(status_code=401, detail="Учётная запись недоступна")
-    return {"role": "teacher", "id": teacher.id, "full_name": teacher.full_name}
+    return {"role": user.role, "id": user.id, "full_name": user.full_name}
 
 
 @router.get("/panel/events")
@@ -838,11 +845,18 @@ def panel_conversations(principal: PanelUser, db: Db):
         )
         .join(Assignment, Conversation.assignment_id == Assignment.id)
         .join(User, Assignment.student_id == User.id)
-        .where(Assignment.active.is_(True), User.active.is_(True), Conversation.status == "active")
+        .where(
+            Assignment.active.is_(True),
+            User.active.is_(True),
+            Assignment.teacher.has(User.active.is_(True)),
+            Conversation.status == "active",
+        )
         .order_by(Conversation.created_at.desc())
     )
     if principal["role"] == "teacher":
         statement = statement.where(Assignment.teacher_id == principal["user_id"])
+    elif principal["role"] == "student":
+        statement = statement.where(Assignment.student_id == principal["user_id"]).limit(1)
     conversations = db.scalars(statement).all()
     return conversation_dicts(
         db, conversations, include_telegram_ids=(principal["role"] == "admin")
@@ -964,8 +978,11 @@ def _panel_sender_and_recipients(db: Session, principal: dict, conversation: Con
     student = conversation.assignment.student
     teacher = conversation.assignment.teacher
     if principal["role"] == "teacher":
-        sender = db.get(User, principal["user_id"])
+        sender = teacher
         recipients = [(student, "student")]
+    elif principal["role"] == "student":
+        sender = student
+        recipients = [(teacher, "teacher")]
     else:
         sender = db.scalar(select(User).where(User.role == "admin").order_by(User.id).limit(1))
         if not sender:
@@ -1204,7 +1221,11 @@ async def send_panel_attachment(
             caption = (
                 (row.text or "").strip()[:1024]
                 if principal["role"] == "teacher"
-                else "От администратора школы" + ((": " + row.text) if row.text else "")
+                else (
+                    "Сообщение от ученика: " + row.text
+                    if principal["role"] == "student" and row.text
+                    else ("От администратора школы" + ((": " + row.text) if row.text else ""))
+                )
             )
             kwargs = {**target}
             if caption:
