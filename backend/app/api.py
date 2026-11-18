@@ -155,15 +155,14 @@ def conversation_dicts(
 
     result = []
     for conversation in conversations:
-        assignment = conversation.assignment
         last_message = latest_by_conversation.get(conversation.id)
         message_count, unread_count = stats_by_conversation.get(conversation.id, (0, 0))
         result.append({
             "id": conversation.id,
             "status": conversation.status,
             "created_at": conversation.created_at.isoformat(),
-            "teacher": user_dict(assignment.teacher, include_telegram_id=include_telegram_ids),
-            "student": user_dict(assignment.student, include_telegram_id=include_telegram_ids),
+            "teacher": user_dict(conversation.teacher, include_telegram_id=include_telegram_ids),
+            "student": user_dict(conversation.student, include_telegram_id=include_telegram_ids),
             "last_message": (
                 (last_message.text or "Сообщение") if last_message.content_type == "text"
                 else (
@@ -617,15 +616,20 @@ def assign_student(payload: AssignmentCreate, _: Admin, db: Db):
     ).all()
     now = datetime.now(timezone.utc)
     for assignment in previous:
-        assignment.active = False
-        assignment.closed_at = now
         if assignment.conversation:
             assignment.conversation.status = "closed"
+            assignment.conversation.assignment_id = None
+        db.delete(assignment)
 
     assignment = Assignment(teacher_id=teacher.id, student_id=student.id, active=True)
     db.add(assignment)
     db.flush()
-    conversation = Conversation(assignment_id=assignment.id, status="active")
+    conversation = Conversation(
+        assignment_id=assignment.id,
+        teacher_id=teacher.id,
+        student_id=student.id,
+        status="active",
+    )
     db.add(conversation)
     db.commit()
     db.refresh(conversation)
@@ -639,15 +643,13 @@ def _panel_visible_conversation(db: Session, principal: dict, conversation_id: i
     if not conversation:
         raise HTTPException(status_code=404, detail="Переписка не найдена")
     if principal["role"] in {"teacher", "student"}:
-        assignment = conversation.assignment
         participant_id = (
-            assignment.teacher_id if principal["role"] == "teacher" else assignment.student_id
+            conversation.teacher_id if principal["role"] == "teacher" else conversation.student_id
         )
         if (
             participant_id != principal["user_id"]
-            or not assignment.active
-            or not assignment.teacher.active
-            or not assignment.student.active
+            or not conversation.teacher.active
+            or not conversation.student.active
             or conversation.status != "active"
         ):
             raise HTTPException(status_code=404, detail="Переписка не найдена")
@@ -729,7 +731,7 @@ def _panel_student_telegram_target(
     conversation: Conversation,
     rows: list[Message],
 ) -> Optional[dict]:
-    student = conversation.assignment.student
+    student = conversation.student
     if not student.telegram_id:
         return None
     target = {"chat_id": student.telegram_id}
@@ -854,8 +856,8 @@ def panel_conversations(principal: PanelUser, db: Db):
     statement = (
         select(Conversation)
         .options(
-            selectinload(Conversation.assignment).selectinload(Assignment.teacher),
-            selectinload(Conversation.assignment).selectinload(Assignment.student),
+            selectinload(Conversation.teacher),
+            selectinload(Conversation.student),
         )
         .join(Assignment, Conversation.assignment_id == Assignment.id)
         .join(User, Assignment.student_id == User.id)
@@ -1145,7 +1147,7 @@ def panel_message_media(message_id: int, principal: PanelUser, db: Db):
 def _panel_sender_and_recipients(db: Session, principal: dict, conversation: Conversation):
     """Resolve the sender and Telegram recipients for a panel message."""
     student = conversation.assignment.student
-    teacher = conversation.assignment.teacher
+    teacher = conversation.teacher
     if principal["role"] == "teacher":
         sender = teacher
         recipients = [(student, "student")]
