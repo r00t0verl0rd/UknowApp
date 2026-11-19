@@ -173,3 +173,42 @@ class StudentTelegramGroup(Base):
     bound_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
     student: Mapped[User] = relationship()
+
+
+
+class MessengerAccount(Base):
+    """External messenger identity linked to one UknowApp user."""
+
+    __tablename__ = "messenger_accounts"
+    __table_args__ = (
+        UniqueConstraint(
+            "platform",
+            "external_user_id",
+            name="uq_messenger_accounts_platform_external_user",
+        ),
+        UniqueConstraint(
+            "platform",
+            "user_id",
+            name="uq_messenger_accounts_platform_user",
+        ),
+        Index("ix_messenger_accounts_user_id", "user_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    platform: Mapped[str] = mapped_column(String(32), nullable=False)
+    external_user_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    external_chat_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    username: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="linked")
+    linked_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=utcnow
+    )
+    last_seen_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    user: Mapped[User] = relationship()

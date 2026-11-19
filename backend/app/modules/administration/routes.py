@@ -23,6 +23,12 @@ from sqlalchemy.orm import Session
 from ...config import ADMIN_USERNAME, VAPID_PUBLIC_KEY
 from ...event_hub import publish_chat_update, subscribe_chat_updates, unsubscribe_chat_updates
 from ...modules.media.service import MEDIA_DIR, delete_message_media, safe_media_type, media_content_disposition
+from ...modules.communication.accounts import (
+    MessengerAccountConflict,
+    delete_user_messenger_accounts,
+    sync_messenger_account,
+)
+from ...modules.communication.contracts import MessengerPlatform
 from ...models import Assignment, ConnectionCode, Conversation, Message, PanelSession, PersonalConversation, PersonalMessage, StudentTelegramGroup, TeacherPanel, TeacherSession, User, PushSubscription
 from ...schemas import AssignmentCreate, LoginRequest, PanelMessageCreate, PersonalConversationCreate, PersonalMessageCreate, UserCreate, UserUpdate
 from ...security import (
@@ -113,6 +119,11 @@ def create_user(payload: UserCreate, _: Admin, db: Db):
     db.add(user)
     try:
         db.flush()
+        if user.telegram_id is not None:
+            sync_messenger_account(
+                db, user.id, MessengerPlatform.TELEGRAM,
+                str(user.telegram_id), external_chat_id=str(user.telegram_id),
+            )
         if issued_access_code:
             now = datetime.now(timezone.utc)
             db.add(ConnectionCode(
@@ -123,7 +134,7 @@ def create_user(payload: UserCreate, _: Admin, db: Db):
             ))
         db.commit()
         db.refresh(user)
-    except IntegrityError:
+    except (IntegrityError, MessengerAccountConflict):
         db.rollback()
         raise HTTPException(status_code=409, detail="Этот Telegram ID уже используется")
     result = user_dict(user)
@@ -209,8 +220,19 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
             ConnectionCode.used_at.is_(None),
         ).update({ConnectionCode.used_at: datetime.now(timezone.utc)}, synchronize_session=False)
     try:
+        if "telegram_id" in changes:
+            sync_messenger_account(
+                db,
+                user.id,
+                MessengerPlatform.TELEGRAM,
+                str(user.telegram_id) if user.telegram_id is not None else None,
+                external_chat_id=str(user.telegram_id) if user.telegram_id is not None else None,
+            )
         db.commit()
         db.refresh(user)
+    except MessengerAccountConflict:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Этот Telegram ID уже используется")
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=409, detail="Этот Telegram ID уже используется")
@@ -263,6 +285,9 @@ def disconnect_telegram(user_id: int, _: Admin, db: Db):
     # Remove only the Telegram binding. The persistent access code remains valid
     # for both participant roles and can be used to reconnect the same account.
     user.telegram_id = None
+    sync_messenger_account(
+        db, user.id, MessengerPlatform.TELEGRAM, None
+    )
 
     # A disconnected teacher must select a conversation again after reconnecting.
     if user.role == "teacher":
@@ -331,6 +356,7 @@ def delete_user(user_id: int, _: Admin, db: Db):
     db.query(ConnectionCode).filter(
         ConnectionCode.user_id == user.id
     ).delete(synchronize_session=False)
+    delete_user_messenger_accounts(db, user.id)
     db.delete(user)
     db.commit()
     return {"ok": True, "deleted_user_id": user_id, "deleted_conversations": len(conversation_ids)}

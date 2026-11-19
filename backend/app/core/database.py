@@ -39,9 +39,35 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False
 # Создаём таблицы и выполняем небольшие совместимые миграции старых баз данных.
 def create_tables() -> None:
     # Импорт моделей регистрирует все таблицы в Base.metadata.
-    from ..models import ConnectionCode, PanelSession, PersonalConversation, PersonalMessage, PushSubscription
+    from ..models import ConnectionCode, MessengerAccount, PanelSession, PersonalConversation, PersonalMessage, PushSubscription
 
     Base.metadata.create_all(bind=engine)
+
+    # Copy legacy Telegram bindings without changing or deleting users.telegram_id.
+    # Existing bind dates were not stored, so linked_at remains NULL for migrated rows.
+    with engine.begin() as connection:
+        connection.execute(text(
+            """
+            INSERT INTO messenger_accounts (
+                user_id, platform, external_user_id, external_chat_id, status, linked_at
+            )
+            SELECT
+                users.id,
+                'telegram',
+                CAST(users.telegram_id AS VARCHAR(255)),
+                CAST(users.telegram_id AS VARCHAR(255)),
+                'linked',
+                NULL
+            FROM users
+            WHERE users.telegram_id IS NOT NULL
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM messenger_accounts
+                  WHERE messenger_accounts.platform = 'telegram'
+                    AND messenger_accounts.user_id = users.id
+              )
+            """
+        ))
 
     # Remove the obsolete soft-disable flag from existing user tables.
     with engine.begin() as connection:

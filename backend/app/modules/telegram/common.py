@@ -12,6 +12,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ...event_hub import publish_chat_update
+from ..communication.accounts import MessengerAccountConflict, sync_messenger_account
+from ..communication.contracts import MessengerPlatform
 from ...models import Assignment, ConnectionCode, Conversation, Message, User
 from ..notifications.service import schedule_push
 
@@ -142,9 +144,13 @@ def claim_connection_code(
 
     user.telegram_id = telegram_id
     try:
+        sync_messenger_account(
+            db, user.id, MessengerPlatform.TELEGRAM,
+            str(telegram_id), external_chat_id=str(telegram_id),
+        )
         db.commit()
         db.refresh(user)
-    except IntegrityError:
+    except (IntegrityError, MessengerAccountConflict):
         db.rollback()
         return None, "telegram_already_linked"
     return user, "ok"

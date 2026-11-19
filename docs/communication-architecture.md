@@ -3,62 +3,63 @@
 ## Purpose
 
 UknowApp owns users, roles, access codes, assignments, conversations, message
-history, and delivery policy. A messenger adapter translates provider events
-and sends messages requested by UknowApp. Provider SDK objects stay inside
-their adapter.
+history, and delivery policy. Messenger adapters translate provider events
+and deliver messages. Provider SDK objects stay inside their adapters.
 
-## Contract location
+## Core contracts and services
 
 - `backend/app/modules/communication/contracts.py` — normalized messages,
   media references, delivery results, capabilities, and platform identifiers.
 - `backend/app/modules/communication/service.py` — outbound adapter registry
   and delivery dispatch.
+- `backend/app/modules/communication/accounts.py` — persistence helpers for
+  platform identities.
 - `backend/app/modules/telegram/adapter.py` — Telegram Bot API implementation.
-- `backend/app/modules/communication/__init__.py` — public contract exports.
 
-## Rules
+## Stage 1 — provider-neutral contracts
 
-1. External user, chat, message, and event identifiers are strings. Provider
-   identifiers may be numeric today and opaque strings tomorrow.
-2. `event_id` identifies a provider event and is the future deduplication key
-   within a platform/bot scope.
-3. `provider_file_id` is opaque and may only be interpreted by its adapter.
-   It is not an application storage path.
-4. Outbound media uses an application-owned `storage_key`; adapters must not
-   make the web panel depend on provider file identifiers.
-5. `idempotency_key` allows the delivery layer to retry safely when a provider
-   supports idempotent operations. The Telegram Bot API adapter does not yet
-   provide provider-side idempotency.
-6. `MessengerCapabilities` describes optional platform features. The core
-   must not assume that edit, delete, groups, threads, or interactive messages
-   exist on every platform.
-7. Provider payloads and SDK objects must not cross the communication boundary.
-
-## Stage 1 — contracts
-
-The first stage introduced the provider-neutral message and adapter contracts.
-It did not change runtime routing, Telegram polling, account linking, database
-tables, or web-panel behavior.
+The first stage introduced normalized inbound/outbound message contracts and
+the adapter protocol without changing runtime behavior.
 
 ## Stage 2 — web-panel outbound delivery
 
-The web-panel text and attachment endpoints now send through
-`CommunicationService`. Message deletion also uses the adapter boundary.
-Telegram thread IDs are carried as a neutral optional route field, while the
-existing student-topic selection logic and delivery metadata remain unchanged.
+Web-panel text, attachments, and deletion now use `CommunicationService`.
+Telegram-specific API calls live in `TelegramAdapter`. The existing message
+history, delivery metadata, and Telegram forum-topic routing were preserved.
+The Telegram teacher panel remains a platform-specific user interface.
 
-`TelegramAdapter` owns aiogram calls, Telegram media selection, the existing
-document fallback, and external message ID conversion. The application starts
-the service with a Telegram adapter when the bot is configured; otherwise the
-service remains available with no active providers and the web panel retains
-its existing delivery-error behavior.
+## Stage 3 — messenger accounts
 
-The Telegram teacher-panel refresh remains a Telegram-specific UI operation.
-Inbound Telegram handlers and their direct Telegram operations are deliberately
-unchanged in this stage; they will be separated in later stages.
+The `messenger_accounts` table stores the relationship between a UknowApp user
+and an external messenger identity:
+
+- `user_id` — the owning UknowApp account;
+- `platform` — provider key such as `telegram`, `max`, or `whatsapp`;
+- `external_user_id` — provider's user identifier, stored as text;
+- `external_chat_id` — provider's chat destination, stored as text;
+- `username`, `status`, `linked_at`, and `last_seen_at` — optional account
+  metadata and connection state.
+
+Database constraints enforce one owner per external identity and at most one
+account per platform for each UknowApp user. Different platforms can therefore
+be linked to the same UknowApp user independently.
+
+On startup, the database migration copies every existing non-null
+`users.telegram_id` into `messenger_accounts`. It is idempotent: running it
+again does not create duplicate rows. The historical Telegram link date was
+not stored by the previous schema, so migrated rows keep `linked_at = NULL`
+rather than inventing a date. Existing user rows and Telegram IDs are not
+deleted or rewritten by the migration.
+
+Until the later identity and handler migration stages, `users.telegram_id`
+remains a compatibility field. Telegram linking through the existing access
+code flow, admin user creation/editing, disconnect, and user deletion
+dual-write or clean up the account table in the same database transaction.
+Current Telegram handlers still resolve users through the compatibility
+field; this stage does not change their routing behavior.
 
 ## Next
 
-The next stage will extend the same outbound service to the remaining
-application-originated delivery points without changing the shared message
-history or current user experience.
+The next stage will move Telegram inbound event normalization and message
+processing behind the communication boundary, while preserving the current
+conversation, access-control, and attachment behavior.
