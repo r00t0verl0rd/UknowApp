@@ -51,6 +51,7 @@ def schedule_push(
         "title": title[:120],
         "body": body[:240],
         "url": url if url.startswith("/") else "/",
+        "tag": url if url.startswith("/") else "uknowapp-message",
     }, ensure_ascii=False)
     try:
         asyncio.get_running_loop().create_task(asyncio.to_thread(_deliver, targets, payload))
