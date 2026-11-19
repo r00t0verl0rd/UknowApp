@@ -16,6 +16,23 @@ and deliver messages. Provider SDK objects stay inside their adapters.
   platform identities.
 - `backend/app/modules/telegram/adapter.py` — Telegram Bot API implementation.
 
+## Contract rules
+
+1. External user, chat, message, and event identifiers are strings. Provider
+   identifiers may be numeric today and opaque strings tomorrow.
+2. `event_id` is the future deduplication key within a platform/bot scope.
+3. `provider_file_id` is opaque and may only be interpreted by its adapter;
+   it is not an application storage path.
+4. Outbound media uses an application-owned `storage_key`, not a provider file
+   identifier.
+5. `idempotency_key` allows safe retries when a provider supports them. The
+   Telegram Bot API adapter does not provide provider-side idempotency yet.
+6. `MessengerCapabilities` describes optional platform features. The core
+   must not assume all messengers support editing, deletion, groups, threads,
+   or interactive messages.
+7. Provider payloads and SDK objects must not cross the communication
+   boundary; adapters normalize them into the shared contracts.
+
 ## Stage 1 — provider-neutral contracts
 
 The first stage introduced normalized inbound/outbound message contracts and
