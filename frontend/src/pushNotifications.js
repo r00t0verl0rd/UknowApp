@@ -30,6 +30,23 @@ async function subscribeToPush(registration) {
   if (!response.ok) throw new Error("Не удалось сохранить подписку на уведомления");
 }
 
+export async function detachPushSubscription() {
+  try {
+    const registration = await navigator.serviceWorker?.getRegistration("/");
+    const subscription = await registration?.pushManager.getSubscription();
+    if (subscription) {
+      await fetch(API + "/api/push/subscribe", {
+        method: "DELETE",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint: subscription.endpoint }),
+      });
+    }
+  } catch (error) {
+    console.warn("UknowApp push detach failed:", error);
+  }
+}
+
 export function initializePushNotifications(authenticated) {
   if (!authenticated || initializationStarted || !("serviceWorker" in navigator) ||
       !("PushManager" in window) || !("Notification" in window)) return;
