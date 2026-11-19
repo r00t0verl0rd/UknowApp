@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 from typing import Iterable
+from urllib.parse import parse_qs, urlsplit
 
 from pywebpush import WebPushException, webpush
 from sqlalchemy import or_, select
@@ -45,11 +46,18 @@ def schedule_push(
     ]
     if not targets:
         return
+    query = parse_qs(urlsplit(url).query)
+    try:
+        conversation_id = int(query.get("openConversation", ["0"])[0]) or None
+    except (TypeError, ValueError):
+        conversation_id = None
     payload = json.dumps({
         "title": title[:120],
         "body": body[:240],
         "url": url if url.startswith("/") else "/",
         "tag": url if url.startswith("/") else "uknowapp-message",
+        "conversation_id": conversation_id,
+        "conversation_type": query.get("type", ["conversation"])[0],
     }, ensure_ascii=False)
     try:
         asyncio.get_running_loop().create_task(asyncio.to_thread(_deliver, targets, payload))
