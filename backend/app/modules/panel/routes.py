@@ -14,6 +14,7 @@ from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
+from ...modules.communication.accounts import get_messenger_account
 from ...modules.communication.contracts import (
     MessageKind,
     MessengerPlatform,
@@ -60,9 +61,10 @@ def _panel_student_telegram_target(
     rows: list[Message],
 ) -> Optional[dict]:
     student = conversation.student
-    if not student.telegram_id:
+    account = get_messenger_account(db, student.id, MessengerPlatform.TELEGRAM)
+    if not account:
         return None
-    target = {"chat_id": student.telegram_id}
+    target = {"chat_id": account.external_chat_id or account.external_user_id}
     last_reply_index = max(
         (
             i for i, item in enumerate(rows)
@@ -540,7 +542,8 @@ async def _store_panel_attachment(request: Request, file: UploadFile, conversati
 
 async def _refresh_teacher_panel_after_web_delivery(bot, db: Session, teacher: User, conversation: Conversation) -> None:
     """Refresh the teacher's Telegram panel after a web message has been persisted."""
-    if not bot or not teacher.telegram_id:
+    teacher_account = get_messenger_account(db, teacher.id, MessengerPlatform.TELEGRAM)
+    if not bot or not teacher_account:
         return
     try:
         from .telegram_teacher import clear_teacher_session, update_teacher_panel
@@ -609,11 +612,16 @@ async def send_panel_message(
     delivered = []
     if communication and communication.has_adapter(MessengerPlatform.TELEGRAM):
         for recipient, recipient_role in recipients:
-            if not recipient.telegram_id:
+            recipient_account = get_messenger_account(
+                db, recipient.id, MessengerPlatform.TELEGRAM
+            )
+            if not recipient_account:
                 delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                 continue
             try:
-                target = student_target if recipient_role == "student" else {"chat_id": recipient.telegram_id}
+                target = student_target if recipient_role == "student" else {
+                    "chat_id": recipient_account.external_chat_id or recipient_account.external_user_id
+                }
                 if not target:
                     delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Не удалось определить Telegram-чат ученика"})
                     continue
@@ -733,10 +741,15 @@ async def send_panel_attachment(
     delivered = []
     if communication and communication.has_adapter(MessengerPlatform.TELEGRAM):
         for recipient, recipient_role in recipients:
-            if not recipient.telegram_id:
+            recipient_account = get_messenger_account(
+                db, recipient.id, MessengerPlatform.TELEGRAM
+            )
+            if not recipient_account:
                 delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                 continue
-            target = student_target if recipient_role == "student" else {"chat_id": recipient.telegram_id}
+            target = student_target if recipient_role == "student" else {
+                "chat_id": recipient_account.external_chat_id or recipient_account.external_user_id
+            }
             if not target:
                 delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Не удалось определить Telegram-чат ученика"})
                 continue

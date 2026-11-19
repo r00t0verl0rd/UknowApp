@@ -42,7 +42,7 @@ def get_messenger_user(
     if external_user_id is None:
         return None
     platform_value = platform.value if isinstance(platform, MessengerPlatform) else platform
-    user = db.scalar(
+    return db.scalar(
         select(User)
         .join(MessengerAccount, MessengerAccount.user_id == User.id)
         .where(
@@ -51,13 +51,6 @@ def get_messenger_user(
             MessengerAccount.status == "linked",
         )
     )
-    if user or platform_value != MessengerPlatform.TELEGRAM.value:
-        return user
-    try:
-        legacy_id = int(external_user_id)
-    except (TypeError, ValueError):
-        return None
-    return db.scalar(select(User).where(User.telegram_id == legacy_id))
 
 
 def sync_messenger_account(
@@ -172,11 +165,8 @@ def claim_messenger_connection_code(
             telegram_id = int(external_user_id)
         except (TypeError, ValueError):
             return None, "invalid"
-        legacy_owner = db.scalar(select(User).where(User.telegram_id == telegram_id))
-        if legacy_owner and legacy_owner.id != user.id:
-            return None, "identity_already_linked"
-        if user.telegram_id and user.telegram_id != telegram_id:
-            return None, "account_already_linked"
+        # Keep the old API field synchronized during the compatibility period.
+        # Ownership and conflicts are checked against messenger_accounts above.
         user.telegram_id = telegram_id
 
     try:

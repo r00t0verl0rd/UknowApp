@@ -17,6 +17,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from ...models import Assignment, Conversation, Message, TeacherPanel, TeacherSession, User
+from ..communication.accounts import get_messenger_account
+from ..communication.contracts import MessengerPlatform
 from ..messaging.inbound import (
     InboundUiResult,
     clear_teacher_session,
@@ -269,7 +271,15 @@ async def _update_teacher_panel_locked(
     force_keyboard_refresh: bool = False,
 ) -> bool:
     """Update the panel and replace its keyboard only when its content changes."""
-    if not teacher.telegram_id:
+    telegram_account = get_messenger_account(db, teacher.id, MessengerPlatform.TELEGRAM)
+    if not telegram_account:
+        return False
+    try:
+        telegram_chat_id = int(
+            telegram_account.external_chat_id or telegram_account.external_user_id
+        )
+    except (TypeError, ValueError):
+        logger.warning("Teacher has an invalid Telegram chat destination (teacher_id=%s)", teacher.id)
         return False
 
     panel = db.get(TeacherPanel, teacher.id)
@@ -292,6 +302,7 @@ async def _update_teacher_panel_locked(
         and panel
         and panel.keyboard_version >= TEACHER_KEYBOARD_VERSION
         and panel.keyboard_signature == signature
+        and panel.chat_id == telegram_chat_id
     ):
         try:
             # Reply keyboards belong to the chat, not to an editable message.
@@ -331,14 +342,14 @@ async def _update_teacher_panel_locked(
     # Do not remove it in a separate message: some Telegram clients defer the
     # placeholder redraw until the next user message after a remove/restore pair.
     sent = await bot.send_message(
-        chat_id=teacher.telegram_id,
+        chat_id=telegram_chat_id,
         text=text,
         reply_markup=markup,
         parse_mode="HTML",
     )
 
     if panel:
-        panel.chat_id = teacher.telegram_id
+        panel.chat_id = telegram_chat_id
         panel.message_id = sent.message_id
         panel.keyboard_version = TEACHER_KEYBOARD_VERSION
         panel.keyboard_signature = signature
@@ -347,7 +358,7 @@ async def _update_teacher_panel_locked(
         db.add(TeacherPanel(
             teacher_id=teacher.id,
             message_id=sent.message_id,
-            chat_id=teacher.telegram_id,
+            chat_id=telegram_chat_id,
             keyboard_version=TEACHER_KEYBOARD_VERSION,
             keyboard_signature=signature,
             page_index=page,

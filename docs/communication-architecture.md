@@ -72,11 +72,12 @@ not stored by the previous schema, so migrated rows keep `linked_at = NULL`
 rather than inventing a date. Existing user rows and Telegram IDs are not
 deleted or rewritten by the migration.
 
-Until the end of stage 4, `users.telegram_id` remains a compatibility field.
-The inbound workflow resolves Telegram identities through
-`messenger_accounts`, retaining a legacy-column fallback for older rows.
-Admin user creation/editing, disconnect, and deletion continue to synchronize
-the account table transactionally.
+From stage 5 onward, `messenger_accounts` is the sole runtime source of truth
+for linked external identities and chat destinations. The startup migration
+copies legacy Telegram IDs before the bot starts, so shared identity and
+delivery workflows no longer fall back to `users.telegram_id`. That column
+remains temporarily as a compatibility projection for the existing admin UI
+and is synchronized by legacy admin create/edit/disconnect operations.
 
 ## Stage 4 — unified inbound transition
 
@@ -111,7 +112,23 @@ presentation handlers. The shared workflow receives only normalized DTOs and
 a provider port. The shared media-storage module no longer imports Telegram
 SDK types.
 
+## Stage 5 — registry-only runtime identity
+
+Runtime identity resolution and chat-destination lookup now read exclusively
+from `messenger_accounts`. The generic inbound workflow, web-panel delivery,
+and Telegram teacher-panel presentation no longer use `users.telegram_id`
+to identify users or route messages. The old column remains only as a
+compatibility projection for the current admin API and is written alongside
+Telegram account changes; it is not consulted by the shared identity service.
+
+The unique constraints on `messenger_accounts` continue to allow one account
+per platform for each UknowApp user while preventing an external account from
+being claimed by two UknowApp users. The same persistent access code can
+therefore connect different platforms to one user independently, and a
+reconnection to the same platform account updates that account instead of
+creating a duplicate.
+
 ## Next
 
-The next stage will make all remaining identity and delivery reads use the
-universal account registry, then add MAX as an independent adapter.
+The next stage can add MAX as an independent adapter without changing the
+user, role, access-code, or conversation model.

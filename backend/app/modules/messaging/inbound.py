@@ -700,13 +700,6 @@ async def process_inbound_message(
         recipient_account.external_chat_id or recipient_account.external_user_id
         if recipient_account else None
     )
-    if (
-        not recipient_chat_id
-        and inbound.platform == MessengerPlatform.TELEGRAM
-        and recipient.telegram_id
-    ):
-        recipient_chat_id = str(recipient.telegram_id)
-
     if not recipient_chat_id:
         if sender.role == "teacher":
             metadata = json.loads(row.metadata_json or "{}")
