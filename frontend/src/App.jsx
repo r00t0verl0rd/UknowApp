@@ -179,6 +179,19 @@ export default function App() {
     initializePushNotifications(Boolean(auth));
   }, [auth]);
 
+  useEffect(() => {
+    const respondToPush = event => {
+      if (event.data?.type !== "UKNOW_CHECK_ACTIVE_CHAT" || !event.ports?.[0]) return;
+      event.ports[0].postMessage({
+        active: document.visibilityState === "visible"
+          && Number(selectedChat?.id) === Number(event.data.conversationId)
+          && (selectedChat?.type === "personal" ? "personal" : "conversation") === event.data.conversationType,
+      });
+    };
+    navigator.serviceWorker?.addEventListener("message", respondToPush);
+    return () => navigator.serviceWorker?.removeEventListener("message", respondToPush);
+  }, [selectedChat?.id, selectedChat?.type]);
+
   // Notification links restore the exact conversation after the inbox data is loaded.
   useEffect(() => {
     if (!auth || !profile) return;
