@@ -25,6 +25,7 @@ import Info from "lucide-react/dist/esm/icons/info.js";
 import DatabaseIcon from "lucide-react/dist/esm/icons/database.js";
 import ArchiveIcon from "lucide-react/dist/esm/icons/archive.js";
 import MessageBubble from "./MessageBubble.jsx";
+import { detachPushSubscription, initializePushNotifications } from "./pushNotifications.js";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 function formatBytes(bytes) {
@@ -173,6 +174,29 @@ export default function App() {
   }, [auth, request]);
 
   useEffect(() => { refresh(); }, [refresh]);
+
+  useEffect(() => {
+    initializePushNotifications(Boolean(auth));
+  }, [auth]);
+
+  // Notification links restore the exact conversation after the inbox data is loaded.
+  useEffect(() => {
+    if (!auth || !profile) return;
+    const params = new URLSearchParams(window.location.search);
+    const conversationId = Number(params.get("openConversation"));
+    if (!conversationId) return;
+    const personal = params.get("type") === "personal";
+    const source = personal ? personalChats : chats;
+    const chat = source.find(item => Number(item.id) === conversationId);
+    if (!chat) return;
+    window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+    setPage("chats");
+    if (personal) setChatSection("personal");
+    setSelectedChat(chat);
+    request((personal ? "/api/panel/personal-conversations/" : "/api/panel/conversations/") + chat.id + "/messages")
+      .then(setMessages)
+      .catch(error => setError(error.message));
+  }, [auth, profile, chats, personalChats, request]);
 
   useEffect(() => {
     localStorage.setItem("uknowapp-theme-v2", theme);
@@ -445,6 +469,7 @@ export default function App() {
 
   async function signOut() {
     try {
+      await detachPushSubscription();
       await fetch(API + "/api/auth/logout", { method: "POST", credentials: "include" });
     } catch {
       // Clear the local view even when the server is temporarily unreachable.
