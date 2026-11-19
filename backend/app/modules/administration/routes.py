@@ -161,15 +161,11 @@ def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
         select(ConnectionCode).where(
             ConnectionCode.user_id == user.id,
             ConnectionCode.used_at.is_(None),
+            ConnectionCode.expires_at > datetime.now(timezone.utc),
         )
     ).all()
-    persistent_code_cutoff = datetime.now(timezone.utc) + timedelta(days=365)
-    has_active_access_code = any(
-        (item.expires_at.replace(tzinfo=timezone.utc) if item.expires_at.tzinfo is None else item.expires_at)
-        > persistent_code_cutoff
-        for item in active_access_codes
-    )
-    if has_web_panel and (role_changed or not user.web_password_hash or not has_active_access_code):
+    has_active_access_code = bool(user.web_password_hash and active_access_codes)
+    if has_web_panel and (role_changed or not has_active_access_code):
         issued_access_code = generate_panel_access_code()
         user.web_password_hash = hash_web_password(issued_access_code)
     elif not has_web_panel:
@@ -353,75 +349,35 @@ def generate_connection_code(user_id: int, _: Admin, db: Db):
     user = db.get(User, user_id)
     if not user or user.role not in {"teacher", "student"}:
         raise HTTPException(status_code=404, detail="Учитель или ученик не найден")
-    if user.role in {"teacher", "student"}:
-        # Both panel roles use the same persistent code for web login and Telegram.
-        access_code = generate_panel_access_code()
-        user.web_password_hash = hash_web_password(access_code)
-        db.query(PanelSession).filter(
-            PanelSession.role == user.role,
-            PanelSession.user_id == user.id,
-        ).delete(synchronize_session=False)
-        now = datetime.now(timezone.utc)
-        db.query(ConnectionCode).filter(
-            ConnectionCode.user_id == user.id,
-            ConnectionCode.used_at.is_(None),
-        ).update({ConnectionCode.used_at: now}, synchronize_session=False)
-        db.add(ConnectionCode(
-            user_id=user.id,
-            code_hash=hashlib.sha256(access_code.replace("-", "").encode("utf-8")).hexdigest(),
-            created_at=now,
-            expires_at=now + timedelta(days=36500),
-        ))
-        db.commit()
-        db.refresh(user)
-        return {
-            "code": access_code,
-            "expires_at": None,
-            "lifetime_minutes": None,
-            "user": user.full_name,
-            "role": user.role,
-            "shared_access": True,
-        }
 
-    if user.telegram_id:
-        raise HTTPException(
-            status_code=409,
-            detail="Telegram уже подключён. Сначала очистите Telegram ID в профиле пользователя.",
-        )
+    access_code = generate_panel_access_code()
+    user.web_password_hash = hash_web_password(access_code)
+    db.query(PanelSession).filter(
+        PanelSession.role == user.role,
+        PanelSession.user_id == user.id,
+    ).delete(synchronize_session=False)
 
     now = datetime.now(timezone.utc)
-    # New code invalidates every previous unused code for this account.
-    previous_codes = db.scalars(
-        select(ConnectionCode).where(
-            ConnectionCode.user_id == user.id,
-            ConnectionCode.used_at.is_(None),
-        )
-    ).all()
-    for previous in previous_codes:
-        previous.used_at = now
-
-    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-    raw_code = "".join(secrets.choice(alphabet) for _ in range(8))
-    code_hash = hashlib.sha256(raw_code.encode("utf-8")).hexdigest()
-    # Student codes do not expire while unused; they are consumed on first activation.
-    expires_at = now + timedelta(days=36500)
-
+    db.query(ConnectionCode).filter(
+        ConnectionCode.user_id == user.id,
+        ConnectionCode.used_at.is_(None),
+    ).update({ConnectionCode.used_at: now}, synchronize_session=False)
     db.add(ConnectionCode(
         user_id=user.id,
-        code_hash=code_hash,
+        code_hash=hashlib.sha256(access_code.replace("-", "").encode("utf-8")).hexdigest(),
         created_at=now,
-        expires_at=expires_at,
+        expires_at=now + timedelta(days=36500),
     ))
     db.commit()
-
+    db.refresh(user)
     return {
-        "code": raw_code[:4] + "-" + raw_code[4:],
+        "code": access_code,
         "expires_at": None,
         "lifetime_minutes": None,
         "user": user.full_name,
         "role": user.role,
+        "shared_access": True,
     }
-
 
 @router.post("/admin/assignments", status_code=201)
 def assign_student_route(payload: AssignmentCreate, _: Admin, db: Db):
