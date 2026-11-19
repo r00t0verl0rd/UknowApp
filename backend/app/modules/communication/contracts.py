@@ -74,6 +74,7 @@ class OutboundMessage:
     platform: MessengerPlatform
     external_chat_id: str
     content_type: MessageKind
+    external_thread_id: str | None = None
     text: str = ""
     media: OutboundMedia | None = None
     reply_to_external_message_id: str | None = None
