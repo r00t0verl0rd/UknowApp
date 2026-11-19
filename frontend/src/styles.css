@@ -755,7 +755,7 @@ html, body { overflow-x: clip;}
 .teacher-grid, .chat-layout{grid-template-columns:1fr}
 
 .root-node { max-width: 100%;}
-.sidebar { top: 0; inset: auto; z-index: 30; display: block; width: 100%; height: auto; padding: 10px 12px 9px; border-right: 0; border-bottom: 1px solid var(--line); box-shadow: 0 5px 18px rgba(47,31,84,.07);}
+.sidebar { top: 0; inset: auto; z-index: 30; display: block; width: 100%; height: auto; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 9px; border-right: 0; border-bottom: 1px solid var(--line); box-shadow: 0 5px 18px rgba(47,31,84,.07);}
 .brand { padding: 0 42px 9px 2px; font-size: 19px; gap: 8px;}
 .brand img { width: 32px; height: 32px;}
 .school-label { display: none;}
@@ -1280,7 +1280,7 @@ button:focus-visible, .btn:focus-visible { outline: 2px solid #aa95d0 !important
 .chats-main > .content { padding: 12px clamp(9px, 3vw, 14px) 14px;}
 
 /* Touch-first viewport and dialog behavior for the mobile layout through 1024px. */
-html, body, #root { min-height: 100%; height: 100%; overflow: hidden;}
+html, body, #root { min-height: 100dvh; height: 100dvh; overflow: hidden;}
 .chats-shell { display: flex; flex-direction: column; width: 100%;  overscroll-behavior: none;}
 .chats-shell > .sidebar { z-index: 40;}
 .chats-main { display: flex;  overflow: hidden;}
@@ -1550,7 +1550,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .chats-main > .content:not(.chats-content) > .graph-panel .teacher-grid { width: 100%; max-width: none;}
 }
 @media (max-width: 1024px) {
-.chats-shell {  min-height: 0;}
+.chats-shell { min-height: 100dvh; height: 100dvh;}
 .chats-main { flex: 1 1 auto; width: 100%; height: auto; min-height: 0;}
 .chats-main > .content:not(.chats-content) { padding: 12px 12px max(14px, env(safe-area-inset-bottom));}
 .chats-main > .content:not(.chats-content) > .graph-panel .graph-legend-row { gap: 8px; margin-bottom: 12px;}
