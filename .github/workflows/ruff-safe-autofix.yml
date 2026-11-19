@@ -22,7 +22,7 @@ jobs:
       - name: Install Ruff
         run: python -m pip install --upgrade ruff
       - name: Apply Ruff safe fixes
-        run: ruff check . --select ALL --fix
+        run: ruff check . --select ALL --fix || true
       - name: Commit safe fixes
         run: |
           if git diff --quiet; then
