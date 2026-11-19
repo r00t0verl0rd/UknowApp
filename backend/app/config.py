@@ -11,6 +11,37 @@ TELEGRAM_PROXY_URL = os.getenv("TELEGRAM_PROXY_URL", "").strip()
 VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "").strip()
 VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "").strip()
 VAPID_SUBJECT = os.getenv("VAPID_SUBJECT", "mailto:admin@example.com").strip()
+
+# Generate a stable key pair on first startup when no explicit VAPID pair is supplied.
+# The private key lives in the persistent data volume and is never stored in the repository.
+if not (VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY):
+    import base64
+    import os
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+
+    _vapid_dir = ROOT_DIR / "data"
+    _vapid_dir.mkdir(parents=True, exist_ok=True)
+    _vapid_path = _vapid_dir / "vapid_private.pem"
+    if _vapid_path.exists():
+        _vapid_key = serialization.load_pem_private_key(_vapid_path.read_bytes(), password=None)
+    else:
+        _vapid_key = ec.generate_private_key(ec.SECP256R1())
+        _vapid_pem = _vapid_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+        _vapid_path.write_bytes(_vapid_pem)
+        os.chmod(_vapid_path, 0o600)
+    _vapid_public = _vapid_key.public_key().public_bytes(
+        encoding=serialization.Encoding.X962,
+        format=serialization.PublicFormat.UncompressedPoint,
+    )
+    VAPID_PUBLIC_KEY = base64.urlsafe_b64encode(_vapid_public).rstrip(b"=").decode("ascii")
+    if not VAPID_PRIVATE_KEY:
+        VAPID_PRIVATE_KEY = str(_vapid_path)
+
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "change-me-now")
 SEED_DEMO_DATA = os.getenv("SEED_DEMO_DATA", "false").lower() in {"1", "true", "yes"}
