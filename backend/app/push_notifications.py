@@ -27,8 +27,6 @@ def schedule_push(
     if not VAPID_PRIVATE_KEY:
         return
     ids = {int(user_id) for user_id in user_ids if user_id}
-    if not ids:
-        return
     conditions = [PushSubscription.user_id.in_(ids)] if ids else []
     if include_admin:
         conditions.append(PushSubscription.role == "admin")
