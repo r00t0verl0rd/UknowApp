@@ -47,9 +47,16 @@ from ...modules.personal_chat.service import _personal_conversation, _personal_c
 from ...modules.assignments.service import assign_student
 from ...modules.messaging.service import _panel_visible_conversation, _panel_message_dict
 
-logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api")
+
+def get_db():
+    with SessionLocal() as db:
+        yield db
+
+
+Admin = Annotated[str, Depends(require_admin)]
+PanelUser = Annotated[dict, Depends(require_panel_user)]
+Db = Annotated[Session, Depends(get_db)]
 
 
 logger = logging.getLogger(__name__)
@@ -127,5 +134,3 @@ def remove_push_subscription(payload: dict, principal: PanelUser, db: Db):
         db.delete(subscription)
         db.commit()
     return {"ok": True}
-
-
