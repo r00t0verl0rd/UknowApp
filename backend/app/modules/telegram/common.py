@@ -3,11 +3,11 @@
 import hashlib
 import json
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Optional
 
 from aiogram.types import Message as TgMessage
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -107,84 +107,35 @@ def claim_connection_code(
     raw_code: str,
     telegram_id: int,
 ) -> tuple[Optional[User], str]:
-    normalized = re.sub(r"[\s-]", "", raw_code).upper()
+    """Bind Telegram using the participant's persistent panel access code."""
+    normalized = re.sub(r"[\\s-]", "", raw_code).upper()
     if not CONNECTION_CODE_RE.fullmatch(normalized):
         return None, "invalid_format"
 
-    # Older teacher codes were stored with the XXXX-XXXX separator, while
-    # this Telegram flow normalizes the input to XXXXXXXX. Check both hashes
-    # so existing issued credentials keep working after the normalization fix.
-    formatted_code = normalized[:4] + "-" + normalized[4:]
-    code_hashes = {
-        hashlib.sha256(normalized.encode("utf-8")).hexdigest(),
-        hashlib.sha256(formatted_code.encode("utf-8")).hexdigest(),
-    }
+    code_hash = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
     connection_code = db.scalar(
-        select(ConnectionCode)
-        .where(ConnectionCode.code_hash.in_(code_hashes))
-        .order_by(ConnectionCode.id.desc())
+        select(ConnectionCode).where(ConnectionCode.code_hash == code_hash)
     )
     if not connection_code:
         return None, "invalid"
 
     user = db.get(User, connection_code.user_id)
-    if not user or user.role not in {"teacher", "student"}:
+    if not user or user.role not in {"teacher", "student"} or not user.web_password_hash:
         return None, "invalid"
 
-    now = datetime.now(timezone.utc)
     expires_at = connection_code.expires_at
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
-
-    # Persistent panel codes are shared with web login for both participant roles.
-    # Older student activation codes remain one-time until they are replaced.
-    if user.web_password_hash and expires_at > now + timedelta(days=365):
-        if connection_code.used_at is not None:
-            return None, "used"
-        existing_user = db.scalar(select(User).where(User.telegram_id == telegram_id))
-        if existing_user and existing_user.id != user.id:
-            return None, "telegram_already_linked"
-        if user.telegram_id and user.telegram_id != telegram_id:
-            return None, "account_already_linked"
-        user.telegram_id = telegram_id
-        try:
-            db.commit()
-            db.refresh(user)
-        except IntegrityError:
-            db.rollback()
-            return None, "telegram_already_linked"
-        return user, "ok"
-
-    if connection_code.used_at is not None:
-        return None, "used"
-
-    # Student activation codes stay valid until their first successful use.
-    # Ignore legacy 15-minute expiry timestamps for unused student codes.
-    if user.role != "student" and expires_at <= now:
-        connection_code.used_at = now
-        db.commit()
+    if expires_at <= datetime.now(timezone.utc):
         return None, "expired"
+    if connection_code.used_at is not None:
+        return None, "invalid"
 
-    existing_user = db.scalar(
-        select(User).where(User.telegram_id == telegram_id)
-    )
+    existing_user = db.scalar(select(User).where(User.telegram_id == telegram_id))
     if existing_user and existing_user.id != user.id:
         return None, "telegram_already_linked"
     if user.telegram_id and user.telegram_id != telegram_id:
         return None, "account_already_linked"
-
-    # Atomically mark the code as used and bind the Telegram ID in one transaction.
-    result = db.execute(
-        update(ConnectionCode)
-        .where(
-            ConnectionCode.id == connection_code.id,
-            ConnectionCode.used_at.is_(None),
-        )
-        .values(used_at=now)
-    )
-    if result.rowcount != 1:
-        db.rollback()
-        return None, "used"
 
     user.telegram_id = telegram_id
     try:
@@ -194,7 +145,6 @@ def claim_connection_code(
         db.rollback()
         return None, "telegram_already_linked"
     return user, "ok"
-
 
 def get_linked_user(db: Session, telegram_id: int) -> Optional[User]:
     return db.scalar(select(User).where(User.telegram_id == telegram_id))
