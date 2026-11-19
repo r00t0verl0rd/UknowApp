@@ -1,5 +1,7 @@
 """User-domain validation and public serialization helpers."""
 
+import secrets
+
 from typing import Optional
 
 from fastapi import HTTPException
