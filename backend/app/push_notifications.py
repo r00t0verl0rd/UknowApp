@@ -6,7 +6,7 @@ import logging
 from typing import Iterable
 
 from pywebpush import WebPushException, webpush
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from .config import VAPID_PRIVATE_KEY, VAPID_SUBJECT
@@ -21,6 +21,7 @@ def schedule_push(
     title: str,
     body: str,
     url: str = "/",
+    include_admin: bool = False,
 ) -> None:
     """Queue push delivery without delaying message persistence or Telegram handling."""
     if not VAPID_PRIVATE_KEY:
@@ -28,8 +29,13 @@ def schedule_push(
     ids = {int(user_id) for user_id in user_ids if user_id}
     if not ids:
         return
+    conditions = [PushSubscription.user_id.in_(ids)] if ids else []
+    if include_admin:
+        conditions.append(PushSubscription.role == "admin")
+    if not conditions:
+        return
     subscriptions = db.scalars(
-        select(PushSubscription).where(PushSubscription.user_id.in_(ids))
+        select(PushSubscription).where(or_(*conditions))
     ).all()
     targets = [
         {
