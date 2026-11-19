@@ -68,6 +68,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
                   </div>
                 </div>)}</div></section>}
               </section>
-            </>
+            </>}
+    </>
   );
 }
