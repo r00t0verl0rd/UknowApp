@@ -433,12 +433,6 @@ async def _handle_unlinked_sender(message: TgMessage, bot: Bot, db) -> None:
                         "✅ Telegram подключён к аккаунту «" + linked_user.full_name + "».\n"
                         "Учитель пока не назначен. Как только администратор создаст связь, здесь можно будет начать переписку."
                     )
-        elif result == "expired":
-            _record_connection_code_attempt(telegram_id)
-            await message.answer("Срок действия кода истёк. Попросите администратора создать новый код.")
-        elif result == "used":
-            _record_connection_code_attempt(telegram_id)
-            await message.answer("Этот код уже недействителен. Попросите администратора создать новый.")
         elif result == "telegram_already_linked":
             _record_connection_code_attempt(telegram_id)
             await message.answer("Этот Telegram-аккаунт уже привязан к другому пользователю UknowApp.")
