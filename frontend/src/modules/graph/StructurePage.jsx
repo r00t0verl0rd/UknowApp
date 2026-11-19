@@ -26,7 +26,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
                 </div>
               </div>
             </section>}
-            {page === "graph" && profile?.role === "admin" && <>
+            {profile?.role === "admin" && <>
               <section className="graph-panel">
                 <div className="graph-legend-row">
                   <div className="legend graph-legend">
