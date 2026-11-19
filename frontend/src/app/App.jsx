@@ -3,7 +3,6 @@ import { useAuthState, useChatState, useDirectoryState, useGraphState, useUiStat
 import Activity from "lucide-react/dist/esm/icons/activity.js";
 import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left.js";
 import Check from "lucide-react/dist/esm/icons/check.js";
-import ChevronRight from "lucide-react/dist/esm/icons/chevron-right.js";
 import GraduationCap from "lucide-react/dist/esm/icons/graduation-cap.js";
 import LogOut from "lucide-react/dist/esm/icons/log-out.js";
 import MessageCircle from "lucide-react/dist/esm/icons/message-circle.js";
@@ -24,6 +23,7 @@ import Link2 from "lucide-react/dist/esm/icons/link-2.js";
 import Info from "lucide-react/dist/esm/icons/info.js";
 import MessageBubble from "../modules/conversations/components/MessageBubble.jsx";
 import AdditionalPage from "../modules/administration/AdditionalPage.jsx";
+import LoginPage from "../modules/authentication/LoginPage.jsx";
 import { detachPushSubscription, initializePushNotifications } from "../modules/notifications/pushNotifications.js";
 import { createApiClient } from "../services/api.js";
 
@@ -678,21 +678,7 @@ export default function App() {
     } catch (e) { setError(e.message); }
   }
 
-  if (!auth) return <div className="login-screen">
-    <div className="login-card">
-      <button type="button" className="theme-toggle login-theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
-        {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
-      </button>
-      <img src="/logo.png" alt="UknowApp" className="login-logo" />
-      <h1>UknowApp</h1>
-      <form onSubmit={signIn} className="stack">
-        <label><input value={login} onChange={e => setLogin(e.target.value)} autoComplete="username" placeholder="Логин" aria-label="Логин" /></label>
-        <label><input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" placeholder="Пароль" aria-label="Пароль" /></label>
-        {error && <div className="alert">{error}</div>}
-        <button className="btn primary" type="submit">Войти <ChevronRight size={17}/></button>
-      </form>
-    </div>
-  </div>;
+  if (!auth) return <LoginPage theme={theme} toggleTheme={toggleTheme} signIn={signIn} login={login} setLogin={setLogin} password={password} setPassword={setPassword} error={error} />;
 
   return <div className="shell chats-shell">
     <aside className="sidebar">
