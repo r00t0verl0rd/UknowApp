@@ -383,7 +383,7 @@ def _auto_bind_student_forum_topic(db, message: TgMessage, sender):
 
 
 async def _handle_unlinked_sender(message: TgMessage, bot: Bot, db) -> None:
-    """Handle activation-code attempts and guide users without a linked account."""
+    """Handle persistent access-code attempts for users without a linked account."""
     if not _unlinked_message_allowed(message.from_user.id):
         return
     text = (message.text or "").strip()
