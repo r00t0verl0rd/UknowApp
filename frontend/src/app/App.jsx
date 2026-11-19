@@ -24,6 +24,8 @@ import Link2 from "lucide-react/dist/esm/icons/link-2.js";
 import Info from "lucide-react/dist/esm/icons/info.js";
 import MessageBubble from "../modules/conversations/components/MessageBubble.jsx";
 import AdditionalPage from "../modules/administration/AdditionalPage.jsx";
+import StructurePage from "../modules/graph/StructurePage.jsx";
+import UsersPage from "../modules/users/UsersPage.jsx";
 import LoginPage from "../modules/authentication/LoginPage.jsx";
 import { detachPushSubscription, initializePushNotifications } from "../modules/notifications/pushNotifications.js";
 import { createApiClient } from "../services/api.js";
@@ -718,108 +720,7 @@ export default function App() {
       </header>
       <div className={"content" + (page === "chats" ? " chats-content" : "")}>
         {error && <div className="alert alert-row">{error}<button onClick={() => setError("")}><X/></button></div>}
-        {page === "graph" && profile?.role === "teacher" && <section className="teacher-readonly-graph">
-          <div className="teacher-graph-root">
-            <div className="teacher-graph-card">
-              <div className="avatar teacher-avatar"><GraduationCap/></div>
-              <div><b>{teacherGraph?.teacher.full_name || profile?.full_name}</b><small>Вы · Учитель</small></div>
-              <span className="readonly-tag">Ваша группа</span>
-            </div>
-            <div className="teacher-graph-students">
-              <div className="teacher-graph-connector"/>
-              <div className="teacher-graph-student-grid">
-                {(teacherGraph?.students || []).map(student => <div className="teacher-graph-card student" key={student.id}>
-                  <div className="avatar student-avatar"><Smile/></div>
-                  <div><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div>
-                </div>)}
-              </div>
-              {!(teacherGraph?.students || []).length && <div className="empty-state">Пока нет назначенных учеников</div>}
-            </div>
-          </div>
-        </section>}
-        {page === "graph" && profile?.role === "admin" && <>
-          <section className="graph-panel">
-            <div className="graph-legend-row">
-              <div className="legend graph-legend">
-                <div className="graph-legend-item"><span className="teacher-dot"/>Учителя <b>{overview?.counts.teachers || 0}</b></div>
-                <div className="graph-legend-item"><span className="student-dot"/>Ученики <b>{overview?.counts.students || 0}</b></div>
-              </div>
-              <button className="btn primary graph-add-participant" onClick={() => openCreate()}><Plus/>Добавить участника</button>
-            </div>
-            <div className="root-node"><img src="/logo.png" alt=""/><div><b>Администратор</b><small>Полное управление</small></div></div>
-            <div className="teacher-grid">
-              {allTeachers.map(teacher => {
-                const students = studentsByTeacherId.get(teacher.id) || [];
-                const studentsCollapsed = collapsedTeacherIds.has(teacher.id);
-                return <section className={`teacher-branch${studentsCollapsed ? " is-collapsed" : ""}`} key={teacher.id}>
-                <div className="person-card teacher-card">
-                  <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap/></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель · {students.length} учен.</small></div></div>
-                  <div className="person-actions">
-                    <button className={`danger-icon teacher-collapse-btn${studentsCollapsed ? "" : " is-expanded"}`} title={studentsCollapsed ? "Показать учеников" : "Скрыть учеников"} aria-label={studentsCollapsed ? "Показать учеников" : "Скрыть учеников"} aria-expanded={!studentsCollapsed} onClick={() => setCollapsedTeacherIds(current => { const next = new Set(current); if (next.has(teacher.id)) next.delete(teacher.id); else next.add(teacher.id); return next; })}><ChevronRight/></button>
-                    <button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil/></button>
-                  </div>
-                </div>
-                {!studentsCollapsed && <button className="add-student" onClick={() => { setTeacherId(String(teacher.id)); setStudentId(allStudents[0]?.id ? String(allStudents[0].id) : ""); setModal({ mode: "assign" }); }}><Plus/>Назначить ученика</button>}
-                {!studentsCollapsed && <div className="student-list">
-                  {students.map(student => <div className="person-card student-card" key={student.id}>
-                    <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
-                    <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button>
-                  </div>)}
-                  {!students.length && <div className="empty-students">Нет назначенных учеников</div>}
-                </div>}
-              </section>;
-              })}
-            </div>
-            {!allTeachers.length && <div className="empty-state"><GraduationCap/><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span></div>}
-            {!!unassignedStudents.length && <section className="unassigned"><h2 className="unassigned-title">Ученики без назначения</h2><div className="unassigned-grid">{unassignedStudents.map(student => <div className="person-card student-card unassigned-student-card" key={student.id}>
-              <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
-              <div className="unassigned-student-actions">
-                <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button>
-                <button className="btn small outline" disabled={!allTeachers.length} onClick={() => { setStudentId(String(student.id)); setTeacherId(String(allTeachers[0]?.id || "")); setModal({ mode: "assign" }); }}>Назначить</button>
-              </div>
-            </div>)}</div></section>}
-          </section>
-        </>}
-
-        {page === "users" && <>
-          <div className="toolbar user-toolbar">
-            <div className="search"><Search/><input placeholder="Поиск по имени" value={search} onChange={e => setSearch(e.target.value)}/></div>
-            <select className="user-sort" aria-label="Сортировка пользователей" value={userSort} onChange={e => setUserSort(e.target.value)}>
-              <option value="name-asc">По имени</option><option value="name-desc">Имя: Я — А</option><option value="teachers">Сначала учителя</option><option value="students">Сначала ученики</option>
-            </select>
-            <span className="user-count">Количество пользователей: <b>{visibleUsers.length}</b></span>
-            <button className="btn primary user-add-btn" onClick={() => openCreate()}><Plus/>Добавить пользователя</button>
-          </div>
-          <div className="user-list">{visibleUsers.map(user => <div className={"user-row" + (userInfo === user.id ? " is-info-open" : "")} key={user.id}>
-            <div className={"avatar " + user.role}>{user.role === "teacher" ? <GraduationCap/> : user.role === "student" ? <Smile/> : <Users/>}</div>
-            <b className="user-person-info">{user.full_name}</b>
-            <div className="user-actions">
-              {user.telegram_id
-                ? <button className="user-action-btn connect-toggle disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram" aria-label="Отключить Telegram"><Unlink/><span>Отключить</span></button>
-                : <button className="user-action-btn connect-toggle connect" onClick={() => makeCode(user)} title="Создать код для подключения" aria-label="Подключить участника"><Link2/><span>Подключить</span></button>}
-              <div className="user-info-wrap">
-                <button
-                  className={"user-action-btn user-info-btn" + (userInfo === user.id ? " is-open" : "")}
-                  type="button"
-                  title="Информация об участнике"
-                  aria-label={"Информация об участнике: " + user.full_name}
-                  aria-expanded={userInfo === user.id}
-                  aria-controls={"user-info-" + user.id}
-                  onClick={() => setUserInfo(current => current === user.id ? null : user.id)}
-                ><Info/></button>
-                {userInfo === user.id && <div className="user-info-popover" id={"user-info-" + user.id} role="status">
-                  <div className="user-info-popover-head"><b>Информация</b><button type="button" onClick={() => setUserInfo(null)} aria-label="Закрыть"><X size={14}/></button></div>
-                  <div className="user-info-line"><Link2 size={14}/><span>{user.telegram_id ? "Telegram подключён" : "Telegram не подключён"}</span></div>
-                  <div className="user-info-login"><span>Telegram ID</span><b>{user.telegram_id || "Не подключён"}</b></div>
-                  {["teacher", "student"].includes(user.role) && <div className="user-info-login"><span>Логин</span><b>{user.web_username || user.full_name}</b></div>}
-                </div>}
-              </div>
-              <button className="user-action-btn edit-btn" onClick={() => openEdit(user)} title="Изменить профиль" aria-label="Изменить профиль"><Pencil/></button>
-              <button className="user-action-btn danger-icon user-delete" onClick={() => removeUser(user)} title="Удалить пользователя" aria-label="Удалить пользователя"><Trash2/></button>
-            </div>
-          </div>)}</div>
-        </>}
-
+        <UsersPage visibleUsers={visibleUsers} search={search} setSearch={setSearch} userSort={userSort} setUserSort={setUserSort} openCreate={openCreate} disconnectTelegram={disconnectTelegram} makeCode={makeCode} userInfo={userInfo} setUserInfo={setUserInfo} openEdit={openEdit} removeUser={removeUser} />
         {page === "chats" && <>
           <div className={"chat-layout" + (selectedChat ? " chat-layout-conversation-open" : " chat-layout-list-open")}><div className="chat-list">{profile?.role === "admin" && <div className="chat-filter-segment admin-chat-sections" role="group" aria-label="Раздел диалогов"><button type="button" className={chatSection === "participants" ? "active" : ""} onClick={() => { setChatSection("participants"); setSelectedChat(null); setMessages([]); }}>Чаты участников</button><button type="button" className={chatSection === "personal" ? "active" : ""} onClick={() => { setChatSection("personal"); setChatFilter("all"); setSelectedChat(null); setMessages([]); }}>Личные{personalChats.some(chat => Number(chat.unread_count) > 0) && <span className="unread-badge">{personalChats.reduce((sum, chat) => sum + (Number(chat.unread_count) || 0), 0) > 99 ? "99+" : personalChats.reduce((sum, chat) => sum + (Number(chat.unread_count) || 0), 0)}</span>}</button></div>}{profile?.role === "admin" && chatSection === "personal" && <button type="button" className="btn outline personal-chat-create" onClick={openCreatePersonalChat}><Plus size={15}/>Создать диалог</button>}{profile?.role !== "student" && <>
               <div className="chat-search-control">
@@ -867,6 +768,7 @@ export default function App() {
             </> : <div className="empty-state">{profile?.role === "student" ? "Ваша переписка с учителем появится здесь" : "Выберите ученика слева"}</div>}</div>
           </div>
         </>}
+        <StructurePage profile={profile} teacherGraph={teacherGraph} overview={overview} openCreate={openCreate} allTeachers={allTeachers} studentsByTeacherId={studentsByTeacherId} collapsedTeacherIds={collapsedTeacherIds} setCollapsedTeacherIds={setCollapsedTeacherIds} openEdit={openEdit} setTeacherId={setTeacherId} setStudentId={setStudentId} allStudents={allStudents} setModal={setModal} unassignedStudents={unassignedStudents} />
         <AdditionalPage dataStats={dataStats} dataBusy={dataBusy} loadDataStats={loadDataStats} downloadAdminFile={downloadAdminFile} uploadAdminFile={uploadAdminFile} retentionDays={retentionDays} setRetentionDays={setRetentionDays} cleanupOldDialogues={cleanupOldDialogues} />
       </div>
     </main>
