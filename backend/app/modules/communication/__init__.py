@@ -2,8 +2,10 @@
 
 from .contracts import (
     DeliveryResult,
+    InboundLocation,
     InboundMedia,
     InboundMessage,
+    InboundPoll,
     MessageKind,
     MessengerAdapter,
     MessengerCapabilities,
@@ -14,8 +16,10 @@ from .contracts import (
 
 __all__ = [
     "DeliveryResult",
+    "InboundLocation",
     "InboundMedia",
     "InboundMessage",
+    "InboundPoll",
     "MessageKind",
     "MessengerAdapter",
     "MessengerCapabilities",

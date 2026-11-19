@@ -29,6 +29,8 @@ class MessageKind(StrEnum):
     STICKER = "sticker"
     LOCATION = "location"
     CONTACT = "contact"
+    VIDEO_NOTE = "video_note"
+    POLL = "poll"
     UNSUPPORTED = "unsupported"
 
 
@@ -40,6 +42,21 @@ class InboundMedia:
     mime_type: str | None = None
     file_size: int | None = None
     provider_file_id: str | None = None
+    provider_unique_file_id: str | None = None
+    is_video: bool = False
+    is_animated: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class InboundLocation:
+    latitude: float
+    longitude: float
+
+
+@dataclass(frozen=True, slots=True)
+class InboundPoll:
+    question: str
+    options: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,7 +65,7 @@ class InboundMessage:
 
     platform: MessengerPlatform
     event_id: str
-    external_user_id: str
+    external_user_id: str | None
     external_chat_id: str
     external_message_id: str
     content_type: MessageKind
@@ -56,6 +73,15 @@ class InboundMessage:
     caption: str = ""
     media: InboundMedia | None = None
     occurred_at: datetime | None = None
+    external_thread_id: str | None = None
+    sender_username: str | None = None
+    sender_chat_id: str | None = None
+    chat_type: str = "private"
+    chat_is_forum: bool = False
+    chat_title: str | None = None
+    location: InboundLocation | None = None
+    poll: InboundPoll | None = None
+    contact_present: bool = False
 
 
 @dataclass(frozen=True, slots=True)

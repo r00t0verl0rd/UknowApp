@@ -6,19 +6,27 @@ from collections import defaultdict
 from html import escape
 import json
 import logging
-from datetime import datetime, timezone
 from typing import Optional
 
 from aiogram import Bot
 from aiogram.types import (
     KeyboardButton,
-    Message as TgMessage,
     ReplyKeyboardMarkup,
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from ...models import Assignment, Conversation, Message, TeacherPanel, TeacherSession, User
+from ..messaging.inbound import (
+    InboundUiResult,
+    clear_teacher_session,
+    conversation_messages,
+    get_teacher_conversation,
+    mark_visible_messages_read_by_teacher,
+    pending_student_messages,
+    set_teacher_session,
+    unanswered_student_messages,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -63,80 +71,6 @@ def message_preview(row: Optional[Message]) -> str:
     if body:
         return body if len(body) <= 115 else body[:112] + "…"
     return "Сообщение"
-
-
-def conversation_messages(db: Session, conversation_id: int) -> list[Message]:
-    return db.scalars(
-        select(Message)
-        .where(Message.conversation_id == conversation_id)
-        .order_by(Message.created_at, Message.id)
-    ).all()
-
-
-def unanswered_student_messages(rows: list[Message]) -> list[Message]:
-    """Return delivered student messages that have not yet received a teacher reply."""
-    last_teacher_index = -1
-    for index, row in enumerate(rows):
-        if row.sender_role == "teacher" and row.delivery_status == "delivered":
-            last_teacher_index = index
-
-    return [
-        row
-        for index, row in enumerate(rows)
-        if (
-            index > last_teacher_index
-            and row.sender_role == "student"
-            and row.delivery_status == "delivered"
-        )
-    ]
-
-
-def pending_student_messages(rows: list[Message]) -> list[Message]:
-    """Return unanswered student messages the teacher has not opened yet."""
-    return [
-        row
-        for row in unanswered_student_messages(rows)
-        if json.loads(row.metadata_json or "{}").get("teacher_read_at") is None
-    ]
-
-
-def mark_messages_read_by_teacher(
-    db: Session,
-    messages: list[Message],
-) -> None:
-    """Persist teacher read state for messages opened in the panel or Telegram bot."""
-    if not messages:
-        return
-
-    now = datetime.now(timezone.utc).isoformat()
-    changed = False
-    for row in messages:
-        metadata = json.loads(row.metadata_json or "{}")
-        if metadata.get("teacher_read_at") is None:
-            metadata["teacher_read_at"] = now
-            row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-            changed = True
-    if changed:
-        db.commit()
-
-
-def mark_visible_messages_read_by_teacher(
-    db: Session,
-    conversation: Conversation,
-) -> None:
-    """Mark the messages currently shown in the teacher's chat as read."""
-    rows = conversation_messages(db, conversation.id)
-    visible_rows = rows[-12:]
-    # Opening a conversation marks every delivered student message actually
-    # visible in the transcript as read, even when a teacher reply is older
-    # than the 12-message preview window.
-    mark_messages_read_by_teacher(
-        db,
-        [
-            row for row in visible_rows
-            if row.sender_role == "student" and row.delivery_status == "delivered"
-        ],
-    )
 
 
 def teacher_conversations(db: Session, teacher: User) -> list[dict]:
@@ -185,36 +119,6 @@ def teacher_conversations(db: Session, teacher: User) -> list[dict]:
     # Keep all assigned students visible; students with unread messages come first.
     items.sort(key=lambda item: (item["unanswered"] > 0, item["last_at"]), reverse=True)
     return items
-
-
-def get_teacher_conversation(db: Session, teacher: User, conversation_id: int) -> Optional[Conversation]:
-    conversation = db.get(Conversation, conversation_id)
-    if (
-        not teacher or teacher.role != "teacher"
-        or not conversation or conversation.status != "active"
-        or not conversation.assignment.active
-        or conversation.assignment.teacher_id != teacher.id
-    ):
-        return None
-    return conversation
-
-
-def set_teacher_session(db: Session, teacher: User, conversation: Conversation) -> None:
-    session = db.get(TeacherSession, teacher.id)
-    if session:
-        session.conversation_id = conversation.id
-    else:
-        db.add(TeacherSession(teacher_id=teacher.id, conversation_id=conversation.id))
-    db.commit()
-
-
-def clear_teacher_session(db: Session, teacher: User) -> None:
-    if teacher.role != "teacher":
-        return
-    db.query(TeacherSession).filter(
-        TeacherSession.teacher_id == teacher.id
-    ).delete(synchronize_session=False)
-    db.commit()
 
 
 def _teacher_page(items: list[dict], page: int) -> tuple[int, int, list[dict]]:
@@ -499,24 +403,30 @@ async def update_teacher_panel(
 
 
 async def handle_teacher_keyboard_message(
-    message: TgMessage,
-    bot: Bot,
     db: Session,
+    inbound,
     teacher: User,
-) -> bool:
-    body = (message.text or "").strip()
+    gateway,
+) -> InboundUiResult:
+    """Interpret Telegram's reply-keyboard text as a UI action in the shared flow."""
+    body = inbound.text.strip()
     if not body:
-        return False
+        return InboundUiResult(False)
 
-    # A button from an older keyboard revision may still be cached by a client.
-    # Consume it and explicitly replace the chat keyboard instead of forwarding it.
-    if body.startswith("Написать · "):
+    async def remove_action_message() -> None:
         try:
-            await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+            await gateway.delete_message(
+                inbound.external_chat_id, inbound.external_message_id
+            )
         except Exception as exc:
-            logger.debug("Could not delete stale teacher keyboard message (error_type=%s)", type(exc).__name__)
-        await update_teacher_panel(bot, db, teacher, force_keyboard_refresh=True)
-        return True
+            logger.debug(
+                "Could not remove teacher keyboard action (error_type=%s)",
+                type(exc).__name__,
+            )
+
+    if body.startswith("Написать · "):
+        await remove_action_message()
+        return InboundUiResult(True, force_keyboard_refresh=True)
 
     panel = db.get(TeacherPanel, teacher.id)
     page = panel.page_index if panel else 0
@@ -524,30 +434,21 @@ async def handle_teacher_keyboard_message(
         db, teacher, page
     )
 
-    # Older Telegram clients may still display the pre-emoji student buttons.
-    # Consume those stale taps and refresh the menu instead of routing the name
-    # as an ordinary message to the currently selected student.
     if body not in actions and body in legacy_student_labels:
-        try:
-            await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
-        except Exception as exc:
-            logger.debug("Could not delete legacy teacher keyboard message (error_type=%s)", type(exc).__name__)
-        await update_teacher_panel(bot, db, teacher, force_keyboard_refresh=True)
-        return True
+        await remove_action_message()
+        return InboundUiResult(True, force_keyboard_refresh=True)
 
     if body in actions:
         conversation = actions[body]
         if conversation is None:
-            await message.answer(
+            await gateway.send_text(
+                inbound.external_chat_id,
                 "У нескольких учеников одинаковое ФИО. Попросите администратора "
-                "различить их в списке пользователей."
+                "различить их в списке пользователей.",
+                inbound.external_thread_id,
             )
-            try:
-                await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
-            except Exception as exc:
-                logger.debug("Could not delete ambiguous teacher keyboard message (error_type=%s)", type(exc).__name__)
-            await update_teacher_panel(bot, db, teacher)
-            return True
+            await remove_action_message()
+            return InboundUiResult(True)
         valid = get_teacher_conversation(db, teacher, conversation.id)
         if valid:
             set_teacher_session(db, teacher, valid)
@@ -569,14 +470,7 @@ async def handle_teacher_keyboard_message(
             panel.page_index = min(total_pages - 1, page + 1)
             db.commit()
     else:
-        return False
+        return InboundUiResult(False)
 
-    try:
-        # Reply-keyboard taps arrive as ordinary user messages; remove them so
-        # the teacher's chat stays focused on the persistent panel.
-        await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
-    except Exception:
-        logger.debug("Could not remove teacher keyboard selection message_id=%s", message.message_id)
-
-    await update_teacher_panel(bot, db, teacher)
-    return True
+    await remove_action_message()
+    return InboundUiResult(True)

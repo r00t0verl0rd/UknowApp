@@ -13,7 +13,11 @@ and deliver messages. Provider SDK objects stay inside their adapters.
 - `backend/app/modules/communication/service.py` — outbound adapter registry
   and delivery dispatch.
 - `backend/app/modules/communication/accounts.py` — persistence helpers for
-  platform identities.
+  platform identities and shared access-code claiming.
+- `backend/app/modules/messaging/inbound.py` — the single inbound identity,
+  conversation, moderation, persistence, and delivery workflow.
+- `backend/app/modules/messaging/moderation.py` — provider-neutral contact-data
+  checks applied before a message enters the shared history.
 - `backend/app/modules/telegram/adapter.py` — Telegram Bot API implementation.
 
 ## Contract rules
@@ -68,15 +72,46 @@ not stored by the previous schema, so migrated rows keep `linked_at = NULL`
 rather than inventing a date. Existing user rows and Telegram IDs are not
 deleted or rewritten by the migration.
 
-Until the later identity and handler migration stages, `users.telegram_id`
-remains a compatibility field. Telegram linking through the existing access
-code flow, admin user creation/editing, disconnect, and user deletion
-dual-write or clean up the account table in the same database transaction.
-Current Telegram handlers still resolve users through the compatibility
-field; this stage does not change their routing behavior.
+Until the end of stage 4, `users.telegram_id` remains a compatibility field.
+The inbound workflow resolves Telegram identities through
+`messenger_accounts`, retaining a legacy-column fallback for older rows.
+Admin user creation/editing, disconnect, and deletion continue to synchronize
+the account table transactionally.
+
+## Stage 4 — unified inbound transition
+
+Every incoming messenger message now follows one application transition:
+
+1. The provider adapter converts its SDK update into `InboundMessage`.
+2. The shared identity service resolves the linked account or validates the
+   persistent access code and claims the current messenger identity.
+3. The same workflow resolves conversation context, checks the user role and
+   permissions, applies contact-data moderation, and writes the shared message
+   history.
+4. The provider port performs channel operations only: sending responses,
+   copying attachments, archiving provider media, or deleting transport
+   messages.
+5. The application returns UI refresh instructions; Telegram renders its
+   teacher panel without owning conversation policy.
+
+Private chats and forum topics enter this same workflow. A forum thread is
+routing context, not an independent message-processing path. Its binding is
+managed by one shared route function used by both automatic routing and the
+explicit `/bind_group` setup command.
+
+Persistent access-code validation is platform-neutral and writes to
+`messenger_accounts`. Student messages, teacher replies, moderation, read
+markers, delivery statuses, and conversation history all use the same
+workflow. Teacher keyboard buttons and callback queries remain
+presentation-specific events, but call the shared conversation authorization
+and session functions.
+
+aiogram message objects are confined to the Telegram adapter and Telegram
+presentation handlers. The shared workflow receives only normalized DTOs and
+a provider port. The shared media-storage module no longer imports Telegram
+SDK types.
 
 ## Next
 
-The next stage will move Telegram inbound event normalization and message
-processing behind the communication boundary, while preserving the current
-conversation, access-control, and attachment behavior.
+The next stage will make all remaining identity and delivery reads use the
+universal account registry, then add MAX as an independent adapter.

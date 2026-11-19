@@ -1,18 +1,63 @@
-"""Persistence helpers for external messenger account bindings."""
+"""Persistence and identity rules for external messenger accounts."""
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import hashlib
+import re
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ...models import MessengerAccount
+from ...models import ConnectionCode, MessengerAccount, User
 from .contracts import MessengerPlatform
+
+
+CONNECTION_CODE_RE = re.compile(r"^[A-HJ-NP-Z2-9]{8}$")
 
 
 class MessengerAccountConflict(Exception):
     """Raised when an external identity is already owned by another user."""
+
+
+def get_messenger_account(
+    db: Session, user_id: int, platform: MessengerPlatform | str
+) -> MessengerAccount | None:
+    platform_value = platform.value if isinstance(platform, MessengerPlatform) else platform
+    return db.scalar(
+        select(MessengerAccount).where(
+            MessengerAccount.user_id == user_id,
+            MessengerAccount.platform == platform_value,
+            MessengerAccount.status == "linked",
+        )
+    )
+
+
+def get_messenger_user(
+    db: Session,
+    platform: MessengerPlatform | str,
+    external_user_id: str | int | None,
+) -> User | None:
+    if external_user_id is None:
+        return None
+    platform_value = platform.value if isinstance(platform, MessengerPlatform) else platform
+    user = db.scalar(
+        select(User)
+        .join(MessengerAccount, MessengerAccount.user_id == User.id)
+        .where(
+            MessengerAccount.platform == platform_value,
+            MessengerAccount.external_user_id == str(external_user_id),
+            MessengerAccount.status == "linked",
+        )
+    )
+    if user or platform_value != MessengerPlatform.TELEGRAM.value:
+        return user
+    try:
+        legacy_id = int(external_user_id)
+    except (TypeError, ValueError):
+        return None
+    return db.scalar(select(User).where(User.telegram_id == legacy_id))
 
 
 def sync_messenger_account(
@@ -23,7 +68,7 @@ def sync_messenger_account(
     external_chat_id: str | int | None = None,
     username: str | None = None,
 ) -> MessengerAccount | None:
-    """Create or update one platform identity, or remove it when ID is None."""
+    """Create/update one provider identity, or remove it when ID is None."""
     platform_value = platform.value if isinstance(platform, MessengerPlatform) else platform
     account = db.scalar(
         select(MessengerAccount).where(
@@ -31,7 +76,6 @@ def sync_messenger_account(
             MessengerAccount.platform == platform_value,
         )
     )
-
     if external_user_id is None:
         if account:
             db.delete(account)
@@ -40,7 +84,6 @@ def sync_messenger_account(
     normalized_user_id = str(external_user_id).strip()
     if not normalized_user_id:
         raise ValueError("External user ID cannot be empty")
-
     existing = db.scalar(
         select(MessengerAccount).where(
             MessengerAccount.platform == platform_value,
@@ -48,18 +91,15 @@ def sync_messenger_account(
         )
     )
     if existing and existing.user_id != user_id:
-        raise MessengerAccountConflict(
-            f"{platform_value} identity is already linked"
-        )
+        raise MessengerAccountConflict(f"{platform_value} identity is already linked")
 
     account = account or existing
-    now = datetime.now(timezone.utc)
     if account is None:
         account = MessengerAccount(
             user_id=user_id,
             platform=platform_value,
             external_user_id=normalized_user_id,
-            linked_at=now,
+            linked_at=datetime.now(timezone.utc),
         )
         db.add(account)
     else:
@@ -67,7 +107,7 @@ def sync_messenger_account(
         account.platform = platform_value
         account.external_user_id = normalized_user_id
         if account.linked_at is None:
-            account.linked_at = now
+            account.linked_at = datetime.now(timezone.utc)
 
     if external_chat_id is not None:
         account.external_chat_id = str(external_chat_id)
@@ -79,8 +119,77 @@ def sync_messenger_account(
     return account
 
 
-def delete_user_messenger_accounts(db: Session, user_id: int) -> None:
-    """Remove all provider identities before their owning user is deleted."""
-    db.execute(
-        delete(MessengerAccount).where(MessengerAccount.user_id == user_id)
+def claim_messenger_connection_code(
+    db: Session,
+    raw_code: str,
+    platform: MessengerPlatform,
+    external_user_id: str,
+    external_chat_id: str,
+    username: str | None = None,
+) -> tuple[User | None, str]:
+    """Claim the persistent UknowApp access code for one messenger identity."""
+    normalized = re.sub(r"[\s-]", "", raw_code).upper()
+    if not CONNECTION_CODE_RE.fullmatch(normalized):
+        return None, "invalid_format"
+
+    code_hash = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+    connection_code = db.scalar(
+        select(ConnectionCode).where(ConnectionCode.code_hash == code_hash)
     )
+    if not connection_code:
+        return None, "invalid"
+
+    user = db.get(User, connection_code.user_id)
+    if not user or user.role not in {"teacher", "student"} or not user.web_password_hash:
+        return None, "invalid"
+
+    expires_at = connection_code.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
+    if expires_at <= now:
+        return None, "expired"
+    if expires_at <= now + timedelta(days=365):
+        return None, "invalid"
+    if connection_code.used_at is not None:
+        return None, "invalid"
+
+    existing_user = get_messenger_user(db, platform, external_user_id)
+    if existing_user and existing_user.id != user.id:
+        return None, "identity_already_linked"
+
+    existing_account = db.scalar(
+        select(MessengerAccount).where(
+            MessengerAccount.user_id == user.id,
+            MessengerAccount.platform == platform.value,
+        )
+    )
+    if existing_account and existing_account.external_user_id != str(external_user_id):
+        return None, "account_already_linked"
+
+    if platform == MessengerPlatform.TELEGRAM:
+        try:
+            telegram_id = int(external_user_id)
+        except (TypeError, ValueError):
+            return None, "invalid"
+        legacy_owner = db.scalar(select(User).where(User.telegram_id == telegram_id))
+        if legacy_owner and legacy_owner.id != user.id:
+            return None, "identity_already_linked"
+        if user.telegram_id and user.telegram_id != telegram_id:
+            return None, "account_already_linked"
+        user.telegram_id = telegram_id
+
+    try:
+        sync_messenger_account(
+            db, user.id, platform, external_user_id, external_chat_id, username
+        )
+        db.commit()
+        db.refresh(user)
+    except (IntegrityError, MessengerAccountConflict):
+        db.rollback()
+        return None, "identity_already_linked"
+    return user, "ok"
+
+
+def delete_user_messenger_accounts(db: Session, user_id: int) -> None:
+    db.execute(delete(MessengerAccount).where(MessengerAccount.user_id == user_id))
