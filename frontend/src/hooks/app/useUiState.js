@@ -1,0 +1,10 @@
+import { useRef, useState } from "react";
+
+export function useUiState() {
+  const [page, setPage] = useState("graph");
+  const [error, setError] = useState("");
+  const [toast, setToast] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [modal, setModal] = useState(null);
+  return { page, setPage, error, setError, toast, setToast, busy, setBusy, modal, setModal };
+}
