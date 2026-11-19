@@ -11,7 +11,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from starlette.background import BackgroundTask
 
@@ -169,10 +169,14 @@ def data_stats(_: Admin):
             "teacher_panels": db.query(TeacherPanel).count(),
             "teacher_sessions": db.query(TeacherSession).count(),
             "panel_sessions": db.query(PanelSession).count(),
-            "connection_codes": db.query(ConnectionCode).join(User, ConnectionCode.user_id == User.id).filter(
+            "connection_codes": db.query(func.count(func.distinct(ConnectionCode.user_id))).join(
+                User, ConnectionCode.user_id == User.id
+            ).filter(
+                User.role.in_(("teacher", "student")),
+                User.web_password_hash.is_not(None),
                 ConnectionCode.used_at.is_(None),
                 ConnectionCode.expires_at > datetime.now(timezone.utc),
-            ).count(),
+            ).scalar(),
             "media_files": sum(media_counts.values()),
             **{f"media_{key}": value for key, value in media_counts.items()},
         }
