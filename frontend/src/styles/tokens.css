@@ -1,0 +1,109 @@
+/* Canonical design tokens: one light palette and one dark override. */
+:root {
+  font-family: Onest, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #29223f;
+  background: #f7f6fb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  color-scheme: light;
+
+  /* Brand and semantic colors. */
+  --purple: #6046a5;
+  --purple2: #785fc0;
+  --red: #df5967;
+  --ink: #514d5a;
+  --muted: #898493;
+  --line: #e6deef;
+  --surface: #faf8fd;
+  --canvas: #f2eff7;
+  --lavender-soft: #f1edfa;
+  --purple-glow: rgba(96, 70, 165, .16);
+  --red-glow: rgba(231, 37, 48, .20);
+  --red-soft: #fff0f1;
+  --red-border: #f2d6da;
+
+  /* Shared component and control tokens. */
+  --ui-radius-sm: 9px;
+  --ui-radius-md: 12px;
+  --ui-radius-lg: 16px;
+  --ui-border: #e5deed;
+  --ui-border-strong: #cfc2e2;
+  --ui-control-bg: #f1edf8;
+  --ui-control-hover: #eae3f4;
+  --ui-control-text: #514b61;
+  --ui-shadow-soft: 0 1px 3px rgba(38, 29, 58, .055);
+  --ui-shadow-card: 0 5px 18px rgba(38, 29, 58, .045);
+  --ui-focus: 0 0 0 3px rgba(120, 95, 192, .17);
+  --button-bg: #f5f3f8;
+  --button-bg-hover: #eee9f6;
+  --button-border: #e6e1ed;
+  --button-border-hover: #cfc3e2;
+  --button-text: #514b61;
+  --button-primary: linear-gradient(110deg, #6046a5, #785fc0);
+  --button-primary-hover: linear-gradient(110deg, #50388f, #694eaf);
+  --button-danger-bg: #fff0f1;
+  --button-danger-border: #f2d6da;
+  --button-danger-text: #b33f50;
+  --ui-shadow-raised: 0 9px 26px rgba(38, 29, 58, .10);
+
+  /* Role colors. */
+  --role-student: #c58c2e;
+  --role-student-soft: #fff0cf;
+  --role-student-border: #e9cf98;
+  --role-teacher: #8a65c5;
+  --role-teacher-soft: #eee4fb;
+  --role-teacher-border: #d3c0ed;
+  --role-admin-soft: #e2f0df;
+  --role-admin-border: #c0d9bb;
+}
+
+:root[data-theme="dark-soft"] {
+  color-scheme: dark;
+  color: #e4e8f0;
+  background: #171b25;
+
+  /* Dark palette and semantic colors. */
+  --purple: #9b91c2;
+  --purple2: #897eaf;
+  --red: #e58c98;
+  --ink: #e7e9f0;
+  --muted: #a4adbd;
+  --line: #374254;
+  --surface: #202938;
+  --canvas: #171d28;
+  --lavender-soft: #343047;
+  --purple-glow: rgba(155, 144, 196, .11);
+  --red-soft: #402d37;
+  --red-border: #65404b;
+
+  /* Shared component and control tokens. */
+  --ui-border: #3a4659;
+  --ui-border-strong: #596780;
+  --ui-control-bg: #293344;
+  --ui-control-hover: #343f53;
+  --ui-control-text: #d1d7e3;
+  --ui-shadow-soft: none;
+  --ui-shadow-card: 0 5px 18px rgba(0, 0, 0, .12);
+  --ui-focus: 0 0 0 3px rgba(155, 144, 196, .14);
+  --button-bg: #2b3443;
+  --button-bg-hover: #343e50;
+  --button-border: #3b4658;
+  --button-border-hover: #58647a;
+  --button-text: #d1d7e3;
+  --button-primary: linear-gradient(110deg, #5e567e, #70678f);
+  --button-primary-hover: linear-gradient(110deg, #696087, #7b729a);
+  --button-danger-bg: #402d37;
+  --button-danger-border: #65404b;
+  --button-danger-text: #f0aab3;
+  --ui-shadow-raised: 0 10px 28px rgba(0, 0, 0, .24);
+
+  /* Role colors. */
+  --role-student: #c9aa70;
+  --role-student-soft: #39342e;
+  --role-student-border: #625440;
+  --role-teacher: #aa9bcf;
+  --role-teacher-soft: #35313f;
+  --role-teacher-border: #554b68;
+  --role-admin-soft: #303a32;
+  --role-admin-border: #4c6250;
+}
