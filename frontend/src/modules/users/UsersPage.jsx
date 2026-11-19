@@ -2,6 +2,7 @@ import GraduationCap from "lucide-react/dist/esm/icons/graduation-cap.js";
 import Info from "lucide-react/dist/esm/icons/info.js";
 import Link2 from "lucide-react/dist/esm/icons/link-2.js";
 import Pencil from "lucide-react/dist/esm/icons/pencil.js";
+import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Search from "lucide-react/dist/esm/icons/search.js";
 import Smile from "lucide-react/dist/esm/icons/smile.js";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
