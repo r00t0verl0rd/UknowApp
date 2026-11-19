@@ -5,3 +5,5 @@ export { useDirectoryState } from "./users/useDirectoryState.js";
 export { useUserEditorState } from "./users/useUserEditorState.js";
 export { useUserActionState } from "./users/useUserActionState.js";
 export { useUiState } from "./app/useUiState.js";
+export { usePersonalChatState } from "./personal-chat/usePersonalChatState.js";
+export { useSettingsState } from "./settings/useSettingsState.js";
