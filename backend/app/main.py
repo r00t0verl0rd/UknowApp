@@ -10,8 +10,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api import router
-from .config import ALLOWED_ORIGINS, SEED_DEMO_DATA, TELEGRAM_BOT_TOKEN, TELEGRAM_PROXY_URL
-from .database import SessionLocal, create_tables
+from .core.config import ALLOWED_ORIGINS, SEED_DEMO_DATA, TELEGRAM_BOT_TOKEN, TELEGRAM_PROXY_URL
+from .core.database import SessionLocal, create_tables
 from .models import Assignment, Conversation, User
 from .telegram_transport import create_telegram_bot
 
