@@ -11,7 +11,8 @@ import X from "lucide-react/dist/esm/icons/x.js";
 
 export default function UsersPage({ visibleUsers, search, setSearch, userSort, setUserSort, openCreate, disconnectTelegram, makeCode, userInfo, setUserInfo, openEdit, removeUser }) {
   return (
-    <div className="toolbar user-toolbar">
+    <>
+      <div className="toolbar user-toolbar">
                 <div className="search"><Search/><input placeholder="Поиск по имени" value={search} onChange={e => setSearch(e.target.value)}/></div>
                 <select className="user-sort" aria-label="Сортировка пользователей" value={userSort} onChange={e => setUserSort(e.target.value)}>
                   <option value="name-asc">По имени</option><option value="name-desc">Имя: Я — А</option><option value="teachers">Сначала учителя</option><option value="students">Сначала ученики</option>
