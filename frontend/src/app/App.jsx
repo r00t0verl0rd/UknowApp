@@ -3,6 +3,7 @@ import { useAuthState, useChatState, useDirectoryState, useGraphState, useUiStat
 import Activity from "lucide-react/dist/esm/icons/activity.js";
 import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left.js";
 import Check from "lucide-react/dist/esm/icons/check.js";
+import ChevronRight from "lucide-react/dist/esm/icons/chevron-right.js";
 import GraduationCap from "lucide-react/dist/esm/icons/graduation-cap.js";
 import LogOut from "lucide-react/dist/esm/icons/log-out.js";
 import MessageCircle from "lucide-react/dist/esm/icons/message-circle.js";
