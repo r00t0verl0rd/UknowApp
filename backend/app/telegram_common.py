@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from .event_hub import publish_chat_update
 from .models import Assignment, ConnectionCode, Conversation, Message, User
+from .push_notifications import schedule_push
 
 
 EMAIL_RE = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.I)
@@ -85,6 +86,15 @@ def persist_message(
     db.add(row)
     db.commit()
     db.refresh(row)
+    conversation = db.get(Conversation, conversation_id)
+    if conversation:
+        recipients = [conversation.teacher_id] if sender.role == "student" else [conversation.student_id]
+        schedule_push(
+            db, recipients, "Новое сообщение · UknowApp",
+            (sender.full_name + ": " + (body or "Новое сообщение"))[:240],
+            f"/?openConversation={conversation.id}",
+            include_admin=True,
+        )
     publish_chat_update(conversation_id)
     return row
 
