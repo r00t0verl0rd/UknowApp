@@ -108,7 +108,7 @@ def claim_connection_code(
     telegram_id: int,
 ) -> tuple[Optional[User], str]:
     """Bind Telegram using the participant's persistent panel access code."""
-    normalized = re.sub(r"[\\s-]", "", raw_code).upper()
+    normalized = re.sub(r"[\s-]", "", raw_code).upper()
     if not CONNECTION_CODE_RE.fullmatch(normalized):
         return None, "invalid_format"
 
