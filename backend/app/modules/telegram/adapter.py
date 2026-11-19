@@ -89,7 +89,7 @@ class TelegramAdapter:
             path = self._media_path(message)
             content = path.read_bytes()
             if message.text:
-                kwargs["caption"] = message.text[:1024]
+                kwargs["caption"] = message.text
             try:
                 sent = await self._send_native_media(
                     message, content, kwargs
