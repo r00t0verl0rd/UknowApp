@@ -11,9 +11,14 @@ backend/app/
 │   ├── database.py        # engine, sessions, schema bootstrap and migrations
 │   └── security.py        # sessions, authentication and authorization
 ├── modules/
-│   ├── administration/    # backups, exports and data maintenance
+│   ├── administration/    # admin users, assignments, backups and data maintenance
+│   │   └── routes.py      # /api/admin/*
 │   ├── assignments/       # teacher/student assignment lifecycle
 │   ├── conversations/    # participant conversation queries and serialization
+│   ├── system/            # authentication, health and push subscription routes
+│   │   └── routes.py
+│   ├── panel/             # authenticated panel, messaging, SSE and graph routes
+│   │   └── routes.py
 │   ├── media/             # media feature boundary
 │   ├── messaging/         # conversation access and safe message serialization
 │   ├── notifications/     # Web Push delivery
@@ -23,7 +28,7 @@ backend/app/
 ├── infrastructure/
 │   └── storage/
 │       └── media.py       # local persistent media adapter
-├── api.py                 # HTTP router composition / compatibility boundary
+├── api.py                 # includes feature routers; keeps the public API entry point
 ├── models.py              # SQLAlchemy entities
 ├── schemas.py              # request/response validation
 ├── event_hub.py            # in-process SSE event distribution
@@ -38,6 +43,8 @@ backend/app/
 - `main.py` is the composition root: it creates the application and connects routers, lifecycle hooks and integrations.
 - `api.py` currently preserves the established HTTP endpoint contract. User, assignment, conversation, private-chat and messaging logic has been moved into domain services. Route handlers are intentionally kept behind this boundary for now so the migration does not alter endpoint behavior in one large step.
 
+`api.py` now only composes three feature routers: `system`, `administration` and `panel`. The endpoint paths, dependencies, response shapes and business handlers remain unchanged. Each router owns its endpoint declarations and local dependencies; new domain endpoints should be added to the matching module rather than the composition root.
+
 The old top-level `config.py`, `database.py`, `security.py`, Telegram files, `media_storage.py`, `push_notifications.py` and `admin_data.py` are compatibility re-exports. New code should import from `core`, `modules` or `infrastructure`; once all internal imports are migrated, these shims can be removed.
 
 ## Frontend
@@ -47,10 +54,15 @@ frontend/src/
 ├── app/
 │   └── App.jsx             # application composition and top-level orchestration
 ├── modules/
-│   ├── administration/     # administration feature exports
+│   ├── administration/     # maintenance page and feature exports
+│   │   └── AdditionalPage.jsx
+│   ├── authentication/     # login page and authentication feature exports
+│   │   └── LoginPage.jsx
 │   ├── authentication/     # authentication feature exports
 │   ├── conversations/      # participant chat UI
-│   ├── graph/              # graph feature exports
+│   │   └── ChatsPage.jsx
+│   ├── graph/              # structure/graph page
+│   │   └── StructurePage.jsx
 │   ├── notifications/      # push notification client
 │   ├── personal-chat/      # private chat state
 │   ├── settings/           # appearance preferences
@@ -75,7 +87,8 @@ frontend/src/
 ### Frontend boundaries
 
 - `main.jsx` mounts the app and loads global styles.
-- `app/App.jsx` coordinates authentication state, feature state and page-level UI.
+- `app/App.jsx` is the application composition root: it coordinates authentication, cross-feature state and actions, then renders the selected feature page.
+- Page markup lives with its feature: authentication, structure, users, conversations and administration each have an independent page component. Feature pages receive explicit state and action props; they do not import the application root.
 - `modules/<feature>` is the public boundary for a feature's UI and behavior.
 - `hooks/<feature>` owns state and reusable React behavior for that feature.
 - `services` owns communication with backend services.
@@ -91,6 +104,6 @@ The former `App.jsx`, `useAppState.js`, `MessageBubble.jsx`, `pushNotifications.
 4. Frontend feature modules must not import from the application root. Shared behavior belongs in hooks or services.
 5. Keep API paths and response shapes stable unless a separate product change explicitly requires a contract migration.
 
-## Next extraction boundary
+## Remaining extraction boundary
 
-The API router and the top-level React application are still composition-heavy. The next safe step is to split route declarations into domain routers and extract page-level UI from `app/App.jsx`, while keeping `api.py` and `App.jsx` as thin composition layers. This is deliberately separate from moving core services: it can be done feature-by-feature with focused tests and without changing user-visible behavior.
+`app/App.jsx` still owns cross-feature orchestration, API refresh/SSE lifecycle, and modal workflows. Keep that orchestration there only while it coordinates multiple features; new page markup and domain-specific actions should live in the corresponding feature module. The next optional step is to move modal workflows into feature-owned dialog components and split the remaining orchestration hooks without changing API contracts or user-visible behavior.
