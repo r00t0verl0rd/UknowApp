@@ -1,0 +1,1835 @@
+*{box-sizing:border-box}
+body{margin:0;min-width:320px}
+button,input,select{font:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+.login-screen{display:grid;place-items:center;}
+
+.login-logo{object-fit:contain;display:block;margin:0 auto 22px}
+.login-card h1{text-align:center;margin:7px 0}
+.login-card>.eyebrow{text-align:center}
+.sidebar{position:fixed;inset:0 auto 0 0;display:flex;flex-direction:column;z-index:2}
+.brand{display:flex;align-items:center;font-weight:800;}
+
+.school-label,.eyebrow{font-weight:800;color:#a49bb4}
+.school-label{padding:0 11px 12px}
+.sidebar nav{display:grid;gap:6px}
+.sidebar nav button,.logout{display:flex;align-items:center;gap:12px;border:0;background:transparent;text-align:left;font-weight:700}
+.sidebar nav button svg,.logout svg{height:18px}
+
+.sidebar nav button i{margin-left:auto;font-style:normal;font-size:11px;background:#f2eff6;padding:3px 7px;border-radius:20px}
+.logout{margin-top:12px;width:100%}
+.shell, .main{min-height:100vh}
+.topbar{height:70px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
+.topbar>div{display:flex;align-items:center;gap:9px;color:#a39bad;font-size:12px}
+.topbar svg{width:15px}
+.topbar b{color:var(--ink)}
+.content{margin:auto;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:800;}
+.btn svg{width:16px;height:16px}
+
+.btn.small{padding:8px 10px;}
+
+.user-list, .chat-layout {border:1px solid var(--line);padding:22px}
+.legend{display:flex;align-items:center;gap:7px;}
+.legend span{width:8px;height:8px;border-radius:50%;margin-left:9px}
+
+.brand img, .root-node img{object-fit:contain}
+.root-node b, .root-node small, .chat-head b, .chat-head small{display:block}
+
+.teacher-grid{display:grid;}
+.teacher-branch{position:relative;}
+.person-card{display:flex;align-items:center;justify-content:space-between;}
+
+.person-main{display:flex;align-items:center;min-width:0}
+.avatar{display:grid;place-items:center;flex:none;background:#f0eafa;color:var(--purple)}
+
+.teacher-avatar{background:#eee8f8;color:var(--purple)}
+.student-avatar,.avatar.student{color:var(--red)}
+.person-info b,.person-info small:not(.student-additional-info){display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.person-info small{color:var(--muted);margin-top:4px}
+.student-additional-info{display:block;max-width:100%;overflow-wrap:anywhere;white-space:normal!important;line-height:1.35}
+.person-actions{display:flex;flex:none}
+.icon-btn {display:grid;place-items:center}
+.person-actions button:hover,.icon-btn:hover{color:var(--purple)}
+.person-actions svg,.icon-btn svg{height:15px}
+.person-actions .danger-icon:hover,.danger-icon:hover{color:var(--red)}
+
+.empty-students{text-align:center}
+.add-student{font-weight:800;display:flex;align-items:center;}
+.add-student svg{width:14px}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:40px 15px;text-align:center;font-size:12px}
+.empty-state>svg{width:30px;height:30px;color:var(--purple)}
+
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;font-size:11px}
+.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);padding:0 10px;width:min(360px,100%);height:40px}
+.search svg{width:16px;}
+.search input{border:0;outline:0;width:100%;font-size:11px}
+
+.user-row:last-child{border:0}
+.user-row .person-info{flex:1}
+.role-tag{font-weight:800;}
+
+.chat-item.selected,.chat-item:hover{background:#f7f4fb}
+
+.chat-item small{font-size:10px;}
+
+.person-info, .chat-detail{min-width:0}
+
+.messages{align-content:start;}
+
+.message.teacher{justify-self:end;}
+
+.message b small{font-weight:500;color:var(--muted);margin-left:6px}
+.message p{font-size:11px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0}
+.main footer{padding:0 34px 25px;font-size:10px}
+.main footer span{padding:0 4px}
+.stack{display:grid;gap:14px}
+.stack label{display:grid;gap:7px;font-weight:700}
+.stack input,.stack select{border:1px solid var(--line);padding:0 11px;outline:0}
+.stack input:focus,.stack select:focus{box-shadow:0 0 0 3px #7856bd16}
+.alert{border:1px solid #f6d4d8;padding:11px 13px;font-size:11px}
+.alert-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.alert-row button{border:0;background:none;color:inherit}
+.alert-row svg{width:15px}
+.overlay{position:fixed;inset:0;backdrop-filter:blur(5px);display:grid;place-items:center;padding:20px;z-index:5}
+.modal{width:min(440px,100%);padding:24px;}
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px}
+.modal-head h2{font-size:19px;margin:6px 0 0}
+.modal-actions{display:flex;margin-top:4px}
+.hint{font-size:10px;line-height:1.5;margin:0}
+.invite-code{font:800 28px ui-monospace,monospace;letter-spacing:4px;text-align:center;border:1px dashed #cfc0e3;padding:18px;border-radius:12px;margin-bottom:13px}
+.toast{position:fixed;right:24px;bottom:24px;display:flex;align-items:center;gap:8px;padding:12px 16px;color:white;font-size:11px;z-index:8;}
+.toast svg{width:16px;}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{
+to{transform:rotate(360deg)}
+}
+.unassigned{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
+.unassigned-title { margin: 0 0 12px; color: var(--ink);}
+.unassigned-title { font-size: 14px;}
+.unassigned-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:9px}
+.unassigned-grid .person-card{flex-wrap:wrap;}
+/* Readability and layout refinement */
+.sidebar { width: 280px; padding: 28px 20px;}
+.main { margin-left: 280px;}
+.brand { gap: 13px; padding: 0 9px 38px; font-size: 27px;}
+.brand img { width: 60px; height: 60px;}
+.sidebar nav button, .logout { font-size: 15px; padding: 14px;}
+.sidebar nav button svg, .logout svg { width: 20px; height: 20px;}
+.login-card { padding: 42px;}
+.login-logo { width: 150px; height: 150px; margin-bottom: 25px;}
+.login-card h1 { font-size: 36px;}
+.stack label { font-size: 13px;}
+.stack input, .stack select { height: 46px; font-size: 14px;}
+.topbar { padding: 0 40px;}
+.topbar > div { font-size: 14px;}
+.content { max-width: 1680px; padding: 38px 42px;}
+.btn { font-size: 13px; padding: 12px 16px;}
+.btn.small, .legend, .empty-students, .add-student { font-size: 12px;}
+.eyebrow, .school-label { font-size: 11px; letter-spacing: 1.6px;}
+/* Statistics are intentionally compact to give the hierarchy more space. */
+/* The hierarchy graph is the main workspace. */
+
+.teacher-grid {  gap: 26px;}
+
+.person-main { gap: 12px;}
+.avatar { width: 44px; height: 44px;}
+.avatar svg { width: 21px; height: 21px;}
+.person-info b { font-size: 14px;}
+.person-info small { font-size: 11px;}
+.person-actions svg, .icon-btn svg { width: 17px; height: 17px;}
+
+.toolbar, .user-row .person-info b { font-size: 13px;}
+.user-row .person-info small, .role-tag { font-size: 11px;}
+.message b { font-size: 13px;}
+.chat-item small, .message p { font-size: 12px;}
+/* Connected Telegram accounts are highlighted; the disconnected label stays neutral. */
+/* User list role colors: students green, teachers purple. */
+.user-row .avatar.student { background: #e8f7ee; color: #16834a;}
+.user-row .avatar.teacher { background: #eee8f8; color: var(--purple);}
+/* UknowApp brand theme: school purple + signal red, with restrained neon details. */
+.login-screen { background: radial-gradient(ellipse at 12% 14%, rgba(194,153,255,.23), transparent 35%), radial-gradient(ellipse at 88% 82%, rgba(231,37,48,.10), transparent 32%), linear-gradient(135deg, #f8f6fc 0%, #f2eef9 52%, #faf6f7 100%);}
+.login-card { background: rgba(255,255,255,.94); border: 1px solid #e7def4; border-radius: 24px; box-shadow: 0 22px 70px rgba(55,35,95,.12), 0 0 28px rgba(194,153,255,.12);}
+.login-logo { filter: drop-shadow(0 5px 14px rgba(87,62,153,.16));}
+.brand { color: var(--purple);}
+.brand span span { color: var(--red);}
+.school-label, .eyebrow { color: #8977a8;}
+.sidebar { background: #fff; border-right: 1px solid var(--line); box-shadow: 8px 0 28px rgba(47,31,84,.035);}
+.sidebar nav button { color: #706982; transition: background .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease;}
+.sidebar nav button:hover { background: #f6f1fc; color: var(--purple);}
+.sidebar nav button.active { color: #fff; background: linear-gradient(105deg, #573e99, #7856bd); box-shadow: 0 5px 18px rgba(87,62,153,.24), 0 0 16px rgba(194,153,255,.20);}
+.sidebar nav button.active i { color: #fff; background: rgba(255,255,255,.18);}
+.topbar { background: rgba(255,255,255,.94); border-bottom-color: var(--line); box-shadow: 0 4px 18px rgba(47,31,84,.025);}
+.topbar > div { color: #9a91aa;}
+.topbar b, .content { color: var(--ink);}
+.btn { background: #fff; color: var(--ink); border: 1px solid #e5deef; border-radius: 11px; transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease;}
+.btn:hover { transform: translateY(-1px); background: #faf7ff; border-color: #cdb9eb; box-shadow: 0 5px 16px rgba(87,62,153,.10);}
+.btn:active { transform: translateY(0);}
+
+.btn.primary:hover { background: linear-gradient(105deg, #493281, #6949aa); box-shadow: 0 8px 22px rgba(87,62,153,.30), 0 0 20px rgba(194,153,255,.24);}
+.btn.ghost { background: #f7f4fb;}
+.btn.outline { color: var(--purple); border-color: #d8c9ed; background: #faf7ff;}
+.btn.outline:hover { background: #f0e9fb;}
+.user-list, .chat-layout { background: #fff;}
+.graph-panel { border-radius: 20px;}
+.legend, .toolbar{ color: var(--muted);}
+
+.person-card:hover { border-color: #cdb9eb; transform: translateY(-1px);}
+
+.teacher-card:hover { box-shadow: 0 0 18px rgba(194,153,255,.23);}
+
+.student-card:hover { box-shadow: 0 0 16px rgba(228,161,47,.17);}
+
+.unassigned { border-top-color: #eee2c9;}
+
+.search { background: #fff; border-color: #e5deef; border-radius: 11px;}
+.search:focus-within { border-color: #a98bd8; box-shadow: 0 0 0 3px rgba(118,84,189,.12), 0 0 14px rgba(194,153,255,.14);}
+.search svg { color: #998eaa;}
+.search input { background: transparent; color: var(--ink);}
+.search input::placeholder { color: #aaa3b4;}
+.user-row .avatar.student-avatar { background: #fff0ce; color: #a76d16;}
+.role-tag { border-radius: 999px; padding: 6px 10px;}
+.user-row .avatar.teacher-avatar, .role-tag.teacher{ background: #eee6fb; color: #6847a8;}
+.person-actions .danger-icon:hover { background: #fff0f1; color: var(--red); box-shadow: 0 0 10px var(--red-glow);}
+.chat-layout { border-radius: 18px;}
+.chat-list { border-right-color: var(--line);}
+.chat-head { border-bottom-color: var(--line);}
+.message.teacher { border: 1px solid #e3d6f5; border-radius: 12px 12px 4px 12px;}
+.message p { color: #393149;}
+.stack label { color: #6d657d;}
+.stack input, .stack select { background: #fff; color: var(--ink);}
+.modal { background: #fff; border-radius: 19px;}
+.overlay { background: rgba(35,25,55,.62);}
+.invite-code { color: var(--purple); background: #f3edfc; border-color: #cdb9eb; box-shadow: inset 0 0 18px rgba(194,153,255,.12);}
+.hint { color: var(--muted);}
+.toast svg { color: #f4a4aa;}
+.empty-state { color: var(--muted);}
+.empty-state > svg { color: var(--purple2);}
+.empty-state b { color: var(--ink);}
+.main footer { color: #a49caf;}
+.main footer span { color: var(--red);}
+input:focus-visible, select:focus-visible { outline-offset: 2px;}
+/* Telegram disconnect action stays clear but visually secondary to delete. */
+.btn.disconnect { color: #a34b43; border-color: #f0d2cd; background: #fff8f6;}
+.btn.disconnect:hover { color: #923b35; border-color: #e7b6ad; background: #fff0ed; box-shadow: 0 0 13px rgba(231, 37, 48, .10);}
+.chat-media-image { display: block; max-width: min(100%, 360px); max-height: 360px; object-fit: contain; border-radius: 10px; margin-top: 9px;}
+.chat-media-video { display: block; width: min(100%, 340px); max-height: 420px; background: #17131f; border-radius: 12px; margin-top: 9px;}
+.chat-media-download { display: inline-block; margin-top: 9px; color: var(--purple); font-weight: 650; overflow-wrap: anywhere;}
+.chat-media-status { display: block; margin-top: 8px; color: #8a6b3c;}
+/* Light decorative background for the school graph. No connector lines are drawn. */
+
+/* Graph polish: retain the light UknowApp palette, remove visual clutter. */
+/* Fine monochrome dithering hides visible color steps in large graph gradients. */
+
+
+.graph-panel > * { position: relative; z-index: 1;}
+.graph-panel { position: relative; overflow: hidden; padding: 27px; border: 1px solid #e8e0f2; background: #faf8fd; box-shadow: 0 12px 34px rgba(66, 45, 105, .055), inset 0 1px rgba(255,255,255,.95);}
+.graph-panel .legend { padding: 8px 11px; border: 1px solid rgba(226, 218, 239, .9); border-radius: 999px; background: rgba(255,255,255,.76);}
+.graph-panel .legend span { width: 9px; height: 9px;}
+.graph-panel .root-node { position: relative; overflow: hidden; border: 1px solid #ded2f0; border-radius: 17px; background: linear-gradient(112deg, rgba(243,236,255,.97), rgba(255,255,255,.98) 62%, rgba(255,247,246,.96)); box-shadow: 0 8px 22px rgba(86, 61, 139, .09), inset 0 1px 0 rgba(255,255,255,.95);}
+.graph-panel .root-node:before { content: ""; position: absolute; background: linear-gradient(180deg, #8b6bc7, #d1b4ee 58%, #e8a5a8);}
+.graph-panel .root-node img { padding: 3px; border-radius: 12px; background: rgba(255,255,255,.8); box-shadow: 0 3px 10px rgba(87,62,153,.09);}
+.graph-panel .root-node b { letter-spacing: -.2px;}
+.graph-panel .root-node small { color: #89809b;}
+.graph-panel .teacher-grid { align-items: stretch; gap: 17px;}
+.graph-panel .teacher-branch { min-width: 0; padding: 13px; border: 1px solid #e9e2f2; border-radius: 17px; background: #f7f4fa; box-shadow: 0 5px 18px rgba(67,47,105,.045), inset 0 1px 0 rgba(255,255,255,.95); transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;}
+.graph-panel .teacher-branch:hover { border-color: #d8c9ed; box-shadow: 0 9px 24px rgba(87,62,153,.085); transform: translateY(-1px);}
+.graph-panel .teacher-card { padding: 12px 13px; border: 1px solid #e3d8f1; border-radius: 13px; background: linear-gradient(110deg, #f0e9fb, #fff 78%); box-shadow: 0 3px 10px rgba(87,62,153,.045);}
+.graph-panel .teacher-card .avatar { width: 42px; height: 42px; border-radius: 12px; background: #e7dcf7; color: #62459b;}
+.graph-panel .teacher-card .person-info b, .graph-panel .student-card .person-info b { font-size: 13px;}
+.graph-panel .teacher-card .person-info small, .graph-panel .student-card .person-info small { margin-top: 5px; font-size: 10px;}
+.graph-panel .student-list { gap: 8px; margin: 11px 0 0; padding: 0; border: 0;}
+.graph-panel .student-card { min-height: 61px; padding: 9px 11px; border: 1px solid #f0e5ce; border-radius: 12px; background: linear-gradient(105deg, #fff8e9, #fff 78%); box-shadow: 0 2px 8px rgba(155,113,43,.035);}
+.graph-panel .student-card .avatar { border-radius: 11px; background: #fff0ce; color: #a76d16;}
+.graph-panel .empty-students { margin-top: 11px; padding: 17px 12px; border: 1px dashed #e8dcbf; border-radius: 12px; background: rgba(255,251,241,.82); color: #9b896a;}
+.graph-panel .add-student { display: inline-flex; align-items: center; justify-content: center; align-self: flex-end; gap: 6px; min-height: 30px; margin: 0 0 8px auto; padding: 5px 9px; border: 1px solid #e5dfeb; border-radius: 8px; background: rgba(255,255,255,.76); color: #78698d; font-size: 11px; font-weight: 700; line-height: 1; transition: background .18s ease, border-color .18s ease, transform .18s ease;}
+.graph-panel .add-student:hover { border-color: #d2c6df; background: #f5f1f8; transform: translateY(-1px);}
+.graph-panel .unassigned { margin-top: 23px; padding-top: 19px; border-top: 1px solid #e9e1f1;}
+.graph-panel .unassigned-title { margin-bottom: 11px;}
+/* Mobile layout: prevent horizontal overflow and turn dense rows into touch-friendly cards. */
+html, body, #root { min-height: 100%;}
+.shell, .main, .content { min-width: 0; max-width: 100%;}
+img, video, audio { max-width: 100%;}
+/* Mobile browsers may render buttons with a transparent native appearance.
+   Set explicit surfaces so controls keep the same soft-grey treatment as desktop. */
+/* Final mobile control surfaces: placed after every theme rule. */
+/* Preserve selected/variant states against the general mobile button rule. */
+/* Touch devices: give every interactive control a visible surface.
+   Use pointer capability as well as viewport width because mobile browsers
+   can report a wider CSS viewport when desktop-site mode is enabled. */
+/* Teacher/admin shared inbox */
+.topbar-user { margin-left: 12px; color: var(--purple); font-weight: 700; font-size: 11px;}
+.chat-layout { display: grid; grid-template-columns: minmax(250px, 330px) minmax(0, 1fr); gap: 0; padding: 0; overflow: hidden;}
+.chat-list { border-right: 1px solid var(--line); align-content: start; gap: 7px; max-height: 75vh; padding: 14px;}
+.chat-item { width: 100%; display: grid; gap: 6px; text-align: left; padding: 14px; background: #faf9fc; color: var(--ink);}
+.chat-item:hover { background: #f5f1fa;}
+.chat-item.selected { background: #f0ebf9; color: var(--purple);}
+.chat-item b { font-size: 13px;}
+.chat-item small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.chat-item span { color: #a49bad; font-size: 10px;}
+.chat-detail { min-width: 0;}
+.chat-head { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #fff; border-bottom: 1px solid var(--line); padding: 17px 20px; z-index: 1;}
+.chat-head b, .chat-head small { display: block;}
+.chat-head b { font-size: 15px;}
+.chat-head small { color: var(--muted); font-size: 11px; margin-top: 4px;}
+.messages { flex: 1; min-height: 350px; max-height: 65vh; overflow: auto; display: flex; flex-direction: column; gap: 12px; padding: 18px 20px; background: #fcfbfd;}
+.message { max-width: min(78%, 720px); padding: 12px 14px; background: #fff; border: 1px solid var(--line); box-shadow: 0 2px 8px rgba(41,34,63,.035);}
+.message.student { align-self: flex-start; border-top-left-radius: 5px;}
+.message.teacher { align-self: flex-end; background: #f2eef9; border-color: #e4daf2; border-top-right-radius: 5px;}
+.message.admin { align-self: center; max-width: 90%; background: #fff8e8; border-color: #f0dfb7;}
+.chat-composer { border-top: 1px solid var(--line); padding: 14px 18px; display: grid; gap: 10px; background: #fff;}
+.chat-composer textarea { display: block; width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; overflow-x: hidden; overflow-y: auto; border: 1px solid var(--line); border-radius: 12px; padding: 12px; outline: none; color: var(--ink); background: #fcfbfd;}
+.chat-composer textarea:focus { border-color: #b6a3d7; box-shadow: 0 0 0 3px #59439a12;}
+.composer-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px;}
+.composer-footer small { color: var(--muted); font-size: 10px; line-height: 1.4;}
+
+.chat-composer .composer-footer { display: grid;}
+.composer-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px;}
+.attach-control { display: inline-flex; align-items: center; width: fit-content; border: 1px solid var(--line); color: var(--purple); background: #f8f5fc; font-weight: 800; cursor: pointer;}
+.attach-control input { display: none;}
+.selected-file { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; color: #625b70; background: #f2eff6; border-radius: 8px; padding: 7px 9px; font-size: 11px; overflow-wrap: anywhere;}
+.selected-file button { display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 6px; background: transparent; padding: 3px; color: #766d84;}
+.composer-send { display: inline-flex; align-items: center; justify-content: center;}
+.message-time { display: block; font-weight: 500; margin-top: 3px;}
+.teacher-readonly-graph { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 24px;}
+.teacher-graph-root { max-width: 960px; margin: 20px auto;}
+.teacher-graph-card { display: flex; align-items: center; gap: 13px; min-width: 0; padding: 16px; border: 1px solid #ded2ef; background: linear-gradient(110deg,#f8f5fc,#fff); border-radius: 14px;}
+.teacher-graph-card .avatar { flex: 0 0 44px; width: 44px; height: 44px;}
+.teacher-graph-card b, .teacher-graph-card small { display: block;}
+.teacher-graph-card b { font-size: 14px;}
+.teacher-graph-card small { margin-top: 4px; color: var(--muted); font-size: 11px;}
+.teacher-graph-card .readonly-tag { margin-left: auto; flex: none; border-radius: 20px; padding: 6px 9px; color: #75658f; background: #f1edf7; font-size: 10px; font-weight: 800;}
+.teacher-graph-connector { width: 1px; height: 26px; margin: 0 auto; background: #d8cde7;}
+.teacher-graph-student-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px;}
+.teacher-graph-card.student { border-color: #f0e5ce; background: linear-gradient(110deg,#fff8e9,#fff);}
+.chat-head-tools { display: flex; align-items: center; justify-content: flex-end; gap: 8px;}
+.chat-head-tools select { max-width: 155px; min-width: 0; border: 1px solid var(--line); border-radius: 9px; padding: 7px 9px; background: #faf9fc; color: var(--ink); font-size: 10px;}
+.message-delivery { display: grid; gap: 3px; margin-top: 7px; font-size: 9px; line-height: 1.4;}
+.message-delivery-heading { color: #299b62; font-weight: 700;}
+.message-delivery-error { min-width: 0; overflow-wrap: anywhere;}
+.message-delivery-name { font-weight: 700; color: #8b8496;}
+.message-delivery-dash, .message-delivery-reason { color: #8b8496;}
+/* Graph-level participant action, placed after the relationship map. */
+/* Friendly conversation search and filter controls */
+.chat-search-control { min-width: 0; height: 42px; display: flex; align-items: center; gap: 9px; padding: 0 11px; border: 1px solid #e8e2f0; border-radius: 12px; background: #fbfaff; color: #9186a5; transition: border-color .18s, box-shadow .18s, background .18s;}
+.chat-search-control:focus-within { border-color: #b6a3d7; background: #fff; box-shadow: 0 0 0 3px #59439a12;}
+.chat-search-control > svg { flex: 0 0 auto; color: #8877a7;}
+.chat-search-control input { width: 100%; min-width: 0; height: 100%; padding: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 12px;}
+.chat-search-control input::placeholder { color: #aaa2b5;}
+.chat-search-control button { flex: 0 0 24px; width: 24px; height: 24px; display: grid; place-items: center; border: 0; border-radius: 7px; background: #f0ebf7; color: #75658f;}
+.chat-filter-segment { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr);}
+.chat-filter-segment button { min-width: 0; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; color: #81798f; font-weight: 750; transition: background .18s, color .18s, box-shadow .18s;}
+.chat-filter-segment button:hover { color: var(--purple); background: #fff9;}
+.chat-filter-segment button svg { flex: 0 0 auto;}
+.chat-filter-segment button span { min-width: 18px; padding: 2px 5px; border-radius: 20px; background: #eee9f5; color: #74658e; font-size: 9px; line-height: 1.2; text-align: center;}
+.chat-filter-segment button.active span { background: #eee7f8; color: var(--purple);}
+.panel-credentials-panel { display: flex; flex-direction: column; width: 100%; min-width: 0; box-sizing: border-box; padding: 4px 14px; border: 1px solid #e9e4ef; border-radius: 12px; background: #f8f7fb;}
+.panel-credential-row { display: flex; flex-direction: column; align-items: stretch; gap: 7px; min-width: 0; padding: 10px 0;}
+.panel-credential-row + .panel-credential-row { border-top: 1px solid var(--line);}
+.panel-credential-row > span, .panel-credential-row > label { display: block; min-width: 0; margin: 0; color: #817b8d; font-size: 11px; font-weight: 650; line-height: 1.25; letter-spacing: .01em;}
+.panel-login-edit-row > input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 36px; margin: 0; padding: 7px 10px; border: 1px solid #e8e3ef; border-radius: 8px; background: #fff; color: var(--ink); font-size: 12px; font-weight: 550; text-align: left; box-shadow: none;}
+.panel-login-edit-row > input:focus { border-color: #c8b8e3; background: #fff; outline: 2px solid rgba(133, 104, 184, .10); outline-offset: 1px;}
+.panel-access-value { display: flex; align-items: center; justify-content: space-between; gap: 10px; box-sizing: border-box; width: 100%; min-width: 0; min-height: 38px; padding: 3px 5px 3px 10px; border: 1px solid #e8e3ef; border-radius: 8px; background: #fff;}
+.panel-access-value b { min-width: 0; color: #75629a; font: 800 13px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 1.8px; white-space: nowrap;}
+.panel-access-value .password-code-refresh { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 6px; min-height: 30px; padding: 5px 9px; border-radius: 7px; font-size: 10px; font-weight: 650; white-space: nowrap;}
+.panel-access-value .password-code-refresh svg { width: 11px; height: 11px;}
+.password-info { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.4;}
+.credential-modal { display: flex; flex-direction: column; box-sizing: border-box; width: min(448px,100%); padding: 24px; gap: 14px; border-radius: 18px;}
+.credential-modal > * { flex: 0 0 auto; min-width: 0;}
+.credential-modal .modal-head { align-items: flex-start; width: 100%; box-sizing: border-box; margin: 0 0 2px;}
+.credential-modal .modal-head > div { min-width: 0;}
+.credential-modal .modal-head .eyebrow { max-width: 100%; color: var(--purple); font-size: 9px; font-weight: 800; letter-spacing: .11em; line-height: 1.35; overflow-wrap: anywhere;}
+.credential-modal .modal-head h2 { margin-top: 6px; line-height: 1.2; overflow-wrap: anywhere;}
+.credential-field { display: flex; align-items: center; box-sizing: border-box; width: 100%; min-height: 58px; gap: 12px; min-width: 0; padding: 10px 14px; border: 1px solid var(--ui-border); border-radius: 13px; background: var(--surface); box-shadow: 0 2px 8px rgba(50, 38, 75, .035);}
+.credential-field-label { flex: 0 0 auto; color: var(--muted); font-size: 11px; font-weight: 750; line-height: 1.2; white-space: nowrap;}
+.credential-field-value { display: flex; flex: 1 1 auto; align-items: center; justify-content: flex-end; gap: 10px; min-width: 0;}
+.credential-field-value b { flex: 1 1 auto; min-width: 0; color: var(--ink); font-size: 15px; font-weight: 750; text-align: right; overflow-wrap: anywhere;}
+.credential-field-value .icon-btn { flex: 0 0 34px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px;}
+.credential-field-code { border-color: #ded1ef; background: linear-gradient(115deg, #f7f3fc 0%, #f1ebf9 100%);}
+.credential-field-code .credential-field-value b { color: #7656a5; font: 800 20px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 1.5px; white-space: nowrap;}
+.credential-actions { display: flex; justify-content: center; margin-top: 2px;}
+.credential-actions .btn { min-width: 0; min-height: 42px; margin-inline: auto; white-space: nowrap; border-radius: 10px;}
+.credential-actions .btn.primary { flex: 0 1 250px;}
+:root[data-theme="dark-soft"] .credential-field { background: #252d3b; border-color: #394457; box-shadow: none;}
+:root[data-theme="dark-soft"] .credential-field-code { background: linear-gradient(115deg, #302d42 0%, #2b2d3e 100%); border-color: #4b4662;}
+:root[data-theme="dark-soft"] .credential-field-code .credential-field-value b { color: #c9c0ef;}
+/* Personal display preferences: timezone selector and soft dark theme. */
+.topbar-actions { display: flex; align-items: center; gap: 8px;}
+.theme-toggle { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 10px; background: #faf9fc; color: var(--purple); transition: background .18s, border-color .18s, transform .18s;}
+.theme-toggle:hover { background: #f0ebf9; border-color: #dcd2ed; transform: translateY(-1px);}
+.theme-toggle svg { width: 17px; height: 17px;}
+/* Keep desktop theme and refresh controls visually consistent with the compact touch controls. */
+.topbar-actions > .theme-toggle:hover, .topbar-actions > .icon-btn:hover { background: #eae4f4; border-color: #d8c9ed; color: #573e99; box-shadow: 0 3px 8px rgba(87, 62, 153, .10);}
+/* Desktop actions stay in the sidebar footer / top bar. */
+.sidebar-bottom { margin-top: auto;}
+.sidebar-bottom > .desktop-logout { display: flex;}
+.sidebar-bottom > .desktop-admin-extra { display: none;}
+.mobile-quick-actions { display: none;}
+.login-card, .user-row, .user-actions{ position: relative;}
+.login-theme-toggle { position: absolute; top: 15px; right: 15px;}
+/* A calm, low-contrast dark palette. It is activated by the theme button and
+   intentionally avoids pure black and highly saturated accent colours. */
+:root[data-theme="dark-soft"] body { background: #171b25 !important; color: #e4e8f0 !important;}
+:root[data-theme="dark-soft"] .login-screen { background: radial-gradient(circle at 18% 18%, #3b2e46 0, transparent 34%), radial-gradient(circle at 86% 84%, #29374b 0, transparent 38%), #171b25 !important;}
+:root[data-theme="dark-soft"] .login-card, :root[data-theme="dark-soft"] .sidebar, :root[data-theme="dark-soft"] .topbar, :root[data-theme="dark-soft"] .graph-panel, :root[data-theme="dark-soft"] .user-list, :root[data-theme="dark-soft"] .chat-layout, :root[data-theme="dark-soft"] .teacher-readonly-graph, :root[data-theme="dark-soft"] .chat-head, :root[data-theme="dark-soft"] .chat-composer, :root[data-theme="dark-soft"] .credential-row, :root[data-theme="dark-soft"] .modal { background: #202633 !important; color: #e4e8f0 !important; border-color: #343d4d !important; box-shadow: 0 12px 35px rgba(0, 0, 0, .16);}
+:root[data-theme="dark-soft"] .main, :root[data-theme="dark-soft"] .shell { background: #171b25 !important;}
+:root[data-theme="dark-soft"] .school-label, :root[data-theme="dark-soft"] .eyebrow, :root[data-theme="dark-soft"] .person-info small, :root[data-theme="dark-soft"] .chat-head small, :root[data-theme="dark-soft"] .chat-item small, :root[data-theme="dark-soft"] .chat-item span, :root[data-theme="dark-soft"] .composer-footer small, :root[data-theme="dark-soft"] .message-time, :root[data-theme="dark-soft"] .credential-row span, :root[data-theme="dark-soft"] .credential-password span { color: #9ba6b8 !important;}
+:root[data-theme="dark-soft"] .topbar > div, :root[data-theme="dark-soft"] .topbar b, :root[data-theme="dark-soft"] .person-info b, :root[data-theme="dark-soft"] .chat-head b, :root[data-theme="dark-soft"] .chat-item b, :root[data-theme="dark-soft"] .credential-row b, :root[data-theme="dark-soft"] .empty-state b { color: #e4e8f0 !important;}
+:root[data-theme="dark-soft"] .sidebar nav button { background: transparent !important; color: #aeb7c7 !important;}
+:root[data-theme="dark-soft"] .sidebar nav button:hover { background: #293142 !important; color: #e4e8f0 !important;}
+:root[data-theme="dark-soft"] .sidebar nav button.active { background: #353149 !important; color: #c6bdf0 !important; border-color: #49415f !important;}
+:root[data-theme="dark-soft"] .sidebar nav button i { background: #303849 !important; color: #c5bddf !important;}
+:root[data-theme="dark-soft"] .chat-list { background: #1d2430 !important; border-color: #343d4d !important;}
+:root[data-theme="dark-soft"] .chat-item, :root[data-theme="dark-soft"] .person-card, :root[data-theme="dark-soft"] .root-node, :root[data-theme="dark-soft"] .teacher-graph-card { background: #252d3b !important; color: #e4e8f0 !important; border-color: #394457 !important;}
+:root[data-theme="dark-soft"] .chat-item:hover { background: #343449 !important; border-color: #514b6d !important; color: #d1c9f4 !important;}
+:root[data-theme="dark-soft"] .messages { background: #191f2a !important;}
+:root[data-theme="dark-soft"] .message { background: #252d3a !important; color: #e4e8f0 !important; border-color: #394456 !important; box-shadow: 0 3px 12px rgba(0, 0, 0, .14) !important;}
+:root[data-theme="dark-soft"] .message.teacher { background: #302e43 !important; border-color: #4c4667 !important;}
+:root[data-theme="dark-soft"] .message.admin { background: #393445 !important; border-color: #66546a !important;}
+:root[data-theme="dark-soft"] .message p { color: #e4e8f0 !important;}
+:root[data-theme="dark-soft"] .chat-composer, :root[data-theme="dark-soft"] .chat-head { background: #202633 !important;}
+:root[data-theme="dark-soft"] .panel-credentials-panel { background: #222a37 !important; border-color: #394456 !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.025);}
+:root[data-theme="dark-soft"] .panel-credential-row + .panel-credential-row { border-top-color: #394456;}
+:root[data-theme="dark-soft"] .panel-credential-row > span, :root[data-theme="dark-soft"] .panel-credential-row > label { color: #a4afc0 !important;}
+:root[data-theme="dark-soft"] .panel-login-edit-row > input, :root[data-theme="dark-soft"] .panel-access-value { background: #293140 !important; border-color: #414c60 !important; color: #e0e5ee !important;}
+:root[data-theme="dark-soft"] .panel-login-edit-row > input:focus { background: #30394a !important; border-color: #69758e !important; color: #f0f2f7 !important;}
+:root[data-theme="dark-soft"] .panel-access-value b { color: #b9afe8 !important;}
+:root[data-theme="dark-soft"] .panel-access-value .password-code-refresh { background: #30394a !important; border-color: #465268 !important; color: #c8c0e4 !important;}
+:root[data-theme="dark-soft"] input, :root[data-theme="dark-soft"] select, :root[data-theme="dark-soft"] textarea { background: #262f3d !important; color: #e4e8f0 !important; border-color: #414c60 !important;}
+:root[data-theme="dark-soft"] input::placeholder, :root[data-theme="dark-soft"] textarea::placeholder, :root[data-theme="dark-soft"] .chat-search-control input::placeholder { color: #8793a7 !important;}
+:root[data-theme="dark-soft"] .chat-search-control:focus-within, :root[data-theme="dark-soft"] .chat-composer textarea:focus { background: #2b3545 !important; border-color: #8579b7 !important; box-shadow: 0 0 0 3px rgba(170, 160, 216, .13) !important;}
+:root[data-theme="dark-soft"] .chat-head, :root[data-theme="dark-soft"] .chat-composer, :root[data-theme="dark-soft"] .user-row { border-color: #343d4d !important;}
+:root[data-theme="dark-soft"] .chat-search-control { background: #202936 !important; border-color: #3a4555 !important; color: #e2e5ed !important;}
+:root[data-theme="dark-soft"] .chat-search-control button { background: #2b3443 !important; color: #c6cddd !important; border-color: #414c60 !important;}
+:root[data-theme="dark-soft"] .chat-filter-segment button { color: #a4aec0 !important;}
+:root[data-theme="dark-soft"] .chat-filter-segment button span { background: #424057 !important; color: #d1c9f4 !important;}
+:root[data-theme="dark-soft"] .btn.primary { color: #fff !important; box-shadow: 0 5px 16px rgba(0, 0, 0, .18) !important;}
+:root[data-theme="dark-soft"] .btn.primary:hover { background: #8176b0 !important;}
+:root[data-theme="dark-soft"] .btn.outline { background: #353149 !important; border-color: #514b6d !important; color: #c9c0ef !important;}
+:root[data-theme="dark-soft"] .role-tag, :root[data-theme="dark-soft"] .avatar, :root[data-theme="dark-soft"] .teacher-graph-card .readonly-tag { background: #353149 !important; color: #c6bdf0 !important;}
+:root[data-theme="dark-soft"] .teacher-graph-card.student { background: #302d32 !important; border-color: #51474a !important;}
+:root[data-theme="dark-soft"] .password-info, :root[data-theme="dark-soft"] .credential-field-code, :root[data-theme="dark-soft"] .invite-code { background: #2b2d3e !important; border-color: #4b4662 !important; color: #c6cddd !important;}
+:root[data-theme="dark-soft"] .credential-field-code .credential-field-value b, :root[data-theme="dark-soft"] .password-info b { color: #c9c0ef !important;}
+:root[data-theme="dark-soft"] .empty-state { color: #9ba6b8 !important;}
+:root[data-theme="dark-soft"] .chat-media-status { color: #d59a83 !important;}
+:root[data-theme="dark-soft"] .topbar svg, :root[data-theme="dark-soft"] .theme-toggle svg { color: inherit;}
+/* The legacy mobile rules force pale surfaces with !important; this final
+   theme layer keeps the selected dark palette consistent on touch screens. */
+:root[data-theme="dark-soft"] .chat-search-control input { background: transparent !important; border: 0 !important; box-shadow: none !important;}
+/* Refined soft-dark surfaces for the school graph and user directory. */
+:root[data-theme="dark-soft"] .graph-panel { background: #1e2531 !important; border: 1px solid #3a4659 !important; box-shadow: 0 10px 30px rgba(0, 0, 0, .2) !important;}
+:root[data-theme="dark-soft"] .graph-panel .legend { color: #d1d7e3 !important; background: #2a3342 !important; border: 1px solid #46536a !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .root-node {  border: 1px solid #49566d !important;}
+:root[data-theme="dark-soft"] .graph-panel .root-node:before { background: #9687c7 !important; opacity: .9;}
+:root[data-theme="dark-soft"] .graph-panel .root-node img { background: transparent !important; box-shadow: none !important; border-radius: 0 !important;}
+:root[data-theme="dark-soft"] .graph-panel .root-node b { color: #edf0f6 !important;}
+:root[data-theme="dark-soft"] .graph-panel .root-node small { color: #aab4c5 !important;}
+:root[data-theme="dark-soft"] .graph-panel .teacher-branch {  border: 1px solid #3f4d61 !important; transform: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .teacher-branch:hover { transform: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .teacher-card {  border: 1px solid #4c4b69 !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .student-card {  border: 1px solid #4a5864 !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .empty-students { background: #252e3a !important; border: 1px dashed #566176 !important; color: #aab4c5 !important;}
+:root[data-theme="dark-soft"] .graph-panel .add-student { background: #303448 !important; border: 1px solid #4b4c69 !important; color: #c7bdf0 !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .add-student:hover { background: #3b3a55 !important; border-color: #77729d !important;}
+:root[data-theme="dark-soft"] .graph-panel .unassigned { border-top: 1px solid #414d60 !important;}
+:root[data-theme="dark-soft"] .graph-panel .person-card, :root[data-theme="dark-soft"] .user-list .person-card { color: #e4e8f0 !important;}
+:root[data-theme="dark-soft"] .graph-panel .person-card:hover, :root[data-theme="dark-soft"] .user-row:hover, :root[data-theme="dark-soft"] .unassigned-grid .person-card:hover { background: #30394a !important; border-color: #66728c !important; box-shadow: 0 4px 13px rgba(0, 0, 0, .2) !important; transform: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .person-actions button:hover, :root[data-theme="dark-soft"] .graph-panel .icon-btn:hover { background: #3b4057 !important; border-color: #525b78 !important; color: #d3cafa !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .person-actions .danger-icon:hover, :root[data-theme="dark-soft"] .graph-panel .danger-icon:hover { background: #482f3b !important; border-color: #78505f !important; color: #f0aab4 !important;}
+:root[data-theme="dark-soft"] .toolbar .search, :root[data-theme="dark-soft"] .search { background: #262f3d !important; border: 1px solid #414e62 !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .search:focus-within { background: #2c3747 !important; border-color: #8c82ba !important; box-shadow: 0 0 0 3px rgba(170, 160, 216, .13) !important;}
+:root[data-theme="dark-soft"] .search svg { color: #aab4c5 !important;}
+:root[data-theme="dark-soft"] .search input { background: transparent !important; color: #e4e8f0 !important;}
+:root[data-theme="dark-soft"] .search input::placeholder { color: #8895a9 !important;}
+:root[data-theme="dark-soft"] .user-row { background: transparent !important; border-bottom: 1px solid #343f52 !important;}
+:root[data-theme="dark-soft"] .user-row .role-tag.teacher { background: #393650 !important; color: #c8c0ef !important;}
+:root[data-theme="dark-soft"] .user-row .role-tag.student { background: #47333c !important; color: #e8b4bd !important;}
+/* Crisp, stable graph edges and comfortable mobile spacing. */
+:root[data-theme="dark-soft"] .graph-panel, :root[data-theme="dark-soft"] .graph-panel * { -webkit-font-smoothing: antialiased;}
+.graph-panel .root-node, .graph-panel .teacher-branch, .graph-panel .teacher-card, .graph-panel .student-card { border-width: 1px; border-style: solid; transform: none;}
+.graph-panel .teacher-branch, .graph-panel .person-card { transition: border-color .16s ease, background-color .16s ease, box-shadow .16s ease;}
+.graph-panel .teacher-branch:hover, .graph-panel .person-card:hover { transform: none;}
+/* Mobile inbox: the conversation picker and open chat are separate scroll
+   surfaces. The outer page can still scroll normally around both cards. */
+/* On short phones leave enough room for the message stream and composer. */
+/* Keep the two mobile cards distinct in the soft-dark theme as well. */
+/* Desktop inbox keeps a fixed frame regardless of conversation length.
+   Only the chat list and message history scroll inside that frame. */
+/* Compact workspace layout: keep the user's work area ahead of decorative headers. */
+/* Unread conversations stay easy to spot without dominating the inbox. */
+.chat-item-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 9px; min-width: 0;}
+.chat-item-participants { display: flex; flex: 1 1 auto; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; text-align: left;}
+.chat-item-participants > span { display: block; width: 100%; min-width: 0; overflow: hidden; color: inherit; font-weight: 700; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap;}
+.chat-item-participants small { display: inline-block; color: #91899d; font-size: 10px; font-weight: 600; white-space: nowrap;}
+.chat-item-participants.is-student-view { flex-direction: row; align-items: center; gap: 8px;}
+.chat-item-participants.is-student-view > span { flex: 1 1 auto; width: auto;}
+.chat-item-participants.is-student-view > small { flex: 0 0 auto;}
+:root[data-theme="dark-soft"] .chat-item-participants small { color: #a7a0b7;}
+.chat-item .unread-badge { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: #d99532; color: #fff !important; font-size: 10px; line-height: 1; font-weight: 800; box-shadow: 0 2px 6px rgba(180, 119, 31, .18);}
+
+.chat-item .message-count-badge { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: #eceaf0; color: #625b70; font-size: 10px; line-height: 1; font-weight: 700; }
+:root[data-theme="dark-soft"] .chat-item .message-count-badge { background: #3b3745; color: #d2cbdc !important; }.chat-item.has-unread:not(.selected) { background: #fffaf0; border: 1px solid #f0d9ab; border-left: 3px solid #d99532; padding-left: 12px;}
+.chat-item.has-unread:not(.selected):hover { background: #fff5df;}
+:root[data-theme="dark-soft"] .chat-item.has-unread:not(.selected) { background: #302d29 !important; border-color: #68543a !important; border-left-color: #d49a46 !important; color: #f0e7d8 !important;}
+:root[data-theme="dark-soft"] .chat-item.has-unread:not(.selected):hover { background: #383228 !important;}
+:root[data-theme="dark-soft"] .chat-item.selected.has-unread { background: #393548 !important; border-color: #756449 !important; border-left-color: #e1ad57 !important; color: #e8e2f6 !important;}
+/* Slightly roomier message composer; manual resizing remains disabled. */
+/* Teacher and student totals are part of the graph legend, not separate cards. */
+.graph-panel .graph-legend { display: flex; align-items: center; flex-wrap: wrap; max-width: 100%;}
+.graph-panel .graph-legend-item { display: inline-flex; align-items: center; color: var(--muted); white-space: nowrap;}
+.graph-panel .graph-legend-item > span { flex: 0 0 9px; width: 9px; height: 9px; margin: 0;}
+.graph-panel .graph-legend-item b { display: inline-flex; align-items: center; justify-content: center; background: #f0ebf9; color: #573e99; font-variant-numeric: tabular-nums;}
+:root[data-theme="dark-soft"] .graph-panel .graph-legend-item { color: #d1d7e3 !important;}
+/* Round Telegram video messages should retain their native circular presentation. */
+.chat-media-video.chat-media-video-note { width: min(100%, 260px); aspect-ratio: 1; max-height: none; object-fit: cover; border-radius: 50%; background: #17131f;}
+/* Graph legend stays at the upper-left edge of the graph workspace. */
+.graph-panel .graph-legend-row { margin: 0 0 17px;}
+.graph-panel .graph-legend { justify-content: flex-start;}
+/* Center the administrator node as a compact identity card. */
+.graph-panel .root-node:before { inset: 0 0 auto; width: 100%; height: 4px;}
+/* Narrow teacher columns must wrap long student names instead of overflowing. */
+.graph-panel .teacher-branch { width: 100%;}
+.graph-panel .student-list { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%;}
+.graph-panel .student-card { align-items: center; gap: 7px;}
+.graph-panel .student-card .person-main { align-items: center; gap: 8px;}
+.graph-panel .student-card .avatar { flex: 0 0 34px; width: 34px; height: 34px;}
+.graph-panel .student-card .person-info b { display: block; max-width: 100%; overflow: visible; white-space: normal; overflow-wrap: anywhere; word-break: break-word; text-overflow: clip; line-height: 1.25;}
+.graph-panel .student-card .person-info small { white-space: normal; overflow-wrap: anywhere;}
+
+.graph-panel .student-card > .graph-person-action svg { width: 14px; height: 14px;}
+:root[data-theme="dark-soft"] .graph-panel .root-node:before { inset: 0 0 auto; width: 100%; height: 3px;}
+/* Keep the primary graph action at the top beside the legend. */
+/* Final graph-card sizing: keep the admin identity on one compact row and
+   make student cards shrink safely inside narrow teacher branches. */
+.graph-panel .root-node { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 11px; width: fit-content; max-width: 100%; min-height: 0; margin: 0 auto 20px; padding: 11px 16px; text-align: left; box-sizing: border-box;}
+.graph-panel .root-node img { flex: 0 0 42px; width: 42px; height: 42px;}
+.graph-panel .root-node > div { display: flex; flex: 0 1 auto; flex-wrap: wrap; align-items: baseline; justify-items: initial; justify-content: center; gap: 3px 9px; width: auto; min-width: 0; text-align: left;}
+.graph-panel .root-node b, .graph-panel .root-node small { display: inline; width: auto; margin: 0; text-align: left;}
+.graph-panel .root-node b { white-space: nowrap; font-size: 12px;}
+.graph-panel .root-node small { white-space: nowrap; font-size: 10px;}
+.graph-panel .teacher-grid, .graph-panel .teacher-branch, .graph-panel .student-list { min-width: 0; max-width: 100%; box-sizing: border-box;}
+.graph-panel .student-list { margin-left: 0; padding-left: 12px; overflow: hidden;}
+.graph-panel .student-card { display: flex; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; overflow: hidden;}
+.graph-panel .student-card .person-main { display: flex; flex: 1 1 0%; width: auto; min-width: 0; max-width: 100%; overflow: hidden;}
+.graph-panel .student-card .person-info { flex: 1 1 0%; width: auto; min-width: 0; max-width: 100%; overflow: hidden;}
+.graph-panel .student-card .person-info b, .graph-panel .student-card .person-info small { max-width: 100%; white-space: normal; overflow-wrap: anywhere; word-break: normal; text-overflow: clip;}
+
+.graph-panel .student-card > .graph-person-action { flex: 0 0 27px !important; width: 27px !important; height: 27px !important; min-width: 27px !important; min-height: 27px !important; padding: 0 !important;}
+/* Preserve comfortable teacher columns; only the card contents may shrink. */
+.graph-panel .teacher-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));}
+.user-sort { display: block; flex: 0 1 auto; min-width: 0; border: 1px solid var(--line); color: var(--ink); background: #fff; font: inherit; cursor: pointer;}
+
+.user-list { padding: 0;}
+.user-row { border-bottom: 1px solid var(--line); transition: background .15s ease;}
+.user-row:hover { background: #f8f7fb;}
+.user-row:last-child { border-bottom: 0;}
+.user-person-info { display: block; flex: 1 1 auto; min-width: 0; overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap;}
+
+.user-actions { display: flex; flex: 0 0 auto;}
+.user-action-btn { place-items: center; cursor: pointer; transition: background .15s ease, border-color .15s ease, color .15s ease;}
+.user-action-btn svg { stroke-width: 1.9;}
+.user-action-btn:hover { border-color: var(--line); color: var(--ink); background: rgba(130, 140, 160, .10);}
+.user-action-btn.disconnect:hover { border-color: rgba(217, 120, 132, .28); background: rgba(217, 120, 132, .12);}
+:root[data-theme="dark-soft"] .user-row:hover { background: #262f3d !important;}
+:root[data-theme="dark-soft"] .user-sort { color: #e4e8f0;}
+:root[data-theme="dark-soft"] .user-action-btn:hover { background: #303b4d; border-color: #4b5870; color: #f0f2f7;}
+/* Teacher cards use the same responsive name wrapping as student cards.
+   Keep avatar and action buttons fixed while the name column takes the
+   remaining width and can wrap at any viewport/zoom level. */
+.graph-panel .teacher-card { display: flex; width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden; gap: 8px;}
+.graph-panel .teacher-card > .person-main { display: flex; flex: 1 1 0%; width: 0; min-width: 0; max-width: 100%; overflow: hidden; gap: 8px;}
+.graph-panel .teacher-card .avatar { flex: 0 0 auto;}
+.graph-panel .teacher-card .person-info { flex: 1 1 0%; width: 0; min-width: 0; max-width: 100%; overflow: hidden;}
+.graph-panel .teacher-card .person-info b { display: block; max-width: 100%; overflow: visible; white-space: normal; overflow-wrap: anywhere; word-break: normal; text-overflow: clip; line-height: 1.25;}
+.graph-panel .teacher-card .person-info small { display: block; max-width: 100%; white-space: normal; overflow-wrap: anywhere; line-height: 1.25;}
+.graph-panel .teacher-card .person-actions { display: flex; flex: 0 0 auto; min-width: 0; gap: 1px;}
+.graph-panel .teacher-card .person-actions button { flex: 0 0 28px; width: 28px; height: 28px;}
+/* Make graph totals easy to notice: clear, positive number chips with
+   enough visual weight to encourage progress without competing with the graph. */
+.graph-panel .graph-legend { gap: 18px;}
+.graph-panel .graph-legend-item { gap: 9px; font-size: 12px; font-weight: 750;}
+.graph-panel .graph-legend-item b { min-width: 36px; min-height: 32px; padding: 0 11px; border-radius: 11px; font-size: 16px; font-weight: 900; line-height: 1; box-shadow: 0 3px 10px rgba(87, 62, 153, .12); transition: transform .18s ease, box-shadow .18s ease;}
+.graph-panel .graph-legend-item:first-child b { background: linear-gradient(145deg, #eee8fb, #e2d8f5); color: #6243a2;}
+.graph-panel .graph-legend-item:last-child b { background: linear-gradient(145deg, #fff0f1, #f9dfe3); color: #c24b60; box-shadow: 0 3px 10px rgba(194, 75, 96, .12);}
+.graph-panel .graph-legend-item b:hover { transform: translateY(-1px); box-shadow: 0 5px 13px rgba(87, 62, 153, .16);}
+:root[data-theme="dark-soft"] .graph-panel .graph-legend-item:first-child b { background: linear-gradient(145deg, #45405e, #3c3853) !important; color: #d9cdfb !important; box-shadow: 0 3px 12px rgba(0, 0, 0, .16);}
+:root[data-theme="dark-soft"] .graph-panel .graph-legend-item:last-child b { background: linear-gradient(145deg, #563b47, #49333e) !important; color: #ffc3cc !important; box-shadow: 0 3px 12px rgba(0, 0, 0, .16);}
+/* Conversation picker: search/filter stay above a separate scrollable list
+   so items cannot slide underneath the controls on mobile screens. */
+/* A little more room to compose messages on every screen size. */
+.chat-composer textarea { min-height: 66px; max-height: 132px; resize: none;}
+/* Light theme: clearer panel/control outlines and softer text contrast. */
+:root:not([data-theme="dark-soft"]) body { color: #514d5a;}
+:root:not([data-theme="dark-soft"]) .topbar, :root:not([data-theme="dark-soft"]) .sidebar, :root:not([data-theme="dark-soft"]) .user-list, :root:not([data-theme="dark-soft"]) .chat-layout, :root:not([data-theme="dark-soft"]) .chat-list, :root:not([data-theme="dark-soft"]) .chat-detail { border-color: #ded9e5;}
+:root:not([data-theme="dark-soft"]) .person-card, :root:not([data-theme="dark-soft"]) .chat-item, :root:not([data-theme="dark-soft"]) .chat-head-tools select { border-color: #dcd6e3;}
+:root:not([data-theme="dark-soft"]) .person-info b, :root:not([data-theme="dark-soft"]) .chat-item b, :root:not([data-theme="dark-soft"]) .chat-head b, :root:not([data-theme="dark-soft"]) .message b { color: #56515f;}
+:root:not([data-theme="dark-soft"]) .person-info small, :root:not([data-theme="dark-soft"]) .chat-item small, :root:not([data-theme="dark-soft"]) .chat-head small, :root:not([data-theme="dark-soft"]) .message-time, :root:not([data-theme="dark-soft"]) .toolbar, :root:not([data-theme="dark-soft"]) .hint { color: #918b9a;}
+.user-sort { min-height: 48px; height: 48px; padding: 0 14px; border-radius: 12px;}
+.user-sort { max-width: 185px; font-size: 13px;}
+.user-count { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; min-height: 44px; padding: 0 13px; border: 1px solid #e4deed; border-radius: 12px; color: #7f788d; background: #faf8fd; font-size: 12px; font-weight: 650; white-space: nowrap;}
+.user-count b { display: inline-grid; place-items: center; min-width: 28px; height: 28px; padding: 0 7px; border-radius: 9px; color: #62439d; background: #eee8fa; font-size: 14px; font-weight: 850; font-variant-numeric: tabular-nums;}
+.user-add-btn { min-height: 48px; padding: 0 18px; border-radius: 12px; font-size: 13px; white-space: nowrap;}
+.user-add-btn svg { width: 18px; height: 18px;}
+.user-list { border-radius: 17px;}
+.user-row { min-height: 86px; gap: 16px; padding: 16px 20px;}
+.user-row > .avatar { border-radius: 14px;}
+.user-row > .avatar svg { width: 22px; height: 22px;}
+.user-actions { align-items: center; margin-left: auto;}
+.user-action-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 42px; height: 42px; flex: 0 0 42px; padding: 0; border: 1px solid #e5dfed; color: #777085; background: #faf9fc;}
+.user-action-btn svg { width: 18px; height: 18px;}
+.user-action-btn.disconnect { color: #c77983; border-color: #f0d8dc; background: #fff8f8;}
+.user-action-btn.edit-btn { color: #756a91; background: #f8f6fb;}
+.user-action-btn.user-delete { margin-left: 3px; color: #c66f7a; border-color: #efd4d8; background: #fff5f6;}
+.user-action-btn.user-delete:hover { color: #fff; border-color: #bd5968; background: #bd5968;}
+:root[data-theme="dark-soft"] .user-count { color: #c2cad8; border-color: #414e62; background: #252e3d;}
+:root[data-theme="dark-soft"] .user-count b { color: #e0d5ff; background: #403956;}
+:root[data-theme="dark-soft"] .user-sort { background: #262f3d; border-color: #414e62;}
+:root[data-theme="dark-soft"] .user-action-btn { color: #c0c8d6; border-color: #414e62; background: #252e3d;}
+:root[data-theme="dark-soft"] .user-action-btn.user-delete:hover { color: #fff; background: #a94e60;}
+/* Compact participant details: opened from the info icon, not shown inline. */
+.user-list { overflow: visible;}
+.user-row.is-info-open { z-index: 12;}
+.user-action-btn.connect-toggle { width: auto; min-width: 126px; height: 42px; flex: 0 0 auto; font-weight: 800;}
+.user-action-btn.connect-toggle svg { width: 17px; height: 17px;}
+
+.user-action-btn.connect-toggle.connect:hover:not(:disabled) { color: #503483;}
+.user-action-btn.connect-toggle.disconnect { color: #b85f6b; border-color: #efd1d6; background: #fff3f5;}
+.user-action-btn.connect-toggle.disconnect:hover { color: #a34654; border-color: #e3b2ba; background: #ffe9ec;}
+.user-action-btn.connect-toggle:disabled { opacity: .45; cursor: not-allowed;}
+.user-info-wrap { position: relative; display: inline-flex; flex: 0 0 auto;}
+.user-action-btn.user-info-btn { width: 42px; height: 42px; flex-basis: 42px; color: #8a7da4; border-color: #e5dfed; background: #faf9fc;}
+.user-action-btn.user-info-btn:hover, .user-action-btn.user-info-btn.is-open { color: #62439d; border-color: #cbb9e7; background: #f2ecfa;}
+.user-info-popover { position: absolute; top: calc(100% + 9px); width: min(270px, calc(100vw - 34px)); padding: 13px 14px; border: 1px solid #e5deed; border-radius: 13px; background: #fff; box-shadow: 0 14px 38px rgba(42, 30, 68, .18); color: #655f70; font-size: 12px; line-height: 1.4;}
+.user-info-popover:before { content: ""; position: absolute; right: 14px; top: -6px; width: 10px; height: 10px; transform: rotate(45deg); border-left: 1px solid #e5deed; border-top: 1px solid #e5deed; background: #fff;}
+.user-info-popover-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 11px; color: #514a60;}
+.user-info-popover-head b { font-size: 12px; font-weight: 850;}
+.user-info-popover-head button { display: grid; place-items: center; width: 25px; height: 25px; padding: 0; border: 0; border-radius: 7px; color: #958da2; background: #f5f2f8;}
+.user-info-line { display: flex; align-items: center; gap: 8px; min-height: 25px; color: #777183;}
+.user-info-line > svg { width: 14px; height: 14px; flex: 0 0 14px; color: #8d82a4;}
+.user-info-login { display: grid; gap: 3px; margin-top: 8px; padding-top: 9px; border-top: 1px solid #eeeaf2;}
+.user-info-login > span { color: #9a93a4; font-size: 10px;}
+.user-info-login > b { color: #5c5568; font-size: 12px; overflow-wrap: anywhere;}
+:root[data-theme="dark-soft"] .user-action-btn.connect-toggle.connect:hover:not(:disabled) { background: #49405f; border-color: #79699a;}
+:root[data-theme="dark-soft"] .user-action-btn.connect-toggle.disconnect { color: #f0aab3; border-color: #66444e; background: #382d38;}
+:root[data-theme="dark-soft"] .user-action-btn.user-info-btn { color: #c0b7d7; border-color: #414e62; background: #252e3d;}
+:root[data-theme="dark-soft"] .user-action-btn.user-info-btn:hover, :root[data-theme="dark-soft"] .user-action-btn.user-info-btn.is-open { color: #e4d7ff; border-color: #665980; background: #39334c;}
+:root[data-theme="dark-soft"] .user-info-popover { color: #c4ccda; border-color: #46536a; background: #252e3d; box-shadow: 0 14px 38px rgba(0, 0, 0, .35);}
+:root[data-theme="dark-soft"] .user-info-popover:before { border-color: #46536a; background: #252e3d;}
+:root[data-theme="dark-soft"] .user-info-popover-head { color: #edf0f6;}
+:root[data-theme="dark-soft"] .user-info-popover-head button { color: #c4ccda; background: #354155;}
+:root[data-theme="dark-soft"] .user-info-line, :root[data-theme="dark-soft"] .user-info-login > span { color: #bbc4d3;}
+:root[data-theme="dark-soft"] .user-info-login { border-top-color: #414e62;}
+:root[data-theme="dark-soft"] .user-info-login > b { color: #edf0f6;}
+/* Unassigned students follow the same column rhythm and card proportions
+   as the main teacher branches. */
+.graph-panel .unassigned { width: 100%; min-width: 0;}
+.graph-panel .unassigned-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); align-items: stretch; gap: 26px; width: 100%; min-width: 0;}
+.graph-panel .unassigned-grid .unassigned-student-card { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 9px; width: 100%; max-width: 100%; min-width: 0; min-height: 72px; padding: 10px 12px; box-sizing: border-box; overflow: hidden;}
+.graph-panel .unassigned-student-card > .person-main { display: flex; flex: 1 1 auto; align-items: center; width: auto; min-width: 0; max-width: 100%; gap: 9px; overflow: hidden;}
+.graph-panel .unassigned-student-card > .person-main > .avatar { flex: 0 0 38px; width: 38px; height: 38px;}
+.graph-panel .unassigned-student-card .person-info { flex: 1 1 auto; width: auto; min-width: 0; max-width: 100%; overflow: hidden;}
+.graph-panel .unassigned-student-card .person-info b { display: block; max-width: 100%; overflow: hidden; white-space: normal; overflow-wrap: anywhere; word-break: normal; text-overflow: ellipsis; line-height: 1.25;}
+.graph-panel .unassigned-student-actions { display: flex; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: 6px; width: auto; min-width: 0; margin: 0;}
+
+.graph-panel .unassigned-student-actions > .graph-person-action { flex: 0 0 34px !important; width: 34px !important; height: 34px !important; min-width: 34px !important; min-height: 34px !important; padding: 0 !important;}
+.graph-panel .unassigned-student-actions .btn { flex: 0 0 auto; min-height: 36px; padding: 8px 13px; white-space: nowrap;}
+.graph-panel .unassigned-grid .unassigned-student-card { background: #f3e8d4; border-color: #ddc69d;}
+.graph-panel .unassigned-grid .unassigned-student-card:hover { border-color: #d8c8eb; box-shadow: 0 5px 17px rgba(87, 62, 153, .08);}
+:root[data-theme="dark-soft"] .graph-panel .unassigned-grid .unassigned-student-card { background: #40382d !important; background-image: none !important; border-color: #746044 !important; box-shadow: none !important; color: #e4e8f0 !important;}
+:root[data-theme="dark-soft"] .graph-panel .unassigned-grid .unassigned-student-card .avatar { background: #574a38 !important; color: #e5c995 !important;}
+:root[data-theme="dark-soft"] .graph-panel .unassigned-grid .unassigned-student-card:hover { background: #30394a !important; border-color: #66728c !important;}
+/* Branded in-app confirmation for destructive participant actions. */
+.confirm-delete-modal .modal-head { align-items: center; margin-bottom: 14px;}
+.confirm-delete-modal .modal-head h2 { color: var(--ink);}
+.confirm-delete-modal > .hint { margin: 0 0 20px; font-size: 13px; line-height: 1.6;}
+.confirm-delete-modal > .hint b { color: var(--ink); font-weight: 800;}
+.confirm-delete-modal .modal-actions { justify-content: flex-end; gap: 10px;}
+.confirm-delete-modal .btn { min-height: 42px; padding: 10px 15px; border-radius: 11px;}
+.confirm-delete-modal .btn.danger { color: #fff; border-color: #c95767; background: linear-gradient(110deg, #bf5263, #d46b78); box-shadow: 0 5px 16px rgba(191, 82, 99, .19);}
+.confirm-delete-modal .btn.danger:hover:not(:disabled) { background: linear-gradient(110deg, #a94455, #c45b69); box-shadow: 0 7px 19px rgba(191, 82, 99, .25);}
+.confirm-delete-modal .btn.danger svg { width: 16px; height: 16px;}
+:root[data-theme="dark-soft"] .confirm-delete-modal .modal-head h2, :root[data-theme="dark-soft"] .confirm-delete-modal > .hint b { color: #edf0f6;}
+:root[data-theme="dark-soft"] .confirm-delete-modal .btn.danger { color: #fff; border-color: #97505c; background: linear-gradient(110deg, #934656, #aa5967); box-shadow: 0 5px 16px rgba(0, 0, 0, .22);}
+/* Inter keeps interface text readable; Sora adds character to headings and participant names. */
+html, body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;}
+h1, h2, h3, .brand, .root-node b, .person-info b, .chat-head b, .modal-head h2, .user-person-info { font-family: Sora, Inter, sans-serif;}
+.user-person-info { font-size: 16px; font-weight: 600; letter-spacing: -.18px; line-height: 1.35;}
+/* Desktop inbox: keep the conversation picker in its own scroll area.
+   Flex sizing prevents chat rows from sharing/overlapping the same grid track. */
+/* The conversation workspace follows the available viewport height. */
+.chat-layout { height: clamp(480px, calc(100dvh - 275px), 1100px); min-height: 0; align-items: stretch;}
+.chat-list { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden;}
+.chat-list > .chat-search-control, .chat-list > .chat-filter-segment, .chat-list > .personal-chat-create { flex: 0 0 auto; min-width: 0;}
+.chat-list > .personal-chat-create { align-self: flex-start; width: fit-content; min-height: 34px; padding: 7px 11px; font-size: 12px; box-shadow: none; }
+.chat-list > .personal-chat-create svg { width: 14px; height: 14px; }
+.chat-items-scroll { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-width: thin;}
+.chat-detail { display: flex; flex-direction: column; min-height: 0; overflow: hidden;}
+.chat-detail > .messages { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto;}
+/* Chat workspace fills the remaining browser viewport below the app header. */
+/* Final narrow-screen safeguards (including iPhone mini widths). */
+html, body, #root { width: 100%; max-width: 100%;}
+html, body { overflow-x: clip;}
+.login-screen { width: 100%; min-width: 0; min-height: 100svh; padding: clamp(12px, 4vw, 24px);}
+.login-card { width: 100%; max-width: 460px; min-width: 0;}
+.login-card .stack, .login-card .stack label, .login-card .stack input, .login-card .stack select { width: 100%; min-width: 0; max-width: 100%;}
+/* Keep the mobile sign-out control compact and clear of nearby controls. */
+/* Mobile layout: keep the graph action on the right and constrain every dialog
+   to the viewport, including long forms and confirmation windows. */
+/* Keep the graph counters and add-participant action on one line, even on
+   extra-narrow phones. Both sides may compact, but must never wrap. */
+.graph-panel .graph-legend-row { display: flex; flex-flow: row nowrap; justify-content: space-between; gap: 5px; min-width: 0; width: 100%;}
+.graph-panel .graph-legend-row > * { min-width: 0;}
+.graph-panel .graph-legend-row .legend { display: flex; flex: 1 1 auto; flex-wrap: nowrap; align-items: center; gap: clamp(3px, 1.2vw, 7px); white-space: nowrap; font-size: clamp(9px, 2.7vw, 12px);}
+.graph-panel .graph-add-participant { display: inline-flex; align-items: center; justify-content: center; min-width: 0; max-width: 52%; margin-left: 0; padding: 8px clamp(6px, 1.8vw, 12px); gap: 5px; font-size: clamp(9px, 2.6vw, 12px); white-space: nowrap;}
+.graph-panel .graph-add-participant svg { flex: 0 0 auto; width: 14px; height: 14px;}
+/* The create-participant form stays fully inside short, narrow mobile viewports. */
+/* Graph header: keep the counters at their natural width and match the
+   add-participant button height to the counter block. */
+.graph-panel .graph-legend-row { align-items: stretch;}
+.graph-panel .graph-legend-row > .graph-legend { flex: 0 0 auto; width: fit-content; max-width: calc(100% - 150px); align-self: stretch; box-sizing: border-box;}
+.graph-panel .graph-add-participant { flex: 0 0 auto; align-self: stretch; min-height: 0; height: auto; box-sizing: border-box;}
+/* Prevent graph counter badges from escaping their compact column on phones. */
+/* Two main layout modes: mobile through 1024px, desktop from 1025px. */
+@media (min-width: 1025px) {
+.sidebar-bottom > .desktop-admin-extra { display: flex;}
+.chat-layout {  overflow: hidden;}
+.chat-detail {   min-width: 0;}
+.chat-head { position: relative; top: auto;}
+.chat-list, .messages{ overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-width: thin;}
+.sidebar { padding: 18px 14px;}
+.brand { gap: 10px; padding: 0 7px 22px; font-size: 22px;}
+.brand img { width: 48px; height: 48px;}
+.sidebar nav { gap: 4px;}
+.sidebar nav button, .logout { gap: 10px; padding: 11px; font-size: 13px;}
+.topbar { height: 56px; padding: 0 22px;}
+
+.topbar-user { margin-left: 0; font-size: 10px;}
+.content { width: 100%; max-width: 1900px; padding: 14px 20px 18px;}
+.graph-panel { padding: 19px; border-radius: 16px;}
+.graph-panel .root-node { min-height: 68px; margin-bottom: 14px; padding: 10px 14px;}
+.graph-panel .root-node img { width: 44px; height: 44px;}
+.graph-panel .teacher-grid{ gap: 12px;}
+.graph-panel .teacher-branch { padding: 10px; border-radius: 13px;}
+.graph-panel .teacher-card { min-height: 64px; padding: 9px 11px;}
+.graph-panel .student-list { gap: 6px; margin: 9px 0 0 20px;}
+.graph-panel .student-card { min-height: 52px; padding: 7px 9px;}
+.graph-panel .add-student { margin-top: 0;}
+.graph-panel .unassigned { margin-top: 15px; padding-top: 13px;}
+.teacher-readonly-graph { padding: 18px;}
+.teacher-graph-root { max-width: none; margin: 10px 0;}
+.user-row { gap: 10px; padding: 9px 14px;}
+.chat-layout { grid-template-columns: minmax(270px, 320px) minmax(0, 1fr);}
+.chat-list { height: 100%; padding: 10px;}
+.chat-item { gap: 6px; padding: 13px 10px;}
+.chat-detail { height: 100%; min-height: 0; overflow: hidden;}
+.chat-head { flex: 0 0 auto; padding: 11px 15px;}
+.messages { flex: 1 1 0; height: 0; min-height: 0; max-height: none; padding: 14px 16px;}
+.chat-composer { flex: 0 0 auto; padding: 10px 14px; gap: 8px;}
+.chat-composer textarea { min-height: 58px; max-height: 112px;}
+.chat-layout { min-height: 620px; height: min(760px, calc(100vh - 230px)); max-height: calc(100vh - 190px); min-width: 0;}
+.chat-list {   align-items: stretch; min-width: 0; min-height: 0; max-height: none; overflow: hidden; gap: 0; box-sizing: border-box;}
+.chat-items-scroll { display: flex; flex: 1 1 auto; flex-direction: column; align-items: stretch; gap: 7px; width: 100%; min-width: 0; min-height: 0; padding-top: 10px; overflow-x: hidden; overflow-y: auto;}
+.chat-items-scroll > .chat-item { display: grid; flex: 0 0 auto; width: 100%; min-width: 0; min-height: max-content; box-sizing: border-box;}
+@media (max-height: 650px) {
+.chat-layout { height: max(420px, calc(100dvh - 220px));}
+}
+.chats-shell { height: 100dvh; min-height: 0; overflow: hidden;}
+.chats-main { height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden;}
+.chats-content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding-bottom: 24px;}
+.chats-content > .chat-layout { flex: 1 1 auto; height: auto; min-height: 0;}
+/* Desktop spacing grows gently with the available viewport. */
+.sidebar { width: clamp(250px, 18vw, 280px);}
+.main { margin-left: clamp(250px, 18vw, 280px);}
+.content { padding-inline: clamp(30px, 2.5vw, 42px);}
+}
+@media (max-width: 1024px) {
+
+.sidebar nav button{flex:1;}
+.school-label, .sidebar nav button i{display:none}
+
+
+.user-row .person-info{min-width:calc(100% - 65px)}
+.role-tag{margin-left:45px}
+.teacher-grid, .chat-layout{grid-template-columns:1fr}
+
+.root-node { max-width: 100%;}
+.sidebar { top: 0; inset: auto; z-index: 30; display: block; width: 100%; height: auto; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 9px; border-right: 0; border-bottom: 1px solid var(--line); box-shadow: 0 5px 18px rgba(47,31,84,.07);}
+.brand { padding: 0 42px 9px 2px; font-size: 19px; gap: 8px;}
+.brand img { width: 32px; height: 32px;}
+.school-label { display: none;}
+.sidebar nav { display: grid; gap: 6px;}
+.sidebar nav button { justify-content: center; padding: 10px 5px;}
+.sidebar nav button svg { flex: none;}
+.sidebar nav button i { display: none;}
+/* Keep mobile quick actions in the brand row; don't leave a blank footer row. */
+.sidebar { position: sticky;}
+.sidebar-bottom { position: absolute; top: 10px; right: 12px; display: flex; margin: 0;}
+.sidebar-bottom > .desktop-logout { display: none;}
+.mobile-quick-actions { display: flex; align-items: center; gap: 4px;}
+.mobile-quick-actions > button { flex: 0 0 32px; width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 6px; margin: 0; border-radius: 9px; display: grid; place-items: center;}
+.mobile-quick-actions > button svg { width: 15px; height: 15px;}
+.mobile-quick-actions .icon-btn { color: var(--purple);}
+.topbar > .topbar-actions { display: none !important;}
+.main { margin: 0; width: 100%; min-width: 0;}
+/* Remove the empty profile strip between mobile navigation and the page workspace. */
+.shell:not(.chats-shell) > .main > .topbar, .topbar > div span, .topbar-user, .chats-main > .topbar{ display: none;}
+.topbar > div { min-width: 0; gap: 5px; font-size: 11px;}
+.content { width: 100%;}
+.graph-panel, .user-list, .chat-layout { width: 100%; border-radius: 15px;}
+.graph-panel { overflow: hidden;}
+.graph-panel .legend, .modal-actions, .user-row{ flex-wrap: wrap;}
+.graph-panel .person-card { min-width: 0;}
+.graph-panel .person-main { min-width: 0; flex: 1;}
+.graph-panel .person-info { min-width: 0;}
+.graph-panel .person-actions { flex: none;}
+.unassigned-grid { grid-template-columns: minmax(0, 1fr);}
+.toolbar { align-items: stretch; flex-direction: column; gap: 9px;}
+.search { width: 100%; min-width: 0;}
+.search input { min-width: 0; width: 100%;}
+.user-list { padding: 5px 12px;}
+.user-row { min-width: 0;}
+.user-row > .avatar { flex: 0 0 36px;}
+.user-row > .person-info { flex: 1 1 calc(100% - 50px); min-width: 0;}
+.user-row .person-info b { white-space: normal; overflow-wrap: anywhere; line-height: 1.35;}
+.user-row .person-info small { white-space: normal; overflow-wrap: anywhere; line-height: 1.5;}
+.user-row > .role-tag { margin: 0 0 0 45px;}
+.user-row > .btn { flex: 1 1 auto; min-height: 38px; padding: 8px 9px; white-space: normal;}
+.user-row > .icon-btn { flex: 0 0 38px;}
+.chat-item { text-align: left;}
+.chat-item b, .chat-item small { display: block; max-width: 100%; overflow-wrap: anywhere; white-space: normal;}
+.chat-head b { overflow-wrap: anywhere;}
+.message { min-width: 0; overflow-wrap: anywhere;}
+.message p { overflow-wrap: anywhere;}
+.chat-media-video { width: 100%; max-width: 100%;}
+.modal { width: 100%; max-width: 100%; max-height: calc(100dvh - 20px); overflow-y: auto; padding: 18px; border-radius: 18px;}
+.modal-head { gap: 10px;}
+.modal-head h2 { font-size: 20px; overflow-wrap: anywhere;}
+.modal-actions .btn { flex: 1 1 120px;}
+.stack input, .stack select { width: 100%; min-width: 0;}
+.main footer { padding: 0 12px 16px;}
+.sidebar nav button svg { width: 14px; height: 14px;}
+button, .btn, .logout, .person-actions button, .icon-btn { -webkit-appearance: none; appearance: none;}
+.btn:not(.primary):not(.disconnect) { background: #f0eef3; border-color: #e2dce9; color: #393149;}
+.btn.ghost { background: #eae7ef; border-color: #ded8e6;}
+.btn.outline { background: #f1edf7; border-color: #d8c9ed; color: var(--purple);}
+.sidebar nav button { background: #f0eef3; border: 1px solid #e4deea; color: #625b70; border-radius: 11px;}
+.person-actions button, .icon-btn { background: #f0eef3; border: 1px solid #e4deea; color: #716981;}
+.add-student { background: #f3eff8; border-color: #e2d8ef;}
+button:not(.primary):not(.disconnect):not(.danger-icon), .btn:not(.primary):not(.disconnect), .sidebar nav button, .person-actions button:not(.danger-icon), .icon-btn:not(.danger-icon), .add-student, .chat-item, .alert-row button, .modal-head button { -webkit-appearance: none !important; appearance: none !important; background-color: #f0eef3 !important; border: 1px solid #e2dce9 !important; color: #393149 !important; box-shadow: none !important;}
+.btn.ghost { background-color: #eae7ef !important;}
+.btn.outline, .add-student { background-color: #f1edf7 !important; color: var(--purple) !important;}
+.sidebar nav button.active { background: linear-gradient(105deg, #573e99, #7856bd) !important; border-color: transparent !important; color: #fff !important;}
+.chat-item.selected { background-color: #eae4f4 !important; color: var(--purple) !important;}
+.btn.primary { background: linear-gradient(105deg, #573e99, #7856bd) !important; border-color: transparent !important; color: #fff !important;}
+.btn.disconnect { background-color: #fff0f1 !important; border-color: #f2d5d9 !important; color: #b82c3b !important;}
+.sidebar nav button.active:not(.primary):not(.disconnect):not(.danger-icon) { background: linear-gradient(105deg, #573e99, #7856bd) !important; border-color: transparent !important; color: #fff !important;}
+.btn.ghost:not(.primary):not(.disconnect):not(.danger-icon) { background-color: #eae7ef !important;}
+.btn.outline:not(.primary):not(.disconnect):not(.danger-icon), button.add-student:not(.primary):not(.disconnect):not(.danger-icon) { background-color: #f1edf7 !important; color: var(--purple) !important;}
+button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { background-color: #eae4f4 !important; color: var(--purple) !important;}
+.composer-footer .btn, .composer-send { width: 100%;}
+.composer-footer{ align-items: stretch; flex-direction: column;}
+.teacher-graph-card { padding: 12px; gap: 9px;}
+.teacher-graph-card b { font-size: 12px; overflow-wrap: anywhere;}
+.teacher-graph-card .readonly-tag { font-size: 9px; padding: 5px 7px;}
+.teacher-graph-student-grid { grid-template-columns: minmax(0,1fr); gap: 8px;}
+.chat-filter-segment button { gap: 4px;}
+.credential-password b { font-size: 24px;}
+.topbar-actions { gap: 5px;}
+.theme-toggle { width: 33px; height: 33px; flex: 0 0 33px;}
+:root[data-theme="dark-soft"] button:not(.primary):not(.disconnect):not(.danger-icon), :root[data-theme="dark-soft"] .btn:not(.primary):not(.disconnect):not(.danger-icon), :root[data-theme="dark-soft"] .sidebar nav button, :root[data-theme="dark-soft"] .person-actions button:not(.danger-icon), :root[data-theme="dark-soft"] .icon-btn:not(.danger-icon), :root[data-theme="dark-soft"] .add-student, :root[data-theme="dark-soft"] .chat-item, :root[data-theme="dark-soft"] .alert-row button, :root[data-theme="dark-soft"] .modal-head button { background: #2b3443 !important; border-color: #414c60 !important; color: #c6cddd !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .sidebar nav button.active, :root[data-theme="dark-soft"] .btn.primary { background: #71679e !important; border-color: #8b80b8 !important; color: #fff !important;}
+:root[data-theme="dark-soft"] .chat-item.selected, :root[data-theme="dark-soft"] button.chat-item.selected { background: #343449 !important; border-color: #514b6d !important; color: #d1c9f4 !important;}
+.graph-panel { min-width: 0; border-radius: 15px;}
+.graph-panel .legend { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; padding: 8px 10px; border-radius: 11px; line-height: 1.3;}
+.graph-panel .root-node { min-height: 66px;}
+.graph-panel .root-node img { flex: 0 0 42px;}
+.graph-panel .teacher-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px;}
+.graph-panel .teacher-branch { min-width: 0; border-radius: 13px;}
+.graph-panel .teacher-card, .graph-panel .student-card { min-width: 0; min-height: 58px; border-radius: 10px;}
+.graph-panel .person-main, .graph-panel .person-info, .chat-head > div:first-child { min-width: 0;}
+.graph-panel .person-info b { overflow-wrap: anywhere; white-space: normal; line-height: 1.35;}
+.graph-panel .person-actions { gap: 3px;}
+.graph-panel .person-actions button { flex: 0 0 30px;}
+.graph-panel .student-list { gap: 7px; margin-top: 8px;}
+.graph-panel .add-student { min-height: 30px; margin-top: 5px; padding: 5px 9px;}
+.user-row:hover, .person-card:hover, .teacher-branch:hover { transform: none;}
+.graph-panel .person-actions button { flex-basis: 28px;}
+.chat-layout { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 12px; min-width: 0; padding: 0; overflow: visible; border: 0; border-radius: 0; background: transparent; box-shadow: none;}
+.chat-list { grid-template-columns: minmax(0, 1fr);  width: 100%;   overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; touch-action: pan-y;}
+.chat-item { min-width: 0; width: 100%;}
+.chat-head {  background: inherit;}
+.chat-head-tools { justify-content: flex-end;}
+.messages { flex: 1 1 0; min-width: 0; min-height: 0; height: auto; max-height: none; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; padding: 12px; touch-action: pan-y;}
+
+.chat-composer textarea {  box-sizing: border-box;}
+@media (max-height: 700px) {
+.chat-list { max-height: min(34dvh, 230px);}
+.chat-detail { min-height: 320px; height: min(64dvh, 520px); max-height: 520px;}
+.messages { padding: 9px;}
+.chat-composer { max-height: 44%; padding: 8px 10px;}
+}
+:root[data-theme="dark-soft"] .chat-layout { background: transparent !important; border: 0 !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .chat-list { background: #1d2430 !important; border: 1px solid #39465a !important; box-shadow: 0 5px 18px rgba(0, 0, 0, .16) !important;}
+:root[data-theme="dark-soft"] .chat-detail { background: #202633 !important; border: 1px solid #3a4659 !important; box-shadow: 0 5px 18px rgba(0, 0, 0, .18) !important;}
+:root[data-theme="dark-soft"] .chat-head, :root[data-theme="dark-soft"] .chat-composer { background: #202633 !important; border-color: #39465a !important;}
+:root[data-theme="dark-soft"] .messages { background: #191f2a !important;}
+.content { padding: 12px 10px 16px;}
+.topbar { height: 46px; padding: 0 12px;}
+
+
+.teacher-readonly-graph { padding: 12px;}
+.teacher-graph-root { max-width: none; margin: 10px 0;}
+.graph-panel .graph-legend { padding: 7px 9px;}
+.graph-panel .graph-legend-row { margin-bottom: 14px;}
+.graph-panel .root-node { width: fit-content; max-width: 100%; margin-bottom: 15px;}
+.graph-panel .root-node > div { justify-content: flex-start;}
+.graph-panel .student-list { padding-left: 9px;}
+.graph-panel .student-card { gap: 5px; padding: 8px 7px;}
+.graph-panel .student-card .avatar { flex-basis: 30px; width: 30px; height: 30px;}
+.graph-panel .root-node > div { gap: 2px 6px;}
+.user-actions { align-self: center;}
+.graph-panel .teacher-card > .person-main { gap: 7px;}
+.graph-panel .teacher-card { gap: 5px; padding: 7px;}
+.graph-panel .student-card > .graph-person-action { flex-basis: 25px !important; width: 25px !important; height: 25px !important; min-width: 25px !important; min-height: 25px !important;}
+.graph-panel .teacher-card .person-actions button{ flex-basis: 25px; width: 25px; height: 25px;}
+.graph-panel .graph-legend-item b { border-radius: 9px;}
+.graph-panel .graph-legend { gap: 8px;}
+.graph-panel .graph-legend-item { gap: 6px; font-size: 10px;}
+.graph-panel .graph-legend-item b { min-width: 30px; min-height: 27px; padding: 0 8px; font-size: 14px;}
+.chat-list { align-items: stretch;}
+.chat-items-scroll { align-content: start; width: 100%; scrollbar-width: thin; touch-action: pan-y;}
+.chat-items-scroll > .empty-state { padding: 14px 8px;}
+.user-sort { min-height: 44px; height: 44px; flex: 1 1 170px;}
+.user-sort { max-width: none; width: 100%;}
+.user-count { min-height: 42px; padding: 0 10px;}
+.user-add-btn { min-height: 44px; padding: 0 13px;}
+.user-row { min-height: 80px;}
+
+.user-action-btn { width: 40px; height: 40px; flex-basis: 40px;}
+.user-row > .user-person-info { flex: 1 1 calc(100% - 58px);}
+.user-actions { flex: 1 1 100%; justify-content: flex-end; margin: 2px 0 0; padding-top: 10px; border-top: 1px solid var(--line);}
+.user-sort { padding: 0 9px;}
+.user-action-btn.connect-toggle { height: 40px;}
+.user-action-btn.user-info-btn { width: 40px; height: 40px; flex-basis: 40px;}
+.graph-panel .unassigned-grid { grid-template-columns: minmax(0, 1fr); gap: 11px;}
+.graph-panel .unassigned-student-card { min-height: 0;}
+.graph-panel .unassigned-student-actions > .graph-person-action { flex-basis: 32px !important; width: 32px !important; height: 32px !important; min-width: 32px !important; min-height: 32px !important;}
+.graph-panel .unassigned-student-actions { gap: 7px;}
+.graph-panel .unassigned-student-actions .btn { padding: 7px 10px;}
+.confirm-delete-modal .modal-actions { flex-wrap: nowrap;}
+.confirm-delete-modal .modal-actions .btn { flex: 1 1 0; min-width: 0;}
+.user-person-info { font-size: 15px;}
+.chat-layout { height: clamp(520px, calc(100dvh - 205px), 1000px); min-height: 0; grid-template-rows: clamp(150px, 27dvh, 245px) minmax(0, 1fr);}
+.chat-list { height: 100%;}
+/* Match Users and Structure: remove the empty mobile profile row above chats. */
+.chats-content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding-bottom: 14px;}
+.chats-content > .chat-layout { flex: 1 1 auto;}
+.login-screen { padding: 14px;}
+.login-card { border-radius: 20px;}
+.login-logo { margin-bottom: 17px;}
+.login-card h1 { font-size: clamp(27px, 8vw, 32px);}
+/* Prevent Safari on iOS from zooming the page when an input is focused. */
+.login-card .stack input, .login-card .stack select { min-height: 46px; font-size: 16px;}
+.login-theme-toggle { top: 12px; right: 12px;}
+.sidebar nav { grid-template-columns: repeat(3, minmax(0, 1fr));}
+.sidebar nav button { min-width: 0; padding-inline: 2px; white-space: normal; overflow-wrap: anywhere;}
+.content, .topbar, .graph-panel, .user-list, .chat-layout, .chat-detail, .chat-list, .modal { min-width: 0; max-width: 100%;}
+.user-row, .message, .chat-head, .chat-item, .overlay > .modal{ overflow-wrap: anywhere;}
+.person-card, .user-row, .composer-footer { min-width: 0;}
+.chat-head-tools { flex-wrap: wrap;}
+.toast { right: 10px; bottom: 10px; left: 10px; max-width: calc(100% - 20px); justify-content: center; text-align: center;}
+.login-card { padding: 24px 16px 20px;}
+.login-logo { width: 84px; height: 84px;}
+.sidebar nav button { letter-spacing: -.15px;}
+.content { padding-right: 8px; padding-left: 8px;}
+.user-list, .chat-layout { padding: 9px;}
+.sidebar-bottom .logout svg { min-width: 19px; min-height: 19px; stroke-width: 2; width: 19px; height: 19px;}
+.graph-panel .graph-legend-row { display: flex; justify-content: space-between; flex-wrap: wrap;}
+.overlay { place-items: center;}
+.modal *, .modal *::before, .modal *::after { box-sizing: border-box; min-width: 0;}
+.modal .stack, .modal .stack label, .modal .stack input, .modal .stack select, .modal .stack textarea { width: 100%; max-width: 100%;}
+.modal .modal-head { gap: 10px;}
+.modal .modal-head > div { flex: 1 1 auto; overflow-wrap: anywhere;}
+.modal .modal-actions { flex-wrap: wrap; gap: 8px;}
+.modal .modal-actions > .btn { min-width: 0; max-width: 100%;}
+.modal .invite-code { max-width: 100%; font-size: clamp(20px, 7vw, 28px); letter-spacing: clamp(2px, 1vw, 4px); overflow-wrap: anywhere;}
+.graph-panel .graph-legend-row .legend { font-size: 9px; gap: 3px;}
+
+.overlay:has(.create-participant-modal) { display: flex; align-items: flex-start; justify-content: center; padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain;}
+.overlay > .create-participant-modal { flex: 0 1 auto; width: min(100%, 420px); max-width: 420px; max-height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom))); min-height: 0; margin: auto 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;}
+.create-participant-modal .modal-head { gap: 8px;}
+.create-participant-modal .modal-head h2 { font-size: clamp(17px, 5vw, 19px);}
+.create-participant-modal .stack label { gap: 5px; font-size: 12px;}
+.create-participant-modal .stack input, .create-participant-modal .stack select { height: 42px; min-height: 42px; font-size: 16px;}
+.create-participant-modal .modal-actions, .create-participant-modal .stack > .btn { min-height: 42px;}
+
+/* Fluid sizing replaces the former 360/380/420/520px micro-breakpoints. */
+.sidebar nav button { font-size: clamp(9px, 2.8vw, 11px); gap: clamp(3px, 1vw, 6px);}
+.content { padding-inline: clamp(8px, 2vw, 15px);}
+.graph-panel { padding: clamp(9px, 2.2vw, 17px);}
+.graph-panel .teacher-branch { padding: clamp(7px, 1.8vw, 10px);}
+.graph-panel .person-card { padding: clamp(7px, 1.8vw, 12px); gap: clamp(5px, 1.2vw, 8px);}
+.graph-panel .avatar { width: clamp(32px, 8.5vw, 38px); height: clamp(32px, 8.5vw, 38px);}
+.graph-panel .person-actions button { width: clamp(25px, 6.5vw, 28px); height: clamp(25px, 6.5vw, 28px);}
+.graph-panel .root-node { gap: clamp(8px, 2vw, 11px); padding: clamp(9px, 2.2vw, 12px) clamp(10px, 2.6vw, 16px);}
+.graph-panel .root-node img { flex-basis: clamp(36px, 10vw, 42px); width: clamp(36px, 10vw, 42px); height: clamp(36px, 10vw, 42px);}
+.graph-panel .root-node b { font-size: clamp(11px, 3vw, 12px);}
+.graph-panel .root-node small { font-size: clamp(9px, 2.5vw, 10px);}
+.user-sort { padding-inline: clamp(9px, 2.5vw, 12px);}
+.user-count { gap: clamp(6px, 1.5vw, 9px); font-size: clamp(10px, 2.7vw, 11px);}
+.user-info-popover { right: clamp(-48px, -6vw, -20px);}
+.graph-panel .unassigned-student-card { padding: clamp(10px, 2vw, 13px); gap: clamp(9px, 2vw, 12px);}
+.graph-panel .unassigned-student-card > .person-main { gap: clamp(9px, 2vw, 12px);}
+.graph-panel .unassigned-student-card > .person-main > .avatar { flex-basis: clamp(38px, 10vw, 44px); width: clamp(38px, 10vw, 44px); height: clamp(38px, 10vw, 44px);}
+.overlay > .create-participant-modal { padding: clamp(14px, 3.5vw, 20px); border-radius: clamp(14px, 3vw, 16px);}
+.create-participant-modal .modal-head { margin-bottom: clamp(11px, 2.5vw, 14px);}
+.create-participant-modal .stack { gap: clamp(8px, 2vw, 10px);}
+.graph-panel .graph-legend-row {  align-items: stretch; gap: clamp(3px, 1vw, 8px);}
+.graph-panel .graph-legend-row > .graph-legend { flex: 0 1 48%; width: 48%; min-width: 0; max-width: 48%; padding: clamp(4px, 1.2vw, 7px) clamp(4px, 1.2vw, 9px); gap: clamp(2px, .8vw, 6px); overflow: hidden;}
+.graph-panel .graph-legend .graph-legend-item { flex: 0 1 auto; min-width: 0; gap: clamp(2px, .8vw, 5px); font-size: clamp(9px, 2.8vw, 12px); white-space: nowrap;}
+.graph-panel .graph-legend .graph-legend-item > span { flex: 0 0 7px; width: 7px; height: 7px;}
+.graph-panel .graph-legend .graph-legend-item b { flex: 0 0 auto; min-width: 15px; min-height: 0; padding: 2px clamp(3px, .8vw, 5px); font-size: clamp(9px, 2.5vw, 11px);}
+.graph-panel .graph-add-participant { flex: 0 1 auto;  min-height: 0; height: auto; max-width: 52%; margin-left: 0; padding: 7px clamp(5px, 1.8vw, 12px); gap: clamp(3px, .8vw, 5px); font-size: clamp(9px, 2.6vw, 12px); white-space: nowrap;}
+.graph-panel .graph-add-participant svg { width: 14px; height: 14px;}
+}
+@media (hover: none), (pointer: coarse) {
+button, button.btn, .sidebar nav button, .logout, .person-actions button, .icon-btn, .add-student, .chat-item, .alert-row button, .modal-head button { -webkit-appearance: none !important; appearance: none !important; background: #f0eef3 !important; border: 1px solid #e2dce9 !important; color: #393149 !important; box-shadow: 0 2px 5px rgba(41, 34, 63, .06) !important;}
+.sidebar nav button.active, .btn.primary { background: linear-gradient(105deg, #573e99, #7856bd) !important; border-color: transparent !important; color: #fff !important; box-shadow: 0 4px 12px rgba(87, 62, 153, .2) !important;}
+.btn.ghost { background: #eae7ef !important; border-color: #ded8e6 !important;}
+.btn.outline, .add-student { background: #f1edf7 !important; border-color: #d8c9ed !important; color: #573e99 !important;}
+.btn.disconnect, .person-actions button.danger-icon, .icon-btn.danger-icon { background: #fff0f1 !important; border-color: #f2d5d9 !important; color: #b82c3b !important;}
+.chat-item.selected { background: #eae4f4 !important; border-color: #d8c9ed !important; color: #573e99 !important;}
+button:disabled { opacity: .5 !important;}
+:root[data-theme="dark-soft"] button:not(.primary):not(.disconnect):not(.danger-icon), :root[data-theme="dark-soft"] .btn:not(.primary):not(.disconnect):not(.danger-icon), :root[data-theme="dark-soft"] .sidebar nav button, :root[data-theme="dark-soft"] .icon-btn:not(.danger-icon), :root[data-theme="dark-soft"] .add-student, :root[data-theme="dark-soft"] .chat-item, :root[data-theme="dark-soft"] .alert-row button, :root[data-theme="dark-soft"] .modal-head button { background: #2b3443 !important; border-color: #414c60 !important; color: #c6cddd !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .sidebar nav button.active, :root[data-theme="dark-soft"] .btn.primary { background: #71679e !important; border-color: #8b80b8 !important; color: #fff !important;}
+:root[data-theme="dark-soft"] .chat-item.selected, :root[data-theme="dark-soft"] button.chat-item.selected { background: #343449 !important; border-color: #514b6d !important; color: #d1c9f4 !important;}
+:root[data-theme="dark-soft"] .user-row:hover, :root[data-theme="dark-soft"] .person-card:hover, :root[data-theme="dark-soft"] .teacher-branch:hover { background: #293343 !important; border-color: #59657b !important; box-shadow: none !important; transform: none !important;}
+}
+/* --------------------------------------------------------------------------
+   UknowApp unified visual system
+   Shared component surfaces and interaction states across desktop and
+   mobile layouts, and both color themes. Layout-specific sizing remains above.
+   -------------------------------------------------------------------------- */
+/* Consistent focus and motion without changing component geometry. */
+button, input, select, textarea { font-family: inherit;}
+button, .btn, .logout, .add-student, .chat-item, .composer-send, .user-action-btn { transition: background-color .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease, transform .16s ease;}
+:where(button, input, select, textarea, [tabindex]):focus-visible { outline: none; box-shadow: var(--ui-focus);}
+/* Buttons share one quiet, rounded control language. */
+.btn, .logout, .modal-head button, .alert-row button { border-radius: var(--ui-radius-sm);}
+.btn, .user-action-btn { border-color: var(--ui-border); box-shadow: var(--ui-shadow-soft);}
+.btn:not(.primary):not(.disconnect):not(.danger), .user-action-btn:not(.danger):not(.disconnect), .icon-btn, .person-actions button, .logout { background: var(--ui-control-bg); border-color: var(--ui-border); color: var(--ui-control-text);}
+.btn:not(.primary):not(.disconnect):not(.danger):hover, .user-action-btn:not(.danger):not(.disconnect):hover, .person-actions button:hover { background: var(--ui-control-hover); border-color: var(--ui-border-strong); color: var(--purple); box-shadow: 0 3px 9px rgba(87, 62, 153, .09);}
+.btn.primary, .composer-send { border-color: transparent; border-radius: var(--ui-radius-sm); box-shadow: 0 4px 13px rgba(87, 62, 153, .18);}
+.user-action-btn.danger { border-color: #f0d5d9; background: #fff0f1; color: #b82c3b;}
+.btn.danger:hover, .btn.disconnect:hover, .user-action-btn.danger:hover, .user-action-btn.disconnect:hover { background: #ffe5e8; border-color: #eebfc6; color: #a92332;}
+.sidebar nav button, .chat-item{ border-radius: var(--ui-radius-md);}
+.sidebar nav button:not(.active) { border: 1px solid transparent;}
+.sidebar nav button:not(.active):hover { background: var(--ui-control-hover); border-color: var(--ui-border);}
+.chat-item.selected { border-color: var(--ui-border-strong); box-shadow: inset 3px 0 0 var(--purple);}
+/* Inputs, search, filters, and composer use matching borders and focus states. */
+.stack input, .stack select, .stack textarea, .search, .search input, .user-sort, .chat-search-control, .chat-search-control input, .chat-head-tools select, .chat-composer textarea, input, select, textarea { border-radius: var(--ui-radius-sm);}
+.stack input, .stack select, .stack textarea, .search, .user-sort, .chat-search-control, .chat-head-tools select, .chat-composer textarea { border-color: var(--ui-border); background-color: #fff;}
+.stack input:focus, .stack select:focus, .stack textarea:focus, .search:focus-within, .user-sort:focus, .chat-search-control:focus-within, .chat-head-tools select:focus, .chat-composer textarea:focus { border-color: #a98bd8; box-shadow: var(--ui-focus); outline: none;}
+input::placeholder, textarea::placeholder { color: #a49daf;}
+/* Cards and workspaces share consistent surface depth and corner rhythm. */
+.graph-panel, .user-list, .chat-layout, .person-card, .teacher-graph-card, .user-info-popover, .chat-list, .chat-detail { border-radius: var(--ui-radius-lg);}
+.teacher-graph-card { border-color: var(--line); box-shadow: var(--ui-shadow-card);}
+.person-card { box-shadow: 0 1px 4px rgba(47, 31, 84, .025);}
+.person-card:hover { box-shadow: 0 5px 15px rgba(87, 62, 153, .075);}
+.user-row { border-bottom-color: #efebf4;}
+.role-tag, .readonly-tag, .unread-badge { border-radius: 7px;}
+.avatar { border-radius: 11px;}
+/* Dialogs, alerts, messages, and feedback follow the same rounded language. */
+.overlay > .modal, .modal { border-radius: 18px;}
+.modal { border: 1px solid var(--line); box-shadow: 0 22px 70px rgba(33, 22, 49, .18);}
+.modal-head { gap: 12px;}
+.alert { border-radius: var(--ui-radius-sm);}
+.message { border-radius: 13px;}
+.toast { border: 1px solid rgba(255,255,255,.12); border-radius: var(--ui-radius-md);}
+.invite-code, .credential-password { border-radius: var(--ui-radius-md);}
+/* Compact top-bar actions intentionally match the touch-device controls. */
+.topbar-actions > .theme-toggle, .topbar-actions > .icon-btn, .mobile-quick-actions > .theme-toggle, .mobile-quick-actions > .icon-btn { flex: 0 0 32px; width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 6px; display: grid; place-items: center; border: 1px solid var(--ui-border); border-radius: var(--ui-radius-sm); background: var(--ui-control-bg); color: var(--purple); box-shadow: var(--ui-shadow-soft);}
+.topbar-actions > .theme-toggle svg, .topbar-actions > .icon-btn svg, .mobile-quick-actions > .theme-toggle svg, .mobile-quick-actions > .icon-btn svg { width: 15px; height: 15px;}
+/* The soft-dark theme uses the same components, with coordinated dark surfaces. */
+:root[data-theme="dark-soft"] .btn:not(.primary):not(.disconnect):not(.danger), :root[data-theme="dark-soft"] .user-action-btn:not(.danger):not(.disconnect), :root[data-theme="dark-soft"] .topbar-actions > .theme-toggle, :root[data-theme="dark-soft"] .topbar-actions > .icon-btn, :root[data-theme="dark-soft"] .mobile-quick-actions > .theme-toggle, :root[data-theme="dark-soft"] .mobile-quick-actions > .icon-btn { background: var(--ui-control-bg) !important; border-color: var(--ui-border) !important; color: var(--ui-control-text) !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .btn:not(.primary):hover { background: var(--ui-control-hover) !important; border-color: var(--ui-border-strong) !important;}
+:root[data-theme="dark-soft"] .stack input, :root[data-theme="dark-soft"] .stack select, :root[data-theme="dark-soft"] .stack textarea, :root[data-theme="dark-soft"] .search, :root[data-theme="dark-soft"] .user-sort, :root[data-theme="dark-soft"] .chat-head-tools select, :root[data-theme="dark-soft"] .chat-composer textarea { background: #202a38 !important; border-color: #414c60 !important; color: #e0e5ee !important;}
+:root[data-theme="dark-soft"] .chat-item { border-color: transparent;}
+
+:root[data-theme="dark-soft"] .user-action-btn.danger { background: #432d39 !important; border-color: #69404c !important; color: #f0aab3 !important;}
+:root[data-theme="dark-soft"] .modal { border-color: #39465a; box-shadow: 0 22px 70px rgba(0, 0, 0, .32);}
+:root[data-theme="dark-soft"] .user-row { border-bottom-color: #303b4c;}
+:root[data-theme="dark-soft"] .person-card { box-shadow: none;}
+/* Users page: responsive layout rules shared by desktop and mobile. */
+.user-toolbar { display: grid; grid-template-columns: minmax(180px, 1fr) auto auto auto; align-items: center; gap: 10px; width: 100%; min-width: 0; box-sizing: border-box;}
+.user-toolbar > .search { width: auto; min-width: 0; max-width: none; flex: none; box-sizing: border-box;}
+.user-toolbar > .user-sort { min-width: 0; max-width: 100%; box-sizing: border-box;}
+
+.user-toolbar > .user-count { min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; box-sizing: border-box;}
+.user-toolbar > .user-add-btn { justify-self: end; min-width: 0; max-width: 100%; padding-inline: clamp(10px, 1.3vw, 18px); white-space: normal; line-height: 1.25; text-align: center; box-sizing: border-box;}
+.user-list { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box;}
+.user-row { width: 100%; max-width: 100%; box-sizing: border-box;}
+.user-person-info, .user-actions, .user-info-wrap { min-width: 0;}
+.user-actions { max-width: 100%;}
+.user-info-popover { right: 0; box-sizing: border-box;}
+/* Narrow desktop windows: wrap controls before they overflow beside the sidebar. */
+@media (min-width: 1025px) and (max-width: 1200px) {
+.user-toolbar { grid-template-columns: minmax(0, 1fr) minmax(0, auto); gap: 9px;}
+.user-toolbar > .search { grid-column: 1 / -1;}
+.user-toolbar > .user-sort { grid-column: 1;}
+.user-toolbar > .user-count { grid-column: 2; justify-self: end;}
+.user-toolbar > .user-add-btn { grid-column: 1 / -1; justify-self: end;}
+.user-row { gap: 8px 12px;}
+
+}
+/* Mobile: two compact columns for filter/count, with a full-width add action. */
+@media (max-width: 1024px) {
+.user-toolbar { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin-bottom: 12px;}
+.user-toolbar > .search, .user-toolbar > .user-add-btn { grid-column: 1 / -1; width: 100%; justify-self: stretch;}
+.user-toolbar > .user-sort { grid-column: 1; width: 100%; padding-inline: 9px;}
+.user-toolbar > .user-count { grid-column: 2; justify-self: stretch; justify-content: center; gap: 5px; padding-inline: 7px; font-size: clamp(9px, 2.7vw, 11px); text-align: center;}
+.user-toolbar > .user-add-btn { min-height: 44px;}
+.user-row { display: grid; align-items: center; gap: 8px 10px;}
+.user-row > .avatar { grid-column: 1; grid-row: 1; flex-basis: 38px;}
+.user-row > .user-person-info { grid-column: 2; grid-row: 1; min-width: 0;}
+.user-row > .user-person-info { white-space: normal; overflow-wrap: anywhere;}
+.user-row > .user-actions { grid-column: 1 / -1; grid-row: 2; margin: 0; padding-top: 9px; border-top: 1px solid var(--line);}
+.user-action-btn.connect-toggle { max-width: 100%;}
+}
+@media (max-width: 380px) {
+.user-toolbar { grid-template-columns: minmax(0, 1fr);}
+.user-toolbar > .search, .user-toolbar > .user-sort, .user-toolbar > .user-count, .user-toolbar > .user-add-btn { grid-column: 1; width: 100%; justify-self: stretch;}
+.user-toolbar > .user-count { justify-content: space-between;}
+.user-row > .user-actions { justify-content: flex-start;}
+}
+/* One button system for desktop and mobile.
+   Breakpoints may change layout/size, but never replace button colours or surfaces. */
+/* Neutral buttons */
+.btn:not(.primary):not(.danger):not(.disconnect), .sidebar nav button:not(.active), .logout, .icon-btn, .theme-toggle, .person-actions button:not(.danger-icon), .user-action-btn:not(.connect):not(.disconnect):not(.user-delete), .add-student, .graph-add-participant, .attach-control, .chat-filter-segment button, .user-info-popover-head button, .selected-file button { -webkit-appearance: none !important; appearance: none !important; background: var(--button-bg) !important; border: 1px solid var(--button-border) !important; color: var(--button-text) !important; box-shadow: var(--ui-shadow-soft, 0 2px 6px rgba(41,34,63,.06)) !important;}
+.sidebar nav button:not(.active):hover, .logout:hover, .icon-btn:hover, .user-action-btn:not(.connect):not(.disconnect):not(.user-delete):hover, .add-student:hover, .chat-filter-segment button:hover { background: var(--button-bg-hover) !important; border-color: var(--button-border-hover) !important; color: var(--purple) !important; box-shadow: 0 3px 9px rgba(87,62,153,.09) !important;}
+/* Primary actions */
+.btn.primary, .sidebar nav button.active { -webkit-appearance: none !important; appearance: none !important; border: 1px solid transparent !important;}
+.btn.primary:hover:not(:disabled), .sidebar nav button.active:hover { border-color: transparent !important; color: #fff !important;}
+/* Destructive and disconnect actions */
+.btn.danger, .btn.disconnect, .user-action-btn.disconnect, .user-action-btn.user-delete, .person-actions button.danger-icon, .icon-btn.danger-icon, .danger-icon { -webkit-appearance: none !important; appearance: none !important; border: 1px solid var(--button-danger-border) !important;}
+/* Selected states remain distinct without changing the shared button language. */
+.chat-item { -webkit-appearance: none !important; appearance: none !important; border: 1px solid transparent !important; box-shadow: none !important;}
+.chat-item:not(.selected) { background: var(--button-bg) !important; color: var(--button-text) !important;}
+.chat-item:not(.selected):hover { background: var(--button-bg-hover) !important; border-color: var(--button-border-hover) !important;}
+.chat-item.selected, .chat-filter-segment button.active { background: #eae4f4 !important; border: 1px solid var(--button-border-hover) !important; color: #573e99 !important; box-shadow: inset 3px 0 0 #7856bd !important;}
+/* Normalize button typography and focus on every viewport. */
+.btn, .sidebar nav button, .logout, .icon-btn, .theme-toggle, .person-actions button, .user-action-btn, .add-student, .graph-add-participant, .chat-filter-segment button, .attach-control, .user-info-popover-head button { font-family: inherit; font-weight: 700; -webkit-tap-highlight-color: transparent;}
+button:disabled, .btn:disabled { opacity: .48 !important; cursor: not-allowed !important; transform: none !important;}
+/* Matching surfaces in the soft-dark theme. */
+:root[data-theme="dark-soft"] .sidebar nav button:not(.active), :root[data-theme="dark-soft"] .logout, :root[data-theme="dark-soft"] .add-student, :root[data-theme="dark-soft"] .chat-item:not(.selected) { background: var(--button-bg) !important; border-color: var(--button-border) !important; color: var(--button-text) !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .sidebar nav button:not(.active):hover, :root[data-theme="dark-soft"] .logout:hover, :root[data-theme="dark-soft"] .add-student:hover, :root[data-theme="dark-soft"] .chat-item:not(.selected):hover { background: var(--button-bg-hover) !important; border-color: var(--button-border-hover) !important; color: #e0d8ff !important;}
+:root[data-theme="dark-soft"] .btn.primary, :root[data-theme="dark-soft"] .sidebar nav button.active { background: var(--button-primary) !important; border-color: #8b80b8 !important; color: #fff !important;}
+:root[data-theme="dark-soft"] .user-action-btn.disconnect, :root[data-theme="dark-soft"] .icon-btn.danger-icon { background: var(--button-danger-bg) !important; border-color: var(--button-danger-border) !important; color: var(--button-danger-text) !important;}
+:root[data-theme="dark-soft"] .chat-item.selected { background: #39354d !important; border-color: #62577e !important; color: #ddd5ff !important; box-shadow: inset 3px 0 0 #9587c6 !important;}
+/* Users toolbar: compact, width-safe alignment on every viewport. */
+.toolbar.user-toolbar { justify-content: start; width: 100%; max-width: 100%; min-width: 0; margin: 0 0 14px; box-sizing: border-box;}
+.toolbar.user-toolbar > * { min-width: 0; max-width: 100%; box-sizing: border-box;}
+.toolbar.user-toolbar > .search { width: 100%; min-width: 0; max-width: none; flex: none;}
+.toolbar.user-toolbar > .search input { width: 100%; min-width: 0;}
+.toolbar.user-toolbar > .user-sort { display: block; width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; text-overflow: ellipsis; white-space: nowrap;}
+.toolbar.user-toolbar > .user-count { min-width: 0; max-width: 100%; overflow-wrap: normal;}
+.toolbar.user-toolbar > .user-add-btn { width: auto; min-width: 0; max-width: 100%; line-height: 1.2;}
+/* On narrow desktop windows the search gets its own row, with the other
+   controls arranged below rather than spreading beyond the available width. */
+@media (min-width: 1025px) and (max-width: 1200px) {
+.toolbar.user-toolbar > .user-count { white-space: normal; text-align: right;}
+}
+@media (max-width: 1024px) {
+.toolbar.user-toolbar > .user-count { justify-content: center; text-align: center; overflow-wrap: anywhere;}
+}
+@media (max-width: 480px) {
+.toolbar.user-toolbar > .search, .toolbar.user-toolbar > .user-sort { grid-column: 1; width: 100%; justify-self: stretch;}
+.toolbar.user-toolbar > .user-count { text-align: left;}
+.toolbar.user-toolbar > .user-add-btn { justify-content: center;}
+}
+/* Compact action groups across Structure, Users and Conversations. */
+.graph-add-participant, .user-add-btn, .composer-send { min-height: 38px; padding: 8px 12px; gap: 7px; border-radius: 10px;}
+.person-actions, .user-actions, .unassigned-student-actions, .modal-actions, .chat-filter-segment, .composer-tools { display: flex; align-items: center; gap: 6px;}
+.icon-btn, .user-action-btn { flex: 0 0 auto;}
+.person-actions button { width: 32px; height: 32px; border-radius: 9px;}
+.add-student { min-height: 32px;   gap: 6px;}
+.unassigned-student-actions { flex-wrap: wrap; justify-content: flex-end; gap: 7px;}
+
+.unassigned-student-actions > .btn { min-height: 32px; padding: 6px 10px;}
+.user-actions { flex-wrap: nowrap; justify-content: flex-end;}
+.user-action-btn { min-height: 34px; border-radius: 9px;}
+.user-action-btn:not(.connect-toggle) { width: 34px; height: 34px; padding: 0;}
+.user-action-btn.connect-toggle { min-height: 34px; padding: 6px 10px; gap: 6px; font-size: 11px; white-space: nowrap;}
+.chat-filter-segment button { min-height: 32px; padding: 6px 9px; gap: 5px; border-radius: 8px; font-size: 11px;}
+.chat-composer .composer-footer { gap: 10px;}
+.composer-tools { min-width: 0; flex-wrap: wrap;}
+.attach-control { min-height: 34px; padding: 6px 10px; gap: 6px; border-radius: 9px; font-size: 11px;}
+.composer-send { justify-content: center;}
+.modal-actions { justify-content: flex-end; flex-wrap: wrap; gap: 7px;}
+.modal-actions .btn { padding: 8px 12px;}
+/* Keep action groups dense without shrinking tap targets or causing overflow. */
+@media (max-width: 900px) {
+.person-actions button { width: 34px; height: 34px;}
+.user-actions { gap: 5px;}
+.user-action-btn.connect-toggle { padding-inline: 8px;}
+
+}
+@media (max-width: 1024px) {
+.graph-add-participant { min-height: 36px; padding: 7px 10px;}
+.person-actions, .modal-actions{ gap: 6px;}
+.user-actions { flex-wrap: wrap; gap: 6px;}
+.person-actions button, .user-action-btn:not(.connect-toggle){ width: 36px; height: 36px;}
+.user-action-btn.connect-toggle { min-height: 36px; min-width: 0; padding: 7px 9px;}
+
+.composer-send { width: 100%;}
+.composer-send { flex: 0 0 auto;}
+}
+@media (max-width: 480px) {
+.unassigned-student-actions { width: 100%; justify-content: flex-start;}
+.user-actions { justify-content: flex-start;}
+.user-action-btn.connect-toggle { flex: 1 1 auto;}
+
+.composer-send { width: 100%;}
+.modal-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));}
+.modal-actions .btn { width: 100%; min-width: 0;}
+}
+/* Calm, consistent button language — refined hierarchy and lighter surfaces. */
+/* Secondary actions should feel quiet; reserve filled colour for the main action. */
+.btn:not(.primary):not(.danger):not(.disconnect), .icon-btn, .theme-toggle, .person-actions button:not(.danger-icon), .user-action-btn:not(.connect):not(.disconnect):not(.user-delete), .graph-add-participant, .attach-control, .chat-filter-segment button, .user-info-popover-head button, .selected-file button { background: #fff !important; border: 1px solid var(--button-border) !important; color: var(--button-text) !important; box-shadow: none !important; transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s ease !important;}
+.icon-btn:hover:not(:disabled), .theme-toggle:hover:not(:disabled), .person-actions button:not(.danger-icon):hover:not(:disabled), .graph-add-participant:hover:not(:disabled), .user-info-popover-head button:hover, .selected-file button:hover { background: #f5f1fa !important; border-color: #d9cde9 !important; color: #594091 !important; box-shadow: none !important;}
+.btn.primary { background: var(--button-primary) !important; border: 1px solid var(--button-primary) !important; color: #fff !important; box-shadow: 0 2px 7px rgba(87,62,153,.13) !important; transition: background-color .16s ease, box-shadow .16s ease, transform .16s ease !important;}
+.btn.primary:hover:not(:disabled) { background: var(--button-primary-hover) !important; border-color: var(--button-primary-hover) !important; box-shadow: 0 3px 10px rgba(87,62,153,.17) !important;}
+.btn:not(.primary):not(.danger):not(.disconnect):active:not(:disabled), .icon-btn:active:not(:disabled), .person-actions button:active:not(:disabled), .user-action-btn:active:not(:disabled), .btn.primary:active:not(:disabled){ transform: translateY(1px);}
+/* Icon actions are intentionally quiet until the user points at them. */
+.user-action-btn:not(.connect-toggle), .icon-btn, .theme-toggle { width: 34px; height: 34px; min-width: 34px; min-height: 34px; padding: 0 !important; border-radius: 10px !important;}
+.person-actions { gap: 4px !important;}
+.user-actions { gap: 5px !important;}
+.person-actions button:not(.danger-icon), .user-action-btn:not(.connect):not(.disconnect):not(.user-delete), .icon-btn:not(.danger-icon) { background: transparent !important; border-color: transparent !important; box-shadow: none !important;}
+.user-action-btn:not(.connect):not(.disconnect):not(.user-delete):hover, .icon-btn:not(.danger-icon):hover { background: #f2edf8 !important; border-color: #eee7f6 !important;}
+/* Connect is a contextual action, not a second primary CTA. */
+.user-action-btn.connect-toggle.connect { background: #f2eef9 !important; border: 1px solid #e5dcf1 !important; color: #6549a4 !important; box-shadow: none !important;}
+.user-action-btn.connect-toggle.connect:hover:not(:disabled) { background: #eae2f5 !important; border-color: #d8c9eb !important;}
+.user-action-btn.connect-toggle.disconnect, .btn.disconnect { background: #fff !important; border: 1px solid #eee5e7 !important; color: #a66a75 !important; box-shadow: none !important;}
+.user-action-btn.connect-toggle.disconnect:hover:not(:disabled) { background: #fff3f4 !important; border-color: #f0dadd !important; color: #a64d5b !important;}
+/* Destructive actions stay neutral until hover/focus to avoid visual alarm. */
+.btn.danger:hover:not(:disabled), .user-action-btn.user-delete:hover:not(:disabled), .person-actions button.danger-icon:hover, .icon-btn.danger-icon:hover, .danger-icon:hover { background: #fff1f2 !important; border-color: #f3dfe2 !important; color: #b33f50 !important; box-shadow: none !important;}
+/* Small inline actions and segmented controls use one rhythm. */
+.add-student, .graph-add-participant, .attach-control, .chat-filter-segment button { min-height: 36px; border-radius: 10px !important; font-size: 12px; font-weight: 650; box-shadow: none !important;}
+.chat-filter-segment { gap: 3px !important; padding: 3px !important; background: #f7f5fa !important; border: 1px solid #eeeaf3 !important; border-radius: 11px !important;}
+.chat-filter-segment button { border-color: transparent !important; background: transparent !important;}
+.chat-filter-segment button.active { background: #fff !important; border-color: #e9e2f1 !important; color: #594091 !important; box-shadow: 0 1px 3px rgba(41,34,63,.06) !important;}
+.modal-actions .btn { min-height: 38px;}
+button:focus-visible, .btn:focus-visible { outline: 2px solid #aa95d0 !important; outline-offset: 2px !important;}
+/* Soft-dark theme keeps the same restrained hierarchy. */
+:root[data-theme="dark-soft"] .btn:not(.primary):not(.danger):not(.disconnect), :root[data-theme="dark-soft"] .icon-btn, :root[data-theme="dark-soft"] .theme-toggle, :root[data-theme="dark-soft"] .person-actions button:not(.danger-icon), :root[data-theme="dark-soft"] .user-action-btn:not(.connect):not(.disconnect):not(.user-delete), :root[data-theme="dark-soft"] .graph-add-participant, :root[data-theme="dark-soft"] .attach-control, :root[data-theme="dark-soft"] .chat-filter-segment button, :root[data-theme="dark-soft"] .user-info-popover-head button, :root[data-theme="dark-soft"] .selected-file button { background: transparent !important; border-color: transparent !important; color: var(--button-text) !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .btn:not(.primary):not(.danger):not(.disconnect):hover, :root[data-theme="dark-soft"] .icon-btn:hover, :root[data-theme="dark-soft"] .theme-toggle:hover, :root[data-theme="dark-soft"] .person-actions button:hover, :root[data-theme="dark-soft"] .user-action-btn:hover, :root[data-theme="dark-soft"] .graph-add-participant:hover, :root[data-theme="dark-soft"] .attach-control:hover, :root[data-theme="dark-soft"] .chat-filter-segment button:hover { background: #394256 !important; border-color: #4b5670 !important; color: #e1dafa !important;}
+:root[data-theme="dark-soft"] .btn.primary { background: var(--button-primary) !important; border-color: var(--button-primary) !important;}
+:root[data-theme="dark-soft"] .user-action-btn.connect-toggle.connect { background: #39364d !important; border-color: #514a6c !important; color: #d8cff7 !important;}
+:root[data-theme="dark-soft"] .user-action-btn.connect-toggle.disconnect, :root[data-theme="dark-soft"] .btn.disconnect, :root[data-theme="dark-soft"] .btn.danger, :root[data-theme="dark-soft"] .user-action-btn.user-delete, :root[data-theme="dark-soft"] .person-actions button.danger-icon, :root[data-theme="dark-soft"] .danger-icon { background: transparent !important; border-color: transparent !important; color: #d59aa4 !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .chat-filter-segment { background: #252d3b !important; border-color: #394355 !important;}
+:root[data-theme="dark-soft"] .chat-filter-segment button.active { background: #3b3652 !important; border-color: #51496d !important; color: #e2d9ff !important; box-shadow: none !important;}
+/* Users toolbar: stable alignment, static count, equal-height search and sort. */
+.toolbar.user-toolbar { display: grid !important; grid-template-columns: minmax(220px, 1fr) minmax(190px, 230px) max-content minmax(max-content, auto); align-items: center !important; gap: 10px !important;}
+.toolbar.user-toolbar > .search, .toolbar.user-toolbar > .user-sort { height: 42px !important; min-height: 42px !important; max-height: 42px !important; box-sizing: border-box !important; margin: 0 !important;}
+.toolbar.user-toolbar > .search { display: flex !important; align-items: center !important; gap: 9px !important; padding: 0 12px !important; border: 1px solid var(--line) !important; border-radius: 10px !important;}
+.toolbar.user-toolbar > .search > svg { display: block !important; flex: 0 0 16px !important; width: 16px !important; height: 16px !important;}
+.toolbar.user-toolbar > .search > input { flex: 1 1 0 !important; width: 0 !important; min-width: 0 !important; height: 100% !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; border: 0 !important; outline: none !important; box-shadow: none !important; line-height: normal !important;}
+.toolbar.user-toolbar > .user-sort { display: block !important; width: 100% !important; height: 42px !important; min-height: 42px !important; padding: 0 8px !important; border: 1px solid var(--line) !important; appearance: auto !important; -webkit-appearance: menulist !important; box-sizing: border-box !important;}
+
+.toolbar.user-toolbar > .user-count { justify-self: start !important; box-shadow: none !important;}
+.toolbar.user-toolbar > .user-add-btn { justify-self: end !important; margin-left: auto !important; min-height: 42px !important; height: 42px !important; padding: 0 15px !important; white-space: nowrap !important;}
+/* Narrow desktop windows: two fixed rows keep toolbar controls aligned. */
+@media (min-width: 1025px) and (max-width: 1200px) {
+.toolbar.user-toolbar { grid-template-columns: minmax(0, 1fr) minmax(190px, .8fr) !important; grid-template-rows: 42px 42px !important;}
+.toolbar.user-toolbar > .search { grid-column: 1 !important; grid-row: 1 !important; width: 100% !important;}
+.toolbar.user-toolbar > .user-sort { grid-column: 2 !important; grid-row: 1 !important; width: 100% !important;}
+.toolbar.user-toolbar > .user-count { grid-column: 1 !important; grid-row: 2 !important; justify-self: start !important;}
+.toolbar.user-toolbar > .user-add-btn { grid-column: 2 !important; grid-row: 2 !important; justify-self: end !important; margin-left: 0 !important;}
+}
+/* Phones: a deliberate stack with no accidental line wrapping. */
+@media (max-width: 1024px) {
+.toolbar.user-toolbar { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; grid-template-rows: 42px 42px auto !important; gap: 8px !important;}
+.toolbar.user-toolbar > .search { grid-column: 1 / -1 !important; grid-row: 1 !important; width: 100% !important;}
+.toolbar.user-toolbar > .user-sort { grid-column: 1 / -1 !important; grid-row: 2 !important; width: 100% !important;}
+.toolbar.user-toolbar > .user-count { grid-column: 1 !important; grid-row: 3 !important; justify-self: start !important;}
+.toolbar.user-toolbar > .user-add-btn { grid-column: 2 !important; grid-row: 3 !important; justify-self: end !important; width: auto !important; margin: 0 !important;}
+}
+/* User count: a quiet information chip, visually aligned with search and sort. */
+.toolbar.user-toolbar > .user-count { min-height: 42px !important; align-self: center !important; display: inline-flex !important; align-items: center !important; gap: 9px !important; padding: 0 12px !important; border: 1px solid #e9e3f2 !important; border-radius: 10px !important; background: #faf9fc !important; color: #817b91 !important; font-size: 12px !important; font-weight: 550 !important; line-height: 1 !important; white-space: nowrap !important; cursor: default !important; pointer-events: none !important;}
+.toolbar.user-toolbar > .user-count b { display: inline-grid !important; place-items: center !important; min-width: 25px !important; height: 25px !important; padding: 0 7px !important; border: 1px solid #e6dcf3 !important; border-radius: 8px !important; background: #f0eafb !important; color: #6549a4 !important; font-size: 12px !important; font-weight: 750 !important; font-variant-numeric: tabular-nums !important;}
+:root[data-theme="dark-soft"] .toolbar.user-toolbar > .user-count { background: #293243 !important; border-color: #3c4659 !important; color: #b9c1d1 !important;}
+:root[data-theme="dark-soft"] .toolbar.user-toolbar > .user-count b { background: #39344e !important; border-color: #51496d !important; color: #ded5fb !important;}
+@media (max-width: 480px) {
+.toolbar.user-toolbar > .user-count { width: 100% !important;}
+/* Very narrow phones: give the count and add action their own full-width rows. */
+.toolbar.user-toolbar { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: auto !important; align-items: stretch !important; gap: 8px !important;}
+.toolbar.user-toolbar > .user-count, .toolbar.user-toolbar > .user-add-btn { grid-column: 1 !important; width: 100% !important; min-width: 0 !important; max-width: 100% !important; justify-self: stretch !important; margin: 0 !important; box-sizing: border-box !important;}
+.toolbar.user-toolbar > .user-count {  height: auto !important; justify-content: flex-start !important; flex-wrap: wrap !important; gap: 7px !important; padding: 8px 10px !important; white-space: normal !important; overflow-wrap: anywhere !important; line-height: 1.3 !important;}
+.toolbar.user-toolbar > .user-add-btn { height: auto !important; min-height: 42px !important; padding: 9px 12px !important; white-space: normal !important; line-height: 1.25 !important; text-align: center !important;}
+.toolbar.user-toolbar > .user-count b, .toolbar.user-toolbar > .user-add-btn svg{ flex: 0 0 auto !important;}
+}
+/* Keep the navigation shell fixed while only the active section viewport changes. */
+/* Shared workspace rhythm: every section starts on the same grid and uses
+   the same responsive outer spacing. */
+.chats-main > .content { width: 100%; max-width: 1680px; margin-inline: auto; padding: clamp(18px, 2vw, 28px) clamp(16px, 2.2vw, 34px); box-sizing: border-box; min-width: 0;}
+.chats-main > .content.chats-content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding-bottom: clamp(18px, 2vw, 28px);}
+.chats-content > .chat-layout { flex: 1 1 auto; min-height: 0; height: auto; max-height: none;}
+@media (max-width: 1024px) {
+.chats-main > .content { padding: 12px clamp(9px, 3vw, 14px) 14px;}
+
+/* Touch-first viewport and dialog behavior for the mobile layout through 1024px. */
+html, body, #root { min-height: 100dvh; height: 100dvh; overflow: hidden;}
+.chats-shell { display: flex; flex-direction: column; width: 100%;  overscroll-behavior: none;}
+.chats-shell > .sidebar { z-index: 40;}
+.chats-main { display: flex;  overflow: hidden;}
+.chats-main > .content:not(.chats-content) { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto;}
+.chats-main > .content.chats-content { flex: 1 1 auto;}
+.overlay {  inset: 0; z-index: 1000; display: flex; justify-content: center; width: 100%; height: 100%; min-height: 0; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; overscroll-behavior: contain;}
+.overlay > .modal { flex: 0 1 auto; min-width: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; box-sizing: border-box;}
+.overlay > .modal .stack { min-width: 0;}
+.overlay > .modal .stack label, .overlay > .modal .stack input, .overlay > .modal .stack select { min-width: 0; max-width: 100%;}
+.chats-shell > .sidebar { position: relative; top: auto; flex: 0 0 auto;}
+
+.overlay { align-items: flex-start; padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));}
+.overlay > .modal { width: 100%; max-width: 480px; max-height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom))); margin: auto 0; padding: 14px; border-radius: 16px;}
+.overlay > .modal .modal-head { gap: 8px; margin-bottom: 12px;}
+.overlay > .modal .modal-head h2 { font-size: clamp(17px, 5vw, 20px); line-height: 1.25;}
+.overlay > .modal .stack { gap: 9px;}
+.overlay > .modal .stack label { gap: 5px; font-size: 12px;}
+.overlay > .modal .stack input, .overlay > .modal .stack select { width: 100%; height: 42px; min-height: 42px; font-size: 16px;}
+.overlay > .modal:not(.credential-modal) .modal-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; padding-top: 3px;}
+.overlay > .modal:not(.credential-modal) .modal-actions .btn { width: 100%; min-width: 0; min-height: 42px; padding-inline: 8px; white-space: normal;}
+/* Responsive inbox workspace: keep the composer visible and scroll only
+   the conversation list and message history on touch-sized screens. */
+.chats-content > .chat-layout { grid-template-columns: minmax(0, 1fr); align-items: stretch;}
+.chat-list { display: flex; flex-direction: column; min-width: 0; min-height: 0; max-height: none; overflow: hidden; border: 1px solid var(--line); border-radius: 13px; background: var(--surface, #fff);}
+.chat-filter-segment { width: 100%;}
+.chat-filter-segment button { flex: 1 1 0;}
+.chat-items-scroll, .chat-item-heading{ min-width: 0;}
+.chat-item { flex: 0 0 auto; min-height: 54px; padding: 8px 10px; gap: 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface, #fff);}
+.chat-item-participants { overflow: hidden; text-overflow: ellipsis;}
+.chat-detail { display: flex; flex-direction: column; width: 100%; min-width: 0; max-height: none; overflow: hidden; border: 1px solid var(--line); border-radius: 13px; background: var(--surface, #fff); box-shadow: 0 3px 12px rgba(41, 34, 63, .04);}
+.chat-head { position: relative; top: auto; min-width: 0;}
+.chat-head b { line-height: 1.25;}
+.chat-head small { font-size: 10px;}
+.chat-head-tools { flex: 0 1 auto;}
+.chat-head-tools select { min-height: 34px;}
+.chat-head-tools .role-tag { margin: 0; white-space: nowrap; font-size: 9px;}
+.chat-detail > .messages { min-width: 0; touch-action: pan-y;}
+.message { max-width: 92%; padding: 9px 11px; font-size: 13px;}
+.chat-composer { position: relative; z-index: 2; min-width: 0; max-height: none; overflow: visible; background: var(--surface, #fff);}
+.composer-tools { min-width: 0; gap: 6px;}
+.attach-control { min-height: 34px; padding: 6px 9px; font-size: 10px;}
+.selected-file { min-width: 0; max-width: 100%; font-size: 10px;}
+.composer-send { display: inline-flex; align-items: center; justify-content: center; width: 100%;}
+.composer-send { width: 100%; min-height: 40px; justify-content: center;}
+}
+:root[data-theme="dark-soft"] .chat-composer { background: #222b39;}
+/* Mobile chat proportions: prioritize the conversation history over the picker. */
+@media (max-width: 1024px) {
+.chat-composer textarea::placeholder { font-size: 12px; line-height: 1.25; opacity: .72;}
+}
+/* Give the mobile conversation picker enough height for its controls and several chats. */
+/* Custom audio controls with a clear play target and animated waveform. */
+.chat-audio-player { display: flex; align-items: center; gap: 12px; width: min(100%, 360px); min-width: 0; margin-top: 10px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface, #fff); box-sizing: border-box;}
+.chat-audio-native { display: none;}
+.chat-audio-play { display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; padding: 0; border: 0; border-radius: 50%; color: #fff; background: var(--purple, #7654bd); cursor: pointer; transition: transform .16s ease, filter .16s ease;}
+.chat-audio-play:hover { filter: brightness(1.08);}
+.chat-audio-play:active { transform: scale(.94);}
+.chat-audio-play svg { display: block;}
+.chat-audio-track { position: relative; flex: 1 1 auto; min-width: 0;}
+.chat-audio-wave { display: flex; align-items: center; justify-content: space-between; gap: 2px; height: 25px; overflow: hidden;}
+.chat-audio-wave span { display: block; flex: 1 1 0; min-width: 2px; max-width: 4px; border-radius: 3px; background: #b9a8dc; transform-origin: center; transition: background .18s ease;}
+.chat-audio-player.is-playing .chat-audio-wave span { animation: chat-audio-wave-pulse .72s ease-in-out infinite alternate; animation-delay: calc(var(--bar-index) * -31ms);}
+.chat-audio-player.is-playing .chat-audio-wave span:nth-child(3n) { animation-duration: .58s;}
+.chat-audio-player.is-playing .chat-audio-wave span:nth-child(4n) { animation-duration: .86s;}
+.chat-audio-seek { position: absolute; inset: 0 0 13px; width: 100%; height: 25px; margin: 0; opacity: 0; cursor: pointer;}
+.chat-audio-time { display: flex; justify-content: space-between; margin-top: 3px; color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; line-height: 1;}
+.chat-audio-wave span.is-progress { background: var(--purple, #7654bd);}
+:root[data-theme="dark-soft"] .chat-audio-player { background: #293243; border-color: #414c60;}
+:root[data-theme="dark-soft"] .chat-audio-wave span { background: #59647b;}
+:root[data-theme="dark-soft"] .chat-audio-wave span.is-progress { background: #b49be8;}
+:root[data-theme="dark-soft"] .chat-audio-time { color: #aeb8c9;}
+@keyframes chat-audio-wave-pulse {
+from { transform: scaleY(.48);}
+to { transform: scaleY(1);}
+}
+@media (prefers-reduced-motion: reduce) {
+.chat-audio-player.is-playing .chat-audio-wave span { animation: none;}
+}
+@media (max-width: 1024px) {
+.chat-audio-player { width: 100%; max-width: 100%; gap: 10px; padding: 9px 10px;}
+.chat-audio-play { flex-basis: 36px; width: 36px; height: 36px;}
+.chat-audio-wave, .chat-audio-seek { height: 23px;}
+}
+/* --------------------------------------------------------------------------
+   UknowApp visual system — final shared palette for every screen and state.
+   Keep semantic colors (success / warning / danger) distinct from decoration.
+   -------------------------------------------------------------------------- */
+/* Common canvas, cards and separators. */
+body { background: var(--canvas); color: var(--ink);}
+.sidebar, .topbar, .login-card, .graph-panel, .user-list, .chat-layout, .modal, .user-info-popover, .credential-modal, .password-info, .chat-audio-player { background-color: var(--surface); border-color: var(--ui-border);}
+.sidebar, .topbar, .graph-panel, .user-list, .chat-layout, .person-card, .modal, .user-info-popover, .login-card{ box-shadow: var(--ui-shadow-card);}
+.person-card, .empty-students, .chat-item, .message, .chat-head, .chat-composer { border-color: var(--ui-border);}
+/* One primary, neutral and destructive button language across all sections. */
+.btn.primary, .sidebar nav button.active { color: #fff !important; background: var(--button-primary) !important; border-color: transparent !important; box-shadow: 0 4px 12px var(--purple-glow) !important;}
+.btn.primary:hover:not(:disabled), .sidebar nav button.active:hover { background: var(--button-primary-hover) !important; box-shadow: 0 6px 16px var(--purple-glow) !important;}
+.btn:not(.primary):not(.danger):not(.disconnect), .user-action-btn:not(.connect):not(.disconnect):not(.user-delete), .icon-btn:not(.danger-icon), .theme-toggle, .person-actions button:not(.danger-icon), .graph-add-participant, .attach-control, .chat-filter-segment button, .user-info-popover-head button, .selected-file button { background: var(--button-bg); border-color: var(--button-border); color: var(--button-text); box-shadow: var(--ui-shadow-soft);}
+.btn:not(.primary):not(.danger):not(.disconnect):hover:not(:disabled), .user-action-btn:not(.connect):not(.disconnect):not(.user-delete):hover:not(:disabled), .icon-btn:not(.danger-icon):hover:not(:disabled), .theme-toggle:hover, .person-actions button:not(.danger-icon):hover, .graph-add-participant:hover, .attach-control:hover, .chat-filter-segment button:hover:not(:disabled) { background: var(--button-bg-hover) !important; border-color: var(--button-border-hover) !important; color: var(--purple) !important; box-shadow: var(--ui-shadow-soft) !important;}
+.btn.danger, .btn.disconnect, .user-action-btn.user-delete, .user-action-btn.disconnect, .person-actions button.danger-icon, .icon-btn.danger-icon, .danger-icon { background: var(--button-danger-bg) !important; border-color: var(--button-danger-border) !important; color: var(--button-danger-text) !important; box-shadow: none !important;}
+.btn.danger:hover:not(:disabled), .btn.disconnect:hover:not(:disabled), .user-action-btn.disconnect:hover:not(:disabled), .person-actions button.danger-icon:hover, .danger-icon:hover { background: var(--red-soft) !important; border-color: var(--red-border) !important; color: var(--red) !important;}
+/* Consistent form fields, focus rings and selection states. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea { border-color: var(--ui-border); color: var(--ink);}
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible { outline: none; box-shadow: var(--ui-focus);}
+.search:focus-within, .chat-search-control:focus-within { border-color: var(--ui-border-strong); box-shadow: var(--ui-focus);}
+.toolbar.user-toolbar > .search > input:focus, .toolbar.user-toolbar > .search > input:focus-visible { outline: none !important; box-shadow: none !important;}
+/* The search wrapper owns the focus ring; prevent a second rectangular ring on the input. */
+.chat-search-control input:focus, .chat-search-control input:focus-visible { outline: none; box-shadow: none;}
+::selection { background: rgba(120, 95, 192, .22);}
+/* Harmonized role colors: teachers use purple, students use the brand red. */
+.teacher-dot, .teacher-card .avatar, .avatar.teacher, .teacher-avatar { background-color: var(--lavender-soft); color: var(--purple);}
+.unassigned-grid .person-card { background: var(--surface); border-color: var(--ui-border);}
+.role-tag { background: var(--lavender-soft); color: var(--purple);}
+.role-tag.student { background: var(--red-soft); color: var(--red);}
+.user-row .role-tag.teacher { background: var(--lavender-soft); color: var(--purple);}
+/* Semantic feedback colors stay consistent and are not used as decoration. */
+.alert { background: var(--red-soft); border-color: var(--red-border); color: var(--button-danger-text);}
+.toast { background: linear-gradient(110deg, #493681, #6046a5); box-shadow: var(--ui-shadow-raised);}
+:root[data-theme="dark-soft"] .toast { background: linear-gradient(110deg, #39314f, #51466f);}
+:root[data-theme="dark-soft"] .alert { background: var(--red-soft) !important; border-color: var(--red-border) !important; color: #f0aab3 !important;}
+:root[data-theme="dark-soft"] .person-card, :root[data-theme="dark-soft"] .teacher-card, :root[data-theme="dark-soft"] .student-card, :root[data-theme="dark-soft"] .root-node, :root[data-theme="dark-soft"] .empty-students, :root[data-theme="dark-soft"] .unassigned-grid .person-card { background: var(--surface); border-color: var(--ui-border); box-shadow: var(--ui-shadow-card);}
+:root[data-theme="dark-soft"] .student-card .avatar, :root[data-theme="dark-soft"] .avatar.student, :root[data-theme="dark-soft"] .student-avatar, :root[data-theme="dark-soft"] .user-row .avatar.student, :root[data-theme="dark-soft"] .role-tag.student, :root[data-theme="dark-soft"] .user-row .role-tag.student { background: #402d37 !important; color: #e58c98 !important;}
+:root[data-theme="dark-soft"] .student-dot { background: #e58c98; box-shadow: 0 0 7px rgba(229, 140, 152, .20);}
+@media (prefers-reduced-motion: reduce) {
+*, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important;}
+}
+/* Stable user rows: identity and actions occupy predictable grid tracks;
+   long names never compete with the action controls. */
+.user-list, .user-row { min-width: 0; max-width: 100%; box-sizing: border-box;}
+.user-row > .user-person-info { overflow-wrap: anywhere;}
+.user-row > .user-person-info { display: block; max-width: 100%; overflow-wrap: anywhere;}
+.user-row > .user-actions { box-sizing: border-box;}
+.user-row > .user-actions > .user-info-wrap { min-width: 0;}
+.user-row > .user-actions > .user-action-btn, .user-row > .user-actions > .user-info-wrap > .user-action-btn { max-width: 100%; box-sizing: border-box;}
+.user-info-popover { z-index: 30; max-width: min(320px, calc(100vw - 28px)); overflow-wrap: anywhere;}
+@media (min-width: 1025px) and (max-width: 1200px) {
+.user-row {  grid-template-columns: 44px minmax(0, 1fr); grid-template-rows: auto auto;  column-gap: 12px; row-gap: 10px; padding: 13px clamp(10px, 1.5vw, 18px);}
+.user-row > .avatar { grid-column: 1; grid-row: 1; width: 44px; height: 44px; flex: 0 0 44px;}
+.user-row > .user-person-info { grid-column: 2; grid-row: 1; width: 100%; min-width: 0;}
+.user-row > .user-actions { grid-column: 1 / -1; grid-row: 2; width: 100%;  padding-top: 10px; border-top: 1px solid var(--line); justify-content: flex-start;}
+}
+@media (max-width: 1024px) {
+.user-row > .user-actions { justify-content: flex-start;}
+}
+@media (max-width: 420px) {
+.user-row > .user-actions { column-gap: 6px; row-gap: 7px;}
+.user-row > .user-actions .connect-toggle { min-width: 112px; padding-inline: 9px;}
+}
+/* User identity and controls stay on the same row at every screen size. */
+.user-row { display: grid !important; grid-template-columns: clamp(32px, 4vw, 44px) minmax(0, 1fr) auto; align-items: center; column-gap: clamp(6px, 1.2vw, 12px); row-gap: 0; min-width: 0;}
+.user-row > .avatar { grid-column: 1; grid-row: 1; width: clamp(32px, 4vw, 44px); height: clamp(32px, 4vw, 44px); flex: 0 0 auto;}
+.user-row > .user-person-info { grid-column: 2; grid-row: 1; min-width: 0; width: auto; flex: initial;}
+.user-row > .user-person-info { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.user-row > .user-actions { grid-column: 3; grid-row: 1; display: flex; flex: 0 0 auto; flex-wrap: nowrap !important; align-items: center; justify-content: flex-end; gap: clamp(3px, .7vw, 7px); min-width: 0; width: auto; max-width: 100%; margin: 0; padding: 0; border: 0;}
+.user-row > .user-actions > .user-action-btn, .user-row > .user-actions > .user-info-wrap > .user-action-btn { flex: 0 0 auto; width: clamp(30px, 3.2vw, 36px); height: clamp(30px, 3.2vw, 36px); min-width: 0; padding: 0;}
+.user-row > .user-actions > .user-info-wrap { display: flex; flex: 0 0 auto;}
+.user-row > .user-actions .connect-toggle { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 5px; width: auto; min-width: 0; max-width: none; min-height: clamp(30px, 3.2vw, 36px); height: clamp(30px, 3.2vw, 36px); padding: 0 clamp(7px, 1vw, 11px); white-space: nowrap;}
+.user-row > .user-actions .connect-toggle svg { width: 14px; height: 14px; flex: 0 0 auto;}
+.user-row > .user-actions .connect-toggle span { display: inline;}
+@media (max-width: 1024px) {
+.user-row { grid-template-columns: 34px minmax(0, 1fr) auto; column-gap: 6px; padding: 10px 8px;}
+.user-row > .avatar { width: 34px; height: 34px;}
+.user-row > .user-actions { gap: 4px;}
+.user-row > .user-actions > .user-action-btn, .user-row > .user-actions > .user-info-wrap > .user-action-btn { width: 32px; height: 32px;}
+.user-row > .user-actions .connect-toggle { width: 32px; min-width: 32px; height: 32px; min-height: 32px; padding: 0;}
+.user-row > .user-actions .connect-toggle span { display: none;}
+}
+@media (max-width: 380px) {
+.user-row { grid-template-columns: 30px minmax(0, 1fr) auto; column-gap: 4px; padding-inline: 6px;}
+.user-row > .avatar { width: 30px; height: 30px;}
+.user-row > .user-actions { gap: 3px;}
+.user-row > .user-actions > .user-action-btn, .user-row > .user-actions > .user-info-wrap > .user-action-btn, .user-row > .user-actions .connect-toggle { width: 29px; min-width: 29px; height: 29px; min-height: 29px;}
+}
+/* Mobile chat: keep the conversation history as the primary workspace.
+   The picker stays usable but compact; the composer uses a two-column footer
+   so it does not consume the message viewport. */
+@media (max-width: 1024px) {
+.chats-content > .chat-layout { grid-template-rows: clamp(104px, 17dvh, 148px) minmax(0, 1fr); gap: 7px;}
+.chat-list { gap: 4px; padding: 7px;}
+
+.chat-item-heading, .chat-composer .composer-tools{ gap: 5px;}
+.chat-detail { min-height: 0; height: 100%;}
+.chat-head b { font-size: 13px;}
+.chat-composer .attach-control { width: fit-content;}
+.chat-composer .selected-file { min-width: 0;}
+.chat-composer .composer-send { justify-content: center;}
+/* Mobile inbox navigation: list and conversation are separate full-height
+   screens. This avoids squeezing both into the same small viewport. */
+.chats-content > .chat-layout { display: block; position: relative; overflow: hidden;}
+.chats-content > .chat-layout > .chat-list, .chats-content > .chat-layout > .chat-detail { min-width: 0; box-sizing: border-box; overflow: hidden; background: var(--surface, #fff);}
+.chats-content > .chat-layout > .chat-list { display: flex; flex-direction: column; gap: 8px;}
+.chat-list > .chat-search-control, .chat-list > .chat-filter-segment { position: relative; z-index: 1; width: 100%; box-sizing: border-box;}
+.chat-list > .personal-chat-create { position: relative; z-index: 1; width: fit-content; }
+.chat-list > .chat-filter-segment { padding-bottom: 9px; border-bottom: 1px solid var(--line);}
+:root[data-theme="dark-soft"] .chat-list > .chat-filter-segment { border-bottom-color: #3a4555 !important;}
+.chat-search-control { min-height: 44px; padding-inline: 12px;}
+.chat-search-control input { min-height: 42px; font-size: 16px;}
+.chat-filter-segment { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px;}
+.chat-filter-segment button { min-width: 0; min-height: 38px; justify-content: center; padding: 7px 8px; font-size: 12px;}
+.chat-items-scroll { display: flex; flex: 1 1 auto; flex-direction: column; gap: 7px; min-height: 0; padding: 2px 1px 4px; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;}
+.chat-items-scroll > .chat-item { display: grid; flex: 0 0 auto; width: 100%; min-height: 68px; gap: 6px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; text-align: left;}
+.chat-item-participants { min-width: 0; gap: 3px;}
+.chat-item-participants span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 1.25;}
+.chats-content > .chat-layout.chat-layout-conversation-open > .chat-list, .chats-content > .chat-layout.chat-layout-list-open > .chat-detail { display: none;}
+.chats-content > .chat-layout > .chat-detail { display: flex; flex-direction: column;}
+.chat-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; flex: 0 0 auto;}
+.mobile-chat-back { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 38px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface, #fff); font-size: 12px; font-weight: 650; white-space: nowrap;}
+.chat-head-person { min-width: 0; overflow: hidden;}
+.chat-head-person b, .chat-head-person small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.chat-head-person b { font-size: 13px;}
+.chat-head-tools { display: flex; align-items: center; gap: 5px; min-width: 0;}
+.chat-head-tools select { width: 34px; min-width: 34px; max-width: 34px; height: 34px; padding: 0; font-size: 0;}
+.chat-head-tools .role-tag { display: none;}
+.chat-detail > .messages { flex: 1 1 0; width: 100%; height: 0; min-height: 0; max-height: none; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;}
+.chat-composer { display: grid; flex: 0 0 auto; gap: 7px;}
+.chat-composer textarea { min-height: 54px; max-height: 96px; padding: 10px; font-size: 16px;}
+.chat-composer .composer-tools { min-width: 0;}
+.chat-composer .attach-control { display: inline-flex; align-items: center; min-height: 38px; padding: 6px 8px; font-size: 11px; white-space: nowrap;}
+.chat-composer .selected-file { max-width: 100%; overflow-wrap: anywhere;}
+.chat-composer .composer-send { min-width: 0;}
+.chat-composer .composer-send { padding: 7px 12px; font-size: 12px;}
+}
+@media (min-width: 1025px) {
+.mobile-chat-back { display: none;}
+}
+/* Align mobile composer note and send action in a predictable footer grid. */
+@media (max-width: 1024px) {
+.chat-composer .composer-footer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(118px, 38%); align-items: center; gap: 8px; width: 100%; min-width: 0;}
+.chat-composer .composer-tools, .chat-composer .composer-send { min-width: 0; width: 100%; box-sizing: border-box;}
+.chat-composer .composer-send { display: inline-flex; align-items: center; justify-content: center;}
+.chat-composer .composer-send { display: inline-flex; max-width: 100%; box-sizing: border-box; justify-content: center; white-space: nowrap;}
+.chat-composer .attach-control { max-width: 100%; min-width: 0; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis;}
+}
+@media (max-width: 360px) {
+.chat-composer .composer-footer { grid-template-columns: minmax(0, 1fr) minmax(108px, 40%); gap: 6px;}
+.chat-composer .composer-send { padding-inline: 6px; font-size: 11px;}
+.chat-composer .attach-control { gap: 4px; padding-inline: 6px; font-size: 10px;}
+}
+/* Mobile chat uses the available viewport directly, without nested card frames. */
+@media (max-width: 1024px) {
+.chats-main > .content.chats-content { width: 100%; max-width: none; min-height: 0; height: 100%; padding: 0 !important; overflow: hidden;}
+.chats-content > .chat-layout { width: 100%; height: 100%; min-height: 0; max-height: none; margin: 0; padding: 0; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: transparent !important;}
+.chats-content > .chat-layout > .chat-list, .chats-content > .chat-layout > .chat-detail { width: 100%; height: 100%; min-height: 0; max-height: none; margin: 0; border: 0 !important; border-radius: 0 !important; box-shadow: none !important;}
+.chats-content > .chat-layout > .chat-list { padding: 10px 12px max(12px, env(safe-area-inset-bottom));}
+.chats-content > .chat-layout > .chat-detail { padding: 0; background: transparent;}
+.chat-head { padding: 10px 12px; border-bottom: 1px solid var(--line);}
+.chat-detail > .messages { padding: 14px 12px;}
+.chat-composer { padding: 9px 12px max(12px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line);}
+.chat-composer .composer-send { display: inline-flex; width: 100%; align-items: center; justify-content: center;}
+.chat-composer .composer-send { width: 100%; min-width: 0; min-height: 42px;}
+}
+/* Shared full-viewport workspace for Structure, Users and Conversations.
+   Keep useful inner cards (people, metrics, controls), flatten only redundant
+   page-level frames and let the active page own the available main area. */
+.chats-shell { width: 100%; max-width: 100%; min-width: 0; min-height: 100dvh; height: 100dvh; overflow: hidden;}
+.chats-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100dvh; overflow: hidden;}
+.chats-main > .topbar { flex: 0 0 auto;}
+.chats-main > .content:not(.chats-content) { display: block; flex: 1 1 0; width: 100%; max-width: none; min-width: 0; min-height: 0; margin: 0; padding: clamp(16px, 2vw, 28px); box-sizing: border-box; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; scrollbar-gutter: stable;}
+/* Structure: remove the large card wrapped around the whole hierarchy.
+   Individual teacher/student cards remain distinct and readable. */
+.chats-main > .content:not(.chats-content) > .graph-panel, .chats-main > .content:not(.chats-content) > .teacher-readonly-graph { width: 100%; max-width: none; min-width: 0; margin: 0; background: transparent;}
+.chats-main > .content:not(.chats-content) > .graph-panel .graph-legend-row { margin-top: 0;}
+.chats-main > .content:not(.chats-content) > .teacher-readonly-graph .teacher-graph-root { width: 100%; max-width: none; margin: 0;}
+/* Users: let the toolbar and list span the workspace; rows remain the
+   meaningful repeated units instead of nesting them inside another card. */
+.chats-main > .content:not(.chats-content) > .user-toolbar, .chats-main > .content:not(.chats-content) > .user-list { width: 100%; max-width: none; min-width: 0; margin-inline: 0;}
+@media (min-width: 1025px) {
+.chats-main > .content:not(.chats-content) { padding: clamp(22px, 2vw, 34px) clamp(24px, 2.4vw, 42px);}
+.chats-main > .content:not(.chats-content) > .graph-panel .teacher-grid { width: 100%; max-width: none;}
+}
+@media (max-width: 1024px) {
+.chats-shell { min-height: 100dvh; height: 100dvh;}
+.chats-main { flex: 1 1 auto; width: 100%; height: auto; min-height: 0;}
+.chats-main > .content:not(.chats-content) { padding: 12px 12px max(14px, env(safe-area-inset-bottom));}
+.chats-main > .content:not(.chats-content) > .graph-panel .graph-legend-row { gap: 8px; margin-bottom: 12px;}
+.chats-main > .content:not(.chats-content) > .graph-panel .teacher-grid { grid-template-columns: minmax(0, 1fr); gap: 10px;}
+.chats-main > .content:not(.chats-content) > .user-toolbar { margin-bottom: 12px;}
+.chats-main > .content:not(.chats-content) > .user-list { padding: 0;}
+}
+/* Restore the graph's soft rounded surfaces while keeping the workspace full width. */
+.chats-main > .content:not(.chats-content) > .graph-panel, .chats-main > .content:not(.chats-content) > .teacher-readonly-graph { border: 1px solid var(--line, #e8e0f2); border-radius: 20px; background-color: var(--surface, #fff); box-shadow: 0 8px 28px rgba(47, 31, 84, .045); overflow: hidden;}
+.chats-main > .content:not(.chats-content) > .graph-panel { padding: clamp(16px, 2vw, 28px); background-image: none !important;}
+.chats-main > .content:not(.chats-content) > .teacher-readonly-graph { padding: clamp(14px, 1.8vw, 24px);}
+.chats-main > .content:not(.chats-content) > .graph-panel .teacher-branch, .chats-main > .content:not(.chats-content) > .graph-panel .person-card, .chats-main > .content:not(.chats-content) > .teacher-readonly-graph .teacher-graph-card { border-radius: 14px;}
+@media (max-width: 1024px) {
+.chats-main > .content:not(.chats-content) > .graph-panel, .chats-main > .content:not(.chats-content) > .teacher-readonly-graph { border-radius: 16px; padding: 13px;}
+}
+/* Keep assigned student cards strictly inside their teacher branch on desktop. */
+@media (min-width: 1025px) {
+.chats-main > .content:not(.chats-content) > .graph-panel .teacher-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 255px), 1fr)); min-width: 0;}
+.chats-main > .content:not(.chats-content) > .graph-panel .teacher-branch { min-width: 0; max-width: 100%; box-sizing: border-box;}
+.chats-main > .content:not(.chats-content) > .graph-panel .student-list { width: auto; min-width: 0; max-width: 100%; box-sizing: border-box; margin-right: 0;}
+.chats-main > .content:not(.chats-content) > .graph-panel .student-list > .student-card, .chats-main > .content:not(.chats-content) > .graph-panel .student-list > .empty-students { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box;}
+.chats-main > .content:not(.chats-content) > .graph-panel .student-card .person-main, .chats-main > .content:not(.chats-content) > .graph-panel .student-card .person-info { min-width: 0;}
+}
+/* The list is a transparent layout wrapper; each participant row is its own card. */
+.chats-main > .content:not(.chats-content) > .user-list { display: grid; gap: 9px; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important;}
+.chats-main > .content:not(.chats-content) > .user-list > .user-row { border: 1px solid var(--line); border-radius: 13px; background: var(--surface); box-shadow: var(--ui-shadow-card); padding: 12px 15px;}
+.chats-main > .content:not(.chats-content) > .user-list > .user-row:last-child { border-bottom: 1px solid var(--line);}
+:root[data-theme="dark-soft"] .chats-main > .content:not(.chats-content) > .user-list { background: transparent !important; border-color: transparent !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .chats-main > .content:not(.chats-content) > .user-list > .user-row { background: var(--surface); border-color: var(--line); box-shadow: none;}
+@media (max-width: 1024px) {
+.chats-main > .content:not(.chats-content) > .user-list { gap: 8px;}
+.chats-main > .content:not(.chats-content) > .user-list > .user-row { border-radius: 12px; padding: 11px 12px;}
+}
+/* Message ownership actions */
+.message-topline { display: flex; align-items: center; justify-content: space-between; gap: 12px;}
+.message-tools { display: inline-flex; align-items: center; gap: 5px; flex: none;}
+.message-read-status { display: inline-flex; align-items: center; color: #9299a6; line-height: 1;}
+.message-read-status.is-read { color: #3398ed;}
+.message-time { color: var(--muted, #89839b); font-size: 10px; white-space: nowrap;}
+.message-delete-btn { display: grid; place-items: center; width: 25px; height: 25px; padding: 0; border: 0; border-radius: 7px; background: transparent; color: #9b93a8;}
+.message-delete-btn:hover { background: #fff0f1; color: #d63848;}
+.message-delete-preview { max-height: 120px; overflow: auto; margin: 14px 0; padding: 12px 14px; border: 1px solid var(--line, #ebe7f1); border-radius: 10px; background: var(--surface-soft, #f7f5fa); color: var(--ink, #29223f); font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere;}
+:root[data-theme="dark-soft"] .message-delete-preview { background: var(--ui-control-bg); border-color: var(--ui-border); color: var(--ink);}
+:root[data-theme="dark-soft"] .message-delete-btn:hover { background: #4a2933; color: #ff9ca7;}
+/* Desktop: keep attachment controls and the send action on one row. */
+@media (min-width: 1025px) {
+.chat-composer .composer-footer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; justify-content: stretch; gap: 12px; width: 100%; min-width: 0;}
+.chat-composer .composer-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0;}
+.chat-composer .composer-send { display: inline-flex; align-items: center; justify-content: center; align-self: center; min-width: max-content; margin: 0;}
+.chat-composer .composer-send { width: auto; min-width: 124px; min-height: 40px; margin: 0; white-space: nowrap;}
+}
+/* Login field hints: lighter, cleaner typography. */
+.login-card .stack input::placeholder { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; font-weight: 400; letter-spacing: .1px; opacity: .82;}
+/* Light theme: softer conversation list and clearer message surfaces. */
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item { box-shadow: 0 1px 3px rgba(41, 34, 63, .025); transition: background .16s ease, border-color .16s ease, box-shadow .16s ease;}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item:hover { box-shadow: 0 2px 7px rgba(41, 34, 63, .035);}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item.selected { box-shadow: inset 2px 0 0 #a895c8;}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item .chat-item-participants span { color: #393346;}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item small { color: #817b8d;}
+:root:not([data-theme="dark-soft"]) .chat-detail .message { background: #f1f3f7; border: 1px solid #e6e9ef; box-shadow: 0 2px 7px rgba(41, 34, 63, .035);}
+:root:not([data-theme="dark-soft"]) .chat-detail .message b, :root:not([data-theme="dark-soft"]) .chat-detail .message p { color: #332e3e;}
+:root:not([data-theme="dark-soft"]) .chat-detail .message b small, :root:not([data-theme="dark-soft"]) .chat-detail .message-time { color: #817b8d;}
+/* Match light-theme message colors to the participant cards in the graph. */
+/* iPhone standalone: keep the brand below the transparent iOS status area. */
+@media (max-width: 1024px) {
+.chats-main > .topbar { box-sizing: border-box; height: calc(54px + env(safe-area-inset-top, 0px)); min-height: calc(54px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px);}
+.chat-composer .composer-send { transform: translateY(-6px);}
+}
+/* The same participant palette is used in both themes, with slightly richer contrast. */
+:root:not([data-theme="dark-soft"]) .chat-detail .message.student { background: linear-gradient(110deg, #fff1cf 0%, #fff8e9 100%); border-color: #efd69e;}
+:root:not([data-theme="dark-soft"]) .chat-detail .message.teacher { background: linear-gradient(110deg, #e9ddfb 0%, #f5efff 100%); border-color: #d4c0f1;}
+:root:not([data-theme="dark-soft"]) .chat-detail .message.admin { background: linear-gradient(110deg, #dff0dc 0%, #eff8ec 100%); border-color: #c4dfbe;}
+:root[data-theme="dark-soft"] .chat-detail .message.student { background: linear-gradient(110deg, #493b2c 0%, #3b332b 100%) !important;}
+:root[data-theme="dark-soft"] .chat-detail .message.teacher { background: linear-gradient(110deg, #403653 0%, #332d45 100%) !important;}
+:root[data-theme="dark-soft"] .chat-detail .message.admin { background: linear-gradient(110deg, #304536 0%, #293a31 100%) !important;}
+:root[data-theme="dark-soft"] .chat-detail .message b, :root[data-theme="dark-soft"] .chat-detail .message p { color: #edf0f5 !important;}
+:root[data-theme="dark-soft"] .chat-detail .message b small, :root[data-theme="dark-soft"] .chat-detail .message-time { color: #b3bdcb !important;}
+/* Messages without a visible sender keep their timestamp aligned to the right. */
+.chat-detail .message-topline:not(:has(> b)) { justify-content: flex-end;}
+/* --------------------------------------------------------------------------
+   UknowApp role-first color language — shared by graph, chats and user lists.
+   The same three semantic colors identify people everywhere in the product.
+   -------------------------------------------------------------------------- */
+/* The canvas is intentionally not pure white; elevated surfaces stay distinct. */
+body, .chats-shell, .chats-main { background: var(--canvas);}
+.sidebar, .topbar, .graph-panel, .user-list > .user-row, .chat-layout, .chat-list, .chat-detail, .modal, .login-card, .user-info-popover, .credential-modal { background-color: var(--surface);}
+/* Structure graph: role colors match the corresponding conversation bubbles. */
+.teacher-card, .teacher-readonly-graph .teacher-graph-card:not(.student) { background: linear-gradient(112deg, #ebe4f0, #f6f3f7) !important; border-color: #d1c4da !important;}
+.teacher-card .avatar, .teacher-readonly-graph .teacher-graph-card:not(.student) .avatar, .avatar.teacher, .teacher-avatar { background: #e2d7eb !important; color: #705b88 !important;}
+.student-card, .unassigned-grid .student-card, .teacher-readonly-graph .teacher-graph-card.student { background: linear-gradient(112deg, #f4eadb, #faf6ee) !important; border-color: #e0cda9 !important;}
+.student-card .avatar, .avatar.student, .student-avatar, .teacher-readonly-graph .teacher-graph-card.student .avatar { background: #ecdfc6 !important; color: #90764c !important;}
+
+.teacher-dot { background: var(--role-teacher) !important; box-shadow: 0 0 8px color-mix(in srgb, var(--role-teacher) 35%, transparent) !important;}
+.student-dot { background: var(--role-student) !important; box-shadow: 0 0 8px color-mix(in srgb, var(--role-student) 35%, transparent) !important;}
+
+.add-student { color: var(--role-student) !important;}
+.add-student:hover { background: var(--role-student-soft) !important;}
+.teacher-card:hover { border-color: var(--role-teacher) !important;}
+.student-card:hover { border-color: var(--role-student) !important;}
+/* User directory uses exactly the same semantic role mapping. */
+.user-row .avatar.teacher, .user-row .role-tag.teacher { background: var(--role-teacher-soft) !important; color: var(--role-teacher) !important;}
+.user-row .avatar.student, .user-row .role-tag.student { background: var(--role-student-soft) !important; color: var(--role-student) !important;}
+/* Conversation bubbles and graph cards share identical role hues in both themes. */
+.chat-detail .message.student { background: linear-gradient(110deg, var(--role-student-soft), color-mix(in srgb, var(--surface) 24%, var(--role-student-soft))) !important; border-color: var(--role-student-border) !important;}
+.chat-detail .message.teacher { background: linear-gradient(110deg, var(--role-teacher-soft), color-mix(in srgb, var(--surface) 24%, var(--role-teacher-soft))) !important; border-color: var(--role-teacher-border) !important;}
+.chat-detail .message.admin { background: linear-gradient(110deg, var(--role-admin-soft), color-mix(in srgb, var(--surface) 24%, var(--role-admin-soft))) !important; border-color: var(--role-admin-border) !important;}
+/* Keep supporting controls and chat lists within the softened light palette. */
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item, :root:not([data-theme="dark-soft"]) .search, :root:not([data-theme="dark-soft"]) .chat-search-control, :root:not([data-theme="dark-soft"]) .stack input, :root:not([data-theme="dark-soft"]) .stack select, :root:not([data-theme="dark-soft"]) .chat-composer textarea { background-color: #fdfcff;}
+/* Graph surfaces: warm the remaining near-white islands in the light theme. */
+:root:not([data-theme="dark-soft"]) .graph-panel .graph-legend-row > .graph-legend { border: 1px solid #e4deec; border-radius: 12px;}
+
+:root:not([data-theme="dark-soft"]) .graph-panel .teacher-branch { border: 1px solid #e7e1ed; border-radius: 16px; padding: 12px;}
+/* Dark graph cards must retain the same role hues as dark chat bubbles.
+   More specific selectors override the generic dark card surface rule above. */
+:root[data-theme="dark-soft"] .graph-panel .root-node { color: #edf0f5 !important;}
+:root[data-theme="dark-soft"] .graph-panel .teacher-card, :root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card:not(.student) { background: #393247 !important; border-color: #675879 !important; color: #edf0f5 !important;}
+:root[data-theme="dark-soft"] .graph-panel .student-card, :root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card.student { background: #40382d !important; border-color: #746044 !important; color: #edf0f5 !important;}
+:root[data-theme="dark-soft"] .graph-panel .root-node small, :root[data-theme="dark-soft"] .graph-panel .person-info small, :root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card small { color: #c0c7d4 !important;}
+:root[data-theme="dark-soft"] .graph-panel .teacher-avatar, :root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card:not(.student) .avatar { background: #514465 !important; color: #d0bce9 !important;}
+:root[data-theme="dark-soft"] .graph-panel .student-avatar, :root[data-theme="dark-soft"] .teacher-readonly-graph .teacher-graph-card.student .avatar { background: #574a38 !important; color: #e5c995 !important;}
+:root[data-theme="dark-soft"] .graph-panel .graph-legend-row > .graph-legend { background: #252f3f; border: 1px solid #3a4659; border-radius: 12px;}
+:root[data-theme="dark-soft"] .graph-panel .teacher-branch { border-radius: 16px; padding: 12px;}
+/* Light theme harmony pass: replace cool grey patches with the warm,
+   softly tinted surfaces used by the dark theme's layered palette. */
+/* Apply the same lavender-tinted canvas consistently across every section. */
+:root:not([data-theme="dark-soft"]) body, :root:not([data-theme="dark-soft"]) .chats-shell, :root:not([data-theme="dark-soft"]) .chats-main { background: #f2eff7 !important;}
+:root:not([data-theme="dark-soft"]) .sidebar, :root:not([data-theme="dark-soft"]) .topbar, :root:not([data-theme="dark-soft"]) .graph-panel, :root:not([data-theme="dark-soft"]) .user-list > .user-row, :root:not([data-theme="dark-soft"]) .chat-layout, :root:not([data-theme="dark-soft"]) .chat-list, :root:not([data-theme="dark-soft"]) .chat-detail, :root:not([data-theme="dark-soft"]) .modal, :root:not([data-theme="dark-soft"]) .login-card, :root:not([data-theme="dark-soft"]) .user-info-popover, :root:not([data-theme="dark-soft"]) .credential-modal { background-color: #faf8fd !important;}
+/* Chat list and conversation canvas: no isolated white or cold-grey blocks. */
+
+:root:not([data-theme="dark-soft"]) .chat-detail .message:not(.student):not(.teacher):not(.admin) { background: #eee9f5 !important; border-color: #dfd6e9 !important;}
+:root:not([data-theme="dark-soft"]) .chat-composer { background: #f8f5fb !important; border-color: #e7dfef !important;}
+:root:not([data-theme="dark-soft"]) .chat-composer textarea, :root:not([data-theme="dark-soft"]) .search, :root:not([data-theme="dark-soft"]) .chat-search-control, :root:not([data-theme="dark-soft"]) .stack input, :root:not([data-theme="dark-soft"]) .stack select { background: #fdfbff !important; border-color: #e6deed !important;}
+/* Graph panels and their nested islands use the same soft surface hierarchy. */
+:root:not([data-theme="dark-soft"]) .graph-panel { background: #faf8fd !important; background-image: none !important; border-color: #e7dfef !important;}
+:root:not([data-theme="dark-soft"]) .graph-panel .graph-legend-row > .graph-legend { background: #f0eaf7 !important; border-color: #e2d8ed !important;}
+:root:not([data-theme="dark-soft"]) .graph-panel .empty-students { background: #f4eff9 !important; border-color: #e4daef !important;}
+/* Inputs, secondary tiles and hover states follow the same tinted hierarchy. */
+:root:not([data-theme="dark-soft"]) .sidebar nav button:not(.active):hover, :root:not([data-theme="dark-soft"]) .chat-item.selected { background: #eee8f6 !important;}
+:root:not([data-theme="dark-soft"]) .user-row { border-color: #e7dfef;}
+/* Dark theme: soften semantic accents so color supports hierarchy without
+   competing with content. Keep the student/teacher/admin distinction intact. */
+:root[data-theme="dark-soft"] .chat-detail .message.student, :root[data-theme="dark-soft"] .teacher-readonly-graph .student-card, :root[data-theme="dark-soft"] .graph-panel .student-card { box-shadow: none !important;}
+/* Keep role-specific conversation colors visible in the dark theme.
+   Disable gradients for a calm finish, but retain each role's tinted surface. */
+:root[data-theme="dark-soft"] .chat-detail .message.student { background-color: #40382f !important; background-image: none !important; border-color: #625440 !important;}
+:root[data-theme="dark-soft"] .chat-detail .message.teacher { background-color: #3b3549 !important; background-image: none !important; border-color: #554b68 !important;}
+:root[data-theme="dark-soft"] .chat-detail .message.admin { background-color: #303d34 !important; background-image: none !important; border-color: #4c6250 !important;}
+/* Users page: dark-theme role icons follow the shared student/teacher palette. */
+:root[data-theme="dark-soft"] .user-list .user-row > .avatar.student { background: var(--role-student-soft) !important; color: var(--role-student) !important;}
+:root[data-theme="dark-soft"] .user-list .user-row > .avatar.teacher { background: var(--role-teacher-soft) !important; color: var(--role-teacher) !important;}
+/* Conversation picker: calm surface hierarchy, clear selection and unread states. */
+.chat-items-scroll > .chat-item { position: relative; overflow: hidden; transition: background-color .16s ease, border-color .16s ease, transform .16s ease;}
+.chat-items-scroll > .chat-item:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px;}
+.chat-items-scroll > .chat-item.has-unread { border-left: 3px solid var(--role-student, #c9a45f) !important; padding-left: 11px;}
+.chat-items-scroll > .chat-item.has-unread .chat-item-participants { font-weight: 700;}
+.chat-items-scroll > .chat-item .unread-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 21px; min-height: 21px; padding: 2px 6px; border-radius: 999px; background: var(--role-student-soft, #f6edda); color: var(--role-student, #9a702b) !important; font-size: 10px; font-weight: 800;}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item { background: #f8f5fb !important; border: 1px solid #e9e2f0 !important; color: #393346;}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item:hover { background: #f1ebf7 !important; border-color: #ded3e9 !important;}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item.selected { background: #eee7f6 !important; border-color: #d8cbe7 !important; color: #51436d;}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item.has-unread { background: #faf6ed !important; border-color: #eadfc9 !important; border-left-color: #c49a50 !important;}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item.has-unread.selected { background: #f2ebf5 !important; border-color: #d8cbe7 !important; border-left-color: #b18a49 !important;}
+:root:not([data-theme="dark-soft"]) .chat-items-scroll > .chat-item .unread-badge { background: #f2e8d3; color: #876126 !important;}
+:root[data-theme="dark-soft"] .chat-layout { background: #202631 !important; border-color: #343d4c !important;}
+:root[data-theme="dark-soft"] .chat-list, :root[data-theme="dark-soft"] .chat-detail { background: #242c38 !important;}
+:root[data-theme="dark-soft"] .chat-items-scroll > .chat-item { background: #293240 !important; border: 1px solid #354052 !important; color: #e2e5ed !important;}
+:root[data-theme="dark-soft"] .chat-items-scroll > .chat-item:hover { background: #30394a !important; border-color: #46516a !important;}
+:root[data-theme="dark-soft"] .chat-items-scroll > .chat-item.selected { background: #38364b !important; border-color: #625878 !important; color: #f0edf8 !important;}
+:root[data-theme="dark-soft"] .chat-items-scroll > .chat-item.has-unread { background: #34332f !important; border-color: #514a3e !important; border-left-color: #c5a66d !important;}
+:root[data-theme="dark-soft"] .chat-items-scroll > .chat-item.has-unread.selected { background: #3b3745 !important; border-color: #625878 !important; border-left-color: #c5a66d !important;}
+:root[data-theme="dark-soft"] .chat-items-scroll > .chat-item .unread-badge { background: #494234 !important; color: #e1c48b !important;}
+:root[data-theme="dark-soft"] .chat-detail > .messages { background: #202834 !important;}
+:root:not([data-theme="dark-soft"]) .chat-detail > .messages { background: #f5f1f9 !important;}
+.graph-panel .student-list[hidden] { display: none !important;}
+/* Muted dark palette: retain role recognition without large saturated blocks. */
+:root[data-theme="dark-soft"] .graph-panel .teacher-branch { background: #242c38 !important; border-color: #374253 !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .teacher-branch:hover { background: #262f3c !important; border-color: #465267 !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .root-node { background: #2e3933 !important; border-color: #485c4d !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .teacher-dot { background: #a99bc8 !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .student-dot { background: #c4a879 !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .graph-legend-item b { background: #343b49 !important; color: #d4d8e2 !important;}
+/* Muted light palette: pale lavender for teachers, soft sand for students. */
+:root:not([data-theme="dark-soft"]) .graph-panel .teacher-branch { background: #f7f4fa !important; border-color: #e7e0ed !important; box-shadow: 0 2px 8px rgba(56, 43, 77, .035) !important;}
+:root:not([data-theme="dark-soft"]) .graph-panel .root-node { background: #eaf0e9 !important; border-color: #d2dfd0 !important; box-shadow: none !important;}
+:root:not([data-theme="dark-soft"]) .graph-panel .teacher-dot { background: #a99ac2 !important; box-shadow: none !important;}
+:root:not([data-theme="dark-soft"]) .graph-panel .student-dot { background: #c5aa7e !important; box-shadow: none !important;}
+:root:not([data-theme="dark-soft"]) .graph-panel .graph-legend-item b { background: #ebe6f0 !important; color: #655a75 !important;}
+/* Fix teacher cards after making the heading itself a collapse button.
+   Keep the button constrained to the content row so it cannot stretch the card. */
+.graph-panel .teacher-card { min-width: 0; min-height: 64px; align-items: center;}
+.graph-panel .teacher-card > .person-actions { flex: 0 0 auto;}
+/* One shared teacher-card treatment at every viewport width. */
+.graph-panel .teacher-branch > .teacher-card { display: flex !important; align-items: center !important; gap: 8px !important; min-height: 76px !important; padding: 12px 13px !important; border-radius: 13px !important; }
+/* Shared edit/delete icon controls across graph, user list and all viewports. */
+.person-actions button, .user-action-btn.edit-btn, .user-action-btn.user-delete { display: inline-grid !important; place-items: center !important; box-sizing: border-box !important; flex: 0 0 34px !important; width: 34px !important; min-width: 34px !important; max-width: 34px !important; height: 34px !important; min-height: 34px !important; padding: 0 !important; border: 1px solid transparent !important; border-radius: 9px !important; background: transparent !important; box-shadow: none !important; transition: background-color .16s ease, border-color .16s ease, color .16s ease !important;}
+.person-actions button svg, .user-action-btn.edit-btn svg, .user-action-btn.user-delete svg { display: block !important; width: 16px !important; height: 16px !important;}
+/* Keep Lucide pencil strokes optically identical across the 1024px breakpoint. */
+.person-actions button:not(.danger-icon) svg *, .user-action-btn.edit-btn svg * { stroke-width: 1.8px !important; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round;}
+.person-actions button:not(.danger-icon), .user-action-btn.edit-btn { color: var(--muted) !important;
+/* The edit pencil stays borderless on desktop and touch devices alike. */
+border-color: transparent !important;}
+.person-actions button:not(.danger-icon):hover:not(:disabled), .user-action-btn.edit-btn:hover:not(:disabled) { background: var(--button-bg-hover) !important; border-color: var(--button-border-hover) !important; color: var(--purple) !important;}
+.person-actions button.danger-icon, .user-action-btn.user-delete { color: var(--button-danger-text) !important;}
+.person-actions button.danger-icon:hover:not(:disabled), .user-action-btn.user-delete:hover:not(:disabled) { background: var(--button-danger-bg) !important; border-color: var(--button-danger-border) !important; color: var(--red, #c45d6b) !important;}
+:root[data-theme="dark-soft"] .person-actions button:not(.danger-icon), :root[data-theme="dark-soft"] .user-action-btn.edit-btn { color: var(--button-text) !important;}
+:root[data-theme="dark-soft"] .person-actions button:not(.danger-icon):hover:not(:disabled), :root[data-theme="dark-soft"] .user-action-btn.edit-btn:hover:not(:disabled) { background: var(--button-bg-hover) !important; border-color: var(--button-border-hover) !important; color: #e1dafa !important;}
+:root[data-theme="dark-soft"] .person-actions button.danger-icon, :root[data-theme="dark-soft"] .user-action-btn.user-delete { color: var(--button-danger-text) !important;}
+:root[data-theme="dark-soft"] .person-actions button.danger-icon:hover:not(:disabled), :root[data-theme="dark-soft"] .user-action-btn.user-delete:hover:not(:disabled) { background: var(--button-danger-bg) !important; border-color: var(--button-danger-border) !important; color: #ef9da9 !important;}
+/* Touch screens: never leave edit controls in a hover-highlighted state. */
+@media (hover: none), (pointer: coarse) {
+.person-actions button:not(.danger-icon), .user-action-btn.edit-btn { background: transparent !important; border-color: transparent !important; color: var(--muted) !important; box-shadow: none !important;}
+.person-actions button:not(.danger-icon):hover, .person-actions button:not(.danger-icon):active, .user-action-btn.edit-btn:hover, .user-action-btn.edit-btn:active { background: transparent !important; border-color: transparent !important; color: var(--muted) !important; box-shadow: none !important; transform: none !important;}
+:root[data-theme="dark-soft"] .person-actions button:not(.danger-icon), :root[data-theme="dark-soft"] .user-action-btn.edit-btn, :root[data-theme="dark-soft"] .person-actions button:not(.danger-icon):hover, :root[data-theme="dark-soft"] .person-actions button:not(.danger-icon):active, :root[data-theme="dark-soft"] .user-action-btn.edit-btn:hover, :root[data-theme="dark-soft"] .user-action-btn.edit-btn:active { background: transparent !important; border-color: transparent !important; color: var(--button-text) !important; box-shadow: none !important;}
+}
+/* Teacher student-list toggle uses the same compact danger control surface as the trash icon. */
+.graph-panel .person-actions button.teacher-collapse-btn { flex: 0 0 28px !important; width: 28px !important; height: 28px !important; padding: 0 !important; border-radius: 8px !important;}
+.graph-panel .person-actions button.teacher-collapse-btn svg { width: 15px !important; height: 15px !important; transition: transform .18s ease;}
+.graph-panel .person-actions button.teacher-collapse-btn.is-expanded svg { transform: rotate(90deg);}
+
+
+/* Admin data maintenance */
+.additional-panel { display: grid; gap: 16px; align-content: start;}
+.additional-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 2px;}
+.additional-heading h2 { margin: 4px 0 0; font-size: 22px; letter-spacing: -.02em;}
+.data-stats-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 12px;}
+.data-stat-card, .data-tool-card, .data-cleanup-card { min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); color: var(--ink);}
+.data-stat-card { display: grid; align-content: start; gap: 6px;}
+.data-stat-card > span { color: var(--muted); font-size: 12px; font-weight: 700;}
+.data-stat-card > b { font-size: 26px; line-height: 1.15; font-variant-numeric: tabular-nums;}
+.data-stat-card > small { color: var(--muted); font-size: 11px; line-height: 1.45;}
+.data-stat-details { display: grid; gap: 6px; margin-top: 5px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; line-height: 1.45;}
+.data-stat-details b { color: var(--ink); font-weight: 650; font-variant-numeric: tabular-nums;}
+.data-stat-details .data-stat-subline { padding-left: 10px; font-size: 10px;}
+.data-tools-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, auto)); gap: 12px;}
+.data-tool-card { display: flex; flex-direction: column; align-items: flex-start; gap: 10px;}
+.data-tool-primary { grid-column: 1; grid-row: 1 / span 2; padding: 18px;}
+.data-tool-primary .data-tool-actions { display: grid; width: 100%; grid-template-columns: 1fr;}
+.data-tool-primary .data-tool-actions .btn { justify-content: center; width: 100%; min-height: 40px;}
+.data-tool-copy { display: grid; align-content: start; gap: 7px; width: 100%;}
+.data-tool-kicker { color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .07em;}
+.data-includes { display: grid; gap: 7px; width: 100%; margin-top: 3px; padding: 12px; border-radius: 10px; background: var(--surface-soft, var(--panel)); font-size: 11px; line-height: 1.5;}
+.data-includes > b { display: flex; align-items: center; gap: 6px; color: var(--ink); font-size: 11px;}
+.data-includes > b svg { color: var(--success, #27845c);}
+.data-includes ul { display: grid; gap: 5px; margin: 0 0 3px; padding-left: 18px; color: var(--muted);}
+.data-includes .data-excludes { margin-top: 2px; color: var(--muted);}
+.data-includes .data-excludes svg { color: var(--danger, #c45b5b);}
+.data-includes > p { margin: -2px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5;}
+.data-backup-hint { display: grid; gap: 4px; padding: 12px 15px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); font-size: 11px; line-height: 1.5;}
+.data-backup-hint span { color: var(--muted);}
+.data-tool-icon { display: grid; flex: none; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--button-bg, #f1edf7); color: var(--purple);}
+.data-tool-icon svg { width: 18px; height: 18px;}
+.data-tool-card h3, .data-cleanup-card h3 { margin: 0 0 5px; font-size: 14px; line-height: 1.35;}
+.data-tool-card p, .data-cleanup-card p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5;}
+.data-tool-actions { display: flex; flex-wrap: wrap; gap: 7px; width: 100%; margin-top: auto; padding-top: 3px;}
+.data-tool-actions .btn { min-height: 36px; font-size: 11px;}
+.data-upload-label { position: relative; overflow: hidden; cursor: pointer;}
+.data-upload-label input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;}
+.data-warning { margin-top: auto !important; padding-top: 9px; border-top: 1px solid var(--line); font-size: 10px !important;}
+.data-cleanup-card { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-color: #e7d8d8;}
+.data-cleanup-card > div:first-child { display: grid; gap: 5px; max-width: 650px;}
+.data-cleanup-actions { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 9px; flex: none;}
+.data-cleanup-actions label { display: grid; gap: 5px; color: var(--muted); font-size: 11px; font-weight: 700;}
+.data-cleanup-actions select { min-width: 125px; height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink);}
+:root[data-theme="dark-soft"] .data-stat-card, :root[data-theme="dark-soft"] .data-tool-card, :root[data-theme="dark-soft"] .data-cleanup-card { background: #252d3b; border-color: #394457; color: #e4e8f0;}
+:root[data-theme="dark-soft"] .data-tool-icon { background: #343149; color: #c6bdf0;}
+:root[data-theme="dark-soft"] .data-cleanup-actions select { background: #202633; border-color: #414c60; color: #e4e8f0;}
+@media (max-width: 1200px) {
+  .data-tools-grid { grid-template-columns: 1fr 1fr;}
+  .data-tool-primary { grid-column: 1 / -1; grid-row: auto;}
+  .data-tool-primary .data-tool-actions { display: flex;}
+  .data-tool-primary .data-tool-actions .btn { width: auto;}
+}
+@media (max-width: 1024px) {
+  .additional-panel { display: none !important;}
+}
+@media (max-width: 760px) {
+  .data-stats-grid, .data-tools-grid { grid-template-columns: 1fr;}
+  .data-tool-primary { grid-column: auto; grid-row: auto;}
+  .data-tool-primary .data-tool-actions { display: grid;}
+  .data-tool-primary .data-tool-actions .btn { width: 100%;}
+  .data-cleanup-card { align-items: stretch; flex-direction: column;}
+  .data-cleanup-actions { align-items: stretch; flex-direction: column;}
+}
