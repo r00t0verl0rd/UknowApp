@@ -30,7 +30,8 @@ class PushSubscription(Base):
     __tablename__ = "push_subscriptions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    role: Mapped[str] = mapped_column(String(20), nullable=False, default="teacher")
     endpoint: Mapped[str] = mapped_column(String(2048), unique=True, nullable=False)
     p256dh: Mapped[str] = mapped_column(String(256), nullable=False)
     auth: Mapped[str] = mapped_column(String(128), nullable=False)
