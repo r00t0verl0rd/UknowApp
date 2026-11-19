@@ -177,7 +177,7 @@ def teacher_panel_view(
     items = teacher_conversations(db, teacher)
     total_pages, page, visible = _teacher_page(items, page)
     lines = [
-        "<b><u>🎓 Ваша группа:</u></b>",
+        "<b>▫️ <u>Ваша группа:</u></b>",
         "",
     ]
     if not visible:
