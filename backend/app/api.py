@@ -240,6 +240,7 @@ def overview(_: Admin, db: Db):
     teachers = []
     for user in users:
         if user.role != "teacher":
+            continue
         teachers.append({**user_dict(user), "students": students_by_teacher.get(user.id, [])})
 
     return {
