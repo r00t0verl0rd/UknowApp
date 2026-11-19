@@ -6,7 +6,8 @@ import Smile from "lucide-react/dist/esm/icons/smile.js";
 
 export default function StructurePage({ profile, teacherGraph, overview, openCreate, allTeachers, studentsByTeacherId, collapsedTeacherIds, setCollapsedTeacherIds, openEdit, setTeacherId, setStudentId, allStudents, setModal, unassignedStudents }) {
   return (
-    && <section className="teacher-readonly-graph">
+    <>
+      {profile?.role === "teacher" && <section className="teacher-readonly-graph">
               <div className="teacher-graph-root">
                 <div className="teacher-graph-card">
                   <div className="avatar teacher-avatar"><GraduationCap/></div>
