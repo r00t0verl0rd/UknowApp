@@ -41,6 +41,9 @@ from .security import (
 )
 from .telegram_common import text_contains_contact_data
 from .push_notifications import schedule_push
+from .modules.users.service import user_dict, generate_panel_access_code, validate_panel_username
+from .modules.conversations.service import conversation_dict, conversation_dicts
+from .modules.personal_chat.service import _personal_conversation, _personal_conversation_dict
 
 logger = logging.getLogger(__name__)
 
@@ -55,42 +58,6 @@ def get_db():
 Admin = Annotated[str, Depends(require_admin)]
 PanelUser = Annotated[dict, Depends(require_panel_user)]
 Db = Annotated[Session, Depends(get_db)]
-
-
-def user_dict(user: User, include_telegram_id: bool = True, include_additional_info: bool = False) -> dict:
-    return {
-        "id": user.id,
-        "full_name": user.full_name,
-        **({"additional_info": user.additional_info} if include_additional_info and user.role == "student" else {}),
-        "web_username": (user.web_username or user.full_name) if user.role in {"teacher", "student"} else None,
-        "role": user.role,
-        "telegram_id": user.telegram_id if include_telegram_id else None,
-        "created_at": user.created_at.isoformat() if user.created_at else None,
-        "has_access_code": bool(user.web_password_hash),
-    }
-
-
-def generate_panel_access_code() -> str:
-    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-    return "".join(secrets.choice(alphabet) for _ in range(4)) + "-" + "".join(
-        secrets.choice(alphabet) for _ in range(4)
-    )
-
-
-def validate_panel_username(db: Session, username: str, exclude_user_id: Optional[int] = None) -> str:
-    cleaned = (username or "").strip()
-    if len(cleaned) < 2 or len(cleaned) > 160:
-        raise HTTPException(status_code=400, detail="Логин должен содержать от 2 до 160 символов")
-    if cleaned.casefold() == ADMIN_USERNAME.casefold():
-        raise HTTPException(status_code=409, detail="Этот логин зарезервирован для администратора")
-    users = db.scalars(select(User).where(User.role.in_(["teacher", "student"]))).all()
-    for user in users:
-        if user.id == exclude_user_id:
-            continue
-        existing = (user.web_username or user.full_name).strip()
-        if existing.casefold() == cleaned.casefold():
-            raise HTTPException(status_code=409, detail="Этот логин уже используется другим участником")
-    return cleaned
 
 
 def conversation_dicts(
@@ -912,27 +879,6 @@ def panel_conversations(principal: PanelUser, db: Db):
         include_telegram_ids=(principal["role"] == "admin"),
         viewer_role=principal["role"],
     )
-
-
-def _personal_conversation(db: Session, principal: dict, conversation_id: int) -> PersonalConversation:
-    conversation = db.get(PersonalConversation, conversation_id)
-    if not conversation:
-        raise HTTPException(status_code=404, detail="Личный диалог не найден")
-    if principal["role"] != "admin" and conversation.participant_id != principal.get("user_id"):
-        raise HTTPException(status_code=404, detail="Личный диалог не найден")
-    return conversation
-
-
-def _personal_conversation_dict(item: PersonalConversation, viewer_role: str, unread_count: int = 0) -> dict:
-    participant = item.participant
-    return {
-        "id": item.id,
-        "type": "personal",
-        "participant": {"id": participant.id, "full_name": participant.full_name, "role": participant.role},
-        "title": participant.full_name if viewer_role == "admin" else "Администратор",
-        "created_at": item.created_at.isoformat(),
-        "unread_count": unread_count,
-    }
 
 
 @router.get("/panel/personal-conversations")
