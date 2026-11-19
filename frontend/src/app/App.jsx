@@ -22,7 +22,6 @@ import Sun from "lucide-react/dist/esm/icons/sun.js";
 import Smile from "lucide-react/dist/esm/icons/smile.js";
 import Link2 from "lucide-react/dist/esm/icons/link-2.js";
 import Info from "lucide-react/dist/esm/icons/info.js";
-import MessageBubble from "../modules/conversations/components/MessageBubble.jsx";
 import AdditionalPage from "../modules/administration/AdditionalPage.jsx";
 import ChatsPage from "../modules/conversations/ChatsPage.jsx";
 import StructurePage from "../modules/graph/StructurePage.jsx";
@@ -32,12 +31,6 @@ import { detachPushSubscription, initializePushNotifications } from "../modules/
 import { createApiClient } from "../services/api.js";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
-function formatBytes(bytes) {
-  if (!bytes) return "0 Б";
-  const units = ["Б", "КБ", "МБ", "ГБ", "ТБ"];
-  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-  return (bytes / (1024 ** index)).toLocaleString("ru-RU", { maximumFractionDigits: index ? 1 : 0 }) + " " + units[index];
-}
 
 async function copyText(value) {
   try {
