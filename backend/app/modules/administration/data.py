@@ -175,7 +175,7 @@ def data_stats(_: Admin):
                 User.role.in_(("teacher", "student")),
                 User.web_password_hash.is_not(None),
                 ConnectionCode.used_at.is_(None),
-                ConnectionCode.expires_at > datetime.now(timezone.utc),
+                ConnectionCode.expires_at > datetime.now(timezone.utc) + timedelta(days=365),
             ).scalar(),
             "media_files": sum(media_counts.values()),
             **{f"media_{key}": value for key, value in media_counts.items()},
