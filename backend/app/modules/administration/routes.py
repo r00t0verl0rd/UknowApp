@@ -47,9 +47,16 @@ from ...modules.personal_chat.service import _personal_conversation, _personal_c
 from ...modules.assignments.service import assign_student
 from ...modules.messaging.service import _panel_visible_conversation, _panel_message_dict
 
-logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api")
+
+def get_db():
+    with SessionLocal() as db:
+        yield db
+
+
+Admin = Annotated[str, Depends(require_admin)]
+PanelUser = Annotated[dict, Depends(require_panel_user)]
+Db = Annotated[Session, Depends(get_db)]
 
 
 logger = logging.getLogger(__name__)
@@ -433,80 +440,5 @@ def generate_connection_code(user_id: int, _: Admin, db: Db):
 def assign_student_route(payload: AssignmentCreate, _: Admin, db: Db):
     return assign_student(payload, db)
 
-
-def _panel_student_telegram_target(
-    db: Session,
-    conversation: Conversation,
-    rows: list[Message],
-) -> Optional[dict]:
-    student = conversation.student
-    if not student.telegram_id:
-        return None
-    target = {"chat_id": student.telegram_id}
-    last_reply_index = max(
-        (
-            i for i, item in enumerate(rows)
-            if item.sender_role in {"teacher", "admin"}
-            and item.delivery_status in {"delivered", "partial"}
-            and (
-                item.sender_role == "teacher"
-                or any(
-                    delivery.get("user_id") == student.id
-                    for delivery in (json.loads(item.metadata_json or "{}").get("telegram_deliveries") or [])
-                )
-                or not json.loads(item.metadata_json or "{}").get("telegram_deliveries")
-            )
-        ),
-        default=-1,
-    )
-    for incoming in reversed(rows[last_reply_index + 1:]):
-        if incoming.sender_role != "student":
-            continue
-        incoming_meta = json.loads(incoming.metadata_json or "{}")
-        if incoming_meta.get("source_mode") == "group_topic":
-            try:
-                group_chat_id = int(incoming_meta["source_chat_id"])
-                thread_id = int(incoming_meta["source_thread_id"])
-            except (KeyError, TypeError, ValueError):
-                return target
-            linked_topic = db.scalar(select(StudentTelegramGroup).where(
-                StudentTelegramGroup.student_id == student.id,
-                StudentTelegramGroup.chat_id == group_chat_id,
-                StudentTelegramGroup.thread_id == thread_id,
-            ))
-            if linked_topic:
-                return {"chat_id": group_chat_id, "message_thread_id": thread_id}
-        return target
-
-    # Preserve the group topic used by the last answer after an administrator
-    # has intervened and there is no newer student message.
-    if last_reply_index >= 0:
-        response_meta = json.loads(rows[last_reply_index].metadata_json or "{}")
-        for delivery in response_meta.get("telegram_deliveries") or []:
-            if delivery.get("user_id") != student.id or delivery.get("thread_id") is None:
-                continue
-            try:
-                group_chat_id = int(delivery["chat_id"])
-                thread_id = int(delivery["thread_id"])
-            except (KeyError, TypeError, ValueError):
-                return target
-            linked_topic = db.scalar(select(StudentTelegramGroup).where(
-                StudentTelegramGroup.student_id == student.id,
-                StudentTelegramGroup.chat_id == group_chat_id,
-                StudentTelegramGroup.thread_id == thread_id,
-            ))
-            if linked_topic:
-                return {"chat_id": group_chat_id, "message_thread_id": thread_id}
-
-    # If the conversation has no usable recent delivery route yet, fall back
-    # to the student's current verified forum-topic binding instead of always
-    # sending the first teacher-initiated message to the private bot chat.
-    current_binding = db.get(StudentTelegramGroup, student.id)
-    if current_binding:
-        return {
-            "chat_id": current_binding.chat_id,
-            "message_thread_id": current_binding.thread_id,
-        }
-    return target
-
-
+from ...admin_data import router as admin_data_router
+router.include_router(admin_data_router)
