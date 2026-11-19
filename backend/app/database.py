@@ -39,7 +39,7 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False
 # Создаём таблицы и выполняем небольшие совместимые миграции старых баз данных.
 def create_tables() -> None:
     # Импорт моделей регистрирует все таблицы в Base.metadata.
-    from .models import ConnectionCode, PanelSession, PersonalConversation, PersonalMessage
+    from .models import ConnectionCode, PanelSession, PersonalConversation, PersonalMessage, PushSubscription
 
     Base.metadata.create_all(bind=engine)
 
