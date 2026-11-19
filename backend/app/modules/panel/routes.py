@@ -14,7 +14,12 @@ from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
-from aiogram.types import BufferedInputFile
+from ...modules.communication.contracts import (
+    MessageKind,
+    MessengerPlatform,
+    OutboundMedia,
+    OutboundMessage,
+)
 from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
@@ -387,21 +392,19 @@ async def delete_panel_message(
 
     metadata = json.loads(item.metadata_json or "{}")
     deliveries = metadata.get("telegram_deliveries") or []
-    bot = getattr(request.app.state, "telegram_bot", None)
+    communication = getattr(request.app.state, "communication", None)
     telegram_deleted = 0
     telegram_failed = 0
 
-    # Remove every Telegram copy recorded at delivery time. Telegram may reject
-    # deletion of old messages or messages that are no longer accessible; the
-    # web history is still removed and the response reports those failures.
-    if deliveries and bot:
+    # Remove every external copy recorded at delivery time. The provider adapter
+    # owns the platform-specific API call; the panel only tracks the result.
+    if deliveries and communication and communication.has_adapter(MessengerPlatform.TELEGRAM):
         for delivery in deliveries:
             try:
-                chat_id = int(delivery["chat_id"])
-                telegram_message_id = int(delivery["telegram_message_id"])
-                await bot.delete_message(
-                    chat_id=chat_id,
-                    message_id=telegram_message_id,
+                await communication.delete_message(
+                    platform=MessengerPlatform.TELEGRAM,
+                    external_chat_id=str(delivery["chat_id"]),
+                    external_message_id=str(delivery["telegram_message_id"]),
                 )
                 telegram_deleted += 1
             except Exception as exc:
@@ -601,9 +604,10 @@ async def send_panel_message(
     )
 
     bot = getattr(request.app.state, "telegram_bot", None)
+    communication = getattr(request.app.state, "communication", None)
     delivery_errors = []
     delivered = []
-    if bot:
+    if communication and communication.has_adapter(MessengerPlatform.TELEGRAM):
         for recipient, recipient_role in recipients:
             if not recipient.telegram_id:
                 delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
@@ -621,16 +625,34 @@ async def send_panel_message(
                     if principal["role"] == "student"
                     else "Сообщение от администратора школы:\n" + body
                 )
-                sent = await bot.send_message(**target, text=outgoing_text)
+                sent = await communication.send(OutboundMessage(
+                    platform=MessengerPlatform.TELEGRAM,
+                    external_chat_id=str(target["chat_id"]),
+                    external_thread_id=(
+                        str(target["message_thread_id"])
+                        if target.get("message_thread_id") is not None else None
+                    ),
+                    content_type=MessageKind.TEXT,
+                    text=outgoing_text,
+                    idempotency_key=f"panel-message:{row.id}:recipient:{recipient.id}",
+                ))
                 delivered.append({
                     "user_id": recipient.id,
-                    "telegram_message_id": sent.message_id,
+                    "telegram_message_id": int(sent.external_message_id),
                     "chat_id": target["chat_id"],
                     "thread_id": target.get("message_thread_id"),
                 })
             except Exception as exc:
-                logger.warning("Telegram delivery failed for conversation_id=%s: %s", conversation.id, type(exc).__name__)
-                delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "ошибка Telegram (" + type(exc).__name__ + ")"})
+                logger.warning(
+                    "Telegram delivery failed for conversation_id=%s: %s",
+                    conversation.id,
+                    type(exc).__name__,
+                )
+                delivery_errors.append({
+                    "name": recipient.full_name,
+                    "role": recipient_role,
+                    "reason": "ошибка Telegram (" + type(exc).__name__ + ")",
+                })
     else:
         delivery_errors.extend(
             {"name": recipient.full_name, "role": recipient_role, "reason": "Telegram-бот не подключён к веб-приложению"}
@@ -706,9 +728,10 @@ async def send_panel_attachment(
     )
 
     bot = getattr(request.app.state, "telegram_bot", None)
+    communication = getattr(request.app.state, "communication", None)
     delivery_errors = []
     delivered = []
-    if bot:
+    if communication and communication.has_adapter(MessengerPlatform.TELEGRAM):
         for recipient, recipient_role in recipients:
             if not recipient.telegram_id:
                 delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
@@ -729,54 +752,40 @@ async def send_panel_attachment(
                     else ("От администратора школы" + ((": " + row.text) if row.text else ""))
                 )
             )
-            kwargs = {**target}
-            if caption:
-                kwargs["caption"] = caption
             try:
-                upload = BufferedInputFile(content, filename=original_name)
-                if kind == "photo" and len(content) <= 10 * 1024 * 1024:
-                    sent = await bot.send_photo(photo=upload, **kwargs)
-                elif kind == "animation":
-                    sent = await bot.send_animation(animation=upload, **kwargs)
-                elif kind == "video":
-                    sent = await bot.send_video(video=upload, **kwargs)
-                elif kind == "voice":
-                    sent = await bot.send_voice(voice=upload, **kwargs)
-                elif kind == "audio":
-                    sent = await bot.send_audio(audio=upload, **kwargs)
-                else:
-                    sent = await bot.send_document(
-                        document=BufferedInputFile(content, filename=original_name),
-                        **kwargs,
-                    )
+                sent = await communication.send(OutboundMessage(
+                    platform=MessengerPlatform.TELEGRAM,
+                    external_chat_id=str(target["chat_id"]),
+                    external_thread_id=(
+                        str(target["message_thread_id"])
+                        if target.get("message_thread_id") is not None else None
+                    ),
+                    content_type=MessageKind(kind),
+                    text=caption,
+                    media=OutboundMedia(
+                        storage_key=relative.as_posix(),
+                        file_name=original_name,
+                        mime_type=mime_type,
+                    ),
+                    idempotency_key=f"panel-message:{row.id}:recipient:{recipient.id}",
+                ))
                 delivered.append({
                     "user_id": recipient.id,
-                    "telegram_message_id": sent.message_id,
+                    "telegram_message_id": int(sent.external_message_id),
                     "chat_id": target["chat_id"],
                     "thread_id": target.get("message_thread_id"),
                 })
-            except Exception as native_exc:
-                # Photos above Telegram's photo limit, uncommon codecs and media
-                # rejected by a native endpoint should still arrive as files.
-                try:
-                    logger.info(
-                        "Native Telegram media send failed; retrying as document "
-                        "(conversation_id=%s kind=%s error_type=%s)",
-                        conversation.id, kind, type(native_exc).__name__,
-                    )
-                    sent = await bot.send_document(
-                        document=BufferedInputFile(content, filename=original_name),
-                        **kwargs,
-                    )
-                    delivered.append({
-                        "user_id": recipient.id,
-                        "telegram_message_id": sent.message_id,
-                        "chat_id": target["chat_id"],
-                        "thread_id": target.get("message_thread_id"),
-                    })
-                except Exception as exc:
-                    logger.warning("Telegram delivery failed for conversation_id=%s: %s", conversation.id, type(exc).__name__)
-                    delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "ошибка Telegram (" + type(exc).__name__ + ")"})
+            except Exception as exc:
+                logger.warning(
+                    "Telegram delivery failed for conversation_id=%s: %s",
+                    conversation.id,
+                    type(exc).__name__,
+                )
+                delivery_errors.append({
+                    "name": recipient.full_name,
+                    "role": recipient_role,
+                    "reason": "ошибка Telegram (" + type(exc).__name__ + ")",
+                })
     else:
         delivery_errors.extend(
             {"name": recipient.full_name, "role": recipient_role, "reason": "Telegram-бот не подключён к веб-приложению"}
