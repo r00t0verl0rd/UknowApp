@@ -1,0 +1,1 @@
+"""Persistent file storage adapters."""
