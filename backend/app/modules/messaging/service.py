@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ...models import Assignment, Conversation, Message, User
+from app.models import Assignment, Conversation, Message, User
 
 
 def _panel_visible_conversation(db: Session, principal: dict, conversation_id: int) -> Conversation:

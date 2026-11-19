@@ -15,7 +15,7 @@ from aiogram.types import (
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from ...models import (
+from app.models import (
     Assignment,
     Conversation,
     Message,
@@ -23,9 +23,9 @@ from ...models import (
     TeacherSession,
     User,
 )
-from ..communication.accounts import get_messenger_account
-from ..communication.contracts import MessengerPlatform
-from ..messaging.inbound import (
+from app.modules.communication.accounts import get_messenger_account
+from app.modules.communication.contracts import MessengerPlatform
+from app.modules.messaging.inbound import (
     InboundUiResult,
     clear_teacher_session,
     conversation_messages,

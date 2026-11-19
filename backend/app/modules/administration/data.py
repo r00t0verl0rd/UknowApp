@@ -15,11 +15,11 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from starlette.background import BackgroundTask
 
-from ...core.database import SessionLocal, engine
-from ...core.security import require_admin
-from ...event_hub import publish_chat_update
-from ...infrastructure.storage.media import MEDIA_DIR, delete_message_media
-from ...models import (
+from app.core.database import SessionLocal, engine
+from app.core.security import require_admin
+from app.event_hub import publish_chat_update
+from app.infrastructure.storage.media import MEDIA_DIR, delete_message_media
+from app.models import (
     Assignment,
     ConnectionCode,
     Conversation,

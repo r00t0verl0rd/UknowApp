@@ -11,8 +11,8 @@ from pywebpush import WebPushException, webpush
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
-from ...core.config import VAPID_PRIVATE_KEY, VAPID_SUBJECT
-from ...models import PushSubscription
+from app.core.config import VAPID_PRIVATE_KEY, VAPID_SUBJECT
+from app.models import PushSubscription
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ def schedule_push(
 
 
 def _deliver(targets: list[dict], payload: str) -> None:
-    from ...core.database import SessionLocal
+    from app.core.database import SessionLocal
 
     expired_ids = []
     for target in targets:

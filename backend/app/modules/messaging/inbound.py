@@ -14,8 +14,8 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ...event_hub import publish_chat_update
-from ...models import (
+from app.event_hub import publish_chat_update
+from app.models import (
     Assignment,
     Conversation,
     Message,
@@ -23,15 +23,15 @@ from ...models import (
     TeacherSession,
     User,
 )
-from ...rate_limit import SlidingWindowLimiter
-from ..communication.accounts import (
+from app.rate_limit import SlidingWindowLimiter
+from app.modules.communication.accounts import (
     CONNECTION_CODE_RE,
     claim_messenger_connection_code,
     get_messenger_account,
     get_messenger_user,
 )
-from ..communication.contracts import InboundMessage, MessengerPlatform
-from ..notifications.service import schedule_push
+from app.modules.communication.contracts import InboundMessage, MessengerPlatform
+from app.modules.notifications.service import schedule_push
 from .moderation import contact_would_be_exposed
 
 logger = logging.getLogger(__name__)

@@ -2,9 +2,9 @@
 
 from sqlalchemy.orm import Session
 
-from ...models import User
-from ..communication.accounts import get_messenger_user
-from ..communication.contracts import MessengerPlatform
+from app.models import User
+from app.modules.communication.accounts import get_messenger_user
+from app.modules.communication.contracts import MessengerPlatform
 
 
 def get_linked_user(db: Session, telegram_id: int) -> User | None:

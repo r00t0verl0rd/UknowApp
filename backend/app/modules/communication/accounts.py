@@ -10,7 +10,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ...models import ConnectionCode, MessengerAccount, User
+from app.models import ConnectionCode, MessengerAccount, User
 from .contracts import MessengerPlatform
 
 CONNECTION_CODE_RE = re.compile(r"^[A-HJ-NP-Z2-9]{8}$")

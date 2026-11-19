@@ -6,8 +6,8 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ...core.config import ADMIN_USERNAME
-from ...models import User
+from app.core.config import ADMIN_USERNAME
+from app.models import User
 
 
 def user_dict(user: User, include_telegram_id: bool = True, include_additional_info: bool = False) -> dict:

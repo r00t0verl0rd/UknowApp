@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
-from ...models import (
+from app.models import (
     Assignment,
     ConnectionCode,
     Conversation,
@@ -22,22 +22,22 @@ from ...models import (
     TeacherSession,
     User,
 )
-from ...modules.assignments.service import assign_student
-from ...modules.communication.accounts import (
+from app.modules.assignments.service import assign_student
+from app.modules.communication.accounts import (
     MessengerAccountConflict,
     delete_user_messenger_accounts,
     sync_messenger_account,
 )
-from ...modules.communication.contracts import MessengerPlatform
-from ...modules.media.service import delete_message_media
-from ...modules.users.service import (
+from app.modules.communication.contracts import MessengerPlatform
+from app.modules.media.service import delete_message_media
+from app.modules.users.service import (
     generate_panel_access_code,
     user_dict,
     validate_panel_username,
 )
-from ...schemas import AssignmentCreate, UserCreate, UserUpdate
-from ...security import hash_web_password
-from ..dependencies import Admin, Db
+from app.schemas import AssignmentCreate, UserCreate, UserUpdate
+from app.security import hash_web_password
+from app.modules.dependencies import Admin, Db
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
@@ -390,6 +390,6 @@ def assign_student_route(payload: AssignmentCreate, _: Admin, db: Db):
 
 
 
-from ...admin_data import router as admin_data_router
+from app.admin_data import router as admin_data_router
 
 router.include_router(admin_data_router)

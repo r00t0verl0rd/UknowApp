@@ -21,12 +21,12 @@ from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
-from ...event_hub import (
+from app.event_hub import (
     publish_chat_update,
     subscribe_chat_updates,
     unsubscribe_chat_updates,
 )
-from ...models import (
+from app.models import (
     Assignment,
     Conversation,
     Message,
@@ -36,36 +36,36 @@ from ...models import (
     TeacherSession,
     User,
 )
-from ...modules.communication.accounts import get_messenger_account
-from ...modules.communication.contracts import (
+from app.modules.communication.accounts import get_messenger_account
+from app.modules.communication.contracts import (
     MessageKind,
     MessengerPlatform,
     OutboundMedia,
     OutboundMessage,
 )
-from ...modules.conversations.service import conversation_dicts
-from ...modules.media.service import (
+from app.modules.conversations.service import conversation_dicts
+from app.modules.media.service import (
     MEDIA_DIR,
     delete_message_media,
     media_content_disposition,
     safe_media_type,
 )
-from ...modules.messaging.service import (
+from app.modules.messaging.service import (
     _panel_message_dict,
     _panel_visible_conversation,
 )
-from ...modules.personal_chat.service import (
+from app.modules.personal_chat.service import (
     _personal_conversation,
     _personal_conversation_dict,
 )
-from ...push_notifications import schedule_push
-from ...schemas import (
+from app.push_notifications import schedule_push
+from app.schemas import (
     PanelMessageCreate,
     PersonalConversationCreate,
     PersonalMessageCreate,
 )
-from ...modules.messaging.moderation import text_contains_contact_data
-from ..dependencies import Db, PanelUser
+from app.modules.messaging.moderation import text_contains_contact_data
+from app.modules.dependencies import Db, PanelUser
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
@@ -561,7 +561,7 @@ async def _refresh_teacher_panel_after_web_delivery(bot, db: Session, teacher: U
     if not bot or not teacher_account:
         return
     try:
-        from ..telegram.teacher import clear_teacher_session, update_teacher_panel
+        from app.modules.telegram.teacher import clear_teacher_session, update_teacher_panel
         current_session = db.get(TeacherSession, teacher.id)
         if current_session and current_session.conversation_id != conversation.id:
             clear_teacher_session(db, teacher)

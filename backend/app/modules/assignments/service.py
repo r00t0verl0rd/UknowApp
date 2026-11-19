@@ -4,9 +4,9 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ...event_hub import publish_chat_update
-from ...models import Assignment, Conversation, User
-from ..conversations.service import conversation_dict
+from app.event_hub import publish_chat_update
+from app.models import Assignment, Conversation, User
+from app.modules.conversations.service import conversation_dict
 
 
 def assign_student(payload, db: Session) -> dict:

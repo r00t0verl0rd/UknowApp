@@ -2,7 +2,7 @@
 
 import re
 
-from ..communication.contracts import InboundMessage
+from app.modules.communication.contracts import InboundMessage
 
 EMAIL_RE = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE)
 USERNAME_RE = re.compile(r"(?<!\w)@[A-Za-z][A-Za-z0-9_]{4,}")

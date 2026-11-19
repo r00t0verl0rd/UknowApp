@@ -7,10 +7,10 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import CallbackQuery
 from aiogram.types import Message as TgMessage
 
-from ...core.database import SessionLocal
-from ...models import TeacherPanel, User
-from ...rate_limit import SlidingWindowLimiter
-from ..messaging.inbound import (
+from app.core.database import SessionLocal
+from app.models import TeacherPanel, User
+from app.rate_limit import SlidingWindowLimiter
+from app.modules.messaging.inbound import (
     bind_student_forum_topic,
     clear_teacher_session,
     current_student_conversation,

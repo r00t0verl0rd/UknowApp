@@ -5,8 +5,8 @@ import json
 from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.orm import Session
 
-from ...models import Conversation, Message
-from ..users.service import user_dict
+from app.models import Conversation, Message
+from app.modules.users.service import user_dict
 
 
 def conversation_dicts(

@@ -3,7 +3,7 @@
 import json
 import logging
 
-from ...core.config import ROOT_DIR
+from app.core.config import ROOT_DIR
 
 logger = logging.getLogger(__name__)
 MEDIA_DIR = ROOT_DIR / "data" / "media"

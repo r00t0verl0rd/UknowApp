@@ -13,9 +13,9 @@ from pathlib import Path
 from aiogram import Bot
 from aiogram.types import BufferedInputFile
 
-from ...infrastructure.storage.media import MEDIA_DIR, safe_media_type
-from ...models import Message
-from ..communication.contracts import (
+from app.infrastructure.storage.media import MEDIA_DIR, safe_media_type
+from app.models import Message
+from app.modules.communication.contracts import (
     DeliveryResult,
     InboundLocation,
     InboundMedia,

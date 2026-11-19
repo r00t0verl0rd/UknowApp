@@ -5,8 +5,8 @@ from datetime import UTC, datetime, timedelta
 from fastapi import HTTPException, Request, Response, status
 from sqlalchemy import select
 
-from ..models import PanelSession, User
-from ..rate_limit import SlidingWindowLimiter
+from app.models import PanelSession, User
+from app.rate_limit import SlidingWindowLimiter
 from .config import ADMIN_PASSWORD, ADMIN_USERNAME, ALLOWED_ORIGINS
 from .database import SessionLocal
 

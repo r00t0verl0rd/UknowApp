@@ -10,10 +10,10 @@ from fastapi import (
 )
 from sqlalchemy import select
 
-from ...config import VAPID_PUBLIC_KEY
-from ...models import PushSubscription
-from ...schemas import LoginRequest
-from ...security import (
+from app.config import VAPID_PUBLIC_KEY
+from app.models import PushSubscription
+from app.schemas import LoginRequest
+from app.security import (
     authenticate_panel_user,
     check_login_rate_limit,
     clear_panel_cookies,
@@ -23,7 +23,7 @@ from ...security import (
     revoke_panel_session,
     verify_request_origin,
 )
-from ..dependencies import Db, PanelUser
+from app.modules.dependencies import Db, PanelUser
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
