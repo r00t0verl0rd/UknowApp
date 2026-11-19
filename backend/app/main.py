@@ -13,7 +13,7 @@ from .api import router
 from .core.config import ALLOWED_ORIGINS, SEED_DEMO_DATA, TELEGRAM_BOT_TOKEN, TELEGRAM_PROXY_URL
 from .core.database import SessionLocal, create_tables
 from .models import Assignment, Conversation, User
-from .telegram_transport import create_telegram_bot
+from .modules.telegram.transport import create_telegram_bot
 
 logger = logging.getLogger(__name__)
 
