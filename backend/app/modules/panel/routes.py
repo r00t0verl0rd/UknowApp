@@ -21,7 +21,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ...config import ADMIN_USERNAME, VAPID_PUBLIC_KEY
-from ...database import SessionLocal
 from ...event_hub import publish_chat_update, subscribe_chat_updates, unsubscribe_chat_updates
 from ...modules.media.service import MEDIA_DIR, delete_message_media, safe_media_type, media_content_disposition
 from ...models import Assignment, ConnectionCode, Conversation, Message, PanelSession, PersonalConversation, PersonalMessage, StudentTelegramGroup, TeacherPanel, TeacherSession, User, PushSubscription
@@ -34,8 +33,6 @@ from ...security import (
     create_panel_session,
     hash_web_password,
     record_failed_login,
-    require_admin,
-    require_panel_user,
     revoke_panel_session,
     verify_request_origin,
 )
@@ -49,14 +46,7 @@ from ...modules.messaging.service import _panel_visible_conversation, _panel_mes
 
 
 
-def get_db():
-    with SessionLocal() as db:
-        yield db
-
-
-Admin = Annotated[str, Depends(require_admin)]
-PanelUser = Annotated[dict, Depends(require_panel_user)]
-Db = Annotated[Session, Depends(get_db)]
+from ..dependencies import Admin, PanelUser, Db
 
 
 logger = logging.getLogger(__name__)
