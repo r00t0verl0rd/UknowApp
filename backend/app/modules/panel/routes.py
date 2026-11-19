@@ -64,7 +64,7 @@ from ...schemas import (
     PersonalConversationCreate,
     PersonalMessageCreate,
 )
-from ...telegram_common import text_contains_contact_data
+from ...modules.messaging.moderation import text_contains_contact_data
 from ..dependencies import Db, PanelUser
 
 logger = logging.getLogger(__name__)
