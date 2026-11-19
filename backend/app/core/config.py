@@ -17,6 +17,7 @@ VAPID_SUBJECT = os.getenv("VAPID_SUBJECT", "mailto:admin@example.com").strip()
 if not (VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY):
     import base64
     import os
+
     from cryptography.hazmat.primitives import serialization
     from cryptography.hazmat.primitives.asymmetric import ec
 

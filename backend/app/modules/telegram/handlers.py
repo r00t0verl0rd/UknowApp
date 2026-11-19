@@ -4,7 +4,8 @@ import logging
 
 from aiogram import Bot, F, Router
 from aiogram.filters import Command, CommandStart
-from aiogram.types import CallbackQuery, Message as TgMessage
+from aiogram.types import CallbackQuery
+from aiogram.types import Message as TgMessage
 
 from ...core.database import SessionLocal
 from ...models import TeacherPanel, User
@@ -32,7 +33,7 @@ _bind_group_limiter = SlidingWindowLimiter()
 
 def _bind_group_attempt_allowed(telegram_id: int, chat_id: int) -> bool:
     return _bind_group_limiter.allow_and_record(
-        (telegram_id, chat_id), _BIND_GROUP_LIMIT, _BIND_GROUP_WINDOW
+        (telegram_id, chat_id), _BIND_GROUP_LIMIT, _BIND_GROUP_WINDOW,
     )
 
 
@@ -45,7 +46,7 @@ async def start(message: TgMessage, bot: Bot):
         if not user:
             await message.answer(
                 "Добро пожаловать в Uknow! 🙂\n\n"
-                "Для подключения попросите администратора выдать вам код доступа"
+                "Для подключения попросите администратора выдать вам код доступа",
             )
             return
         if user.role == "teacher":
@@ -69,12 +70,12 @@ async def start(message: TgMessage, bot: Bot):
                 await message.answer(
                     "😊 Вы подключены к UknowApp.\n"
                     "🎓 Ваш учитель: " + teacher.full_name + ".\n\n"
-                    "Пишите сюда и отправляйте файлы — всё попадёт вашему учителю."
+                    "Пишите сюда и отправляйте файлы — всё попадёт вашему учителю.",
                 )
             else:
                 await message.answer(
                     "Аккаунт подключён, но активный учитель пока не назначен. "
-                    "Обратитесь к администратору."
+                    "Обратитесь к администратору.",
                 )
             return
 
@@ -176,7 +177,7 @@ async def bind_student_group(message: TgMessage, bot: Bot):
         return
     if message.chat.type != "supergroup" or not message.chat.is_forum or not message.message_thread_id:
         await message.answer(
-            "Откройте тему «🤖 Бот» в супергруппе с включёнными темами и отправьте /bind_group."
+            "Откройте тему «🤖 Бот» в супергруппе с включёнными темами и отправьте /bind_group.",
         )
         return
 
@@ -203,7 +204,7 @@ async def bind_student_group(message: TgMessage, bot: Bot):
     try:
         bot_info = await bot.get_me()
         can_read_group_messages = bool(
-            getattr(bot_info, "can_read_all_group_messages", False)
+            getattr(bot_info, "can_read_all_group_messages", False),
         )
         bot_member_status = "not_checked"
         if not can_read_group_messages:
@@ -224,7 +225,7 @@ async def bind_student_group(message: TgMessage, bot: Bot):
                 "⚠️ Тема не привязана: Telegram сейчас не передаёт боту обычные сообщения из группы.\n\n"
                 "Добавьте бота в администраторы этой группы либо отключите Group Privacy "
                 "в @BotFather (Bot Settings → Group Privacy), затем удалите бота из группы "
-                "и добавьте снова. После этого повторите /bind_group."
+                "и добавьте снова. После этого повторите /bind_group.",
             )
             return
     except Exception as exc:
@@ -236,7 +237,7 @@ async def bind_student_group(message: TgMessage, bot: Bot):
             "Telegram не подтвердил, что бот получает обычные сообщения этой группы. "
             "Для надёжной работы сделайте бота администратором группы либо отключите "
             "Group Privacy в @BotFather, удалите бота из группы и добавьте снова. "
-            "Затем повторите /bind_group."
+            "Затем повторите /bind_group.",
         )
         return
 
@@ -251,7 +252,7 @@ async def bind_student_group(message: TgMessage, bot: Bot):
             return
 
         if not bind_student_forum_topic(
-            db, student, message.chat.id, message.message_thread_id, message.chat.title
+            db, student, message.chat.id, message.message_thread_id, message.chat.title,
         ):
             await message.answer("Эта тема уже привязана к другому ученику.")
             return
@@ -259,7 +260,7 @@ async def bind_student_group(message: TgMessage, bot: Bot):
     await message.answer(
         "✅ Тема привязана к вашему аккаунту UknowApp.\n"
         "Сообщения из этой темы и личного чата с ботом попадут в одну переписку учителя. "
-        "Ответ преподавателя появится в канале последнего сообщения."
+        "Ответ преподавателя появится в канале последнего сообщения.",
     )
 
 

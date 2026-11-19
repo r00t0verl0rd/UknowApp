@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
@@ -12,7 +12,6 @@ from sqlalchemy.orm import Session
 
 from ...models import ConnectionCode, MessengerAccount, User
 from .contracts import MessengerPlatform
-
 
 CONNECTION_CODE_RE = re.compile(r"^[A-HJ-NP-Z2-9]{8}$")
 
@@ -22,7 +21,7 @@ class MessengerAccountConflict(Exception):
 
 
 def get_messenger_account(
-    db: Session, user_id: int, platform: MessengerPlatform | str
+    db: Session, user_id: int, platform: MessengerPlatform | str,
 ) -> MessengerAccount | None:
     platform_value = platform.value if isinstance(platform, MessengerPlatform) else platform
     return db.scalar(
@@ -30,7 +29,7 @@ def get_messenger_account(
             MessengerAccount.user_id == user_id,
             MessengerAccount.platform == platform_value,
             MessengerAccount.status == "linked",
-        )
+        ),
     )
 
 
@@ -49,7 +48,7 @@ def get_messenger_user(
             MessengerAccount.platform == platform_value,
             MessengerAccount.external_user_id == str(external_user_id),
             MessengerAccount.status == "linked",
-        )
+        ),
     )
 
 
@@ -67,7 +66,7 @@ def sync_messenger_account(
         select(MessengerAccount).where(
             MessengerAccount.user_id == user_id,
             MessengerAccount.platform == platform_value,
-        )
+        ),
     )
     if external_user_id is None:
         if account:
@@ -81,7 +80,7 @@ def sync_messenger_account(
         select(MessengerAccount).where(
             MessengerAccount.platform == platform_value,
             MessengerAccount.external_user_id == normalized_user_id,
-        )
+        ),
     )
     if existing and existing.user_id != user_id:
         raise MessengerAccountConflict(f"{platform_value} identity is already linked")
@@ -92,7 +91,7 @@ def sync_messenger_account(
             user_id=user_id,
             platform=platform_value,
             external_user_id=normalized_user_id,
-            linked_at=datetime.now(timezone.utc),
+            linked_at=datetime.now(UTC),
         )
         db.add(account)
     else:
@@ -100,7 +99,7 @@ def sync_messenger_account(
         account.platform = platform_value
         account.external_user_id = normalized_user_id
         if account.linked_at is None:
-            account.linked_at = datetime.now(timezone.utc)
+            account.linked_at = datetime.now(UTC)
 
     if external_chat_id is not None:
         account.external_chat_id = str(external_chat_id)
@@ -127,7 +126,7 @@ def claim_messenger_connection_code(
 
     code_hash = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
     connection_code = db.scalar(
-        select(ConnectionCode).where(ConnectionCode.code_hash == code_hash)
+        select(ConnectionCode).where(ConnectionCode.code_hash == code_hash),
     )
     if not connection_code:
         return None, "invalid"
@@ -138,8 +137,8 @@ def claim_messenger_connection_code(
 
     expires_at = connection_code.expires_at
     if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
-    now = datetime.now(timezone.utc)
+        expires_at = expires_at.replace(tzinfo=UTC)
+    now = datetime.now(UTC)
     if expires_at <= now:
         return None, "expired"
     if expires_at <= now + timedelta(days=365):
@@ -155,7 +154,7 @@ def claim_messenger_connection_code(
         select(MessengerAccount).where(
             MessengerAccount.user_id == user.id,
             MessengerAccount.platform == platform.value,
-        )
+        ),
     )
     if existing_account and existing_account.external_user_id != str(external_user_id):
         return None, "account_already_linked"
@@ -171,7 +170,7 @@ def claim_messenger_connection_code(
 
     try:
         sync_messenger_account(
-            db, user.id, platform, external_user_id, external_chat_id, username
+            db, user.id, platform, external_user_id, external_chat_id, username,
         )
         db.commit()
         db.refresh(user)

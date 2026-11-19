@@ -18,7 +18,7 @@ def assign_student(payload, db: Session) -> dict:
         raise HTTPException(status_code=400, detail="Выберите ученика")
 
     previous = db.scalars(
-        select(Assignment).where(Assignment.student_id == student.id, Assignment.active.is_(True))
+        select(Assignment).where(Assignment.student_id == student.id, Assignment.active.is_(True)),
     ).all()
     for assignment in previous:
         if assignment.conversation:

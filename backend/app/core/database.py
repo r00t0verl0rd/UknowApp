@@ -1,6 +1,7 @@
+from datetime import UTC, datetime, timedelta
+
 from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
-from datetime import datetime, timedelta, timezone
 
 from .config import DATABASE_URL
 
@@ -39,7 +40,10 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False
 # Создаём таблицы и выполняем небольшие совместимые миграции старых баз данных.
 def create_tables() -> None:
     # Импорт моделей регистрирует все таблицы в Base.metadata.
-    from ..models import ConnectionCode, PanelSession, PersonalConversation, PersonalMessage, PushSubscription
+    from ..models import (
+        ConnectionCode,
+        PanelSession,
+    )
 
     Base.metadata.create_all(bind=engine)
 
@@ -66,7 +70,7 @@ def create_tables() -> None:
                   WHERE messenger_accounts.platform = 'telegram'
                     AND messenger_accounts.user_id = users.id
               )
-            """
+            """,
         ))
 
     # Remove the obsolete soft-disable flag from existing user tables.
@@ -92,13 +96,13 @@ def create_tables() -> None:
                     "assignment_id INTEGER UNIQUE REFERENCES assignments(id), "
                     "teacher_id INTEGER NOT NULL REFERENCES users(id), "
                     "student_id INTEGER NOT NULL REFERENCES users(id), "
-                    "status VARCHAR(20) NOT NULL, created_at DATETIME NOT NULL)"
+                    "status VARCHAR(20) NOT NULL, created_at DATETIME NOT NULL)",
                 )
                 connection.exec_driver_sql(
                     "INSERT INTO conversations_new "
                     "(id, assignment_id, teacher_id, student_id, status, created_at) "
                     "SELECT c.id, c.assignment_id, a.teacher_id, a.student_id, c.status, c.created_at "
-                    "FROM conversations c JOIN assignments a ON a.id = c.assignment_id"
+                    "FROM conversations c JOIN assignments a ON a.id = c.assignment_id",
                 )
                 connection.exec_driver_sql("DROP TABLE conversations")
                 connection.exec_driver_sql("ALTER TABLE conversations_new RENAME TO conversations")
@@ -112,7 +116,7 @@ def create_tables() -> None:
     with engine.begin() as connection:
         connection.execute(text(
             "UPDATE conversations SET assignment_id = NULL "
-            "WHERE assignment_id IN (SELECT id FROM assignments WHERE active = 0)"
+            "WHERE assignment_id IN (SELECT id FROM assignments WHERE active = 0)",
         ))
         connection.execute(text("DELETE FROM assignments WHERE active = 0"))
 
@@ -121,7 +125,7 @@ def create_tables() -> None:
         connection.execute(text("DROP INDEX IF EXISTS ix_messages_conversation_id"))
         connection.execute(text(
             "CREATE INDEX IF NOT EXISTS ix_messages_conversation_created_id "
-            "ON messages (conversation_id, created_at, id)"
+            "ON messages (conversation_id, created_at, id)",
         ))
 
     # Read markers for private in-app conversations.
@@ -132,14 +136,14 @@ def create_tables() -> None:
                 connection.execute(text("ALTER TABLE personal_messages ADD COLUMN " + column_name + " DATETIME"))
 
     # Одноразовые коды и истёкшие сессии не нужны для истории — удаляем старые записи.
-    retention_cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+    retention_cutoff = datetime.now(UTC) - timedelta(days=30)
     with SessionLocal() as db:
-        db.query(PanelSession).filter(PanelSession.expires_at < datetime.now(timezone.utc)).delete(
-            synchronize_session=False
+        db.query(PanelSession).filter(PanelSession.expires_at < datetime.now(UTC)).delete(
+            synchronize_session=False,
         )
         db.query(ConnectionCode).filter(
             (ConnectionCode.used_at.is_not(None) & (ConnectionCode.used_at < retention_cutoff))
-            | (ConnectionCode.expires_at < retention_cutoff)
+            | (ConnectionCode.expires_at < retention_cutoff),
         ).delete(synchronize_session=False)
         db.commit()
 
@@ -164,7 +168,7 @@ def create_tables() -> None:
     with engine.begin() as connection:
         connection.execute(text(
             "UPDATE users SET web_username = full_name "
-            "WHERE role = 'teacher' AND (web_username IS NULL OR TRIM(web_username) = '')"
+            "WHERE role = 'teacher' AND (web_username IS NULL OR TRIM(web_username) = '')",
         ))
 
     # create_all does not add columns to an existing database. Keep this small,
@@ -187,6 +191,6 @@ def create_tables() -> None:
                         "ALTER TABLE teacher_panels ADD COLUMN "
                         + column_name
                         + " "
-                        + definition
-                    )
+                        + definition,
+                    ),
                 )

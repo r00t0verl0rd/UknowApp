@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -10,18 +10,18 @@ class LoginRequest(BaseModel):
 
 class UserCreate(BaseModel):
     full_name: str = Field(min_length=2, max_length=160)
-    additional_info: Optional[str] = Field(default=None, max_length=500)
+    additional_info: str | None = Field(default=None, max_length=500)
     role: Literal["teacher", "student"]
-    web_username: Optional[str] = Field(default=None, min_length=2, max_length=160)
-    telegram_id: Optional[int] = Field(default=None, gt=0)
+    web_username: str | None = Field(default=None, min_length=2, max_length=160)
+    telegram_id: int | None = Field(default=None, gt=0)
 
 
 class UserUpdate(BaseModel):
-    full_name: Optional[str] = Field(default=None, min_length=2, max_length=160)
-    additional_info: Optional[str] = Field(default=None, max_length=500)
-    role: Optional[Literal["teacher", "student"]] = None
-    web_username: Optional[str] = Field(default=None, min_length=2, max_length=160)
-    telegram_id: Optional[int] = Field(default=None, gt=0)
+    full_name: str | None = Field(default=None, min_length=2, max_length=160)
+    additional_info: str | None = Field(default=None, max_length=500)
+    role: Literal["teacher", "student"] | None = None
+    web_username: str | None = Field(default=None, min_length=2, max_length=160)
+    telegram_id: int | None = Field(default=None, gt=0)
 
 
 class AssignmentCreate(BaseModel):

@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Iterable, Protocol
+from collections.abc import Iterable
+from typing import Protocol
 
 from .contracts import (
     DeliveryResult,
@@ -30,13 +31,13 @@ class CommunicationService:
     """Dispatch provider-neutral delivery commands to configured adapters."""
 
     def __init__(
-        self, adapters: Iterable[OutboundMessengerAdapter] = ()
+        self, adapters: Iterable[OutboundMessengerAdapter] = (),
     ) -> None:
         self._adapters: dict[MessengerPlatform, OutboundMessengerAdapter] = {}
         for adapter in adapters:
             if adapter.platform in self._adapters:
                 raise ValueError(
-                    f"Duplicate messenger adapter: {adapter.platform.value}"
+                    f"Duplicate messenger adapter: {adapter.platform.value}",
                 )
             self._adapters[adapter.platform] = adapter
 
@@ -47,7 +48,7 @@ class CommunicationService:
         adapter = self._adapters.get(platform)
         if adapter is None:
             raise RuntimeError(
-                f"No adapter configured for {platform.value}"
+                f"No adapter configured for {platform.value}",
             )
         return adapter
 
@@ -55,11 +56,11 @@ class CommunicationService:
         adapter = self._adapter(message.platform)
         if message.media and not adapter.capabilities.attachments:
             raise NotImplementedError(
-                f"{message.platform.value} does not support attachments"
+                f"{message.platform.value} does not support attachments",
             )
         if not message.media and not adapter.capabilities.text:
             raise NotImplementedError(
-                f"{message.platform.value} does not support text messages"
+                f"{message.platform.value} does not support text messages",
             )
         return await adapter.send(message)
 
@@ -73,6 +74,6 @@ class CommunicationService:
         delete = getattr(adapter, "delete_message", None)
         if not adapter.capabilities.delete_messages or delete is None:
             raise NotImplementedError(
-                f"{platform.value} does not support message deletion"
+                f"{platform.value} does not support message deletion",
             )
         await delete(external_chat_id, external_message_id)

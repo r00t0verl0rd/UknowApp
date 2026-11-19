@@ -1,7 +1,6 @@
 """Conversation access checks and safe message serialization."""
 
 import json
-from typing import Optional
 
 from fastapi import HTTPException
 from sqlalchemy import select
@@ -35,7 +34,7 @@ def _panel_visible_conversation(db: Session, principal: dict, conversation_id: i
                     Conversation.status == "active",
                 )
                 .order_by(Conversation.created_at.desc(), Conversation.id.desc())
-                .limit(1)
+                .limit(1),
             )
             if current_conversation_id != conversation.id:
                 raise HTTPException(status_code=404, detail="Переписка не найдена")
@@ -45,7 +44,7 @@ def _panel_visible_conversation(db: Session, principal: dict, conversation_id: i
 def _panel_message_dict(
     item: Message,
     expose_internal_metadata: bool = True,
-    principal: Optional[dict] = None,
+    principal: dict | None = None,
 ) -> dict:
     # Внутренние Telegram ID и file_id не раскрываем учителю в обычном ответе API.
     metadata = json.loads(item.metadata_json or "{}")
@@ -78,7 +77,7 @@ def _panel_message_dict(
             and (
                 principal["role"] == "admin"
                 or item.sender_id == principal.get("user_id")
-            )
+            ),
         ),
         "content_type": item.content_type,
         "text": item.text,

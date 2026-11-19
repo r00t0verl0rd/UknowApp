@@ -2,8 +2,6 @@
 
 import secrets
 
-from typing import Optional
-
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -32,7 +30,7 @@ def generate_panel_access_code() -> str:
     )
 
 
-def validate_panel_username(db: Session, username: str, exclude_user_id: Optional[int] = None) -> str:
+def validate_panel_username(db: Session, username: str, exclude_user_id: int | None = None) -> str:
     cleaned = (username or "").strip()
     if len(cleaned) < 2 or len(cleaned) > 160:
         raise HTTPException(status_code=400, detail="Логин должен содержать от 2 до 160 символов")

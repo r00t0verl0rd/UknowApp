@@ -10,12 +10,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api import router
-from .core.config import ALLOWED_ORIGINS, SEED_DEMO_DATA, TELEGRAM_BOT_TOKEN, TELEGRAM_PROXY_URL
+from .core.config import (
+    ALLOWED_ORIGINS,
+    SEED_DEMO_DATA,
+    TELEGRAM_BOT_TOKEN,
+    TELEGRAM_PROXY_URL,
+)
 from .core.database import SessionLocal, create_tables
 from .models import Assignment, Conversation, User
-from .modules.telegram.transport import create_telegram_bot
 from .modules.communication.service import CommunicationService
 from .modules.telegram.adapter import TelegramAdapter
+from .modules.telegram.transport import create_telegram_bot
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +75,7 @@ async def run_telegram_bot(bot, dispatcher) -> None:
                 logger.critical(
                     "TELEGRAM_POLLING_CONFLICT: another process is already calling getUpdates "
                     "for this bot. Polling has been stopped; close the other bot instance "
-                    "and restart UknowApp."
+                    "and restart UknowApp.",
                 )
                 return
             # Telegram Bot API request URLs may contain the bot token.
@@ -115,7 +120,7 @@ async def lifespan(app: FastAPI):
             polling_lock_fd = None
             logger.warning(
                 "TELEGRAM_POLLING_SKIPPED: another local UknowApp process already owns "
-                "the polling lock. This process will keep the web API available without polling."
+                "the polling lock. This process will keep the web API available without polling.",
             )
         else:
             dispatcher = create_dispatcher()

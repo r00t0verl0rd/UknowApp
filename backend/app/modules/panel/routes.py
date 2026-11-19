@@ -6,9 +6,9 @@ import logging
 import mimetypes
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
+
 from fastapi import (
     APIRouter,
     File,
@@ -18,22 +18,13 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import FileResponse, StreamingResponse
-from ...modules.communication.accounts import get_messenger_account
-from ...modules.communication.contracts import (
-    MessageKind,
-    MessengerPlatform,
-    OutboundMedia,
-    OutboundMessage,
-)
 from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
-from sqlalchemy.orm import Session
-from ...event_hub import publish_chat_update, subscribe_chat_updates, unsubscribe_chat_updates
-from ...modules.media.service import (
-    MEDIA_DIR,
-    delete_message_media,
-    safe_media_type,
-    media_content_disposition,
+from sqlalchemy.orm import Session, selectinload
+
+from ...event_hub import (
+    publish_chat_update,
+    subscribe_chat_updates,
+    unsubscribe_chat_updates,
 )
 from ...models import (
     Assignment,
@@ -45,13 +36,36 @@ from ...models import (
     TeacherSession,
     User,
 )
-from ...schemas import PanelMessageCreate, PersonalConversationCreate, PersonalMessageCreate
-from ...telegram_common import text_contains_contact_data
-from ...push_notifications import schedule_push
+from ...modules.communication.accounts import get_messenger_account
+from ...modules.communication.contracts import (
+    MessageKind,
+    MessengerPlatform,
+    OutboundMedia,
+    OutboundMessage,
+)
 from ...modules.conversations.service import conversation_dicts
-from ...modules.personal_chat.service import _personal_conversation, _personal_conversation_dict
-from ...modules.messaging.service import _panel_visible_conversation, _panel_message_dict
-from ..dependencies import PanelUser, Db
+from ...modules.media.service import (
+    MEDIA_DIR,
+    delete_message_media,
+    media_content_disposition,
+    safe_media_type,
+)
+from ...modules.messaging.service import (
+    _panel_message_dict,
+    _panel_visible_conversation,
+)
+from ...modules.personal_chat.service import (
+    _personal_conversation,
+    _personal_conversation_dict,
+)
+from ...push_notifications import schedule_push
+from ...schemas import (
+    PanelMessageCreate,
+    PersonalConversationCreate,
+    PersonalMessageCreate,
+)
+from ...telegram_common import text_contains_contact_data
+from ..dependencies import Db, PanelUser
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
@@ -60,7 +74,7 @@ def _panel_student_telegram_target(
     db: Session,
     conversation: Conversation,
     rows: list[Message],
-) -> Optional[dict]:
+) -> dict | None:
     student = conversation.student
     account = get_messenger_account(db, student.id, MessengerPlatform.TELEGRAM)
     if not account:
@@ -161,7 +175,7 @@ async def panel_events(request: Request, principal: PanelUser):
             while not await request.is_disconnected():
                 try:
                     payload = await asyncio.wait_for(queue.get(), timeout=20)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     # SSE comment frames keep intermediaries from closing an idle
                     # connection; they do not trigger a browser data callback.
                     yield ": keep-alive\n\n"
@@ -213,7 +227,7 @@ def panel_conversations(principal: PanelUser, db: Db):
 @router.get("/panel/personal-conversations")
 def personal_conversations(principal: PanelUser, db: Db):
     statement = select(PersonalConversation).options(
-        selectinload(PersonalConversation.participant)
+        selectinload(PersonalConversation.participant),
     ).order_by(PersonalConversation.created_at.desc(), PersonalConversation.id.desc())
     if principal["role"] != "admin":
         statement = statement.where(PersonalConversation.participant_id == principal["user_id"])
@@ -248,14 +262,14 @@ def personal_messages(conversation_id: int, principal: PanelUser, db: Db):
     read_column = PersonalMessage.admin_read_at if principal["role"] == "admin" else PersonalMessage.participant_read_at
     incoming = db.scalars(select(PersonalMessage).where(PersonalMessage.conversation_id == item.id, PersonalMessage.sender_role != principal["role"], read_column.is_(None))).all()
     if incoming:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for message in incoming:
             setattr(message, "admin_read_at" if principal["role"] == "admin" else "participant_read_at", now)
         db.commit()
         publish_chat_update(0)
     rows = db.scalars(
         select(PersonalMessage).where(PersonalMessage.conversation_id == item.id)
-        .order_by(PersonalMessage.created_at, PersonalMessage.id)
+        .order_by(PersonalMessage.created_at, PersonalMessage.id),
     ).all()
     return [{
         "id": row.id,
@@ -343,12 +357,12 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db):
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     rows = db.scalars(
         select(Message).where(Message.conversation_id == conversation.id)
-        .order_by(Message.created_at, Message.id)
+        .order_by(Message.created_at, Message.id),
     ).all()
     if principal["role"] in {"teacher", "student"}:
         read_key = "teacher_read_at" if principal["role"] == "teacher" else "student_read_at"
         sender_roles = {"student", "admin"} if principal["role"] == "teacher" else {"teacher", "admin"}
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         changed = False
         for row in rows:
             if row.sender_role not in sender_roles:
@@ -581,7 +595,7 @@ async def send_panel_message(
 
     rows = db.scalars(
         select(Message).where(Message.conversation_id == conversation.id)
-        .order_by(Message.created_at, Message.id)
+        .order_by(Message.created_at, Message.id),
     ).all()
     student_target = (
         _panel_student_telegram_target(db, conversation, rows)
@@ -614,14 +628,14 @@ async def send_panel_message(
     if communication and communication.has_adapter(MessengerPlatform.TELEGRAM):
         for recipient, recipient_role in recipients:
             recipient_account = get_messenger_account(
-                db, recipient.id, MessengerPlatform.TELEGRAM
+                db, recipient.id, MessengerPlatform.TELEGRAM,
             )
             if not recipient_account:
                 delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                 continue
             try:
                 target = student_target if recipient_role == "student" else {
-                    "chat_id": recipient_account.external_chat_id or recipient_account.external_user_id
+                    "chat_id": recipient_account.external_chat_id or recipient_account.external_user_id,
                 }
                 if not target:
                     delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Не удалось определить Telegram-чат ученика"})
@@ -693,7 +707,7 @@ async def send_panel_attachment(
     if text_contains_contact_data((text or "").strip()):
         raise HTTPException(status_code=400, detail="Контактные данные нельзя отправлять через чат UknowApp")
     content, original_name, relative, mime_type, kind = await _store_panel_attachment(
-        request, file, conversation.id
+        request, file, conversation.id,
     )
 
     media = {
@@ -729,7 +743,7 @@ async def send_panel_attachment(
 
     rows = db.scalars(
         select(Message).where(Message.conversation_id == conversation.id)
-        .order_by(Message.created_at, Message.id)
+        .order_by(Message.created_at, Message.id),
     ).all()
     student_target = (
         _panel_student_telegram_target(db, conversation, rows[:-1])
@@ -743,13 +757,13 @@ async def send_panel_attachment(
     if communication and communication.has_adapter(MessengerPlatform.TELEGRAM):
         for recipient, recipient_role in recipients:
             recipient_account = get_messenger_account(
-                db, recipient.id, MessengerPlatform.TELEGRAM
+                db, recipient.id, MessengerPlatform.TELEGRAM,
             )
             if not recipient_account:
                 delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
                 continue
             target = student_target if recipient_role == "student" else {
-                "chat_id": recipient_account.external_chat_id or recipient_account.external_user_id
+                "chat_id": recipient_account.external_chat_id or recipient_account.external_user_id,
             }
             if not target:
                 delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Не удалось определить Telegram-чат ученика"})
@@ -822,7 +836,7 @@ def panel_graph(principal: PanelUser, db: Db):
     assignments = db.scalars(
         select(Assignment)
         .where(Assignment.teacher_id == teacher.id, Assignment.active.is_(True))
-        .order_by(Assignment.created_at.desc())
+        .order_by(Assignment.created_at.desc()),
     ).all()
     students = []
     for assignment in assignments:

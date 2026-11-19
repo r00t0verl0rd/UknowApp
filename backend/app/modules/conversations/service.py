@@ -33,7 +33,7 @@ def conversation_dicts(
     latest_messages = db.scalars(
         select(Message)
         .join(latest_rank, Message.id == latest_rank.c.message_id)
-        .where(latest_rank.c.position == 1)
+        .where(latest_rank.c.position == 1),
     ).all()
     latest_by_conversation = {item.conversation_id: item for item in latest_messages}
 
@@ -62,7 +62,7 @@ def conversation_dicts(
             func.coalesce(func.sum(case((unread_condition, 1), else_=0)), 0),
         )
         .where(Message.conversation_id.in_(conversation_ids))
-        .group_by(Message.conversation_id)
+        .group_by(Message.conversation_id),
     ).all()
     stats_by_conversation = {
         conversation_id: (message_count, unread_count)
@@ -103,6 +103,6 @@ def conversation_dicts(
 
 
 def conversation_dict(
-    db: Session, conversation: Conversation, include_telegram_ids: bool = True
+    db: Session, conversation: Conversation, include_telegram_ids: bool = True,
 ) -> dict:
     return conversation_dicts(db, [conversation], include_telegram_ids)[0]

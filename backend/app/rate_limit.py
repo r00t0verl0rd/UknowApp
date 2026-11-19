@@ -3,7 +3,7 @@
 import threading
 import time
 from collections import deque
-from typing import Hashable
+from collections.abc import Hashable
 
 
 class SlidingWindowLimiter:

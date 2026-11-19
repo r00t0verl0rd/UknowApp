@@ -49,7 +49,7 @@ class ConflictAwareDispatcher(Dispatcher):
 
                 failed = True
                 loggers.dispatcher.error(
-                    "Failed to fetch updates - %s: %s", type(exc).__name__, exc
+                    "Failed to fetch updates - %s: %s", type(exc).__name__, exc,
                 )
                 loggers.dispatcher.warning(
                     "Sleep for %f seconds and try again... (tryings = %d, bot id = %d)",

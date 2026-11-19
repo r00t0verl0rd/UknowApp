@@ -1,15 +1,14 @@
 import hashlib
 import secrets
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, Request, Response, status
 from sqlalchemy import select
 
-from .config import ADMIN_PASSWORD, ADMIN_USERNAME, ALLOWED_ORIGINS
-from .database import SessionLocal
 from ..models import PanelSession, User
 from ..rate_limit import SlidingWindowLimiter
+from .config import ADMIN_PASSWORD, ADMIN_USERNAME, ALLOWED_ORIGINS
+from .database import SessionLocal
 
 SESSION_COOKIE = "uknowapp_session"
 SECURE_SESSION_COOKIE = "__Host-uknowapp_session"
@@ -39,7 +38,7 @@ def hash_web_password(password: str) -> str:
 
 
 # Сравниваем вычисленный хеш с сохранённым значением без утечки через время сравнения.
-def verify_web_password(password: str, stored: Optional[str]) -> bool:
+def verify_web_password(password: str, stored: str | None) -> bool:
     if not stored or ":" not in stored:
         return False
     try:
@@ -52,7 +51,7 @@ def verify_web_password(password: str, stored: Optional[str]) -> bool:
     return secrets.compare_digest(actual, expected)
 
 
-def authenticate_panel_user(username: str, password: str) -> Optional[dict]:
+def authenticate_panel_user(username: str, password: str) -> dict | None:
     if verify_admin(username, password):
         return {"role": "admin", "user_id": None, "full_name": "Администратор"}
     normalized_username = (username or "").strip().casefold()
@@ -60,7 +59,7 @@ def authenticate_panel_user(username: str, password: str) -> Optional[dict]:
         return None
     with SessionLocal() as db:
         users = db.scalars(
-            select(User).where(User.role.in_(["teacher", "student"]))
+            select(User).where(User.role.in_(["teacher", "student"])),
         ).all()
         matches = [
             user for user in users
@@ -122,7 +121,7 @@ def clear_username_failures(request: Request, username: str) -> None:
     _login_rate_limiter.clear(user_key)
 
 
-def _credential_fingerprint(db, role: str, user_id: Optional[int]) -> Optional[str]:
+def _credential_fingerprint(db, role: str, user_id: int | None) -> str | None:
     if role == "admin":
         value = ADMIN_USERNAME + "\0" + ADMIN_PASSWORD
     elif role in {"teacher", "student"} and user_id is not None:
@@ -150,7 +149,7 @@ def create_panel_session(
     # A new login replaces the browser's previous session, limiting the
     # lifetime of any older token that may have been copied or exposed.
     revoke_panel_session(request, db)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     db.query(PanelSession).filter(PanelSession.expires_at < now).delete(synchronize_session=False)
     token = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(token.encode("ascii")).hexdigest()
@@ -186,11 +185,11 @@ def create_panel_session(
     )
 
 
-def _request_token(request: Request) -> Optional[str]:
+def _request_token(request: Request) -> str | None:
     return request.cookies.get(SECURE_SESSION_COOKIE) or request.cookies.get(SESSION_COOKIE)
 
 
-def _token_digest(token: Optional[str]) -> Optional[str]:
+def _token_digest(token: str | None) -> str | None:
     if not token or len(token) > 128:
         return None
     try:
@@ -232,7 +231,7 @@ def clear_panel_cookies(request: Request, response: Response) -> None:
         )
 
 
-def _load_panel_identity(request: Request) -> Optional[dict]:
+def _load_panel_identity(request: Request) -> dict | None:
     token_hash = _token_digest(_request_token(request))
     if not token_hash:
         return None
@@ -243,13 +242,13 @@ def _load_panel_identity(request: Request) -> Optional[dict]:
 
         expires_at = session.expires_at
         if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
-        valid = expires_at > datetime.now(timezone.utc)
+            expires_at = expires_at.replace(tzinfo=UTC)
+        valid = expires_at > datetime.now(UTC)
         if session.role == "admin":
             valid = valid and session.user_id is None
             expected_fingerprint = _credential_fingerprint(db, "admin", None)
             valid = valid and secrets.compare_digest(
-                session.credential_fingerprint, expected_fingerprint or ""
+                session.credential_fingerprint, expected_fingerprint or "",
             )
             identity = {"role": "admin", "user_id": None, "full_name": "Администратор"}
         elif session.role in {"teacher", "student"} and session.user_id is not None:
@@ -261,7 +260,7 @@ def _load_panel_identity(request: Request) -> Optional[dict]:
                 and user.role == session.role
                 and expected_fingerprint is not None
                 and secrets.compare_digest(
-                    session.credential_fingerprint, expected_fingerprint or ""
+                    session.credential_fingerprint, expected_fingerprint or "",
                 )
             )
             identity = (

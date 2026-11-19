@@ -6,9 +6,9 @@ import json
 import logging
 import mimetypes
 import uuid
-from datetime import datetime, timezone
+from collections.abc import Mapping, Sequence
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Mapping, Sequence
 
 from aiogram import Bot
 from aiogram.types import BufferedInputFile
@@ -195,10 +195,10 @@ class TelegramAdapter:
         return kwargs
 
     async def send_text(
-        self, external_chat_id: str, text: str, thread_id: str | None = None
+        self, external_chat_id: str, text: str, thread_id: str | None = None,
     ) -> str:
         sent = await self._bot.send_message(
-            text=text, **self._chat_kwargs(external_chat_id, thread_id)
+            text=text, **self._chat_kwargs(external_chat_id, thread_id),
         )
         return str(sent.message_id)
 
@@ -258,7 +258,7 @@ class TelegramAdapter:
             "file_unique_id": item.provider_unique_file_id,
             "file_name": file_name,
             "mime_type": safe_media_type(
-                item.mime_type or default_mime_type or mimetypes.guess_type(file_name or "")[0]
+                item.mime_type or default_mime_type or mimetypes.guess_type(file_name or "")[0],
             ),
             "file_size": item.file_size,
             "archive_status": "pending",
@@ -307,7 +307,7 @@ class TelegramAdapter:
         return path
 
     async def _send_native_media(
-        self, message: OutboundMessage, content: bytes, kwargs: dict
+        self, message: OutboundMessage, content: bytes, kwargs: dict,
     ):
         upload = BufferedInputFile(content, filename=message.media.file_name)
         kind = message.content_type
@@ -348,12 +348,12 @@ class TelegramAdapter:
             platform=self.platform,
             external_chat_id=message.external_chat_id,
             external_message_id=str(sent.message_id),
-            delivered_at=datetime.now(timezone.utc),
+            delivered_at=datetime.now(UTC),
         )
 
     async def delete_message(
-        self, external_chat_id: str, external_message_id: str
+        self, external_chat_id: str, external_message_id: str,
     ) -> None:
         await self._bot.delete_message(
-            chat_id=int(external_chat_id), message_id=int(external_message_id)
+            chat_id=int(external_chat_id), message_id=int(external_message_id),
         )

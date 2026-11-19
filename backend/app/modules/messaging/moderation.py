@@ -4,10 +4,9 @@ import re
 
 from ..communication.contracts import InboundMessage
 
-
-EMAIL_RE = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.I)
+EMAIL_RE = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE)
 USERNAME_RE = re.compile(r"(?<!\w)@[A-Za-z][A-Za-z0-9_]{4,}")
-TG_LINK_RE = re.compile(r"(?:https?://)?(?:t\.me|telegram\.me)/[A-Za-z0-9_]+", re.I)
+TG_LINK_RE = re.compile(r"(?:https?://)?(?:t\.me|telegram\.me)/[A-Za-z0-9_]+", re.IGNORECASE)
 PHONE_RE = re.compile(r"(?<!\w)\+?\d[\d\s().-]{6,}\d(?!\w)")
 
 
@@ -22,5 +21,5 @@ def text_contains_contact_data(body: str) -> bool:
 
 def contact_would_be_exposed(message: InboundMessage) -> bool:
     return message.contact_present or text_contains_contact_data(
-        message.text or message.caption
+        message.text or message.caption,
     )

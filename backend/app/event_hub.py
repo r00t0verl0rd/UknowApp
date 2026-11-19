@@ -8,7 +8,6 @@
 import asyncio
 import json
 
-
 _subscribers: set[asyncio.Queue[str]] = set()
 
 

@@ -2,9 +2,6 @@
 
 import json
 import logging
-from pathlib import Path
-from typing import Optional
-
 
 from ...core.config import ROOT_DIR
 
@@ -28,13 +25,13 @@ SAFE_MEDIA_TYPES = {
 }
 
 
-def safe_media_type(value: Optional[str]) -> str:
+def safe_media_type(value: str | None) -> str:
     """Only return known browser-safe MIME types; unknown types are downloads."""
     normalized = (value or "").split(";", 1)[0].strip().lower()
     return normalized if normalized in SAFE_MEDIA_TYPES else "application/octet-stream"
 
 
-def media_content_disposition(kind: Optional[str], value: Optional[str]) -> str:
+def media_content_disposition(kind: str | None, value: str | None) -> str:
     mime_type = safe_media_type(value)
     if kind in {"photo", "sticker"} and mime_type.startswith("image/") and mime_type != "image/svg+xml":
         return "inline"
@@ -47,7 +44,7 @@ def media_content_disposition(kind: Optional[str], value: Optional[str]) -> str:
     return "attachment"
 
 
-def delete_message_media(metadata_json: Optional[str]) -> None:
+def delete_message_media(metadata_json: str | None) -> None:
     try:
         metadata = json.loads(metadata_json or "{}")
         relative = metadata.get("media", {}).get("local_path")

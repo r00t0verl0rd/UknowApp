@@ -5,9 +5,10 @@ from __future__ import annotations
 import json
 import logging
 import re
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Awaitable, Callable, Protocol
+from datetime import UTC, datetime
+from typing import Protocol
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -33,7 +34,6 @@ from ..communication.contracts import InboundMessage, MessengerPlatform
 from ..notifications.service import schedule_push
 from .moderation import contact_would_be_exposed
 
-
 logger = logging.getLogger(__name__)
 
 _CONNECTION_CODE_WINDOW = 15 * 60
@@ -48,7 +48,7 @@ class InboundMessengerPort(Protocol):
     platform: MessengerPlatform
 
     async def send_text(
-        self, external_chat_id: str, text: str, thread_id: str | None = None
+        self, external_chat_id: str, text: str, thread_id: str | None = None,
     ) -> str:
         ...
 
@@ -66,7 +66,7 @@ class InboundMessengerPort(Protocol):
         ...
 
     async def delete_message(
-        self, external_chat_id: str, external_message_id: str
+        self, external_chat_id: str, external_message_id: str,
     ) -> None:
         ...
 
@@ -78,7 +78,7 @@ class InboundUiResult:
 
 
 InboundUiHandler = Callable[
-    [Session, InboundMessage, User, InboundMessengerPort], Awaitable[InboundUiResult]
+    [Session, InboundMessage, User, InboundMessengerPort], Awaitable[InboundUiResult],
 ]
 
 
@@ -167,7 +167,7 @@ def current_student_conversation(db: Session, student_id: int) -> Conversation |
             Assignment.student_id == student_id,
             Assignment.active.is_(True),
         )
-        .order_by(Assignment.created_at.desc())
+        .order_by(Assignment.created_at.desc()),
     )
     return assignment.conversation if assignment else None
 
@@ -176,7 +176,7 @@ def conversation_messages(db: Session, conversation_id: int) -> list[Message]:
     return db.scalars(
         select(Message)
         .where(Message.conversation_id == conversation_id)
-        .order_by(Message.created_at, Message.id)
+        .order_by(Message.created_at, Message.id),
     ).all()
 
 
@@ -205,7 +205,7 @@ def pending_student_messages(rows: list[Message]) -> list[Message]:
 def mark_messages_read_by_teacher(db: Session, messages: list[Message]) -> None:
     if not messages:
         return
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     changed = False
     for row in messages:
         metadata = json.loads(row.metadata_json or "{}")
@@ -218,7 +218,7 @@ def mark_messages_read_by_teacher(db: Session, messages: list[Message]) -> None:
 
 
 def mark_visible_messages_read_by_teacher(
-    db: Session, conversation: Conversation
+    db: Session, conversation: Conversation,
 ) -> None:
     rows = conversation_messages(db, conversation.id)
     mark_messages_read_by_teacher(
@@ -232,7 +232,7 @@ def mark_visible_messages_read_by_teacher(
 
 
 def get_teacher_conversation(
-    db: Session, teacher: User | None, conversation_id: int
+    db: Session, teacher: User | None, conversation_id: int,
 ) -> Conversation | None:
     conversation = db.get(Conversation, conversation_id)
     if (
@@ -261,7 +261,7 @@ def clear_teacher_session(db: Session, teacher: User) -> None:
     if teacher.role != "teacher":
         return
     db.query(TeacherSession).filter(
-        TeacherSession.teacher_id == teacher.id
+        TeacherSession.teacher_id == teacher.id,
     ).delete(synchronize_session=False)
     db.commit()
 
@@ -279,7 +279,7 @@ def bind_student_forum_topic(
         select(StudentTelegramGroup).where(
             StudentTelegramGroup.chat_id == chat_id,
             StudentTelegramGroup.thread_id == thread_id,
-        )
+        ),
     )
     if occupied and occupied.student_id != student.id:
         return False
@@ -306,7 +306,7 @@ def bind_student_forum_topic(
 
 
 def _resolve_forum_message(
-    db: Session, inbound: InboundMessage, sender: User | None
+    db: Session, inbound: InboundMessage, sender: User | None,
 ) -> StudentTelegramGroup | None:
     if (
         inbound.chat_type not in {"group", "supergroup"}
@@ -324,7 +324,7 @@ def _resolve_forum_message(
             StudentTelegramGroup.chat_id == chat_id,
             StudentTelegramGroup.thread_id == thread_id,
             StudentTelegramGroup.student_id == sender.id,
-        )
+        ),
     )
     if binding:
         return binding
@@ -333,7 +333,7 @@ def _resolve_forum_message(
         select(StudentTelegramGroup).where(
             StudentTelegramGroup.chat_id == chat_id,
             StudentTelegramGroup.thread_id == thread_id,
-        )
+        ),
     )
     if occupied and occupied.student_id != sender.id:
         logger.warning(
@@ -346,19 +346,19 @@ def _resolve_forum_message(
     if occupied or not conversation or conversation.status != "active":
         return None
     if not bind_student_forum_topic(
-        db, sender, chat_id, thread_id, inbound.chat_title
+        db, sender, chat_id, thread_id, inbound.chat_title,
     ):
         return None
     return db.get(StudentTelegramGroup, sender.id)
 
 
 async def _handle_unlinked_sender(
-    db: Session, inbound: InboundMessage, gateway: InboundMessengerPort
+    db: Session, inbound: InboundMessage, gateway: InboundMessengerPort,
 ) -> InboundProcessResult:
     external_user_id = inbound.external_user_id
     limiter_key = (inbound.platform.value, external_user_id)
     if not external_user_id or not _unlinked_message_limiter.allow_and_record(
-        limiter_key, _UNLINKED_MESSAGE_LIMIT, _UNLINKED_MESSAGE_WINDOW
+        limiter_key, _UNLINKED_MESSAGE_LIMIT, _UNLINKED_MESSAGE_WINDOW,
     ):
         return InboundProcessResult()
 
@@ -369,12 +369,12 @@ async def _handle_unlinked_sender(
     )
     if not CONNECTION_CODE_RE.fullmatch(normalized):
         await gateway.send_text(
-            inbound.external_chat_id, prompt, inbound.external_thread_id
+            inbound.external_chat_id, prompt, inbound.external_thread_id,
         )
         return InboundProcessResult()
 
     if not _connection_code_limiter.is_allowed(
-        limiter_key, _CONNECTION_CODE_LIMIT, _CONNECTION_CODE_WINDOW
+        limiter_key, _CONNECTION_CODE_LIMIT, _CONNECTION_CODE_WINDOW,
     ):
         await gateway.send_text(
             inbound.external_chat_id,
@@ -481,7 +481,7 @@ async def _deliver_student_message_to_teacher(
                 conversation.id, type(copy_error).__name__,
             )
             notice_id = await gateway.send_text(
-                teacher_chat_id, "📎 Вложение от ученика: " + sender.full_name
+                teacher_chat_id, "📎 Вложение от ученика: " + sender.full_name,
             )
             copied_id = await gateway.copy_message(
                 inbound.external_chat_id,
@@ -553,7 +553,7 @@ async def _deliver_teacher_reply(
     if inbound.text:
         try:
             await gateway.delete_message(
-                inbound.external_chat_id, inbound.external_message_id
+                inbound.external_chat_id, inbound.external_message_id,
             )
         except Exception as exc:
             logger.info(
@@ -566,7 +566,7 @@ async def _deliver_teacher_reply(
             continue
         try:
             await gateway.delete_message(
-                inbound.external_chat_id, str(pending.destination_message_id)
+                inbound.external_chat_id, str(pending.destination_message_id),
             )
         except Exception as exc:
             logger.info(
@@ -649,7 +649,7 @@ async def process_inbound_message(
         if not conversation:
             try:
                 await gateway.delete_message(
-                    inbound.external_chat_id, inbound.external_message_id
+                    inbound.external_chat_id, inbound.external_message_id,
                 )
             except Exception as exc:
                 logger.debug(
@@ -716,7 +716,7 @@ async def process_inbound_message(
             if inbound.text:
                 try:
                     await gateway.delete_message(
-                        inbound.external_chat_id, inbound.external_message_id
+                        inbound.external_chat_id, inbound.external_message_id,
                     )
                 except Exception as exc:
                     logger.info(
@@ -760,7 +760,7 @@ async def process_inbound_message(
             else "Не удалось отправить сообщение. Попробуйте ещё раз позже."
         )
         await gateway.send_text(
-            inbound.external_chat_id, response, inbound.external_thread_id
+            inbound.external_chat_id, response, inbound.external_thread_id,
         )
 
     return InboundProcessResult(refresh_teacher_id=conversation.teacher_id)

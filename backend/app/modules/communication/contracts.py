@@ -6,10 +6,11 @@ platforms. They deliberately contain no aiogram, MAX, or WhatsApp types.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
-from typing import Mapping, Protocol, Sequence
+from typing import Protocol
 
 
 class MessengerPlatform(StrEnum):
@@ -142,7 +143,7 @@ class MessengerAdapter(Protocol):
         ...
 
     def normalize_event(
-        self, payload: Mapping[str, object]
+        self, payload: Mapping[str, object],
     ) -> Sequence[InboundMessage]:
         """Convert a provider event into zero or more normalized messages."""
         ...

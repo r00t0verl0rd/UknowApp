@@ -2,11 +2,10 @@
 
 import asyncio
 import hashlib
-from collections import defaultdict
-from html import escape
 import json
 import logging
-from typing import Optional
+from collections import defaultdict
+from html import escape
 
 from aiogram import Bot
 from aiogram.types import (
@@ -16,7 +15,14 @@ from aiogram.types import (
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from ...models import Assignment, Conversation, Message, TeacherPanel, TeacherSession, User
+from ...models import (
+    Assignment,
+    Conversation,
+    Message,
+    TeacherPanel,
+    TeacherSession,
+    User,
+)
 from ..communication.accounts import get_messenger_account
 from ..communication.contracts import MessengerPlatform
 from ..messaging.inbound import (
@@ -27,7 +33,6 @@ from ..messaging.inbound import (
     mark_visible_messages_read_by_teacher,
     pending_student_messages,
     set_teacher_session,
-    unanswered_student_messages,
 )
 
 logger = logging.getLogger(__name__)
@@ -41,7 +46,7 @@ TEACHER_PREVIOUS_PAGE_LABEL = "← Предыдущая"
 TEACHER_NEXT_PAGE_LABEL = "Следующая →"
 
 
-def message_preview(row: Optional[Message]) -> str:
+def message_preview(row: Message | None) -> str:
     if not row:
         return "Сообщений пока нет"
     body = " ".join((row.text or "").strip().split())
@@ -89,7 +94,7 @@ def teacher_conversations(db: Session, teacher: User) -> list[dict]:
             Conversation.status == "active",
         )
         .join(Conversation, Assignment.id == Conversation.assignment_id)
-        .order_by(Assignment.created_at.desc())
+        .order_by(Assignment.created_at.desc()),
     ).all()
     conversation_ids = [item.conversation.id for item in assignments]
     messages_by_conversation = defaultdict(list)
@@ -97,7 +102,7 @@ def teacher_conversations(db: Session, teacher: User) -> list[dict]:
         rows = db.scalars(
             select(Message)
             .where(Message.conversation_id.in_(conversation_ids))
-            .order_by(Message.conversation_id, Message.created_at, Message.id)
+            .order_by(Message.conversation_id, Message.created_at, Message.id),
         ).all()
         for row in rows:
             messages_by_conversation[row.conversation_id].append(row)
@@ -134,7 +139,7 @@ def _teacher_keyboard(
     visible: list[dict],
     page: int,
     total_pages: int,
-    selected_student_name: Optional[str] = None,
+    selected_student_name: str | None = None,
 ) -> ReplyKeyboardMarkup:
     labels = [item["student"].full_name.strip() for item in visible]
     rows = []
@@ -172,7 +177,7 @@ def teacher_panel_view(
     db: Session,
     teacher: User,
     page: int = 0,
-    selected_student_name: Optional[str] = None,
+    selected_student_name: str | None = None,
 ) -> tuple[str, ReplyKeyboardMarkup, int]:
     items = teacher_conversations(db, teacher)
     total_pages, page, visible = _teacher_page(items, page)
@@ -204,7 +209,7 @@ def teacher_panel_view(
         if total_pages > 1:
             lines.append("Страница " + str(page + 1) + " из " + str(total_pages) + ".")
     return "\n".join(lines), _teacher_keyboard(
-        visible, page, total_pages, selected_student_name
+        visible, page, total_pages, selected_student_name,
     ), page
 
 
@@ -212,14 +217,14 @@ def teacher_keyboard_actions(
     db: Session,
     teacher: User,
     page: int,
-) -> tuple[dict[str, Optional[Conversation]], int, int, set[str]]:
+) -> tuple[dict[str, Conversation | None], int, int, set[str]]:
     items = teacher_conversations(db, teacher)
     total_pages, page, visible = _teacher_page(items, page)
     labels_by_conversation = {
         item["conversation"].id: item["student"].full_name.strip()
         for item in items
     }
-    actions: dict[str, Optional[Conversation]] = {}
+    actions: dict[str, Conversation | None] = {}
     for item in visible:
         label = labels_by_conversation[item["conversation"].id]
         if label in actions:
@@ -276,7 +281,7 @@ async def _update_teacher_panel_locked(
         return False
     try:
         telegram_chat_id = int(
-            telegram_account.external_chat_id or telegram_account.external_user_id
+            telegram_account.external_chat_id or telegram_account.external_user_id,
         )
     except (TypeError, ValueError):
         logger.warning("Teacher has an invalid Telegram chat destination (teacher_id=%s)", teacher.id)
@@ -288,7 +293,7 @@ async def _update_teacher_panel_locked(
     conversation = get_teacher_conversation(db, teacher, session.conversation_id) if session else None
     selected_student_name = conversation.assignment.student.full_name if conversation else None
     list_text, markup, page = teacher_panel_view(
-        db, teacher, page, selected_student_name
+        db, teacher, page, selected_student_name,
     )
     if panel and panel.page_index != page:
         panel.page_index = page
@@ -406,7 +411,7 @@ async def update_teacher_panel(
     async with lock:
         try:
             return await _update_teacher_panel_locked(
-                bot, db, teacher, force_keyboard_refresh=force_keyboard_refresh
+                bot, db, teacher, force_keyboard_refresh=force_keyboard_refresh,
             )
         except Exception:
             db.rollback()
@@ -427,7 +432,7 @@ async def handle_teacher_keyboard_message(
     async def remove_action_message() -> None:
         try:
             await gateway.delete_message(
-                inbound.external_chat_id, inbound.external_message_id
+                inbound.external_chat_id, inbound.external_message_id,
             )
         except Exception as exc:
             logger.debug(
@@ -442,7 +447,7 @@ async def handle_teacher_keyboard_message(
     panel = db.get(TeacherPanel, teacher.id)
     page = panel.page_index if panel else 0
     actions, page, total_pages, legacy_student_labels = teacher_keyboard_actions(
-        db, teacher, page
+        db, teacher, page,
     )
 
     if body not in actions and body in legacy_student_labels:

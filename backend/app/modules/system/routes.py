@@ -1,6 +1,7 @@
 """HTTP API веб-панели: авторизация, участники, переписки и доставка сообщений."""
 
 import logging
+
 from fastapi import (
     APIRouter,
     HTTPException,
@@ -8,6 +9,7 @@ from fastapi import (
     Response,
 )
 from sqlalchemy import select
+
 from ...config import VAPID_PUBLIC_KEY
 from ...models import PushSubscription
 from ...schemas import LoginRequest
@@ -21,7 +23,7 @@ from ...security import (
     revoke_panel_session,
     verify_request_origin,
 )
-from ..dependencies import PanelUser, Db
+from ..dependencies import Db, PanelUser
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
@@ -92,8 +94,8 @@ def remove_push_subscription(payload: dict, principal: PanelUser, db: Db):
         raise HTTPException(status_code=400, detail="Некорректная подписка")
     subscription = db.scalar(select(PushSubscription).where(PushSubscription.endpoint == endpoint))
     if subscription and (
-        principal["role"] == "admin" and subscription.role == "admin"
-        or principal["role"] in {"teacher", "student"} and subscription.user_id == principal["user_id"]
+        (principal["role"] == "admin" and subscription.role == "admin")
+        or (principal["role"] in {"teacher", "student"} and subscription.user_id == principal["user_id"])
     ):
         db.delete(subscription)
         db.commit()

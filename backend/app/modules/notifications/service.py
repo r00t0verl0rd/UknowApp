@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 import threading
-from typing import Iterable
+from collections.abc import Iterable
 from urllib.parse import parse_qs, urlsplit
 
 from pywebpush import WebPushException, webpush
@@ -35,7 +35,7 @@ def schedule_push(
     if not conditions:
         return
     subscriptions = db.scalars(
-        select(PushSubscription).where(or_(*conditions))
+        select(PushSubscription).where(or_(*conditions)),
     ).all()
     targets = [
         {
@@ -94,6 +94,6 @@ def _deliver(targets: list[dict], payload: str) -> None:
     if expired_ids:
         with SessionLocal() as db:
             db.query(PushSubscription).filter(
-                PushSubscription.id.in_(expired_ids)
+                PushSubscription.id.in_(expired_ids),
             ).delete(synchronize_session=False)
             db.commit()
