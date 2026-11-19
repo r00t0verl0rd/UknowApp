@@ -39,8 +39,7 @@ if not (VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY):
         format=serialization.PublicFormat.UncompressedPoint,
     )
     VAPID_PUBLIC_KEY = base64.urlsafe_b64encode(_vapid_public).rstrip(b"=").decode("ascii")
-    if not VAPID_PRIVATE_KEY:
-        VAPID_PRIVATE_KEY = str(_vapid_path)
+    VAPID_PRIVATE_KEY = str(_vapid_path)
 
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "change-me-now")
