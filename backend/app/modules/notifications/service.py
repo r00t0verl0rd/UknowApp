@@ -67,7 +67,7 @@ def schedule_push(
 
 
 def _deliver(targets: list[dict], payload: str) -> None:
-    from .database import SessionLocal
+    from ...core.database import SessionLocal
 
     expired_ids = []
     for target in targets:
