@@ -38,11 +38,11 @@ from ...security import (
 )
 from ...telegram_common import text_contains_contact_data
 from ...push_notifications import schedule_push
-from .modules.users.service import user_dict, generate_panel_access_code, validate_panel_username
-from .modules.conversations.service import conversation_dict, conversation_dicts
-from .modules.personal_chat.service import _personal_conversation, _personal_conversation_dict
-from .modules.assignments.service import assign_student
-from .modules.messaging.service import _panel_visible_conversation, _panel_message_dict
+from ...modules.users.service import user_dict, generate_panel_access_code, validate_panel_username
+from ...modules.conversations.service import conversation_dict, conversation_dicts
+from ...modules.personal_chat.service import _personal_conversation, _personal_conversation_dict
+from ...modules.assignments.service import assign_student
+from ...modules.messaging.service import _panel_visible_conversation, _panel_message_dict
 
 from ..dependencies import Admin, PanelUser, Db
 
