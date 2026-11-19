@@ -44,6 +44,7 @@ from .push_notifications import schedule_push
 from .modules.users.service import user_dict, generate_panel_access_code, validate_panel_username
 from .modules.conversations.service import conversation_dict, conversation_dicts
 from .modules.personal_chat.service import _personal_conversation, _personal_conversation_dict
+from .modules.assignments.service import assign_student
 
 logger = logging.getLogger(__name__)
 
@@ -509,38 +510,8 @@ def generate_connection_code(user_id: int, _: Admin, db: Db):
 
 
 @router.post("/admin/assignments", status_code=201)
-def assign_student(payload: AssignmentCreate, _: Admin, db: Db):
-    teacher = db.get(User, payload.teacher_id)
-    student = db.get(User, payload.student_id)
-    if not teacher or teacher.role != "teacher":
-        raise HTTPException(status_code=400, detail="Выберите учителя")
-    if not student or student.role != "student":
-        raise HTTPException(status_code=400, detail="Выберите ученика")
-
-    previous = db.scalars(
-        select(Assignment).where(Assignment.student_id == student.id, Assignment.active.is_(True))
-    ).all()
-    now = datetime.now(timezone.utc)
-    for assignment in previous:
-        if assignment.conversation:
-            assignment.conversation.status = "closed"
-            assignment.conversation.assignment_id = None
-        db.delete(assignment)
-
-    assignment = Assignment(teacher_id=teacher.id, student_id=student.id, active=True)
-    db.add(assignment)
-    db.flush()
-    conversation = Conversation(
-        assignment_id=assignment.id,
-        teacher_id=teacher.id,
-        student_id=student.id,
-        status="active",
-    )
-    db.add(conversation)
-    db.commit()
-    db.refresh(conversation)
-    publish_chat_update(conversation.id)
-    return conversation_dict(db, conversation)
+def assign_student_route(payload: AssignmentCreate, _: Admin, db: Db):
+    return assign_student(payload, db)
 
 
 def _panel_visible_conversation(db: Session, principal: dict, conversation_id: int) -> Conversation:
