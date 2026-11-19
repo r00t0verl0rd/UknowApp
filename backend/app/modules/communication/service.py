@@ -26,12 +26,6 @@ class OutboundMessengerAdapter(Protocol):
     async def send(self, message: OutboundMessage) -> DeliveryResult:
         ...
 
-    async def delete_message(
-        self, external_chat_id: str, external_message_id: str
-    ) -> None:
-        ...
-
-
 class CommunicationService:
     """Dispatch provider-neutral delivery commands to configured adapters."""
 
@@ -76,10 +70,9 @@ class CommunicationService:
         external_message_id: str,
     ) -> None:
         adapter = self._adapter(platform)
-        if not adapter.capabilities.delete_messages:
+        delete = getattr(adapter, "delete_message", None)
+        if not adapter.capabilities.delete_messages or delete is None:
             raise NotImplementedError(
                 f"{platform.value} does not support message deletion"
             )
-        await adapter.delete_message(
-            external_chat_id, external_message_id
-        )
+        await delete(external_chat_id, external_message_id)
