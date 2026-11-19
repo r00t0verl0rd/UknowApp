@@ -20,11 +20,11 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from .config import ADMIN_USERNAME
+from .config import ADMIN_USERNAME, VAPID_PUBLIC_KEY
 from .database import SessionLocal
 from .event_hub import publish_chat_update, subscribe_chat_updates, unsubscribe_chat_updates
 from .media_storage import MEDIA_DIR, delete_message_media, safe_media_type, media_content_disposition
-from .models import Assignment, ConnectionCode, Conversation, Message, PanelSession, PersonalConversation, PersonalMessage, StudentTelegramGroup, TeacherPanel, TeacherSession, User
+from .models import Assignment, ConnectionCode, Conversation, Message, PanelSession, PersonalConversation, PersonalMessage, StudentTelegramGroup, TeacherPanel, TeacherSession, User, PushSubscription
 from .schemas import AssignmentCreate, LoginRequest, PanelMessageCreate, PersonalConversationCreate, PersonalMessageCreate, UserCreate, UserUpdate
 from .security import (
     authenticate_panel_user,
@@ -40,6 +40,7 @@ from .security import (
     verify_request_origin,
 )
 from .telegram_common import text_contains_contact_data
+from .push_notifications import schedule_push
 
 logger = logging.getLogger(__name__)
 
@@ -215,6 +216,54 @@ def logout(request: Request, response: Response, db: Db):
 @router.get("/health")
 def health():
     return {"status": "ok", "service": "uknowapp"}
+
+@router.get("/push/public-key")
+def push_public_key():
+    return {"enabled": bool(VAPID_PUBLIC_KEY), "public_key": VAPID_PUBLIC_KEY or None}
+
+
+@router.post("/push/subscribe")
+def save_push_subscription(payload: dict, principal: PanelUser, db: Db):
+    endpoint = payload.get("endpoint")
+    keys = payload.get("keys") or {}
+    p256dh = keys.get("p256dh")
+    auth = keys.get("auth")
+    if (
+        not isinstance(endpoint, str)
+        or len(endpoint) > 2048
+        or not endpoint.startswith(("https://", "http://localhost", "http://127.0.0.1"))
+        or not isinstance(p256dh, str) or not 20 <= len(p256dh) <= 256
+        or not isinstance(auth, str) or not 8 <= len(auth) <= 128
+    ):
+        raise HTTPException(status_code=400, detail="Некорректная подписка на уведомления")
+    role = principal["role"]
+    user_id = principal.get("user_id") if role in {"teacher", "student"} else None
+    subscription = db.scalar(select(PushSubscription).where(PushSubscription.endpoint == endpoint))
+    if subscription is None:
+        subscription = PushSubscription(endpoint=endpoint, p256dh=p256dh, auth=auth, user_id=user_id, role=role)
+        db.add(subscription)
+    else:
+        subscription.p256dh = p256dh
+        subscription.auth = auth
+        subscription.user_id = user_id
+        subscription.role = role
+    db.commit()
+    return {"ok": True}
+
+
+@router.delete("/push/subscribe")
+def remove_push_subscription(payload: dict, principal: PanelUser, db: Db):
+    endpoint = payload.get("endpoint")
+    if not isinstance(endpoint, str) or len(endpoint) > 2048:
+        raise HTTPException(status_code=400, detail="Некорректная подписка")
+    subscription = db.scalar(select(PushSubscription).where(PushSubscription.endpoint == endpoint))
+    if subscription and (
+        principal["role"] == "admin" and subscription.role == "admin"
+        or principal["role"] in {"teacher", "student"} and subscription.user_id == principal["user_id"]
+    ):
+        db.delete(subscription)
+        db.commit()
+    return {"ok": True}
 
 
 @router.get("/admin/overview")
@@ -976,6 +1025,14 @@ def send_personal_message(
     db.add(row)
     db.commit()
     db.refresh(row)
+    schedule_push(
+        db,
+        [item.participant_id] if principal["role"] == "admin" else [],
+        "Новое личное сообщение",
+        (("Администратор: " if principal["role"] == "admin" else item.participant.full_name + ": ") + row.text)[:240],
+        f"/?openConversation={item.id}&type=personal",
+        include_admin=principal["role"] != "admin",
+    )
     publish_chat_update(0)
     return {
         "id": row.id,
@@ -1269,6 +1326,12 @@ async def send_panel_message(
     db.add(row)
     db.commit()
     db.refresh(row)
+    push_recipients = [student.id, teacher.id] if principal["role"] == "admin" else ([student.id] if principal["role"] == "teacher" else [teacher.id])
+    schedule_push(
+        db, push_recipients, "Новое сообщение · UknowApp",
+        (sender.full_name + ": " + (body or "Новое сообщение"))[:240],
+        f"/?openConversation={conversation.id}", include_admin=principal["role"] != "admin",
+    )
 
     bot = getattr(request.app.state, "telegram_bot", None)
     delivery_errors = []
@@ -1359,6 +1422,12 @@ async def send_panel_attachment(
     db.add(row)
     db.commit()
     db.refresh(row)
+    push_recipients = [student.id, teacher.id] if principal["role"] == "admin" else ([student.id] if principal["role"] == "teacher" else [teacher.id])
+    schedule_push(
+        db, push_recipients, "Новое сообщение · UknowApp",
+        (sender.full_name + ": " + (row.text or "Отправлено вложение"))[:240],
+        f"/?openConversation={conversation.id}", include_admin=principal["role"] != "admin",
+    )
 
     rows = db.scalars(
         select(Message).where(Message.conversation_id == conversation.id)
