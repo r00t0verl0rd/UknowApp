@@ -56,7 +56,6 @@ export default function ChatsPage({ profile, chatSection, setChatSection, person
                   </form>}
                 </> : <div className="empty-state">{profile?.role === "student" ? "Ваша переписка с учителем появится здесь" : "Выберите ученика слева"}</div>}</div>
               </div>
-            </>
     </>
   );
 }
