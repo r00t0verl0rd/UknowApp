@@ -1,0 +1,39 @@
+name: Temporary Ruff safe autofix
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  safe-autofix:
+    if: contains(github.event.head_commit.message, '[ruff-autofix]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Ruff
+        run: python -m pip install --upgrade ruff
+      - name: Apply Ruff safe fixes
+        run: ruff check . --select ALL --fix
+      - name: Commit safe fixes
+        run: |
+          if git diff --quiet; then
+            echo "No safe automatic fixes were applicable."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -u
+          git commit -m "style: apply safe Ruff autofixes"
+          git push origin main
+      - name: Verify Ruff result
+        if: always()
+        run: ruff check . --select ALL || true
