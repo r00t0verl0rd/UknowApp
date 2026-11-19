@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import threading
 from typing import Iterable
 from urllib.parse import parse_qs, urlsplit
 
@@ -62,7 +63,7 @@ def schedule_push(
     try:
         asyncio.get_running_loop().create_task(asyncio.to_thread(_deliver, targets, payload))
     except RuntimeError:
-        logger.warning("Web Push skipped because there is no running event loop")
+        threading.Thread(target=_deliver, args=(targets, payload), daemon=True).start()
 
 
 def _deliver(targets: list[dict], payload: str) -> None:
