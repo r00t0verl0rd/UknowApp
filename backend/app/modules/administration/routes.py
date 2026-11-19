@@ -38,16 +38,13 @@ from ...security import (
 )
 from ...telegram_common import text_contains_contact_data
 from ...push_notifications import schedule_push
-from ...modules.users.service import user_dict, generate_panel_access_code, validate_panel_username
-from ...modules.conversations.service import conversation_dict, conversation_dicts
-from ...modules.personal_chat.service import _personal_conversation, _personal_conversation_dict
-from ...modules.assignments.service import assign_student
-from ...modules.messaging.service import _panel_visible_conversation, _panel_message_dict
-
-
+from .modules.users.service import user_dict, generate_panel_access_code, validate_panel_username
+from .modules.conversations.service import conversation_dict, conversation_dicts
+from .modules.personal_chat.service import _personal_conversation, _personal_conversation_dict
+from .modules.assignments.service import assign_student
+from .modules.messaging.service import _panel_visible_conversation, _panel_message_dict
 
 from ..dependencies import Admin, PanelUser, Db
-
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
@@ -429,6 +426,8 @@ def generate_connection_code(user_id: int, _: Admin, db: Db):
 @router.post("/admin/assignments", status_code=201)
 def assign_student_route(payload: AssignmentCreate, _: Admin, db: Db):
     return assign_student(payload, db)
+
+
 
 from ...admin_data import router as admin_data_router
 router.include_router(admin_data_router)
