@@ -259,9 +259,9 @@ def disconnect_telegram(user_id: int, _: Admin, db: Db):
         raise HTTPException(status_code=409, detail="Telegram уже отключён")
 
     disconnected_telegram_id = user.telegram_id
-    now = datetime.now(timezone.utc)
 
-    # Remove the binding without deleting the account, assignments or chat history.
+    # Remove only the Telegram binding. The persistent access code remains valid
+    # for both participant roles and can be used to reconnect the same account.
     user.telegram_id = None
 
     # A disconnected teacher must select a conversation again after reconnecting.
@@ -269,14 +269,6 @@ def disconnect_telegram(user_id: int, _: Admin, db: Db):
         db.query(TeacherSession).filter(
             TeacherSession.teacher_id == user.id
         ).delete(synchronize_session=False)
-
-    # Student activation codes are one-time. A teacher's shared access code
-    # remains valid after Telegram is disconnected so the teacher can reconnect.
-    if user.role == "student":
-        db.query(ConnectionCode).filter(
-            ConnectionCode.user_id == user.id,
-            ConnectionCode.used_at.is_(None),
-        ).update({ConnectionCode.used_at: now}, synchronize_session=False)
 
     db.commit()
     db.refresh(user)
