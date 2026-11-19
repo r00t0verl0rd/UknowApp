@@ -41,7 +41,7 @@ backend/app/
 - `modules` owns business rules. Each domain has its own service boundary; Telegram, notifications and administration are isolated from unrelated domains.
 - `infrastructure` owns concrete adapters such as local file storage.
 - `main.py` is the composition root: it creates the application and connects routers, lifecycle hooks and integrations.
-- `api.py` currently preserves the established HTTP endpoint contract. User, assignment, conversation, private-chat and messaging logic has been moved into domain services. Route handlers are intentionally kept behind this boundary for now so the migration does not alter endpoint behavior in one large step.
+- HTTP routes are grouped by feature. Domain services remain separate from transport handlers, and the composition root only includes routers.
 
 `api.py` now only composes three feature routers: `system`, `administration` and `panel`. The endpoint paths, dependencies, response shapes and business handlers remain unchanged. Each router owns its endpoint declarations and local dependencies; new domain endpoints should be added to the matching module rather than the composition root.
 
@@ -65,7 +65,8 @@ frontend/src/
 │   ├── notifications/      # push notification client
 │   ├── personal-chat/      # private chat state
 │   ├── settings/           # appearance preferences
-│   └── users/              # user directory and editor state
+│   └── users/              # user directory page and editor state
+│       └── UsersPage.jsx
 ├── components/             # shared UI and layout components
 ├── hooks/
 │   ├── app/
