@@ -58,7 +58,6 @@ frontend/src/
 │   │   └── AdditionalPage.jsx
 │   ├── authentication/     # login page and authentication feature exports
 │   │   └── LoginPage.jsx
-│   ├── authentication/     # authentication feature exports
 │   ├── conversations/      # participant chat UI
 │   │   └── ChatsPage.jsx
 │   ├── graph/              # structure/graph page
