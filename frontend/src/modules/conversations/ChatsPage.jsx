@@ -58,5 +58,6 @@ export default function ChatsPage({ profile, chatSection, setChatSection, person
               </div>
             </>}
     </>
+    </>
   );
 }
