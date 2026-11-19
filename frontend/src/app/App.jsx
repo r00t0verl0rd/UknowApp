@@ -68,17 +68,19 @@ async function copyText(value) {
 // Главный экран панели: здесь хранятся состояние разделов, данные API и действия пользователя.
 export default function App() {
   const {
-    auth, setAuth, theme, setTheme, profile, setProfile, login, setLogin, password, setPassword,
+    auth, setAuth, profile, setProfile, login, setLogin, password, setPassword,
   } = useAuthState();
+  const { theme, setTheme } = useSettingsState();
   const {
     teacherGraph, setTeacherGraph, collapsedTeacherIds, setCollapsedTeacherIds,
   } = useGraphState();
   const {
-    draft, setDraft, attachment, setAttachment, chats, setChats, personalChats, setPersonalChats, chatSection, setChatSection,
+    draft, setDraft, attachment, setAttachment, chats, setChats,
     selectedChat, setSelectedChat, messages, setMessages, messagesViewportRef,
     chatSearch, setChatSearch, chatFilter, setChatFilter,
     messageFilter, setMessageFilter,
   } = useChatState();
+  const { personalChats, setPersonalChats, chatSection, setChatSection } = usePersonalChatState();
   const {
     users, setUsers, overview, setOverview, search, setSearch, userSort, setUserSort, userInfo, setUserInfo,
   } = useDirectoryState();
