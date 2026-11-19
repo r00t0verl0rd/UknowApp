@@ -3,7 +3,7 @@
 import hashlib
 import json
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from aiogram.types import Message as TgMessage
@@ -126,8 +126,11 @@ def claim_connection_code(
     expires_at = connection_code.expires_at
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
-    if expires_at <= datetime.now(timezone.utc):
+    now = datetime.now(timezone.utc)
+    if expires_at <= now:
         return None, "expired"
+    if expires_at <= now + timedelta(days=365):
+        return None, "invalid"
     if connection_code.used_at is not None:
         return None, "invalid"
 
