@@ -14,6 +14,8 @@ from .core.config import ALLOWED_ORIGINS, SEED_DEMO_DATA, TELEGRAM_BOT_TOKEN, TE
 from .core.database import SessionLocal, create_tables
 from .models import Assignment, Conversation, User
 from .modules.telegram.transport import create_telegram_bot
+from .modules.communication.service import CommunicationService
+from .modules.telegram.adapter import TelegramAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +101,7 @@ async def lifespan(app: FastAPI):
 
         bot = create_telegram_bot(TELEGRAM_BOT_TOKEN, TELEGRAM_PROXY_URL)
         app.state.telegram_bot = bot
+        app.state.communication = CommunicationService([TelegramAdapter(bot)])
 
         # A non-blocking OS lock prevents two local Uvicorn processes (including
         # accidental duplicate launches) from polling the same Telegram bot.
@@ -122,6 +125,7 @@ async def lifespan(app: FastAPI):
             )
     else:
         app.state.telegram_bot = None
+        app.state.communication = CommunicationService()
         logger.error("TELEGRAM_BOT_TOKEN_EMPTY: Telegram bot is disabled; admin API remains available.")
     try:
         yield
