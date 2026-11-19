@@ -278,7 +278,7 @@ def send_personal_message(
         sender_id = None
     else:
         sender = db.get(User, principal["user_id"])
-        if not sender or not sender.active or sender.id != item.participant_id:
+        if not sender or sender.id != item.participant_id:
             raise HTTPException(status_code=403, detail="Нет доступа к личному диалогу")
         sender_id = sender.id
     row = PersonalMessage(
