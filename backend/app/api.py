@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 from .config import ADMIN_USERNAME, VAPID_PUBLIC_KEY
 from .database import SessionLocal
 from .event_hub import publish_chat_update, subscribe_chat_updates, unsubscribe_chat_updates
-from .media_storage import MEDIA_DIR, delete_message_media, safe_media_type, media_content_disposition
+from .modules.media.service import MEDIA_DIR, delete_message_media, safe_media_type, media_content_disposition
 from .models import Assignment, ConnectionCode, Conversation, Message, PanelSession, PersonalConversation, PersonalMessage, StudentTelegramGroup, TeacherPanel, TeacherSession, User, PushSubscription
 from .schemas import AssignmentCreate, LoginRequest, PanelMessageCreate, PersonalConversationCreate, PersonalMessageCreate, UserCreate, UserUpdate
 from .security import (
