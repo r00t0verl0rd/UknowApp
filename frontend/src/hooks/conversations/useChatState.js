@@ -4,8 +4,6 @@ export function useChatState() {
   const [draft, setDraft] = useState("");
   const [attachment, setAttachment] = useState(null);
   const [chats, setChats] = useState([]);
-  const [personalChats, setPersonalChats] = useState([]);
-  const [chatSection, setChatSection] = useState("participants");
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const messagesViewportRef = useRef(null);
@@ -13,7 +11,7 @@ export function useChatState() {
   const [chatFilter, setChatFilter] = useState("all");
   const [messageFilter, setMessageFilter] = useState("all");
   return {
-    draft, setDraft, attachment, setAttachment, chats, setChats, personalChats, setPersonalChats, chatSection, setChatSection,
+    draft, setDraft, attachment, setAttachment, chats, setChats,
     selectedChat, setSelectedChat, messages, setMessages, messagesViewportRef,
     chatSearch, setChatSearch, chatFilter, setChatFilter,
     messageFilter, setMessageFilter,
