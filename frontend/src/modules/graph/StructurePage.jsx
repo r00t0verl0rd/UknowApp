@@ -94,7 +94,8 @@ export default function StructurePage({
 
   function startObjectDrag(event) {
     if (event.button !== 0 || event.target.closest("button, a, input, select, textarea")) return;
-    const element = event.target.closest("[data-object-id]");
+    const handle = event.target.closest(".graph-object-header, .graph-custom-object");
+    const element = handle?.closest("[data-object-id]");
     if (!element || !event.currentTarget.contains(element)) return;
     const item = graphObjects.find(object => object.id === Number(element.dataset.objectId));
     if (!item) return;
