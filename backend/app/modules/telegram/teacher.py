@@ -8,6 +8,7 @@ from collections import defaultdict
 from html import escape
 
 from aiogram import Bot
+from aiogram.exceptions import TelegramAPIError, TelegramBadRequest
 from aiogram.types import (
     KeyboardButton,
     ReplyKeyboardMarkup,
@@ -24,7 +25,7 @@ from app.models import (
     User,
 )
 from app.modules.communication.accounts import get_messenger_account
-from app.modules.communication.contracts import MessengerPlatform
+from app.modules.communication.contracts import MessengerError, MessengerPlatform
 from app.modules.messaging.inbound import (
     InboundUiResult,
     clear_teacher_session,
@@ -319,7 +320,7 @@ async def _update_teacher_panel_locked(
                 parse_mode="HTML",
             )
             return True
-        except Exception as exc:
+        except TelegramBadRequest as exc:
             error_text = str(exc).lower()
             if "message is not modified" in error_text:
                 return True
@@ -378,7 +379,7 @@ async def _update_teacher_panel_locked(
                 message_id=old_message_id,
                 reply_markup=None,
             )
-        except Exception:
+        except TelegramAPIError:
             logger.debug(
                 "Could not remove old inline keyboard (teacher_id=%s message_id=%s)",
                 teacher.id,
@@ -387,7 +388,7 @@ async def _update_teacher_panel_locked(
         await asyncio.sleep(0.8)
         try:
             await bot.delete_message(chat_id=old_chat_id, message_id=old_message_id)
-        except Exception:
+        except TelegramAPIError:
             logger.info(
                 "Could not remove the previous teacher panel (teacher_id=%s message_id=%s)",
                 teacher.id,
@@ -434,7 +435,7 @@ async def handle_teacher_keyboard_message(
             await gateway.delete_message(
                 inbound.external_chat_id, inbound.external_message_id,
             )
-        except Exception as exc:
+        except MessengerError as exc:
             logger.debug(
                 "Could not remove teacher keyboard action (error_type=%s)",
                 type(exc).__name__,
