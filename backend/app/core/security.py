@@ -84,7 +84,7 @@ def verify_request_origin(request: Request) -> None:
         # Non-browser clients do not send Origin; cookie-based browser requests do.
         return
     origin = origin.strip().rstrip("/")
-    current_origin = (str(request.base_url).rstrip("/"))
+    current_origin = str(request.base_url).rstrip("/")
     allowed = {item.strip().rstrip("/") for item in ALLOWED_ORIGINS if item.strip()}
     allowed.add(current_origin)
     if origin not in allowed:
@@ -96,9 +96,9 @@ def _client_ip(request: Request) -> str:
     if peer not in TRUSTED_PROXY_IPS:
         return peer
 
-    forwarded = request.headers.get("cf-connecting-ip") or request.headers.get("x-forwarded-for", "").split(",")[0]
+    forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
     try:
-        return str(ipaddress.ip_address(forwarded.strip()))
+        return str(ipaddress.ip_address(forwarded))
     except ValueError:
         return peer
 
