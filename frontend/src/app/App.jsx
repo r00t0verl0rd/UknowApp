@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { useAuthState, useChatState, useDirectoryState, useGraphState, usePersonalChatState, useSettingsState, useUiState, useUserActionState, useUserEditorState } from "../hooks/useAppState.js";
+import { useAuthState, useChatState, useGraphState, usePersonalChatState, useSettingsState, useUiState } from "../hooks/useAppState.js";
 import Activity from "lucide-react/dist/esm/icons/activity.js";
 import Layers from "lucide-react/dist/esm/icons/layers.js";
 import Check from "lucide-react/dist/esm/icons/check.js";
@@ -23,6 +23,7 @@ import UsersPage from "../modules/users/UsersPage.jsx";
 import LoginPage from "../modules/authentication/LoginPage.jsx";
 import { detachPushSubscription, disablePushNotifications, enablePushNotifications, getPushNotificationState } from "../modules/notifications/pushNotifications.js";
 import { usePanelDataState } from "../hooks/app/usePanelDataState.js";
+import { useUsersController } from "../hooks/users/useUsersController.js";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 
@@ -70,19 +71,6 @@ export default function App() {
   } = useChatState();
   const { personalChats, setPersonalChats, chatSection, setChatSection } = usePersonalChatState();
   const {
-    users, setUsers, overview, setOverview, search, setSearch, userSort, setUserSort, userInfo, setUserInfo,
-  } = useDirectoryState();
-  const {
-    issuedCredential, setIssuedCredential, savingUser, setSavingUser,
-    name, setName, panelLogin, setPanelLogin, role, setRole, additionalInfo, setAdditionalInfo,
-    telegramId, setTelegramId, teacherId, setTeacherId, studentId, setStudentId, code, setCode,
-  } = useUserEditorState();
-  const {
-    deleteCandidate, setDeleteCandidate, deletingUser, setDeletingUser,
-    deleteMessageCandidate, setDeleteMessageCandidate, deletingMessage, setDeletingMessage,
-    disconnectCandidate, setDisconnectCandidate, disconnectingTelegram, setDisconnectingTelegram,
-  } = useUserActionState();
-  const {
     page, setPage, error, setError, toast, setToast, modal, setModal,
   } = useUiState();
   const [dataStats, setDataStats] = useState(null);
@@ -94,6 +82,25 @@ export default function App() {
     auth, page, selectedChat, setAuth, setProfile, setError, setChats,
     setPersonalChats, setUsers, setOverview, setTeacherGraph, setPage,
     setSelectedChat, setMessages,
+  });
+  const notify = useCallback(message => {
+    setToast(message);
+    window.setTimeout(() => setToast(""), 2600);
+  }, [setToast]);
+  const {
+    users, setUsers, overview, setOverview, search, setSearch, userSort, setUserSort,
+    userInfo, setUserInfo, issuedCredential, setIssuedCredential, savingUser, setSavingUser,
+    name, setName, panelLogin, setPanelLogin, role, setRole, additionalInfo,
+    setAdditionalInfo, telegramId, setTelegramId, teacherId, setTeacherId,
+    studentId, setStudentId, code, setCode, deleteCandidate, setDeleteCandidate,
+    deletingUser, setDeletingUser, disconnectCandidate, setDisconnectCandidate,
+    disconnectingTelegram, setDisconnectingTelegram, allTeachers, allStudents,
+    studentsByTeacherId, visibleUsers, unassignedStudents, openCreate, openEdit,
+    saveUser, regeneratePanelAccessCode, removeUser, confirmRemoveUser, assign,
+    unassignStudent, disconnectTelegram, confirmDisconnectTelegram, makeCode,
+  } = useUsersController({
+    request, refresh, notify, setError, selectedChat, setSelectedChat,
+    setMessages, modal, setModal,
   });
 
   useEffect(() => {
@@ -174,7 +181,6 @@ export default function App() {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
-  const notify = (message) => { setToast(message); window.setTimeout(() => setToast(""), 2600); };
   const loadDataStats = useCallback(async () => {
     try {
       setDataStats(await request("/api/admin/data/stats"));
@@ -256,23 +262,6 @@ export default function App() {
     }
   }
 
-  // Списки участников пересчитываются только при изменении массива пользователей.
-  const allTeachers = useMemo(() => users.filter(u => u.role === "teacher"), [users]);
-  const allStudents = useMemo(() => users.filter(u => u.role === "student"), [users]);
-  const studentsByTeacherId = useMemo(
-    () => new Map((overview?.teachers || []).map(teacher => [teacher.id, teacher.students || []])),
-    [overview]
-  );
-  const visibleUsers = useMemo(() => users
-    .filter(u => (u.full_name + " " + (u.telegram_id || "")).toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => {
-      if (userSort === "teachers") return (a.role === "teacher" ? 0 : 1) - (b.role === "teacher" ? 0 : 1) || a.full_name.localeCompare(b.full_name, "ru");
-      if (userSort === "students") return (a.role === "student" ? 0 : 1) - (b.role === "student" ? 0 : 1) || a.full_name.localeCompare(b.full_name, "ru");
-      return a.full_name.localeCompare(b.full_name, "ru", { sensitivity: "base" }) * (userSort === "name-desc" ? -1 : 1);
-    }), [users, search, userSort]);
-  // Один раз собираем ID уже назначенных учеников, чтобы быстро найти свободных.
-  const assignedStudentIds = useMemo(() => new Set((overview?.teachers || []).flatMap(t => t.students.map(s => s.id))), [overview]);
-  const unassignedStudents = useMemo(() => allStudents.filter(student => !assignedStudentIds.has(student.id)), [allStudents, assignedStudentIds]);
   const visibleMessages = useMemo(() => messages.filter(message => {
     const kind = message.metadata?.media?.kind || message.content_type;
     if (messageFilter === "all") return true;
@@ -445,135 +434,6 @@ export default function App() {
   function openCreatePersonalChat() {
     setError("");
     setModal({ mode: "create-personal" });
-  }
-
-  function openCreate(defaultRole = "student") {
-    setIssuedCredential(null); setModal({ mode: "create", id: null }); setName(""); setPanelLogin(""); setRole(defaultRole); setAdditionalInfo(""); setTelegramId(""); setError("");
-  }
-  function openEdit(user) {
-    setModal({ mode: "edit", id: user.id }); setName(user.full_name); setPanelLogin(user.web_username || user.full_name); setRole(user.role); setAdditionalInfo(user.additional_info || ""); setTelegramId(user.telegram_id ? String(user.telegram_id) : ""); setError("");
-  }
-
-  async function saveUser(event) {
-    event.preventDefault();
-    setSavingUser(true);
-    setError("");
-    const body = { full_name: name.trim(), role, telegram_id: telegramId.trim() ? Number(telegramId) : null };
-    if (role === "student") body.additional_info = additionalInfo.trim();
-    if (role === "teacher" || role === "student") body.web_username = (panelLogin || name).trim();
-    try {
-      const saved = modal.mode === "create"
-        ? await request("/api/admin/users", { method: "POST", body: JSON.stringify(body) })
-        : await request("/api/admin/users/" + modal.id, { method: "PATCH", body: JSON.stringify(body) });
-      setModal(null);
-      await refresh();
-      if (saved.issued_access_code) {
-        setIssuedCredential({
-          full_name: saved.full_name,
-          username: saved.web_username || saved.full_name,
-          code: saved.issued_access_code,
-          role: saved.role,
-        });
-      } else {
-        notify(modal.mode === "create" ? "Участник добавлен" : "Изменения сохранены");
-      }
-    } catch (e) {
-      setError(e.message || "Не удалось сохранить профиль");
-    } finally {
-      setSavingUser(false);
-    }
-  }
-
-  async function regeneratePanelAccessCode() {
-    if (!modal || modal.mode !== "edit" || !["teacher", "student"].includes(role)) return;
-    setSavingUser(true);
-    setError("");
-    try {
-      const issued = await request("/api/admin/users/" + modal.id + "/access-code", { method: "POST" });
-      // Show the issued code immediately; refreshing the rest of the panel is non-blocking.
-      setIssuedCredential({
-        full_name: issued.full_name,
-        username: issued.web_username || issued.full_name,
-        code: issued.issued_access_code,
-        role: issued.role,
-      });
-      void refresh();
-    } catch (e) {
-      setError(e.message || "Не удалось создать новый код доступа");
-    } finally {
-      setSavingUser(false);
-    }
-  }
-
-  function removeUser(user) {
-    setDeleteCandidate(user);
-  }
-
-  async function confirmRemoveUser() {
-    const user = deleteCandidate;
-    if (!user || deletingUser) return;
-    setDeletingUser(true);
-    setError("");
-    try {
-      await request("/api/admin/users/" + user.id, { method: "DELETE" });
-      if (selectedChat && (selectedChat.teacher.id === user.id || selectedChat.student.id === user.id)) {
-        setSelectedChat(null);
-        setMessages([]);
-      }
-      setDeleteCandidate(null);
-      if (modal?.mode === "edit" && modal.id === user.id) setModal(null);
-      await refresh();
-      notify("Пользователь удалён");
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setDeletingUser(false);
-    }
-  }
-
-  async function assign(event) {
-    event.preventDefault();
-    try {
-      await request("/api/admin/assignments", { method: "POST", body: JSON.stringify({ teacher_id: Number(teacherId), student_id: Number(studentId) }) });
-      setModal(null); await refresh(); notify("Ученик назначен учителю");
-    } catch (e) { setError(e.message); }
-  }
-
-  async function unassignStudent(student) {
-    if (!window.confirm(`Открепить ученика «${student.full_name}» от учителя? История переписки сохранится.`)) return;
-    setError("");
-    try {
-      await request(`/api/admin/assignments/${student.id}`, { method: "DELETE" });
-      await refresh();
-      notify("Ученик откреплён от учителя");
-    } catch (e) {
-      setError(e.message);
-    }
-  }
-
-  function disconnectTelegram(user) {
-    setDisconnectCandidate(user);
-  }
-
-  async function confirmDisconnectTelegram() {
-    const user = disconnectCandidate;
-    if (!user || disconnectingTelegram) return;
-    setDisconnectingTelegram(true);
-    setError("");
-    try {
-      await request("/api/admin/users/" + user.id + "/disconnect-telegram", { method: "POST" });
-      setDisconnectCandidate(null);
-      await refresh();
-      notify("Telegram отключён");
-    } catch (e) { setError(e.message); }
-    finally { setDisconnectingTelegram(false); }
-  }
-
-  async function makeCode(user) {
-    try {
-      const result = await request("/api/admin/users/" + user.id + "/connection-code", { method: "POST" });
-      setCode({ ...result, full_name: user.full_name }); 
-    } catch (e) { setError(e.message); }
   }
 
   async function openChat(chat) {
