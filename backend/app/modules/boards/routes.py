@@ -58,7 +58,6 @@ def create_graph_object(payload: dict, _: Admin, db: Db):
     if parent_id is not None and db.get(GraphObject, parent_id) is None:
         raise HTTPException(status_code=404, detail="Родительский объект не найден")
     sibling_count = db.scalar(select(func.count(GraphObject.id)).where(GraphObject.parent_id == parent_id)) or 0
-    parent = db.get(GraphObject, parent_id) if parent_id is not None else None
     item = GraphObject(
         object_key=f"custom:{uuid.uuid4().hex}",
         object_type=object_type, title=title, parent_id=parent_id,
