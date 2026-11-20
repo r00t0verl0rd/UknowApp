@@ -353,8 +353,6 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
   return (
     <>
       {profile?.role === "teacher" && <section className="graph-panel is-teacher-view">
-        <div className="graph-toolbar-actions">
-        </div>
         <div
           className="teacher-grid"
           onPointerDown={handlePointerDown}
