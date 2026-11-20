@@ -1,5 +1,25 @@
 const API = import.meta.env.VITE_API_BASE_URL || "";
-let initializationStarted = false;
+
+function getPushSupport() {
+  if (!window.isSecureContext) {
+    return { supported: false, reason: "Push-уведомления работают только через HTTPS" };
+  }
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    return { supported: false, reason: "Этот браузер не поддерживает push-уведомления" };
+  }
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const standalone = window.matchMedia("(display-mode: standalone)").matches ||
+    navigator.standalone === true;
+  if (isIOS && !standalone) {
+    return {
+      supported: false,
+      reason: "На iPhone и iPad добавьте UknowApp на экран «Домой», затем откройте приложение оттуда",
+    };
+  }
+  return { supported: true, reason: "" };
+}
 
 function decodeApplicationServerKey(value) {
   const padding = "=".repeat((4 - value.length % 4) % 4);
@@ -8,17 +28,23 @@ function decodeApplicationServerKey(value) {
   return Uint8Array.from(raw, character => character.charCodeAt(0));
 }
 
+async function getRegistration() {
+  return navigator.serviceWorker.getRegistration("/") ||
+    navigator.serviceWorker.register("/sw.js");
+}
+
 async function subscribeToPush(registration) {
   const keyResponse = await fetch(API + "/api/push/public-key", { credentials: "include" });
-  if (!keyResponse.ok) return;
-  const { enabled, public_key: publicKey } = await keyResponse.json();
-  if (!enabled || !publicKey) return;
+  const keyData = await keyResponse.json().catch(() => ({}));
+  if (!keyResponse.ok || !keyData.enabled || !keyData.public_key) {
+    throw new Error(keyData.detail || "Push-уведомления не настроены на сервере");
+  }
 
   let subscription = await registration.pushManager.getSubscription();
   if (!subscription) {
     subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: decodeApplicationServerKey(publicKey),
+      applicationServerKey: decodeApplicationServerKey(keyData.public_key),
     });
   }
   const response = await fetch(API + "/api/push/subscribe", {
@@ -27,53 +53,72 @@ async function subscribeToPush(registration) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(subscription.toJSON()),
   });
-  if (!response.ok) throw new Error("Не удалось сохранить подписку на уведомления");
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.detail || "Не удалось сохранить подписку на уведомления");
+  return subscription;
+}
+
+export async function getPushNotificationState() {
+  const support = getPushSupport();
+  if (!support.supported) {
+    return { supported: false, enabled: false, permission: "default", reason: support.reason };
+  }
+
+  const permission = Notification.permission;
+  if (permission === "denied") {
+    return {
+      supported: true,
+      enabled: false,
+      permission,
+      reason: "Уведомления запрещены в настройках браузера",
+    };
+  }
+  const registration = await navigator.serviceWorker.getRegistration("/");
+  const subscription = await registration?.pushManager.getSubscription();
+  return {
+    supported: true,
+    enabled: Boolean(subscription && permission === "granted"),
+    permission,
+    reason: "",
+  };
+}
+
+export async function enablePushNotifications() {
+  const support = getPushSupport();
+  if (!support.supported) throw new Error(support.reason);
+
+  let permission = Notification.permission;
+  if (permission === "default") permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    throw new Error(permission === "denied"
+      ? "Разрешите уведомления для UknowApp в настройках браузера"
+      : "Браузер не разрешил включить уведомления");
+  }
+
+  const registration = await getRegistration();
+  await subscribeToPush(registration);
+}
+
+export async function disablePushNotifications() {
+  const registration = await navigator.serviceWorker.getRegistration("/");
+  const subscription = await registration?.pushManager.getSubscription();
+  if (!subscription) return;
+
+  const response = await fetch(API + "/api/push/subscribe", {
+    method: "DELETE",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ endpoint: subscription.endpoint }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.detail || "Не удалось отключить push-уведомления");
+  await subscription.unsubscribe();
 }
 
 export async function detachPushSubscription() {
   try {
-    const registration = await navigator.serviceWorker?.getRegistration("/");
-    const subscription = await registration?.pushManager.getSubscription();
-    if (subscription) {
-      await fetch(API + "/api/push/subscribe", {
-        method: "DELETE",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ endpoint: subscription.endpoint }),
-      });
-    }
+    await disablePushNotifications();
   } catch (error) {
     console.warn("UknowApp push detach failed:", error);
-  }
-}
-
-export function initializePushNotifications(authenticated) {
-  if (!authenticated || initializationStarted || !("serviceWorker" in navigator) ||
-      !("PushManager" in window) || !("Notification" in window)) return;
-  const standalone = window.matchMedia("(display-mode: standalone)").matches ||
-    window.navigator.standalone === true;
-  if (!standalone) return;
-
-  initializationStarted = true;
-  const start = async requestPermission => {
-    try {
-      if (Notification.permission === "default" && requestPermission) {
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") return;
-      }
-      if (Notification.permission !== "granted") return;
-      const registration = await navigator.serviceWorker.register("/sw.js");
-      await subscribeToPush(registration);
-    } catch (error) {
-      console.warn("UknowApp push setup failed:", error);
-    }
-  };
-
-  if (Notification.permission === "granted") {
-    void start(false);
-  } else if (Notification.permission === "default") {
-    const requestOnInteraction = () => void start(true);
-    window.addEventListener("pointerdown", requestOnInteraction, { once: true, passive: true });
-    window.addEventListener("keydown", requestOnInteraction, { once: true });
   }
 }
