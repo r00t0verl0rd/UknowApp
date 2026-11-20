@@ -14,9 +14,10 @@ def login(client, username, password):
 def test_authentication_rejects_invalid_credentials(api):
     make_client, _, _ = api
     client = make_client()
+    invalid_credential = "incorrect-value"
     response = client.post(
         "/api/auth/login",
-        json={"username": "teacher-one", "password": "incorrect-value"},
+        json={"username": "teacher-one", "password": invalid_credential},
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
