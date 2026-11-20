@@ -75,7 +75,7 @@ export default function App() {
     visibleChats, visibleMessages, openChat, openCreatePersonalChat, createPersonalChat,
     confirmDeleteMessage, sendChatMessage,
   } = useChatsController({
-    request, profile, chatState, personalState, setPage, setError, setModal,
+    auth, request, profile, chatState, personalState, setPage, setError, setModal,
     notify, deleteMessageCandidate, deletingMessage, setDeletingMessage,
     setDeleteMessageCandidate,
   });
@@ -98,25 +98,6 @@ export default function App() {
   useEffect(() => {
     if (auth && profile?.role === "teacher") setPage("chats");
   }, [auth, profile?.role, setPage]);
-
-  // Notification links restore the exact conversation after the inbox data is loaded.
-  useEffect(() => {
-    if (!auth || !profile) return;
-    const params = new URLSearchParams(window.location.search);
-    const conversationId = Number(params.get("openConversation"));
-    if (!conversationId) return;
-    const personal = params.get("type") === "personal";
-    const source = personal ? personalChats : chats;
-    const chat = source.find(item => Number(item.id) === conversationId);
-    if (!chat) return;
-    window.history.replaceState({}, "", window.location.pathname + window.location.hash);
-    setPage("chats");
-    if (personal) setChatSection("personal");
-    setSelectedChat(chat);
-    request((personal ? "/api/panel/personal-conversations/" : "/api/panel/conversations/") + chat.id + "/messages")
-      .then(setMessages)
-      .catch(error => setError(error.message));
-  }, [auth, profile, chats, personalChats, request]);
 
   const pushToggle = (
     <button
