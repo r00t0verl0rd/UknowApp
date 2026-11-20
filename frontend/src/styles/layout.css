@@ -433,7 +433,7 @@ img, video, audio { max-width: 100%;}
 :root[data-theme="dark-soft"] .graph-panel .add-student:hover { background: #3b3a55 !important; border-color: #77729d !important;}
 :root[data-theme="dark-soft"] .graph-panel .unassigned { border-top: 1px solid #414d60 !important;}
 :root[data-theme="dark-soft"] .graph-panel .person-card, :root[data-theme="dark-soft"] .user-list .person-card { color: #e4e8f0 !important;}
-:root[data-theme="dark-soft"] .graph-panel .person-card:hover, :root[data-theme="dark-soft"] .user-row:hover, :root[data-theme="dark-soft"] .unassigned-grid .person-card:hover { background: #30394a !important; border-color: #66728c !important; box-shadow: 0 4px 13px rgba(0, 0, 0, .2) !important; transform: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .person-card:hover, :root[data-theme="dark-soft"] .user-row:hover, :root[data-theme="dark-soft"] .unassigned-grid .person-card:hover { background: #30394a !important; border-color: #66728c !important; box-shadow: 0 4px 13px rgba(0, 0, 0, .2) !important;}
 :root[data-theme="dark-soft"] .graph-panel .person-actions button:hover, :root[data-theme="dark-soft"] .graph-panel .icon-btn:hover { background: #3b4057 !important; border-color: #525b78 !important; color: #d3cafa !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .person-actions .danger-icon:hover, :root[data-theme="dark-soft"] .graph-panel .danger-icon:hover { background: #482f3b !important; border-color: #78505f !important; color: #f0aab4 !important;}
 :root[data-theme="dark-soft"] .toolbar .search, :root[data-theme="dark-soft"] .search { background: #262f3d !important; border: 1px solid #414e62 !important; box-shadow: none !important;}
@@ -1002,7 +1002,7 @@ button:disabled { opacity: .5 !important;}
 :root[data-theme="dark-soft"] button:not(.primary):not(.disconnect):not(.danger-icon), :root[data-theme="dark-soft"] .btn:not(.primary):not(.disconnect):not(.danger-icon), :root[data-theme="dark-soft"] .sidebar nav button, :root[data-theme="dark-soft"] .icon-btn:not(.danger-icon), :root[data-theme="dark-soft"] .add-student, :root[data-theme="dark-soft"] .chat-item, :root[data-theme="dark-soft"] .alert-row button, :root[data-theme="dark-soft"] .modal-head button { background: #2b3443 !important; border-color: #414c60 !important; color: #c6cddd !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .sidebar nav button.active, :root[data-theme="dark-soft"] .btn.primary { background: #71679e !important; border-color: #8b80b8 !important; color: #fff !important;}
 :root[data-theme="dark-soft"] .chat-item.selected, :root[data-theme="dark-soft"] button.chat-item.selected { background: #343449 !important; border-color: #514b6d !important; color: #d1c9f4 !important;}
-:root[data-theme="dark-soft"] .user-row:hover, :root[data-theme="dark-soft"] .person-card:hover { background: #293343 !important; border-color: #59657b !important; box-shadow: none !important; transform: none !important;}
+:root[data-theme="dark-soft"] .user-row:hover, :root[data-theme="dark-soft"] .person-card:hover { background: #293343 !important; border-color: #59657b !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .teacher-branch:hover { background: #293343 !important; border-color: #59657b !important; box-shadow: none !important;}
 }
 /* --------------------------------------------------------------------------
