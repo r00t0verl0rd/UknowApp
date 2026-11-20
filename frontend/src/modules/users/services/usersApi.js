@@ -8,8 +8,6 @@ export function issuePanelAccessCode(request, userId) { return request("/api/adm
 
 export function createAssignment(request, teacherId, studentId) { return request("/api/admin/assignments", { method: "POST", body: JSON.stringify({ teacher_id: Number(teacherId), student_id: Number(studentId) }) }); }
 
-export function deleteAssignment(request, studentId) { return request("/api/admin/assignments/" + studentId, { method: "DELETE" }); }
-
 export function disconnectUserTelegram(request, userId) { return request("/api/admin/users/" + userId + "/disconnect-telegram", { method: "POST" }); }
 
 export function createUserConnectionCode(request, userId) { return request("/api/admin/users/" + userId + "/connection-code", { method: "POST" }); }
