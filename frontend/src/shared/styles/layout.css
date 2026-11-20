@@ -238,7 +238,7 @@ input:focus-visible, select:focus-visible { outline-offset: 2px;}
 .graph-panel .student-card { min-height: 61px; padding: 9px 11px; border: 1px solid #f0e5ce; border-radius: 12px; background: linear-gradient(105deg, #fff8e9, #fff 78%); box-shadow: 0 2px 8px rgba(155,113,43,.035);}
 .graph-panel .student-card .avatar { border-radius: 11px; background: #fff0ce; color: #a76d16;}
 .graph-panel .empty-students { margin-top: 11px; padding: 17px 12px; border: 1px dashed #e8dcbf; border-radius: 12px; background: rgba(255,251,241,.82); color: #9b896a;}
-.graph-panel .add-student { display: inline-flex; align-items: center; justify-content: center; align-self: flex-end; gap: 6px; min-height: 30px; margin: 0 0 8px auto; padding: 5px 9px; border: 1px solid #e5dfeb; border-radius: 8px; background: rgba(255,255,255,.76); color: #78698d; font-size: 11px; font-weight: 700; line-height: 1; transition: background .18s ease, border-color .18s ease, transform .18s ease;}
+.graph-panel .add-student { display: flex; width: fit-content; max-width: 100%; align-items: center; justify-content: center; gap: 6px; min-height: 30px; margin: 0 0 8px auto; padding: 5px 9px; border: 1px solid #e5dfeb; border-radius: 8px; background: rgba(255,255,255,.76); color: #78698d; font-size: 11px; font-weight: 700; line-height: 1; transition: background .18s ease, border-color .18s ease, transform .18s ease;}
 .graph-panel .add-student:hover { border-color: #d2c6df; background: #f5f1f8; transform: translateY(-1px);}
 .graph-panel .unassigned { margin-top: 23px; padding-top: 19px; border-top: 1px solid #e9e1f1;}
 .graph-panel .unassigned-title { margin-bottom: 11px;}
@@ -667,7 +667,9 @@ html, body { overflow-x: clip;}
 /* Prevent graph counter badges from escaping their compact column on phones. */
 /* Two main layout modes: mobile through 1024px, desktop from 1025px. */
 @media (min-width: 1025px) {
-.sidebar-bottom > .desktop-admin-extra { display: flex;}
+.sidebar-bottom { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+.sidebar-bottom > .desktop-admin-extra { display: flex; }
+.sidebar-bottom > .desktop-admin-extra[aria-current="page"] { color: var(--purple); background: var(--button-bg-hover); border-color: var(--button-border-hover); }
 .chat-layout {  overflow: hidden;}
 .chat-detail {   min-width: 0;}
 .chat-head { position: relative; top: auto;}
