@@ -1854,9 +1854,7 @@ border-color: transparent !important;}
 }
 
 /* Browser-native graph movement: only the teacher header and student cards are drag handles. */
-.graph-panel .teacher-card, .graph-panel .student-card { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
-.graph-panel .teacher-card:active, .graph-panel .student-card:active { cursor: grabbing; }
-.graph-panel .teacher-branch.is-dragging, .graph-panel .student-card.is-dragging { position: relative; z-index: 4; cursor: grabbing; }
+.graph-panel .teacher-card, .graph-panel .student-card { cursor: default; touch-action: auto; user-select: auto; -webkit-user-select: auto; }
 .graph-panel .teacher-branch.is-dragging, .graph-panel .student-card.is-dragging { box-shadow: none !important; }
 
 
