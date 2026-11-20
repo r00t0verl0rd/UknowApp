@@ -96,11 +96,13 @@ def _client_ip(request: Request) -> str:
     if peer not in TRUSTED_PROXY_IPS:
         return peer
 
-    forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
-    try:
-        return str(ipaddress.ip_address(forwarded))
-    except ValueError:
-        return peer
+    for header in ("cf-connecting-ip", "x-forwarded-for"):
+        forwarded = request.headers.get(header, "").split(",")[0].strip()
+        try:
+            return str(ipaddress.ip_address(forwarded))
+        except ValueError:
+            continue
+    return peer
 
 
 def _login_keys(request: Request, username: str) -> tuple[str, str]:
