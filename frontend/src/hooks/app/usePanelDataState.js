@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { createApiClient } from "../../services/api.js";
 import { getAdminBootstrap, getCurrentProfile, getInboxData, getTeacherGraph } from "../../modules/panel/services/panelApi.js";
+import { getChatMessages } from "../../modules/conversations/services/conversationsApi.js";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 
@@ -86,9 +87,7 @@ export function usePanelDataState({
       inFlight = true;
       try {
         if (selectedChat?.id && shouldRefreshMessages) {
-          const base = selectedChat.type === "personal"
-            ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
-          const rows = await request(base + selectedChat.id + "/messages");
+          const rows = await getChatMessages(request, selectedChat);
           if (!active) return;
           setMessages(rows);
         }
