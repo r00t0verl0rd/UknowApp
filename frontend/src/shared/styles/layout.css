@@ -451,7 +451,7 @@ img, video, audio { max-width: 100%;}
 :root[data-theme="dark-soft"] .chat-item.selected.has-unread { background: #393548 !important; border-color: #756449 !important; border-left-color: #e1ad57 !important; color: #e8e2f6 !important;}
 /* Slightly roomier message composer; manual resizing remains disabled. */
 /* Teacher and student totals are part of the graph legend, not separate cards. */
-.graph-panel .graph-legend { display: flex; align-items: center; flex-wrap: wrap; max-width: 100%;}
+.graph-panel .graph-legend { display: flex; flex: 0 1 auto; align-items: center; flex-wrap: wrap; width: fit-content; max-width: 100%; box-sizing: border-box;}
 .graph-panel .graph-legend-item { display: inline-flex; align-items: center; color: var(--muted); white-space: nowrap;}
 .graph-panel .graph-legend-item > span { flex: 0 0 9px; width: 9px; height: 9px; margin: 0;}
 .graph-panel .graph-legend-item b { display: inline-flex; align-items: center; justify-content: center; background: #f0ebf9; color: #573e99; font-variant-numeric: tabular-nums;}
@@ -644,18 +644,17 @@ html, body { overflow-x: clip;}
 /* Keep the mobile sign-out control compact and clear of nearby controls. */
 /* Mobile layout: keep the graph action on the right and constrain every dialog
    to the viewport, including long forms and confirmation windows. */
-/* Keep the graph counters and add-participant action on one line, even on
-   extra-narrow phones. Both sides may compact, but must never wrap. */
-.graph-panel .graph-legend-row { display: flex; flex-flow: row nowrap; justify-content: space-between; gap: 5px; min-width: 0; width: 100%;}
+/* Keep the graph legend content-sized; move the action below only when needed. */
+.graph-panel .graph-legend-row { display: flex; flex-flow: row wrap; justify-content: space-between; gap: 5px; min-width: 0; width: 100%;}
 .graph-panel .graph-legend-row > * { min-width: 0;}
-.graph-panel .graph-legend-row .legend { display: flex; flex: 1 1 auto; flex-wrap: nowrap; align-items: center; gap: clamp(3px, 1.2vw, 7px); white-space: nowrap; font-size: clamp(9px, 2.7vw, 12px);}
+.graph-panel .graph-legend-row .legend { display: flex; flex: 0 1 auto; flex-wrap: wrap; align-items: center; width: fit-content; max-width: 100%; gap: clamp(3px, 1.2vw, 7px); font-size: clamp(9px, 2.7vw, 12px);}
 .graph-panel .graph-add-participant { display: inline-flex; align-items: center; justify-content: center; min-width: 0; max-width: 52%; margin-left: 0; padding: 8px clamp(6px, 1.8vw, 12px); gap: 5px; font-size: clamp(9px, 2.6vw, 12px); white-space: nowrap;}
 .graph-panel .graph-add-participant svg { flex: 0 0 auto; width: 14px; height: 14px;}
 /* The create-participant form stays fully inside short, narrow mobile viewports. */
 /* Graph header: keep the counters at their natural width and match the
    add-participant button height to the counter block. */
 .graph-panel .graph-legend-row { align-items: stretch;}
-.graph-panel .graph-legend-row > .graph-legend { flex: 0 0 auto; width: fit-content; max-width: calc(100% - 150px); align-self: stretch; box-sizing: border-box;}
+.graph-panel .graph-legend-row > .graph-legend { flex: 0 1 auto; width: fit-content; max-width: 100%; align-self: stretch; box-sizing: border-box;}
 .graph-panel .graph-add-participant { flex: 0 0 auto; align-self: stretch; min-height: 0; height: auto; box-sizing: border-box;}
 /* Prevent graph counter badges from escaping their compact column on phones. */
 /* Two main layout modes: mobile through 1024px, desktop from 1025px. */
@@ -933,7 +932,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .create-participant-modal .modal-head { margin-bottom: clamp(11px, 2.5vw, 14px);}
 .create-participant-modal .stack { gap: clamp(8px, 2vw, 10px);}
 .graph-panel .graph-legend-row {  align-items: stretch; gap: clamp(3px, 1vw, 8px);}
-.graph-panel .graph-legend-row > .graph-legend { flex: 0 1 48%; width: 48%; min-width: 0; max-width: 48%; padding: clamp(4px, 1.2vw, 7px) clamp(4px, 1.2vw, 9px); gap: clamp(2px, .8vw, 6px); overflow: hidden;}
+.graph-panel .graph-legend-row > .graph-legend { flex: 0 1 auto; width: fit-content; min-width: 0; max-width: 100%; padding: clamp(4px, 1.2vw, 7px) clamp(4px, 1.2vw, 9px); gap: clamp(2px, .8vw, 6px);}
 .graph-panel .graph-legend .graph-legend-item { flex: 0 1 auto; min-width: 0; gap: clamp(2px, .8vw, 5px); font-size: clamp(9px, 2.8vw, 12px); white-space: nowrap;}
 .graph-panel .graph-legend .graph-legend-item > span { flex: 0 0 7px; width: 7px; height: 7px;}
 .graph-panel .graph-legend .graph-legend-item b { flex: 0 0 auto; min-width: 15px; min-height: 0; padding: 2px clamp(3px, .8vw, 5px); font-size: clamp(9px, 2.5vw, 11px);}
