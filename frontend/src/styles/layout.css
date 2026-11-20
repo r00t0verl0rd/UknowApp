@@ -1839,3 +1839,7 @@ border-color: transparent !important;}
 .topbar-actions > .push-toggle, .mobile-quick-actions > .push-toggle { flex: 0 0 32px; width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 6px; display: grid; place-items: center; border: 1px solid var(--ui-border); border-radius: var(--ui-radius-sm); background: var(--ui-control-bg); color: var(--ui-control-text); box-shadow: var(--ui-shadow-soft); }
 .topbar-actions > .push-toggle svg, .mobile-quick-actions > .push-toggle svg { width: 15px; height: 15px; }
 :root[data-theme="dark-soft"] .topbar-actions > .push-toggle, :root[data-theme="dark-soft"] .mobile-quick-actions > .push-toggle { background: var(--ui-control-bg) !important; border-color: var(--ui-border) !important; color: var(--ui-control-text) !important; box-shadow: none !important; }
+
+/* Keep the enabled state visible in both desktop and mobile action bars. */
+.topbar-actions > .push-toggle.active, .mobile-quick-actions > .push-toggle.active { color: #24845b; border-color: #9bd3b5; background: #effaf3; }
+:root[data-theme="dark-soft"] .topbar-actions > .push-toggle.active, :root[data-theme="dark-soft"] .mobile-quick-actions > .push-toggle.active { color: #8bd9a9 !important; border-color: #416b54 !important; background: #263b30 !important; }
