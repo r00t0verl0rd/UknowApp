@@ -12,6 +12,7 @@ from sqlalchemy import select
 
 from app.config import VAPID_PUBLIC_KEY
 from app.models import PushSubscription
+from app.modules.notifications.endpoints import is_safe_push_endpoint
 from app.modules.dependencies import Db, PanelUser
 from app.request_validation import login_payload
 from app.security import (
@@ -68,7 +69,7 @@ def save_push_subscription(payload: dict, principal: PanelUser, db: Db):
     if (
         not isinstance(endpoint, str)
         or len(endpoint) > 2048
-        or not endpoint.startswith(("https://", "http://localhost", "http://127.0.0.1"))
+        or not is_safe_push_endpoint(endpoint)
         or not isinstance(p256dh, str) or not 20 <= len(p256dh) <= 256
         or not isinstance(auth, str) or not 8 <= len(auth) <= 128
     ):
