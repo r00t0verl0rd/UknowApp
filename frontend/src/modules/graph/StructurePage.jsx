@@ -35,17 +35,19 @@ function findFreeGridPosition(element, siblings, currentPosition, boundsElement 
   const gridStep = GRAPH_GRID_SIZE / zoom;
   const maxX = Math.max(0, (bounds.right - rect.right) / zoom + currentPosition.x);
   const maxY = Math.max(0, (bounds.bottom - rect.bottom) / zoom + currentPosition.y);
+  const siblingRects = [];
+  siblings.forEach(other => {
+    if (other !== element) siblingRects.push(other.getBoundingClientRect());
+  });
   const collides = (candidateX, candidateY) => {
     const left = rect.left + (candidateX - currentPosition.x) * zoom;
     const top = rect.top + (candidateY - currentPosition.y) * zoom;
     const right = left + rect.width;
     const bottom = top + rect.height;
     if (left < bounds.left - 1 || top < bounds.top - 1 || right > bounds.right + 1 || bottom > bounds.bottom + 1) return true;
-    return siblings.some(other => {
-      if (other === element) return false;
-      const otherRect = other.getBoundingClientRect();
-      return left < otherRect.right - 1 && right > otherRect.left + 1 && top < otherRect.bottom - 1 && bottom > otherRect.top + 1;
-    });
+    return siblingRects.some(otherRect =>
+      left < otherRect.right - 1 && right > otherRect.left + 1 && top < otherRect.bottom - 1 && bottom > otherRect.top + 1
+    );
   };
 
   if (!collides(currentPosition.x, currentPosition.y)) return currentPosition;
