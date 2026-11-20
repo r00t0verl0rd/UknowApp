@@ -24,7 +24,10 @@ export function createOuterCoordinateSystem(step = 12) {
         y: (clientY - bounds.top) / scaleY,
       };
     },
-    deltaToLocal(deltaX, deltaY) {\n      return { x: deltaX / scaleX, y: deltaY / scaleY };\n    },\n    toClient(x, y) {
+    deltaToLocal(deltaX, deltaY) {
+      return { x: deltaX / scaleX, y: deltaY / scaleY };
+    },
+    toClient(x, y) {
       return {
         x: bounds.left + x * scaleX,
         y: bounds.top + y * scaleY,
