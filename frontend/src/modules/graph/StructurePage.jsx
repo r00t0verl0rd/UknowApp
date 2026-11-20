@@ -42,7 +42,7 @@ function TeacherObject({ teacher, students, openEdit, unassignStudent, canUnassi
     </header>
     <div className="graph-student-children">
       {students.filter(student => studentObjects?.has(student.id)).map(student => <StudentCard key={student.id} student={student} openEdit={openEdit} unassignStudent={unassignStudent} canUnassign={canUnassign} graphObject={studentObjects.get(student.id)} removeObject={removeObject} />)}
-      {!students.length && <div className="empty-students">Нет назначенных учеников</div>}
+      {!students.some(student => studentObjects?.has(student.id)) && <div className="empty-students">Нет назначенных учеников</div>}
     </div>
   </section>;
 }
@@ -202,7 +202,7 @@ export default function StructurePage({
               <section className="graph-object-area graph-assigned-area" data-object-id={assignedArea?.id}>
                 <header className="graph-area-header"><b>{assignedArea?.title || "Назначенные ученики"}</b><span>{unassignedStudents.length} учен.</span>{assignedArea && <button type="button" className="graph-object-delete" title="Удалить область" aria-label="Удалить область назначенных учеников" onClick={() => removeObject(assignedArea)}><Trash2 /></button>}</header>
                 <div className="graph-area-content graph-student-grid">
-                  {unassignedStudents.map(student => {studentObjects.has(student.id) && <StudentCard key={student.id} student={student} openEdit={openEdit} canUnassign={false} graphObject={studentObjects.get(student.id)} removeObject={removeObject} />})}
+                  {unassignedStudents.filter(student => studentObjects.has(student.id)).map(student => <StudentCard key={student.id} student={student} openEdit={openEdit} canUnassign={false} graphObject={studentObjects.get(student.id)} removeObject={removeObject} />)}
                   {!unassignedStudents.length && <div className="empty-students">Нет учеников без назначения учителю</div>}
                 </div>
               </section>
@@ -210,7 +210,7 @@ export default function StructurePage({
                 <header className="graph-area-header"><b>{teachersArea?.title || "Учителя"}</b><span>{allTeachers.length}</span>{teachersArea && <button type="button" className="graph-object-delete" title="Удалить область" aria-label="Удалить область учителей" onClick={() => removeObject(teachersArea)}><Trash2 /></button>}</header>
                 <div className="graph-area-content graph-teachers-grid">
                   {allTeachers.filter(teacher => teacherObjects.has(teacher.id)).map(teacher => <TeacherObject key={teacher.id} teacher={teacher} students={studentsByTeacherId?.get(teacher.id) || []} openEdit={openEdit} unassignStudent={unassignStudent} graphObject={teacherObjects.get(teacher.id)} studentObjects={studentObjects} removeObject={removeObject} />)}
-                  {!allTeachers.length && <div className="empty-students">Пока нет учителей</div>}
+                  {!allTeachers.some(teacher => teacherObjects.has(teacher.id)) && <div className="empty-students">Пока нет учителей</div>}
                 </div>
               </section>
             </div>
