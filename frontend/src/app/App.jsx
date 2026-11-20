@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { useAuthState, useChatState, useGraphState, usePersonalChatState, useSettingsState, useUiState } from "../hooks/useAppState.js";
+import { useAuthState, useChatState, useDirectoryState, useGraphState, usePersonalChatState, useSettingsState, useUiState } from "../hooks/useAppState.js";
 import Activity from "lucide-react/dist/esm/icons/activity.js";
 import Layers from "lucide-react/dist/esm/icons/layers.js";
 import Check from "lucide-react/dist/esm/icons/check.js";
@@ -73,6 +73,7 @@ export default function App() {
   const {
     page, setPage, error, setError, toast, setToast, modal, setModal,
   } = useUiState();
+  const directory = useDirectoryState();
   const [dataStats, setDataStats] = useState(null);
   const [dataBusy, setDataBusy] = useState(false);
   const [retentionDays, setRetentionDays] = useState("30");
@@ -80,7 +81,7 @@ export default function App() {
   const [pushBusy, setPushBusy] = useState(false);
   const { request, refresh } = usePanelDataState({
     auth, page, selectedChat, setAuth, setProfile, setError, setChats,
-    setPersonalChats, setUsers, setOverview, setTeacherGraph, setPage,
+    setPersonalChats, setUsers: directory.setUsers, setOverview: directory.setOverview, setTeacherGraph, setPage,
     setSelectedChat, setMessages,
   });
   const notify = useCallback(message => {
@@ -100,7 +101,7 @@ export default function App() {
     unassignStudent, disconnectTelegram, confirmDisconnectTelegram, makeCode,
   } = useUsersController({
     request, refresh, notify, setError, selectedChat, setSelectedChat,
-    setMessages, modal, setModal,
+    setMessages, modal, setModal, directory,
   });
 
   useEffect(() => {
