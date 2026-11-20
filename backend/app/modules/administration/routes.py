@@ -16,7 +16,6 @@ from app.models import (
     ConnectionCode,
     Conversation,
     GraphObject,
-    GraphObjectDeletion,
     Message,
     PanelSession,
     PersonalConversation,
@@ -97,58 +96,17 @@ def _graph_object_dict(item: GraphObject) -> dict:
 
 @router.get("/admin/graph/objects")
 def graph_objects(_: Admin, db: Db):
-    users = db.scalars(select(User).where(User.role.in_(["teacher", "student"]))).all()
-    teachers = {user.id: user for user in users if user.role == "teacher"}
-    students = {user.id: user for user in users if user.role == "student"}
-    assignments = db.scalars(
-        select(Assignment).where(Assignment.active.is_(True)).order_by(Assignment.created_at),
-    ).all()
-    assigned_to = {item.student_id: item.teacher_id for item in assignments if item.teacher_id in teachers}
-
-    deleted_keys = set(db.scalars(select(GraphObjectDeletion.object_key)).all())
-    objects = {item.object_key: item for item in db.scalars(select(GraphObject)).all()}
-
-    def ensure(key: str, kind: str, title: str, parent_id: int | None, x: float = 0, y: float = 0):
-        if key in deleted_keys:
-            return None
-        item = objects.get(key)
-        if item is None:
-            item = GraphObject(object_key=key, object_type=kind, title=title, parent_id=parent_id, x=x, y=y)
-            db.add(item)
-            db.flush()
-            objects[key] = item
-        else:
-            item.object_type, item.title, item.parent_id = kind, title, parent_id
-        return item
-
-    fon = ensure("fon", "fon", "Fon", None, 0, 0)
-    admin = ensure("administrator", "administrator", "Администратор", fon.id, 32, 32) if fon else None
-    assigned_area = ensure("assigned_students", "area", "Назначенные ученики", admin.id, 0, 110) if admin else None
-    teachers_area = ensure("teachers", "area", "Учителя", admin.id, 500, 110) if admin else None
-
-    for teacher_id, teacher in teachers.items():
-        if teachers_area:
-            ensure(f"teacher:{teacher_id}", "teacher", teacher.full_name, teachers_area.id)
-    for student_id, student in students.items():
-        parent = objects.get(f"teacher:{assigned_to[student_id]}") if student_id in assigned_to else None
-        if assigned_area or parent:
-            ensure(
-                f"student:{student_id}", "student", student.full_name,
-                parent.id if parent else assigned_area.id,
-            )
-
-    valid_keys = {"fon", "administrator", "assigned_students", "teachers"}
-    valid_keys.difference_update(deleted_keys)
-    if teachers_area:
-        valid_keys.update(f"teacher:{user_id}" for user_id in teachers)
-    if assigned_area or teachers_area:
-        valid_keys.update(f"student:{user_id}" for user_id in students)
-    valid_keys.update(key for key in objects if key.startswith("custom:"))
-    for key, item in tuple(objects.items()):
-        if key not in valid_keys:
-            db.delete(item)
-
-    db.commit()
+    # Remove legacy school-structure nodes; boards now contain only user-created objects.
+    objects = db.scalars(select(GraphObject).order_by(GraphObject.id)).all()
+    legacy_ids = {item.id for item in objects if not item.object_key.startswith("custom:")}
+    if legacy_ids:
+        for item in objects:
+            if item.parent_id in legacy_ids and item.object_key.startswith("custom:"):
+                item.parent_id = None
+        for item in objects:
+            if item.id in legacy_ids:
+                db.delete(item)
+        db.commit()
     return [_graph_object_dict(item) for item in db.scalars(select(GraphObject).order_by(GraphObject.id)).all()]
 
 
@@ -176,11 +134,10 @@ def create_graph_object(payload: dict, _: Admin, db: Db):
         raise HTTPException(status_code=404, detail="Родительский объект не найден")
     sibling_count = db.scalar(select(func.count(GraphObject.id)).where(GraphObject.parent_id == parent_id)) or 0
     parent = db.get(GraphObject, parent_id) if parent_id is not None else None
-    base_y = 780 if parent and parent.object_type == "fon" else 560 if parent and parent.object_type == "administrator" else 90
     item = GraphObject(
         object_key=f"custom:{uuid.uuid4().hex}",
         object_type=object_type, title=title, parent_id=parent_id,
-        x=36 + (sibling_count % 4) * 190, y=base_y + (sibling_count // 4) * 100,
+        x=36 + (sibling_count % 4) * 190, y=36 + (sibling_count // 4) * 100,
     )
     db.add(item)
     db.commit()
@@ -203,8 +160,6 @@ def delete_graph_object(object_id: int, _: Admin, db: Db):
         pending = [child.id for child in children]
         descendants.extend(children)
 
-    for target in [item, *descendants]:
-        db.merge(GraphObjectDeletion(object_key=target.object_key))
     for target in reversed(descendants):
         db.delete(target)
     db.delete(item)
