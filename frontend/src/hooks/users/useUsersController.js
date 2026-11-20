@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useUserEditorState } from "./useUserEditorState.js";
 import { useUserActionState } from "./useUserActionState.js";
-import { createAssignment, createUser, createUserConnectionCode, deleteAssignment, deleteUser, disconnectUserTelegram, issuePanelAccessCode, updateUser } from "../../modules/users/services/usersApi.js";
+import { createAssignment, createUser, createUserConnectionCode, deleteUser, disconnectUserTelegram, issuePanelAccessCode, updateUser } from "../../modules/users/services/usersApi.js";
 
 export function useUsersController({
   request, refresh, notify, setError, selectedChat, setSelectedChat,
@@ -174,18 +174,6 @@ export function useUsersController({
     }
   }, [request, teacherId, studentId, setModal, refresh, notify, setError]);
 
-  const unassignStudent = useCallback(async student => {
-    if (!window.confirm(`Открепить ученика «${student.full_name}» от учителя? История переписки сохранится.`)) return;
-    setError("");
-    try {
-      await deleteAssignment(request, student.id);
-      await refresh();
-      notify("Ученик откреплён от учителя");
-    } catch (error) {
-      setError(error.message);
-    }
-  }, [request, refresh, notify, setError]);
-
   const disconnectTelegram = useCallback(user => setDisconnectCandidate(user), [setDisconnectCandidate]);
 
   const confirmDisconnectTelegram = useCallback(async () => {
@@ -218,7 +206,7 @@ export function useUsersController({
     ...directory, ...editor, ...actions,
     allTeachers, allStudents, studentsByTeacherId, visibleUsers, unassignedStudents,
     openCreate, openEdit, saveUser, regeneratePanelAccessCode, removeUser,
-    confirmRemoveUser, assign, unassignStudent, disconnectTelegram,
+    confirmRemoveUser, assign, disconnectTelegram,
     confirmDisconnectTelegram, makeCode,
   };
 }
