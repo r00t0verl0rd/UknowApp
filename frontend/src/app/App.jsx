@@ -36,7 +36,7 @@ export default function App() {
     page, setPage, error, setError, toast, setToast, modal, setModal,
   } = useUiState();
   const directory = useDirectoryState();
-  const { request, refresh } = usePanelDataState({
+  const { request, refresh, panelReady } = usePanelDataState({
     auth, page, selectedChat, setAuth, setProfile, setError, setChats,
     setPersonalChats, setUsers: directory.setUsers, setOverview: directory.setOverview, setTeacherGraph, setPage,
     setSelectedChat, setMessages,
@@ -74,6 +74,7 @@ export default function App() {
   );
 
   if (!auth) return <LoginPage theme={theme} toggleTheme={toggleTheme} signIn={signIn} login={login} setLogin={setLogin} password={password} setPassword={setPassword} error={error} />;
+  if (!panelReady || !profile) return <div className="login-screen"><div className="empty-state">Загрузка личного кабинета…</div></div>;
 
   return <div className="shell chats-shell">
     <aside className="sidebar">
@@ -112,25 +113,27 @@ export default function App() {
       </header>
       <div className={"content" + (page === "chats" ? " chats-content" : "")}>
         {error && <div className="alert alert-row">{error}<button onClick={() => setError("")}><X/></button></div>}
-        {page === "boards" && profile?.role === "admin" && <BoardsPage />}
-        <UsersModule
-          page={page} profile={profile} directory={directory} request={request}
-          refresh={refresh} notify={notify} setError={setError}
-          selectedChat={selectedChat} setSelectedChat={setSelectedChat}
-          setMessages={setMessages} modal={modal} setModal={setModal}
-          teacherGraph={teacherGraph}
-        />
-        <ChatsModule
-          page={page} auth={auth} profile={profile} request={request}
+        {profile.role === "admin" && <>
+          {page === "boards" && <BoardsPage />}
+          <UsersModule
+            page={page} profile={profile} directory={directory} request={request}
+            refresh={refresh} notify={notify} setError={setError}
+            selectedChat={selectedChat} setSelectedChat={setSelectedChat}
+            setMessages={setMessages} modal={modal} setModal={setModal}
+          />
+          <AdministrationModule
+            page={page} auth={auth} profile={profile} request={request}
+            refresh={refresh} notify={notify} setError={setError}
+            setSelectedChat={setSelectedChat} setMessages={setMessages}
+          />
+        </>}
+        {profile.role === "teacher" && page === "graph" && <TeacherStructurePage profile={profile} teacherGraph={teacherGraph} />}
+        {["admin", "teacher", "student"].includes(profile.role) && <ChatsModule
+          key={profile.role} page={page} auth={auth} profile={profile} request={request}
           chatState={chatState} personalState={personalState}
-          users={directory.users} error={error} modal={modal}
+          users={profile.role === "admin" ? directory.users : []} error={error} modal={modal}
           setPage={setPage} setError={setError} setModal={setModal} notify={notify}
-        />
-        <AdministrationModule
-          page={page} auth={auth} profile={profile} request={request}
-          refresh={refresh} notify={notify} setError={setError}
-          setSelectedChat={setSelectedChat} setMessages={setMessages}
-        />
+        />}
 
       </div>
     </main>
