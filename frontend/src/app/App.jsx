@@ -27,7 +27,7 @@ import { useUsersController } from "../hooks/users/useUsersController.js";
 import { useChatsController } from "../hooks/conversations/useChatsController.js";
 import { useAdminDataController } from "../hooks/administration/useAdminDataController.js";
 
-// Главный экран панели: здесь хранятся состояние разделов, данные API и действия пользователя.
+// Composition root: соединяет общие контроллеры, навигацию и страницы модулей.
 export default function App() {
   const authState = useAuthState();
   const { auth, setAuth, profile, setProfile, login, setLogin, password, setPassword } = authState;
