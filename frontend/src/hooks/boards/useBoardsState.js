@@ -7,16 +7,19 @@ import {
 } from "../../modules/boards/services/boardsApi.js";
 
 function removeObjectTree(objects, objectId) {
-  const removed = new Set([objectId]);
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const item of objects) {
-      if (removed.has(item.parent_id) && !removed.has(item.id)) {
-        removed.add(item.id);
-        changed = true;
-      }
-    }
+  const childrenByParent = new Map();
+  for (const item of objects) {
+    if (!childrenByParent.has(item.parent_id)) childrenByParent.set(item.parent_id, []);
+    childrenByParent.get(item.parent_id).push(item.id);
+  }
+
+  const removed = new Set();
+  const pending = [objectId];
+  while (pending.length) {
+    const id = pending.pop();
+    if (removed.has(id)) continue;
+    removed.add(id);
+    pending.push(...(childrenByParent.get(id) || []));
   }
   return objects.filter(item => !removed.has(item.id));
 }
