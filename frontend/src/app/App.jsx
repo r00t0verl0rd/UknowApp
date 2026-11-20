@@ -21,8 +21,8 @@ import StructurePage from "../modules/graph/StructurePage.jsx";
 import BoardsPage from "../modules/boards/BoardsPage.jsx";
 import UsersPage from "../modules/users/UsersPage.jsx";
 import LoginPage from "../modules/authentication/LoginPage.jsx";
-import { detachPushSubscription, enablePushNotifications, getPushNotificationState } from "../modules/notifications/pushNotifications.js";
 import { usePushNotificationsState } from "../hooks/notifications/usePushNotificationsState.js";
+import { useAuthController } from "../hooks/authentication/useAuthController.js";
 import { usePanelDataState } from "../hooks/app/usePanelDataState.js";
 import { useUsersController } from "../hooks/users/useUsersController.js";
 import { useChatsController } from "../hooks/conversations/useChatsController.js";
@@ -60,9 +60,8 @@ async function copyText(value) {
 
 // Главный экран панели: здесь хранятся состояние разделов, данные API и действия пользователя.
 export default function App() {
-  const {
-    auth, setAuth, profile, setProfile, login, setLogin, password, setPassword,
-  } = useAuthState();
+  const authState = useAuthState();
+  const { auth, setAuth, profile, setProfile, login, setLogin, password, setPassword } = authState;
   const { theme, setTheme } = useSettingsState();
   const { teacherGraph, setTeacherGraph } = useGraphState();
   const chatState = useChatState();
@@ -117,6 +116,11 @@ export default function App() {
     pushState, pushBusy, setPushState, setPushBusy,
     togglePushNotifications, pushButtonTitle,
   } = usePushNotificationsState({ auth, selectedChat, notify, setError });
+  const { signIn, signOut } = useAuthController({
+    authState, setError, setPage, setPushBusy, setPushState, setTeacherGraph,
+    setUsers, setOverview, setChats, setPersonalChats, setMessages,
+    setSelectedChat, setDraft, setAttachment, setIssuedCredential, notify,
+  });
 
   useEffect(() => {
     if (userInfo === null) return undefined;
@@ -259,64 +263,6 @@ export default function App() {
       {pushState.enabled ? <Bell size={17}/> : <BellOff size={17}/>}
     </button>
   );
-
-  async function signIn(event) {
-    event.preventDefault();
-    setError("");
-
-    if (!login.trim()) {
-      setError("Введите логин");
-      return;
-    }
-    if (!password) {
-      setError("Введите пароль");
-      return;
-    }
-
-    try {
-      const response = await fetch(API + "/api/auth/login", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: login.trim(), password }) });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const detail = Array.isArray(result.detail)
-          ? result.detail.map(item => item.msg || "Некорректные данные").join("; ")
-          : typeof result.detail === "string" ? result.detail : "Не удалось войти";
-        throw new Error(detail);
-      }
-      // Enable push by default immediately after successful login, while the
-      // browser still has the login button's user activation.
-      setPushBusy(true);
-      try {
-        await enablePushNotifications();
-        setPushState(await getPushNotificationState());
-      } catch (pushError) {
-        const state = await getPushNotificationState().catch(() => null);
-        if (state) setPushState(state);
-        if (state?.supported && state.permission !== "denied") {
-          notify("Чтобы включить уведомления, нажмите на значок колокольчика");
-        }
-      } finally {
-        setPushBusy(false);
-      }
-      localStorage.setItem("uknowapp-auth", "1"); sessionStorage.removeItem("uknowapp-auth"); setProfile(result); setPage(["student", "teacher"].includes(result.role) ? "chats" : "graph"); setAuth("1"); setPassword("");
-    } catch (e) {
-      setError(e.message || "Не удалось войти");
-    }
-  }
-
-  async function signOut() {
-    try {
-      await detachPushSubscription();
-      await fetch(API + "/api/auth/logout", { method: "POST", credentials: "include" });
-    } catch {
-      // Clear the local view even when the server is temporarily unreachable.
-    }
-    localStorage.removeItem("uknowapp-auth"); sessionStorage.removeItem("uknowapp-auth"); setAuth(""); setProfile(null); setTeacherGraph(null); setUsers([]); setOverview(null); setChats([]); setPersonalChats([]); setMessages([]); setSelectedChat(null); setDraft(""); setAttachment(null); setIssuedCredential(null);
-  }
-
-  function openCreatePersonalChat() {
-    setError("");
-    setModal({ mode: "create-personal" });
-  }
 
   if (!auth) return <LoginPage theme={theme} toggleTheme={toggleTheme} signIn={signIn} login={login} setLogin={setLogin} password={password} setPassword={setPassword} error={error} />;
 
