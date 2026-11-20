@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo } from "react";
 import {
   createPersonalConversation, deleteChatMessage, getChatMessages,
   getConversations, getPersonalConversations, sendConversationAttachment,
@@ -6,7 +6,7 @@ import {
 } from "../../modules/conversations/services/conversationsApi.js";
 
 export function useChatsController({
-  request, profile, chatState, personalState, setPage, setError, setModal,
+  auth, request, profile, chatState, personalState, setPage, setError, setModal,
   notify, deleteMessageCandidate, deletingMessage, setDeletingMessage,
   setDeleteMessageCandidate,
 }) {
@@ -16,6 +16,24 @@ export function useChatsController({
     chatSearch, chatFilter, messageFilter, setMessageFilter,
   } = chatState;
   const { personalChats, setPersonalChats, chatSection, setChatSection } = personalState;
+
+  useEffect(() => {
+    if (!auth || !profile) return;
+    const params = new URLSearchParams(window.location.search);
+    const conversationId = Number(params.get("openConversation"));
+    if (!conversationId) return;
+    const personal = params.get("type") === "personal";
+    const source = personal ? personalChats : chats;
+    const chat = source.find(item => Number(item.id) === conversationId);
+    if (!chat) return;
+    window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+    setPage("chats");
+    if (personal) setChatSection("personal");
+    setSelectedChat(chat);
+    void getChatMessages(request, chat)
+      .then(setMessages)
+      .catch(error => setError(error.message));
+  }, [auth, profile, personalChats, chats, request, setPage, setChatSection, setSelectedChat, setMessages, setError]);
 
   const visibleMessages = useMemo(() => messages.filter(message => {
     const kind = message.metadata?.media?.kind || message.content_type;
