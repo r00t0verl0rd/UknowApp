@@ -2,12 +2,15 @@ import LogOut from "lucide-react/dist/esm/icons/log-out.js";
 import Moon from "lucide-react/dist/esm/icons/moon.js";
 import Sun from "lucide-react/dist/esm/icons/sun.js";
 import X from "lucide-react/dist/esm/icons/x.js";
+import Info from "lucide-react/dist/esm/icons/info.js";
 import AppToast from "../shared/components/AppToast.jsx";
 
 export default function WorkspaceLayout({
   role, profile, label, navigation, page, setPage, theme, toggleTheme,
   pushToggle, signOut, error, setError, toast, children,
 }) {
+  const additionalItem = role === "admin" ? navigation.find(item => item.page === "additional") : null;
+
   const themeToggle = (
     <button type="button" className="theme-toggle" onClick={toggleTheme}
       title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"}
@@ -21,7 +24,7 @@ export default function WorkspaceLayout({
       <div className="brand"><img src="/logo.png" alt="" /><span>Uknow<span>App</span></span></div>
       <div className="school-label">{label}</div>
       <nav aria-label="Основная навигация">
-        {navigation.map(item => {
+        {navigation.filter(item => item.page !== "additional").map(item => {
           const Icon = item.icon;
           return <button key={item.page} type="button"
             className={page === item.page ? "active" : ""}
@@ -32,6 +35,11 @@ export default function WorkspaceLayout({
         })}
       </nav>
       <div className="sidebar-bottom">
+        {additionalItem && <button type="button" className="logout desktop-admin-extra"
+          aria-current={page === "additional" ? "page" : undefined}
+          onClick={() => setPage(additionalItem.page)}>
+          <Info size={18}/>{additionalItem.label}
+        </button>}
         <button type="button" className="logout desktop-sidebar-logout" onClick={signOut}>
           <LogOut size={18}/>Выход
         </button>
