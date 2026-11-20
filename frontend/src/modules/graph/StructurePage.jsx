@@ -41,16 +41,19 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     setCloudLayout(next);
   }, [cloudPositions]);
 
-  function startDrag(event, type, id) {
+  function startDrag(event, handle) {
     if (event.button !== 0 || event.target.closest("button, a, input, select, textarea")) return;
+    const type = handle.dataset.dragType;
+    const id = handle.dataset.dragId;
+    if (!type || !id) return;
+
     event.preventDefault();
-    event.stopPropagation();
     const captureElement = event.currentTarget;
-    const element = type === "cloud" ? captureElement.closest(".teacher-branch") : captureElement;
+    const element = type === "cloud" ? handle.closest(".teacher-branch") : handle;
     const layout = type === "cloud" ? cloudLayoutRef.current : studentLayoutRef.current;
     const position = layout[id] || { x: 0, y: 0 };
     dragRef.current = {
-      type, id, element, captureElement, pointerId: event.pointerId,
+      type, id, element, pointerId: event.pointerId,
       startX: event.clientX, startY: event.clientY,
       x: position.x, y: position.y,
       nextX: position.x, nextY: position.y,
@@ -59,6 +62,11 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     element.classList.add("is-dragging");
     element.style.willChange = "transform";
     element.style.transition = "none";
+  }
+
+  function handlePointerDown(event) {
+    const handle = event.target.closest("[data-drag-type]");
+    if (handle && event.currentTarget.contains(handle)) startDrag(event, handle);
   }
 
   function moveDrag(event) {
@@ -152,7 +160,13 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
           </div>)}</div>
         </section>}
 
-        <div className="teacher-grid">
+        <div
+          className="teacher-grid"
+          onPointerDown={handlePointerDown}
+          onPointerMove={moveDrag}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+        >
           {allTeachers.map(teacher => {
             const students = studentsByTeacherId.get(teacher.id) || [];
             const studentsCollapsed = collapsedTeacherIds.has(teacher.id);
@@ -160,11 +174,8 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
               className={`teacher-branch${studentsCollapsed ? " is-collapsed" : ""}`}
               key={teacher.id}
               style={positionStyle(cloudLayout[teacher.id])}
-              onPointerMove={moveDrag}
-              onPointerUp={endDrag}
-              onPointerCancel={endDrag}
             >
-              <div className="person-card teacher-card" onPointerDown={event => startDrag(event, "cloud", teacher.id)}>
+              <div className="person-card teacher-card" data-drag-type="cloud" data-drag-id={teacher.id}>
                 <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap /></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель · {students.length} учен.</small></div></div>
                 <div className="person-actions">
                   <button className={`danger-icon teacher-collapse-btn${studentsCollapsed ? "" : " is-expanded"}`} title={studentsCollapsed ? "Показать учеников" : "Скрыть учеников"} aria-label={studentsCollapsed ? "Показать учеников" : "Скрыть учеников"} aria-expanded={!studentsCollapsed} onClick={() => setCollapsedTeacherIds(current => { const next = new Set(current); if (next.has(teacher.id)) next.delete(teacher.id); else next.add(teacher.id); return next; })}><ChevronRight /></button>
@@ -177,10 +188,8 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
                   className="person-card student-card"
                   key={student.id}
                   style={positionStyle(studentLayout[student.id])}
-                  onPointerDown={event => startDrag(event, "student", student.id)}
-                  onPointerMove={moveDrag}
-                  onPointerUp={endDrag}
-                  onPointerCancel={endDrag}
+                  data-drag-type="student"
+                  data-drag-id={student.id}
                 >
                   <div className="person-main"><div className="avatar student-avatar"><Smile /></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
                   <div className="person-actions">
