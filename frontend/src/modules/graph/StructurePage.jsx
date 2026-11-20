@@ -11,7 +11,8 @@ const EMPTY_CLOUD_POSITIONS = [];
 
 function readStudentLayout() {
   try {
-    return JSON.parse(localStorage.getItem(STUDENT_LAYOUT_KEY) || "{}");
+    const layout = JSON.parse(localStorage.getItem(STUDENT_LAYOUT_KEY) || "{}");
+    return layout && typeof layout === "object" && !Array.isArray(layout) ? layout : {};
   } catch {
     return {};
   }
@@ -86,6 +87,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     drag.element.style.willChange = "";
     drag.element.style.transition = "";
     dragRef.current = null;
+    if (Math.abs(x - drag.x) < 1 && Math.abs(y - drag.y) < 1) return;
 
     if (drag.type === "cloud") {
       const next = { ...cloudLayoutRef.current, [drag.id]: { x, y } };
