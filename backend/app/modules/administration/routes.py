@@ -13,7 +13,6 @@ from app.models import (
     Assignment,
     ConnectionCode,
     Conversation,
-    GraphPosition,
     Message,
     PanelSession,
     PersonalConversation,
@@ -63,44 +62,18 @@ def overview(_: Admin, db: Db):
         select(func.count(Conversation.id)).where(Conversation.status == "active"),
     ) or 0
 
-    saved_positions: dict[str, dict[int, int]] = {}
-    for item in db.scalars(select(GraphPosition)).all():
-        saved_positions.setdefault(item.group_key, {})[item.user_id] = item.position
-
-    def graph_sort(items: list[dict], group_key: str) -> list[dict]:
-        positions = saved_positions.get(group_key, {})
-        return sorted(items, key=lambda item: (positions.get(item["id"], len(items)), item["full_name"].casefold()))
-
     students_by_teacher: dict[int, list[dict]] = {}
     for assignment in assignments:
-        students_by_teacher.setdefault(assignment.teacher_id, []).append(
-            user_dict(assignment.student, include_additional_info=True),
-        )
+        students_by_teacher.setdefault(assignment.teacher_id, []).append(user_dict(assignment.student, include_additional_info=True))
 
     teachers = []
     for user in users:
         if user.role != "teacher":
             continue
-        students = graph_sort(
-            students_by_teacher.get(user.id, []),
-            f"students:{user.id}",
-        )
-        teachers.append({**user_dict(user), "students": students})
-    teachers = graph_sort(teachers, "teachers")
-
-    assigned_ids = {assignment.student_id for assignment in assignments}
-    unassigned_students = graph_sort(
-        [
-            user_dict(user, include_additional_info=True)
-            for user in users
-            if user.role == "student" and user.id not in assigned_ids
-        ],
-        "unassigned",
-    )
+        teachers.append({**user_dict(user), "students": students_by_teacher.get(user.id, [])})
 
     return {
         "admin": {"label": "Администратор", "role": "admin"},
-        "unassigned_students": unassigned_students,
         "counts": {
             "teachers": sum(1 for user in users if user.role == "teacher"),
             "students": sum(1 for user in users if user.role == "student"),
@@ -110,50 +83,6 @@ def overview(_: Admin, db: Db):
         },
         "teachers": teachers,
     }
-
-
-@router.patch("/admin/graph/order")
-def save_graph_order(payload: dict, _: Admin, db: Db):
-    group = payload.get("group")
-    user_ids = payload.get("user_ids")
-    if not isinstance(group, str) or not isinstance(user_ids, list) or any(
-        type(user_id) is not int or user_id < 1 for user_id in user_ids
-    ):
-        raise HTTPException(status_code=400, detail="Некорректный порядок участников")
-    if len(user_ids) != len(set(user_ids)):
-        raise HTTPException(status_code=400, detail="Список участников содержит повторяющиеся ID")
-
-    if group == "teachers":
-        expected_ids = set(db.scalars(select(User.id).where(User.role == "teacher")).all())
-    elif group == "unassigned":
-        assigned_ids = select(Assignment.student_id).where(Assignment.active.is_(True))
-        expected_ids = set(db.scalars(
-            select(User.id).where(User.role == "student", ~User.id.in_(assigned_ids)),
-        ).all())
-    elif group.startswith("students:") and group.removeprefix("students:").isdigit():
-        teacher_id = int(group.removeprefix("students:"))
-        teacher = db.get(User, teacher_id)
-        if not teacher or teacher.role != "teacher":
-            raise HTTPException(status_code=404, detail="Учитель не найден")
-        expected_ids = set(db.scalars(
-            select(Assignment.student_id).where(
-                Assignment.teacher_id == teacher_id,
-                Assignment.active.is_(True),
-            ),
-        ).all())
-    else:
-        raise HTTPException(status_code=400, detail="Неизвестная группа участников")
-
-    if set(user_ids) != expected_ids:
-        raise HTTPException(status_code=409, detail="Состав облачка изменился. Обновите страницу и повторите перемещение.")
-
-    db.query(GraphPosition).filter(GraphPosition.group_key == group).delete(synchronize_session=False)
-    db.add_all(
-        GraphPosition(group_key=group, user_id=user_id, position=position)
-        for position, user_id in enumerate(user_ids)
-    )
-    db.commit()
-    return {"ok": True, "group": group, "user_ids": user_ids}
 
 
 @router.get("/admin/users")
