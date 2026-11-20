@@ -438,7 +438,7 @@ async def handle_teacher_keyboard_message(
         except MessengerError as exc:
             logger.debug(
                 "Could not remove teacher keyboard action (error_type=%s)",
-                type(exc).__name__,
+                exc.provider_error_type,
             )
 
     if body.startswith("Написать · "):
