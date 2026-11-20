@@ -10,8 +10,8 @@ from app.modules.conversations.service import conversation_dict
 
 
 def assign_student(payload, db: Session) -> dict:
-    teacher = db.get(User, payload.teacher_id)
-    student = db.get(User, payload.student_id)
+    teacher = db.get(User, payload["teacher_id"])
+    student = db.get(User, payload["student_id"])
     if not teacher or teacher.role != "teacher":
         raise HTTPException(status_code=400, detail="Выберите учителя")
     if not student or student.role != "student":
