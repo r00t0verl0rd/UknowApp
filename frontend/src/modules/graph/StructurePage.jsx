@@ -184,6 +184,13 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
   useLayoutEffect(() => {
     const viewport = graphViewportRef.current;
     if (!viewport) return undefined;
+    viewport.addEventListener("wheel", handleGraphWheel, { passive: false });
+    return () => viewport.removeEventListener("wheel", handleGraphWheel);
+  }, [profile?.role]);
+
+  useLayoutEffect(() => {
+    const viewport = graphViewportRef.current;
+    if (!viewport) return undefined;
     const outer = outerCoordinatesRef.current;
     let boundsFrame = 0;
     const updateBounds = () => {
@@ -293,7 +300,8 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
   }
 
   function handleGraphWheel(event) {
-    event.preventDefault();
+    if (event.cancelable) event.preventDefault();
+    event.stopPropagation();
     const bounds = outerCoordinatesRef.current.getBounds();
     const point = outerCoordinatesRef.current.toLocal(
       bounds.left + bounds.width / 2,
@@ -582,7 +590,6 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
           className="graph-coordinate-viewport"
           ref={graphViewportRef}
           style={{ height: graphViewportHeight }}
-          onWheel={handleGraphWheel}
           onPointerDownCapture={handleGraphPointerDownCapture}
           onPointerMoveCapture={handleGraphPointerMoveCapture}
           onPointerUpCapture={handleGraphPointerUpCapture}
