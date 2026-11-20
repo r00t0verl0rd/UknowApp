@@ -1,11 +1,10 @@
 import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left.js";
-import Check from "lucide-react/dist/esm/icons/check.js";
 import CheckCheck from "lucide-react/dist/esm/icons/check-check.js";
-import ChevronRight from "lucide-react/dist/esm/icons/chevron-right.js";
 import MessageCircle from "lucide-react/dist/esm/icons/message-circle.js";
 import Paperclip from "lucide-react/dist/esm/icons/paperclip.js";
 import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Search from "lucide-react/dist/esm/icons/search.js";
+import Send from "lucide-react/dist/esm/icons/send.js";
 import X from "lucide-react/dist/esm/icons/x.js";
 import MessageBubble from "./components/MessageBubble.jsx";
 
@@ -24,7 +23,7 @@ export default function ChatsPage({
     <>
       <section className="teacher-branch chat-list">
         {profile?.role === "admin" && (
-          <div className="legend" role="group" aria-label="Раздел диалогов">
+          <div className="chat-section-tabs" role="group" aria-label="Раздел диалогов">
             <button type="button" className={"btn small" + (chatSection === "participants" ? " primary" : "")}
               onClick={() => {
                 setChatSection("participants");
@@ -42,7 +41,7 @@ export default function ChatsPage({
               }}>
               Личные
               {unreadPersonalCount > 0 && (
-                <span className="role-tag unread-badge">
+                <span className="chat-tab-count">
                   {unreadPersonalCount > 99 ? "99+" : unreadPersonalCount}
                 </span>
               )}
@@ -52,7 +51,7 @@ export default function ChatsPage({
 
         {profile?.role === "admin" && chatSection === "personal" && (
           <button type="button" className="btn outline personal-chat-create" onClick={openCreatePersonalChat}>
-            <Plus size={15}/>Создать диалог
+            <Plus size={15}/>Новый диалог
           </button>
         )}
 
@@ -70,16 +69,14 @@ export default function ChatsPage({
               )}
             </label>
             {(profile?.role === "teacher" || (profile?.role === "admin" && chatSection === "personal")) && (
-              <div className="legend" role="group" aria-label="Фильтр диалогов">
-                <button type="button" className={"btn small" + (chatFilter === "all" ? " primary" : "")}
-                  aria-pressed={chatFilter === "all"} onClick={() => setChatFilter("all")}>
-                  <MessageCircle size={14}/>{profile?.role === "admin" ? "Все личные" : "Все диалоги"}
-                </button>
-                <button type="button" className={"btn small" + (chatFilter === "unread" ? " primary" : "")}
-                  aria-pressed={chatFilter === "unread"} onClick={() => setChatFilter("unread")}>
-                  <Check size={14}/>Непрочитанные
-                </button>
-              </div>
+              <label className="chat-filter">
+                <span>Показать</span>
+                <select aria-label="Фильтр диалогов" value={chatFilter}
+                  onChange={event => setChatFilter(event.target.value)}>
+                  <option value="all">{profile?.role === "admin" ? "Все личные" : "Все диалоги"}</option>
+                  <option value="unread">Непрочитанные</option>
+                </select>
+              </label>
             )}
           </>
         )}
@@ -213,7 +210,7 @@ export default function ChatsPage({
                   <div className="composer-tools">
                     {selectedChat.type !== "personal" && (
                       <label className="attach-control">
-                        <Paperclip size={16}/>Прикрепить файл
+                        <Paperclip size={16}/>Файл
                         <input type="file" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
                           onChange={event => setAttachment(event.target.files?.[0] || null)}/>
                       </label>
@@ -228,7 +225,7 @@ export default function ChatsPage({
                   </div>
                   <button type="submit" className="btn primary composer-send"
                     disabled={!draft.trim() && !attachment}>
-                    Отправить<ChevronRight size={16}/>
+                    <Send size={15}/><span>Отправить</span>
                   </button>
                 </div>
               </form>
