@@ -2,8 +2,6 @@ export function getCurrentProfile(request) { return request("/api/panel/me"); }
 
 export function getAdminBootstrap(request) { return Promise.all([request("/api/admin/users"), request("/api/admin/overview")]); }
 
-export function getTeacherGraph(request) { return request("/api/panel/graph"); }
-
 export function getPanelConversations(request) { return request("/api/panel/conversations"); }
 
 export function getPersonalConversations(request) { return request("/api/panel/personal-conversations"); }

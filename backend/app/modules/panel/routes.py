@@ -830,38 +830,3 @@ async def send_panel_attachment(
 
     await _refresh_teacher_panel_after_web_delivery(bot, db, teacher, conversation)
     return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"), principal=principal)
-
-
-@router.get("/panel/graph")
-def panel_graph(principal: PanelUser, db: Db):
-    if principal["role"] != "teacher":
-        raise HTTPException(status_code=403, detail="Граф учителя доступен только учителю")
-    teacher = db.get(User, principal["user_id"])
-    if not teacher or teacher.role != "teacher":
-        raise HTTPException(status_code=404, detail="Учитель не найден")
-    assignments = db.scalars(
-        select(Assignment)
-        .where(Assignment.teacher_id == teacher.id, Assignment.active.is_(True))
-        .order_by(Assignment.created_at.desc()),
-    ).all()
-    students = []
-    for assignment in assignments:
-        student = assignment.student
-        if student and assignment.conversation and assignment.conversation.status == "active":
-            students.append({
-                "id": student.id,
-                "full_name": student.full_name,
-                "additional_info": student.additional_info,
-                "role": "student",
-            })
-    return {
-        "teacher": {
-            "id": teacher.id,
-            "full_name": teacher.full_name,
-            "role": "teacher",
-        },
-        "students": students,
-        "counts": {"students": len(students)},
-    }
-
-

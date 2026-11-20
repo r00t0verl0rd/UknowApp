@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from "react";
-import { useAuthState, useChatState, useDirectoryState, useGraphState, usePersonalChatState, useSettingsState, useUiState } from "../shared/hooks/index.js";
+import { useAuthState, useChatState, useDirectoryState, usePersonalChatState, useSettingsState, useUiState } from "../shared/hooks/index.js";
 import LoginPage from "./authentication/LoginPage.jsx";
 import { usePushNotificationsState } from "../shared/hooks/notifications/usePushNotificationsState.js";
 import { useAuthController } from "../shared/hooks/authentication/useAuthController.js";
@@ -12,7 +12,6 @@ export default function App() {
   const authState = useAuthState();
   const { auth, setAuth, profile, setProfile, login, setLogin, password, setPassword } = authState;
   const { theme, toggleTheme } = useSettingsState();
-  const { teacherGraph, setTeacherGraph } = useGraphState();
   const chatState = useChatState();
   const { setDraft, setAttachment, selectedChat, setSelectedChat, setChats, setMessages } = chatState;
   const personalState = usePersonalChatState();
@@ -22,7 +21,7 @@ export default function App() {
   const { request, refresh, panelReady } = usePanelDataState({
     auth, page, selectedChat, setAuth, setProfile, setError, setChats,
     setPersonalChats, setUsers: directory.setUsers, setOverview: directory.setOverview,
-    setTeacherGraph, setPage, setSelectedChat, setMessages,
+    setPage, setSelectedChat, setMessages,
   });
   const notify = useCallback(message => {
     setToast(message);
@@ -35,7 +34,7 @@ export default function App() {
   const push = usePushNotificationsState({ auth, selectedChat, notify, setError });
   const { signIn, signOut } = useAuthController({
     authState, setError, setPage, setPushBusy: push.setPushBusy, setPushState: push.setPushState,
-    setTeacherGraph, setUsers: directory.setUsers, setOverview: directory.setOverview,
+    setUsers: directory.setUsers, setOverview: directory.setOverview,
     setChats, setPersonalChats, setMessages, setSelectedChat, setDraft, setAttachment, notify,
   });
 
@@ -48,7 +47,7 @@ export default function App() {
   const workspacePage = workspace.pages.includes(page) ? page : workspace.pages[0];
   const context = {
     auth, profile, page: workspacePage, setPage, request, refresh, notify, error, setError, modal, setModal,
-    chatState, personalState, directory, teacherGraph,
+    chatState, personalState, directory,
   };
   const pushToggle = (
     <button type="button" className={`push-toggle${push.pushState.enabled ? " active" : ""}`}

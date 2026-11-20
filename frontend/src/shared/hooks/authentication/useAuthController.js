@@ -4,7 +4,7 @@ import { signInRequest, signOutRequest } from "../../../app/authentication/servi
 
 export function useAuthController({
   authState, setError, setPage, setPushBusy, setPushState,
-  setTeacherGraph, setUsers, setOverview, setChats, setPersonalChats,
+  setUsers, setOverview, setChats, setPersonalChats,
   setMessages, setSelectedChat, setDraft, setAttachment,
   notify,
 }) {
@@ -58,7 +58,6 @@ export function useAuthController({
     sessionStorage.removeItem("uknowapp-auth");
     setAuth("");
     setProfile(null);
-    setTeacherGraph(null);
     setUsers([]);
     setOverview(null);
     setChats([]);
@@ -67,7 +66,7 @@ export function useAuthController({
     setSelectedChat(null);
     setDraft("");
     setAttachment(null);
-  }, [setAuth, setProfile, setTeacherGraph, setUsers, setOverview, setChats, setPersonalChats, setMessages, setSelectedChat, setDraft, setAttachment]);
+  }, [setAuth, setProfile, setUsers, setOverview, setChats, setPersonalChats, setMessages, setSelectedChat, setDraft, setAttachment]);
 
   return { signIn, signOut };
 }

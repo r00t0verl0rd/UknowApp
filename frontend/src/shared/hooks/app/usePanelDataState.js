@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createApiClient } from "../../../services/api.js";
-import { createPanelEventSource, getAdminBootstrap, getCurrentProfile, getInboxData, getTeacherGraph } from "../../services/panelApi.js";
+import { createPanelEventSource, getAdminBootstrap, getCurrentProfile, getInboxData } from "../../services/panelApi.js";
 import { getChatMessages } from "../../../features/conversations/services/conversationsApi.js";
 
 export function usePanelDataState({
   auth, page, selectedChat, setAuth, setProfile, setError, setChats,
-  setPersonalChats, setUsers, setOverview, setTeacherGraph, setPage,
+  setPersonalChats, setUsers, setOverview, setPage,
   setSelectedChat, setMessages,
 }) {
   const request = useMemo(() => createApiClient(), []);
@@ -18,29 +18,24 @@ export function usePanelDataState({
       const who = await getCurrentProfile(request);
       setProfile(who);
 
-      const roleRequest = who.role === "admin"
-        ? getAdminBootstrap(request)
-        : who.role === "teacher" ? getTeacherGraph(request) : Promise.resolve(null);
-      const [[conversations, personal], roleData] = await Promise.all([
-        getInboxData(request), roleRequest,
+      const adminRequest = who.role === "admin" ? getAdminBootstrap(request) : Promise.resolve(null);
+      const [[conversations, personal], adminData] = await Promise.all([
+        getInboxData(request), adminRequest,
       ]);
       setChats(conversations);
       setPersonalChats(personal);
       if (who.role === "admin") {
-        const [people, summary] = roleData;
+        const [people, summary] = adminData;
         setUsers(people);
         setOverview(summary);
-      } else if (who.role === "teacher") {
-        setTeacherGraph(roleData);
-        setUsers([]);
-        setOverview(null);
       } else {
-        setTeacherGraph(null);
         setUsers([]);
         setOverview(null);
-        setPage("chats");
-        setSelectedChat(null);
-        setMessages([]);
+        if (who.role !== "teacher") {
+          setPage("chats");
+          setSelectedChat(null);
+          setMessages([]);
+        }
       }
       setPanelReady(true);
     } catch (error) {

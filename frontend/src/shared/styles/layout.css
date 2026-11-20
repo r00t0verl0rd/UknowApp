@@ -287,7 +287,6 @@ img, video, audio { max-width: 100%;}
 .selected-file button { display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 6px; background: transparent; padding: 3px; color: #766d84;}
 .composer-send { display: inline-flex; align-items: center; justify-content: center;}
 .message-time { display: block; font-weight: 500; margin-top: 3px;}
-.teacher-graph-connector { width: 1px; height: 26px; margin: 0 auto; background: #d8cde7;}
 .chat-head-tools { display: flex; align-items: center; justify-content: flex-end; gap: 8px;}
 .chat-head-tools select { max-width: 155px; min-width: 0; border: 1px solid var(--line); border-radius: 9px; padding: 7px 9px; background: #faf9fc; color: var(--ink); font-size: 10px;}
 .message-delivery { display: grid; gap: 3px; margin-top: 7px; font-size: 9px; line-height: 1.4;}
@@ -1002,7 +1001,7 @@ input::placeholder, textarea::placeholder { color: #a49daf;}
 .person-card { box-shadow: 0 1px 4px rgba(47, 31, 84, .025);}
 .person-card:hover { box-shadow: 0 5px 15px rgba(87, 62, 153, .075);}
 .user-row { border-bottom-color: #efebf4;}
-.role-tag, .readonly-tag, .unread-badge { border-radius: 7px;}
+.role-tag, .unread-badge { border-radius: 7px;}
 .avatar { border-radius: 11px;}
 /* Dialogs, alerts, messages, and feedback follow the same rounded language. */
 .overlay > .modal, .modal { border-radius: 18px;}
@@ -1857,36 +1856,6 @@ border-color: transparent !important;}
 .graph-panel .teacher-card, .graph-panel .student-card { cursor: default; touch-action: auto; user-select: auto; -webkit-user-select: auto; }
 .graph-panel .teacher-branch.is-dragging, .graph-panel .student-card.is-dragging { box-shadow: none !important; }
 
-
-/* Teacher view reuses the administrator graph layout; only the role differs. */
-.graph-panel.is-teacher-view .teacher-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 17px;
-}
-.graph-panel.is-teacher-view .teacher-grid > .teacher-card {
-  justify-self: center;
-  width: min(100%, 380px);
-  min-height: 76px;
-  justify-content: center;
-}
-.graph-panel.is-teacher-view .student-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
-  align-items: stretch;
-  gap: 10px;
-  width: 100%;
-  margin: 14px 0 0;
-  padding: 0;
-  overflow: visible;
-}
-.graph-panel.is-teacher-view .student-list > .student-card {
-  width: 100%;
-  min-width: 0;
-}
-.graph-panel.is-teacher-view .student-list > .empty-students {
-  grid-column: 1 / -1;
-}
 
 /* Hierarchical graph objects use the active application theme tokens. */
 .graph-object-panel { overflow: hidden; }
