@@ -170,6 +170,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     const canSwap = sameGroup && targetType === drag.type && targetId;
     const swapTarget = canSwap ? target : null;
     let targetPosition = null;
+    drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     if (swapTarget) {
       const currentRect = drag.element.getBoundingClientRect();
       const targetRect = target.getBoundingClientRect();
