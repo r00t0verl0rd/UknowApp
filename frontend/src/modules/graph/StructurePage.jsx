@@ -36,6 +36,13 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
                   <button className="btn primary graph-add-participant" onClick={() => openCreate()}><Plus/>Добавить участника</button>
                 </div>
                 <div className="root-node"><img src="/logo.png" alt=""/><div><b>Администратор</b><small>Полное управление</small></div></div>
+                {!!unassignedStudents.length && <section className="unassigned"><h2 className="unassigned-title">Ученики без назначения</h2><div className="unassigned-grid">{unassignedStudents.map(student => <div className="person-card student-card unassigned-student-card" key={student.id}>
+                  <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
+                  <div className="unassigned-student-actions">
+                    <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button>
+                    <button className="btn small outline" disabled={!allTeachers.length} onClick={() => { setStudentId(String(student.id)); setTeacherId(String(allTeachers[0]?.id || "")); setModal({ mode: "assign" }); }}>Назначить</button>
+                  </div>
+                </div>)}</div></section>}
                 <div className="teacher-grid">
                   {allTeachers.map(teacher => {
                     const students = studentsByTeacherId.get(teacher.id) || [];
@@ -60,13 +67,6 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
                   })}
                 </div>
                 {!allTeachers.length && <div className="empty-state"><GraduationCap/><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span></div>}
-                {!!unassignedStudents.length && <section className="unassigned"><h2 className="unassigned-title">Ученики без назначения</h2><div className="unassigned-grid">{unassignedStudents.map(student => <div className="person-card student-card unassigned-student-card" key={student.id}>
-                  <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
-                  <div className="unassigned-student-actions">
-                    <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button>
-                    <button className="btn small outline" disabled={!allTeachers.length} onClick={() => { setStudentId(String(student.id)); setTeacherId(String(allTeachers[0]?.id || "")); setModal({ mode: "assign" }); }}>Назначить</button>
-                  </div>
-                </div>)}</div></section>}
               </section>
             </>}
     </>
