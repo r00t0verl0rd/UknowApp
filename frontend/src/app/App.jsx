@@ -380,9 +380,10 @@ export default function App() {
       if (userSort === "students") return (a.role === "student" ? 0 : 1) - (b.role === "student" ? 0 : 1) || a.full_name.localeCompare(b.full_name, "ru");
       return a.full_name.localeCompare(b.full_name, "ru", { sensitivity: "base" }) * (userSort === "name-desc" ? -1 : 1);
     }), [users, search, userSort]);
-  // Один раз собираем ID уже назначенных учеников, чтобы быстро найти свободных.
-  const assignedStudentIds = useMemo(() => new Set((overview?.teachers || []).flatMap(t => t.students.map(s => s.id))), [overview]);
-  const unassignedStudents = useMemo(() => allStudents.filter(student => !assignedStudentIds.has(student.id)), [allStudents, assignedStudentIds]);
+  const unassignedStudents = useMemo(
+    () => overview?.unassigned_students || allStudents.filter(student => !(overview?.teachers || []).some(teacher => teacher.students.some(item => item.id === student.id))),
+    [overview, allStudents],
+  );
   const visibleMessages = useMemo(() => messages.filter(message => {
     const kind = message.metadata?.media?.kind || message.content_type;
     if (messageFilter === "all") return true;
@@ -649,6 +650,20 @@ export default function App() {
     } catch (e) { setError(e.message); }
   }
 
+  async function saveGraphOrder(group, userIds) {
+    setError("");
+    try {
+      await request("/api/admin/graph/order", {
+        method: "PATCH",
+        body: JSON.stringify({ group, user_ids: userIds }),
+      });
+      notify("Порядок сохранён");
+    } catch (e) {
+      setError(e.message);
+      await refresh();
+    }
+  }
+
   async function unassignStudent(student) {
     if (!window.confirm(`Открепить ученика «${student.full_name}» от учителя? История переписки сохранится.`)) return;
     setError("");
@@ -807,7 +822,7 @@ export default function App() {
       </header>
       <div className={"content" + (page === "chats" ? " chats-content" : "")}>
         {error && <div className="alert alert-row">{error}<button onClick={() => setError("")}><X/></button></div>}
-        {page === "graph" && <StructurePage profile={profile} teacherGraph={teacherGraph} overview={overview} openCreate={openCreate} allTeachers={allTeachers} studentsByTeacherId={studentsByTeacherId} collapsedTeacherIds={collapsedTeacherIds} setCollapsedTeacherIds={setCollapsedTeacherIds} openEdit={openEdit} setTeacherId={setTeacherId} setStudentId={setStudentId} allStudents={allStudents} setModal={setModal} unassignedStudents={unassignedStudents} unassignStudent={unassignStudent} />}
+        {page === "graph" && <StructurePage profile={profile} teacherGraph={teacherGraph} overview={overview} openCreate={openCreate} allTeachers={allTeachers} studentsByTeacherId={studentsByTeacherId} collapsedTeacherIds={collapsedTeacherIds} setCollapsedTeacherIds={setCollapsedTeacherIds} openEdit={openEdit} setTeacherId={setTeacherId} setStudentId={setStudentId} allStudents={allStudents} setModal={setModal} unassignedStudents={unassignedStudents} unassignStudent={unassignStudent} saveGraphOrder={saveGraphOrder} />}
         {page === "users" && <UsersPage visibleUsers={visibleUsers} search={search} setSearch={setSearch} userSort={userSort} setUserSort={setUserSort} openCreate={openCreate} disconnectTelegram={disconnectTelegram} makeCode={makeCode} userInfo={userInfo} setUserInfo={setUserInfo} openEdit={openEdit} removeUser={removeUser} />}
         {page === "chats" && <ChatsPage profile={profile} chatSection={chatSection} setChatSection={setChatSection} personalChats={personalChats} setSelectedChat={setSelectedChat} setMessages={setMessages} chatFilter={chatFilter} setChatFilter={setChatFilter} openCreatePersonalChat={openCreatePersonalChat} chatSearch={chatSearch} setChatSearch={setChatSearch} visibleChats={visibleChats} openChat={openChat} selectedChat={selectedChat} setPage={setPage} draft={draft} setDraft={setDraft} messageFilter={messageFilter} setMessageFilter={setMessageFilter} messagesViewportRef={messagesViewportRef} visibleMessages={visibleMessages} messages={messages} setDeleteMessageCandidate={setDeleteMessageCandidate} attachment={attachment} setAttachment={setAttachment} sendChatMessage={sendChatMessage} />}
 
