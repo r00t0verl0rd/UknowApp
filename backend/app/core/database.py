@@ -44,6 +44,10 @@ def create_tables() -> None:
 
     Base.metadata.create_all(bind=engine)
 
+    # Remove the temporary graph ordering table introduced by the reverted drag-sort feature.
+    with engine.begin() as connection:
+        connection.execute(text("DROP TABLE IF EXISTS graph_positions"))
+
     # Copy legacy Telegram bindings without changing or deleting users.telegram_id.
     # Existing bind dates were not stored, so linked_at remains NULL for migrated rows.
     with engine.begin() as connection:
