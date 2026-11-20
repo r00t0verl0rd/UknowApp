@@ -46,7 +46,9 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
       - run: python -m pip install -r requirements.txt
-      - run: python -m pip install ruff
+      - run: python -m pip install ruff vulture
+      - run: ruff check app
       - run: ruff check app --select BLE001,SIM115,B008
+      - run: vulture app --min-confidence 80
       - run: python -m compileall -q app
       - run: python -c "from app.main import app; assert app.title == 'UknowApp API'"
