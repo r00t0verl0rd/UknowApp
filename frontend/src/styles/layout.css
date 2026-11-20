@@ -465,8 +465,6 @@ img, video, audio { max-width: 100%;}
 .chat-media-video.chat-media-video-note { width: min(100%, 260px); aspect-ratio: 1; max-height: none; object-fit: cover; border-radius: 50%; background: #17131f;}
 /* Graph legend stays at the upper-left edge of the graph workspace. */
 .graph-panel .graph-toolbar-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; min-width: 0; }
-.graph-panel .graph-align-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 38px; padding: 8px 12px; white-space: nowrap; }
-.graph-panel .graph-align-button svg { width: 16px; height: 16px; flex: 0 0 auto; }
 .graph-panel .graph-legend-row { margin: 0 0 17px;}
 .graph-panel .graph-legend { justify-content: flex-start;}
 /* Center the administrator node as a compact identity card. */
