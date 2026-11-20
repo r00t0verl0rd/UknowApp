@@ -1891,3 +1891,19 @@ border-color: transparent !important;}
 .graph-panel.is-teacher-view .student-list > .empty-students {
   grid-column: 1 / -1;
 }
+
+/* Two-layer graph coordinates: cached viewport geometry + independently zoomed graph plane. */
+.graph-panel .graph-coordinate-viewport {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+.graph-panel .graph-coordinate-world {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  transform-origin: 0 0;
+}
