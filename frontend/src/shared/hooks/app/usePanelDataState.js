@@ -17,6 +17,7 @@ export function usePanelDataState({
     try {
       const who = await getCurrentProfile(request);
       setProfile(who);
+      setPanelReady(true);
 
       const adminRequest = who.role === "admin" ? getAdminBootstrap(request) : Promise.resolve(null);
       const [[conversations, personal], adminData] = await Promise.all([
