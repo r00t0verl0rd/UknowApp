@@ -214,6 +214,7 @@ export default function StructurePage({
           </section>}
           {customObjects.filter(item => item.parent_id === fon.id).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}><span>{item.title}</span><button type="button" className="graph-object-delete" title={`Удалить объект «${item.title}»`} aria-label={`Удалить объект «${item.title}»`} onClick={() => removeObject(item)}><Trash2 /></button></div>)}
         </div>}
+        {customObjects.filter(item => item.parent_id == null).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}><span>{item.title}</span><button type="button" className="graph-object-delete" title={`Удалить объект «${item.title}»`} aria-label={`Удалить объект «${item.title}»`} onClick={() => removeObject(item)}><Trash2 /></button></div>)}
       </div>
     </div>
   </section>;
