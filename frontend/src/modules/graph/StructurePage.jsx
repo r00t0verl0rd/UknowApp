@@ -160,7 +160,7 @@ export default function StructurePage({
     <div className="graph-legend-row">
       <div className="graph-legend"><b>Иерархия объектов</b><span>Перемещайте Fon и облачко администратора независимо.</span></div>
       <div className="graph-toolbar-actions">
-        <button type="button" className="btn small outline" onClick={resetView} title="Сбросить масштаб и положение"><Crosshair />Отцентрировать</button>
+        <button type="button" className="btn small outline" onClick={resetView} title="Сбросить масштаб"><Crosshair />Сбросить масштаб</button>
         <button type="button" className="btn primary graph-add-participant" onClick={() => openCreate()}><Plus />Добавить участника</button>
       </div>
     </div>
@@ -185,14 +185,14 @@ export default function StructurePage({
               <button type="button" className="btn small outline" onClick={() => addObject(admin.id)}><Plus />Создать объект</button>
             </header>
             <div className="graph-admin-areas">
-              <section className="graph-object-area graph-assigned-area">
+              <section className="graph-object-area graph-assigned-area" data-object-id={assignedArea?.id}>
                 <header className="graph-area-header"><b>{assignedArea?.title || "Назначенные ученики"}</b><span>{unassignedStudents.length} учен.</span></header>
                 <div className="graph-area-content graph-student-grid">
                   {unassignedStudents.map(student => <StudentCard key={student.id} student={student} openEdit={openEdit} canUnassign={false} />)}
                   {!unassignedStudents.length && <div className="empty-students">Нет учеников без назначения учителю</div>}
                 </div>
               </section>
-              <section className="graph-object-area graph-teachers-area">
+              <section className="graph-object-area graph-teachers-area" data-object-id={teachersArea?.id}>
                 <header className="graph-area-header"><b>{teachersArea?.title || "Учителя"}</b><span>{allTeachers.length}</span></header>
                 <div className="graph-area-content graph-teachers-grid">
                   {allTeachers.map(teacher => <TeacherObject key={teacher.id} teacher={teacher} students={studentsByTeacherId?.get(teacher.id) || []} openEdit={openEdit} unassignStudent={unassignStudent} />)}
