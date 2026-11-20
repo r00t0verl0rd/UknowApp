@@ -1900,10 +1900,3 @@ border-color: transparent !important;}
   .graph-panel > .unassigned { padding: 18px 10px 12px; margin-bottom: 20px; }
   .graph-panel > .unassigned .unassigned-grid { grid-template-columns: minmax(0, 1fr); }
 }
-
-/* Drag sorting is limited to cards in the same graph cloud. */
-.graph-panel .teacher-card[data-sort-group],
-.graph-panel .student-card[data-sort-group] { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
-.graph-panel [data-sort-group].is-dragging { position: relative; z-index: 3; opacity: .72; cursor: grabbing; box-shadow: 0 10px 28px rgba(65, 48, 94, .2); }
-.graph-panel [data-sort-group].is-drop-target { border-color: var(--purple) !important; outline: 2px dashed var(--purple); outline-offset: 2px; }
-.graph-panel [data-sort-group] button { cursor: pointer; }
