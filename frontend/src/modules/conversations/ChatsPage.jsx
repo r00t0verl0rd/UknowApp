@@ -35,7 +35,6 @@ export default function ChatsPage({ profile, chatSection, setChatSection, person
                     <div className="chat-item-heading">
                       <div className={"chat-item-participants" + (profile?.role === "student" ? " is-student-view" : "")}>
                         {personal ? <span>{chat.title}</span> : <>{profile?.role === "admin" && <span>{chat.teacher.full_name}</span>}<span>{profile?.role === "student" ? chat.teacher.full_name : chat.student.full_name}</span>{profile?.role === "student" && <small>Учитель</small>}</>}
-                        {personal && <small>Личный диалог</small>}
                       </div>
                       {(showMessageCount || unreadCount > 0) && <span className={showMessageCount ? "message-count-badge" : "unread-badge"} title={showMessageCount ? "Всего сообщений" : "Непрочитанные сообщения"} aria-label={showMessageCount ? displayedCount + " сообщений всего" : displayedCount + " непрочитанных сообщений"}>{displayedCount > 99 ? "99+" : displayedCount}</span>}
                     </div>
