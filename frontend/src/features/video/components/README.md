@@ -1,0 +1,1 @@
+Reusable call UI belongs here: participant tiles, call surface and device controls. Components receive call state and capabilities as props; they do not own signaling or authorization.

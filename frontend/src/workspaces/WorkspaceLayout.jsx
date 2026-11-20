@@ -1,0 +1,58 @@
+import LogOut from "lucide-react/dist/esm/icons/log-out.js";
+import Moon from "lucide-react/dist/esm/icons/moon.js";
+import Sun from "lucide-react/dist/esm/icons/sun.js";
+import X from "lucide-react/dist/esm/icons/x.js";
+import AppToast from "../shared/components/AppToast.jsx";
+
+export default function WorkspaceLayout({
+  role, profile, label, navigation, page, setPage, theme, toggleTheme,
+  pushToggle, signOut, error, setError, toast, children,
+}) {
+  const themeToggle = (
+    <button type="button" className="theme-toggle" onClick={toggleTheme}
+      title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"}
+      aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
+      {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
+    </button>
+  );
+
+  return <div className={`shell chats-shell workspace-shell workspace-${role}`}>
+    <aside className="sidebar">
+      <div className="brand"><img src="/logo.png" alt="" /><span>Uknow<span>App</span></span></div>
+      <div className="school-label">{label}</div>
+      <nav aria-label="Основная навигация">
+        {navigation.map(item => {
+          const Icon = item.icon;
+          return <button key={item.page} type="button"
+            className={page === item.page ? "active" : ""}
+            aria-current={page === item.page ? "page" : undefined}
+            onClick={() => setPage(item.page)}>
+            <Icon size={18}/>{item.label}
+          </button>;
+        })}
+      </nav>
+      <div className="sidebar-bottom">
+        <button type="button" className="logout desktop-sidebar-logout" onClick={signOut}>
+          <LogOut size={18}/>Выход
+        </button>
+        <div className="mobile-quick-actions">
+          {pushToggle}{themeToggle}
+          <button type="button" className="logout" onClick={signOut} title="Выйти" aria-label="Выйти"><LogOut/></button>
+        </div>
+      </div>
+    </aside>
+    <main className="main chats-main">
+      <header className="topbar">
+        <small className="topbar-user">{profile.full_name}</small>
+        <div className="topbar-actions">{pushToggle}{themeToggle}</div>
+      </header>
+      <div className={"content" + (page === "chats" ? " chats-content" : "")}>
+        {error && <div className="alert alert-row" role="alert">{error}
+          <button type="button" onClick={() => setError("")} aria-label="Закрыть"><X/></button>
+        </div>}
+        {children}
+      </div>
+    </main>
+    <AppToast message={toast}/>
+  </div>;
+}

@@ -1,0 +1,1 @@
+Room APIs, signaling transport and media adapters belong here. Keep providers replaceable and do not request camera or microphone permissions until a user joins or starts a call.

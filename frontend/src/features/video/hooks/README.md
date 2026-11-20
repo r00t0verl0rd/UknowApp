@@ -1,0 +1,1 @@
+Call lifecycle and browser media-device hooks belong here. Hooks coordinate local UI state and cleanup, but delegate transport and room operations to services.
