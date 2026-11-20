@@ -2,6 +2,7 @@ from fastapi import status
 from starlette.requests import Request
 
 from app.core import security
+from app.models import Message
 
 
 def login(client, username, password):
@@ -11,7 +12,7 @@ def login(client, username, password):
 
 
 def test_authentication_rejects_invalid_credentials(api):
-    make_client, _ = api
+    make_client, _, _ = api
     client = make_client()
     response = client.post(
         "/api/auth/login",
@@ -21,7 +22,7 @@ def test_authentication_rejects_invalid_credentials(api):
 
 
 def test_admin_only_assignment_and_conversation_isolation(api):
-    make_client, users = api
+    make_client, users, sessions = api
     admin = make_client()
     login(admin, "test-admin", "a-long-test-password-123")
 
@@ -31,6 +32,14 @@ def test_admin_only_assignment_and_conversation_isolation(api):
     )
     assert created.status_code == status.HTTP_201_CREATED
     conversation_id = created.json()["id"]
+    with sessions() as db:
+        db.add(Message(
+            conversation_id=conversation_id,
+            sender_id=users["student-one"],
+            sender_role="student",
+            text="Private conversation message",
+        ))
+        db.commit()
 
     teacher_one = make_client()
     login(teacher_one, "teacher-one", "teacher-password-1")
@@ -46,10 +55,15 @@ def test_admin_only_assignment_and_conversation_isolation(api):
     assert len(student_one.get("/api/panel/conversations").json()) == 1
     assert student_two.get("/api/panel/conversations").json() == []
 
-    assert teacher_one.get(
+    teacher_messages = teacher_one.get(
         f"/api/panel/conversations/{conversation_id}/messages",
-    ).status_code == status.HTTP_200_OK
+    )
+    assert teacher_messages.status_code == status.HTTP_200_OK
+    assert teacher_messages.json()[0]["text"] == "Private conversation message"
     assert teacher_two.get(
+        f"/api/panel/conversations/{conversation_id}/messages",
+    ).status_code == status.HTTP_404_NOT_FOUND
+    assert student_two.get(
         f"/api/panel/conversations/{conversation_id}/messages",
     ).status_code == status.HTTP_404_NOT_FOUND
 
