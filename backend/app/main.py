@@ -6,6 +6,7 @@ import os
 import tempfile
 from contextlib import asynccontextmanager, suppress
 
+from aiogram.exceptions import TelegramAPIError, TelegramConflictError
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -68,16 +69,16 @@ async def run_telegram_bot(bot, dispatcher) -> None:
             retry_delay = min(retry_delay * 2, 60)
         except asyncio.CancelledError:
             raise
-        except Exception as exc:
+        except TelegramConflictError:
             # A Telegram conflict means another process is polling this bot.
             # Retrying forever only creates noisy logs and repeated takeovers.
-            if type(exc).__name__ == "TelegramConflictError":
-                logger.critical(
-                    "TELEGRAM_POLLING_CONFLICT: another process is already calling getUpdates "
-                    "for this bot. Polling has been stopped; close the other bot instance "
-                    "and restart UknowApp.",
-                )
-                return
+            logger.critical(
+                "TELEGRAM_POLLING_CONFLICT: another process is already calling getUpdates "
+                "for this bot. Polling has been stopped; close the other bot instance "
+                "and restart UknowApp.",
+            )
+            return
+        except TelegramAPIError as exc:
             # Telegram Bot API request URLs may contain the bot token.
             # Log the exception type only; never print request URLs or headers.
             logger.error(
