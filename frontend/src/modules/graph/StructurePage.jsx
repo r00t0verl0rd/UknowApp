@@ -27,6 +27,15 @@ function positionStyle(position) {
   return { transform: `translate3d(${position?.x || 0}px, ${position?.y || 0}px, 0)` };
 }
 
+function dragPosition(drag, clientX, clientY) {
+  const bounds = drag.boundaryRect;
+  const element = drag.elementRect;
+  const clamp = (value, min, max) => min > max ? (min + max) / 2 : Math.max(min, Math.min(max, value));
+  const dx = clamp(clientX - drag.startX, bounds.left - element.left, bounds.right - element.right);
+  const dy = clamp(clientY - drag.startY, bounds.top - element.top, bounds.bottom - element.bottom);
+  return { x: drag.x + dx, y: drag.y + dy };
+}
+
 function TeacherBranch({ teacher, students, studentLayout, studentsCollapsed = false, isOwner = false, cloudLayout, cloudStack, setCollapsedTeacherIds, openEdit, setTeacherId, setStudentId, allStudents, setModal, unassignStudent }) {
   return (
     <section
@@ -101,11 +110,16 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     const teacherView = type === "student" && Boolean(handle.closest(".is-teacher-view"));
     const layout = type === "cloud" ? cloudLayoutRef.current : teacherView ? teacherStudentLayoutRef.current : studentLayoutRef.current;
     const position = layout[id] || { x: 0, y: 0 };
+    const bounded = type === "student";
     dragRef.current = {
       type, id, element, teacherView, pointerId: event.pointerId,
       startX: event.clientX, startY: event.clientY,
       x: position.x, y: position.y,
       nextX: position.x, nextY: position.y,
+      ...(bounded ? {
+        boundaryRect: element.parentElement.getBoundingClientRect(),
+        elementRect: element.getBoundingClientRect(),
+      } : {}),
     };
     captureElement.setPointerCapture(event.pointerId);
     element.classList.add("is-dragging");
@@ -121,8 +135,11 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
   function moveDrag(event) {
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
-    drag.nextX = drag.x + event.clientX - drag.startX;
-    drag.nextY = drag.y + event.clientY - drag.startY;
+    const position = drag.type === "student"
+      ? dragPosition(drag, event.clientX, event.clientY)
+      : { x: drag.x + event.clientX - drag.startX, y: drag.y + event.clientY - drag.startY };
+    drag.nextX = position.x;
+    drag.nextY = position.y;
     if (!frameRef.current) {
       frameRef.current = requestAnimationFrame(() => {
         frameRef.current = 0;
@@ -137,8 +154,9 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     if (!drag || drag.pointerId !== event.pointerId) return;
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
     frameRef.current = 0;
-    let x = drag.x + event.clientX - drag.startX;
-    let y = drag.y + event.clientY - drag.startY;
+    const { x, y } = drag.type === "student"
+      ? dragPosition(drag, event.clientX, event.clientY)
+      : { x: drag.x + event.clientX - drag.startX, y: drag.y + event.clientY - drag.startY };
     drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     drag.element.classList.remove("is-dragging");
     drag.element.style.willChange = "";
