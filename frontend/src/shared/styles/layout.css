@@ -157,7 +157,7 @@ button, input, select, textarea{ font-family: inherit;}button, .btn, .logout, .a
    the same responsive outer spacing. */
 .chats-main > .content{ width: 100%; max-width: 1680px; margin-inline: auto; padding: clamp(18px, 2vw, 28px) clamp(16px, 2.2vw, 34px); box-sizing: border-box; min-width: 0;}
 @media (max-width: 1024px) {.chats-main > .content{ padding: 12px clamp(9px, 3vw, 14px) 14px;}/* Touch-first viewport and dialog behavior for the mobile layout through 1024px. */
-html, body, #root{ min-height: 100%; height: auto; overflow-x: hidden; overflow-y: auto;}body{ min-height: 100vh; min-height: 100dvh; background: var(--canvas);}#root{ min-height: 100vh; min-height: 100dvh;}.chats-shell{ display: flex; flex-direction: column; width: 100%; min-height: 100vh; min-height: 100dvh; height: auto; overflow: visible; background: var(--canvas); overscroll-behavior: auto;}.chats-shell > .sidebar{ z-index: 40; flex: 0 0 auto;}.chats-main{ display: flex; flex: 1 0 auto; flex-direction: column; min-height: 0; height: auto; overflow: visible; background: var(--canvas);}.chats-main > .workspace-content{ flex: 1 0 auto; min-height: 0; overflow: visible;}.overlay{  inset: 0; z-index: 1000; display: flex; justify-content: center; width: 100%; height: 100%; min-height: 0; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; overscroll-behavior: contain;}.overlay > .modal{ flex: 0 1 auto; min-width: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; box-sizing: border-box;}.overlay > .modal .stack{ min-width: 0;}.overlay > .modal .stack label, .overlay > .modal .stack input, .overlay > .modal .stack select{ min-width: 0; max-width: 100%;}.chats-shell > .sidebar{ position: sticky; top: 0; align-self: start; flex: 0 0 auto;}.overlay{ align-items: flex-start; padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));}.overlay > .modal{ width: 100%; max-width: 480px; max-height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom))); margin: auto 0; padding: 14px; border-radius: 16px;}.overlay > .modal .modal-head{ gap: 8px; margin-bottom: 12px;}.overlay > .modal .modal-head h2{ font-size: clamp(17px, 5vw, 20px); line-height: 1.25;}.overlay > .modal .stack{ gap: 9px;}.overlay > .modal .stack label{ gap: 5px; font-size: 12px;}.overlay > .modal .stack input, .overlay > .modal .stack select{ width: 100%; height: 42px; min-height: 42px; font-size: 16px;}.overlay > .modal:not(.credential-modal) .modal-actions{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; padding-top: 3px;}.overlay > .modal:not(.credential-modal) .modal-actions .btn{ width: 100%; min-width: 0; min-height: 42px; padding-inline: 8px; white-space: normal;}.chat-filter-segment{ width: 100%;}.chat-filter-segment button{ flex: 1 1 0;}.chat-items-scroll, .chat-item-heading{ min-width: 0;}.chat-item{ flex: 0 0 auto; min-height: 54px; padding: 8px 10px; gap: 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface, #fff);}.chat-item-participants{ overflow: hidden; text-overflow: ellipsis;}.chat-head{ position: relative; top: auto; min-width: 0;}.chat-head b{ line-height: 1.25;}.chat-head small{ font-size: 10px;}.chat-head-tools{ flex: 0 1 auto;}.chat-head-tools select{ min-height: 34px;}.chat-head-tools .role-tag{ margin: 0; white-space: nowrap; font-size: 9px;}.message{ max-width: 92%; padding: 9px 11px; font-size: 13px;}.chat-composer{ position: relative; z-index: 2; min-width: 0; max-height: none; overflow: visible; background: var(--surface, #fff);}.composer-tools{ min-width: 0; gap: 6px;}.attach-control{ min-height: 34px; padding: 6px 9px; font-size: 10px;}.selected-file{ min-width: 0; max-width: 100%; font-size: 10px;}.composer-send{ display: inline-flex; align-items: center; justify-content: center; width: 100%;}.composer-send{ width: 100%; min-height: 40px; justify-content: center;}
+html, body, #root{ min-height: 100%; height: auto; overflow-x: hidden; overflow-y: auto;}body{ min-height: 100vh; min-height: 100dvh; background: var(--canvas);}#root{ min-height: 100vh; min-height: 100dvh;}.chats-shell{ display: flex; flex-direction: column; width: 100%; min-height: 100vh; min-height: 100dvh; height: auto; overflow: visible; background: var(--canvas); overscroll-behavior: auto;}.chats-shell > .sidebar{ z-index: 40; flex: 0 0 auto;}.chats-main{ display: flex; flex: 1 0 auto; flex-direction: column; min-height: 0; height: auto; overflow: visible; background: var(--canvas);}.chats-main > .workspace-content{ flex: 1 1 auto; min-height: 0; overflow: visible;}.overlay{  inset: 0; z-index: 1000; display: flex; justify-content: center; width: 100%; height: 100%; min-height: 0; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; overscroll-behavior: contain;}.overlay > .modal{ flex: 0 1 auto; min-width: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; box-sizing: border-box;}.overlay > .modal .stack{ min-width: 0;}.overlay > .modal .stack label, .overlay > .modal .stack input, .overlay > .modal .stack select{ min-width: 0; max-width: 100%;}.chats-shell > .sidebar{ position: sticky; top: 0; align-self: start; flex: 0 0 auto;}.overlay{ align-items: flex-start; padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));}.overlay > .modal{ width: 100%; max-width: 480px; max-height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom))); margin: auto 0; padding: 14px; border-radius: 16px;}.overlay > .modal .modal-head{ gap: 8px; margin-bottom: 12px;}.overlay > .modal .modal-head h2{ font-size: clamp(17px, 5vw, 20px); line-height: 1.25;}.overlay > .modal .stack{ gap: 9px;}.overlay > .modal .stack label{ gap: 5px; font-size: 12px;}.overlay > .modal .stack input, .overlay > .modal .stack select{ width: 100%; height: 42px; min-height: 42px; font-size: 16px;}.overlay > .modal:not(.credential-modal) .modal-actions{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; padding-top: 3px;}.overlay > .modal:not(.credential-modal) .modal-actions .btn{ width: 100%; min-width: 0; min-height: 42px; padding-inline: 8px; white-space: normal;}.chat-filter-segment{ width: 100%;}.chat-filter-segment button{ flex: 1 1 0;}.chat-items-scroll, .chat-item-heading{ min-width: 0;}.chat-item{ flex: 0 0 auto; min-height: 54px; padding: 8px 10px; gap: 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface, #fff);}.chat-item-participants{ overflow: hidden; text-overflow: ellipsis;}.chat-head{ position: relative; top: auto; min-width: 0;}.chat-head b{ line-height: 1.25;}.chat-head small{ font-size: 10px;}.chat-head-tools{ flex: 0 1 auto;}.chat-head-tools select{ min-height: 34px;}.chat-head-tools .role-tag{ margin: 0; white-space: nowrap; font-size: 9px;}.message{ max-width: 92%; padding: 9px 11px; font-size: 13px;}.chat-composer{ position: relative; z-index: 2; min-width: 0; max-height: none; overflow: visible; background: var(--surface, #fff);}.composer-tools{ min-width: 0; gap: 6px;}.attach-control{ min-height: 34px; padding: 6px 9px; font-size: 10px;}.selected-file{ min-width: 0; max-width: 100%; font-size: 10px;}.composer-send{ display: inline-flex; align-items: center; justify-content: center; width: 100%;}.composer-send{ width: 100%; min-height: 40px; justify-content: center;}
 }:root[data-theme="dark-soft"] .chat-composer{ background: #222b39;}
 /* Mobile chat proportions: prioritize the conversation history over the picker. */
 @media (max-width: 1024px) {.chat-composer textarea::placeholder{ font-size: 12px; line-height: 1.25; opacity: .72;}
@@ -349,17 +349,26 @@ border-color: transparent !important;}.person-actions button:not(.danger-icon):h
 }
 
 
-/* Conversations keep the workspace canvas open: only individual items carry a surface. */
+/* Conversations use the full workspace area; only the controls and messages scroll. */
 .chats-main > .workspace-content:has(> .chat-list){
   display:grid;
-  grid-template-columns:minmax(250px,290px) minmax(0,1fr);
+  flex:1 1 0;
+  grid-template-columns:minmax(260px, min(24%, 340px)) minmax(0,1fr);
+  grid-template-rows:minmax(0,1fr);
   align-items:stretch;
-  gap:24px;
+  gap:clamp(16px, 1.8vw, 28px);
+  width:100%;
+  max-width:none;
+  min-width:0;
+  min-height:0;
+  margin:0;
+  overflow:hidden;
 }
 .chats-main > .workspace-content:has(> .chat-list) > .chat-list,
 .chats-main > .workspace-content:has(> .chat-list) > .chat-detail{
   min-width:0;
-  min-height:560px;
+  min-height:0;
+  height:100%;
   background:transparent;
   border:0;
   border-radius:0;
@@ -382,7 +391,7 @@ border-color: transparent !important;}.person-actions button:not(.danger-icon):h
 .chat-list > .personal-chat-create{flex:0 0 auto;min-width:0}
 .chat-list > .personal-chat-create{align-self:flex-start;width:fit-content}
 .chat-list > .chat-items-scroll{
-  flex:1 1 auto;
+  flex:1 1 0;
   min-height:0;
   padding:2px 2px 4px 0;
   overflow-x:hidden;
@@ -391,7 +400,7 @@ border-color: transparent !important;}.person-actions button:not(.danger-icon):h
   scrollbar-width:thin;
 }
 .chat-detail > .messages{
-  flex:1 1 auto;
+  flex:1 1 0;
   min-width:0;
   min-height:0;
   max-height:none;
@@ -404,15 +413,19 @@ border-color: transparent !important;}.person-actions button:not(.danger-icon):h
 @media(max-width:1024px){
   .chats-main > .workspace-content:has(> .chat-list){
     grid-template-columns:minmax(0,1fr);
-    align-items:stretch;
-    gap:18px;
+    grid-template-rows:minmax(0,1fr);
+    gap:0;
+    overflow:hidden;
   }
-  .chats-main > .workspace-content:has(> .chat-list) > .chat-list{
+  .chats-main > .workspace-content:has(> .chat-list) > .chat-list,
+  .chats-main > .workspace-content:has(> .chat-list) > .chat-detail{
+    grid-column:1;
+    grid-row:1;
     min-height:0;
-    height:min(38dvh,320px);
+    height:100%;
   }
-  .chats-main > .workspace-content:has(> .chat-list) > .chat-detail{min-height:65dvh}
   .chats-main > .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) > .chat-detail{display:none}
   .chats-main > .workspace-content:has(> .chat-list):has(.mobile-chat-back) > .chat-list{display:none}
-  .chats-main > .workspace-content:has(> .chat-list) > .chat-detail > .messages{min-height:180px}
+  .chats-main > .workspace-content:has(> .chat-list) > .chat-detail > .messages{min-height:0}
 }
+
