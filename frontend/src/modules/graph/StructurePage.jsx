@@ -301,11 +301,12 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     let { x, y } = drag.type === "student"
       ? dragPosition(drag, event.clientX, event.clientY)
       : { x: snapToGrid(drag.x + event.clientX - drag.startX), y: snapToGrid(drag.y + event.clientY - drag.startY) };
+    const hasMoved = Math.abs(x - drag.x) >= 1 || Math.abs(y - drag.y) >= 1;
     drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     const currentRect = drag.element.getBoundingClientRect();
-    const siblings = drag.type === "cloud"
+    const siblings = hasMoved ? (drag.type === "cloud"
       ? drag.element.parentElement.querySelectorAll(":scope > .teacher-branch")
-      : drag.element.parentElement.querySelectorAll(":scope > .student-card");
+      : drag.element.parentElement.querySelectorAll(":scope > .student-card")) : [];
     let swapTarget = null;
     let targetRatio = 0;
     for (const sibling of siblings) {
@@ -337,21 +338,6 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
       y += targetRect.top - currentRect.top;
     }
     drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-    if (swapTarget) {
-      const currentRect = drag.element.getBoundingClientRect();
-      const targetRect = target.getBoundingClientRect();
-      const dx = targetRect.left - currentRect.left;
-      const dy = targetRect.top - currentRect.top;
-      const layout = drag.type === "cloud" ? cloudLayoutRef.current : drag.teacherView ? teacherStudentLayoutRef.current : studentLayoutRef.current;
-      const previousTarget = layout[targetId] || { x: 0, y: 0 };
-      targetPosition = { id: targetId, x: previousTarget.x - dx, y: previousTarget.y - dy };
-      x += dx;
-      y += dy;
-    }
-    drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-    if (swapTarget && targetPosition) {
-      swapTarget.style.transform = `translate3d(${targetPosition.x}px, ${targetPosition.y}px, 0)`;
-    }
     drag.element.classList.remove("is-dragging");
     drag.element.style.willChange = "";
     drag.element.style.transition = "";
