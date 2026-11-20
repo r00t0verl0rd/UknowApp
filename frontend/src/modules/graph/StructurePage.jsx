@@ -140,20 +140,6 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     let x = drag.x + event.clientX - drag.startX;
     let y = drag.y + event.clientY - drag.startY;
     drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-    const siblingSelector = drag.type === "cloud" ? ":scope > .teacher-branch" : ":scope > [data-drag-type]";
-    const siblings = drag.element.parentElement?.querySelectorAll(siblingSelector) || [];
-    const rect = drag.element.getBoundingClientRect();
-    const overlaps = [...siblings].some(sibling => {
-      if (sibling === drag.element) return false;
-      const other = sibling.getBoundingClientRect();
-      return rect.left < other.right - 6 && rect.right > other.left + 6 &&
-        rect.top < other.bottom - 6 && rect.bottom > other.top + 6;
-    });
-    if (overlaps) {
-      drag.element.style.transform = `translate3d(${drag.x}px, ${drag.y}px, 0)`;
-      x = drag.x;
-      y = drag.y;
-    }
     drag.element.classList.remove("is-dragging");
     drag.element.style.willChange = "";
     drag.element.style.transition = "";
