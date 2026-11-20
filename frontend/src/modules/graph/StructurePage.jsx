@@ -140,6 +140,19 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     const x = drag.x + event.clientX - drag.startX;
     const y = drag.y + event.clientY - drag.startY;
     drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    const siblings = drag.element.parentElement?.querySelectorAll(":scope > [data-drag-type]") || [];
+    const rect = drag.element.getBoundingClientRect();
+    const overlaps = [...siblings].some(sibling => {
+      if (sibling === drag.element) return false;
+      const other = sibling.getBoundingClientRect();
+      return rect.left < other.right - 6 && rect.right > other.left + 6 &&
+        rect.top < other.bottom - 6 && rect.bottom > other.top + 6;
+    });
+    if (overlaps) {
+      drag.element.style.transform = `translate3d(${drag.x}px, ${drag.y}px, 0)`;
+      x = drag.x;
+      y = drag.y;
+    }
     drag.element.classList.remove("is-dragging");
     drag.element.style.willChange = "";
     drag.element.style.transition = "";
@@ -199,7 +212,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
           </div>
           <button className="btn primary graph-add-participant" onClick={() => openCreate()}><Plus />Добавить участника</button>
         </div>
-        <div className="root-node"><img src="/logo.png" alt="" /><div><b>Администратор</b><small>Полное управление</small></div></div>
+        <div className="root-node"><img src="/logo.png" alt="" /><b>Администратор</b><small>Полное управление</small></div>
 
         {!!unassignedStudents.length && <section className="unassigned">
           <div
