@@ -96,7 +96,7 @@ frontend/src/
 │   │   │   ├── ChatDialogs.jsx
 │   │   │   └── MessageBubble.jsx
 │   │   └── services/conversationsApi.js
-│   ├── graph/StructurePage.jsx
+│   ├── graph/\n│   │   ├── StructureModule.jsx\n│   │   └── StructurePage.jsx
 │   ├── panel/services/panelApi.js
 │   ├── notifications/pushNotifications.js
 │   └── users/
@@ -110,8 +110,8 @@ frontend/src/
 
 ### Frontend boundaries
 
-- `app/App.jsx` owns application composition, global navigation, role-based page visibility and shared shell elements.
-- Each feature controller owns its data transformations, asynchronous workflows and lifecycle effects. The page components focus on rendering and forwarding user intent.
+- `app/App.jsx` owns application composition, global navigation, role-based page visibility and shared shell elements. It mounts the four feature entry components and does not call their feature controllers or render their internal pages/dialogs.
+- `UsersModule`, `ChatsModule`, `AdministrationModule` and `StructureModule` are feature entry points. They connect each feature controller to its pages and dialogs; `UsersModule` composes `StructureModule` because the graph actions operate on the same user/assignment domain.\n- Each feature controller owns its data transformations, asynchronous workflows and lifecycle effects. The page components focus on rendering and forwarding user intent.
 - Feature API adapters live under `modules/<feature>/services/`. They own endpoint paths, HTTP details and payload serialization. Controllers coordinate operations through these adapters.
 - `services/api.js` is the shared authenticated JSON transport. File uploads and binary backup transfers use feature-specific adapters because they require multipart or blob handling.
 - Authentication, push notifications, theme persistence, panel bootstrap/SSE, user management, conversations, boards and administration have separate ownership boundaries.
