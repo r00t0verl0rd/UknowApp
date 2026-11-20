@@ -119,7 +119,8 @@ export default function ChatsPage({
                   </div>
                 </div>
                 {(showMessageCount || unreadCount > 0) && (
-                  <span className="role-tag" title={showMessageCount ? "Всего сообщений" : "Непрочитанные сообщения"}
+                  <span className={"role-tag chat-count" + (!showMessageCount ? " unread-badge" : " message-count")}
+                    title={showMessageCount ? "Всего сообщений" : "Непрочитанные сообщения"}
                     aria-label={showMessageCount
                       ? displayedCount + " сообщений всего"
                       : displayedCount + " непрочитанных сообщений"}>
