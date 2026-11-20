@@ -11,6 +11,19 @@ from pathlib import Path
 from typing import Annotated
 
 from aiogram.exceptions import TelegramAPIError
+from fastapi import (
+    APIRouter,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+)
+from fastapi.responses import FileResponse, StreamingResponse
+from sqlalchemy import func, select
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session, selectinload
+
 from app.event_hub import (
     publish_chat_update,
     subscribe_chat_updates,
@@ -53,18 +66,6 @@ from app.modules.personal_chat.service import (
 )
 from app.push_notifications import schedule_push
 from app.request_validation import message_payload, personal_conversation_payload
-from fastapi import (
-    APIRouter,
-    File,
-    Form,
-    HTTPException,
-    Request,
-    UploadFile,
-)
-from fastapi.responses import FileResponse, StreamingResponse
-from sqlalchemy import func, select
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session, selectinload
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
