@@ -1,5 +1,5 @@
 import { memo, useCallback, useLayoutEffect, useMemo, useRef } from "react";
-import { useBoardsState } from "../../hooks/boards/useBoardsState.js";
+import { useBoardsState } from "../../shared/hooks/boards/useBoardsState.js";
 import Crosshair from "lucide-react/dist/esm/icons/crosshair.js";
 import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";

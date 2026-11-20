@@ -1,9 +1,9 @@
 import { useCallback, useEffect } from "react";
-import { useAuthState, useChatState, useDirectoryState, useGraphState, usePersonalChatState, useSettingsState, useUiState } from "../hooks/useAppState.js";
+import { useAuthState, useChatState, useDirectoryState, useGraphState, usePersonalChatState, useSettingsState, useUiState } from "../shared/hooks/useAppState.js";
 import LoginPage from "./authentication/LoginPage.jsx";
-import { usePushNotificationsState } from "../hooks/notifications/usePushNotificationsState.js";
-import { useAuthController } from "../hooks/authentication/useAuthController.js";
-import { usePanelDataState } from "../hooks/app/usePanelDataState.js";
+import { usePushNotificationsState } from "../shared/hooks/notifications/usePushNotificationsState.js";
+import { useAuthController } from "../shared/hooks/authentication/useAuthController.js";
+import { usePanelDataState } from "../shared/hooks/app/usePanelDataState.js";
 import { workspaceRegistry, workspaceIcons } from "../workspaces/workspaceRegistry.js";
 import WorkspaceLayout from "../workspaces/WorkspaceLayout.jsx";
 import AppLoading from "../shared/components/AppLoading.jsx";

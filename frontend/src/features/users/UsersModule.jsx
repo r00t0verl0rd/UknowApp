@@ -1,7 +1,7 @@
 import UsersPage from "./UsersPage.jsx";
 import UserDialogs from "./components/UserDialogs.jsx";
 import StructurePage from "../graph/StructurePage.jsx";
-import { useUsersController } from "../../hooks/users/useUsersController.js";
+import { useUsersController } from "../../shared/hooks/users/useUsersController.js";
 
 export default function UsersModule({
   page, profile, directory, request, refresh, notify, setError,

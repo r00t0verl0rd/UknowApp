@@ -1,5 +1,5 @@
 import AdditionalPage from "./AdditionalPage.jsx";
-import { useAdminDataController } from "../../hooks/administration/useAdminDataController.js";
+import { useAdminDataController } from "../../shared/hooks/administration/useAdminDataController.js";
 
 export default function AdministrationModule({
   page, auth, profile, request, refresh, notify, setError,
