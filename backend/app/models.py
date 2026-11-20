@@ -224,6 +224,13 @@ class MessengerAccount(Base):
     user: Mapped[User] = relationship()
 
 
+class GraphObjectDeletion(Base):
+    __tablename__ = "graph_object_deletions"
+
+    object_key: Mapped[str] = mapped_column(String(160), primary_key=True)
+    deleted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+
 class GraphObject(Base):
     __tablename__ = "graph_objects"
     __table_args__ = (
