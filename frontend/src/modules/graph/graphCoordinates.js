@@ -66,6 +66,15 @@ export function createInnerGraphCoordinateSystem() {
       panX += x;
       panY += y;
     },
+    resetView() {
+      zoom = 1;
+      panX = 0;
+      panY = 0;
+    },
+    centerContent(contentWidth, contentHeight, viewportWidth, viewportHeight) {
+      panX = (viewportWidth - contentWidth) / 2;
+      panY = (viewportHeight - contentHeight) / 2;
+    },
     transform() {
       return `translate3d(${panX}px, ${panY}px, 0) scale(${zoom})`;
     },
