@@ -1897,13 +1897,18 @@ border-color: transparent !important;}
   position: relative;
   width: 100%;
   min-width: 0;
+  flex: none;
   overflow: hidden;
+  contain: layout paint;
   touch-action: none;
   overscroll-behavior: contain;
 }
 .graph-panel .graph-coordinate-world {
-  position: relative;
+  position: absolute;
+  inset: 0 auto auto 0;
   width: 100%;
   min-width: 0;
+  min-height: 100%;
   transform-origin: 0 0;
+  will-change: transform;
 }
