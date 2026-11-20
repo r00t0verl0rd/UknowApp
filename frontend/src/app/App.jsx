@@ -649,6 +649,19 @@ export default function App() {
     } catch (e) { setError(e.message); }
   }
 
+  async function createGraphObject(payload) {
+    try {
+      await request("/api/admin/graph/objects", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      const objects = await request("/api/admin/graph/objects");
+      setGraphObjects(objects);
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
   async function saveGraphObjectPosition(objectId, x, y) {
     try {
       await request(`/api/admin/graph/objects/${objectId}/position`, {
