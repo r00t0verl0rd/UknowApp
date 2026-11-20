@@ -1,5 +1,4 @@
 import { useCallback, useMemo } from "react";
-import { useDirectoryState } from "./useDirectoryState.js";
 import { useUserEditorState } from "./useUserEditorState.js";
 import { useUserActionState } from "./useUserActionState.js";
 
