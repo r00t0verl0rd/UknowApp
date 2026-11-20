@@ -233,7 +233,7 @@ input:focus-visible, select:focus-visible { outline-offset: 2px;}
 .graph-panel .root-node b { letter-spacing: -.2px;}
 .graph-panel .root-node small { color: #89809b;}
 .graph-panel .teacher-grid { align-items: stretch; gap: 17px;}
-.graph-panel .teacher-branch { min-width: 0; padding: 13px; border: 1px solid #e9e2f2; border-radius: 17px; background: #f7f4fa; box-shadow: 0 5px 18px rgba(67,47,105,.045), inset 0 1px 0 rgba(255,255,255,.95); transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;}
+.graph-panel .teacher-branch { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; align-self: start; min-width: 0; padding: 13px; border: 1px solid #e9e2f2; border-radius: 17px; background: #f7f4fa; box-shadow: 0 5px 18px rgba(67,47,105,.045), inset 0 1px 0 rgba(255,255,255,.95); transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;}
 .graph-panel .teacher-branch:hover { border-color: #d8c9ed; box-shadow: 0 9px 24px rgba(87,62,153,.085); transform: translateY(-1px);}
 .graph-panel .teacher-card { padding: 12px 13px; border: 1px solid #e3d8f1; border-radius: 13px; background: linear-gradient(110deg, #f0e9fb, #fff 78%); box-shadow: 0 3px 10px rgba(87,62,153,.045);}
 .graph-panel .teacher-card .avatar { width: 42px; height: 42px; border-radius: 12px; background: #e7dcf7; color: #62459b;}
@@ -486,14 +486,14 @@ img, video, audio { max-width: 100%;}
 /* Keep the primary graph action at the top beside the legend. */
 /* Final graph-card sizing: keep the admin identity on one compact row and
    make student cards shrink safely inside narrow teacher branches. */
-.graph-panel .root-node { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 11px; width: fit-content; max-width: 100%; min-height: 0; margin: 0 auto 20px; padding: 11px 16px; text-align: left; box-sizing: border-box;}
-.graph-panel .root-node img { flex: 0 0 42px; width: 42px; height: 42px;}
-.graph-panel .root-node > div { display: flex; flex: 0 1 auto; flex-wrap: wrap; align-items: baseline; justify-items: initial; justify-content: center; gap: 3px 9px; width: auto; min-width: 0; text-align: left;}
-.graph-panel .root-node b, .graph-panel .root-node small { display: inline; width: auto; margin: 0; text-align: left;}
+.graph-panel .root-node { display: grid; grid-template-columns: 42px auto; grid-template-rows: auto auto; align-items: center; justify-content: center; column-gap: 11px; width: fit-content; max-width: 100%; min-height: 0; margin: 0 auto 20px; padding: 11px 16px; text-align: left; box-sizing: border-box;}
+.graph-panel .root-node img { grid-row: 1 / span 2; width: 42px; height: 42px;}
+.graph-panel .root-node > b, .graph-panel .root-node > small { min-width: 0; margin: 0; text-align: left;}
+.graph-panel .root-node b, .graph-panel .root-node small { display: block; width: auto; text-align: left;}
 .graph-panel .root-node b { white-space: nowrap; font-size: 12px;}
 .graph-panel .root-node small { white-space: nowrap; font-size: 10px;}
 .graph-panel .teacher-grid, .graph-panel .teacher-branch, .graph-panel .student-list { min-width: 0; max-width: 100%; box-sizing: border-box;}
-.graph-panel .student-list { margin-left: 0; padding-left: 12px; overflow: hidden;}
+.graph-panel .student-list { margin: 12px 0 0; padding: 0; overflow: visible;}
 .graph-panel .student-card { display: flex; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; overflow: hidden;}
 .graph-panel .student-card .person-main { display: flex; flex: 1 1 0%; width: auto; min-width: 0; max-width: 100%; overflow: hidden;}
 .graph-panel .student-card .person-info { flex: 1 1 0%; width: auto; min-width: 0; max-width: 100%; overflow: hidden;}
@@ -501,7 +501,7 @@ img, video, audio { max-width: 100%;}
 
 .graph-panel .student-card > .graph-person-action { flex: 0 0 27px !important; width: 27px !important; height: 27px !important; min-width: 27px !important; min-height: 27px !important; padding: 0 !important;}
 /* Preserve comfortable teacher columns; only the card contents may shrink. */
-.graph-panel .teacher-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));}
+.graph-panel .teacher-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); align-items: start; grid-auto-rows: min-content;}
 .user-sort { display: block; flex: 0 1 auto; min-width: 0; border: 1px solid var(--line); color: var(--ink); background: #fff; font: inherit; cursor: pointer;}
 
 .user-list { padding: 0;}
@@ -696,7 +696,7 @@ html, body { overflow-x: clip;}
 .graph-panel .teacher-grid{ gap: 12px;}
 .graph-panel .teacher-branch { padding: 10px; border-radius: 13px;}
 .graph-panel .teacher-card { min-height: 64px; padding: 9px 11px;}
-.graph-panel .student-list { gap: 6px; margin: 9px 0 0 20px;}
+.graph-panel .student-list { gap: 8px; margin: 10px 0 0; padding: 0; overflow: visible;}
 .graph-panel .student-card { min-height: 52px; padding: 7px 9px;}
 .graph-panel .add-student { margin-top: 0;}
 .graph-panel .unassigned { margin-top: 15px; padding-top: 13px;}
@@ -859,7 +859,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .graph-panel .graph-legend-row { margin-bottom: 14px;}
 .graph-panel .root-node { width: fit-content; max-width: 100%; margin-bottom: 15px;}
 .graph-panel .root-node > div { justify-content: flex-start;}
-.graph-panel .student-list { padding-left: 9px;}
+.graph-panel .student-list { padding-left: 0;}
 .graph-panel .student-card { gap: 5px; padding: 8px 7px;}
 .graph-panel .student-card .avatar { flex-basis: 30px; width: 30px; height: 30px;}
 .graph-panel .root-node > div { gap: 2px 6px;}
