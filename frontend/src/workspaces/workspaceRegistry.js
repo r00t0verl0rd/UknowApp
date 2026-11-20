@@ -28,7 +28,7 @@ export const workspaceRegistry = Object.freeze({
     pages: ["chats", "graph"],
     navigation: [
       { page: "chats", label: "Диалоги", icon: MessageCircle },
-      { page: "graph", label: "Моя структура", icon: Activity },
+      { page: "graph", label: "Структура", icon: Activity },
     ],
   },
   student: {
