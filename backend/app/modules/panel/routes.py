@@ -6,6 +6,7 @@ import logging
 import mimetypes
 import re
 import uuid
+from typing import Annotated
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -27,6 +28,7 @@ from app.models import (
 from app.modules.communication.accounts import get_messenger_account
 from app.modules.communication.contracts import (
     MessageKind,
+    MessengerError,
     MessengerPlatform,
     OutboundMedia,
     OutboundMessage,
@@ -59,6 +61,8 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import FileResponse, StreamingResponse
+from aiogram.exceptions import TelegramAPIError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
@@ -421,7 +425,7 @@ async def delete_panel_message(
                     external_message_id=str(delivery["telegram_message_id"]),
                 )
                 telegram_deleted += 1
-            except Exception as exc:
+            except MessengerError as exc:
                 telegram_failed += 1
                 logger.warning(
                     "Could not delete Telegram copy (message_id=%s error_type=%s)",
@@ -566,7 +570,7 @@ async def _refresh_teacher_panel_after_web_delivery(bot, db: Session, teacher: U
         if current_session and current_session.conversation_id != conversation.id:
             clear_teacher_session(db, teacher)
         await update_teacher_panel(bot, db, teacher)
-    except Exception as exc:
+    except (TelegramAPIError, SQLAlchemyError) as exc:
         # Delivery is already committed; a panel refresh failure must not undo it.
         logger.warning(
             "Could not refresh teacher panel after web delivery "
@@ -666,7 +670,7 @@ async def send_panel_message(
                     "chat_id": target["chat_id"],
                     "thread_id": target.get("message_thread_id"),
                 })
-            except Exception as exc:
+            except (MessengerError, OSError, ValueError) as exc:
                 logger.warning(
                     "Telegram delivery failed for conversation_id=%s: %s",
                     conversation.id,
@@ -696,8 +700,8 @@ async def send_panel_attachment(
     request: Request,
     principal: PanelUser,
     db: Db,
-    file: UploadFile = File(...),
-    text: str = Form(default=""),
+    file: Annotated[UploadFile, File()],
+    text: Annotated[str, Form()] = "",
 ):
     # Ограничиваем размер до чтения файла целиком и сохраняем локальную копию для веб-панели.
     conversation = _panel_visible_conversation(db, principal, conversation_id)
