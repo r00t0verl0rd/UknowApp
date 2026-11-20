@@ -267,13 +267,12 @@ async def restore_full_backup(_: Admin, file: Annotated[UploadFile, File()]):
     if not (file.filename or "").lower().endswith(".zip"):
         raise HTTPException(status_code=400, detail="Загрузите ZIP-файл полной резервной копии")
     data_dir = _database_path().parent
-    handle = tempfile.NamedTemporaryFile(prefix="uknowapp-full-upload-", suffix=".zip", dir=data_dir, delete=False)
-    upload_path = Path(handle.name)
+    upload_path = _temporary_path("uknowapp-full-upload-", ".zip", data_dir)
     stage = Path(tempfile.mkdtemp(prefix="uknowapp-full-stage-", dir=data_dir))
     old_media = stage / "previous-media"
     try:
         total = 0
-        with handle:
+        with upload_path.open("wb") as handle:
             while chunk := await file.read(1024 * 1024):
                 total += len(chunk)
                 if total > MAX_ARCHIVE_BYTES:
@@ -344,11 +343,10 @@ async def restore_database(_: Admin, file: Annotated[UploadFile, File()]):
     if not (file.filename or "").lower().endswith((".db", ".sqlite", ".sqlite3")):
         raise HTTPException(status_code=400, detail="Загрузите файл SQLite (.db, .sqlite или .sqlite3)")
     database = _database_path()
-    handle = tempfile.NamedTemporaryFile(prefix="uknowapp-restore-", suffix=".sqlite3", dir=database.parent, delete=False)
-    temp_path = Path(handle.name)
+    temp_path = _temporary_path("uknowapp-restore-", ".sqlite3", database.parent)
     total = 0
     try:
-        with handle:
+        with temp_path.open("wb") as handle:
             while chunk := await file.read(1024 * 1024):
                 total += len(chunk)
                 if total > MAX_DATABASE_BYTES:
@@ -423,11 +421,10 @@ async def restore_dialogues(
     if not (file.filename or "").lower().endswith(".zip"):
         raise HTTPException(status_code=400, detail="Загрузите ZIP-архив переписок")
     data_dir = _database_path().parent
-    handle = tempfile.NamedTemporaryFile(prefix="uknowapp-dialogues-upload-", suffix=".zip", dir=data_dir, delete=False)
-    temp_path = Path(handle.name)
+    temp_path = _temporary_path("uknowapp-dialogues-upload-", ".zip", data_dir)
     total = 0
     try:
-        with handle:
+        with temp_path.open("wb") as handle:
             while chunk := await file.read(1024 * 1024):
                 total += len(chunk)
                 if total > MAX_ARCHIVE_BYTES:
