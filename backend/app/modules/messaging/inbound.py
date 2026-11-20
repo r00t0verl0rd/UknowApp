@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 from typing import Protocol
 
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.event_hub import publish_chat_update
@@ -29,7 +29,7 @@ from app.modules.communication.accounts import (
     get_messenger_account,
     get_messenger_user,
 )
-from app.modules.communication.contracts import InboundMessage, MessengerPlatform
+from app.modules.communication.contracts import InboundMessage, MessengerError, MessengerPlatform
 from app.modules.notifications.service import schedule_push
 from app.rate_limit import SlidingWindowLimiter
 
@@ -393,7 +393,7 @@ async def _handle_unlinked_sender(
             inbound.external_chat_id,
             inbound.sender_username,
         )
-    except Exception as exc:
+    except SQLAlchemyError as exc:
         db.rollback()
         logger.exception(
             "Failed to process messenger connection code (platform=%s error_type=%s)",
@@ -475,7 +475,7 @@ async def _deliver_student_message_to_teacher(
                 teacher_chat_id,
                 caption=caption[:1024],
             )
-        except Exception as copy_error:
+        except MessengerError as copy_error:
             logger.info(
                 "Messenger media copy with caption failed; retrying without caption "
                 "(conversation_id=%s error_type=%s)",
@@ -556,7 +556,7 @@ async def _deliver_teacher_reply(
             await gateway.delete_message(
                 inbound.external_chat_id, inbound.external_message_id,
             )
-        except Exception as exc:
+        except MessengerError as exc:
             logger.info(
                 "Could not remove teacher's sent text from the messenger chat (error_type=%s)",
                 type(exc).__name__,
@@ -569,7 +569,7 @@ async def _deliver_teacher_reply(
             await gateway.delete_message(
                 inbound.external_chat_id, str(pending.destination_message_id),
             )
-        except Exception as exc:
+        except MessengerError as exc:
             logger.info(
                 "Could not remove handled student message %s "
                 "(external_message_id=%s error_type=%s)",
@@ -652,7 +652,7 @@ async def process_inbound_message(
                 await gateway.delete_message(
                     inbound.external_chat_id, inbound.external_message_id,
                 )
-            except Exception as exc:
+            except MessengerError as exc:
                 logger.debug(
                     "Could not remove teacher message sent without an active selection "
                     "(error_type=%s)", type(exc).__name__,
@@ -719,7 +719,7 @@ async def process_inbound_message(
                     await gateway.delete_message(
                         inbound.external_chat_id, inbound.external_message_id,
                     )
-                except Exception as exc:
+                except MessengerError as exc:
                     logger.info(
                         "Could not remove teacher text after in-app delivery (error_type=%s)",
                         type(exc).__name__,
@@ -747,7 +747,7 @@ async def process_inbound_message(
                 db, inbound, row, conversation, sender, recipient,
                 recipient_chat_id, unanswered_before_reply, gateway,
             )
-    except Exception as exc:
+    except (MessengerError, SQLAlchemyError, ValueError, OSError) as exc:
         row.delivery_status = "failed"
         db.commit()
         publish_chat_update(conversation.id)
