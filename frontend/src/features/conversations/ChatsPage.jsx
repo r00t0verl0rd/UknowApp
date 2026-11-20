@@ -11,7 +11,7 @@ import MessageBubble from "./components/MessageBubble.jsx";
 export default function ChatsPage({ profile, chatSection, setChatSection, personalChats, setSelectedChat, setMessages, chatFilter, setChatFilter, openCreatePersonalChat, chatSearch, setChatSearch, visibleChats, openChat, selectedChat, draft, setDraft, messageFilter, setMessageFilter, messagesViewportRef, visibleMessages, messages, setDeleteMessageCandidate, attachment, setAttachment, sendChatMessage }) {
   return (
     <>
-      <div className={"chat-layout" + (selectedChat ? " chat-layout-conversation-open" : " chat-layout-list-open")}><div className="chat-list">{profile?.role === "admin" && <div className="chat-filter-segment admin-chat-sections" role="group" aria-label="Раздел диалогов"><button type="button" className={chatSection === "participants" ? "active" : ""} onClick={() => { setChatSection("participants"); setSelectedChat(null); setMessages([]); }}>Чаты участников</button><button type="button" className={chatSection === "personal" ? "active" : ""} onClick={() => { setChatSection("personal"); setChatFilter("all"); setSelectedChat(null); setMessages([]); }}>Личные{personalChats.some(chat => Number(chat.unread_count) > 0) && <span className="unread-badge">{personalChats.reduce((sum, chat) => sum + (Number(chat.unread_count) || 0), 0) > 99 ? "99+" : personalChats.reduce((sum, chat) => sum + (Number(chat.unread_count) || 0), 0)}</span>}</button></div>}{profile?.role === "admin" && chatSection === "personal" && <button type="button" className="btn outline personal-chat-create" onClick={openCreatePersonalChat}><Plus size={15}/>Создать диалог</button>}{profile?.role !== "student" && <>
+      <div className="chat-list">{profile?.role === "admin" && <div className="chat-filter-segment admin-chat-sections" role="group" aria-label="Раздел диалогов"><button type="button" className={chatSection === "participants" ? "active" : ""} onClick={() => { setChatSection("participants"); setSelectedChat(null); setMessages([]); }}>Чаты участников</button><button type="button" className={chatSection === "personal" ? "active" : ""} onClick={() => { setChatSection("personal"); setChatFilter("all"); setSelectedChat(null); setMessages([]); }}>Личные{personalChats.some(chat => Number(chat.unread_count) > 0) && <span className="unread-badge">{personalChats.reduce((sum, chat) => sum + (Number(chat.unread_count) || 0), 0) > 99 ? "99+" : personalChats.reduce((sum, chat) => sum + (Number(chat.unread_count) || 0), 0)}</span>}</button></div>}{profile?.role === "admin" && chatSection === "personal" && <button type="button" className="btn outline personal-chat-create" onClick={openCreatePersonalChat}><Plus size={15}/>Создать диалог</button>}{profile?.role !== "student" && <>
                   <div className="chat-search-control">
                     <Search size={17}/>
                     <input aria-label="Поиск по имени" placeholder="Поиск по имени" value={chatSearch} onChange={e => setChatSearch(e.target.value)}/>
@@ -54,7 +54,6 @@ export default function ChatsPage({ profile, chatSection, setChatSection, person
                     </div>
                   </form>}
                 </> : <div className="empty-state">{profile?.role === "student" ? "Ваша переписка с учителем появится здесь" : "Выберите ученика слева"}</div>}</div>
-              </div>
     </>
   );
 }
