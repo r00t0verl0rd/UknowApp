@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 export function useDirectoryState() {
   const [users, setUsers] = useState([]);
