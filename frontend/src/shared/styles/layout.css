@@ -39,7 +39,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
 .teacher-grid{display:block;}
 .teacher-branch{position:relative;}
-.person-card{display:flex;align-items:center;justify-content:space-between;}
+.person-card, .student-card{display:flex;align-items:center;justify-content:space-between;}
 
 .person-main{display:flex;align-items:center;min-width:0}
 .avatar{display:grid;place-items:center;flex:none;background:#f0eafa;color:var(--purple)}
@@ -105,7 +105,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .unassigned{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
 .unassigned-title { margin: 0 0 12px; color: var(--ink); font-size: 14px;}
 .unassigned-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:9px}
-.unassigned-grid .person-card{flex-wrap:wrap;}
+.unassigned-grid .student-card{flex-wrap:wrap;}
 /* Readability and layout refinement */
 .sidebar { width: 280px; padding: 28px 20px;}
  .main { margin-left: 0;}
@@ -171,7 +171,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .graph-panel { border-radius: 20px;}
 .legend, .toolbar{ color: var(--muted);}
 
-.person-card:hover { border-color: #cdb9eb; transform: translateY(-1px);}
+.person-card:hover, .student-card:hover { border-color: #cdb9eb; transform: translateY(-1px);}
 
 .teacher-card:hover { box-shadow: 0 0 18px rgba(194,153,255,.23);}
 
@@ -363,7 +363,7 @@ img, video, audio { max-width: 100%;}
 :root[data-theme="dark-soft"] .sidebar nav button.active { background: #353149 !important; color: #c6bdf0 !important; border-color: #49415f !important;}
 :root[data-theme="dark-soft"] .sidebar nav button i { background: #303849 !important; color: #c5bddf !important;}
 :root[data-theme="dark-soft"] .chat-list { background: #1d2430 !important; border-color: #343d4d !important;}
-:root[data-theme="dark-soft"] .chat-item, :root[data-theme="dark-soft"] .person-card, :root[data-theme="dark-soft"] .role_node { background: #252d3b !important; border-color: #3a4659 !important; box-shadow: 0 4px 14px rgba(0, 0, 0, .14) !important;}
+:root[data-theme="dark-soft"] .chat-item, :root[data-theme="dark-soft"] .person-card, :root[data-theme="dark-soft"] .student-card, :root[data-theme="dark-soft"] .role_node { background: #252d3b !important; border-color: #3a4659 !important; box-shadow: 0 4px 14px rgba(0, 0, 0, .14) !important;}
 :root[data-theme="dark-soft"] .message.teacher { background: #302e43 !important; border-color: #4c4667 !important;}
 :root[data-theme="dark-soft"] .message.admin { background: #393445 !important; border-color: #66546a !important;}
 :root[data-theme="dark-soft"] .message p { color: #e4e8f0 !important;}
@@ -409,8 +409,8 @@ img, video, audio { max-width: 100%;}
 :root[data-theme="dark-soft"] .graph-panel .add-student { background: #303448 !important; border: 1px solid #4b4c69 !important; color: #c7bdf0 !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .add-student:hover { background: #3b3a55 !important; border-color: #77729d !important;}
 :root[data-theme="dark-soft"] .graph-panel .unassigned { border-top: 1px solid #414d60 !important;}
-:root[data-theme="dark-soft"] .graph-panel .person-card, :root[data-theme="dark-soft"] .user-list .person-card { color: #e4e8f0 !important;}
-:root[data-theme="dark-soft"] .graph-panel .person-card:hover, :root[data-theme="dark-soft"] .user-row:hover, :root[data-theme="dark-soft"] .unassigned-grid .person-card:hover { background: #30394a !important; border-color: #66728c !important; box-shadow: 0 4px 13px rgba(0, 0, 0, .2) !important;}
+:root[data-theme="dark-soft"] .graph-panel .person-card, :root[data-theme="dark-soft"] .graph-panel .student-card, :root[data-theme="dark-soft"] .user-list .person-card { color: #e4e8f0 !important;}
+:root[data-theme="dark-soft"] .graph-panel .person-card:hover, :root[data-theme="dark-soft"] .graph-panel .student-card:hover, :root[data-theme="dark-soft"] .user-row:hover, :root[data-theme="dark-soft"] .unassigned-grid .student-card:hover { background: #30394a !important; border-color: #66728c !important; box-shadow: 0 4px 13px rgba(0, 0, 0, .2) !important;}
 :root[data-theme="dark-soft"] .graph-panel .person-actions button:hover, :root[data-theme="dark-soft"] .graph-panel .icon-btn:hover { background: #3b4057 !important; border-color: #525b78 !important; color: #d3cafa !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .person-actions .danger-icon:hover, :root[data-theme="dark-soft"] .graph-panel .danger-icon:hover { background: #482f3b !important; border-color: #78505f !important; color: #f0aab4 !important;}
 :root[data-theme="dark-soft"] .toolbar .search, :root[data-theme="dark-soft"] .search { background: #262f3d !important; border: 1px solid #414e62 !important; box-shadow: none !important;}
@@ -424,8 +424,8 @@ img, video, audio { max-width: 100%;}
 /* Crisp, stable graph edges and comfortable mobile spacing. */
 :root[data-theme="dark-soft"] .graph-panel, :root[data-theme="dark-soft"] .graph-panel * { -webkit-font-smoothing: antialiased;}
 .graph-panel .role_node, .graph-panel .teacher-branch, .graph-panel .teacher-card, .graph-panel .student-card { border-width: 1px; border-style: solid; transform: none;}
-.graph-panel .teacher-branch, .graph-panel .person-card { transition: border-color .16s ease, background-color .16s ease, box-shadow .16s ease;}
-.graph-panel .teacher-branch:hover, .graph-panel .person-card:hover { transform: none;}
+.graph-panel .teacher-branch, .graph-panel .person-card, .graph-panel .student-card { transition: border-color .16s ease, background-color .16s ease, box-shadow .16s ease;}
+.graph-panel .teacher-branch:hover, .graph-panel .person-card:hover, .graph-panel .student-card:hover { transform: none;}
 /* Mobile inbox: the conversation picker and open chat are separate scroll
    surfaces. The outer page can still scroll normally around both cards. */
 /* On short phones leave enough room for the message stream and composer. */
@@ -536,7 +536,7 @@ img, video, audio { max-width: 100%;}
 /* Light theme: clearer panel/control outlines and softer text contrast. */
 :root:not([data-theme="dark-soft"]) body { color: #514d5a;}
 :root:not([data-theme="dark-soft"]) .topbar, :root:not([data-theme="dark-soft"]) .sidebar, :root:not([data-theme="dark-soft"]) .user-list, :root:not([data-theme="dark-soft"]) .chat-layout, :root:not([data-theme="dark-soft"]) .chat-list, :root:not([data-theme="dark-soft"]) .chat-detail { border-color: #ded9e5;}
-:root:not([data-theme="dark-soft"]) .person-card, :root:not([data-theme="dark-soft"]) .chat-item, :root:not([data-theme="dark-soft"]) .chat-head-tools select { border-color: #dcd6e3;}
+:root:not([data-theme="dark-soft"]) .person-card, :root:not([data-theme="dark-soft"]) .student-card, :root:not([data-theme="dark-soft"]) .chat-item, :root:not([data-theme="dark-soft"]) .chat-head-tools select { border-color: #dcd6e3;}
 :root:not([data-theme="dark-soft"]) .person-info b, :root:not([data-theme="dark-soft"]) .chat-item b, :root:not([data-theme="dark-soft"]) .chat-head b, :root:not([data-theme="dark-soft"]) .message b { color: #56515f;}
 :root:not([data-theme="dark-soft"]) .person-info small, :root:not([data-theme="dark-soft"]) .chat-item small, :root:not([data-theme="dark-soft"]) .chat-head small, :root:not([data-theme="dark-soft"]) .message-time, :root:not([data-theme="dark-soft"]) .toolbar, :root:not([data-theme="dark-soft"]) .hint { color: #918b9a;}
 .user-sort { min-height: 48px; height: 48px; padding: 0 14px; border-radius: 12px;}
@@ -751,7 +751,7 @@ html, body { overflow-x: clip;}
 .graph-panel, .user-list, .chat-layout { width: 100%; border-radius: 15px;}
 .graph-panel { overflow: hidden;}
 .graph-panel .legend, .modal-actions, .user-row{ flex-wrap: wrap;}
-.graph-panel .person-card { min-width: 0;}
+.graph-panel .person-card, .graph-panel .student-card { min-width: 0;}
 .graph-panel .person-main { min-width: 0; flex: 1;}
 .graph-panel .person-info { min-width: 0;}
 .graph-panel .person-actions { flex: none;}
@@ -820,7 +820,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .graph-panel .person-actions button { flex: 0 0 30px;}
 .graph-panel .student-list { gap: 7px; margin-top: 8px;}
 .graph-panel .add-student { min-height: 30px; margin-top: 5px; padding: 5px 9px;}
-.user-row:hover, .person-card:hover, .teacher-branch:hover { transform: none;}
+.user-row:hover, .person-card:hover, .student-card:hover, .teacher-branch:hover { transform: none;}
 .graph-panel .person-actions button { flex-basis: 28px;}
 .chat-layout { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 12px; min-width: 0; padding: 0; overflow: visible; border: 0; border-radius: 0; background: transparent; box-shadow: none;}
 .chat-list { grid-template-columns: minmax(0, 1fr);  width: 100%;   overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; touch-action: pan-y;}
@@ -899,7 +899,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .sidebar nav button { min-width: 0; padding-inline: 2px; white-space: normal; overflow-wrap: anywhere;}
 .content, .topbar, .graph-panel, .user-list, .chat-layout, .chat-detail, .chat-list, .modal { min-width: 0; max-width: 100%;}
 .user-row, .message, .chat-head, .chat-item, .overlay > .modal{ overflow-wrap: anywhere;}
-.person-card, .user-row, .composer-footer { min-width: 0;}
+.person-card, .student-card, .user-row, .composer-footer { min-width: 0;}
 .chat-head-tools { flex-wrap: wrap;}
 .toast { right: 10px; bottom: 10px; left: 10px; max-width: calc(100% - 20px); justify-content: center; text-align: center;}
 .login-card { padding: 24px 16px 20px;}
@@ -932,7 +932,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .content { padding-inline: clamp(8px, 2vw, 15px);}
 .graph-panel { padding: clamp(9px, 2.2vw, 17px);}
 .graph-panel .teacher-branch { padding: clamp(7px, 1.8vw, 10px);}
-.graph-panel .person-card { padding: clamp(7px, 1.8vw, 12px); gap: clamp(5px, 1.2vw, 8px);}
+.graph-panel .person-card, .graph-panel .student-card { padding: clamp(7px, 1.8vw, 12px); gap: clamp(5px, 1.2vw, 8px);}
 .graph-panel .avatar { width: clamp(32px, 8.5vw, 38px); height: clamp(32px, 8.5vw, 38px);}
 .graph-panel .person-actions button { width: clamp(25px, 6.5vw, 28px); height: clamp(25px, 6.5vw, 28px);}
 .graph-panel .role_node { column-gap: clamp(10px, 1.8vw, 14px); padding: clamp(7px, 1.5vw, 9px) clamp(20px, 3vw, 26px) clamp(7px, 1.5vw, 9px) clamp(15px, 2.2vw, 19px);}
@@ -967,7 +967,7 @@ button:disabled { opacity: .5 !important;}
 :root[data-theme="dark-soft"] button:not(.primary):not(.disconnect):not(.danger-icon), :root[data-theme="dark-soft"] .btn:not(.primary):not(.disconnect):not(.danger-icon), :root[data-theme="dark-soft"] .sidebar nav button, :root[data-theme="dark-soft"] .icon-btn:not(.danger-icon), :root[data-theme="dark-soft"] .add-student, :root[data-theme="dark-soft"] .chat-item, :root[data-theme="dark-soft"] .alert-row button, :root[data-theme="dark-soft"] .modal-head button { background: #2b3443 !important; border-color: #414c60 !important; color: #c6cddd !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .sidebar nav button.active, :root[data-theme="dark-soft"] .btn.primary { background: #71679e !important; border-color: #8b80b8 !important; color: #fff !important;}
 :root[data-theme="dark-soft"] .chat-item.selected, :root[data-theme="dark-soft"] button.chat-item.selected { background: #343449 !important; border-color: #514b6d !important; color: #d1c9f4 !important;}
-:root[data-theme="dark-soft"] .user-row:hover, :root[data-theme="dark-soft"] .person-card:hover { background: #293343 !important; border-color: #59657b !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .user-row:hover, :root[data-theme="dark-soft"] .person-card:hover, :root[data-theme="dark-soft"] .student-card:hover { background: #293343 !important; border-color: #59657b !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .teacher-branch:hover { background: #293343 !important; border-color: #59657b !important; box-shadow: none !important;}
 }
 /* --------------------------------------------------------------------------
@@ -997,9 +997,9 @@ button, .btn, .logout, .add-student, .chat-item, .composer-send, .user-action-bt
 .stack input:focus, .stack select:focus, .stack textarea:focus, .search:focus-within, .user-sort:focus, .chat-search-control:focus-within, .chat-head-tools select:focus, .chat-composer textarea:focus { border-color: #a98bd8; box-shadow: var(--ui-focus); outline: none;}
 input::placeholder, textarea::placeholder { color: #a49daf;}
 /* Cards and workspaces share consistent surface depth and corner rhythm. */
-.graph-panel, .user-list, .chat-layout, .person-card, .user-info-popover, .chat-list, .chat-detail { border-radius: var(--ui-radius-lg);}
-.person-card { box-shadow: 0 1px 4px rgba(47, 31, 84, .025);}
-.person-card:hover { box-shadow: 0 5px 15px rgba(87, 62, 153, .075);}
+.graph-panel, .user-list, .chat-layout, .person-card, .student-card, .user-info-popover, .chat-list, .chat-detail { border-radius: var(--ui-radius-lg);}
+.person-card, .student-card { box-shadow: 0 1px 4px rgba(47, 31, 84, .025);}
+.person-card:hover, .student-card:hover { box-shadow: 0 5px 15px rgba(87, 62, 153, .075);}
 .user-row { border-bottom-color: #efebf4;}
 .role-tag, .unread-badge { border-radius: 7px;}
 .avatar { border-radius: 11px;}
@@ -1020,7 +1020,7 @@ input::placeholder, textarea::placeholder { color: #a49daf;}
 :root[data-theme="dark-soft"] .user-action-btn.danger { background: #432d39 !important; border-color: #69404c !important; color: #f0aab3 !important;}
 :root[data-theme="dark-soft"] .modal { border-color: #39465a; box-shadow: 0 22px 70px rgba(0, 0, 0, .32);}
 :root[data-theme="dark-soft"] .user-row { border-bottom-color: #303b4c;}
-:root[data-theme="dark-soft"] .person-card { box-shadow: none;}
+:root[data-theme="dark-soft"] .person-card, :root[data-theme="dark-soft"] .student-card { box-shadow: none;}
 /* Users page: responsive layout rules shared by desktop and mobile. */
 .user-toolbar { display: grid; grid-template-columns: minmax(180px, 1fr) auto auto auto; align-items: center; gap: 10px; width: 100%; min-width: 0; box-sizing: border-box;}
 .user-toolbar > .search { width: auto; min-width: 0; max-width: none; flex: none; box-sizing: border-box;}
@@ -1330,8 +1330,8 @@ to { transform: scaleY(1);}
 /* Common canvas, cards and separators. */
 body { background: var(--canvas); color: var(--ink);}
 .sidebar, .topbar, .login-card, .graph-panel, .user-list, .chat-layout, .modal, .user-info-popover, .credential-modal, .password-info, .chat-audio-player { background-color: var(--surface); border-color: var(--ui-border);}
-.sidebar, .topbar, .graph-panel, .user-list, .chat-layout, .person-card, .modal, .user-info-popover, .login-card{ box-shadow: var(--ui-shadow-card);}
-.person-card, .empty-students, .chat-item, .message, .chat-head, .chat-composer { border-color: var(--ui-border);}
+.sidebar, .topbar, .graph-panel, .user-list, .chat-layout, .person-card, .student-card, .modal, .user-info-popover, .login-card{ box-shadow: var(--ui-shadow-card);}
+.person-card, .student-card, .empty-students, .chat-item, .message, .chat-head, .chat-composer { border-color: var(--ui-border);}
 /* One primary, neutral and destructive button language across all sections. */
 .btn.primary, .sidebar nav button.active { color: #fff !important; background: var(--button-primary) !important; border-color: transparent !important; box-shadow: 0 4px 12px var(--purple-glow) !important;}
 .btn.primary:hover:not(:disabled), .sidebar nav button.active:hover { background: var(--button-primary-hover) !important; box-shadow: 0 6px 16px var(--purple-glow) !important;}
@@ -1349,7 +1349,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 ::selection { background: rgba(120, 95, 192, .22);}
 /* Harmonized role colors: teachers use purple, students use the brand red. */
 .teacher-dot, .teacher-card .avatar, .avatar.teacher, .teacher-avatar { background-color: var(--lavender-soft); color: var(--purple);}
-.unassigned-grid .person-card { background: var(--surface); border-color: var(--ui-border);}
+.unassigned-grid .student-card { background: var(--surface); border-color: var(--ui-border);}
 .role-tag { background: var(--lavender-soft); color: var(--purple);}
 .role-tag.student { background: var(--red-soft); color: var(--red);}
 .user-row .role-tag.teacher { background: var(--lavender-soft); color: var(--purple);}
@@ -1358,7 +1358,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .toast { background: linear-gradient(110deg, #493681, #6046a5); box-shadow: var(--ui-shadow-raised);}
 :root[data-theme="dark-soft"] .toast { background: linear-gradient(110deg, #39314f, #51466f);}
 :root[data-theme="dark-soft"] .alert { background: var(--red-soft) !important; border-color: var(--red-border) !important; color: #f0aab3 !important;}
-:root[data-theme="dark-soft"] .person-card, :root[data-theme="dark-soft"] .teacher-card, :root[data-theme="dark-soft"] .student-card, :root[data-theme="dark-soft"] .role_node, :root[data-theme="dark-soft"] .empty-students, :root[data-theme="dark-soft"] .unassigned-grid .person-card { background: var(--surface); border-color: var(--ui-border); box-shadow: var(--ui-shadow-card);}
+:root[data-theme="dark-soft"] .person-card, :root[data-theme="dark-soft"] .teacher-card, :root[data-theme="dark-soft"] .student-card, :root[data-theme="dark-soft"] .role_node, :root[data-theme="dark-soft"] .empty-students, :root[data-theme="dark-soft"] .unassigned-grid .student-card { background: var(--surface); border-color: var(--ui-border); box-shadow: var(--ui-shadow-card);}
 :root[data-theme="dark-soft"] .student-card .avatar, :root[data-theme="dark-soft"] .avatar.student, :root[data-theme="dark-soft"] .student-avatar, :root[data-theme="dark-soft"] .user-row .avatar.student, :root[data-theme="dark-soft"] .role-tag.student, :root[data-theme="dark-soft"] .user-row .role-tag.student { background: #402d37 !important; color: #e58c98 !important;}
 :root[data-theme="dark-soft"] .student-dot { background: #e58c98; box-shadow: 0 0 7px rgba(229, 140, 152, .20);}
 @media (prefers-reduced-motion: reduce) {

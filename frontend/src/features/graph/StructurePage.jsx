@@ -44,7 +44,7 @@ export default function StructurePage({
             setModal({ mode: "assign" });
           }}><Plus />Назначить ученика</button>}
           {!collapsed && <div className="student-list">
-            {students.map(student => <div className="person-card student-card" key={student.id}>
+            {students.map(student => <div className="student-card" key={student.id}>
               <div className="person-main"><div className="avatar student-avatar"><Smile /></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
               <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil /></button>
             </div>)}
@@ -56,7 +56,7 @@ export default function StructurePage({
     {!allTeachers.length && <div className="empty-state"><GraduationCap /><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span></div>}
     {!!unassignedStudents.length && <section className="unassigned">
       <h2 className="unassigned-title">Ученики без учителя</h2>
-      <div className="unassigned-grid">{unassignedStudents.map(student => <div className="person-card student-card unassigned-student-card" key={student.id}>
+      <div className="unassigned-grid">{unassignedStudents.map(student => <div className="student-card unassigned-student-card" key={student.id}>
         <div className="person-main"><div className="avatar student-avatar"><Smile /></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
         <div className="unassigned-student-actions">
           <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil /></button>
