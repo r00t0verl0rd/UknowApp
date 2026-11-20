@@ -137,10 +137,11 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     if (!drag || drag.pointerId !== event.pointerId) return;
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
     frameRef.current = 0;
-    const x = drag.x + event.clientX - drag.startX;
-    const y = drag.y + event.clientY - drag.startY;
+    let x = drag.x + event.clientX - drag.startX;
+    let y = drag.y + event.clientY - drag.startY;
     drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-    const siblings = drag.element.parentElement?.querySelectorAll(":scope > [data-drag-type]") || [];
+    const siblingSelector = drag.type === "cloud" ? ":scope > .teacher-branch" : ":scope > [data-drag-type]";
+    const siblings = drag.element.parentElement?.querySelectorAll(siblingSelector) || [];
     const rect = drag.element.getBoundingClientRect();
     const overlaps = [...siblings].some(sibling => {
       if (sibling === drag.element) return false;
