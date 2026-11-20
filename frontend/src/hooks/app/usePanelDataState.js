@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createApiClient } from "../../services/api.js";
 import { createPanelEventSource, getAdminBootstrap, getCurrentProfile, getInboxData, getTeacherGraph } from "../../modules/panel/services/panelApi.js";
 import { getChatMessages } from "../../modules/conversations/services/conversationsApi.js";
@@ -8,7 +8,7 @@ export function usePanelDataState({
   setPersonalChats, setUsers, setOverview, setTeacherGraph, setPage,
   setSelectedChat, setMessages,
 }) {
-  const request = useMemo(() => createApiClient(), []);
+  const request = useMemo(() => createApiClient(), []);\n  const [panelReady, setPanelReady] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!auth) return;
@@ -53,7 +53,7 @@ export function usePanelDataState({
     }
   }, [auth, request]);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {\n    if (!auth) setPanelReady(false);\n  }, [auth]);\n\n  useEffect(() => { void refresh(); }, [refresh]);
 
   useEffect(() => {
     if (!auth || page !== "chats") return undefined;
@@ -120,5 +120,5 @@ export function usePanelDataState({
     };
   }, [auth, page, selectedChat?.id, selectedChat?.type, request]);
 
-  return { request, refresh };
+  return { request, refresh, panelReady };
 }
