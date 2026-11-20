@@ -1,70 +1,52 @@
 import { useLayoutEffect, useRef } from "react";
 import Crosshair from "lucide-react/dist/esm/icons/crosshair.js";
-import GraduationCap from "lucide-react/dist/esm/icons/graduation-cap.js";
-import Link2Off from "lucide-react/dist/esm/icons/link-2-off.js";
-import Pencil from "lucide-react/dist/esm/icons/pencil.js";
 import Plus from "lucide-react/dist/esm/icons/plus.js";
-import Smile from "lucide-react/dist/esm/icons/smile.js";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
 
 function objectPosition(item) {
-  return { transform: `translate3d(${item?.x || 0}px, ${item?.y || 0}px, 0)` };
+  return { transform: `translate3d(${item.x || 0}px, ${item.y || 0}px, 0)` };
 }
 
-function StudentCard({ student, openEdit, unassignStudent, canUnassign = true, graphObject, removeObject }) {
-  return <article className="person-card student-card">
-    <div className="person-main">
-      <div className="avatar student-avatar"><Smile /></div>
-      <div className="person-info">
-        <b>{student.full_name}</b>
-        {student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}
+function BoardObject({ item, children, createGraphObject, deleteGraphObject, removeObject }) {
+  return <div className="graph-board-node" data-object-id={item.id} style={objectPosition(item)}>
+    <article className="graph-board-card">
+      <header className="graph-board-object-header">
+        <b>{item.title}</b>
+        <div className="graph-board-object-actions">
+          <button type="button" title="Создать вложенный объект" aria-label={`Создать объект внутри «${item.title}»`} onClick={() => createGraphObject(item.id)}><Plus /></button>
+          <button type="button" title="Удалить объект" aria-label={`Удалить объект «${item.title}» и вложенные объекты`} onClick={() => removeObject(item)}><Trash2 /></button>
+        </div>
+      </header>
+      <div className="graph-board-children">
+        {children.map(child => <BoardObject key={child.id} item={child} children={child.children} createGraphObject={createGraphObject} deleteGraphObject={deleteGraphObject} removeObject={removeObject} />)}
       </div>
-    </div>
-    <div className="person-actions">
-      {canUnassign && <button type="button" className="icon-btn graph-person-action" title="Открепить от учителя" aria-label={`Открепить ${student.full_name} от учителя`} onClick={() => unassignStudent(student)}><Link2Off /></button>}
-      <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil /></button>
-      {graphObject && <button type="button" className="icon-btn graph-person-action" title="Удалить объект ученика" aria-label={`Удалить объект ученика ${student.full_name}`} onClick={() => removeObject(graphObject)}><Trash2 /></button>}
-    </div>
-  </article>;
-}
-
-function TeacherObject({ teacher, students, openEdit, unassignStudent, canUnassign = true, graphObject, studentObjects, removeObject }) {
-  return <section className="graph-teacher-object">
-    <header className="person-card teacher-card">
-      <div className="person-main">
-        <div className="avatar teacher-avatar"><GraduationCap /></div>
-        <div className="person-info"><b>{teacher.full_name}</b><small>Учитель · {students.length} учен.</small></div>
-      </div>
-      <div className="person-actions">
-        <button type="button" title="Редактировать" onClick={() => openEdit(teacher)}><Pencil /></button>
-        {graphObject && <button type="button" title="Удалить объект учителя" aria-label={`Удалить объект учителя ${teacher.full_name}`} onClick={() => removeObject(graphObject)}><Trash2 /></button>}
-      </div>
-    </header>
-    <div className="graph-student-children">
-      {students.filter(student => studentObjects?.has(student.id)).map(student => <StudentCard key={student.id} student={student} openEdit={openEdit} unassignStudent={unassignStudent} canUnassign={canUnassign} graphObject={studentObjects.get(student.id)} removeObject={removeObject} />)}
-      {!students.some(student => studentObjects?.has(student.id)) && <div className="empty-students">Нет назначенных учеников</div>}
-    </div>
-  </section>;
+    </article>
+  </div>;
 }
 
 export default function BoardsPage({
-  profile, teacherGraph, graphObjects = [], allTeachers = [], studentsByTeacherId,
-  unassignedStudents = [], openEdit, unassignStudent, openCreate, createGraphObject,
-  saveGraphObjectPosition, deleteGraphObject,
+  graphObjects = [], saveGraphObjectPosition, createGraphObject, deleteGraphObject,
 }) {
   const viewportRef = useRef(null);
   const worldRef = useRef(null);
   const dragRef = useRef(null);
   const frameRef = useRef(0);
   const transformRef = useRef({ zoom: 1, x: 0, y: 0 });
-  const objectMap = new Map(graphObjects.map(item => [item.key, item]));
-  const fon = objectMap.get("fon");
-  const admin = objectMap.get("administrator");
-  const assignedArea = objectMap.get("assigned_students");
-  const teachersArea = objectMap.get("teachers");
-  const customObjects = graphObjects.filter(item => item.type === "object" || item.key.startsWith("custom:"));
-  const teacherObjects = new Map(graphObjects.filter(item => item.key.startsWith("teacher:")).map(item => [Number(item.key.slice(8)), item]));
-  const studentObjects = new Map(graphObjects.filter(item => item.key.startsWith("student:")).map(item => [Number(item.key.slice(8)), item]));
+
+  const objectsByParent = new Map();
+  for (const item of graphObjects) {
+    const parentId = item.parent_id ?? null;
+    if (!objectsByParent.has(parentId)) objectsByParent.set(parentId, []);
+    objectsByParent.get(parentId).push({ ...item, children: [] });
+  }
+  const nodesById = new Map();
+  for (const items of objectsByParent.values()) {
+    for (const item of items) nodesById.set(item.id, item);
+  }
+  for (const item of nodesById.values()) {
+    if (item.parent_id != null) nodesById.get(item.parent_id)?.children.push(item);
+  }
+  const roots = (objectsByParent.get(null) || []).filter(item => !nodesById.get(item.id)?.parent_id);
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
@@ -100,7 +82,7 @@ export default function BoardsPage({
 
   function startObjectDrag(event) {
     if (event.button !== 0 || event.target.closest("button, a, input, select, textarea")) return;
-    const handle = event.target.closest(".graph-object-header, .graph-custom-object");
+    const handle = event.target.closest(".graph-board-object-header");
     const element = handle?.closest("[data-object-id]");
     if (!element || !event.currentTarget.contains(element)) return;
     const item = graphObjects.find(object => object.id === Number(element.dataset.objectId));
@@ -141,7 +123,7 @@ export default function BoardsPage({
     await saveGraphObjectPosition(drag.item.id, x, y);
   }
 
-  function addObject(parentId) {
+  function addObject(parentId = null) {
     const title = window.prompt("Название нового объекта");
     if (title?.trim()) createGraphObject({ title: title.trim(), parent_id: parentId });
   }
@@ -156,24 +138,12 @@ export default function BoardsPage({
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
   }, []);
 
-  if (profile?.role === "teacher") {
-    const teacher = teacherGraph?.teacher || profile;
-    const students = teacherGraph?.students || [];
-    return <section className="graph-panel is-teacher-view">
-      <div className="graph-panel-heading"><b>Моя структура</b></div>
-      <div className="graph-teacher-view">
-        <TeacherObject teacher={teacher} students={students} openEdit={openEdit} unassignStudent={unassignStudent} canUnassign={false} />
-      </div>
-    </section>;
-  }
-
   return <section className="graph-panel graph-object-panel">
     <div className="graph-legend-row">
-      <div className="graph-legend"><b>Иерархия объектов</b><span>Перемещайте Fon и облачко администратора независимо.</span></div>
+      <div className="graph-legend"><b>Интерактивные доски</b><span>Создавайте объекты, объединяйте их в иерархии и перемещайте независимо.</span></div>
       <div className="graph-toolbar-actions">
         <button type="button" className="btn small outline" onClick={resetView} title="Сбросить масштаб"><Crosshair />Сбросить масштаб</button>
-        {!fon && <button type="button" className="btn small outline" onClick={() => addObject(null)}><Plus />Создать корневой объект</button>}
-        <button type="button" className="btn primary graph-add-participant" onClick={() => openCreate()}><Plus />Добавить участника</button>
+        <button type="button" className="btn primary graph-add-participant" onClick={() => addObject()}><Plus />Создать объект</button>
       </div>
     </div>
     <div
@@ -186,39 +156,8 @@ export default function BoardsPage({
       onLostPointerCapture={endObjectDrag}
     >
       <div className="graph-coordinate-world graph-object-world" ref={worldRef}>
-        {fon && <div className="graph-object-fon" data-object-id={fon.id} style={objectPosition(fon)}>
-          <header className="graph-object-header graph-fon-header">
-            <b>Fon</b><span>Главный фон · родитель всех объектов</span>
-            <button type="button" className="btn small outline" onClick={() => addObject(fon.id)}><Plus />Создать объект</button>
-            <button type="button" className="graph-object-delete" title="Удалить Fon" aria-label="Удалить Fon" onClick={() => removeObject(fon)}><Trash2 /></button>
-          </header>
-          {admin && <section className="graph-object-admin" data-object-id={admin.id} style={objectPosition(admin)}>
-            <header className="graph-object-header graph-admin-header">
-              <div className="graph-admin-identity"><img src="/logo.png" alt="" /><div><b>Администратор</b><span>Родитель областей и их содержимого</span></div></div>
-              <button type="button" className="btn small outline" onClick={() => addObject(admin.id)}><Plus />Создать объект</button>
-              <button type="button" className="graph-object-delete" title="Удалить администратора" aria-label="Удалить администратора" onClick={() => removeObject(admin)}><Trash2 /></button>
-            </header>
-            <div className="graph-admin-areas">
-              <section className="graph-object-area graph-assigned-area" data-object-id={assignedArea?.id}>
-                <header className="graph-area-header"><b>{assignedArea?.title || "Назначенные ученики"}</b><span>{unassignedStudents.length} учен.</span>{assignedArea && <button type="button" className="graph-object-delete" title="Удалить область" aria-label="Удалить область назначенных учеников" onClick={() => removeObject(assignedArea)}><Trash2 /></button>}</header>
-                <div className="graph-area-content graph-student-grid">
-                  {unassignedStudents.filter(student => studentObjects.has(student.id)).map(student => <StudentCard key={student.id} student={student} openEdit={openEdit} canUnassign={false} graphObject={studentObjects.get(student.id)} removeObject={removeObject} />)}
-                  {!unassignedStudents.length && <div className="empty-students">Нет учеников без назначения учителю</div>}
-                </div>
-              </section>
-              <section className="graph-object-area graph-teachers-area" data-object-id={teachersArea?.id}>
-                <header className="graph-area-header"><b>{teachersArea?.title || "Учителя"}</b><span>{allTeachers.length}</span>{teachersArea && <button type="button" className="graph-object-delete" title="Удалить область" aria-label="Удалить область учителей" onClick={() => removeObject(teachersArea)}><Trash2 /></button>}</header>
-                <div className="graph-area-content graph-teachers-grid">
-                  {allTeachers.filter(teacher => teacherObjects.has(teacher.id)).map(teacher => <TeacherObject key={teacher.id} teacher={teacher} students={studentsByTeacherId?.get(teacher.id) || []} openEdit={openEdit} unassignStudent={unassignStudent} graphObject={teacherObjects.get(teacher.id)} studentObjects={studentObjects} removeObject={removeObject} />)}
-                  {!allTeachers.some(teacher => teacherObjects.has(teacher.id)) && <div className="empty-students">Пока нет учителей</div>}
-                </div>
-              </section>
-            </div>
-            {customObjects.filter(item => item.parent_id === admin.id).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}><span>{item.title}</span><button type="button" className="graph-object-delete" title={`Удалить объект «${item.title}»`} aria-label={`Удалить объект «${item.title}»`} onClick={() => removeObject(item)}><Trash2 /></button></div>)}
-          </section>}
-          {customObjects.filter(item => item.parent_id === fon.id).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}><span>{item.title}</span><button type="button" className="graph-object-delete" title={`Удалить объект «${item.title}»`} aria-label={`Удалить объект «${item.title}»`} onClick={() => removeObject(item)}><Trash2 /></button></div>)}
-        </div>}
-        {customObjects.filter(item => item.parent_id == null).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}><span>{item.title}</span><button type="button" className="graph-object-delete" title={`Удалить объект «${item.title}»`} aria-label={`Удалить объект «${item.title}»`} onClick={() => removeObject(item)}><Trash2 /></button></div>)}
+        {roots.map(item => <BoardObject key={item.id} item={item} children={item.children} createGraphObject={addObject} deleteGraphObject={deleteGraphObject} removeObject={removeObject} />)}
+        {!graphObjects.length && <div className="graph-board-empty">Доска пока пустая. Создайте первый объект.</div>}
       </div>
     </div>
   </section>;
