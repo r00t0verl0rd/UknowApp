@@ -152,6 +152,10 @@ export default function App() {
   useEffect(() => { refresh(); }, [refresh]);
 
   useEffect(() => {
+    if (auth && profile?.role === "teacher") setPage("chats");
+  }, [auth, profile?.role, setPage]);
+
+  useEffect(() => {
     if (!auth) {
       setPushState({ supported: false, enabled: false, permission: "default", reason: "Войдите в приложение" });
       return undefined;
@@ -532,7 +536,7 @@ export default function App() {
       } finally {
         setPushBusy(false);
       }
-      localStorage.setItem("uknowapp-auth", "1"); sessionStorage.removeItem("uknowapp-auth"); setProfile(result); setPage(result.role === "student" ? "chats" : "graph"); setAuth("1"); setPassword("");
+      localStorage.setItem("uknowapp-auth", "1"); sessionStorage.removeItem("uknowapp-auth"); setProfile(result); setPage(["student", "teacher"].includes(result.role) ? "chats" : "graph"); setAuth("1"); setPassword("");
     } catch (e) {
       setError(e.message || "Не удалось войти");
     }
