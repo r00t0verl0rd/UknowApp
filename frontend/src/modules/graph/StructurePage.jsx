@@ -11,7 +11,7 @@ function objectPosition(item) {
   return { transform: `translate3d(${item?.x || 0}px, ${item?.y || 0}px, 0)` };
 }
 
-function StudentCard({ student, openEdit, unassignStudent, canUnassign = true }) {
+function StudentCard({ student, openEdit, unassignStudent, canUnassign = true, graphObject, removeObject }) {
   return <article className="person-card student-card">
     <div className="person-main">
       <div className="avatar student-avatar"><Smile /></div>
@@ -23,11 +23,12 @@ function StudentCard({ student, openEdit, unassignStudent, canUnassign = true })
     <div className="person-actions">
       {canUnassign && <button type="button" className="icon-btn graph-person-action" title="Открепить от учителя" aria-label={`Открепить ${student.full_name} от учителя`} onClick={() => unassignStudent(student)}><Link2Off /></button>}
       <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil /></button>
+      {graphObject && <button type="button" className="icon-btn graph-person-action" title="Удалить объект ученика" aria-label={`Удалить объект ученика ${student.full_name}`} onClick={() => removeObject(graphObject)}><Trash2 /></button>}
     </div>
   </article>;
 }
 
-function TeacherObject({ teacher, students, openEdit, unassignStudent, canUnassign = true }) {
+function TeacherObject({ teacher, students, openEdit, unassignStudent, canUnassign = true, graphObject, studentObjects, removeObject }) {
   return <section className="graph-teacher-object">
     <header className="person-card teacher-card">
       <div className="person-main">
@@ -36,10 +37,11 @@ function TeacherObject({ teacher, students, openEdit, unassignStudent, canUnassi
       </div>
       <div className="person-actions">
         <button type="button" title="Редактировать" onClick={() => openEdit(teacher)}><Pencil /></button>
+        {graphObject && <button type="button" title="Удалить объект учителя" aria-label={`Удалить объект учителя ${teacher.full_name}`} onClick={() => removeObject(graphObject)}><Trash2 /></button>}
       </div>
     </header>
     <div className="graph-student-children">
-      {students.map(student => <StudentCard key={student.id} student={student} openEdit={openEdit} unassignStudent={unassignStudent} canUnassign={canUnassign} />)}
+      {students.filter(student => studentObjects?.has(student.id)).map(student => <StudentCard key={student.id} student={student} openEdit={openEdit} unassignStudent={unassignStudent} canUnassign={canUnassign} graphObject={studentObjects.get(student.id)} removeObject={removeObject} />)}
       {!students.length && <div className="empty-students">Нет назначенных учеников</div>}
     </div>
   </section>;
@@ -61,6 +63,8 @@ export default function StructurePage({
   const assignedArea = objectMap.get("assigned_students");
   const teachersArea = objectMap.get("teachers");
   const customObjects = graphObjects.filter(item => item.type === "object" || item.key.startsWith("custom:"));
+  const teacherObjects = new Map(graphObjects.filter(item => item.key.startsWith("teacher:")).map(item => [Number(item.key.slice(8)), item]));
+  const studentObjects = new Map(graphObjects.filter(item => item.key.startsWith("student:")).map(item => [Number(item.key.slice(8)), item]));
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
@@ -198,14 +202,14 @@ export default function StructurePage({
               <section className="graph-object-area graph-assigned-area" data-object-id={assignedArea?.id}>
                 <header className="graph-area-header"><b>{assignedArea?.title || "Назначенные ученики"}</b><span>{unassignedStudents.length} учен.</span>{assignedArea && <button type="button" className="graph-object-delete" title="Удалить область" aria-label="Удалить область назначенных учеников" onClick={() => removeObject(assignedArea)}><Trash2 /></button>}</header>
                 <div className="graph-area-content graph-student-grid">
-                  {unassignedStudents.map(student => <StudentCard key={student.id} student={student} openEdit={openEdit} canUnassign={false} />)}
+                  {unassignedStudents.map(student => {studentObjects.has(student.id) && <StudentCard key={student.id} student={student} openEdit={openEdit} canUnassign={false} graphObject={studentObjects.get(student.id)} removeObject={removeObject} />})}
                   {!unassignedStudents.length && <div className="empty-students">Нет учеников без назначения учителю</div>}
                 </div>
               </section>
               <section className="graph-object-area graph-teachers-area" data-object-id={teachersArea?.id}>
                 <header className="graph-area-header"><b>{teachersArea?.title || "Учителя"}</b><span>{allTeachers.length}</span>{teachersArea && <button type="button" className="graph-object-delete" title="Удалить область" aria-label="Удалить область учителей" onClick={() => removeObject(teachersArea)}><Trash2 /></button>}</header>
                 <div className="graph-area-content graph-teachers-grid">
-                  {allTeachers.map(teacher => <TeacherObject key={teacher.id} teacher={teacher} students={studentsByTeacherId?.get(teacher.id) || []} openEdit={openEdit} unassignStudent={unassignStudent} />)}
+                  {allTeachers.filter(teacher => teacherObjects.has(teacher.id)).map(teacher => <TeacherObject key={teacher.id} teacher={teacher} students={studentsByTeacherId?.get(teacher.id) || []} openEdit={openEdit} unassignStudent={unassignStudent} graphObject={teacherObjects.get(teacher.id)} studentObjects={studentObjects} removeObject={removeObject} />)}
                   {!allTeachers.length && <div className="empty-students">Пока нет учителей</div>}
                 </div>
               </section>
