@@ -29,8 +29,8 @@ function decodeApplicationServerKey(value) {
 }
 
 async function getRegistration() {
-  return navigator.serviceWorker.getRegistration("/") ||
-    navigator.serviceWorker.register("/sw.js");
+  const existing = await navigator.serviceWorker.getRegistration("/");
+  return existing || navigator.serviceWorker.register("/sw.js");
 }
 
 async function subscribeToPush(registration) {
