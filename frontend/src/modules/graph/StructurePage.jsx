@@ -1,10 +1,11 @@
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right.js";
 import GraduationCap from "lucide-react/dist/esm/icons/graduation-cap.js";
+import Link2Off from "lucide-react/dist/esm/icons/link-2-off.js";
 import Pencil from "lucide-react/dist/esm/icons/pencil.js";
 import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Smile from "lucide-react/dist/esm/icons/smile.js";
 
-export default function StructurePage({ profile, teacherGraph, overview, openCreate, allTeachers, studentsByTeacherId, collapsedTeacherIds, setCollapsedTeacherIds, openEdit, setTeacherId, setStudentId, allStudents, setModal, unassignedStudents }) {
+export default function StructurePage({ profile, teacherGraph, overview, openCreate, allTeachers, studentsByTeacherId, collapsedTeacherIds, setCollapsedTeacherIds, openEdit, setTeacherId, setStudentId, allStudents, setModal, unassignedStudents, unassignStudent }) {
   return (
     <>
       {profile?.role === "teacher" && <section className="teacher-readonly-graph">
@@ -59,7 +60,10 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
                     {!studentsCollapsed && <div className="student-list">
                       {students.map(student => <div className="person-card student-card" key={student.id}>
                         <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
-                        <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button>
+                        <div className="person-actions">
+                          <button type="button" className="icon-btn graph-person-action danger-icon" title="Открепить от учителя" aria-label={"Открепить " + student.full_name + " от учителя"} onClick={() => unassignStudent(student)}><Link2Off/></button>
+                          <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button>
+                        </div>
                       </div>)}
                       {!students.length && <div className="empty-students">Нет назначенных учеников</div>}
                     </div>}
