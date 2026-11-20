@@ -76,7 +76,7 @@ def test_admin_only_assignment_and_conversation_isolation(api):
 
 
 def test_panel_routes_require_authentication(api):
-    make_client, _ = api
+    make_client, _, _ = api
     client = make_client()
     assert client.get("/api/panel/conversations").status_code == status.HTTP_401_UNAUTHORIZED
 
