@@ -67,10 +67,5 @@ export function createInnerGraphCoordinateSystem() {
     transform() {
       return `translate3d(${panX}px, ${panY}px, 0) scale(${zoom})`;
     },
-    reset() {
-      zoom = 1;
-      panX = 0;
-      panY = 0;
-    },
   };
 }
