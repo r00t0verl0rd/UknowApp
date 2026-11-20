@@ -237,7 +237,8 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     let frame = 0;
     const normalizePositions = () => {
       frame = 0;
-      const nextClouds = { ...cloudLayoutRef.current };
+      const previousClouds = cloudLayoutRef.current;
+      const nextClouds = { ...previousClouds };
       const nextStudents = { ...studentLayoutRef.current };
       const nextTeacherStudents = { ...teacherStudentLayoutRef.current };
       let cloudsChanged = false;
@@ -275,7 +276,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
         cloudLayoutRef.current = nextClouds;
         setCloudLayout(nextClouds);
         Object.entries(nextClouds).forEach(([id, position]) => {
-          if (cloudLayoutRef.current[id]?.x !== position.x || cloudLayoutRef.current[id]?.y !== position.y) {
+          if (previousClouds[id]?.x !== position.x || previousClouds[id]?.y !== position.y) {
             saveCloudPosition(id, position.x, position.y);
           }
         });
