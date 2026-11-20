@@ -321,7 +321,8 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     const inner = innerCoordinatesRef.current;
     const zoom = inner.zoom;
     const isTeacher = profile?.role === "teacher";
-    const clouds = { ...cloudLayoutRef.current };
+    const previousClouds = cloudLayoutRef.current;
+    const clouds = { ...previousClouds };
     const students = { ...(isTeacher ? teacherStudentLayoutRef.current : studentLayoutRef.current) };
     const alignGroup = (selector, layout, boundsFor) => {
       const elements = [...world.querySelectorAll(selector)];
@@ -358,7 +359,11 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     studentLayoutRef.current = students;
     setCloudLayout(clouds);
     setStudentLayout(students);
-    Object.entries(clouds).forEach(([id, position]) => saveCloudPosition(id, position.x, position.y));
+    Object.entries(clouds).forEach(([id, position]) => {
+      if (previousClouds[id]?.x !== position.x || previousClouds[id]?.y !== position.y) {
+        saveCloudPosition(id, position.x, position.y);
+      }
+    });
     try { localStorage.setItem(STUDENT_LAYOUT_KEY, JSON.stringify(students)); } catch {}
   }
 
