@@ -53,35 +53,29 @@ The frontend is organized around feature modules. `app/App.jsx` is the compositi
 
 ```text
 frontend/src/
-├── app/
-│   └── App.jsx
+├── app/App.jsx
 ├── hooks/
-│   ├── app/
-│   │   └── usePanelDataState.js       # role-aware bootstrap, shared API client, SSE lifecycle
+│   ├── app/usePanelDataState.js
 │   ├── authentication/
-│   │   ├── useAuthController.js       # login/logout workflows
-│   │   └── useAuthState.js            # authentication form/session state
-│   ├── administration/
-│   │   └── useAdminDataController.js  # backups, restore, retention and statistics
-│   ├── boards/
-│   │   └── useBoardsState.js          # board data and object lifecycle
+│   │   ├── useAuthController.js
+│   │   └── useAuthState.js
+│   ├── administration/useAdminDataController.js
+│   ├── boards/useBoardsState.js
 │   ├── conversations/
-│   │   ├── useChatState.js            # chat view state
-│   │   ├── useChatActionState.js      # message deletion state
-│   │   └── useChatsController.js      # message lifecycle, filtering, scrolling and deep links
-│   ├── graph/
-│   │   └── useGraphState.js
-│   ├── notifications/
-│   │   └── usePushNotificationsState.js
-│   ├── settings/
-│   │   └── useSettingsState.js        # theme state and persistence
+│   │   ├── useChatState.js
+│   │   ├── useChatActionState.js
+│   │   └── useChatsController.js
+│   ├── graph/useGraphState.js
+│   ├── notifications/usePushNotificationsState.js
+│   ├── settings/useSettingsState.js
 │   └── users/
 │       ├── useDirectoryState.js
 │       ├── useUserActionState.js
 │       ├── useUserEditorState.js
-│       └── useUsersController.js      # user lifecycle, assignments and Telegram actions
+│       └── useUsersController.js
 ├── modules/
 │   ├── administration/
+│   │   ├── AdministrationModule.jsx
 │   │   ├── AdditionalPage.jsx
 │   │   └── services/adminDataApi.js
 │   ├── authentication/
@@ -91,18 +85,23 @@ frontend/src/
 │   │   ├── BoardsPage.jsx
 │   │   └── services/boardsApi.js
 │   ├── conversations/
+│   │   ├── ChatsModule.jsx
 │   │   ├── ChatsPage.jsx
 │   │   ├── components/
 │   │   │   ├── ChatDialogs.jsx
 │   │   │   └── MessageBubble.jsx
 │   │   └── services/conversationsApi.js
-│   ├── graph/\n│   │   ├── StructureModule.jsx\n│   │   └── StructurePage.jsx
+│   ├── graph/
+│   │   ├── StructureModule.jsx
+│   │   └── StructurePage.jsx
 │   ├── panel/services/panelApi.js
 │   ├── notifications/pushNotifications.js
 │   └── users/
+│       ├── UsersModule.jsx
 │       ├── UsersPage.jsx
-│       └── components/UserDialogs.jsx
-├── services/api.js                    # shared authenticated JSON API client
+│       ├── components/UserDialogs.jsx
+│       └── services/usersApi.js
+├── services/api.js
 └── styles/
     ├── layout.css
     └── tokens.css
