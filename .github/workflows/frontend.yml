@@ -46,7 +46,7 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
       - run: python -m pip install -r requirements.txt
-      - run: python -m pip install ruff vulture bandit detect-secrets pytest
+      - run: python -m pip install ruff vulture bandit detect-secrets pytest httpx
       - run: ruff check app
       - run: ruff check app --select BLE001,SIM115,B008
       - run: vulture app --min-confidence 80
