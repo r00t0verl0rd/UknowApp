@@ -5,6 +5,7 @@ import Link2Off from "lucide-react/dist/esm/icons/link-2-off.js";
 import Pencil from "lucide-react/dist/esm/icons/pencil.js";
 import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Smile from "lucide-react/dist/esm/icons/smile.js";
+import { createInnerGraphCoordinateSystem, createOuterCoordinateSystem } from "./graphCoordinates.js";
 
 const STUDENT_LAYOUT_KEY = "uknowapp-graph-student-layout";
 const TEACHER_STUDENT_LAYOUT_KEY = "uknowapp-teacher-graph-student-layout";
@@ -32,14 +33,15 @@ function snapToGrid(value) {
   return Math.round(value / GRAPH_GRID_SIZE) * GRAPH_GRID_SIZE;
 }
 
-function findFreeGridPosition(element, siblings, currentPosition, boundsElement = element.parentElement) {
+function findFreeGridPosition(element, siblings, currentPosition, boundsElement = element.parentElement, zoom = 1) {
   const bounds = boundsElement.getBoundingClientRect();
   const rect = element.getBoundingClientRect();
-  const maxX = Math.max(0, bounds.right - rect.right + currentPosition.x);
-  const maxY = Math.max(0, bounds.bottom - rect.bottom + currentPosition.y);
+  const gridStep = GRAPH_GRID_SIZE / zoom;
+  const maxX = Math.max(0, (bounds.right - rect.right) / zoom + currentPosition.x);
+  const maxY = Math.max(0, (bounds.bottom - rect.bottom) / zoom + currentPosition.y);
   const collides = (candidateX, candidateY) => {
-    const left = rect.left + candidateX - currentPosition.x;
-    const top = rect.top + candidateY - currentPosition.y;
+    const left = rect.left + (candidateX - currentPosition.x) * zoom;
+    const top = rect.top + (candidateY - currentPosition.y) * zoom;
     const right = left + rect.width;
     const bottom = top + rect.height;
     if (left < bounds.left - 1 || top < bounds.top - 1 || right > bounds.right + 1 || bottom > bounds.bottom + 1) return true;
@@ -58,8 +60,8 @@ function findFreeGridPosition(element, siblings, currentPosition, boundsElement 
         [step, -radius], [step, radius], [-radius, step], [radius, step],
       ];
       for (const [column, row] of candidates) {
-        const x = currentPosition.x + column * GRAPH_GRID_SIZE;
-        const y = currentPosition.y + row * GRAPH_GRID_SIZE;
+        const x = currentPosition.x + column * gridStep;
+        const y = currentPosition.y + row * gridStep;
         if (x < 0 || y < 0 || x > maxX || y > maxY) continue;
         if (!collides(x, y)) return { x, y };
       }
@@ -80,16 +82,19 @@ function clampElementPosition(element, position, boundsElement) {
   };
 }
 
-function dragPosition(drag, clientX, clientY) {
+function dragPosition(drag, clientX, clientY, outer, inner) {
   const bounds = drag.boundaryRect;
   const element = drag.elementRect;
+  const pointer = outer.toLocal(clientX, clientY);
+  const delta = outer.deltaToLocal(pointer.x - drag.startLocal.x, pointer.y - drag.startLocal.y);
+  const zoom = inner.zoom;
   const clamp = (value, min, max) => min > max ? (min + max) / 2 : Math.max(min, Math.min(max, value));
-  const dx = clamp(clientX - drag.startX, bounds.left - element.left, bounds.right - element.right);
-  const dy = clamp(clientY - drag.startY, bounds.top - element.top, bounds.bottom - element.bottom);
-  return {
-    x: clamp(snapToGrid(drag.x + dx), drag.x + bounds.left - element.left, drag.x + bounds.right - element.right),
-    y: clamp(snapToGrid(drag.y + dy), drag.y + bounds.top - element.top, drag.y + bounds.bottom - element.bottom),
-  };
+  const minX = (bounds.left - element.left) / zoom;
+  const maxX = (bounds.right - element.right) / zoom;
+  const minY = (bounds.top - element.top) / zoom;
+  const maxY = (bounds.bottom - element.bottom) / zoom;
+  const snapped = inner.snapPoint({ x: drag.x + delta.x / zoom, y: drag.y + delta.y / zoom }, outer);
+  return { x: clamp(snapped.x, drag.x + minX, drag.x + maxX), y: clamp(snapped.y, drag.y + minY, drag.y + maxY) };
 }
 
 function TeacherBranch({ teacher, students, studentLayout, studentsCollapsed = false, isOwner = false, cloudLayout, cloudStack, setCollapsedTeacherIds, openEdit, setTeacherId, setStudentId, allStudents, setModal, unassignStudent }) {
@@ -152,6 +157,12 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
   const teacherStudentLayoutRef = useRef(teacherStudentLayout);
   const dragRef = useRef(null);
   const frameRef = useRef(0);
+  const graphViewportRef = useRef(null);
+  const graphWorldRef = useRef(null);
+  const outerCoordinatesRef = useRef(createOuterCoordinateSystem(GRAPH_GRID_SIZE));
+  const innerCoordinatesRef = useRef(createInnerGraphCoordinateSystem());
+  const touchPointersRef = useRef(new Map());
+  const pinchRef = useRef(null);
 
   useEffect(() => {
     if (!cloudPositionsInitializedRef.current) {
@@ -233,82 +244,85 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
   }, [profile?.role, allTeachers, studentsByTeacherId, unassignedStudents, teacherGraph, saveCloudPosition]);
 
 
-  useEffect(() => {
-    let frame = 0;
-    const normalizePositions = () => {
-      frame = 0;
-      const previousClouds = cloudLayoutRef.current;
-      const nextClouds = { ...previousClouds };
-      const nextStudents = { ...studentLayoutRef.current };
-      const nextTeacherStudents = { ...teacherStudentLayoutRef.current };
-      let cloudsChanged = false;
-      let studentsChanged = false;
-      let teacherStudentsChanged = false;
-
-      document.querySelectorAll(".graph-panel .teacher-branch").forEach(element => {
-        const handle = element.querySelector('[data-drag-type="cloud"]');
-        const id = handle?.dataset.dragId;
-        const bounds = element.closest(".graph-panel");
-        if (!id || !bounds) return;
-        const current = nextClouds[id] || { x: 0, y: 0 };
-        const position = clampElementPosition(element, current, bounds);
-        if (position.x === current.x && position.y === current.y) return;
-        nextClouds[id] = position;
-        element.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
-        cloudsChanged = true;
-      });
-
-      document.querySelectorAll(".graph-panel .student-card[data-drag-id]").forEach(element => {
-        const id = element.dataset.dragId;
-        const teacherView = Boolean(element.closest(".is-teacher-view"));
-        const layout = teacherView ? nextTeacherStudents : nextStudents;
-        const bounds = element.parentElement;
-        if (!id || !bounds || !layout[id]) return;
-        const position = clampElementPosition(element, layout[id], bounds);
-        if (position.x === layout[id].x && position.y === layout[id].y) return;
-        layout[id] = position;
-        element.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
-        if (teacherView) teacherStudentsChanged = true;
-        else studentsChanged = true;
-      });
-
-      if (cloudsChanged) {
-        cloudLayoutRef.current = nextClouds;
-        setCloudLayout(nextClouds);
-        Object.entries(nextClouds).forEach(([id, position]) => {
-          if (previousClouds[id]?.x !== position.x || previousClouds[id]?.y !== position.y) {
-            saveCloudPosition(id, position.x, position.y);
-          }
-        });
-      }
-      if (studentsChanged) {
-        studentLayoutRef.current = nextStudents;
-        setStudentLayout(nextStudents);
-        try { localStorage.setItem(STUDENT_LAYOUT_KEY, JSON.stringify(nextStudents)); } catch {}
-      }
-      if (teacherStudentsChanged) {
-        teacherStudentLayoutRef.current = nextTeacherStudents;
-        setTeacherStudentLayout(nextTeacherStudents);
-        try { localStorage.setItem(TEACHER_STUDENT_LAYOUT_KEY, JSON.stringify(nextTeacherStudents)); } catch {}
-      }
-    };
-    const scheduleNormalize = () => {
-      if (!frame) frame = requestAnimationFrame(normalizePositions);
-    };
-    const panels = [...document.querySelectorAll(".graph-panel")];
-    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(scheduleNormalize) : null;
-    panels.forEach(panel => observer?.observe(panel));
-    window.addEventListener("resize", scheduleNormalize);
-    scheduleNormalize();
+  useLayoutEffect(() => {
+    const viewport = graphViewportRef.current;
+    if (!viewport) return undefined;
+    const outer = outerCoordinatesRef.current;
+    const updateBounds = () => outer.update(viewport);
+    updateBounds();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(updateBounds) : null;
+    observer?.observe(viewport);
+    window.addEventListener("resize", updateBounds, { passive: true });
+    window.addEventListener("scroll", updateBounds, { passive: true, capture: true });
     return () => {
       observer?.disconnect();
-      window.removeEventListener("resize", scheduleNormalize);
-      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("resize", updateBounds);
+      window.removeEventListener("scroll", updateBounds, true);
     };
-  }, [profile?.role, saveCloudPosition]);
+  }, [profile?.role]);
+
+  function applyGraphTransform() {
+    const world = graphWorldRef.current;
+    if (world) world.style.transform = innerCoordinatesRef.current.transform();
+  }
+
+  function handleGraphWheel(event) {
+    event.preventDefault();
+    const point = outerCoordinatesRef.current.toLocal(event.clientX, event.clientY);
+    if (innerCoordinatesRef.current.zoomAt(point, Math.exp(-event.deltaY * 0.0015))) applyGraphTransform();
+  }
+
+  function handleGraphPointerDownCapture(event) {
+    if (event.pointerType !== "touch") return;
+    const pointers = touchPointersRef.current;
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pointers.size < 2) return;
+    if (dragRef.current) {
+      dragRef.current.element.classList.remove("is-dragging");
+      dragRef.current.element.style.willChange = "";
+      dragRef.current.element.style.transition = "";
+      dragRef.current = null;
+    }
+    if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    frameRef.current = 0;
+    const entries = [...pointers.values()];
+    const midpoint = outerCoordinatesRef.current.toLocal(
+      (entries[0].x + entries[1].x) / 2,
+      (entries[0].y + entries[1].y) / 2,
+    );
+    pinchRef.current = {
+      distance: Math.hypot(entries[1].x - entries[0].x, entries[1].y - entries[0].y),
+      midpoint,
+    };
+    try { event.currentTarget.setPointerCapture(event.pointerId); } catch {}
+  }
+
+  function handleGraphPointerMoveCapture(event) {
+    const pointers = touchPointersRef.current;
+    if (!pointers.has(event.pointerId)) return;
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pointers.size < 2 || !pinchRef.current) return;
+    const entries = [...pointers.values()];
+    const midpoint = outerCoordinatesRef.current.toLocal(
+      (entries[0].x + entries[1].x) / 2,
+      (entries[0].y + entries[1].y) / 2,
+    );
+    const distance = Math.hypot(entries[1].x - entries[0].x, entries[1].y - entries[0].y);
+    const pinch = pinchRef.current;
+    const inner = innerCoordinatesRef.current;
+    inner.panBy(midpoint.x - pinch.midpoint.x, midpoint.y - pinch.midpoint.y);
+    if (pinch.distance > 0 && distance > 0) inner.zoomAt(midpoint, distance / pinch.distance);
+    pinchRef.current = { distance, midpoint };
+    applyGraphTransform();
+  }
+
+  function handleGraphPointerUpCapture(event) {
+    touchPointersRef.current.delete(event.pointerId);
+    if (touchPointersRef.current.size < 2) pinchRef.current = null;
+  }
 
   function startDrag(event, handle) {
-    if (event.button !== 0 || event.target.closest("button, a, input, select, textarea")) return;
+    if (pinchRef.current || event.button !== 0 || event.target.closest("button, a, input, select, textarea")) return;
     const type = handle.dataset.dragType;
     const id = handle.dataset.dragId;
     if (!type || !id) return;
@@ -320,10 +334,12 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     const teacherView = type === "student" && Boolean(handle.closest(".is-teacher-view"));
     const layout = type === "cloud" ? cloudLayoutRef.current : teacherView ? teacherStudentLayoutRef.current : studentLayoutRef.current;
     const position = layout[id] || { x: 0, y: 0 };
-    const boundsElement = type === "cloud" ? element.closest(".graph-panel") : element.parentElement;
+    const boundsElement = type === "cloud" ? element.closest(".graph-coordinate-viewport") : element.parentElement;
+    const outer = outerCoordinatesRef.current;
+    outer.update(graphViewportRef.current);
     dragRef.current = {
       type, id, element, teacherView, pointerId: event.pointerId,
-      startX: event.clientX, startY: event.clientY,
+      startLocal: outer.toLocal(event.clientX, event.clientY),
       x: position.x, y: position.y,
       nextX: position.x, nextY: position.y,
       elementRect: element.getBoundingClientRect(),
@@ -343,7 +359,8 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
   function moveDrag(event) {
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
-    const position = dragPosition(drag, event.clientX, event.clientY);
+    if (pinchRef.current) return;
+    const position = dragPosition(drag, event.clientX, event.clientY, outerCoordinatesRef.current, innerCoordinatesRef.current);
     drag.nextX = position.x;
     drag.nextY = position.y;
     if (!frameRef.current) {
@@ -361,7 +378,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
     frameRef.current = 0;
     let { x, y } = event.type === "pointerup"
-      ? dragPosition(drag, event.clientX, event.clientY)
+      ? dragPosition(drag, event.clientX, event.clientY, outerCoordinatesRef.current, innerCoordinatesRef.current)
       : { x: drag.nextX, y: drag.nextY };
     const hasMoved = Math.abs(x - drag.x) >= 1 || Math.abs(y - drag.y) >= 1;
     drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
@@ -388,8 +405,8 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
       const siblings = drag.type === "cloud"
         ? drag.element.parentElement.querySelectorAll(":scope > .teacher-branch")
         : drag.element.parentElement.querySelectorAll(":scope > .student-card");
-      const boundsElement = drag.type === "cloud" ? drag.element.closest(".graph-panel") : drag.element.parentElement;
-      const safePosition = findFreeGridPosition(drag.element, siblings, { x, y }, boundsElement);
+      const boundsElement = drag.type === "cloud" ? drag.element.closest(".graph-coordinate-viewport") : drag.element.parentElement;
+      const safePosition = findFreeGridPosition(drag.element, siblings, { x, y }, boundsElement, innerCoordinatesRef.current.zoom);
       x = safePosition.x;
       y = safePosition.y;
     }
@@ -402,11 +419,12 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
       const previousTarget = layout[targetId] || { x: 0, y: 0 };
       targetPosition = {
         id: targetId,
-        x: previousTarget.x + drag.elementRect.left - targetRect.left,
-        y: previousTarget.y + drag.elementRect.top - targetRect.top,
+        x: previousTarget.x + outerCoordinatesRef.current.deltaToLocal(drag.elementRect.left - targetRect.left, drag.elementRect.top - targetRect.top).x / innerCoordinatesRef.current.zoom,
+        y: previousTarget.y + outerCoordinatesRef.current.deltaToLocal(drag.elementRect.left - targetRect.left, drag.elementRect.top - targetRect.top).y / innerCoordinatesRef.current.zoom,
       };
-      x += targetRect.left - currentRect.left;
-      y += targetRect.top - currentRect.top;
+      const swapDelta = outerCoordinatesRef.current.deltaToLocal(targetRect.left - currentRect.left, targetRect.top - currentRect.top);
+      x += swapDelta.x / innerCoordinatesRef.current.zoom;
+      y += swapDelta.y / innerCoordinatesRef.current.zoom;
     }
     drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     drag.element.classList.remove("is-dragging");
@@ -442,11 +460,23 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
 
   useEffect(() => () => {
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    touchPointersRef.current.clear();
+    pinchRef.current = null;
   }, []);
 
   return (
     <>
       {profile?.role === "teacher" && <section className="graph-panel is-teacher-view">
+        <div
+          className="graph-coordinate-viewport"
+          ref={graphViewportRef}
+          onWheel={handleGraphWheel}
+          onPointerDownCapture={handleGraphPointerDownCapture}
+          onPointerMoveCapture={handleGraphPointerMoveCapture}
+          onPointerUpCapture={handleGraphPointerUpCapture}
+          onPointerCancelCapture={handleGraphPointerUpCapture}
+        >
+        <div className="graph-coordinate-world" ref={graphWorldRef}>
         <div
           className="teacher-grid"
           onPointerDown={handlePointerDown}
@@ -462,6 +492,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
             isOwner
           />
         </div>
+        </div>
       </section>}
 
       {profile?.role === "admin" && <section className="graph-panel">
@@ -474,6 +505,16 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
             <button className="btn primary graph-add-participant" onClick={() => openCreate()}><Plus />Добавить участника</button>
           </div>
         </div>
+        <div
+          className="graph-coordinate-viewport"
+          ref={graphViewportRef}
+          onWheel={handleGraphWheel}
+          onPointerDownCapture={handleGraphPointerDownCapture}
+          onPointerMoveCapture={handleGraphPointerMoveCapture}
+          onPointerUpCapture={handleGraphPointerUpCapture}
+          onPointerCancelCapture={handleGraphPointerUpCapture}
+        >
+        <div className="graph-coordinate-world" ref={graphWorldRef}>
         <div className="root-node"><img src="/logo.png" alt="" /><b>Администратор</b><small>Полное управление</small></div>
 
         {!!unassignedStudents.length && <section className="unassigned">
@@ -525,6 +566,8 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
           />)}
         </div>
         {!allTeachers.length && <div className="empty-state"><GraduationCap /><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span></div>}
+        </div>
+        </div>
       </section>}
     </>
   );
