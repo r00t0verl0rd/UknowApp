@@ -3,9 +3,12 @@
 import logging
 
 from aiogram import Bot, F, Router
+from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import Command, CommandStart
 from aiogram.types import CallbackQuery
 from aiogram.types import Message as TgMessage
+
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.database import SessionLocal
 from app.models import TeacherPanel, User
@@ -56,7 +59,7 @@ async def start(message: TgMessage, bot: Bot):
                 # Open the persistent teacher panel directly; do not send a
                 # separate confirmation message after /start.
                 await update_teacher_panel(bot, db, user, force_keyboard_refresh=True)
-            except Exception as exc:
+            except (TelegramAPIError, SQLAlchemyError) as exc:
                 logger.warning(
                     "Could not open teacher panel (user_id=%s error_type=%s)",
                     user.id,
@@ -229,7 +232,7 @@ async def bind_student_group(message: TgMessage, bot: Bot):
                 "и добавьте снова. После этого повторите /bind_group.",
             )
             return
-    except Exception as exc:
+    except TelegramAPIError as exc:
         logger.warning(
             "Could not verify Telegram group message access (error_type=%s)",
             type(exc).__name__,
@@ -288,7 +291,7 @@ async def route_message(message: TgMessage, bot: Bot):
                         teacher,
                         force_keyboard_refresh=result.force_teacher_panel_refresh,
                     )
-                except Exception as exc:
+                except (TelegramAPIError, SQLAlchemyError) as exc:
                     logger.warning(
                         "Could not refresh teacher panel (teacher_id=%s error_type=%s)",
                         teacher.id,
