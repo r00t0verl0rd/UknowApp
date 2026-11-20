@@ -174,7 +174,7 @@ export default function StructurePage({
       onLostPointerCapture={endObjectDrag}
     >
       <div className="graph-coordinate-world graph-object-world" ref={worldRef}>
-        {fon && <section className="graph-object-fon" data-object-id={fon.id} style={objectPosition(fon)}>
+        {fon && <div className="graph-object-fon" data-object-id={fon.id} style={objectPosition(fon)}>
           <header className="graph-object-header graph-fon-header">
             <b>Fon</b><span>Главный фон · родитель всех объектов</span>
             <button type="button" className="btn small outline" onClick={() => addObject(fon.id)}><Plus />Создать объект</button>
@@ -203,7 +203,7 @@ export default function StructurePage({
             {customObjects.filter(item => item.parent_id === admin.id).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}>{item.title}</div>)}
           </section>}
           {customObjects.filter(item => item.parent_id === fon.id).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}>{item.title}</div>)}
-        </section>}
+        </div>}
       </div>
     </div>
   </section>;
