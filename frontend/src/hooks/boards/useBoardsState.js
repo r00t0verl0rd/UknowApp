@@ -63,16 +63,14 @@ export function useBoardsState() {
   }, []);
 
   const moveObject = useCallback(async (objectId, x, y) => {
-    setBoardObjects(current => current.map(item => item.id === objectId ? { ...item, x, y } : item));
     setError("");
     try {
       await updateBoardObjectPosition(objectId, x, y);
     } catch (cause) {
       setError(cause.message || "Не удалось переместить объект");
-      void reload().catch(() => {});
       throw cause;
     }
-  }, [reload]);
+  }, []);
 
   const deleteObject = useCallback(async objectId => {
     setError("");
