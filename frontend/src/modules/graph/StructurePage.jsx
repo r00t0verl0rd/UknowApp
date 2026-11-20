@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right.js";
 import GraduationCap from "lucide-react/dist/esm/icons/graduation-cap.js";
 import Link2Off from "lucide-react/dist/esm/icons/link-2-off.js";
@@ -30,6 +30,43 @@ function positionStyle(position) {
 
 function snapToGrid(value) {
   return Math.round(value / GRAPH_GRID_SIZE) * GRAPH_GRID_SIZE;
+}
+
+function findFreeGridPosition(element, siblings, currentPosition) {
+  const parent = element.parentElement;
+  const bounds = parent.getBoundingClientRect();
+  const rect = element.getBoundingClientRect();
+  const maxX = Math.max(0, bounds.right - rect.right + currentPosition.x);
+  const maxY = Math.max(0, bounds.bottom - rect.bottom + currentPosition.y);
+  const collides = (candidateX, candidateY) => {
+    const left = rect.left + candidateX - currentPosition.x;
+    const top = rect.top + candidateY - currentPosition.y;
+    const right = left + rect.width;
+    const bottom = top + rect.height;
+    if (left < bounds.left - 1 || top < bounds.top - 1 || right > bounds.right + 1 || bottom > bounds.bottom + 1) return true;
+    return siblings.some(other => {
+      if (other === element) return false;
+      const otherRect = other.getBoundingClientRect();
+      return left < otherRect.right - 1 && right > otherRect.left + 1 && top < otherRect.bottom - 1 && bottom > otherRect.top + 1;
+    });
+  };
+
+  if (!collides(currentPosition.x, currentPosition.y)) return currentPosition;
+  const maxSteps = Math.ceil(Math.max(bounds.width, bounds.height, 1200) / GRAPH_GRID_SIZE);
+  for (let radius = 1; radius <= maxSteps; radius += 1) {
+    for (let step = -radius; step <= radius; step += 1) {
+      const candidates = [
+        [step, -radius], [step, radius], [-radius, step], [radius, step],
+      ];
+      for (const [column, row] of candidates) {
+        const x = currentPosition.x + column * GRAPH_GRID_SIZE;
+        const y = currentPosition.y + row * GRAPH_GRID_SIZE;
+        if (x < 0 || y < 0 || x > maxX || y > maxY) continue;
+        if (!collides(x, y)) return { x, y };
+      }
+    }
+  }
+  return currentPosition;
 }
 
 function dragPosition(drag, clientX, clientY) {
@@ -104,6 +141,60 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     cloudLayoutRef.current = next;
     setCloudLayout(next);
   }, [cloudPositions]);
+
+  useLayoutEffect(() => {
+    const isAdmin = profile?.role === "admin";
+    const isTeacher = profile?.role === "teacher";
+    if (!isAdmin && !isTeacher) return;
+
+    const nextClouds = { ...cloudLayoutRef.current };
+    const nextStudents = { ...studentLayoutRef.current };
+    const nextTeacherStudents = { ...teacherStudentLayoutRef.current };
+    let cloudsChanged = false;
+    let studentsChanged = false;
+    let teacherStudentsChanged = false;
+
+    const allocateGroup = (selector, layout, onAllocate) => {
+      const elements = [...document.querySelectorAll(selector)];
+      elements.forEach(element => {
+        const id = element.dataset.dragId;
+        if (!id || layout[id]) return;
+        const siblings = elements.filter(other => other !== element);
+        const position = findFreeGridPosition(element, siblings, { x: 0, y: 0 });
+        if (position.x || position.y) {
+          element.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
+          layout[id] = position;
+          onAllocate(position, id);
+        }
+      });
+    };
+
+    if (isAdmin) {
+      allocateGroup(".graph-panel:not(.is-teacher-view) > .teacher-grid > .teacher-branch", nextClouds, (position, id) => {
+        cloudsChanged = true;
+        saveCloudPosition(id, position.x, position.y);
+      });
+      allocateGroup(".graph-panel:not(.is-teacher-view) .student-list > .student-card", nextStudents, () => { studentsChanged = true; });
+      allocateGroup(".graph-panel:not(.is-teacher-view) .unassigned-grid > .student-card", nextStudents, () => { studentsChanged = true; });
+    } else {
+      allocateGroup(".graph-panel.is-teacher-view .student-list > .student-card", nextTeacherStudents, () => { teacherStudentsChanged = true; });
+    }
+
+    if (cloudsChanged) {
+      cloudLayoutRef.current = nextClouds;
+      setCloudLayout(nextClouds);
+    }
+    if (studentsChanged) {
+      studentLayoutRef.current = nextStudents;
+      setStudentLayout(nextStudents);
+      try { localStorage.setItem(STUDENT_LAYOUT_KEY, JSON.stringify(nextStudents)); } catch {}
+    }
+    if (teacherStudentsChanged) {
+      teacherStudentLayoutRef.current = nextTeacherStudents;
+      setTeacherStudentLayout(nextTeacherStudents);
+      try { localStorage.setItem(TEACHER_STUDENT_LAYOUT_KEY, JSON.stringify(nextTeacherStudents)); } catch {}
+    }
+  }, [profile?.role, allTeachers, studentsByTeacherId, unassignedStudents, teacherGraph, saveCloudPosition]);
 
   function startDrag(event, handle) {
     if (event.button !== 0 || event.target.closest("button, a, input, select, textarea")) return;
