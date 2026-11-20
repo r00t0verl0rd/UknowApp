@@ -1905,4 +1905,4 @@ border-color: transparent !important;}
 .graph-panel .teacher-card, .graph-panel .student-card { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .graph-panel .teacher-card:active, .graph-panel .student-card:active { cursor: grabbing; }
 .graph-panel .teacher-branch.is-dragging, .graph-panel .student-card.is-dragging { position: relative; z-index: 4; cursor: grabbing; }
-.graph-panel .teacher-branch.is-dragging { box-shadow: 0 12px 28px rgba(67, 47, 105, .16); }
+.graph-panel .teacher-branch.is-dragging, .graph-panel .student-card.is-dragging { box-shadow: none !important; }
