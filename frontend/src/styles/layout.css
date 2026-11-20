@@ -102,9 +102,6 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .invite-code{font:800 28px ui-monospace,monospace;letter-spacing:4px;text-align:center;border:1px dashed #cfc0e3;padding:18px;border-radius:12px;margin-bottom:13px}
 .toast{position:fixed;right:24px;bottom:24px;display:flex;align-items:center;gap:8px;padding:12px 16px;color:white;font-size:11px;z-index:8;}
 .toast svg{width:16px;}
-.spin{animation:spin 1s linear infinite}
-@keyframes spin{
-to{transform:rotate(360deg)}
 }
 .unassigned{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
 .unassigned-title { margin: 0 0 12px; color: var(--ink); font-size: 14px;}
@@ -350,7 +347,6 @@ img, video, audio { max-width: 100%;}
 .theme-toggle:hover { background: #f0ebf9; border-color: #dcd2ed; transform: translateY(-1px);}
 .theme-toggle svg { width: 17px; height: 17px;}
 /* Keep desktop theme and refresh controls visually consistent with the compact touch controls. */
-.topbar-actions > .theme-toggle:hover, .topbar-actions > .icon-btn:hover, .topbar-actions > .push-toggle:hover, .mobile-quick-actions > .push-toggle:hover { background: #eae4f4; border-color: #d8c9ed; color: #573e99; box-shadow: 0 3px 8px rgba(87, 62, 153, .10);}
 /* Desktop actions stay in the sidebar footer / top bar. */
 .sidebar-bottom { margin-top: auto;}
 .sidebar-bottom > .desktop-admin-extra { display: none;}
@@ -753,7 +749,6 @@ html, body { overflow-x: clip;}
 .mobile-quick-actions { display: flex; align-items: center; gap: 4px;}
 .mobile-quick-actions > button { flex: 0 0 32px; width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 6px; margin: 0; border-radius: 9px; display: grid; place-items: center;}
 .mobile-quick-actions > button svg { width: 15px; height: 15px;}
-.mobile-quick-actions .icon-btn { color: var(--purple);}
 .topbar > .topbar-actions { display: none !important;}
 .main { margin: 0; width: 100%; min-width: 0;}
 /* Remove the empty profile strip between mobile navigation and the page workspace. */
@@ -1025,10 +1020,7 @@ input::placeholder, textarea::placeholder { color: #a49daf;}
 .toast { border: 1px solid rgba(255,255,255,.12); border-radius: var(--ui-radius-md);}
 .invite-code, .credential-password { border-radius: var(--ui-radius-md);}
 /* Compact top-bar actions intentionally match the touch-device controls. */
-.topbar-actions > .theme-toggle, .topbar-actions > .icon-btn, .topbar-actions > .push-toggle, .topbar-actions > .topbar-logout, .mobile-quick-actions > .theme-toggle, .mobile-quick-actions > .icon-btn, .mobile-quick-actions > .push-toggle { flex: 0 0 32px; width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 6px; display: grid; place-items: center; border: 1px solid var(--ui-border); border-radius: var(--ui-radius-sm); background: var(--ui-control-bg); color: var(--purple); box-shadow: var(--ui-shadow-soft);}
-.topbar-actions > .theme-toggle svg, .topbar-actions > .icon-btn svg, .topbar-actions > .push-toggle svg, .topbar-actions > .topbar-logout svg, .mobile-quick-actions > .theme-toggle svg, .mobile-quick-actions > .icon-btn svg, .mobile-quick-actions > .push-toggle svg { width: 15px; height: 15px;}
 /* The soft-dark theme uses the same components, with coordinated dark surfaces. */
-:root[data-theme="dark-soft"] .btn:not(.primary):not(.disconnect):not(.danger), :root[data-theme="dark-soft"] .user-action-btn:not(.danger):not(.disconnect), :root[data-theme="dark-soft"] .topbar-actions > .theme-toggle, :root[data-theme="dark-soft"] .topbar-actions > .icon-btn, :root[data-theme="dark-soft"] .topbar-actions > .push-toggle, :root[data-theme="dark-soft"] .topbar-actions > .topbar-logout, :root[data-theme="dark-soft"] .mobile-quick-actions > .theme-toggle, :root[data-theme="dark-soft"] .mobile-quick-actions > .icon-btn, :root[data-theme="dark-soft"] .mobile-quick-actions > .push-toggle { background: var(--ui-control-bg) !important; border-color: var(--ui-border) !important; color: var(--ui-control-text) !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .btn:not(.primary):hover { background: var(--ui-control-hover) !important; border-color: var(--ui-border-strong) !important;}
 :root[data-theme="dark-soft"] .stack input, :root[data-theme="dark-soft"] .stack select, :root[data-theme="dark-soft"] .stack textarea, :root[data-theme="dark-soft"] .search, :root[data-theme="dark-soft"] .user-sort, :root[data-theme="dark-soft"] .chat-head-tools select, :root[data-theme="dark-soft"] .chat-composer textarea { background: #202a38 !important; border-color: #414c60 !important; color: #e0e5ee !important;}
 :root[data-theme="dark-soft"] .chat-item { border-color: transparent;}
