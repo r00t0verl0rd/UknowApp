@@ -370,7 +370,7 @@ img, video, audio { max-width: 100%;}
 :root[data-theme="dark-soft"] .sidebar nav button.active { background: #353149 !important; color: #c6bdf0 !important; border-color: #49415f !important;}
 :root[data-theme="dark-soft"] .sidebar nav button i { background: #303849 !important; color: #c5bddf !important;}
 :root[data-theme="dark-soft"] .chat-list { background: #1d2430 !important; border-color: #343d4d !important;}
-:root[data-theme="dark-soft"] .chat-item, :root[data-theme="dark-soft"] .person-card, :root[data-theme="dark-soft"] .root-node, 0, 0, .14) !important;}
+:root[data-theme="dark-soft"] .chat-item, :root[data-theme="dark-soft"] .person-card, :root[data-theme="dark-soft"] .root-node { background: #252d3b !important; border-color: #3a4659 !important; box-shadow: 0 4px 14px rgba(0, 0, 0, .14) !important;}
 :root[data-theme="dark-soft"] .message.teacher { background: #302e43 !important; border-color: #4c4667 !important;}
 :root[data-theme="dark-soft"] .message.admin { background: #393445 !important; border-color: #66546a !important;}
 :root[data-theme="dark-soft"] .message p { color: #e4e8f0 !important;}
