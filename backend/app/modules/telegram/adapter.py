@@ -203,7 +203,7 @@ class TelegramAdapter:
             sent = await self._bot.send_message(
                 text=text, **self._chat_kwargs(external_chat_id, thread_id),
             )
-        except TelegramAPIError as exc:
+        except (TelegramAPIError, ValueError) as exc:
             raise MessengerError("send_text", exc) from exc
         return str(sent.message_id)
 
@@ -215,16 +215,16 @@ class TelegramAdapter:
         target_thread_id: str | None = None,
         caption: str | None = None,
     ) -> str:
-        kwargs = {
-            "from_chat_id": int(source_chat_id),
-            "message_id": int(source_message_id),
-            **self._chat_kwargs(target_chat_id, target_thread_id),
-        }
-        if caption is not None:
-            kwargs["caption"] = caption
         try:
+            kwargs = {
+                "from_chat_id": int(source_chat_id),
+                "message_id": int(source_message_id),
+                **self._chat_kwargs(target_chat_id, target_thread_id),
+            }
+            if caption is not None:
+                kwargs["caption"] = caption
             copied = await self._bot.copy_message(**kwargs)
-        except TelegramAPIError as exc:
+        except (TelegramAPIError, ValueError) as exc:
             raise MessengerError("copy_message", exc) from exc
         return str(copied.message_id)
 
@@ -372,5 +372,5 @@ class TelegramAdapter:
             await self._bot.delete_message(
                 chat_id=int(external_chat_id), message_id=int(external_message_id),
             )
-        except TelegramAPIError as exc:
+        except (TelegramAPIError, ValueError) as exc:
             raise MessengerError("delete_message", exc) from exc
