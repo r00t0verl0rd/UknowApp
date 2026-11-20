@@ -15,9 +15,6 @@ export function createOuterCoordinateSystem(step = 12) {
       scaleY = rect.height / (element.clientHeight || rect.height || 1);
       return bounds;
     },
-    getBounds() {
-      return bounds;
-    },
     toLocal(clientX, clientY) {
       return {
         x: (clientX - bounds.left) / scaleX,
@@ -27,17 +24,8 @@ export function createOuterCoordinateSystem(step = 12) {
     deltaToLocal(deltaX, deltaY) {
       return { x: deltaX / scaleX, y: deltaY / scaleY };
     },
-    toClient(x, y) {
-      return {
-        x: bounds.left + x * scaleX,
-        y: bounds.top + y * scaleY,
-      };
-    },
     snap(value) {
       return Math.round(value / step) * step;
-    },
-    getStep() {
-      return step;
     },
   };
 }
@@ -52,9 +40,6 @@ export function createInnerGraphCoordinateSystem() {
   return {
     get zoom() {
       return zoom;
-    },
-    get pan() {
-      return { x: panX, y: panY };
     },
     toGraphPoint(point) {
       return { x: (point.x - panX) / zoom, y: (point.y - panY) / zoom };
