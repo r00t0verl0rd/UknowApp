@@ -2,6 +2,7 @@
 
 import hashlib
 import logging
+import math
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, HTTPException
@@ -12,6 +13,7 @@ from sqlalchemy.orm import selectinload
 from app.models import (
     Assignment,
     ConnectionCode,
+    GraphCloudPosition,
     Conversation,
     Message,
     PanelSession,
@@ -71,6 +73,7 @@ def overview(_: Admin, db: Db):
         if user.role != "teacher":
             continue
         teachers.append({**user_dict(user), "students": students_by_teacher.get(user.id, [])})
+    cloud_positions = db.scalars(select(GraphCloudPosition)).all()
 
     return {
         "admin": {"label": "Администратор", "role": "admin"},
@@ -82,7 +85,29 @@ def overview(_: Admin, db: Db):
             "messages": db.query(Message).count(),
         },
         "teachers": teachers,
+        "cloud_positions": [
+            {"teacher_id": position.teacher_id, "x": position.x, "y": position.y}
+            for position in cloud_positions
+        ],
     }
+
+
+@router.patch("/admin/graph/cloud-positions/{teacher_id}")
+def update_graph_cloud_position(teacher_id: int, payload: dict, _: Admin, db: Db):
+    x, y = payload.get("x"), payload.get("y")
+    if any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or abs(value) > 10000 for value in (x, y)):
+        raise HTTPException(status_code=422, detail="Некорректные координаты облачка")
+    teacher = db.get(User, teacher_id)
+    if not teacher or teacher.role != "teacher":
+        raise HTTPException(status_code=404, detail="Учитель не найден")
+    position = db.get(GraphCloudPosition, teacher_id)
+    if position is None:
+        position = GraphCloudPosition(teacher_id=teacher_id, x=x, y=y)
+        db.add(position)
+    else:
+        position.x, position.y = x, y
+    db.commit()
+    return {"teacher_id": teacher_id, "x": position.x, "y": position.y}
 
 
 @router.get("/admin/users")
@@ -176,6 +201,7 @@ def update_user(user_id: int, payload: dict, _: Admin, db: Db):
         user.web_password_hash = None
 
     if role_changed:
+        db.query(GraphCloudPosition).filter(GraphCloudPosition.teacher_id == user.id).delete(synchronize_session=False)
         db.query(TeacherPanel).filter(TeacherPanel.teacher_id == user.id).delete(synchronize_session=False)
         assignments = db.scalars(select(Assignment).where(Assignment.active.is_(True), (Assignment.teacher_id == user.id) | (Assignment.student_id == user.id))).all()
         now = datetime.now(UTC)
@@ -338,6 +364,7 @@ def delete_user(user_id: int, _: Admin, db: Db):
         TeacherSession.teacher_id == user.id,
     ).delete(synchronize_session=False)
     db.query(TeacherPanel).filter(TeacherPanel.teacher_id == user.id).delete(synchronize_session=False)
+    db.query(GraphCloudPosition).filter(GraphCloudPosition.teacher_id == user.id).delete(synchronize_session=False)
     if assignments:
         db.query(Assignment).filter(
             Assignment.id.in_([item.id for item in assignments]),
