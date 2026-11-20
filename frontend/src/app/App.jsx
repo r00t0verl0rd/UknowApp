@@ -12,12 +12,14 @@ import Copy from "lucide-react/dist/esm/icons/copy.js";
 import Moon from "lucide-react/dist/esm/icons/moon.js";
 import Sun from "lucide-react/dist/esm/icons/sun.js";
 import Info from "lucide-react/dist/esm/icons/info.js";
+import Bell from "lucide-react/dist/esm/icons/bell.js";
+import BellOff from "lucide-react/dist/esm/icons/bell-off.js";
 import AdditionalPage from "../modules/administration/AdditionalPage.jsx";
 import ChatsPage from "../modules/conversations/ChatsPage.jsx";
 import StructurePage from "../modules/graph/StructurePage.jsx";
 import UsersPage from "../modules/users/UsersPage.jsx";
 import LoginPage from "../modules/authentication/LoginPage.jsx";
-import { detachPushSubscription, initializePushNotifications } from "../modules/notifications/pushNotifications.js";
+import { detachPushSubscription, disablePushNotifications, enablePushNotifications, getPushNotificationState } from "../modules/notifications/pushNotifications.js";
 import { createApiClient } from "../services/api.js";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
@@ -86,6 +88,8 @@ export default function App() {
   const [dataStats, setDataStats] = useState(null);
   const [dataBusy, setDataBusy] = useState(false);
   const [retentionDays, setRetentionDays] = useState("30");
+  const [pushState, setPushState] = useState({ supported: false, enabled: false, permission: "default", reason: "Проверяем поддержку уведомлений…" });
+  const [pushBusy, setPushBusy] = useState(false);
 
   useEffect(() => {
     if (userInfo === null) return undefined;
@@ -148,7 +152,17 @@ export default function App() {
   useEffect(() => { refresh(); }, [refresh]);
 
   useEffect(() => {
-    initializePushNotifications(Boolean(auth));
+    if (!auth) {
+      setPushState({ supported: false, enabled: false, permission: "default", reason: "Войдите в приложение" });
+      return undefined;
+    }
+    let active = true;
+    getPushNotificationState()
+      .then(state => { if (active) setPushState(state); })
+      .catch(() => {
+        if (active) setPushState({ supported: false, enabled: false, permission: "default", reason: "Не удалось проверить поддержку уведомлений" });
+      });
+    return () => { active = false; };
   }, [auth]);
 
   useEffect(() => {
@@ -424,6 +438,47 @@ export default function App() {
     setTheme(current => current === "dark-soft" ? "light" : "dark-soft");
   }
 
+  async function togglePushNotifications() {
+    if (!pushState.supported || pushBusy) return;
+    setPushBusy(true);
+    setError("");
+    try {
+      if (pushState.enabled) {
+        await disablePushNotifications();
+        notify("Push-уведомления отключены");
+      } else {
+        await enablePushNotifications();
+        notify("Push-уведомления включены");
+      }
+      setPushState(await getPushNotificationState());
+    } catch (error) {
+      setError(error.message || "Не удалось изменить настройки уведомлений");
+      try { setPushState(await getPushNotificationState()); } catch { /* Keep the last known state. */ }
+    } finally {
+      setPushBusy(false);
+    }
+  }
+
+  const pushButtonTitle = !pushState.supported
+    ? pushState.reason
+    : pushState.permission === "denied"
+      ? "Уведомления запрещены в настройках браузера"
+      : pushState.enabled ? "Отключить push-уведомления" : "Включить push-уведомления";
+
+  const pushToggle = (
+    <button
+      type="button"
+      className={`push-toggle${pushState.enabled ? " active" : ""}`}
+      onClick={togglePushNotifications}
+      disabled={!pushState.supported || pushBusy || pushState.permission === "denied"}
+      title={pushBusy ? "Обновляем настройки уведомлений…" : pushButtonTitle}
+      aria-label={pushButtonTitle}
+      aria-pressed={pushState.enabled}
+    >
+      {pushState.enabled ? <Bell size={17}/> : <BellOff size={17}/>}
+    </button>
+  );
+
   async function signIn(event) {
     event.preventDefault();
     setError("");
@@ -681,8 +736,8 @@ export default function App() {
       </nav>
       <div className="sidebar-bottom">
         {profile?.role === "admin" && <button type="button" className={`logout desktop-admin-extra${page === "additional" ? " active" : ""}`} onClick={() => setPage("additional")}><Info size={18}/>Дополнительно</button>}
-        <button className="logout desktop-logout" onClick={signOut} title="Выйти" aria-label="Выйти"><LogOut/>Выйти</button>
         <div className="mobile-quick-actions">
+          {pushToggle}
           <button type="button" className="theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
             {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
           </button>
@@ -696,10 +751,12 @@ export default function App() {
       <header className="topbar">
         <small className="topbar-user">{profile?.full_name}</small>
         <div className="topbar-actions">
+          {pushToggle}
           <button type="button" className="theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
             {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
           </button>
           <button type="button" className="icon-btn" onClick={refresh} title="Обновить" aria-label="Обновить"><RefreshCw className={busy ? "spin" : ""}/></button>
+          <button type="button" className="logout topbar-logout" onClick={signOut} title="Выйти" aria-label="Выйти"><LogOut size={17}/></button>
         </div>
       </header>
       <div className={"content" + (page === "chats" ? " chats-content" : "")}>
