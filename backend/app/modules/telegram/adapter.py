@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from aiogram import Bot
+from aiogram.exceptions import TelegramAPIError
 from aiogram.types import BufferedInputFile
 
 from app.infrastructure.storage.media import MEDIA_DIR, safe_media_type
@@ -24,6 +25,7 @@ from app.modules.communication.contracts import (
     MessageKind,
     MessengerCapabilities,
     MessengerPlatform,
+    MessengerError,
     OutboundMessage,
 )
 
@@ -197,9 +199,12 @@ class TelegramAdapter:
     async def send_text(
         self, external_chat_id: str, text: str, thread_id: str | None = None,
     ) -> str:
-        sent = await self._bot.send_message(
-            text=text, **self._chat_kwargs(external_chat_id, thread_id),
-        )
+        try:
+            sent = await self._bot.send_message(
+                text=text, **self._chat_kwargs(external_chat_id, thread_id),
+            )
+        except TelegramAPIError as exc:
+            raise MessengerError("send_text", exc) from exc
         return str(sent.message_id)
 
     async def copy_message(
@@ -217,7 +222,10 @@ class TelegramAdapter:
         }
         if caption is not None:
             kwargs["caption"] = caption
-        copied = await self._bot.copy_message(**kwargs)
+        try:
+            copied = await self._bot.copy_message(**kwargs)
+        except TelegramAPIError as exc:
+            raise MessengerError("copy_message", exc) from exc
         return str(copied.message_id)
 
     async def archive_media(self, inbound: InboundMessage, row: Message) -> None:
@@ -289,7 +297,7 @@ class TelegramAdapter:
                 await self._bot.download(item.provider_file_id, destination=target)
                 media["local_path"] = relative.as_posix()
                 media["archive_status"] = "stored"
-        except Exception as exc:
+        except (TelegramAPIError, OSError, ValueError) as exc:
             logger.warning(
                 "Could not archive Telegram media (message_id=%s error_type=%s)",
                 row.id, type(exc).__name__,
@@ -328,7 +336,10 @@ class TelegramAdapter:
             raise ValueError("Telegram adapter received a message for another platform")
         kwargs = self._chat_kwargs(message.external_chat_id, message.external_thread_id)
         if message.content_type == MessageKind.TEXT:
-            sent = await self._bot.send_message(text=message.text, **kwargs)
+            try:
+                sent = await self._bot.send_message(text=message.text, **kwargs)
+            except TelegramAPIError as exc:
+                raise MessengerError("send_message", exc) from exc
         else:
             path = self._media_path(message)
             content = path.read_bytes()
@@ -336,14 +347,17 @@ class TelegramAdapter:
                 kwargs["caption"] = message.text
             try:
                 sent = await self._send_native_media(message, content, kwargs)
-            except Exception as native_error:
+            except TelegramAPIError as native_error:
                 logger.info(
                     "Native Telegram media send failed; retrying as document "
                     "(kind=%s error_type=%s)",
                     message.content_type.value, type(native_error).__name__,
                 )
                 upload = BufferedInputFile(content, filename=message.media.file_name)
-                sent = await self._bot.send_document(document=upload, **kwargs)
+                try:
+                    sent = await self._bot.send_document(document=upload, **kwargs)
+                except TelegramAPIError as exc:
+                    raise MessengerError("send_document", exc) from exc
         return DeliveryResult(
             platform=self.platform,
             external_chat_id=message.external_chat_id,
@@ -354,6 +368,9 @@ class TelegramAdapter:
     async def delete_message(
         self, external_chat_id: str, external_message_id: str,
     ) -> None:
-        await self._bot.delete_message(
-            chat_id=int(external_chat_id), message_id=int(external_message_id),
-        )
+        try:
+            await self._bot.delete_message(
+                chat_id=int(external_chat_id), message_id=int(external_message_id),
+            )
+        except TelegramAPIError as exc:
+            raise MessengerError("delete_message", exc) from exc
