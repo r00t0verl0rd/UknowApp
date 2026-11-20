@@ -61,8 +61,7 @@ export default function App() {
     name, setName, panelLogin, setPanelLogin, role, setRole, additionalInfo,
     setAdditionalInfo, telegramId, setTelegramId, teacherId, setTeacherId,
     studentId, setStudentId, code, setCode, deleteCandidate, setDeleteCandidate,
-    deletingUser, setDeletingUser, deleteMessageCandidate, setDeleteMessageCandidate,
-    deletingMessage, setDeletingMessage, disconnectCandidate, setDisconnectCandidate,
+    deletingUser, setDeletingUser, disconnectCandidate, setDisconnectCandidate,
     disconnectingTelegram, setDisconnectingTelegram, allTeachers, allStudents,
     studentsByTeacherId, visibleUsers, unassignedStudents, openCreate, openEdit,
     saveUser, regeneratePanelAccessCode, removeUser, confirmRemoveUser, assign,
@@ -73,11 +72,11 @@ export default function App() {
   });
   const {
     visibleChats, visibleMessages, openChat, openCreatePersonalChat, createPersonalChat,
-    confirmDeleteMessage, sendChatMessage,
+    confirmDeleteMessage, sendChatMessage, deleteMessageCandidate, deletingMessage,
+    setDeleteMessageCandidate,
   } = useChatsController({
     auth, request, profile, chatState, personalState, setPage, setError, setModal,
-    notify, deleteMessageCandidate, deletingMessage, setDeletingMessage,
-    setDeleteMessageCandidate,
+    notify,
   });
   const {
     pushState, pushBusy, setPushState, setPushBusy,
