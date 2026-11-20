@@ -57,15 +57,15 @@ export default function App() {
   }, [setToast]);
   const {
     users, setUsers, overview, setOverview, search, setSearch, userSort, setUserSort,
-    userInfo, setUserInfo, issuedCredential, setIssuedCredential, savingUser, setSavingUser,
+    userInfo, setUserInfo, issuedCredential, setIssuedCredential, savingUser,
     name, setName, panelLogin, setPanelLogin, role, setRole, additionalInfo,
     setAdditionalInfo, telegramId, setTelegramId, teacherId, setTeacherId,
     studentId, setStudentId, code, setCode, deleteCandidate, setDeleteCandidate,
-    deletingUser, setDeletingUser, disconnectCandidate, setDisconnectCandidate,
-    disconnectingTelegram, setDisconnectingTelegram, allTeachers, allStudents,
+    deletingUser, disconnectCandidate, setDisconnectCandidate,
+    disconnectingTelegram, allTeachers, allStudents,
     studentsByTeacherId, visibleUsers, unassignedStudents, openCreate, openEdit,
     saveUser, regeneratePanelAccessCode, removeUser, confirmRemoveUser, assign,
-    unassignStudent, disconnectTelegram, confirmDisconnectTelegram, makeCode,
+    disconnectTelegram, confirmDisconnectTelegram, makeCode,
   } = useUsersController({
     request, refresh, notify, setError, selectedChat, setSelectedChat,
     setMessages, modal, setModal, directory,
