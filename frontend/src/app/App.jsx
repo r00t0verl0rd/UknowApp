@@ -60,7 +60,7 @@ export default function App() {
   } = useAuthState();
   const { theme, setTheme } = useSettingsState();
   const {
-    teacherGraph, setTeacherGraph, collapsedTeacherIds, setCollapsedTeacherIds,
+    teacherGraph, setTeacherGraph, graphObjects, setGraphObjects, collapsedTeacherIds, setCollapsedTeacherIds,
   } = useGraphState();
   const {
     draft, setDraft, attachment, setAttachment, chats, setChats,
@@ -119,20 +119,20 @@ export default function App() {
 
       // Independent panel datasets are fetched together to avoid serial network waits.
       const roleRequest = who.role === "admin"
-        ? Promise.all([request("/api/admin/users"), request("/api/admin/overview")])
+        ? Promise.all([request("/api/admin/users"), request("/api/admin/overview"), request("/api/admin/graph/objects")])
         : who.role === "teacher" ? request("/api/panel/graph") : Promise.resolve(null);
       const [conversations, roleData, personal] = await Promise.all([
         request("/api/panel/conversations"), roleRequest, request("/api/panel/personal-conversations"),
       ]);
       setChats(conversations); setPersonalChats(personal);
       if (who.role === "admin") {
-        const [people, summary] = roleData;
-        setUsers(people); setOverview(summary);
+        const [people, summary, objects] = roleData;
+        setUsers(people); setOverview(summary); setGraphObjects(objects);
       } else if (who.role === "teacher") {
         setTeacherGraph(roleData);
-        setUsers([]); setOverview(null);
+        setGraphObjects([]); setUsers([]); setOverview(null);
       } else {
-        setTeacherGraph(null); setUsers([]); setOverview(null);
+        setTeacherGraph(null); setGraphObjects([]); setUsers([]); setOverview(null);
         setPage("chats");
         // Keep the inbox visible on entry. Fetching messages marks them read,
         // so only an explicit student click should clear the unread counter.
@@ -649,9 +649,9 @@ export default function App() {
     } catch (e) { setError(e.message); }
   }
 
-  async function saveCloudPosition(teacherId, x, y) {
+  async function saveGraphObjectPosition(objectId, x, y) {
     try {
-      await request(`/api/admin/graph/cloud-positions/${teacherId}`, {
+      await request(`/api/admin/graph/objects/${objectId}/position`, {
         method: "PATCH",
         body: JSON.stringify({ x, y }),
       });
@@ -816,7 +816,7 @@ export default function App() {
       </header>
       <div className={"content" + (page === "chats" ? " chats-content" : "")}>
         {error && <div className="alert alert-row">{error}<button onClick={() => setError("")}><X/></button></div>}
-        {page === "graph" && <StructurePage profile={profile} teacherGraph={teacherGraph} overview={overview} openCreate={openCreate} allTeachers={allTeachers} studentsByTeacherId={studentsByTeacherId} collapsedTeacherIds={collapsedTeacherIds} setCollapsedTeacherIds={setCollapsedTeacherIds} openEdit={openEdit} setTeacherId={setTeacherId} setStudentId={setStudentId} allStudents={allStudents} setModal={setModal} unassignedStudents={unassignedStudents} unassignStudent={unassignStudent} saveCloudPosition={saveCloudPosition} />}
+        {page === "graph" && <StructurePage profile={profile} teacherGraph={teacherGraph} overview={overview} openCreate={openCreate} allTeachers={allTeachers} studentsByTeacherId={studentsByTeacherId} collapsedTeacherIds={collapsedTeacherIds} setCollapsedTeacherIds={setCollapsedTeacherIds} openEdit={openEdit} setTeacherId={setTeacherId} setStudentId={setStudentId} allStudents={allStudents} setModal={setModal} unassignedStudents={unassignedStudents} unassignStudent={unassignStudent} graphObjects={graphObjects} saveGraphObjectPosition={saveGraphObjectPosition} />}
         {page === "users" && <UsersPage visibleUsers={visibleUsers} search={search} setSearch={setSearch} userSort={userSort} setUserSort={setUserSort} openCreate={openCreate} disconnectTelegram={disconnectTelegram} makeCode={makeCode} userInfo={userInfo} setUserInfo={setUserInfo} openEdit={openEdit} removeUser={removeUser} />}
         {page === "chats" && <ChatsPage profile={profile} chatSection={chatSection} setChatSection={setChatSection} personalChats={personalChats} setSelectedChat={setSelectedChat} setMessages={setMessages} chatFilter={chatFilter} setChatFilter={setChatFilter} openCreatePersonalChat={openCreatePersonalChat} chatSearch={chatSearch} setChatSearch={setChatSearch} visibleChats={visibleChats} openChat={openChat} selectedChat={selectedChat} setPage={setPage} draft={draft} setDraft={setDraft} messageFilter={messageFilter} setMessageFilter={setMessageFilter} messagesViewportRef={messagesViewportRef} visibleMessages={visibleMessages} messages={messages} setDeleteMessageCandidate={setDeleteMessageCandidate} attachment={attachment} setAttachment={setAttachment} sendChatMessage={sendChatMessage} />}
 
