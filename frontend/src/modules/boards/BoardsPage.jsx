@@ -46,6 +46,7 @@ export default function BoardsPage() {
   const frameRef = useRef(0);
   const transformRef = useRef({ zoom: 1, x: 0, y: 0 });
   const positionsRef = useRef(new Map());
+  const viewportSizeRef = useRef({ width: 0, height: 0 });
 
   const { roots, nodesById } = useMemo(() => {
     const objectsByParent = new Map();
@@ -72,6 +73,14 @@ export default function BoardsPage() {
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return undefined;
+    const measure = () => {
+      const bounds = viewport.getBoundingClientRect();
+      viewportSizeRef.current = { width: bounds.width, height: bounds.height };
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(viewport);
+
     const update = () => {
       const { zoom, x, y } = transformRef.current;
       if (worldRef.current) worldRef.current.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${zoom})`;
@@ -80,9 +89,8 @@ export default function BoardsPage() {
       if (!viewport.contains(event.target)) return;
       if (event.cancelable) event.preventDefault();
       event.stopPropagation();
-      const bounds = viewport.getBoundingClientRect();
-      const pointX = bounds.width / 2;
-      const pointY = bounds.height / 2;
+      const pointX = viewportSizeRef.current.width / 2;
+      const pointY = viewportSizeRef.current.height / 2;
       const current = transformRef.current;
       const nextZoom = Math.max(0.35, Math.min(2.5, current.zoom * Math.exp(-Math.max(-240, Math.min(240, event.deltaY)) * 0.0015)));
       if (nextZoom === current.zoom) return;
@@ -93,7 +101,10 @@ export default function BoardsPage() {
       update();
     };
     viewport.addEventListener("wheel", onWheel, { passive: false });
-    return () => viewport.removeEventListener("wheel", onWheel);
+    return () => {
+      viewport.removeEventListener("wheel", onWheel);
+      observer.disconnect();
+    };
   }, []);
 
   const resetView = useCallback(() => {
@@ -112,7 +123,10 @@ export default function BoardsPage() {
     dragRef.current = {
       item, element, pointerId: event.pointerId,
       startX: event.clientX, startY: event.clientY,
-      x: item.x || 0, y: item.y || 0, nextX: item.x || 0, nextY: item.y || 0,
+      x: positionsRef.current.get(item.id)?.x ?? item.x ?? 0,
+      y: positionsRef.current.get(item.id)?.y ?? item.y ?? 0,
+      nextX: positionsRef.current.get(item.id)?.x ?? item.x ?? 0,
+      nextY: positionsRef.current.get(item.id)?.y ?? item.y ?? 0,
     };
     event.currentTarget.setPointerCapture(event.pointerId);
     element.classList.add("is-object-dragging");
