@@ -9,6 +9,7 @@ import Smile from "lucide-react/dist/esm/icons/smile.js";
 const STUDENT_LAYOUT_KEY = "uknowapp-graph-student-layout";
 const TEACHER_STUDENT_LAYOUT_KEY = "uknowapp-teacher-graph-student-layout";
 const EMPTY_CLOUD_POSITIONS = [];
+const GRAPH_GRID_SIZE = 12;
 
 function readStudentLayout() {
   try {
@@ -27,13 +28,17 @@ function positionStyle(position) {
   return { transform: `translate3d(${position?.x || 0}px, ${position?.y || 0}px, 0)` };
 }
 
+function snapToGrid(value) {
+  return Math.round(value / GRAPH_GRID_SIZE) * GRAPH_GRID_SIZE;
+}
+
 function dragPosition(drag, clientX, clientY) {
   const bounds = drag.boundaryRect;
   const element = drag.elementRect;
   const clamp = (value, min, max) => min > max ? (min + max) / 2 : Math.max(min, Math.min(max, value));
   const dx = clamp(clientX - drag.startX, bounds.left - element.left, bounds.right - element.right);
   const dy = clamp(clientY - drag.startY, bounds.top - element.top, bounds.bottom - element.bottom);
-  return { x: drag.x + dx, y: drag.y + dy };
+  return { x: snapToGrid(drag.x + dx), y: snapToGrid(drag.y + dy) };
 }
 
 function TeacherBranch({ teacher, students, studentLayout, studentsCollapsed = false, isOwner = false, cloudLayout, cloudStack, setCollapsedTeacherIds, openEdit, setTeacherId, setStudentId, allStudents, setModal, unassignStudent }) {
@@ -137,7 +142,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     if (!drag || drag.pointerId !== event.pointerId) return;
     const position = drag.type === "student"
       ? dragPosition(drag, event.clientX, event.clientY)
-      : { x: drag.x + event.clientX - drag.startX, y: drag.y + event.clientY - drag.startY };
+      : { x: snapToGrid(drag.x + event.clientX - drag.startX), y: snapToGrid(drag.y + event.clientY - drag.startY) };
     drag.nextX = position.x;
     drag.nextY = position.y;
     if (!frameRef.current) {
@@ -154,10 +159,28 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     if (!drag || drag.pointerId !== event.pointerId) return;
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
     frameRef.current = 0;
-    const { x, y } = drag.type === "student"
+    let { x, y } = drag.type === "student"
       ? dragPosition(drag, event.clientX, event.clientY)
-      : { x: drag.x + event.clientX - drag.startX, y: drag.y + event.clientY - drag.startY };
+      : { x: snapToGrid(drag.x + event.clientX - drag.startX), y: snapToGrid(drag.y + event.clientY - drag.startY) };
+    const hit = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-drag-type]");
+    const target = hit && hit !== drag.element && hit.dataset.dragType === drag.type && hit.parentElement === drag.element.parentElement ? hit : null;
+    let targetPosition = null;
+    if (target) {
+      const currentRect = drag.element.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const dx = targetRect.left - currentRect.left;
+      const dy = targetRect.top - currentRect.top;
+      const layout = drag.type === "cloud" ? cloudLayoutRef.current : drag.teacherView ? teacherStudentLayoutRef.current : studentLayoutRef.current;
+      const targetId = target.dataset.dragId;
+      const previousTarget = layout[targetId] || { x: 0, y: 0 };
+      targetPosition = { id: targetId, x: previousTarget.x - dx, y: previousTarget.y - dy };
+      x += dx;
+      y += dy;
+    }
     drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    if (target && targetPosition) {
+      target.style.transform = `translate3d(${targetPosition.x}px, ${targetPosition.y}px, 0)`;
+    }
     drag.element.classList.remove("is-dragging");
     drag.element.style.willChange = "";
     drag.element.style.transition = "";
@@ -166,10 +189,12 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
 
     if (drag.type === "cloud") {
       const next = { ...cloudLayoutRef.current, [drag.id]: { x, y } };
+      if (targetPosition) next[targetPosition.id] = { x: targetPosition.x, y: targetPosition.y };
       cloudLayoutRef.current = next;
       setCloudLayout(next);
       setCloudStack(current => ({ ...current, [drag.id]: cloudStackRef.current }));
       saveCloudPosition(drag.id, x, y);
+      if (targetPosition) saveCloudPosition(targetPosition.id, targetPosition.x, targetPosition.y);
       return;
     }
 
@@ -177,6 +202,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     const setLayout = drag.teacherView ? setTeacherStudentLayout : setStudentLayout;
     const storageKey = drag.teacherView ? TEACHER_STUDENT_LAYOUT_KEY : STUDENT_LAYOUT_KEY;
     const next = { ...layoutRef.current, [drag.id]: { x, y } };
+    if (targetPosition) next[targetPosition.id] = { x: targetPosition.x, y: targetPosition.y };
     layoutRef.current = next;
     setLayout(next);
     try {
