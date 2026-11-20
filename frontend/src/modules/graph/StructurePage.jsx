@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right.js";
+import Crosshair from "lucide-react/dist/esm/icons/crosshair.js";
+import Grid3X3 from "lucide-react/dist/esm/icons/grid-3x3.js";
 import GraduationCap from "lucide-react/dist/esm/icons/graduation-cap.js";
 import Link2Off from "lucide-react/dist/esm/icons/link-2-off.js";
 import Pencil from "lucide-react/dist/esm/icons/pencil.js";
@@ -302,6 +304,64 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     if (innerCoordinatesRef.current.zoomAt(point, factor)) scheduleGraphTransform();
   }
 
+  function centerGraphAndResetZoom() {
+    const viewport = graphViewportRef.current;
+    const world = graphWorldRef.current;
+    if (!viewport || !world) return;
+    const inner = innerCoordinatesRef.current;
+    inner.resetView();
+    world.style.transform = inner.transform();
+    inner.centerContent(world.scrollWidth, world.scrollHeight, viewport.clientWidth, viewport.clientHeight);
+    scheduleGraphTransform();
+  }
+
+  function alignGraphToGrid() {
+    const world = graphWorldRef.current;
+    if (!world) return;
+    const inner = innerCoordinatesRef.current;
+    const zoom = inner.zoom;
+    const isTeacher = profile?.role === "teacher";
+    const clouds = { ...cloudLayoutRef.current };
+    const students = { ...(isTeacher ? teacherStudentLayoutRef.current : studentLayoutRef.current) };
+    const alignGroup = (selector, layout, boundsFor) => {
+      const elements = [...world.querySelectorAll(selector)];
+      const groups = new Map();
+      elements.forEach(element => {
+        const parent = element.parentElement;
+        if (!groups.has(parent)) groups.set(parent, []);
+        groups.get(parent).push(element);
+      });
+      groups.forEach(group => group.forEach(element => {
+        const id = element.dataset.dragId;
+        if (!id) return;
+        const current = layout[id] || { x: 0, y: 0 };
+        const snapped = inner.snapPoint(current, outerCoordinatesRef.current);
+        element.style.transform = `translate3d(${snapped.x}px, ${snapped.y}px, 0)`;
+        const siblings = group.filter(other => other !== element);
+        const position = findFreeGridPosition(element, siblings, snapped, boundsFor(element), zoom);
+        element.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
+        layout[id] = position;
+      }));
+    };
+
+    if (isTeacher) {
+      alignGroup(".student-list > .student-card", students, element => element.parentElement);
+      teacherStudentLayoutRef.current = students;
+      setTeacherStudentLayout(students);
+      try { localStorage.setItem(TEACHER_STUDENT_LAYOUT_KEY, JSON.stringify(students)); } catch {}
+      return;
+    }
+
+    alignGroup(".teacher-grid > .teacher-branch", clouds, () => outerCoordinatesRef.current.getBounds());
+    alignGroup(".student-list > .student-card, .unassigned-grid > .student-card", students, element => element.parentElement);
+    cloudLayoutRef.current = clouds;
+    studentLayoutRef.current = students;
+    setCloudLayout(clouds);
+    setStudentLayout(students);
+    Object.entries(clouds).forEach(([id, position]) => saveCloudPosition(id, position.x, position.y));
+    try { localStorage.setItem(STUDENT_LAYOUT_KEY, JSON.stringify(students)); } catch {}
+  }
+
   function handleGraphPointerDownCapture(event) {
     if (event.pointerType !== "touch") return;
     const pointers = touchPointersRef.current;
@@ -507,6 +567,12 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
   return (
     <>
       {profile?.role === "teacher" && <section className="graph-panel is-teacher-view">
+        <div className="graph-legend-row">
+          <div className="graph-toolbar-actions graph-view-actions">
+            <button type="button" className="btn small outline" onClick={centerGraphAndResetZoom} title="Отцентрировать граф и сбросить масштаб"><Crosshair />Отцентрировать</button>
+            <button type="button" className="btn small outline" onClick={alignGraphToGrid} title="Выровнять карточки по сетке"><Grid3X3 />Выровнять по сетке</button>
+          </div>
+        </div>
         <div
           className="graph-coordinate-viewport"
           ref={graphViewportRef}
@@ -544,6 +610,8 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
             <div className="graph-legend-item"><span className="student-dot" />Ученики <b>{overview?.counts.students || 0}</b></div>
           </div>
           <div className="graph-toolbar-actions">
+            <button type="button" className="btn small outline" onClick={centerGraphAndResetZoom} title="Отцентрировать граф и сбросить масштаб"><Crosshair />Отцентрировать</button>
+            <button type="button" className="btn small outline" onClick={alignGraphToGrid} title="Выровнять карточки по сетке"><Grid3X3 />Выровнять по сетке</button>
             <button className="btn primary graph-add-participant" onClick={() => openCreate()}><Plus />Добавить участника</button>
           </div>
         </div>
