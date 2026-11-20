@@ -16,6 +16,7 @@ from app.models import (
     ConnectionCode,
     Conversation,
     GraphObject,
+    GraphObjectDeletion,
     Message,
     PanelSession,
     PersonalConversation,
@@ -104,9 +105,12 @@ def graph_objects(_: Admin, db: Db):
     ).all()
     assigned_to = {item.student_id: item.teacher_id for item in assignments if item.teacher_id in teachers}
 
+    deleted_keys = set(db.scalars(select(GraphObjectDeletion.object_key)).all())
     objects = {item.object_key: item for item in db.scalars(select(GraphObject)).all()}
 
     def ensure(key: str, kind: str, title: str, parent_id: int | None, x: float = 0, y: float = 0):
+        if key in deleted_keys:
+            return None
         item = objects.get(key)
         if item is None:
             item = GraphObject(object_key=key, object_type=kind, title=title, parent_id=parent_id, x=x, y=y)
@@ -118,12 +122,13 @@ def graph_objects(_: Admin, db: Db):
         return item
 
     fon = ensure("fon", "fon", "Fon", None, 0, 0)
-    admin = ensure("administrator", "administrator", "Администратор", fon.id, 32, 32)
-    assigned_area = ensure("assigned_students", "area", "Назначенные ученики", admin.id, 0, 110)
-    teachers_area = ensure("teachers", "area", "Учителя", admin.id, 500, 110)
+    admin = ensure("administrator", "administrator", "Администратор", fon.id, 32, 32) if fon else None
+    assigned_area = ensure("assigned_students", "area", "Назначенные ученики", admin.id, 0, 110) if admin else None
+    teachers_area = ensure("teachers", "area", "Учителя", admin.id, 500, 110) if admin else None
 
     for teacher_id, teacher in teachers.items():
-        ensure(f"teacher:{teacher_id}", "teacher", teacher.full_name, teachers_area.id)
+        if teachers_area:
+            ensure(f"teacher:{teacher_id}", "teacher", teacher.full_name, teachers_area.id)
     for student_id, student in students.items():
         parent = objects.get(f"teacher:{assigned_to[student_id]}") if student_id in assigned_to else None
         ensure(
@@ -132,6 +137,7 @@ def graph_objects(_: Admin, db: Db):
         )
 
     valid_keys = {"fon", "administrator", "assigned_students", "teachers"}
+    valid_keys.difference_update(deleted_keys)
     valid_keys.update(f"teacher:{user_id}" for user_id in teachers)
     valid_keys.update(f"student:{user_id}" for user_id in students)
     valid_keys.update(key for key in objects if key.startswith("custom:"))
@@ -184,8 +190,6 @@ def delete_graph_object(object_id: int, _: Admin, db: Db):
     item = db.get(GraphObject, object_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Объект графа не найден")
-    if not item.object_key.startswith("custom:"):
-        raise HTTPException(status_code=403, detail="Системные объекты удалять нельзя")
 
     pending = [item.id]
     descendants = []
@@ -196,11 +200,10 @@ def delete_graph_object(object_id: int, _: Admin, db: Db):
         pending = [child.id for child in children]
         descendants.extend(children)
 
-    if any(not child.object_key.startswith("custom:") for child in descendants):
-        raise HTTPException(status_code=409, detail="Нельзя удалить объект с системными вложенными элементами")
-
-    for child in reversed(descendants):
-        db.delete(child)
+    for target in [item, *descendants]:
+        db.merge(GraphObjectDeletion(object_key=target.object_key))
+    for target in reversed(descendants):
+        db.delete(target)
     db.delete(item)
     db.commit()
     return {"deleted": True, "deleted_count": len(descendants) + 1}
