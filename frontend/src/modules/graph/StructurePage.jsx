@@ -298,13 +298,15 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     }
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
     frameRef.current = 0;
-    const entries = [...pointers.values()];
+    const iterator = pointers.values();
+    const first = iterator.next().value;
+    const second = iterator.next().value;
     const midpoint = outerCoordinatesRef.current.toLocal(
-      (entries[0].x + entries[1].x) / 2,
-      (entries[0].y + entries[1].y) / 2,
+      (first.x + second.x) / 2,
+      (first.y + second.y) / 2,
     );
     pinchRef.current = {
-      distance: Math.hypot(entries[1].x - entries[0].x, entries[1].y - entries[0].y),
+      distance: Math.hypot(second.x - first.x, second.y - first.y),
       midpoint,
     };
     try { event.currentTarget.setPointerCapture(event.pointerId); } catch {}
@@ -313,20 +315,26 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
   function handleGraphPointerMoveCapture(event) {
     const pointers = touchPointersRef.current;
     if (!pointers.has(event.pointerId)) return;
-    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    const pointer = pointers.get(event.pointerId);
+    if (!pointer) return;
+    pointer.x = event.clientX;
+    pointer.y = event.clientY;
     if (pointers.size < 2 || !pinchRef.current) return;
-    const entries = [...pointers.values()];
+    const iterator = pointers.values();
+    const first = iterator.next().value;
+    const second = iterator.next().value;
     const midpoint = outerCoordinatesRef.current.toLocal(
-      (entries[0].x + entries[1].x) / 2,
-      (entries[0].y + entries[1].y) / 2,
+      (first.x + second.x) / 2,
+      (first.y + second.y) / 2,
     );
-    const distance = Math.hypot(entries[1].x - entries[0].x, entries[1].y - entries[0].y);
+    const distance = Math.hypot(second.x - first.x, second.y - first.y);
     const pinch = pinchRef.current;
     const inner = innerCoordinatesRef.current;
     inner.panBy(midpoint.x - pinch.midpoint.x, midpoint.y - pinch.midpoint.y);
     if (pinch.distance > 0 && distance > 0) inner.zoomAt(midpoint, distance / pinch.distance);
-    pinchRef.current = { distance, midpoint };
-    applyGraphTransform();
+    pinch.distance = distance;
+    pinch.midpoint = midpoint;
+    scheduleGraphTransform();
   }
 
   function handleGraphPointerUpCapture(event) {
