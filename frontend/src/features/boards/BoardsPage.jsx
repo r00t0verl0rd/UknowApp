@@ -50,25 +50,19 @@ export default function BoardsPage() {
   const viewportSizeRef = useRef({ width: 0, height: 0 });
 
   const { roots, nodesById } = useMemo(() => {
-    const objectsByParent = new Map();
     const nodesById = new Map();
+    const roots = [];
 
     for (const item of boardObjects) {
-      const node = { ...item, children: [] };
-      const parentId = item.parent_id ?? null;
-      if (!objectsByParent.has(parentId)) objectsByParent.set(parentId, []);
-      objectsByParent.get(parentId).push(node);
-      nodesById.set(node.id, node);
+      nodesById.set(item.id, { ...item, children: [] });
     }
-
     for (const node of nodesById.values()) {
-      if (node.parent_id != null) nodesById.get(node.parent_id)?.children.push(node);
+      const parent = nodesById.get(node.parent_id);
+      if (parent) parent.children.push(node);
+      else roots.push(node);
     }
 
-    return {
-      roots: (objectsByParent.get(null) || []).filter(node => !node.parent_id),
-      nodesById,
-    };
+    return { roots, nodesById };
   }, [boardObjects]);
 
   useLayoutEffect(() => {

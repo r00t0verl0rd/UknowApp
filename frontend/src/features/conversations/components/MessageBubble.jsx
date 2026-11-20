@@ -101,13 +101,16 @@ function ChatAudioPlayer({ src, label }) {
 
 function MessageBubble({ message, onDelete, viewerRole }) {
   const [mediaUrl, setMediaUrl] = useState("");
+  const bubbleRef = useRef(null);
   const media = message.metadata?.media;
   useEffect(() => {
     if (!media || media.archive_status !== "stored") return undefined;
     let objectUrl = "";
     let cancelled = false;
-    fetch(API + "/api/panel/messages/" + message.id + "/media", {
-      credentials: "include"
+    const controller = new AbortController();
+    const loadMedia = () => fetch(API + "/api/panel/messages/" + message.id + "/media", {
+      credentials: "include",
+      signal: controller.signal,
     }).then(response => {
       if (!response.ok) throw new Error("media unavailable");
       return response.blob();
@@ -115,9 +118,26 @@ function MessageBubble({ message, onDelete, viewerRole }) {
       if (cancelled) return;
       objectUrl = URL.createObjectURL(blob);
       setMediaUrl(objectUrl);
-    }).catch(() => setMediaUrl(""));
+    }).catch(() => {
+      if (!cancelled) setMediaUrl("");
+    });
+
+    let observer;
+    if ("IntersectionObserver" in window && bubbleRef.current) {
+      observer = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting)) {
+          observer.disconnect();
+          void loadMedia();
+        }
+      }, { rootMargin: "250px 0px" });
+      observer.observe(bubbleRef.current);
+    } else {
+      void loadMedia();
+    }
     return () => {
       cancelled = true;
+      controller.abort();
+      observer?.disconnect();
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [message.id, media?.archive_status]);
@@ -148,7 +168,7 @@ function MessageBubble({ message, onDelete, viewerRole }) {
     video_sticker: "Видео-стикер",
     animation: "Анимация"
   }[sourceKind] || "Вложение");
-  return <div className={"message " + message.sender_role}>
+  return <div ref={bubbleRef} className={"message " + message.sender_role}>
     <div className="message-topline">
       {!(viewerRole === "teacher" && message.sender_role !== "admin") && <b>{message.sender}</b>}
       <div className="message-tools">
