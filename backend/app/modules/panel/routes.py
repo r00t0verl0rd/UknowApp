@@ -59,11 +59,7 @@ from app.modules.personal_chat.service import (
     _personal_conversation_dict,
 )
 from app.push_notifications import schedule_push
-from app.schemas import (
-    PanelMessageCreate,
-    PersonalConversationCreate,
-    PersonalMessageCreate,
-)
+from app.request_validation import message_payload, personal_conversation_payload
 from app.modules.messaging.moderation import text_contains_contact_data
 from app.modules.dependencies import Db, PanelUser
 
@@ -240,10 +236,11 @@ def personal_conversations(principal: PanelUser, db: Db):
 
 
 @router.post("/panel/personal-conversations", status_code=201)
-def create_personal_conversation(payload: PersonalConversationCreate, principal: PanelUser, db: Db):
+def create_personal_conversation(payload: dict, principal: PanelUser, db: Db):
+    payload = personal_conversation_payload(payload)
     if principal["role"] != "admin":
         raise HTTPException(status_code=403, detail="Создавать личные диалоги может только администратор")
-    participant = db.get(User, payload.user_id)
+    participant = db.get(User, payload["user_id"])
     if not participant or participant.role not in {"teacher", "student"}:
         raise HTTPException(status_code=404, detail="Участник не найден")
     item = db.scalar(select(PersonalConversation).where(PersonalConversation.participant_id == participant.id))
@@ -289,10 +286,11 @@ def personal_messages(conversation_id: int, principal: PanelUser, db: Db):
 @router.post("/panel/personal-conversations/{conversation_id}/messages", status_code=201)
 def send_personal_message(
     conversation_id: int,
-    payload: PersonalMessageCreate,
+    payload: dict,
     principal: PanelUser,
     db: Db,
 ):
+    payload = message_payload(payload)
     item = _personal_conversation(db, principal, conversation_id)
     if principal["role"] not in {"admin", "teacher", "student"}:
         raise HTTPException(status_code=403, detail="Недостаточно прав")
@@ -307,7 +305,7 @@ def send_personal_message(
         conversation_id=item.id,
         sender_id=sender_id,
         sender_role=principal["role"],
-        text=payload.text.strip(),
+        text=payload["text"].strip(),
     )
     if not row.text:
         raise HTTPException(status_code=400, detail="Введите сообщение")
@@ -578,14 +576,15 @@ async def _refresh_teacher_panel_after_web_delivery(bot, db: Session, teacher: U
 @router.post("/panel/conversations/{conversation_id}/messages", status_code=201)
 async def send_panel_message(
     conversation_id: int,
-    payload: PanelMessageCreate,
+    payload: dict,
     request: Request,
     principal: PanelUser,
     db: Db,
 ):
+    payload = message_payload(payload)
     # Сначала сохраняем сообщение в БД, затем отправляем его адресатам в Telegram.
     conversation = _panel_visible_conversation(db, principal, conversation_id)
-    body = payload.text.strip()
+    body = payload["text"].strip()
     if text_contains_contact_data(body):
         raise HTTPException(status_code=400, detail="Контактные данные нельзя отправлять через чат UknowApp")
     if not body:
