@@ -31,7 +31,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - name: Lint design tokens
-        run: npx --yes stylelint@16 src/tokens.css --config ../.stylelintrc.json
+        run: npx --yes stylelint@16 src/shared/styles/tokens.css --config ../.stylelintrc.json
 
   backend:
     runs-on: ubuntu-latest
