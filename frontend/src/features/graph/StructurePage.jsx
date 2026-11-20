@@ -20,7 +20,7 @@ export default function StructurePage({
       </div>
       <button type="button" className="btn primary graph-add-participant" onClick={() => openCreate()}><Plus />Добавить участника</button>
     </div>
-    <div className="root-node"><img src="/logo.png" alt="" /><div><b>Администратор</b><small>Полное управление</small></div></div>
+    <div className="admin_node"><img src="/logo.png" alt="" /><div><b>Администратор</b><small>Полное управление</small></div></div>
     <div className="teacher-grid">
       {allTeachers.map(teacher => {
         const students = studentsByTeacherId.get(teacher.id) || [];
