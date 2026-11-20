@@ -1,6 +1,7 @@
 """Администрирование резервных копий, архива переписок и очистки данных."""
 
 import json
+import os
 import shutil
 import sqlite3
 import tempfile
@@ -50,6 +51,12 @@ def _database_path() -> Path:
     if engine.dialect.name != "sqlite" or not engine.url.database:
         raise HTTPException(status_code=501, detail="Резервное копирование доступно для SQLite")
     return Path(engine.url.database).resolve()
+
+
+def _temporary_path(prefix: str, suffix: str, directory: Path) -> Path:
+    descriptor, name = tempfile.mkstemp(prefix=prefix, suffix=suffix, dir=directory)
+    os.close(descriptor)
+    return Path(name)
 
 
 def _remove_temp(path: str) -> None:
@@ -121,12 +128,7 @@ def _validate_database(path: Path) -> None:
 @router.get("/stats")
 def data_stats(_: Admin):
     database = _database_path()
-    handle = tempfile.NamedTemporaryFile(
-        prefix="uknowapp-db-stats-", suffix=".sqlite3",
-        dir=database.parent, delete=False,
-    )
-    backup_path = Path(handle.name)
-    handle.close()
+    backup_path = _temporary_path("uknowapp-db-stats-", ".sqlite3", database.parent)
     try:
         with sqlite3.connect(database) as source, sqlite3.connect(backup_path) as target:
             source.backup(target)
@@ -199,9 +201,7 @@ def download_database(_: Admin):
     database = _database_path()
     if not database.is_file():
         raise HTTPException(status_code=404, detail="Файл базы данных не найден")
-    handle = tempfile.NamedTemporaryFile(prefix="uknowapp-db-", suffix=".sqlite3", dir=database.parent, delete=False)
-    backup_path = Path(handle.name)
-    handle.close()
+    backup_path = _temporary_path("uknowapp-db-", ".sqlite3", database.parent)
     try:
         with sqlite3.connect(database) as source, sqlite3.connect(backup_path) as target:
             source.backup(target)
@@ -218,9 +218,7 @@ def download_database(_: Admin):
 @router.get("/full")
 def download_full_backup(_: Admin):
     database = _database_path()
-    handle = tempfile.NamedTemporaryFile(prefix="uknowapp-full-", suffix=".zip", dir=database.parent, delete=False)
-    archive_path = Path(handle.name)
-    handle.close()
+    archive_path = _temporary_path("uknowapp-full-", ".zip", database.parent)
     snapshot_path = archive_path.with_suffix(".sqlite3")
     try:
         _create_database_snapshot(snapshot_path)
@@ -246,9 +244,7 @@ def download_full_backup(_: Admin):
 @router.get("/media")
 def download_media_archive(_: Admin):
     database = _database_path()
-    handle = tempfile.NamedTemporaryFile(prefix="uknowapp-media-", suffix=".zip", dir=database.parent, delete=False)
-    archive_path = Path(handle.name)
-    handle.close()
+    archive_path = _temporary_path("uknowapp-media-", ".zip", database.parent)
     try:
         with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             archive.writestr("manifest.json", json.dumps({
@@ -267,7 +263,7 @@ def download_media_archive(_: Admin):
 
 
 @router.post("/full")
-async def restore_full_backup(_: Admin, file: UploadFile = File(...)):
+async def restore_full_backup(_: Admin, file: Annotated[UploadFile, File()]):
     if not (file.filename or "").lower().endswith(".zip"):
         raise HTTPException(status_code=400, detail="Загрузите ZIP-файл полной резервной копии")
     data_dir = _database_path().parent
@@ -344,7 +340,7 @@ async def restore_full_backup(_: Admin, file: UploadFile = File(...)):
 
 
 @router.post("/database")
-async def restore_database(_: Admin, file: UploadFile = File(...)):
+async def restore_database(_: Admin, file: Annotated[UploadFile, File()]):
     if not (file.filename or "").lower().endswith((".db", ".sqlite", ".sqlite3")):
         raise HTTPException(status_code=400, detail="Загрузите файл SQLite (.db, .sqlite или .sqlite3)")
     database = _database_path()
@@ -391,9 +387,7 @@ def download_dialogues(_: Admin):
                 "admin_read_at", "participant_read_at", "created_at",
             )) for row in personal_messages],
         }
-        handle = tempfile.NamedTemporaryFile(prefix="uknowapp-dialogues-", suffix=".zip", dir=_database_path().parent, delete=False)
-        archive_path = Path(handle.name)
-        handle.close()
+        archive_path = _temporary_path("uknowapp-dialogues-", ".zip", _database_path().parent)
         try:
             with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
                 for name, value in payload.items():
@@ -421,7 +415,11 @@ def download_dialogues(_: Admin):
 
 
 @router.post("/dialogues")
-async def restore_dialogues(_: Admin, file: UploadFile = File(...), db: Session = Depends(_get_db)):
+async def restore_dialogues(
+    _: Admin,
+    file: Annotated[UploadFile, File()],
+    db: Annotated[Session, Depends(_get_db)],
+):
     if not (file.filename or "").lower().endswith(".zip"):
         raise HTTPException(status_code=400, detail="Загрузите ZIP-архив переписок")
     data_dir = _database_path().parent
@@ -523,7 +521,7 @@ async def restore_dialogues(_: Admin, file: UploadFile = File(...), db: Session 
 
 
 @router.delete("/dialogues")
-def cleanup_dialogues(days: int, _: Admin, db: Session = Depends(_get_db)):
+def cleanup_dialogues(days: int, _: Admin, db: Annotated[Session, Depends(_get_db)]):
     if days not in {30, 60, 120}:
         raise HTTPException(status_code=400, detail="Выберите срок 30, 60 или 120 дней")
     cutoff = datetime.now(UTC) - timedelta(days=days)
