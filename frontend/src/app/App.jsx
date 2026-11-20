@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useAuthState, useChatState, useDirectoryState, useGraphState, usePersonalChatState, useSettingsState, useUiState } from "../hooks/useAppState.js";
 import LoginPage from "../modules/authentication/LoginPage.jsx";
 import { usePushNotificationsState } from "../hooks/notifications/usePushNotificationsState.js";
@@ -28,6 +28,10 @@ export default function App() {
     setToast(message);
     window.setTimeout(() => setToast(""), 2600);
   }, [setToast]);
+  useEffect(() => {
+    if (auth && profile?.role === "teacher") setPage("chats");
+  }, [auth, profile?.role, setPage]);
+
   const push = usePushNotificationsState({ auth, selectedChat, notify, setError });
   const { signIn, signOut } = useAuthController({
     authState, setError, setPage, setPushBusy: push.setPushBusy, setPushState: push.setPushState,
