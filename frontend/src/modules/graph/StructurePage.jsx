@@ -38,7 +38,10 @@ function dragPosition(drag, clientX, clientY) {
   const clamp = (value, min, max) => min > max ? (min + max) / 2 : Math.max(min, Math.min(max, value));
   const dx = clamp(clientX - drag.startX, bounds.left - element.left, bounds.right - element.right);
   const dy = clamp(clientY - drag.startY, bounds.top - element.top, bounds.bottom - element.bottom);
-  return { x: snapToGrid(drag.x + dx), y: snapToGrid(drag.y + dy) };
+  return {
+    x: clamp(snapToGrid(drag.x + dx), drag.x + bounds.left - element.left, drag.x + bounds.right - element.right),
+    y: clamp(snapToGrid(drag.y + dy), drag.y + bounds.top - element.top, drag.y + bounds.bottom - element.bottom),
+  };
 }
 
 function TeacherBranch({ teacher, students, studentLayout, studentsCollapsed = false, isOwner = false, cloudLayout, cloudStack, setCollapsedTeacherIds, openEdit, setTeacherId, setStudentId, allStudents, setModal, unassignStudent }) {
