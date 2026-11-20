@@ -178,10 +178,20 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     const allocateGroup = (selector, layout) => {
       const elements = [...document.querySelectorAll(selector)];
       elements.forEach(element => {
-        const id = element.dataset.dragId;
-        if (!id || layout[id]) return;
+        const handle = element.matches("[data-drag-id]") ? element : element.querySelector("[data-drag-id]");
+        const id = handle?.dataset.dragId;
+        if (!id) return;
+        const boundsElement = handle.dataset.dragType === "cloud" ? element.closest(".graph-panel") : element.parentElement;
+        if (layout[id]) {
+          const position = clampElementPosition(element, layout[id], boundsElement);
+          if (position.x !== layout[id].x || position.y !== layout[id].y) {
+            layout[id] = position;
+            element.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
+          }
+          return;
+        }
         const siblings = elements.filter(other => other !== element && other.parentElement === element.parentElement);
-        const position = findFreeGridPosition(element, siblings, { x: 0, y: 0 });
+        const position = findFreeGridPosition(element, siblings, { x: 0, y: 0 }, boundsElement);
         element.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
         layout[id] = position;
       });
@@ -222,6 +232,79 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     }
   }, [profile?.role, allTeachers, studentsByTeacherId, unassignedStudents, teacherGraph, saveCloudPosition]);
 
+
+  useEffect(() => {
+    let frame = 0;
+    const normalizePositions = () => {
+      frame = 0;
+      const nextClouds = { ...cloudLayoutRef.current };
+      const nextStudents = { ...studentLayoutRef.current };
+      const nextTeacherStudents = { ...teacherStudentLayoutRef.current };
+      let cloudsChanged = false;
+      let studentsChanged = false;
+      let teacherStudentsChanged = false;
+
+      document.querySelectorAll(".graph-panel .teacher-branch").forEach(element => {
+        const handle = element.querySelector('[data-drag-type="cloud"]');
+        const id = handle?.dataset.dragId;
+        const bounds = element.closest(".graph-panel");
+        if (!id || !bounds) return;
+        const current = nextClouds[id] || { x: 0, y: 0 };
+        const position = clampElementPosition(element, current, bounds);
+        if (position.x === current.x && position.y === current.y) return;
+        nextClouds[id] = position;
+        element.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
+        cloudsChanged = true;
+      });
+
+      document.querySelectorAll(".graph-panel .student-card[data-drag-id]").forEach(element => {
+        const id = element.dataset.dragId;
+        const teacherView = Boolean(element.closest(".is-teacher-view"));
+        const layout = teacherView ? nextTeacherStudents : nextStudents;
+        const bounds = element.parentElement;
+        if (!id || !bounds || !layout[id]) return;
+        const position = clampElementPosition(element, layout[id], bounds);
+        if (position.x === layout[id].x && position.y === layout[id].y) return;
+        layout[id] = position;
+        element.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
+        if (teacherView) teacherStudentsChanged = true;
+        else studentsChanged = true;
+      });
+
+      if (cloudsChanged) {
+        cloudLayoutRef.current = nextClouds;
+        setCloudLayout(nextClouds);
+        Object.entries(nextClouds).forEach(([id, position]) => {
+          if (cloudLayoutRef.current[id]?.x !== position.x || cloudLayoutRef.current[id]?.y !== position.y) {
+            saveCloudPosition(id, position.x, position.y);
+          }
+        });
+      }
+      if (studentsChanged) {
+        studentLayoutRef.current = nextStudents;
+        setStudentLayout(nextStudents);
+        try { localStorage.setItem(STUDENT_LAYOUT_KEY, JSON.stringify(nextStudents)); } catch {}
+      }
+      if (teacherStudentsChanged) {
+        teacherStudentLayoutRef.current = nextTeacherStudents;
+        setTeacherStudentLayout(nextTeacherStudents);
+        try { localStorage.setItem(TEACHER_STUDENT_LAYOUT_KEY, JSON.stringify(nextTeacherStudents)); } catch {}
+      }
+    };
+    const scheduleNormalize = () => {
+      if (!frame) frame = requestAnimationFrame(normalizePositions);
+    };
+    const panels = [...document.querySelectorAll(".graph-panel")];
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(scheduleNormalize) : null;
+    panels.forEach(panel => observer?.observe(panel));
+    window.addEventListener("resize", scheduleNormalize);
+    scheduleNormalize();
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", scheduleNormalize);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [profile?.role, saveCloudPosition]);
 
   function startDrag(event, handle) {
     if (event.button !== 0 || event.target.closest("button, a, input, select, textarea")) return;
