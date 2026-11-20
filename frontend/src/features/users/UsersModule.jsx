@@ -1,6 +1,6 @@
 import UsersPage from "./UsersPage.jsx";
 import UserDialogs from "./components/UserDialogs.jsx";
-import StructureModule from "../graph/StructureModule.jsx";
+import StructurePage from "../graph/StructurePage.jsx";
 import { useUsersController } from "../../hooks/users/useUsersController.js";
 
 export default function UsersModule({
@@ -20,7 +20,7 @@ export default function UsersModule({
       makeCode={state.makeCode} userInfo={state.userInfo} setUserInfo={state.setUserInfo}
       openEdit={state.openEdit} removeUser={state.removeUser}
     />}
-    {page === "graph" && <StructureModule
+    {page === "graph" && <StructurePage
       profile={profile} teacherGraph={teacherGraph} overview={state.overview}
       openCreate={state.openCreate} allTeachers={state.allTeachers}
       studentsByTeacherId={state.studentsByTeacherId} openEdit={state.openEdit}

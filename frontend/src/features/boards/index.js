@@ -1,1 +1,1 @@
-export { default } from "../../modules/boards/BoardsPage.jsx";
+export { default } from "./BoardsPage.jsx";
