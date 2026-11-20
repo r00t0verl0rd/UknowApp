@@ -81,7 +81,6 @@ class GraphPosition(Base):
     __table_args__ = (
         UniqueConstraint("group_key", "user_id", name="uq_graph_positions_group_user"),
         UniqueConstraint("group_key", "position", name="uq_graph_positions_group_position"),
-        Index("ix_graph_positions_group_position", "group_key", "position"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
