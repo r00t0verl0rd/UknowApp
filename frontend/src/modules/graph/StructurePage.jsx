@@ -163,23 +163,27 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
       ? dragPosition(drag, event.clientX, event.clientY)
       : { x: snapToGrid(drag.x + event.clientX - drag.startX), y: snapToGrid(drag.y + event.clientY - drag.startY) };
     const hit = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-drag-type]");
-    const target = hit && hit !== drag.element && hit.dataset.dragType === drag.type && hit.parentElement === drag.element.parentElement ? hit : null;
+    const target = drag.type === "cloud" ? hit?.closest(".teacher-branch") : hit;
+    const targetId = hit?.dataset.dragId;
+    const targetType = hit?.dataset.dragType;
+    const sameGroup = target && target !== drag.element && target.parentElement === drag.element.parentElement;
+    const canSwap = sameGroup && targetType === drag.type && targetId;
+    const swapTarget = canSwap ? target : null;
     let targetPosition = null;
-    if (target) {
+    if (swapTarget) {
       const currentRect = drag.element.getBoundingClientRect();
       const targetRect = target.getBoundingClientRect();
       const dx = targetRect.left - currentRect.left;
       const dy = targetRect.top - currentRect.top;
       const layout = drag.type === "cloud" ? cloudLayoutRef.current : drag.teacherView ? teacherStudentLayoutRef.current : studentLayoutRef.current;
-      const targetId = target.dataset.dragId;
       const previousTarget = layout[targetId] || { x: 0, y: 0 };
       targetPosition = { id: targetId, x: previousTarget.x - dx, y: previousTarget.y - dy };
       x += dx;
       y += dy;
     }
     drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-    if (target && targetPosition) {
-      target.style.transform = `translate3d(${targetPosition.x}px, ${targetPosition.y}px, 0)`;
+    if (swapTarget && targetPosition) {
+      swapTarget.style.transform = `translate3d(${targetPosition.x}px, ${targetPosition.y}px, 0)`;
     }
     drag.element.classList.remove("is-dragging");
     drag.element.style.willChange = "";
