@@ -37,7 +37,6 @@ function findFreeGridPosition(element, siblings, currentPosition) {
   const bounds = parent.getBoundingClientRect();
   const rect = element.getBoundingClientRect();
   const maxX = Math.max(0, bounds.right - rect.right + currentPosition.x);
-  const maxY = Math.max(0, bounds.bottom - rect.bottom + currentPosition.y);
   const collides = (candidateX, candidateY) => {
     const left = rect.left + candidateX - currentPosition.x;
     const top = rect.top + candidateY - currentPosition.y;
@@ -61,7 +60,7 @@ function findFreeGridPosition(element, siblings, currentPosition) {
       for (const [column, row] of candidates) {
         const x = currentPosition.x + column * GRAPH_GRID_SIZE;
         const y = currentPosition.y + row * GRAPH_GRID_SIZE;
-        if (x < 0 || y < 0 || x > maxX || y > maxY) continue;
+        if (x < 0 || y < 0 || x > maxX) continue;
         if (!collides(x, y)) return { x, y };
       }
     }
@@ -163,6 +162,11 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
         const position = findFreeGridPosition(element, siblings, { x: 0, y: 0 });
         if (position.x || position.y) {
           element.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
+          const parent = element.parentElement;
+          const bounds = parent.getBoundingClientRect();
+          const rect = element.getBoundingClientRect();
+          const requiredHeight = rect.bottom - bounds.top;
+          parent.style.minHeight = `${Math.max(parent.scrollHeight, requiredHeight)}px`;
           layout[id] = position;
           onAllocate(position, id);
         }
