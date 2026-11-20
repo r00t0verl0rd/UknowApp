@@ -14,7 +14,7 @@ from app.models import (
     Assignment,
     ConnectionCode,
     Conversation,
-    GraphCloudPosition,
+    GraphObject,
     Message,
     PanelSession,
     PersonalConversation,
@@ -73,8 +73,6 @@ def overview(_: Admin, db: Db):
         if user.role != "teacher":
             continue
         teachers.append({**user_dict(user), "students": students_by_teacher.get(user.id, [])})
-    cloud_positions = db.scalars(select(GraphCloudPosition)).all()
-
     return {
         "admin": {"label": "Администратор", "role": "admin"},
         "counts": {
@@ -85,29 +83,94 @@ def overview(_: Admin, db: Db):
             "messages": db.query(Message).count(),
         },
         "teachers": teachers,
-        "cloud_positions": [
-            {"teacher_id": position.teacher_id, "x": position.x, "y": position.y}
-            for position in cloud_positions
-        ],
     }
 
 
-@router.patch("/admin/graph/cloud-positions/{teacher_id}")
-def update_graph_cloud_position(teacher_id: int, payload: dict, _: Admin, db: Db):
-    x, y = payload.get("x"), payload.get("y")
-    if any(isinstance(value, bool) or not isinstance(value, (int, float)) or abs(value) > 10000 or not math.isfinite(value) for value in (x, y)):
-        raise HTTPException(status_code=422, detail="Некорректные координаты облачка")
-    teacher = db.get(User, teacher_id)
-    if not teacher or teacher.role != "teacher":
-        raise HTTPException(status_code=404, detail="Учитель не найден")
-    position = db.get(GraphCloudPosition, teacher_id)
-    if position is None:
-        position = GraphCloudPosition(teacher_id=teacher_id, x=x, y=y)
-        db.add(position)
-    else:
-        position.x, position.y = x, y
+def _graph_object_dict(item: GraphObject) -> dict:
+    return {
+        "id": item.id, "key": item.object_key, "type": item.object_type,
+        "title": item.title, "parent_id": item.parent_id, "x": item.x, "y": item.y,
+    }
+
+
+@router.get("/admin/graph/objects")
+def graph_objects(_: Admin, db: Db):
+    users = db.scalars(select(User).where(User.role.in_(["teacher", "student"]))).all()
+    teachers = {user.id: user for user in users if user.role == "teacher"}
+    students = {user.id: user for user in users if user.role == "student"}
+    assignments = db.scalars(
+        select(Assignment).where(Assignment.active.is_(True)).order_by(Assignment.created_at),
+    ).all()
+    assigned_to = {item.student_id: item.teacher_id for item in assignments if item.teacher_id in teachers}
+
+    objects = {item.object_key: item for item in db.scalars(select(GraphObject)).all()}
+
+    def ensure(key: str, kind: str, title: str, parent_id: int | None, x: float = 0, y: float = 0):
+        item = objects.get(key)
+        if item is None:
+            item = GraphObject(object_key=key, object_type=kind, title=title, parent_id=parent_id, x=x, y=y)
+            db.add(item)
+            db.flush()
+            objects[key] = item
+        else:
+            item.object_type, item.title, item.parent_id = kind, title, parent_id
+        return item
+
+    fon = ensure("fon", "fon", "Fon", None, 0, 0)
+    admin = ensure("administrator", "administrator", "Администратор", fon.id, 32, 32)
+    assigned_area = ensure("assigned_students", "area", "Назначенные ученики", admin.id, 0, 110)
+    teachers_area = ensure("teachers", "area", "Учителя", admin.id, 500, 110)
+
+    for teacher_id, teacher in teachers.items():
+        ensure(f"teacher:{teacher_id}", "teacher", teacher.full_name, teachers_area.id)
+    for student_id, student in students.items():
+        parent = objects.get(f"teacher:{assigned_to[student_id]}") if student_id in assigned_to else None
+        ensure(
+            f"student:{student_id}", "student", student.full_name,
+            parent.id if parent else assigned_area.id,
+        )
+
+    valid_keys = {"fon", "administrator", "assigned_students", "teachers"}
+    valid_keys.update(f"teacher:{user_id}" for user_id in teachers)
+    valid_keys.update(f"student:{user_id}" for user_id in students)
+    for key, item in tuple(objects.items()):
+        if key not in valid_keys:
+            db.delete(item)
+
     db.commit()
-    return {"teacher_id": teacher_id, "x": position.x, "y": position.y}
+    return [_graph_object_dict(item) for item in db.scalars(select(GraphObject).order_by(GraphObject.id)).all()]
+
+
+@router.patch("/admin/graph/objects/{object_id}/position")
+def update_graph_object_position(object_id: int, payload: dict, _: Admin, db: Db):
+    x, y = payload.get("x"), payload.get("y")
+    if any(isinstance(value, bool) or not isinstance(value, (int, float)) or abs(value) > 100000 or not math.isfinite(value) for value in (x, y)):
+        raise HTTPException(status_code=422, detail="Некорректные координаты объекта")
+    item = db.get(GraphObject, object_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Объект графа не найден")
+    item.x, item.y = x, y
+    db.commit()
+    return _graph_object_dict(item)
+
+
+@router.post("/admin/graph/objects", status_code=201)
+def create_graph_object(payload: dict, _: Admin, db: Db):
+    title = str(payload.get("title") or "").strip()
+    parent_id = payload.get("parent_id")
+    object_type = str(payload.get("type") or "object").strip()
+    if not title or len(title) > 160 or len(object_type) > 40:
+        raise HTTPException(status_code=422, detail="Укажите название объекта")
+    if parent_id is not None and db.get(GraphObject, parent_id) is None:
+        raise HTTPException(status_code=404, detail="Родительский объект не найден")
+    item = GraphObject(
+        object_key=f"custom:{__import__('uuid').uuid4().hex}",
+        object_type=object_type, title=title, parent_id=parent_id,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return _graph_object_dict(item)
 
 
 @router.get("/admin/users")
@@ -201,8 +264,7 @@ def update_user(user_id: int, payload: dict, _: Admin, db: Db):
         user.web_password_hash = None
 
     if role_changed:
-        db.query(GraphCloudPosition).filter(GraphCloudPosition.teacher_id == user.id).delete(synchronize_session=False)
-        db.query(TeacherPanel).filter(TeacherPanel.teacher_id == user.id).delete(synchronize_session=False)
+                db.query(TeacherPanel).filter(TeacherPanel.teacher_id == user.id).delete(synchronize_session=False)
         assignments = db.scalars(select(Assignment).where(Assignment.active.is_(True), (Assignment.teacher_id == user.id) | (Assignment.student_id == user.id))).all()
         now = datetime.now(UTC)
         for assignment in assignments:
