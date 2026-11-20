@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo } from "react";
+import { useChatActionState } from "./useChatActionState.js";
 import {
   createPersonalConversation, deleteChatMessage, getChatMessages,
   getConversations, getPersonalConversations, sendConversationAttachment,
@@ -7,9 +8,9 @@ import {
 
 export function useChatsController({
   auth, request, profile, chatState, personalState, setPage, setError, setModal,
-  notify, deleteMessageCandidate, deletingMessage, setDeletingMessage,
-  setDeleteMessageCandidate,
+  notify,
 }) {
+  const { deleteMessageCandidate, deletingMessage, setDeletingMessage, setDeleteMessageCandidate } = useChatActionState();
   const {
     chats, setChats, selectedChat, setSelectedChat, messages, setMessages,
     draft, setDraft, attachment, setAttachment, messagesViewportRef,
@@ -168,5 +169,5 @@ export function useChatsController({
     }
   }, [selectedChat, draft, attachment, request, setDraft, setAttachment, setMessages, setPersonalChats, setChats, notify, profile?.role, setError]);
 
-  return { visibleChats, visibleMessages, openChat, openCreatePersonalChat, createPersonalChat, confirmDeleteMessage, sendChatMessage };
+  return { visibleChats, visibleMessages, openChat, openCreatePersonalChat, createPersonalChat, confirmDeleteMessage, sendChatMessage, deleteMessageCandidate, deletingMessage, setDeleteMessageCandidate };
 }
