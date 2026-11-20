@@ -287,8 +287,11 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
 
   function handleGraphWheel(event) {
     event.preventDefault();
-    const point = outerCoordinatesRef.current.toLocal(event.clientX, event.clientY);
-    if (innerCoordinatesRef.current.zoomAt(point, Math.exp(-event.deltaY * 0.0015))) scheduleGraphTransform();
+    const bounds = outerCoordinatesRef.current.getBounds();
+    const point = { x: bounds.width / 2, y: bounds.height / 2 };
+    const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? bounds.height : 1);
+    const factor = Math.exp(-Math.max(-240, Math.min(240, delta)) * 0.0015);
+    if (innerCoordinatesRef.current.zoomAt(point, factor)) scheduleGraphTransform();
   }
 
   function handleGraphPointerDownCapture(event) {
