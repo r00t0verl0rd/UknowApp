@@ -137,7 +137,7 @@ def create_graph_object(payload: dict, _: Admin, db: Db):
     item = GraphObject(
         object_key=f"custom:{uuid.uuid4().hex}",
         object_type=object_type, title=title, parent_id=parent_id,
-        x=36 + (sibling_count % 4) * 190, y=36 + (sibling_count // 4) * 100,
+        x=24 + (sibling_count % 2) * 410, y=24 + (sibling_count // 2) * 310,
     )
     db.add(item)
     db.commit()
