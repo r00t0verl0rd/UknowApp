@@ -30,7 +30,7 @@ const BoardObject = memo(function BoardObject({ item, children, positionsRef, cr
 
 const BoardToolbar = memo(function BoardToolbar({ onResetView, onAddObject }) {
   return <div className="graph-legend-row">
-    <div className="graph-legend"><b>Интерактивные доски</b><span>Создавайте объекты, объединяйте их в иерархии и перемещайте независимо.</span></div>
+    
     <div className="graph-toolbar-actions">
       <button type="button" className="btn small outline" onClick={onResetView} title="Сбросить масштаб"><Crosshair />Сбросить масштаб</button>
       <button type="button" className="btn primary graph-add-participant" onClick={onAddObject}><Plus />Создать объект</button>
