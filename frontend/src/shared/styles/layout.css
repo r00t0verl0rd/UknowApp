@@ -247,12 +247,33 @@
 .selected-file button{flex:0 0 26px;width:26px;height:26px;padding:0}
 .composer-send{flex:0 0 auto;min-width:120px;white-space:nowrap}
 :root[data-theme="dark-soft"] .chat-audio-player{background:var(--ui-control-bg);border-color:var(--ui-border)}
-@media(max-width:1024px){
+@media(min-width:761px) and (max-width:1024px){
   .chats-main > .workspace-content:has(> .chat-list){
+    grid-template-columns:minmax(210px,min(30%,280px)) minmax(0,1fr);
+    gap:12px;
+    padding:12px;
+  }
+  .chat-detail > .chat-head{gap:8px;padding:12px}
+  .chat-head-tools select{min-width:112px;max-width:145px;padding:6px;font-size:11px}
+  .messages{padding:12px 2px}
+  .message{max-width:92%}
+  .chat-composer{padding:10px}
+  .chat-composer textarea{min-height:54px;max-height:112px;font-size:16px}
+  .composer-footer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+  .composer-tools{gap:6px}
+  .chat-composer .attach-control{min-height:36px;padding:6px 8px;font-size:11px}
+  .composer-send{min-width:104px;min-height:40px;padding:7px 10px;font-size:12px}
+}
+@media(max-width:760px){
+  .chats-main{min-height:calc(100dvh - 112px)}
+  .chats-main > .workspace-content:has(> .chat-list){
+    flex:1 1 auto;
+    height:auto;
+    min-height:0;
     grid-template-columns:minmax(0,1fr);
     grid-template-rows:minmax(0,1fr);
     gap:0;
-    padding:12px;
+    padding:10px;
   }
   .chats-main > .workspace-content:has(> .chat-list) > .chat-list,
   .chats-main > .workspace-content:has(> .chat-list) > .chat-detail{
@@ -264,7 +285,7 @@
   .chats-main > .workspace-content:has(> .chat-list):has(.mobile-chat-back) > .chat-list{display:none}
   .chat-detail > .chat-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;padding:10px}
   .mobile-chat-back{display:inline-flex;align-items:center;gap:4px;padding:6px 8px;white-space:nowrap}
-  .chat-head-tools select{min-width:110px;max-width:145px;padding:6px;font-size:11px}
+  .chat-head-tools select{min-width:100px;max-width:135px;padding:6px;font-size:11px}
   .messages{padding:12px 2px}
   .message{max-width:92%}
   .chat-composer{padding:10px}
@@ -274,11 +295,13 @@
   .chat-composer .attach-control{min-height:36px;padding:6px 8px;font-size:11px}
   .composer-send{min-width:104px;min-height:40px;padding:7px 10px;font-size:12px}
 }
-@media(max-width:640px){
-  .chats-main > .workspace-content:has(> .chat-list){padding:8px}
+@media(max-width:420px){
+  .chats-main > .workspace-content:has(> .chat-list){padding:7px}
   .chat-list{gap:8px}
+  .chat-detail > .chat-head{grid-template-columns:auto minmax(0,1fr);gap:7px}
+  .chat-head-tools{grid-column:1/-1;justify-content:flex-end}
+  .chat-head-tools select{max-width:100%;min-width:0}
   .chat-head-person b{font-size:12px}
-  .chat-head-tools select{min-width:96px;max-width:120px;font-size:10px}
   .message{max-width:96%}
   .composer-footer{grid-template-columns:minmax(0,1fr) auto;gap:6px}
   .chat-composer .attach-control{gap:4px;padding-inline:6px;font-size:10px}

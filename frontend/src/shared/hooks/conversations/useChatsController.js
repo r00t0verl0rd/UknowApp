@@ -66,10 +66,19 @@ export function useChatsController({
   useLayoutEffect(() => {
     const viewport = messagesViewportRef.current;
     if (!viewport) return undefined;
-    const scrollToLatest = () => { viewport.scrollTop = viewport.scrollHeight; };
+    let stickToBottom = true;
+    const scrollToLatest = () => {
+      if (stickToBottom) viewport.scrollTop = viewport.scrollHeight;
+    };
+    const handleScroll = () => {
+      stickToBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 80;
+    };
+    viewport.addEventListener("scroll", handleScroll, { passive: true });
     scrollToLatest();
     const frame = window.requestAnimationFrame(scrollToLatest);
-    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(scrollToLatest) : null;
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(scrollToLatest)
+      : null;
     const observeMessages = () => {
       if (resizeObserver) Array.from(viewport.children).forEach(child => resizeObserver.observe(child));
     };
@@ -77,13 +86,14 @@ export function useChatsController({
     const mutationObserver = typeof MutationObserver !== "undefined"
       ? new MutationObserver(() => { observeMessages(); scrollToLatest(); })
       : null;
-    mutationObserver?.observe(viewport, { childList: true });
+    mutationObserver?.observe(viewport, { childList: true, subtree: true });
     return () => {
       window.cancelAnimationFrame(frame);
+      viewport.removeEventListener("scroll", handleScroll);
       resizeObserver?.disconnect();
       mutationObserver?.disconnect();
     };
-  }, [selectedChat?.id, messageFilter, visibleMessages, messagesViewportRef]);
+  }, [selectedChat?.id, messageFilter, messagesViewportRef]);
 
   const openChat = useCallback(async chat => {
     setSelectedChat(chat);
