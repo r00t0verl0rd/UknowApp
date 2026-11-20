@@ -28,14 +28,10 @@ export default function App() {
   const { theme, toggleTheme } = useSettingsState();
   const { teacherGraph, setTeacherGraph } = useGraphState();
   const chatState = useChatState();
-  const {
-    draft, setDraft, attachment, setAttachment, chats, setChats,
-    selectedChat, setSelectedChat, messages, setMessages, messagesViewportRef,
-    chatSearch, setChatSearch, chatFilter, setChatFilter,
-    messageFilter, setMessageFilter,
-  } = chatState;
+  const { draft, setDraft, attachment, setAttachment, chats, setChats,
+    selectedChat, setSelectedChat, messages, setMessages } = chatState;
   const personalState = usePersonalChatState();
-  const { personalChats, setPersonalChats, chatSection, setChatSection } = personalState;
+  const { setPersonalChats } = personalState;
   const {
     page, setPage, error, setError, toast, setToast, modal, setModal,
   } = useUiState();
