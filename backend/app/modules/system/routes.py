@@ -12,6 +12,7 @@ from sqlalchemy import select
 
 from app.config import VAPID_PUBLIC_KEY
 from app.models import PushSubscription
+from app.modules.dependencies import Db, PanelUser
 from app.request_validation import login_payload
 from app.security import (
     authenticate_panel_user,
@@ -23,7 +24,6 @@ from app.security import (
     revoke_panel_session,
     verify_request_origin,
 )
-from app.modules.dependencies import Db, PanelUser
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")

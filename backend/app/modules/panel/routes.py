@@ -9,18 +9,6 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
-from fastapi import (
-    APIRouter,
-    File,
-    Form,
-    HTTPException,
-    Request,
-    UploadFile,
-)
-from fastapi.responses import FileResponse, StreamingResponse
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session, selectinload
-
 from app.event_hub import (
     publish_chat_update,
     subscribe_chat_updates,
@@ -44,12 +32,14 @@ from app.modules.communication.contracts import (
     OutboundMessage,
 )
 from app.modules.conversations.service import conversation_dicts
+from app.modules.dependencies import Db, PanelUser
 from app.modules.media.service import (
     MEDIA_DIR,
     delete_message_media,
     media_content_disposition,
     safe_media_type,
 )
+from app.modules.messaging.moderation import text_contains_contact_data
 from app.modules.messaging.service import (
     _panel_message_dict,
     _panel_visible_conversation,
@@ -60,8 +50,17 @@ from app.modules.personal_chat.service import (
 )
 from app.push_notifications import schedule_push
 from app.request_validation import message_payload, personal_conversation_payload
-from app.modules.messaging.moderation import text_contains_contact_data
-from app.modules.dependencies import Db, PanelUser
+from fastapi import (
+    APIRouter,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+)
+from fastapi.responses import FileResponse, StreamingResponse
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session, selectinload
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
@@ -559,7 +558,10 @@ async def _refresh_teacher_panel_after_web_delivery(bot, db: Session, teacher: U
     if not bot or not teacher_account:
         return
     try:
-        from app.modules.telegram.teacher import clear_teacher_session, update_teacher_panel
+        from app.modules.telegram.teacher import (
+            clear_teacher_session,
+            update_teacher_panel,
+        )
         current_session = db.get(TeacherSession, teacher.id)
         if current_session and current_session.conversation_id != conversation.id:
             clear_teacher_session(db, teacher)

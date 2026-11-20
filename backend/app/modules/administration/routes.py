@@ -2,7 +2,7 @@
 
 import hashlib
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import func, select
@@ -29,15 +29,19 @@ from app.modules.communication.accounts import (
     sync_messenger_account,
 )
 from app.modules.communication.contracts import MessengerPlatform
+from app.modules.dependencies import Admin, Db
 from app.modules.media.service import delete_message_media
 from app.modules.users.service import (
     generate_panel_access_code,
     user_dict,
     validate_panel_username,
 )
-from app.request_validation import assignment_payload, user_create_payload, user_update_payload
+from app.request_validation import (
+    assignment_payload,
+    user_create_payload,
+    user_update_payload,
+)
 from app.security import hash_web_password
-from app.modules.dependencies import Admin, Db
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
@@ -113,7 +117,7 @@ def create_user(payload: dict, _: Admin, db: Db):
                 str(user.telegram_id), external_chat_id=str(user.telegram_id),
             )
         if issued_access_code:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             db.add(ConnectionCode(
                 user_id=user.id,
                 code_hash=hashlib.sha256(issued_access_code.replace("-", "").encode("utf-8")).hexdigest(),
@@ -161,7 +165,7 @@ def update_user(user_id: int, payload: dict, _: Admin, db: Db):
         select(ConnectionCode).where(
             ConnectionCode.user_id == user.id,
             ConnectionCode.used_at.is_(None),
-            ConnectionCode.expires_at > datetime.now(timezone.utc),
+            ConnectionCode.expires_at > datetime.now(UTC),
         ),
     ).all()
     has_active_access_code = bool(user.web_password_hash and active_access_codes)
@@ -174,7 +178,7 @@ def update_user(user_id: int, payload: dict, _: Admin, db: Db):
     if role_changed:
         db.query(TeacherPanel).filter(TeacherPanel.teacher_id == user.id).delete(synchronize_session=False)
         assignments = db.scalars(select(Assignment).where(Assignment.active.is_(True), (Assignment.teacher_id == user.id) | (Assignment.student_id == user.id))).all()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for assignment in assignments:
             assignment.active = False
             assignment.closed_at = now
@@ -192,7 +196,7 @@ def update_user(user_id: int, payload: dict, _: Admin, db: Db):
                 raise HTTPException(status_code=400, detail="Имя должно содержать минимум два символа")
         setattr(user, field, value)
     if issued_access_code:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         db.query(ConnectionCode).filter(
             ConnectionCode.user_id == user.id,
             ConnectionCode.used_at.is_(None),
@@ -207,7 +211,7 @@ def update_user(user_id: int, payload: dict, _: Admin, db: Db):
         db.query(ConnectionCode).filter(
             ConnectionCode.user_id == user.id,
             ConnectionCode.used_at.is_(None),
-        ).update({ConnectionCode.used_at: datetime.now(timezone.utc)}, synchronize_session=False)
+        ).update({ConnectionCode.used_at: datetime.now(UTC)}, synchronize_session=False)
     try:
         if "telegram_id" in changes:
             sync_messenger_account(
@@ -238,7 +242,7 @@ def regenerate_panel_access_code(user_id: int, _: Admin, db: Db):
         raise HTTPException(status_code=404, detail="Участник не найден")
     issued_access_code = generate_panel_access_code()
     user.web_password_hash = hash_web_password(issued_access_code)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     db.query(ConnectionCode).filter(
         ConnectionCode.user_id == user.id,
         ConnectionCode.used_at.is_(None),
@@ -364,7 +368,7 @@ def generate_connection_code(user_id: int, _: Admin, db: Db):
         PanelSession.user_id == user.id,
     ).delete(synchronize_session=False)
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     db.query(ConnectionCode).filter(
         ConnectionCode.user_id == user.id,
         ConnectionCode.used_at.is_(None),

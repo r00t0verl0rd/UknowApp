@@ -9,7 +9,6 @@ from aiogram.types import Message as TgMessage
 
 from app.core.database import SessionLocal
 from app.models import TeacherPanel, User
-from app.rate_limit import SlidingWindowLimiter
 from app.modules.messaging.inbound import (
     bind_student_forum_topic,
     clear_teacher_session,
@@ -19,6 +18,8 @@ from app.modules.messaging.inbound import (
     process_inbound_message,
     set_teacher_session,
 )
+from app.rate_limit import SlidingWindowLimiter
+
 from .adapter import TelegramAdapter
 from .common import get_linked_user
 from .teacher import handle_teacher_keyboard_message, update_teacher_panel

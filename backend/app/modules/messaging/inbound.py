@@ -23,7 +23,6 @@ from app.models import (
     TeacherSession,
     User,
 )
-from app.rate_limit import SlidingWindowLimiter
 from app.modules.communication.accounts import (
     CONNECTION_CODE_RE,
     claim_messenger_connection_code,
@@ -32,6 +31,8 @@ from app.modules.communication.accounts import (
 )
 from app.modules.communication.contracts import InboundMessage, MessengerPlatform
 from app.modules.notifications.service import schedule_push
+from app.rate_limit import SlidingWindowLimiter
+
 from .moderation import contact_would_be_exposed
 
 logger = logging.getLogger(__name__)
