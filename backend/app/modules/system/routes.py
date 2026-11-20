@@ -13,8 +13,8 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import VAPID_PUBLIC_KEY
 from app.models import PushSubscription
-from app.modules.notifications.endpoints import is_safe_push_endpoint
 from app.modules.dependencies import Db, PanelUser
+from app.modules.notifications.endpoints import is_safe_push_endpoint
 from app.request_validation import login_payload
 from app.security import (
     authenticate_panel_user,
