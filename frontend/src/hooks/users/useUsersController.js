@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useUserEditorState } from "./useUserEditorState.js";
 import { useUserActionState } from "./useUserActionState.js";
+import { createAssignment, createUser, createUserConnectionCode, deleteAssignment, deleteUser, disconnectUserTelegram, issuePanelAccessCode, updateUser } from "../../modules/users/services/usersApi.js";
 
 export function useUsersController({
   request, refresh, notify, setError, selectedChat, setSelectedChat,
@@ -95,8 +96,8 @@ export function useUsersController({
     if (role === "teacher" || role === "student") body.web_username = (panelLogin || name).trim();
     try {
       const saved = modal.mode === "create"
-        ? await request("/api/admin/users", { method: "POST", body: JSON.stringify(body) })
-        : await request("/api/admin/users/" + modal.id, { method: "PATCH", body: JSON.stringify(body) });
+        ? await createUser(request, body)
+        : await updateUser(request, modal.id, body);
       setModal(null);
       await refresh();
       if (saved.issued_access_code) {
@@ -121,7 +122,7 @@ export function useUsersController({
     setSavingUser(true);
     setError("");
     try {
-      const issued = await request("/api/admin/users/" + modal.id + "/access-code", { method: "POST" });
+      const issued = await issuePanelAccessCode(request, modal.id);
       setIssuedCredential({
         full_name: issued.full_name,
         username: issued.web_username || issued.full_name,
@@ -144,7 +145,7 @@ export function useUsersController({
     setDeletingUser(true);
     setError("");
     try {
-      await request("/api/admin/users/" + user.id, { method: "DELETE" });
+      await deleteUser(request, user.id);
       if (selectedChat?.type !== "personal" && selectedChat
         && (selectedChat.teacher?.id === user.id || selectedChat.student?.id === user.id)) {
         setSelectedChat(null);
@@ -164,10 +165,7 @@ export function useUsersController({
   const assign = useCallback(async event => {
     event.preventDefault();
     try {
-      await request("/api/admin/assignments", {
-        method: "POST",
-        body: JSON.stringify({ teacher_id: Number(teacherId), student_id: Number(studentId) }),
-      });
+      await createAssignment(request, teacherId, studentId);
       setModal(null);
       await refresh();
       notify("Ученик назначен учителю");
@@ -180,7 +178,7 @@ export function useUsersController({
     if (!window.confirm(`Открепить ученика «${student.full_name}» от учителя? История переписки сохранится.`)) return;
     setError("");
     try {
-      await request(`/api/admin/assignments/${student.id}`, { method: "DELETE" });
+      await deleteAssignment(request, student.id);
       await refresh();
       notify("Ученик откреплён от учителя");
     } catch (error) {
@@ -196,7 +194,7 @@ export function useUsersController({
     setDisconnectingTelegram(true);
     setError("");
     try {
-      await request("/api/admin/users/" + user.id + "/disconnect-telegram", { method: "POST" });
+      await disconnectUserTelegram(request, user.id);
       setDisconnectCandidate(null);
       await refresh();
       notify("Telegram отключён");
@@ -209,7 +207,7 @@ export function useUsersController({
 
   const makeCode = useCallback(async user => {
     try {
-      const result = await request("/api/admin/users/" + user.id + "/connection-code", { method: "POST" });
+      const result = await createUserConnectionCode(request, user.id);
       setCode({ ...result, full_name: user.full_name });
     } catch (error) {
       setError(error.message);
