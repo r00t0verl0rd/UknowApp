@@ -10,12 +10,13 @@ export function createOuterCoordinateSystem(step = 12) {
     update(element) {
       if (!element) return bounds;
       const rect = element.getBoundingClientRect();
-      bounds = { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+      bounds = { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height };
       scaleX = rect.width / (element.clientWidth || rect.width || 1);
       scaleY = rect.height / (element.clientHeight || rect.height || 1);
       return bounds;
     },
-    toLocal(clientX, clientY) {
+    getBounds() {
+      return bounds;\n    },\n    toLocal(clientX, clientY) {
       return {
         x: (clientX - bounds.left) / scaleX,
         y: (clientY - bounds.top) / scaleY,
