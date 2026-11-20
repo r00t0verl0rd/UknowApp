@@ -7,7 +7,8 @@ import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
 function objectPosition(item, positions) {
   const position = positions.current.get(item.id);
   return {
-    transform: `translate3d(${position?.x ?? item.x ?? 0}px, ${position?.y ?? item.y ?? 0}px, 0)`,
+    left: position?.x ?? item.x ?? 0,
+    top: position?.y ?? item.y ?? 0,
   };
 }
 
@@ -83,7 +84,7 @@ export default function BoardsPage() {
 
     const update = () => {
       const { zoom, x, y } = transformRef.current;
-      if (worldRef.current) worldRef.current.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${zoom})`;
+      if (worldRef.current) worldRef.current.style.transform = `translate(${x}px, ${y}px) scale(${zoom})`;
     };
     const onWheel = event => {
       if (!viewport.contains(event.target)) return;
@@ -109,7 +110,7 @@ export default function BoardsPage() {
 
   const resetView = useCallback(() => {
     transformRef.current = { zoom: 1, x: 0, y: 0 };
-    if (worldRef.current) worldRef.current.style.transform = "translate3d(0, 0, 0) scale(1)";
+    if (worldRef.current) worldRef.current.style.transform = "translate(0, 0) scale(1)";
   }, []);
 
   const startObjectDrag = useCallback(event => {
@@ -142,7 +143,8 @@ export default function BoardsPage() {
     frameRef.current = requestAnimationFrame(() => {
       frameRef.current = 0;
       if (dragRef.current === drag) {
-        drag.element.style.transform = `translate3d(${drag.nextX}px, ${drag.nextY}px, 0)`;
+        drag.element.style.left = `${drag.nextX}px`;
+        drag.element.style.top = `${drag.nextY}px`;
       }
     });
   }, []);
@@ -153,7 +155,8 @@ export default function BoardsPage() {
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
     frameRef.current = 0;
     const { nextX: x, nextY: y } = drag;
-    drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    drag.element.style.left = `${x}px`;
+    drag.element.style.top = `${y}px`;
     drag.element.classList.remove("is-object-dragging");
     dragRef.current = null;
     if (Math.abs(x - drag.x) < 1 && Math.abs(y - drag.y) < 1) return;
@@ -163,7 +166,8 @@ export default function BoardsPage() {
       await moveBoardObject(drag.item.id, x, y);
     } catch {
       positionsRef.current.set(drag.item.id, { x: drag.x, y: drag.y });
-      drag.element.style.transform = `translate3d(${drag.x}px, ${drag.y}px, 0)`;
+      drag.element.style.left = `${drag.x}px`;
+      drag.element.style.top = `${drag.y}px`;
     }
   }, [moveBoardObject]);
 
