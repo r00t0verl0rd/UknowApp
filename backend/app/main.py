@@ -42,7 +42,7 @@ def seed_demo_data() -> None:
 
 
 # Telegram работает в фоновой задаче: временная недоступность Telegram не должна останавливать API.
-async def run_telegram_bot(bot, dispatcher) -> None:
+async def run_telegram_bot(bot, dispatcher, app) -> None:
     """Run polling in the background; Telegram outages must not stop the web API."""
     retry_delay = 5
     while True:
@@ -50,6 +50,7 @@ async def run_telegram_bot(bot, dispatcher) -> None:
             # This call can time out when Telegram is unreachable. It must never
             # run directly in the FastAPI startup path.
             bot_info = await bot.get_me()
+            app.state.telegram_status = "connected"
             logger.warning(
                 "TELEGRAM_CONNECTED username=@%s id=%s privacy_disabled=%s",
                 bot_info.username, bot_info.id,
@@ -70,6 +71,7 @@ async def run_telegram_bot(bot, dispatcher) -> None:
         except asyncio.CancelledError:
             raise
         except TelegramConflictError:
+            app.state.telegram_status = "conflict"
             # A Telegram conflict means another process is polling this bot.
             # Retrying forever only creates noisy logs and repeated takeovers.
             logger.critical(
@@ -79,6 +81,7 @@ async def run_telegram_bot(bot, dispatcher) -> None:
             )
             return
         except TelegramAPIError as exc:
+            app.state.telegram_status = "unavailable"
             # Telegram Bot API request URLs may contain the bot token.
             # Log the exception type only; never print request URLs or headers.
             logger.error(
@@ -98,6 +101,7 @@ async def lifespan(app: FastAPI):
     if SEED_DEMO_DATA:
         seed_demo_data()
 
+    app.state.telegram_status = "disabled"
     bot_task = None
     bot = None
     dispatcher = None
@@ -106,6 +110,7 @@ async def lifespan(app: FastAPI):
         from .telegram_bot import create_dispatcher
 
         bot = create_telegram_bot(TELEGRAM_BOT_TOKEN, TELEGRAM_PROXY_URL)
+        app.state.telegram_status = "connecting"
         app.state.telegram_bot = bot
         app.state.communication = CommunicationService([TelegramAdapter(bot)])
 
@@ -119,6 +124,7 @@ async def lifespan(app: FastAPI):
         except BlockingIOError:
             os.close(polling_lock_fd)
             polling_lock_fd = None
+            app.state.telegram_status = "another_instance"
             logger.warning(
                 "TELEGRAM_POLLING_SKIPPED: another local UknowApp process already owns "
                 "the polling lock. This process will keep the web API available without polling.",
@@ -126,7 +132,7 @@ async def lifespan(app: FastAPI):
         else:
             dispatcher = create_dispatcher()
             bot_task = asyncio.create_task(
-                run_telegram_bot(bot, dispatcher),
+                run_telegram_bot(bot, dispatcher, app),
                 name="uknowapp-telegram-polling",
             )
     else:
