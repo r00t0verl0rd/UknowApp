@@ -42,7 +42,7 @@ function findFreeGridPosition(element, siblings, currentPosition) {
     const top = rect.top + candidateY - currentPosition.y;
     const right = left + rect.width;
     const bottom = top + rect.height;
-    if (left < bounds.left - 1 || top < bounds.top - 1 || right > bounds.right + 1 || bottom > bounds.bottom + 1) return true;
+    if (left < bounds.left - 1 || top < bounds.top - 1 || right > bounds.right + 1) return true;
     return siblings.some(other => {
       if (other === element) return false;
       const otherRect = other.getBoundingClientRect();
