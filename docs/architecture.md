@@ -97,6 +97,7 @@ frontend/src/
 │   │   │   └── MessageBubble.jsx
 │   │   └── services/conversationsApi.js
 │   ├── graph/StructurePage.jsx
+│   ├── panel/services/panelApi.js
 │   ├── notifications/pushNotifications.js
 │   └── users/
 │       ├── UsersPage.jsx
