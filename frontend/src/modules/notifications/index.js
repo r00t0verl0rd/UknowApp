@@ -1,1 +1,1 @@
-export { initializePushNotifications, detachPushSubscription } from "./pushNotifications.js";
+export { getPushNotificationState, enablePushNotifications, disablePushNotifications, detachPushSubscription } from "./pushNotifications.js";
