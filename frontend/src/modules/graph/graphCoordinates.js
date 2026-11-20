@@ -56,11 +56,10 @@ export function createInnerGraphCoordinateSystem() {
     zoomAt(point, factor) {
       const nextZoom = clampZoom(zoom * factor);
       if (nextZoom === zoom) return false;
-      const graphX = (point.x - panX) / zoom;
-      const graphY = (point.y - panY) / zoom;
+      const ratio = nextZoom / zoom;
+      panX = point.x - (point.x - panX) * ratio;
+      panY = point.y - (point.y - panY) * ratio;
       zoom = nextZoom;
-      panX = point.x - graphX * zoom;
-      panY = point.y - graphY * zoom;
       return true;
     },
     panBy(x, y) {
