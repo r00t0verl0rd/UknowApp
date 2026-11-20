@@ -15,7 +15,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
                   <span className="readonly-tag">Ваша группа</span>
                 </div>
                 <div className="teacher-graph-students">
-                  <div className="teacher-graph-connector"/>
+                  
                   <div className="teacher-graph-student-grid">
                     {(teacherGraph?.students || []).map(student => <div className="teacher-graph-card student" key={student.id}>
                       <div className="avatar student-avatar"><Smile/></div>
