@@ -24,6 +24,7 @@ import LoginPage from "../modules/authentication/LoginPage.jsx";
 import { detachPushSubscription, disablePushNotifications, enablePushNotifications, getPushNotificationState } from "../modules/notifications/pushNotifications.js";
 import { usePanelDataState } from "../hooks/app/usePanelDataState.js";
 import { useUsersController } from "../hooks/users/useUsersController.js";
+import { useChatsController } from "../hooks/conversations/useChatsController.js";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 
@@ -63,13 +64,15 @@ export default function App() {
   } = useAuthState();
   const { theme, setTheme } = useSettingsState();
   const { teacherGraph, setTeacherGraph } = useGraphState();
+  const chatState = useChatState();
   const {
     draft, setDraft, attachment, setAttachment, chats, setChats,
     selectedChat, setSelectedChat, messages, setMessages, messagesViewportRef,
     chatSearch, setChatSearch, chatFilter, setChatFilter,
     messageFilter, setMessageFilter,
-  } = useChatState();
-  const { personalChats, setPersonalChats, chatSection, setChatSection } = usePersonalChatState();
+  } = chatState;
+  const personalState = usePersonalChatState();
+  const { personalChats, setPersonalChats, chatSection, setChatSection } = personalState;
   const {
     page, setPage, error, setError, toast, setToast, modal, setModal,
   } = useUiState();
@@ -102,6 +105,14 @@ export default function App() {
   } = useUsersController({
     request, refresh, notify, setError, selectedChat, setSelectedChat,
     setMessages, modal, setModal, directory,
+  });
+  const {
+    visibleChats, visibleMessages, openChat, createPersonalChat,
+    confirmDeleteMessage, sendChatMessage,
+  } = useChatsController({
+    request, profile, chatState, personalState, setPage, setError, setModal,
+    notify, deleteMessageCandidate, deletingMessage, setDeletingMessage,
+    setDeleteMessageCandidate,
   });
 
   useEffect(() => {
@@ -263,69 +274,6 @@ export default function App() {
     }
   }
 
-  const visibleMessages = useMemo(() => messages.filter(message => {
-    const kind = message.metadata?.media?.kind || message.content_type;
-    if (messageFilter === "all") return true;
-    if (messageFilter === "media") return kind !== "text" || Boolean(message.metadata?.media);
-    if (messageFilter === "audio") return ["voice", "audio"].includes(kind);
-    if (messageFilter === "photos") return kind === "photo";
-    if (messageFilter === "files") return ["document", "video", "video_note", "video_sticker", "animation", "animated_sticker", "sticker"].includes(kind);
-    return true;
-  }), [messages, messageFilter]);
-
-  useLayoutEffect(() => {
-    const viewport = messagesViewportRef.current;
-    if (!viewport) return undefined;
-
-    const scrollToLatest = () => {
-      // New messages are appended at the bottom, directly above the composer.
-      viewport.scrollTop = viewport.scrollHeight;
-    };
-
-    scrollToLatest();
-    const frame = window.requestAnimationFrame(scrollToLatest);
-
-    // Keep the bottom in view when an attachment finishes loading and changes
-    // the height of an existing message (for example, audio/video metadata).
-    const resizeObserver = typeof ResizeObserver !== "undefined"
-      ? new ResizeObserver(scrollToLatest)
-      : null;
-    const observeMessages = () => {
-      if (!resizeObserver) return;
-      Array.from(viewport.children).forEach(child => resizeObserver.observe(child));
-    };
-    observeMessages();
-
-    const mutationObserver = typeof MutationObserver !== "undefined"
-      ? new MutationObserver(() => {
-          observeMessages();
-          scrollToLatest();
-        })
-      : null;
-    mutationObserver?.observe(viewport, { childList: true });
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      resizeObserver?.disconnect();
-      mutationObserver?.disconnect();
-    };
-  }, [selectedChat?.id, messageFilter, visibleMessages]);
-
-  const visibleChats = useMemo(() => {
-    const query = chatSearch.trim().toLocaleLowerCase("ru");
-    const personal = personalChats.filter(chat => (!query || chat.title.toLocaleLowerCase("ru").includes(query)) && (chatFilter === "all" || Number(chat.unread_count || 0) > 0));
-    if (profile?.role === "admin" && chatSection === "personal") return personal;
-    const regular = profile?.role === "student" ? chats.slice(0, 1) : chats.filter(chat => {
-      const names = profile?.role === "admin"
-        ? chat.teacher.full_name + " " + chat.student.full_name
-        : chat.student.full_name + " " + chat.teacher.full_name;
-      const matchesSearch = !query || names.toLocaleLowerCase("ru").includes(query);
-      const matchesFilter = profile?.role !== "teacher" || chatFilter === "all" || Number(chat.unread_count || 0) > 0;
-      return matchesSearch && matchesFilter;
-    });
-    return profile?.role === "admin" ? regular : [...regular, ...personal];
-  }, [chats, personalChats, chatSection, chatSearch, chatFilter, profile?.role]);
-
   function toggleTheme() {
     setTheme(current => current === "dark-soft" ? "light" : "dark-soft");
   }
@@ -435,87 +383,6 @@ export default function App() {
   function openCreatePersonalChat() {
     setError("");
     setModal({ mode: "create-personal" });
-  }
-
-  async function openChat(chat) {
-    setSelectedChat(chat); setPage("chats"); setDraft(""); setAttachment(null); setMessageFilter("all");
-    try {
-      const base = chat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
-      setMessages(await request(base + chat.id + "/messages"));
-      if (chat.type === "personal") setPersonalChats(await request("/api/panel/personal-conversations"));
-      else if (profile?.role === "teacher") setChats(await request("/api/panel/conversations"));
-    } catch (e) { setError(e.message); }
-  }
-
-  async function createPersonalChat(userId) {
-    try {
-      const chat = await request("/api/panel/personal-conversations", { method: "POST", body: JSON.stringify({ user_id: Number(userId) }) });
-      setPersonalChats(await request("/api/panel/personal-conversations"));
-      setChatSection("personal");
-      setModal(null);
-      await openChat(chat);
-    } catch (e) { setError(e.message); }
-  }
-
-  async function confirmDeleteMessage() {
-    const message = deleteMessageCandidate;
-    if (!message || deletingMessage) return;
-    setDeletingMessage(true);
-    setError("");
-    try {
-      const result = selectedChat?.type === "personal" ? await request("/api/panel/personal-messages/" + message.id, { method: "DELETE" }) : await request("/api/panel/messages/" + message.id, { method: "DELETE" });
-      setMessages(current => current.filter(item => item.id !== message.id));
-      setDeleteMessageCandidate(null);
-      if (selectedChat?.type === "personal") setPersonalChats(await request("/api/panel/personal-conversations"));
-      else if (selectedChat) setChats(await request("/api/panel/conversations"));
-      if (result.telegram_failed > 0) {
-        notify("Удалено из UknowApp. Не удалось удалить копии в Telegram: " + result.telegram_failed + ". Возможно, Telegram уже не разрешает их удаление.");
-      } else {
-        notify("Сообщение удалено у всех участников");
-      }
-    } catch (e) {
-      setError(e.message || "Не удалось удалить сообщение");
-    } finally {
-      setDeletingMessage(false);
-    }
-  }
-
-  async function sendChatMessage(event) {
-    event.preventDefault();
-    if (!selectedChat || (!draft.trim() && !attachment)) return;
-    try {
-      let sentMessage;
-      if (selectedChat.type === "personal") {
-        if (attachment) throw new Error("В личных диалогах доступны только текстовые сообщения");
-        sentMessage = await request("/api/panel/personal-conversations/" + selectedChat.id + "/messages", { method: "POST", body: JSON.stringify({ text: draft.trim() }) });
-      } else if (attachment) {
-        const form = new FormData();
-        form.append("file", attachment);
-        form.append("text", draft.trim());
-        const response = await fetch(API + "/api/panel/conversations/" + selectedChat.id + "/attachments", {
-          method: "POST",
-          credentials: "include",
-          body: form
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.detail || "Не удалось отправить файл");
-        sentMessage = data;
-      } else {
-        sentMessage = await request("/api/panel/conversations/" + selectedChat.id + "/messages", {
-          method: "POST", body: JSON.stringify({ text: draft.trim() })
-        });
-      }
-      setDraft(""); setAttachment(null);
-      setMessages(await request((selectedChat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/") + selectedChat.id + "/messages"));
-      if (selectedChat.type === "personal") setPersonalChats(await request("/api/panel/personal-conversations"));
-      else setChats(await request("/api/panel/conversations"));
-      if (selectedChat.type === "personal") notify("Сообщение отправлено внутри UknowApp");
-      else if (profile?.role === "admin" && sentMessage?.delivery_status !== "delivered") {
-        notify("Сообщение сохранено. Подробности доставки доступны в переписке.");
-      } else if (sentMessage?.delivery_status === "delivered" && profile?.role !== "teacher") {
-        notify("Сообщение отправлено");
-      }
-    } catch (e) { setError(e.message); }
   }
 
   if (!auth) return <LoginPage theme={theme} toggleTheme={toggleTheme} signIn={signIn} login={login} setLogin={setLogin} password={password} setPassword={setPassword} error={error} />;
