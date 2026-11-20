@@ -211,7 +211,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
 
 
     if (isAdmin) {
-      allocateGroup(".graph-panel:not(.is-teacher-view) > .teacher-grid > .teacher-branch", nextClouds);
+      allocateGroup(".graph-panel:not(.is-teacher-view) .teacher-grid > .teacher-branch", nextClouds);
       allocateGroup(".graph-panel:not(.is-teacher-view) .student-list > .student-card", nextStudents);
       allocateGroup(".graph-panel:not(.is-teacher-view) .unassigned-grid > .student-card", nextStudents);
     } else {
