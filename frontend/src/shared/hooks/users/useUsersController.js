@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useUserEditorState } from "./useUserEditorState.js";
 import { useUserActionState } from "./useUserActionState.js";
-import { createAssignment, createUser, createUserConnectionCode, deleteUser, disconnectUserTelegram, issuePanelAccessCode, updateUser } from "../../features/users/services/usersApi.js";
+import { createAssignment, createUser, createUserConnectionCode, deleteUser, disconnectUserTelegram, issuePanelAccessCode, updateUser } from "../../../features/users/services/usersApi.js";
 
 export function useUsersController({
   request, refresh, notify, setError, selectedChat, setSelectedChat,

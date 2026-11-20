@@ -1,6 +1,6 @@
 import { useCallback } from "react";
-import { detachPushSubscription, enablePushNotifications, getPushNotificationState } from "../../features/notifications/pushNotifications.js";
-import { signInRequest, signOutRequest } from "../../app/authentication/services/authApi.js";
+import { detachPushSubscription, enablePushNotifications, getPushNotificationState } from "../../../features/notifications/pushNotifications.js";
+import { signInRequest, signOutRequest } from "../../../app/authentication/services/authApi.js";
 
 export function useAuthController({
   authState, setError, setPage, setPushBusy, setPushState,

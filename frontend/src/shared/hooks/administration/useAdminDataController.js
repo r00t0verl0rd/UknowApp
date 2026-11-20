@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   cleanupAdminDialogues, downloadAdminBackup, getAdminDataStats, uploadAdminBackup,
-} from "../../features/administration/services/adminDataApi.js";
+} from "../../../features/administration/services/adminDataApi.js";
 
 export function useAdminDataController({
   auth, profile, page, request, refresh, notify, setError,

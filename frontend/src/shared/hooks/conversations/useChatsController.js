@@ -4,7 +4,7 @@ import {
   createPersonalConversation, deleteChatMessage, getChatMessages,
   getConversations, getPersonalConversations, sendConversationAttachment,
   sendConversationText, sendPersonalMessage,
-} from "../../features/conversations/services/conversationsApi.js";
+} from "../../../features/conversations/services/conversationsApi.js";
 
 export function useChatsController({
   auth, request, profile, chatState, personalState, setPage, setError, setModal,

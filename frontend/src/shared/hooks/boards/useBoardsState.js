@@ -4,7 +4,7 @@ import {
   deleteBoardObject as deleteBoardObjectRequest,
   getBoardObjects,
   updateBoardObjectPosition,
-} from "../../features/boards/services/boardsApi.js";
+} from "../../../features/boards/services/boardsApi.js";
 
 function removeObjectTree(objects, objectId) {
   const childrenByParent = new Map();
