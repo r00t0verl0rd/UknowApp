@@ -32,17 +32,17 @@ function snapToGrid(value) {
   return Math.round(value / GRAPH_GRID_SIZE) * GRAPH_GRID_SIZE;
 }
 
-function findFreeGridPosition(element, siblings, currentPosition) {
-  const parent = element.parentElement;
-  const bounds = parent.getBoundingClientRect();
+function findFreeGridPosition(element, siblings, currentPosition, boundsElement = element.parentElement) {
+  const bounds = boundsElement.getBoundingClientRect();
   const rect = element.getBoundingClientRect();
   const maxX = Math.max(0, bounds.right - rect.right + currentPosition.x);
+  const maxY = Math.max(0, bounds.bottom - rect.bottom + currentPosition.y);
   const collides = (candidateX, candidateY) => {
     const left = rect.left + candidateX - currentPosition.x;
     const top = rect.top + candidateY - currentPosition.y;
     const right = left + rect.width;
     const bottom = top + rect.height;
-    if (left < bounds.left - 1 || top < bounds.top - 1 || right > bounds.right + 1) return true;
+    if (left < bounds.left - 1 || top < bounds.top - 1 || right > bounds.right + 1 || bottom > bounds.bottom + 1) return true;
     return siblings.some(other => {
       if (other === element) return false;
       const otherRect = other.getBoundingClientRect();
@@ -60,14 +60,25 @@ function findFreeGridPosition(element, siblings, currentPosition) {
       for (const [column, row] of candidates) {
         const x = currentPosition.x + column * GRAPH_GRID_SIZE;
         const y = currentPosition.y + row * GRAPH_GRID_SIZE;
-        if (x < 0 || y < 0 || x > maxX) continue;
+        if (x < 0 || y < 0 || x > maxX || y > maxY) continue;
         if (!collides(x, y)) return { x, y };
       }
     }
   }
-  return currentPosition;
+  return { x: Math.min(maxX, Math.max(0, currentPosition.x)), y: Math.min(maxY, Math.max(0, currentPosition.y)) };
 }
 
+function clampElementPosition(element, position, boundsElement) {
+  const rect = element.getBoundingClientRect();
+  const bounds = boundsElement.getBoundingClientRect();
+  const clampDelta = (start, end, min, max) => end - start > max - min
+    ? (min + max - start - end) / 2
+    : start < min ? min - start : end > max ? max - end : 0;
+  return {
+    x: position.x + clampDelta(rect.left, rect.right, bounds.left, bounds.right),
+    y: position.y + clampDelta(rect.top, rect.bottom, bounds.top, bounds.bottom),
+  };
+}
 
 function dragPosition(drag, clientX, clientY) {
   const bounds = drag.boundaryRect;
@@ -225,14 +236,14 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     const teacherView = type === "student" && Boolean(handle.closest(".is-teacher-view"));
     const layout = type === "cloud" ? cloudLayoutRef.current : teacherView ? teacherStudentLayoutRef.current : studentLayoutRef.current;
     const position = layout[id] || { x: 0, y: 0 };
-    const bounded = type === "student";
+    const boundsElement = type === "cloud" ? element.closest(".graph-panel") : element.parentElement;
     dragRef.current = {
       type, id, element, teacherView, pointerId: event.pointerId,
       startX: event.clientX, startY: event.clientY,
       x: position.x, y: position.y,
       nextX: position.x, nextY: position.y,
       elementRect: element.getBoundingClientRect(),
-      ...(bounded ? { boundaryRect: element.parentElement.getBoundingClientRect() } : {}),
+      boundaryRect: boundsElement.getBoundingClientRect(),
     };
     captureElement.setPointerCapture(event.pointerId);
     element.classList.add("is-dragging");
@@ -248,9 +259,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
   function moveDrag(event) {
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
-    const position = drag.type === "student"
-      ? dragPosition(drag, event.clientX, event.clientY)
-      : { x: snapToGrid(drag.x + event.clientX - drag.startX), y: snapToGrid(drag.y + event.clientY - drag.startY) };
+    const position = dragPosition(drag, event.clientX, event.clientY);
     drag.nextX = position.x;
     drag.nextY = position.y;
     if (!frameRef.current) {
@@ -267,9 +276,9 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     if (!drag || drag.pointerId !== event.pointerId) return;
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
     frameRef.current = 0;
-    let { x, y } = drag.type === "student"
+    let { x, y } = event.type === "pointerup"
       ? dragPosition(drag, event.clientX, event.clientY)
-      : { x: snapToGrid(drag.x + event.clientX - drag.startX), y: snapToGrid(drag.y + event.clientY - drag.startY) };
+      : { x: drag.nextX, y: drag.nextY };
     const hasMoved = Math.abs(x - drag.x) >= 1 || Math.abs(y - drag.y) >= 1;
     drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     const currentRect = drag.element.getBoundingClientRect();
@@ -295,7 +304,8 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
       const siblings = drag.type === "cloud"
         ? drag.element.parentElement.querySelectorAll(":scope > .teacher-branch")
         : drag.element.parentElement.querySelectorAll(":scope > .student-card");
-      const safePosition = findFreeGridPosition(drag.element, siblings, { x, y });
+      const boundsElement = drag.type === "cloud" ? drag.element.closest(".graph-panel") : drag.element.parentElement;
+      const safePosition = findFreeGridPosition(drag.element, siblings, { x, y }, boundsElement);
       x = safePosition.x;
       y = safePosition.y;
     }
@@ -359,6 +369,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
           onPointerMove={moveDrag}
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
+          onLostPointerCapture={endDrag}
         >
           <TeacherBranch
             teacher={teacherGraph?.teacher || profile}
@@ -388,6 +399,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
             onPointerMove={moveDrag}
             onPointerUp={endDrag}
             onPointerCancel={endDrag}
+            onLostPointerCapture={endDrag}
           >{unassignedStudents.map(student => <div
             className="person-card student-card unassigned-student-card"
             key={student.id}
