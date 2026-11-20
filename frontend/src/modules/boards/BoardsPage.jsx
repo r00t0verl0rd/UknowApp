@@ -28,6 +28,16 @@ const BoardObject = memo(function BoardObject({ item, children, positionsRef, cr
   </div>;
 });
 
+const BoardToolbar = memo(function BoardToolbar({ onResetView, onAddObject }) {
+  return <div className="graph-legend-row">
+    <div className="graph-legend"><b>Интерактивные доски</b><span>Создавайте объекты, объединяйте их в иерархии и перемещайте независимо.</span></div>
+    <div className="graph-toolbar-actions">
+      <button type="button" className="btn small outline" onClick={onResetView} title="Сбросить масштаб"><Crosshair />Сбросить масштаб</button>
+      <button type="button" className="btn primary graph-add-participant" onClick={onAddObject}><Plus />Создать объект</button>
+    </div>
+  </div>;
+});
+
 export default function BoardsPage() {
   const { boardObjects, loading, error, clearError, createObject, deleteObject, moveObject: moveBoardObject } = useBoardsState();
   const viewportRef = useRef(null);
@@ -86,10 +96,10 @@ export default function BoardsPage() {
     return () => viewport.removeEventListener("wheel", onWheel);
   }, []);
 
-  function resetView() {
+  const resetView = useCallback(() => {
     transformRef.current = { zoom: 1, x: 0, y: 0 };
     if (worldRef.current) worldRef.current.style.transform = "translate3d(0, 0, 0) scale(1)";
-  }
+  }, []);
 
   const startObjectDrag = useCallback(event => {
     if (event.button !== 0 || event.target.closest("button, a, input, select, textarea")) return;
@@ -160,13 +170,7 @@ export default function BoardsPage() {
 
   return <section className="graph-panel graph-object-panel">
     {error && <div className="alert alert-row" role="alert">{error}<button type="button" onClick={clearError} aria-label="Закрыть">×</button></div>}
-    <div className="graph-legend-row">
-      <div className="graph-legend"><b>Интерактивные доски</b><span>Создавайте объекты, объединяйте их в иерархии и перемещайте независимо.</span></div>
-      <div className="graph-toolbar-actions">
-        <button type="button" className="btn small outline" onClick={resetView} title="Сбросить масштаб"><Crosshair />Сбросить масштаб</button>
-        <button type="button" className="btn primary graph-add-participant" onClick={() => addObject()}><Plus />Создать объект</button>
-      </div>
-    </div>
+    <BoardToolbar onResetView={resetView} onAddObject={addObject} />
     <div
       className="graph-coordinate-viewport graph-object-viewport"
       ref={viewportRef}
