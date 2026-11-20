@@ -13,6 +13,15 @@ from enum import StrEnum
 from typing import Protocol
 
 
+class MessengerError(Exception):
+    """A provider operation failed at the messenger integration boundary."""
+
+    def __init__(self, operation: str, cause: Exception) -> None:
+        self.operation = operation
+        self.provider_error_type = type(cause).__name__
+        super().__init__(f"{operation} failed ({self.provider_error_type})")
+
+
 class MessengerPlatform(StrEnum):
     TELEGRAM = "telegram"
     MAX = "max"
