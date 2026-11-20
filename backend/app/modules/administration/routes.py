@@ -95,7 +95,7 @@ def overview(_: Admin, db: Db):
 @router.patch("/admin/graph/cloud-positions/{teacher_id}")
 def update_graph_cloud_position(teacher_id: int, payload: dict, _: Admin, db: Db):
     x, y = payload.get("x"), payload.get("y")
-    if any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or abs(value) > 10000 for value in (x, y)):
+    if any(isinstance(value, bool) or not isinstance(value, (int, float)) or abs(value) > 10000 or not math.isfinite(value) for value in (x, y)):
         raise HTTPException(status_code=422, detail="Некорректные координаты облачка")
     teacher = db.get(User, teacher_id)
     if not teacher or teacher.role != "teacher":
