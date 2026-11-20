@@ -82,36 +82,41 @@ function dragPosition(drag, clientX, clientY) {
 }
 
 function TeacherBranch({ teacher, students, studentLayout, studentsCollapsed = false, isOwner = false, cloudLayout, cloudStack, setCollapsedTeacherIds, openEdit, setTeacherId, setStudentId, allStudents, setModal, unassignStudent }) {
+  const content = <>
+    <div className="person-card teacher-card" {...(!isOwner ? { "data-drag-type": "cloud", "data-drag-id": teacher.id } : {})}>
+      <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap /></div><div className="person-info"><b>{teacher.full_name}</b><small>{isOwner ? "Вы · Учитель" : "Учитель"} · {students.length} учен.</small></div></div>
+      {!isOwner && <div className="person-actions">
+        <button className={`danger-icon teacher-collapse-btn${studentsCollapsed ? "" : " is-expanded"}`} title={studentsCollapsed ? "Показать учеников" : "Скрыть учеников"} aria-label={studentsCollapsed ? "Показать учеников" : "Скрыть учеников"} aria-expanded={!studentsCollapsed} onClick={() => setCollapsedTeacherIds(current => { const next = new Set(current); if (next.has(teacher.id)) next.delete(teacher.id); else next.add(teacher.id); return next; })}><ChevronRight /></button>
+        <button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil /></button>
+      </div>}
+    </div>
+    {!isOwner && !studentsCollapsed && <button className="add-student" onClick={() => { setTeacherId(String(teacher.id)); setStudentId(allStudents[0]?.id ? String(allStudents[0].id) : ""); setModal({ mode: "assign" }); }}><Plus />Назначить ученика</button>}
+    {!studentsCollapsed && <div className="student-list">
+      {students.map(student => <div
+        className="person-card student-card"
+        key={student.id}
+        style={positionStyle(studentLayout[student.id])}
+        data-drag-type="student"
+        data-drag-id={student.id}
+      >
+        <div className="person-main"><div className="avatar student-avatar"><Smile /></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
+        {!isOwner && <div className="person-actions">
+          <button type="button" className="icon-btn graph-person-action" title="Открепить от учителя" aria-label={"Открепить " + student.full_name + " от учителя"} onClick={() => unassignStudent(student)}><Link2Off /></button>
+          <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil /></button>
+        </div>}
+      </div>)}
+      {!students.length && <div className="empty-students">{isOwner ? "Пока нет назначенных учеников" : "Нет назначенных учеников"}</div>}
+    </div>}
+  </>;
+
+  if (isOwner) return content;
   return (
     <section
       className={`teacher-branch${studentsCollapsed ? " is-collapsed" : ""}`}
       key={teacher.id}
-      style={isOwner ? undefined : { ...positionStyle(cloudLayout[teacher.id]), zIndex: cloudStack[teacher.id] || 0 }}
+      style={{ ...positionStyle(cloudLayout[teacher.id]), zIndex: cloudStack[teacher.id] || 0 }}
     >
-      <div className="person-card teacher-card" {...(!isOwner ? { "data-drag-type": "cloud", "data-drag-id": teacher.id } : {})}>
-        <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap /></div><div className="person-info"><b>{teacher.full_name}</b><small>{isOwner ? "Вы · Учитель" : "Учитель"} · {students.length} учен.</small></div></div>
-        {!isOwner && <div className="person-actions">
-          <button className={`danger-icon teacher-collapse-btn${studentsCollapsed ? "" : " is-expanded"}`} title={studentsCollapsed ? "Показать учеников" : "Скрыть учеников"} aria-label={studentsCollapsed ? "Показать учеников" : "Скрыть учеников"} aria-expanded={!studentsCollapsed} onClick={() => setCollapsedTeacherIds(current => { const next = new Set(current); if (next.has(teacher.id)) next.delete(teacher.id); else next.add(teacher.id); return next; })}><ChevronRight /></button>
-          <button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil /></button>
-        </div>}
-      </div>
-      {!isOwner && !studentsCollapsed && <button className="add-student" onClick={() => { setTeacherId(String(teacher.id)); setStudentId(allStudents[0]?.id ? String(allStudents[0].id) : ""); setModal({ mode: "assign" }); }}><Plus />Назначить ученика</button>}
-      {!studentsCollapsed && <div className="student-list">
-        {students.map(student => <div
-          className="person-card student-card"
-          key={student.id}
-          style={positionStyle(studentLayout[student.id])}
-          data-drag-type="student"
-          data-drag-id={student.id}
-        >
-          <div className="person-main"><div className="avatar student-avatar"><Smile /></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
-          {!isOwner && <div className="person-actions">
-            <button type="button" className="icon-btn graph-person-action" title="Открепить от учителя" aria-label={"Открепить " + student.full_name + " от учителя"} onClick={() => unassignStudent(student)}><Link2Off /></button>
-            <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil /></button>
-          </div>}
-        </div>)}
-        {!students.length && <div className="empty-students">{isOwner ? "Пока нет назначенных учеников" : "Нет назначенных учеников"}</div>}
-      </div>}
+      {content}
     </section>
   );
 }
