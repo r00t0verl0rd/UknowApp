@@ -179,6 +179,33 @@ def create_graph_object(payload: dict, _: Admin, db: Db):
     return _graph_object_dict(item)
 
 
+@router.delete("/admin/graph/objects/{object_id}")
+def delete_graph_object(object_id: int, _: Admin, db: Db):
+    item = db.get(GraphObject, object_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Объект графа не найден")
+    if not item.object_key.startswith("custom:"):
+        raise HTTPException(status_code=403, detail="Системные объекты удалять нельзя")
+
+    pending = [item.id]
+    descendants = []
+    while pending:
+        children = db.scalars(
+            select(GraphObject).where(GraphObject.parent_id.in_(pending)),
+        ).all()
+        pending = [child.id for child in children]
+        descendants.extend(children)
+
+    if any(not child.object_key.startswith("custom:") for child in descendants):
+        raise HTTPException(status_code=409, detail="Нельзя удалить объект с системными вложенными элементами")
+
+    for child in reversed(descendants):
+        db.delete(child)
+    db.delete(item)
+    db.commit()
+    return {"deleted": True, "deleted_count": len(descendants) + 1}
+
+
 @router.get("/admin/users")
 def list_users(_: Admin, db: Db):
     users = db.scalars(select(User).where(User.role.in_(["teacher", "student"])).order_by(User.role, User.full_name)).all()
