@@ -5,7 +5,6 @@ import Link2Off from "lucide-react/dist/esm/icons/link-2-off.js";
 import Pencil from "lucide-react/dist/esm/icons/pencil.js";
 import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Smile from "lucide-react/dist/esm/icons/smile.js";
-import Grid3X3 from "lucide-react/dist/esm/icons/grid-3x3.js";
 
 const STUDENT_LAYOUT_KEY = "uknowapp-graph-student-layout";
 const TEACHER_STUDENT_LAYOUT_KEY = "uknowapp-teacher-graph-student-layout";
@@ -212,42 +211,6 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     }
   }, [profile?.role, allTeachers, studentsByTeacherId, unassignedStudents, teacherGraph, saveCloudPosition]);
 
-  function alignGraphToGrid() {
-    const panel = document.querySelector(profile?.role === "teacher" ? ".graph-panel.is-teacher-view" : ".graph-panel:not(.is-teacher-view)");
-    if (!panel) return;
-
-    const resetGroup = selector => {
-      const next = {};
-      panel.querySelectorAll(selector).forEach(element => {
-        const id = element.dataset.dragId;
-        if (!id) return;
-        element.style.transform = "translate3d(0px, 0px, 0)";
-        next[id] = { x: 0, y: 0 };
-      });
-      return next;
-    };
-
-    if (profile?.role === "admin") {
-      const nextClouds = resetGroup(".teacher-grid > .teacher-branch");
-      const nextStudents = resetGroup(".student-list > .student-card, .unassigned-grid > .student-card");
-      panel.querySelectorAll(".teacher-grid, .student-list, .unassigned-grid").forEach(group => { group.style.minHeight = ""; });
-
-      cloudLayoutRef.current = nextClouds;
-      studentLayoutRef.current = nextStudents;
-      setCloudLayout(nextClouds);
-      setStudentLayout(nextStudents);
-      setCloudStack({});
-      Object.keys(nextClouds).forEach(id => saveCloudPosition(id, 0, 0));
-      try { localStorage.setItem(STUDENT_LAYOUT_KEY, JSON.stringify(nextStudents)); } catch {}
-      return;
-    }
-
-    const nextStudents = resetGroup(".student-list > .student-card");
-    panel.querySelectorAll(".student-list").forEach(group => { group.style.minHeight = ""; });
-    teacherStudentLayoutRef.current = nextStudents;
-    setTeacherStudentLayout(nextStudents);
-    try { localStorage.setItem(TEACHER_STUDENT_LAYOUT_KEY, JSON.stringify(nextStudents)); } catch {}
-  }
 
   function startDrag(event, handle) {
     if (event.button !== 0 || event.target.closest("button, a, input, select, textarea")) return;
@@ -332,7 +295,6 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
       const siblings = drag.type === "cloud"
         ? drag.element.parentElement.querySelectorAll(":scope > .teacher-branch")
         : drag.element.parentElement.querySelectorAll(":scope > .student-card");
-      const layout = drag.type === "cloud" ? cloudLayoutRef.current : drag.teacherView ? teacherStudentLayoutRef.current : studentLayoutRef.current;
       const safePosition = findFreeGridPosition(drag.element, siblings, { x, y });
       x = safePosition.x;
       y = safePosition.y;
@@ -392,7 +354,6 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     <>
       {profile?.role === "teacher" && <section className="graph-panel is-teacher-view">
         <div className="graph-toolbar-actions">
-          <button className="btn outline graph-align-button" type="button" onClick={alignGraphToGrid}><Grid3X3 />Выровнять по сетке</button>
         </div>
         <div
           className="teacher-grid"
@@ -417,7 +378,6 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
             <div className="graph-legend-item"><span className="student-dot" />Ученики <b>{overview?.counts.students || 0}</b></div>
           </div>
           <div className="graph-toolbar-actions">
-            <button className="btn outline graph-align-button" type="button" onClick={alignGraphToGrid}><Grid3X3 />Выровнять по сетке</button>
             <button className="btn primary graph-add-participant" onClick={() => openCreate()}><Plus />Добавить участника</button>
           </div>
         </div>
