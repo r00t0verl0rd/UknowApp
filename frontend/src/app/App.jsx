@@ -22,7 +22,7 @@ import BoardsPage from "../modules/boards/BoardsPage.jsx";
 import UsersPage from "../modules/users/UsersPage.jsx";
 import LoginPage from "../modules/authentication/LoginPage.jsx";
 import { detachPushSubscription, disablePushNotifications, enablePushNotifications, getPushNotificationState } from "../modules/notifications/pushNotifications.js";
-import { createApiClient } from "../services/api.js";
+import { usePanelDataState } from "../hooks/app/usePanelDataState.js";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 
@@ -90,6 +90,11 @@ export default function App() {
   const [retentionDays, setRetentionDays] = useState("30");
   const [pushState, setPushState] = useState({ supported: false, enabled: false, permission: "default", reason: "Проверяем поддержку уведомлений…" });
   const [pushBusy, setPushBusy] = useState(false);
+  const { request, refresh } = usePanelDataState({
+    auth, page, selectedChat, setAuth, setProfile, setError, setChats,
+    setPersonalChats, setUsers, setOverview, setTeacherGraph, setPage,
+    setSelectedChat, setMessages,
+  });
 
   useEffect(() => {
     if (userInfo === null) return undefined;
@@ -106,51 +111,6 @@ export default function App() {
       document.removeEventListener("keydown", closeInfoOnEscape);
     };
   }, [userInfo]);
-  // Единая точка HTTP-запросов: добавляет cookie-сессию и приводит ошибки API к понятному сообщению.
-  const request = useMemo(() => createApiClient(), []);
-
-  // Загружает актуальные данные панели в зависимости от роли вошедшего пользователя.
-  const refresh = useCallback(async () => {
-    if (!auth) return;
-    setError("");
-    try {
-      const who = await request("/api/panel/me");
-      setProfile(who);
-
-      // Independent panel datasets are fetched together to avoid serial network waits.
-      const roleRequest = who.role === "admin"
-        ? Promise.all([request("/api/admin/users"), request("/api/admin/overview")])
-        : who.role === "teacher" ? request("/api/panel/graph") : Promise.resolve(null);
-      const [conversations, roleData, personal] = await Promise.all([
-        request("/api/panel/conversations"), roleRequest, request("/api/panel/personal-conversations"),
-      ]);
-      setChats(conversations); setPersonalChats(personal);
-      if (who.role === "admin") {
-        const [people, summary] = roleData;
-        setUsers(people); setOverview(summary);
-      } else if (who.role === "teacher") {
-        setTeacherGraph(roleData);
-        setUsers([]); setOverview(null);
-      } else {
-        setTeacherGraph(null); setUsers([]); setOverview(null);
-        setPage("chats");
-        // Keep the inbox visible on entry. Fetching messages marks them read,
-        // so only an explicit student click should clear the unread counter.
-        setSelectedChat(null);
-        setMessages([]);
-      }
-    } catch (e) {
-      setError(e.message);
-      if (["учитель", "ученик", "логин", "сессия", "войдите", "учётная запись"].some(term => String(e.message).toLowerCase().includes(term)) || String(e.message).includes("401")) {
-        localStorage.removeItem("uknowapp-auth"); sessionStorage.removeItem("uknowapp-auth");
-        setAuth("");
-        setProfile(null);
-      }
-    }
-  }, [auth, request]);
-
-  useEffect(() => { refresh(); }, [refresh]);
-
   useEffect(() => {
     if (auth && profile?.role === "teacher") setPage("chats");
   }, [auth, profile?.role, setPage]);
@@ -213,76 +173,6 @@ export default function App() {
     localStorage.setItem("uknowapp-theme-v2", theme);
     document.documentElement.dataset.theme = theme;
   }, [theme]);
-
-  // В разделе переписок события SSE сообщают об изменениях; периодический опрос не нужен.
-  useEffect(() => {
-    if (!auth || page !== "chats") return undefined;
-    let active = true;
-    let inFlight = false;
-    let refreshPending = false;
-    let refreshMessagesPending = false;
-
-    const syncChats = async (event, forceMessages = false) => {
-      if (!active) return;
-      let shouldRefreshMessages = forceMessages;
-      if (event) {
-        let eventConversationId = null;
-        if (event.data) {
-          try {
-            eventConversationId = Number(JSON.parse(event.data).conversation_id) || null;
-          } catch {
-            // An empty or malformed event is treated as a general refresh.
-          }
-        }
-        shouldRefreshMessages = !eventConversationId
-          || eventConversationId === Number(selectedChat?.id);
-      }
-      if (inFlight) {
-        refreshPending = true;
-        refreshMessagesPending ||= Boolean(selectedChat?.id && shouldRefreshMessages);
-        return;
-      }
-      inFlight = true;
-      try {
-        if (selectedChat?.id && shouldRefreshMessages) {
-          const rows = await request((selectedChat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/") + selectedChat.id + "/messages");
-          if (!active) return;
-          setMessages(rows);
-        }
-        // Loading messages marks them read for teachers. Fetch the list after
-        // that write so unread counters are correct in the same refresh cycle.
-        const [conversations, personal] = await Promise.all([request("/api/panel/conversations"), request("/api/panel/personal-conversations")]);
-        if (!active) return;
-        setChats(conversations); setPersonalChats(personal);
-      } catch {
-        // Keep the current conversation visible during brief network interruptions.
-      } finally {
-        inFlight = false;
-        if (refreshPending && active) {
-          const reloadMessages = refreshMessagesPending;
-          refreshPending = false;
-          refreshMessagesPending = false;
-          void syncChats(null, reloadMessages);
-        }
-      }
-    };
-
-    // One persistent SSE connection replaces the two-second HTTP polling loop.
-    // The server sends an initial update event as soon as the stream is ready.
-    const eventSource = new EventSource(API + "/api/panel/events", { withCredentials: true });
-    eventSource.addEventListener("update", syncChats);
-
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") void syncChats(null, true);
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
-
-    return () => {
-      active = false;
-      eventSource.close();
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-    };
-  }, [auth, page, selectedChat?.id, request]);
 
   const notify = (message) => { setToast(message); window.setTimeout(() => setToast(""), 2600); };
   const loadDataStats = useCallback(async () => {
