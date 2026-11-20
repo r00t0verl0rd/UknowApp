@@ -52,7 +52,7 @@ jobs:
       - run: vulture app --min-confidence 80
       - run: bandit -r . -ll
       - name: Block newly introduced secrets
-        run: detect-secrets-hook --baseline .secrets.baseline
+        run: git ls-files -z -- ':!.secrets.baseline' | xargs -0 detect-secrets-hook --baseline .secrets.baseline
         working-directory: .
       - run: python -m pytest -q tests
       - run: python -m compileall -q app
