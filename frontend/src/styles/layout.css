@@ -713,7 +713,7 @@ html, body { overflow-x: clip;}
 @media (max-height: 650px) {
 .chat-layout { height: max(420px, calc(100dvh - 220px));}
 }
-.chats-shell { height: 100dvh; min-height: 0; overflow: hidden;}
+.chats-shell { display: grid; grid-template-columns: clamp(250px, 18vw, 280px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); height: 100dvh; min-height: 0; overflow: hidden;}
 .chats-main { height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden;}
 .chats-content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding-bottom: 24px;}
 .chats-content > .chat-layout { flex: 1 1 auto; height: auto; min-height: 0;}
