@@ -270,7 +270,7 @@ def update_user(user_id: int, payload: dict, _: Admin, db: Db):
         user.web_password_hash = None
 
     if role_changed:
-                db.query(TeacherPanel).filter(TeacherPanel.teacher_id == user.id).delete(synchronize_session=False)
+        db.query(TeacherPanel).filter(TeacherPanel.teacher_id == user.id).delete(synchronize_session=False)
         assignments = db.scalars(select(Assignment).where(Assignment.active.is_(True), (Assignment.teacher_id == user.id) | (Assignment.student_id == user.id))).all()
         now = datetime.now(UTC)
         for assignment in assignments:
