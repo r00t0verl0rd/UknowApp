@@ -158,9 +158,17 @@ export default function App() {
     }
     let active = true;
     getPushNotificationState()
-      .then(state => { if (active) setPushState(state); })
+      .then(async state => {
+        if (state.supported && state.permission === "granted" && !state.enabled) {
+          await enablePushNotifications();
+          state = await getPushNotificationState();
+        }
+        if (active) setPushState(state);
+      })
       .catch(() => {
-        if (active) setPushState({ supported: false, enabled: false, permission: "default", reason: "Не удалось проверить поддержку уведомлений" });
+        if (active) getPushNotificationState()
+          .then(state => { if (active) setPushState(state); })
+          .catch(() => {});
       });
     return () => { active = false; };
   }, [auth]);
@@ -508,6 +516,21 @@ export default function App() {
           ? result.detail.map(item => item.msg || "Некорректные данные").join("; ")
           : typeof result.detail === "string" ? result.detail : "Не удалось войти";
         throw new Error(detail);
+      }
+      // Enable push by default immediately after successful login, while the
+      // browser still has the login button's user activation.
+      setPushBusy(true);
+      try {
+        await enablePushNotifications();
+        setPushState(await getPushNotificationState());
+      } catch (pushError) {
+        const state = await getPushNotificationState().catch(() => null);
+        if (state) setPushState(state);
+        if (state?.supported && state.permission !== "denied") {
+          notify("Чтобы включить уведомления, нажмите на значок колокольчика");
+        }
+      } finally {
+        setPushBusy(false);
       }
       localStorage.setItem("uknowapp-auth", "1"); sessionStorage.removeItem("uknowapp-auth"); setProfile(result); setPage(result.role === "student" ? "chats" : "graph"); setAuth("1"); setPassword("");
     } catch (e) {
