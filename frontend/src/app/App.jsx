@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { useAuthState, useChatState, useDirectoryState, useGraphState, usePersonalChatState, useSettingsState, useUiState, useUserActionState, useUserEditorState } from "../hooks/useAppState.js";
+import { useAuthState, useChatState, useDirectoryState, useGraphState, useBoardsState, usePersonalChatState, useSettingsState, useUiState, useUserActionState, useUserEditorState } from "../hooks/useAppState.js";
 import Activity from "lucide-react/dist/esm/icons/activity.js";
 import Layers from "lucide-react/dist/esm/icons/layers.js";
 import Check from "lucide-react/dist/esm/icons/check.js";
@@ -61,9 +61,8 @@ export default function App() {
     auth, setAuth, profile, setProfile, login, setLogin, password, setPassword,
   } = useAuthState();
   const { theme, setTheme } = useSettingsState();
-  const {
-    teacherGraph, setTeacherGraph, graphObjects, setGraphObjects,
-  } = useGraphState();
+  const { teacherGraph, setTeacherGraph } = useGraphState();
+  const { boardObjects, setBoardObjects } = useBoardsState();
   const {
     draft, setDraft, attachment, setAttachment, chats, setChats,
     selectedChat, setSelectedChat, messages, setMessages, messagesViewportRef,
@@ -132,9 +131,9 @@ export default function App() {
         setUsers(people); setOverview(summary);
       } else if (who.role === "teacher") {
         setTeacherGraph(roleData);
-        setGraphObjects([]); setUsers([]); setOverview(null);
+        setBoardObjects([]); setUsers([]); setOverview(null);
       } else {
-        setTeacherGraph(null); setGraphObjects([]); setUsers([]); setOverview(null);
+        setTeacherGraph(null); setBoardObjects([]); setUsers([]); setOverview(null);
         setPage("chats");
         // Keep the inbox visible on entry. Fetching messages marks them read,
         // so only an explicit student click should clear the unread counter.
@@ -156,8 +155,8 @@ export default function App() {
   useEffect(() => {
     if (!auth || profile?.role !== "admin" || page !== "boards") return undefined;
     let active = true;
-    request("/api/admin/graph/objects")
-      .then(objects => { if (active) setGraphObjects(objects); })
+    request("/api/admin/boards/objects")
+      .then(objects => { if (active) setBoardObjects(objects); })
       .catch(error => { if (active) setError(error.message); });
     return () => { active = false; };
   }, [auth, profile?.role, page, request]);
@@ -660,23 +659,23 @@ export default function App() {
     } catch (e) { setError(e.message); }
   }
 
-  async function createGraphObject(payload) {
+  async function createBoardObject(payload) {
     try {
-      await request("/api/admin/graph/objects", {
+      await request("/api/admin/boards/objects", {
         method: "POST",
         body: JSON.stringify(payload),
       });
-      const objects = await request("/api/admin/graph/objects");
-      setGraphObjects(objects);
+      const objects = await request("/api/admin/boards/objects");
+      setBoardObjects(objects);
     } catch (e) {
       setError(e.message);
     }
   }
 
-  async function saveGraphObjectPosition(objectId, x, y) {
-    setGraphObjects(current => current.map(item => item.id === objectId ? { ...item, x, y } : item));
+  async function saveBoardObjectPosition(objectId, x, y) {
+    setBoardObjects(current => current.map(item => item.id === objectId ? { ...item, x, y } : item));
     try {
-      await request(`/api/admin/graph/objects/${objectId}/position`, {
+      await request(`/api/admin/boards/objects/${objectId}/position`, {
         method: "PATCH",
         body: JSON.stringify({ x, y }),
       });
@@ -685,10 +684,10 @@ export default function App() {
     }
   }
 
-  async function deleteGraphObject(objectId) {
+  async function deleteBoardObject(objectId) {
     try {
-      await request(`/api/admin/graph/objects/${objectId}`, { method: "DELETE" });
-      setGraphObjects(current => {
+      await request(`/api/admin/boards/objects/${objectId}`, { method: "DELETE" });
+      setBoardObjects(current => {
         const removed = new Set([objectId]);
         let changed = true;
         while (changed) {
@@ -866,7 +865,7 @@ export default function App() {
       <div className={"content" + (page === "chats" ? " chats-content" : "")}>
         {error && <div className="alert alert-row">{error}<button onClick={() => setError("")}><X/></button></div>}
         {page === "graph" && <StructurePage profile={profile} teacherGraph={teacherGraph} overview={overview} openCreate={openCreate} allTeachers={allTeachers} studentsByTeacherId={studentsByTeacherId} openEdit={openEdit} setTeacherId={setTeacherId} setStudentId={setStudentId} allStudents={allStudents} setModal={setModal} unassignedStudents={unassignedStudents} />}
-        {page === "boards" && profile?.role === "admin" && <BoardsPage graphObjects={graphObjects} saveGraphObjectPosition={saveGraphObjectPosition} createGraphObject={createGraphObject} deleteGraphObject={deleteGraphObject} />}
+        {page === "boards" && profile?.role === "admin" && <BoardsPage boardObjects={boardObjects} saveBoardObjectPosition={saveBoardObjectPosition} createBoardObject={createBoardObject} deleteBoardObject={deleteBoardObject} />}
         {page === "users" && <UsersPage visibleUsers={visibleUsers} search={search} setSearch={setSearch} userSort={userSort} setUserSort={setUserSort} openCreate={openCreate} disconnectTelegram={disconnectTelegram} makeCode={makeCode} userInfo={userInfo} setUserInfo={setUserInfo} openEdit={openEdit} removeUser={removeUser} />}
         {page === "chats" && <ChatsPage profile={profile} chatSection={chatSection} setChatSection={setChatSection} personalChats={personalChats} setSelectedChat={setSelectedChat} setMessages={setMessages} chatFilter={chatFilter} setChatFilter={setChatFilter} openCreatePersonalChat={openCreatePersonalChat} chatSearch={chatSearch} setChatSearch={setChatSearch} visibleChats={visibleChats} openChat={openChat} selectedChat={selectedChat} setPage={setPage} draft={draft} setDraft={setDraft} messageFilter={messageFilter} setMessageFilter={setMessageFilter} messagesViewportRef={messagesViewportRef} visibleMessages={visibleMessages} messages={messages} setDeleteMessageCandidate={setDeleteMessageCandidate} attachment={attachment} setAttachment={setAttachment} sendChatMessage={sendChatMessage} />}
 
