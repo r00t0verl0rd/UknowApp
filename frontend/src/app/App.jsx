@@ -39,7 +39,19 @@ export default function App() {
 
   if (!auth) return <LoginPage theme={theme} toggleTheme={toggleTheme} signIn={signIn}
     login={login} setLogin={setLogin} password={password} setPassword={setPassword} error={error} />;
-  if (!panelReady || !profile) return null;
+  if (!panelReady || !profile) return (
+    <main role="status" aria-label="Загрузка приложения" style={{
+      display: "grid", placeItems: "center", minHeight: "100vh", minHeight: "100dvh",
+      background: "var(--canvas)",
+    }}>
+      <span aria-hidden="true" style={{
+        width: 28, height: 28, border: "2px solid var(--border)",
+        borderTopColor: "var(--accent)", borderRadius: "50%",
+        animation: "app-startup-spin 0.8s linear infinite",
+      }}/>
+      <style>{"@keyframes app-startup-spin { to { transform: rotate(360deg); } }"}</style>
+    </main>
+  );
 
   const workspace = workspaceRegistry[profile.role];
   if (!workspace) return null;
