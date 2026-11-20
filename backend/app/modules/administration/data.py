@@ -5,7 +5,7 @@ import shutil
 import sqlite3
 import tempfile
 import zipfile
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path, PurePosixPath
 from typing import Annotated
 
@@ -187,7 +187,7 @@ def data_stats(_: Admin):
                 User.role.in_(("teacher", "student")),
                 User.web_password_hash.is_not(None),
                 ConnectionCode.used_at.is_(None),
-                ConnectionCode.expires_at > datetime.now(UTC) + timedelta(days=365),
+                ConnectionCode.expires_at > datetime.now(timezone.utc) + timedelta(days=365),
             ).scalar(),
             "media_files": sum(media_counts.values()),
             **{f"media_{key}": value for key, value in media_counts.items()},
@@ -227,7 +227,7 @@ def download_full_backup(_: Admin):
         with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             archive.writestr("manifest.json", json.dumps({
                 "format": "uknowapp-full-backup-v1",
-                "created_at": datetime.now(UTC).isoformat(),
+                "created_at": datetime.now(timezone.utc).isoformat(),
             }, ensure_ascii=False))
             archive.write(snapshot_path, "database.sqlite3")
             _add_media_files(archive)
@@ -253,7 +253,7 @@ def download_media_archive(_: Admin):
         with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             archive.writestr("manifest.json", json.dumps({
                 "format": "uknowapp-media-v1",
-                "created_at": datetime.now(UTC).isoformat(),
+                "created_at": datetime.now(timezone.utc).isoformat(),
             }, ensure_ascii=False))
             _add_media_files(archive)
         return FileResponse(
@@ -380,7 +380,7 @@ def download_dialogues(_: Admin):
         messages = db.scalars(select(Message).order_by(Message.id)).all()
         personal_messages = db.scalars(select(PersonalMessage).order_by(PersonalMessage.id)).all()
         payload = {
-            "manifest.json": {"format": ARCHIVE_FORMAT, "created_at": datetime.now(UTC).isoformat()},
+            "manifest.json": {"format": ARCHIVE_FORMAT, "created_at": datetime.now(timezone.utc).isoformat()},
             "messages.json": [_message_data(row, (
                 "id", "conversation_id", "sender_id", "sender_role", "content_type",
                 "text", "metadata_json", "delivery_status", "source_message_id",
@@ -526,7 +526,7 @@ async def restore_dialogues(_: Admin, file: UploadFile = File(...), db: Session 
 def cleanup_dialogues(days: int, _: Admin, db: Session = Depends(_get_db)):
     if days not in {30, 60, 120}:
         raise HTTPException(status_code=400, detail="Выберите срок 30, 60 или 120 дней")
-    cutoff = datetime.now(UTC) - timedelta(days=days)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     old_rows = db.scalars(select(Message).where(Message.created_at < cutoff)).all()
     old_personal_rows = db.scalars(select(PersonalMessage).where(PersonalMessage.created_at < cutoff)).all()
     deleted_messages = len(old_rows)
