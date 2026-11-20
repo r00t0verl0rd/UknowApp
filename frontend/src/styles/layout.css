@@ -1843,3 +1843,24 @@ border-color: transparent !important;}
 /* Keep the enabled state visible in both desktop and mobile action bars. */
 .topbar-actions > .push-toggle.active, .mobile-quick-actions > .push-toggle.active { color: #24845b; border-color: #9bd3b5; background: #effaf3; }
 :root[data-theme="dark-soft"] .topbar-actions > .push-toggle.active, :root[data-theme="dark-soft"] .mobile-quick-actions > .push-toggle.active { color: #8bd9a9 !important; border-color: #416b54 !important; background: #263b30 !important; }
+
+/* Desktop logout belongs directly below the Additional section in the sidebar. */
+.desktop-sidebar-logout { display: none !important; }
+@media (min-width: 1025px) {
+  .sidebar-bottom > .desktop-sidebar-logout { display: flex !important; margin-top: 8px; }
+}
+/* On mobile, keep Save and Delete together at the right edge of the participant profile. */
+@media (max-width: 1024px) {
+  .overlay > .modal.participant-profile-modal .modal-actions {
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center;
+    flex-wrap: nowrap !important;
+    gap: 8px;
+  }
+  .overlay > .modal.participant-profile-modal .modal-actions > .btn {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 0;
+  }
+}
