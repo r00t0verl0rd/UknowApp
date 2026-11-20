@@ -93,7 +93,7 @@ export function useChatsController({
       resizeObserver?.disconnect();
       mutationObserver?.disconnect();
     };
-  }, [selectedChat?.id, messageFilter, messagesViewportRef]);
+  }, [selectedChat?.id, selectedChat?.type, messageFilter, messagesViewportRef]);
 
   const openChat = useCallback(async chat => {
     setSelectedChat(chat);
