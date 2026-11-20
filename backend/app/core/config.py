@@ -67,6 +67,10 @@ elif len(ADMIN_PASSWORD) < 16:
     )
 
 
+TRUSTED_PROXY_IPS = {
+    item.strip() for item in os.getenv("TRUSTED_PROXY_IPS", "127.0.0.1,::1,172.31.255.2").split(",") if item.strip()
+}
+
 ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
