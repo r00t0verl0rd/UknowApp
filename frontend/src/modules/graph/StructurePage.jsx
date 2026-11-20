@@ -29,8 +29,12 @@ function positionStyle(position) {
   return { transform: `translate3d(${position?.x || 0}px, ${position?.y || 0}px, 0)` };
 }
 
+function boundsRect(elementOrRect) {
+  return typeof elementOrRect.getBoundingClientRect === "function" ? elementOrRect.getBoundingClientRect() : elementOrRect;
+}
+
 function findFreeGridPosition(element, siblings, currentPosition, boundsElement = element.parentElement, zoom = 1) {
-  const bounds = boundsElement.getBoundingClientRect();
+  const bounds = boundsRect(boundsElement);
   const rect = element.getBoundingClientRect();
   const gridStep = GRAPH_GRID_SIZE / zoom;
   const maxX = Math.max(0, (bounds.right - rect.right) / zoom + currentPosition.x);
@@ -70,7 +74,7 @@ function findFreeGridPosition(element, siblings, currentPosition, boundsElement 
 
 function clampElementPosition(element, position, boundsElement) {
   const rect = element.getBoundingClientRect();
-  const bounds = boundsElement.getBoundingClientRect();
+  const bounds = boundsRect(boundsElement);
   const clampDelta = (start, end, min, max) => end - start > max - min
     ? (min + max - start - end) / 2
     : start < min ? min - start : end > max ? max - end : 0;
@@ -175,6 +179,32 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
   }, [cloudPositions]);
 
   useLayoutEffect(() => {
+    const viewport = graphViewportRef.current;
+    if (!viewport) return undefined;
+    const outer = outerCoordinatesRef.current;
+    let boundsFrame = 0;
+    const updateBounds = () => {
+      boundsFrame = 0;
+      outer.update(viewport);
+    };
+    const scheduleBoundsUpdate = () => {
+      if (!boundsFrame) boundsFrame = requestAnimationFrame(updateBounds);
+    };
+    updateBounds();
+    if (graphWorldRef.current) graphWorldRef.current.style.transform = innerCoordinatesRef.current.transform();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(scheduleBoundsUpdate) : null;
+    observer?.observe(viewport);
+    window.addEventListener("resize", scheduleBoundsUpdate, { passive: true });
+    window.addEventListener("scroll", scheduleBoundsUpdate, { passive: true, capture: true });
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", scheduleBoundsUpdate);
+      window.removeEventListener("scroll", scheduleBoundsUpdate, true);
+      if (boundsFrame) cancelAnimationFrame(boundsFrame);
+    };
+  }, [profile?.role]);
+
+  useLayoutEffect(() => {
     const isAdmin = profile?.role === "admin";
     const isTeacher = profile?.role === "teacher";
     if (!isAdmin && !isTeacher) return;
@@ -192,7 +222,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
         const handle = element.matches("[data-drag-id]") ? element : element.querySelector("[data-drag-id]");
         const id = handle?.dataset.dragId;
         if (!id) return;
-        const boundsElement = handle.dataset.dragType === "cloud" ? element.closest(".graph-coordinate-viewport") : element.parentElement;
+        const boundsElement = handle.dataset.dragType === "cloud" ? outerCoordinatesRef.current.getBounds() : element.parentElement;
         if (layout[id]) {
           const position = clampElementPosition(element, layout[id], boundsElement);
           if (position.x !== layout[id].x || position.y !== layout[id].y) {
@@ -244,31 +274,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
   }, [profile?.role, allTeachers, studentsByTeacherId, unassignedStudents, teacherGraph, saveCloudPosition]);
 
 
-  useLayoutEffect(() => {
-    const viewport = graphViewportRef.current;
-    if (!viewport) return undefined;
-    const outer = outerCoordinatesRef.current;
-    let boundsFrame = 0;
-    const updateBounds = () => {
-      boundsFrame = 0;
-      outer.update(viewport);
-    };
-    const scheduleBoundsUpdate = () => {
-      if (!boundsFrame) boundsFrame = requestAnimationFrame(updateBounds);
-    };
-    updateBounds();
-    if (graphWorldRef.current) graphWorldRef.current.style.transform = innerCoordinatesRef.current.transform();
-    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(scheduleBoundsUpdate) : null;
-    observer?.observe(viewport);
-    window.addEventListener("resize", scheduleBoundsUpdate, { passive: true });
-    window.addEventListener("scroll", scheduleBoundsUpdate, { passive: true, capture: true });
-    return () => {
-      observer?.disconnect();
-      window.removeEventListener("resize", scheduleBoundsUpdate);
-      window.removeEventListener("scroll", scheduleBoundsUpdate, true);
-      if (boundsFrame) cancelAnimationFrame(boundsFrame);
-    };
-  }, [profile?.role]);
+
 
   function scheduleGraphTransform() {
     if (transformFrameRef.current) return;
@@ -357,7 +363,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     const teacherView = type === "student" && Boolean(handle.closest(".is-teacher-view"));
     const layout = type === "cloud" ? cloudLayoutRef.current : teacherView ? teacherStudentLayoutRef.current : studentLayoutRef.current;
     const position = layout[id] || { x: 0, y: 0 };
-    const boundsElement = type === "cloud" ? element.closest(".graph-coordinate-viewport") : element.parentElement;
+    const boundsElement = type === "cloud" ? outer.getBounds() : element.parentElement;
     const outer = outerCoordinatesRef.current;
     dragRef.current = {
       type, id, element, teacherView, pointerId: event.pointerId,
@@ -427,7 +433,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
       const siblings = drag.type === "cloud"
         ? drag.element.parentElement.querySelectorAll(":scope > .teacher-branch")
         : drag.element.parentElement.querySelectorAll(":scope > .student-card");
-      const boundsElement = drag.type === "cloud" ? drag.element.closest(".graph-coordinate-viewport") : drag.element.parentElement;
+      const boundsElement = drag.type === "cloud" ? outerCoordinatesRef.current.getBounds() : drag.element.parentElement;
       const safePosition = findFreeGridPosition(drag.element, siblings, { x, y }, boundsElement, innerCoordinatesRef.current.zoom);
       x = safePosition.x;
       y = safePosition.y;
