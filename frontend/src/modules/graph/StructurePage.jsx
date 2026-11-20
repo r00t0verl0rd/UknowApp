@@ -26,6 +26,41 @@ function positionStyle(position) {
   return { transform: `translate3d(${position?.x || 0}px, ${position?.y || 0}px, 0)` };
 }
 
+function TeacherBranch({ teacher, students, studentLayout, studentsCollapsed = false, isOwner = false, cloudLayout, cloudStack, setCollapsedTeacherIds, openEdit, setTeacherId, setStudentId, allStudents, setModal, unassignStudent }) {
+  return (
+    <section
+      className={`teacher-branch${studentsCollapsed ? " is-collapsed" : ""}`}
+      key={teacher.id}
+      style={isOwner ? undefined : { ...positionStyle(cloudLayout[teacher.id]), zIndex: cloudStack[teacher.id] || 0 }}
+    >
+      <div className="person-card teacher-card" {...(!isOwner ? { "data-drag-type": "cloud", "data-drag-id": teacher.id } : {})}>
+        <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap /></div><div className="person-info"><b>{teacher.full_name}</b><small>{isOwner ? "Вы · Учитель" : "Учитель"} · {students.length} учен.</small></div></div>
+        {!isOwner && <div className="person-actions">
+          <button className={`danger-icon teacher-collapse-btn${studentsCollapsed ? "" : " is-expanded"}`} title={studentsCollapsed ? "Показать учеников" : "Скрыть учеников"} aria-label={studentsCollapsed ? "Показать учеников" : "Скрыть учеников"} aria-expanded={!studentsCollapsed} onClick={() => setCollapsedTeacherIds(current => { const next = new Set(current); if (next.has(teacher.id)) next.delete(teacher.id); else next.add(teacher.id); return next; })}><ChevronRight /></button>
+          <button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil /></button>
+        </div>}
+      </div>
+      {!isOwner && !studentsCollapsed && <button className="add-student" onClick={() => { setTeacherId(String(teacher.id)); setStudentId(allStudents[0]?.id ? String(allStudents[0].id) : ""); setModal({ mode: "assign" }); }}><Plus />Назначить ученика</button>}
+      {!studentsCollapsed && <div className="student-list">
+        {students.map(student => <div
+          className="person-card student-card"
+          key={student.id}
+          style={positionStyle(studentLayout[student.id])}
+          data-drag-type="student"
+          data-drag-id={student.id}
+        >
+          <div className="person-main"><div className="avatar student-avatar"><Smile /></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
+          {!isOwner && <div className="person-actions">
+            <button type="button" className="icon-btn graph-person-action" title="Открепить от учителя" aria-label={"Открепить " + student.full_name + " от учителя"} onClick={() => unassignStudent(student)}><Link2Off /></button>
+            <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil /></button>
+          </div>}
+        </div>)}
+        {!students.length && <div className="empty-students">{isOwner ? "Пока нет назначенных учеников" : "Нет назначенных учеников"}</div>}
+      </div>}
+    </section>
+  );
+}
+
 export default function StructurePage({ profile, teacherGraph, overview, openCreate, allTeachers, studentsByTeacherId, collapsedTeacherIds, setCollapsedTeacherIds, openEdit, setTeacherId, setStudentId, allStudents, setModal, unassignedStudents, unassignStudent, saveCloudPosition }) {
   const cloudPositions = overview?.cloud_positions || EMPTY_CLOUD_POSITIONS;
   const [cloudLayout, setCloudLayout] = useState(() => positionMap(cloudPositions));
@@ -133,23 +168,12 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
         >
-          <section className="teacher-branch">
-            <div className="person-card teacher-card">
-              <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap /></div><div className="person-info"><b>{teacherGraph?.teacher.full_name || profile?.full_name}</b><small>Вы · Учитель · {(teacherGraph?.students || []).length} учен.</small></div></div>
-            </div>
-            <div className="student-list">
-              {(teacherGraph?.students || []).map(student => <div
-                className="person-card student-card"
-                key={student.id}
-                style={positionStyle(studentLayout[student.id])}
-                data-drag-type="student"
-                data-drag-id={student.id}
-              >
-                <div className="person-main"><div className="avatar student-avatar"><Smile /></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
-              </div>)}
-              {!(teacherGraph?.students || []).length && <div className="empty-students">Пока нет назначенных учеников</div>}
-            </div>
-          </section>
+          <TeacherBranch
+            teacher={teacherGraph?.teacher || profile}
+            students={teacherGraph?.students || []}
+            studentLayout={studentLayout}
+            isOwner
+          />
         </div>
       </section>}
 
@@ -192,40 +216,22 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
         >
-          {allTeachers.map(teacher => {
-            const students = studentsByTeacherId.get(teacher.id) || [];
-            const studentsCollapsed = collapsedTeacherIds.has(teacher.id);
-            return <section
-              className={`teacher-branch${studentsCollapsed ? " is-collapsed" : ""}`}
-              key={teacher.id}
-              style={{ ...positionStyle(cloudLayout[teacher.id]), zIndex: cloudStack[teacher.id] || 0 }}
-            >
-              <div className="person-card teacher-card" data-drag-type="cloud" data-drag-id={teacher.id}>
-                <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap /></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель · {students.length} учен.</small></div></div>
-                <div className="person-actions">
-                  <button className={`danger-icon teacher-collapse-btn${studentsCollapsed ? "" : " is-expanded"}`} title={studentsCollapsed ? "Показать учеников" : "Скрыть учеников"} aria-label={studentsCollapsed ? "Показать учеников" : "Скрыть учеников"} aria-expanded={!studentsCollapsed} onClick={() => setCollapsedTeacherIds(current => { const next = new Set(current); if (next.has(teacher.id)) next.delete(teacher.id); else next.add(teacher.id); return next; })}><ChevronRight /></button>
-                  <button title="Редактировать" onClick={() => openEdit(teacher)}><Pencil /></button>
-                </div>
-              </div>
-              {!studentsCollapsed && <button className="add-student" onClick={() => { setTeacherId(String(teacher.id)); setStudentId(allStudents[0]?.id ? String(allStudents[0].id) : ""); setModal({ mode: "assign" }); }}><Plus />Назначить ученика</button>}
-              {!studentsCollapsed && <div className="student-list">
-                {students.map(student => <div
-                  className="person-card student-card"
-                  key={student.id}
-                  style={positionStyle(studentLayout[student.id])}
-                  data-drag-type="student"
-                  data-drag-id={student.id}
-                >
-                  <div className="person-main"><div className="avatar student-avatar"><Smile /></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
-                  <div className="person-actions">
-                    <button type="button" className="icon-btn graph-person-action" title="Открепить от учителя" aria-label={"Открепить " + student.full_name + " от учителя"} onClick={() => unassignStudent(student)}><Link2Off /></button>
-                    <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil /></button>
-                  </div>
-                </div>)}
-                {!students.length && <div className="empty-students">Нет назначенных учеников</div>}
-              </div>}
-            </section>;
-          })}
+          {allTeachers.map(teacher => <TeacherBranch
+            key={teacher.id}
+            teacher={teacher}
+            students={studentsByTeacherId.get(teacher.id) || []}
+            studentLayout={studentLayout}
+            studentsCollapsed={collapsedTeacherIds.has(teacher.id)}
+            cloudLayout={cloudLayout}
+            cloudStack={cloudStack}
+            setCollapsedTeacherIds={setCollapsedTeacherIds}
+            openEdit={openEdit}
+            setTeacherId={setTeacherId}
+            setStudentId={setStudentId}
+            allStudents={allStudents}
+            setModal={setModal}
+            unassignStudent={unassignStudent}
+          />)}
         </div>
         {!allTeachers.length && <div className="empty-state"><GraduationCap /><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span></div>}
       </section>}
