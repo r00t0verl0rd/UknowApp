@@ -205,7 +205,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     const panel = document.querySelector(profile?.role === "teacher" ? ".graph-panel.is-teacher-view" : ".graph-panel:not(.is-teacher-view)");
     if (!panel) return;
 
-    const resetGroup = (selector, layout) => {
+    const resetGroup = selector => {
       const next = {};
       panel.querySelectorAll(selector).forEach(element => {
         const id = element.dataset.dragId;
@@ -217,8 +217,8 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     };
 
     if (profile?.role === "admin") {
-      const nextClouds = resetGroup(".teacher-grid > .teacher-branch", cloudLayoutRef.current);
-      const nextStudents = resetGroup(".student-list > .student-card, .unassigned-grid > .student-card", studentLayoutRef.current);
+      const nextClouds = resetGroup(".teacher-grid > .teacher-branch");
+      const nextStudents = resetGroup(".student-list > .student-card, .unassigned-grid > .student-card");
       panel.querySelectorAll(".teacher-grid, .student-list, .unassigned-grid").forEach(group => { group.style.minHeight = ""; });
 
       cloudLayoutRef.current = nextClouds;
@@ -231,7 +231,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
       return;
     }
 
-    const nextStudents = resetGroup(".student-list > .student-card", teacherStudentLayoutRef.current);
+    const nextStudents = resetGroup(".student-list > .student-card");
     panel.querySelectorAll(".student-list").forEach(group => { group.style.minHeight = ""; });
     teacherStudentLayoutRef.current = nextStudents;
     setTeacherStudentLayout(nextStudents);
