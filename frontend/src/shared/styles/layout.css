@@ -34,8 +34,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .legend{display:flex;align-items:center;gap:7px;}
 .legend span{width:8px;height:8px;border-radius:50%;margin-left:9px}
 
-.brand img, .admin_node img{object-fit:contain}
-.admin_node b, .admin_node small, .chat-head b, .chat-head small{display:block}
+.brand img, .role_node img{object-fit:contain}
+.role_node b, .role_node small, .chat-head b, .chat-head small{display:block}
 
 .teacher-grid{display:block;}
 .teacher-branch{position:relative;}
@@ -223,10 +223,10 @@ input:focus-visible, select:focus-visible { outline-offset: 2px;}
 .graph-panel { position: relative; overflow: hidden; padding: 27px; border: 1px solid #e8e0f2; background: #faf8fd; box-shadow: 0 12px 34px rgba(66, 45, 105, .055), inset 0 1px rgba(255,255,255,.95);}
 .graph-panel .legend { padding: 8px 11px; border: 1px solid rgba(226, 218, 239, .9); border-radius: 999px; background: rgba(255,255,255,.76);}
 .graph-panel .legend span { width: 9px; height: 9px;}
-.graph-panel .admin_node { position: relative; overflow: hidden; border: 1px solid #ded2f0; border-radius: 17px; background: linear-gradient(112deg, rgba(243,236,255,.97), rgba(255,255,255,.98) 62%, rgba(255,247,246,.96)); box-shadow: 0 8px 22px rgba(86, 61, 139, .09), inset 0 1px 0 rgba(255,255,255,.95);}
-.graph-panel .admin_node img { padding: 3px; border-radius: 12px; background: rgba(255,255,255,.8); box-shadow: 0 3px 10px rgba(87,62,153,.09);}
-.graph-panel .admin_node b { letter-spacing: -.2px;}
-.graph-panel .admin_node small { color: #89809b;}
+.graph-panel .role_node { position: relative; overflow: hidden; border: 1px solid #ded2f0; border-radius: 17px; background: linear-gradient(112deg, rgba(243,236,255,.97), rgba(255,255,255,.98) 62%, rgba(255,247,246,.96)); box-shadow: 0 8px 22px rgba(86, 61, 139, .09), inset 0 1px 0 rgba(255,255,255,.95);}
+.graph-panel .role_node img { padding: 3px; border-radius: 12px; background: rgba(255,255,255,.8); box-shadow: 0 3px 10px rgba(87,62,153,.09);}
+.graph-panel .role_node b { letter-spacing: -.2px;}
+.graph-panel .role_node small { color: #89809b;}
 .graph-panel .teacher-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); grid-auto-flow: row; align-items: start; column-gap: 17px; row-gap: 17px; width: 100%;}
 .graph-panel .teacher-branch { display: block; width: 100%; margin: 0; min-width: 0; padding: 13px; border: 1px solid #e9e2f2; border-radius: 17px; background: #f7f4fa; box-shadow: 0 5px 18px rgba(67,47,105,.045), inset 0 1px 0 rgba(255,255,255,.95); transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;}
 .graph-panel .teacher-branch:hover { border-color: #d8c9ed; box-shadow: 0 9px 24px rgba(87,62,153,.085); transform: translateY(-1px);}
@@ -363,7 +363,7 @@ img, video, audio { max-width: 100%;}
 :root[data-theme="dark-soft"] .sidebar nav button.active { background: #353149 !important; color: #c6bdf0 !important; border-color: #49415f !important;}
 :root[data-theme="dark-soft"] .sidebar nav button i { background: #303849 !important; color: #c5bddf !important;}
 :root[data-theme="dark-soft"] .chat-list { background: #1d2430 !important; border-color: #343d4d !important;}
-:root[data-theme="dark-soft"] .chat-item, :root[data-theme="dark-soft"] .person-card, :root[data-theme="dark-soft"] .admin_node { background: #252d3b !important; border-color: #3a4659 !important; box-shadow: 0 4px 14px rgba(0, 0, 0, .14) !important;}
+:root[data-theme="dark-soft"] .chat-item, :root[data-theme="dark-soft"] .person-card, :root[data-theme="dark-soft"] .role_node { background: #252d3b !important; border-color: #3a4659 !important; box-shadow: 0 4px 14px rgba(0, 0, 0, .14) !important;}
 :root[data-theme="dark-soft"] .message.teacher { background: #302e43 !important; border-color: #4c4667 !important;}
 :root[data-theme="dark-soft"] .message.admin { background: #393445 !important; border-color: #66546a !important;}
 :root[data-theme="dark-soft"] .message p { color: #e4e8f0 !important;}
@@ -397,10 +397,10 @@ img, video, audio { max-width: 100%;}
 /* Refined soft-dark surfaces for the school graph and user directory. */
 :root[data-theme="dark-soft"] .graph-panel { background: #1e2531 !important; border: 1px solid #3a4659 !important; box-shadow: 0 10px 30px rgba(0, 0, 0, .2) !important;}
 :root[data-theme="dark-soft"] .graph-panel .legend { color: #d1d7e3 !important; background: #2a3342 !important; border: 1px solid #46536a !important; box-shadow: none !important;}
-:root[data-theme="dark-soft"] .graph-panel .admin_node {  border: 1px solid #49566d !important;}
-:root[data-theme="dark-soft"] .graph-panel .admin_node img { background: transparent !important; box-shadow: none !important; border-radius: 0 !important;}
-:root[data-theme="dark-soft"] .graph-panel .admin_node b { color: #edf0f6 !important;}
-:root[data-theme="dark-soft"] .graph-panel .admin_node small { color: #aab4c5 !important;}
+:root[data-theme="dark-soft"] .graph-panel .role_node {  border: 1px solid #49566d !important;}
+:root[data-theme="dark-soft"] .graph-panel .role_node img { background: transparent !important; box-shadow: none !important; border-radius: 0 !important;}
+:root[data-theme="dark-soft"] .graph-panel .role_node b { color: #edf0f6 !important;}
+:root[data-theme="dark-soft"] .graph-panel .role_node small { color: #aab4c5 !important;}
 :root[data-theme="dark-soft"] .graph-panel .teacher-branch { border: 1px solid #3f4d61 !important;}
 :root[data-theme="dark-soft"] .graph-panel .teacher-branch:hover { transform: inherit;}
 :root[data-theme="dark-soft"] .graph-panel .teacher-card {  border: 1px solid #4c4b69 !important; box-shadow: none !important;}
@@ -423,7 +423,7 @@ img, video, audio { max-width: 100%;}
 :root[data-theme="dark-soft"] .user-row .role-tag.student { background: #47333c !important; color: #e8b4bd !important;}
 /* Crisp, stable graph edges and comfortable mobile spacing. */
 :root[data-theme="dark-soft"] .graph-panel, :root[data-theme="dark-soft"] .graph-panel * { -webkit-font-smoothing: antialiased;}
-.graph-panel .admin_node, .graph-panel .teacher-branch, .graph-panel .teacher-card, .graph-panel .student-card { border-width: 1px; border-style: solid; transform: none;}
+.graph-panel .role_node, .graph-panel .teacher-branch, .graph-panel .teacher-card, .graph-panel .student-card { border-width: 1px; border-style: solid; transform: none;}
 .graph-panel .teacher-branch, .graph-panel .person-card { transition: border-color .16s ease, background-color .16s ease, box-shadow .16s ease;}
 .graph-panel .teacher-branch:hover, .graph-panel .person-card:hover { transform: none;}
 /* Mobile inbox: the conversation picker and open chat are separate scroll
@@ -477,12 +477,12 @@ img, video, audio { max-width: 100%;}
 /* Keep the primary graph action at the top beside the legend. */
 /* Final graph-card sizing: keep the admin identity on one compact row and
    make student cards shrink safely inside narrow teacher branches. */
-.graph-panel .admin_node { display: grid; grid-template-columns: 50px minmax(0, 1fr); grid-template-rows: auto auto; align-items: center; justify-content: stretch; column-gap: 14px; width: min(100%, 380px); max-width: 100%; min-height: 68px; margin: 0 auto 24px; padding: 7px 26px 7px 19px; text-align: center; box-sizing: border-box;}
-.graph-panel .admin_node img { grid-row: 1 / span 2; width: 50px; height: 50px;}
-.graph-panel .admin_node > div { grid-column: 2; grid-row: 1 / span 2; display: flex; min-width: 0; flex-direction: column; align-items: center; justify-content: center; text-align: center;}
-.graph-panel .admin_node b, .graph-panel .admin_node small { display: block; max-width: 100%; width: 100%; margin: 0; text-align: center;}
-.graph-panel .admin_node b { white-space: nowrap; font-size: 15px; line-height: 1.25;}
-.graph-panel .admin_node small { white-space: nowrap; font-size: 11px; line-height: 1.3;}
+.graph-panel .role_node { display: grid; grid-template-columns: 50px minmax(0, 1fr); grid-template-rows: auto auto; align-items: center; justify-content: stretch; column-gap: 14px; width: min(100%, 260px); max-width: 100%; min-height: 68px; margin: 0 auto 24px; padding: 7px 26px 7px 19px; text-align: center; box-sizing: border-box;}
+.graph-panel .role_node img { grid-row: 1 / span 2; width: 50px; height: 50px;}
+.graph-panel .role_node > div { grid-column: 2; grid-row: 1 / span 2; display: flex; min-width: 0; flex-direction: column; align-items: center; justify-content: center; text-align: center;}
+.graph-panel .role_node b, .graph-panel .role_node small { display: block; max-width: 100%; width: 100%; margin: 0; text-align: center;}
+.graph-panel .role_node b { white-space: nowrap; font-size: 15px; line-height: 1.25;}
+.graph-panel .role_node small { white-space: nowrap; font-size: 11px; line-height: 1.3;}
 .graph-panel .teacher-grid, .graph-panel .teacher-branch, .graph-panel .student-list { min-width: 0; max-width: 100%; box-sizing: border-box;}
 .graph-panel .student-list { margin: 12px 0 0; padding: 0; overflow: visible;}
 .graph-panel .student-card { display: flex; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; overflow: hidden;}
@@ -627,7 +627,7 @@ img, video, audio { max-width: 100%;}
 :root[data-theme="dark-soft"] .confirm-delete-modal .btn.danger { color: #fff; border-color: #97505c; background: linear-gradient(110deg, #934656, #aa5967); box-shadow: 0 5px 16px rgba(0, 0, 0, .22);}
 /* Inter keeps interface text readable; Sora adds character to headings and participant names. */
 html, body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;}
-h1, h2, h3, .brand, .admin_node b, .person-info b, .chat-head b, .modal-head h2, .user-person-info { font-family: Sora, Inter, sans-serif;}
+h1, h2, h3, .brand, .role_node b, .person-info b, .chat-head b, .modal-head h2, .user-person-info { font-family: Sora, Inter, sans-serif;}
 .user-person-info { font-size: 16px; font-weight: 600; letter-spacing: -.18px; line-height: 1.35;}
 /* Desktop inbox: keep the conversation picker in its own scroll area.
    Flex sizing prevents chat rows from sharing/overlapping the same grid track. */
@@ -683,8 +683,8 @@ html, body { overflow-x: clip;}
 .topbar-user { margin-left: 0; font-size: 10px;}
 .content { width: 100%; max-width: 1900px; padding: 14px 20px 18px;}
 .graph-panel { padding: 19px; border-radius: 16px;}
-.graph-panel .admin_node { min-height: 68px; margin-bottom: 20px; padding: 7px 30px;}
-.graph-panel .admin_node img { width: 50px; height: 50px;}
+.graph-panel .role_node { min-height: 68px; margin-bottom: 20px; padding: 7px 30px;}
+.graph-panel .role_node img { width: 50px; height: 50px;}
 .graph-panel .teacher-grid{ column-gap: 12px; row-gap: 12px;}
 .graph-panel .teacher-branch { padding: 10px; border-radius: 13px;}
 .graph-panel .teacher-card { min-height: 64px; padding: 9px 11px;}
@@ -727,7 +727,7 @@ html, body { overflow-x: clip;}
 .role-tag{margin-left:45px}
 .chat-layout{grid-template-columns:1fr}
 
-.admin_node { max-width: 100%;}
+.role_node { max-width: 100%;}
 .sidebar { top: 0; inset: auto; z-index: 30; display: block; width: 100%; height: auto; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 9px; border-right: 0; border-bottom: 1px solid var(--line); box-shadow: 0 5px 18px rgba(47,31,84,.07);}
 .brand { padding: 0 42px 9px 2px; font-size: 19px; gap: 8px;}
 .brand img { width: 32px; height: 32px;}
@@ -810,8 +810,8 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 :root[data-theme="dark-soft"] .chat-item.selected, :root[data-theme="dark-soft"] button.chat-item.selected { background: #343449 !important; border-color: #514b6d !important; color: #d1c9f4 !important;}
 .graph-panel { min-width: 0; border-radius: 15px;}
 .graph-panel .legend { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; padding: 8px 10px; border-radius: 11px; line-height: 1.3;}
-.graph-panel .admin_node { min-height: 68px;}
-.graph-panel .admin_node img { flex: 0 0 50px; width: 50px; height: 50px;}
+.graph-panel .role_node { min-height: 68px;}
+.graph-panel .role_node img { flex: 0 0 50px; width: 50px; height: 50px;}
 .graph-panel .teacher-branch { min-width: 0; border-radius: 13px;}
 .graph-panel .teacher-card, .graph-panel .student-card { min-width: 0; min-height: 58px; border-radius: 10px;}
 .graph-panel .person-main, .graph-panel .person-info, .chat-head > div:first-child { min-width: 0;}
@@ -847,7 +847,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 
 .graph-panel .graph-legend { padding: 7px 9px;}
 .graph-panel .graph-legend-row { margin-bottom: 14px;}
-.graph-panel .admin_node { width: min(100%, 380px); max-width: 100%; min-height: 68px; margin-bottom: 20px;}
+.graph-panel .role_node { width: min(100%, 260px); max-width: 100%; min-height: 68px; margin-bottom: 20px;}
 .graph-panel .student-list { padding-left: 0;}
 .graph-panel .student-card { gap: 5px; padding: 8px 7px;}
 .graph-panel .student-card .avatar { flex-basis: 30px; width: 30px; height: 30px;}
@@ -920,7 +920,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .graph-panel .graph-legend-row .legend { font-size: 9px; gap: 3px;}
 
 .overlay:has(.create-participant-modal) { display: flex; align-items: flex-start; justify-content: center; padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain;}
-.overlay > .create-participant-modal { flex: 0 1 auto; width: min(100%, 380px); max-width: 420px; max-height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom))); min-height: 0; margin: auto 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;}
+.overlay > .create-participant-modal { flex: 0 1 auto; width: min(100%, 260px); max-width: 420px; max-height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom))); min-height: 0; margin: auto 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;}
 .create-participant-modal .modal-head { gap: 8px;}
 .create-participant-modal .modal-head h2 { font-size: clamp(17px, 5vw, 19px);}
 .create-participant-modal .stack label { gap: 5px; font-size: 12px;}
@@ -935,10 +935,10 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .graph-panel .person-card { padding: clamp(7px, 1.8vw, 12px); gap: clamp(5px, 1.2vw, 8px);}
 .graph-panel .avatar { width: clamp(32px, 8.5vw, 38px); height: clamp(32px, 8.5vw, 38px);}
 .graph-panel .person-actions button { width: clamp(25px, 6.5vw, 28px); height: clamp(25px, 6.5vw, 28px);}
-.graph-panel .admin_node { column-gap: clamp(10px, 1.8vw, 14px); padding: clamp(7px, 1.5vw, 9px) clamp(20px, 3vw, 26px) clamp(7px, 1.5vw, 9px) clamp(15px, 2.2vw, 19px);}
-.graph-panel .admin_node img { flex-basis: clamp(46px, 9vw, 50px); width: clamp(46px, 9vw, 50px); height: clamp(46px, 9vw, 50px);}
-.graph-panel .admin_node b { font-size: clamp(14px, 3.2vw, 15px);}
-.graph-panel .admin_node small { font-size: clamp(10px, 2.5vw, 11px);}
+.graph-panel .role_node { column-gap: clamp(10px, 1.8vw, 14px); padding: clamp(7px, 1.5vw, 9px) clamp(20px, 3vw, 26px) clamp(7px, 1.5vw, 9px) clamp(15px, 2.2vw, 19px);}
+.graph-panel .role_node img { flex-basis: clamp(46px, 9vw, 50px); width: clamp(46px, 9vw, 50px); height: clamp(46px, 9vw, 50px);}
+.graph-panel .role_node b { font-size: clamp(14px, 3.2vw, 15px);}
+.graph-panel .role_node small { font-size: clamp(10px, 2.5vw, 11px);}
 .user-sort { padding-inline: clamp(9px, 2.5vw, 12px);}
 .user-count { gap: clamp(6px, 1.5vw, 9px); font-size: clamp(10px, 2.7vw, 11px);}
 .user-info-popover { right: clamp(-48px, -6vw, -20px);}
@@ -1358,7 +1358,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .toast { background: linear-gradient(110deg, #493681, #6046a5); box-shadow: var(--ui-shadow-raised);}
 :root[data-theme="dark-soft"] .toast { background: linear-gradient(110deg, #39314f, #51466f);}
 :root[data-theme="dark-soft"] .alert { background: var(--red-soft) !important; border-color: var(--red-border) !important; color: #f0aab3 !important;}
-:root[data-theme="dark-soft"] .person-card, :root[data-theme="dark-soft"] .teacher-card, :root[data-theme="dark-soft"] .student-card, :root[data-theme="dark-soft"] .admin_node, :root[data-theme="dark-soft"] .empty-students, :root[data-theme="dark-soft"] .unassigned-grid .person-card { background: var(--surface); border-color: var(--ui-border); box-shadow: var(--ui-shadow-card);}
+:root[data-theme="dark-soft"] .person-card, :root[data-theme="dark-soft"] .teacher-card, :root[data-theme="dark-soft"] .student-card, :root[data-theme="dark-soft"] .role_node, :root[data-theme="dark-soft"] .empty-students, :root[data-theme="dark-soft"] .unassigned-grid .person-card { background: var(--surface); border-color: var(--ui-border); box-shadow: var(--ui-shadow-card);}
 :root[data-theme="dark-soft"] .student-card .avatar, :root[data-theme="dark-soft"] .avatar.student, :root[data-theme="dark-soft"] .student-avatar, :root[data-theme="dark-soft"] .user-row .avatar.student, :root[data-theme="dark-soft"] .role-tag.student, :root[data-theme="dark-soft"] .user-row .role-tag.student { background: #402d37 !important; color: #e58c98 !important;}
 :root[data-theme="dark-soft"] .student-dot { background: #e58c98; box-shadow: 0 0 7px rgba(229, 140, 152, .20);}
 @media (prefers-reduced-motion: reduce) {
@@ -1619,7 +1619,7 @@ body, .chats-shell, .chats-main { background: var(--canvas);}
 :root[data-theme="dark-soft"] .graph-panel .student-card { background: #40382d !important; border-color: #746044 !important; color: #edf0f5 !important;}
 :root[data-theme="dark-soft"] .graph-panel .teacher-card .avatar { background: #514465 !important; color: #d0bce9 !important;}
 :root[data-theme="dark-soft"] .graph-panel .student-card .avatar { background: #574a38 !important; color: #e5c995 !important;}
-:root[data-theme="dark-soft"] .graph-panel .admin_node { color: #edf0f5 !important;}
+:root[data-theme="dark-soft"] .graph-panel .role_node { color: #edf0f5 !important;}
 /* Apply the same lavender-tinted canvas consistently across every section. */
 :root:not([data-theme="dark-soft"]) body, :root:not([data-theme="dark-soft"]) .chats-shell, :root:not([data-theme="dark-soft"]) .chats-main { background: #f2eff7 !important;}
 :root:not([data-theme="dark-soft"]) .sidebar, :root:not([data-theme="dark-soft"]) .topbar, :root:not([data-theme="dark-soft"]) .graph-panel, :root:not([data-theme="dark-soft"]) .user-list > .user-row, :root:not([data-theme="dark-soft"]) .chat-layout, :root:not([data-theme="dark-soft"]) .chat-list, :root:not([data-theme="dark-soft"]) .chat-detail, :root:not([data-theme="dark-soft"]) .modal, :root:not([data-theme="dark-soft"]) .login-card, :root:not([data-theme="dark-soft"]) .user-info-popover, :root:not([data-theme="dark-soft"]) .credential-modal { background-color: #faf8fd !important;}
@@ -1672,13 +1672,13 @@ body, .chats-shell, .chats-main { background: var(--canvas);}
 /* Muted dark palette: retain role recognition without large saturated blocks. */
 :root[data-theme="dark-soft"] .graph-panel .teacher-branch { background: #242c38 !important; border-color: #374253 !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .teacher-branch:hover { background: #262f3c !important; border-color: #465267 !important; box-shadow: none !important;}
-:root[data-theme="dark-soft"] .graph-panel .admin_node { background: #2e3933 !important; border-color: #485c4d !important; box-shadow: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .role_node { background: #2e3933 !important; border-color: #485c4d !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .teacher-dot { background: #a99bc8 !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .student-dot { background: #c4a879 !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .graph-legend-item b { background: #343b49 !important; color: #d4d8e2 !important;}
 /* Muted light palette: pale lavender for teachers, soft sand for students. */
 :root:not([data-theme="dark-soft"]) .graph-panel .teacher-branch { background: #f7f4fa !important; border-color: #e7e0ed !important; box-shadow: 0 2px 8px rgba(56, 43, 77, .035) !important;}
-:root:not([data-theme="dark-soft"]) .graph-panel .admin_node { background: #eaf0e9 !important; border-color: #d2dfd0 !important; box-shadow: none !important;}
+:root:not([data-theme="dark-soft"]) .graph-panel .role_node { background: #eaf0e9 !important; border-color: #d2dfd0 !important; box-shadow: none !important;}
 :root:not([data-theme="dark-soft"]) .graph-panel .teacher-dot { background: #a99ac2 !important; box-shadow: none !important;}
 :root:not([data-theme="dark-soft"]) .graph-panel .student-dot { background: #c5aa7e !important; box-shadow: none !important;}
 :root:not([data-theme="dark-soft"]) .graph-panel .graph-legend-item b { background: #ebe6f0 !important; color: #655a75 !important;}
