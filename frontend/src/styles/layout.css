@@ -858,11 +858,9 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .graph-panel .graph-legend { padding: 7px 9px;}
 .graph-panel .graph-legend-row { margin-bottom: 14px;}
 .graph-panel .root-node { width: fit-content; max-width: 100%; margin-bottom: 15px;}
-.graph-panel .root-node > div { justify-content: flex-start;}
 .graph-panel .student-list { padding-left: 0;}
 .graph-panel .student-card { gap: 5px; padding: 8px 7px;}
 .graph-panel .student-card .avatar { flex-basis: 30px; width: 30px; height: 30px;}
-.graph-panel .root-node > div { gap: 2px 6px;}
 .user-actions { align-self: center;}
 .graph-panel .teacher-card > .person-main { gap: 7px;}
 .graph-panel .teacher-card { gap: 5px; padding: 7px;}
