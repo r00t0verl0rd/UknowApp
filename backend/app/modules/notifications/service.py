@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import VAPID_PRIVATE_KEY, VAPID_SUBJECT
 from app.models import PushSubscription
+from app.modules.notifications.endpoints import is_safe_push_endpoint
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,9 @@ def _deliver(targets: list[dict], payload: str) -> None:
 
     expired_ids = []
     for target in targets:
+        if not is_safe_push_endpoint(target["endpoint"]):
+            logger.warning("Web Push delivery skipped: endpoint failed destination validation")
+            continue
         try:
             webpush(
                 subscription_info={
