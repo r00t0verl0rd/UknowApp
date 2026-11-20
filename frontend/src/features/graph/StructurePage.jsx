@@ -21,12 +21,12 @@ export default function StructurePage({
       <button type="button" className="btn primary graph-add-participant" onClick={() => openCreate()}><Plus />Добавить участника</button>
     </div>
     <div className="role_node"><img src="/logo.png" alt="" /><div><b>Администратор</b><small>Полное управление</small></div></div>
-    <div className="teacher-grid">
+    <div className="grid">
       {allTeachers.map(teacher => {
         const students = studentsByTeacherId.get(teacher.id) || [];
         const collapsed = collapsedTeacherIds.has(teacher.id);
         return <section className={`teacher-branch${collapsed ? " is-collapsed" : ""}`} key={teacher.id}>
-          <div className="person-card teacher-card">
+          <div className="teacher-card">
             <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap /></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель · {students.length} учен.</small></div></div>
             <div className="person-actions">
               <button type="button" className={`danger-icon teacher-collapse-btn${collapsed ? "" : " is-expanded"}`} title={collapsed ? "Показать учеников" : "Скрыть учеников"} aria-label={collapsed ? "Показать учеников" : "Скрыть учеников"} aria-expanded={!collapsed} onClick={() => setCollapsedTeacherIds(current => {
