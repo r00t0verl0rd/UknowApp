@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   disablePushNotifications, enablePushNotifications, getPushNotificationState,
-} from "../../modules/notifications/pushNotifications.js";
+} from "../../features/notifications/pushNotifications.js";
 
 const INITIAL_STATE = {
   supported: false, enabled: false, permission: "default",

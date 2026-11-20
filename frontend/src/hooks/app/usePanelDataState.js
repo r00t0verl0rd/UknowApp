@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createApiClient } from "../../services/api.js";
-import { createPanelEventSource, getAdminBootstrap, getCurrentProfile, getInboxData, getTeacherGraph } from "../../modules/panel/services/panelApi.js";
-import { getChatMessages } from "../../modules/conversations/services/conversationsApi.js";
+import { createPanelEventSource, getAdminBootstrap, getCurrentProfile, getInboxData, getTeacherGraph } from "../../shared/services/panelApi.js";
+import { getChatMessages } from "../../features/conversations/services/conversationsApi.js";
 
 export function usePanelDataState({
   auth, page, selectedChat, setAuth, setProfile, setError, setChats,
