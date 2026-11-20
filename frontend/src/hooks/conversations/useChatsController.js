@@ -13,7 +13,7 @@ export function useChatsController({
   const {
     chats, setChats, selectedChat, setSelectedChat, messages, setMessages,
     draft, setDraft, attachment, setAttachment, messagesViewportRef,
-    chatSearch, chatFilter, messageFilter,
+    chatSearch, chatFilter, messageFilter, setMessageFilter,
   } = chatState;
   const { personalChats, setPersonalChats, chatSection, setChatSection } = personalState;
 
@@ -71,7 +71,7 @@ export function useChatsController({
     setPage("chats");
     setDraft("");
     setAttachment(null);
-    chatState.setMessageFilter("all");
+    setMessageFilter("all");
     try {
       setMessages(await getChatMessages(request, chat));
       if (chat.type === "personal") setPersonalChats(await getPersonalConversations(request));
@@ -79,7 +79,7 @@ export function useChatsController({
     } catch (error) {
       setError(error.message);
     }
-  }, [setSelectedChat, setPage, setDraft, setAttachment, chatState, setMessages, request, setPersonalChats, profile?.role, setChats, setError]);
+  }, [setSelectedChat, setPage, setDraft, setAttachment, setMessageFilter, setMessages, request, setPersonalChats, profile?.role, setChats, setError]);
 
   const createPersonalChat = useCallback(async userId => {
     try {
