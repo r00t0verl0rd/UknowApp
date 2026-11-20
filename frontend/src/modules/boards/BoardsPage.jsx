@@ -1,15 +1,18 @@
-import { useLayoutEffect, useRef } from "react";
+import { memo, useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import { useBoardsState } from "../../hooks/boards/useBoardsState.js";
 import Crosshair from "lucide-react/dist/esm/icons/crosshair.js";
 import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
 
-function objectPosition(item) {
-  return { transform: `translate3d(${item.x || 0}px, ${item.y || 0}px, 0)` };
+function objectPosition(item, positions) {
+  const position = positions.current.get(item.id);
+  return {
+    transform: `translate3d(${position?.x ?? item.x ?? 0}px, ${position?.y ?? item.y ?? 0}px, 0)`,
+  };
 }
 
-function BoardObject({ item, children, createObject, removeObject }) {
-  return <div className="graph-board-node" data-object-id={item.id} style={objectPosition(item)}>
+const BoardObject = memo(function BoardObject({ item, children, positionsRef, createObject, removeObject }) {
+  return <div className="graph-board-node" data-object-id={item.id} style={objectPosition(item, positionsRef)}>
     <article className="graph-board-card">
       <header className="graph-board-object-header">
         <b>{item.title}</b>
@@ -19,11 +22,11 @@ function BoardObject({ item, children, createObject, removeObject }) {
         </div>
       </header>
       <div className="graph-board-children">
-        {children.map(child => <BoardObject key={child.id} item={child} children={child.children} createObject={createObject} removeObject={removeObject} />)}
+        {children.map(child => <BoardObject key={child.id} item={child} children={child.children} positionsRef={positionsRef} createObject={createObject} removeObject={removeObject} />)}
       </div>
     </article>
   </div>;
-}
+});
 
 export default function BoardsPage() {
   const { boardObjects, loading, error, clearError, createObject, deleteObject, moveObject: moveBoardObject } = useBoardsState();
@@ -32,21 +35,29 @@ export default function BoardsPage() {
   const dragRef = useRef(null);
   const frameRef = useRef(0);
   const transformRef = useRef({ zoom: 1, x: 0, y: 0 });
+  const positionsRef = useRef(new Map());
 
-  const objectsByParent = new Map();
-  for (const item of boardObjects) {
-    const parentId = item.parent_id ?? null;
-    if (!objectsByParent.has(parentId)) objectsByParent.set(parentId, []);
-    objectsByParent.get(parentId).push({ ...item, children: [] });
-  }
-  const nodesById = new Map();
-  for (const items of objectsByParent.values()) {
-    for (const item of items) nodesById.set(item.id, item);
-  }
-  for (const item of nodesById.values()) {
-    if (item.parent_id != null) nodesById.get(item.parent_id)?.children.push(item);
-  }
-  const roots = (objectsByParent.get(null) || []).filter(item => !nodesById.get(item.id)?.parent_id);
+  const { roots, nodesById } = useMemo(() => {
+    const objectsByParent = new Map();
+    const nodesById = new Map();
+
+    for (const item of boardObjects) {
+      const node = { ...item, children: [] };
+      const parentId = item.parent_id ?? null;
+      if (!objectsByParent.has(parentId)) objectsByParent.set(parentId, []);
+      objectsByParent.get(parentId).push(node);
+      nodesById.set(node.id, node);
+    }
+
+    for (const node of nodesById.values()) {
+      if (node.parent_id != null) nodesById.get(node.parent_id)?.children.push(node);
+    }
+
+    return {
+      roots: (objectsByParent.get(null) || []).filter(node => !node.parent_id),
+      nodesById,
+    };
+  }, [boardObjects]);
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
@@ -80,12 +91,12 @@ export default function BoardsPage() {
     if (worldRef.current) worldRef.current.style.transform = "translate3d(0, 0, 0) scale(1)";
   }
 
-  function startObjectDrag(event) {
+  const startObjectDrag = useCallback(event => {
     if (event.button !== 0 || event.target.closest("button, a, input, select, textarea")) return;
     const handle = event.target.closest(".graph-board-object-header");
     const element = handle?.closest("[data-object-id]");
     if (!element || !event.currentTarget.contains(element)) return;
-    const item = boardObjects.find(object => object.id === Number(element.dataset.objectId));
+    const item = nodesById.get(Number(element.dataset.objectId));
     if (!item) return;
     event.preventDefault();
     dragRef.current = {
@@ -95,9 +106,9 @@ export default function BoardsPage() {
     };
     event.currentTarget.setPointerCapture(event.pointerId);
     element.classList.add("is-object-dragging");
-  }
+  }, [nodesById]);
 
-  function moveObject(event) {
+  const moveObject = useCallback(event => {
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
     const scale = transformRef.current.zoom || 1;
@@ -106,11 +117,13 @@ export default function BoardsPage() {
     if (frameRef.current) return;
     frameRef.current = requestAnimationFrame(() => {
       frameRef.current = 0;
-      if (dragRef.current) dragRef.current.element.style.transform = `translate3d(${dragRef.current.nextX}px, ${dragRef.current.nextY}px, 0)`;
+      if (dragRef.current === drag) {
+        drag.element.style.transform = `translate3d(${drag.nextX}px, ${drag.nextY}px, 0)`;
+      }
     });
-  }
+  }, []);
 
-  async function endObjectDrag(event) {
+  const endObjectDrag = useCallback(async event => {
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
@@ -120,19 +133,26 @@ export default function BoardsPage() {
     drag.element.classList.remove("is-object-dragging");
     dragRef.current = null;
     if (Math.abs(x - drag.x) < 1 && Math.abs(y - drag.y) < 1) return;
-    await moveBoardObject(drag.item.id, x, y).catch(() => {});
-  }
 
-  function addObject(parentId = null) {
+    positionsRef.current.set(drag.item.id, { x, y });
+    try {
+      await moveBoardObject(drag.item.id, x, y);
+    } catch {
+      positionsRef.current.set(drag.item.id, { x: drag.x, y: drag.y });
+      drag.element.style.transform = `translate3d(${drag.x}px, ${drag.y}px, 0)`;
+    }
+  }, [moveBoardObject]);
+
+  const addObject = useCallback((parentId = null) => {
     const title = window.prompt("Название нового объекта");
     if (title?.trim()) void createObject({ title: title.trim(), parent_id: parentId }).catch(() => {});
-  }
+  }, [createObject]);
 
-  function removeObject(item) {
+  const removeObject = useCallback(item => {
     if (window.confirm(`Удалить объект «${item.title}» и все вложенные в него объекты?`)) {
       void deleteObject(item.id).catch(() => {});
     }
-  }
+  }, [deleteObject]);
 
   useLayoutEffect(() => () => {
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
@@ -157,7 +177,7 @@ export default function BoardsPage() {
       onLostPointerCapture={endObjectDrag}
     >
       <div className="graph-coordinate-world graph-object-world" ref={worldRef}>
-        {roots.map(item => <BoardObject key={item.id} item={item} children={item.children} createObject={addObject} removeObject={removeObject} />)}
+        {roots.map(item => <BoardObject key={item.id} item={item} children={item.children} positionsRef={positionsRef} createObject={addObject} removeObject={removeObject} />)}
         {loading && !boardObjects.length && <div className="graph-board-empty">Загружаем доску…</div>}
         {!loading && !boardObjects.length && <div className="graph-board-empty">Доска пока пустая. Создайте первый объект.</div>}
       </div>
