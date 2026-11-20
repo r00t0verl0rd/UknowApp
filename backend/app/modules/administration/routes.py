@@ -22,7 +22,7 @@ from app.models import (
     TeacherSession,
     User,
 )
-from app.modules.assignments.service import assign_student
+from app.modules.assignments.service import assign_student, unassign_student
 from app.modules.communication.accounts import (
     MessengerAccountConflict,
     delete_user_messenger_accounts,
@@ -393,6 +393,11 @@ def generate_connection_code(user_id: int, _: Admin, db: Db):
 @router.post("/admin/assignments", status_code=201)
 def assign_student_route(payload: dict, _: Admin, db: Db):
     return assign_student(assignment_payload(payload), db)
+
+
+@router.delete("/admin/assignments/{student_id}")
+def unassign_student_route(student_id: int, _: Admin, db: Db):
+    return unassign_student(student_id, db)
 
 
 
