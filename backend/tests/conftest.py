@@ -54,7 +54,7 @@ def api(monkeypatch):
         clients.append(client)
         return client
 
-    yield make_client, users
+    yield make_client, users, test_sessions
 
     for client in clients:
         client.close()
