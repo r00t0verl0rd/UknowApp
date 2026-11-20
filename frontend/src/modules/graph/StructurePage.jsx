@@ -61,7 +61,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
                       {students.map(student => <div className="person-card student-card" key={student.id}>
                         <div className="person-main"><div className="avatar student-avatar"><Smile/></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
                         <div className="person-actions">
-                          <button type="button" className="icon-btn graph-person-action danger-icon" title="Открепить от учителя" aria-label={"Открепить " + student.full_name + " от учителя"} onClick={() => unassignStudent(student)}><Link2Off/></button>
+                          <button type="button" className="icon-btn graph-person-action" title="Открепить от учителя" aria-label={"Открепить " + student.full_name + " от учителя"} onClick={() => unassignStudent(student)}><Link2Off/></button>
                           <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil/></button>
                         </div>
                       </div>)}
