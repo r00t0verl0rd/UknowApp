@@ -6,7 +6,6 @@ import { useAuthController } from "../shared/hooks/authentication/useAuthControl
 import { usePanelDataState } from "../shared/hooks/app/usePanelDataState.js";
 import { workspaceRegistry, workspaceIcons } from "../workspaces/workspaceRegistry.js";
 import WorkspaceLayout from "../workspaces/WorkspaceLayout.jsx";
-import AppLoading from "../shared/components/AppLoading.jsx";
 
 export default function App() {
   const authState = useAuthState();
@@ -40,10 +39,10 @@ export default function App() {
 
   if (!auth) return <LoginPage theme={theme} toggleTheme={toggleTheme} signIn={signIn}
     login={login} setLogin={setLogin} password={password} setPassword={setPassword} error={error} />;
-  if (!panelReady || !profile) return <AppLoading label="Загрузка личного кабинета…" />;
+  if (!panelReady || !profile) return null;
 
   const workspace = workspaceRegistry[profile.role];
-  if (!workspace) return <AppLoading label="Для этой роли пока не настроено рабочее пространство." />;
+  if (!workspace) return null;
   const workspacePage = workspace.pages.includes(page) ? page : workspace.pages[0];
   const context = {
     auth, profile, page: workspacePage, setPage, request, refresh, notify, error, setError, modal, setModal,
