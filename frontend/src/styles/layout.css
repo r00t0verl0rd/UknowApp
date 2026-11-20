@@ -1920,7 +1920,7 @@ border-color: transparent !important;}
 .graph-teacher-object > .teacher-card { min-width: 0; }
 .graph-student-children { display: grid; gap: 7px; min-width: 0; }
 .graph-student-children .student-card { min-width: 0; }
-.graph-custom-object { position: absolute; left: 0; top: 0; min-width: 150px; padding: 14px 17px; border: 1px solid var(--ui-border-strong); border-radius: 12px; background: var(--surface); color: var(--ink); box-shadow: var(--ui-shadow-card); cursor: grab; user-select: none; }
+.graph-custom-object { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 12px; min-width: 150px; padding: 8px 9px 8px 17px; border: 1px solid var(--ui-border-strong); border-radius: 12px; background: var(--surface); color: var(--ink); box-shadow: var(--ui-shadow-card); cursor: grab; user-select: none; }\n.graph-custom-object > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }\n.graph-custom-object .graph-object-delete { display: grid; flex: 0 0 30px; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; }\n.graph-custom-object .graph-object-delete:hover { background: var(--button-danger-bg); color: var(--button-danger-text); }\n.graph-custom-object .graph-object-delete svg { width: 15px; height: 15px; }
 .graph-custom-object:active, .is-object-dragging .graph-object-header { cursor: grabbing; }
 .graph-object-panel [data-object-id] { will-change: auto; }
 .graph-object-panel .is-object-dragging { z-index: 20; }
