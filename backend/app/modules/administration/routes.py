@@ -116,10 +116,12 @@ def overview(_: Admin, db: Db):
 def save_graph_order(payload: dict, _: Admin, db: Db):
     group = payload.get("group")
     user_ids = payload.get("user_ids")
-    if not isinstance(group, str) or not isinstance(user_ids, list):
+    if not isinstance(group, str) or not isinstance(user_ids, list) or any(
+        type(user_id) is not int or user_id < 1 for user_id in user_ids
+    ):
         raise HTTPException(status_code=400, detail="Некорректный порядок участников")
-    if len(user_ids) != len(set(user_ids)) or any(type(user_id) is not int or user_id < 1 for user_id in user_ids):
-        raise HTTPException(status_code=400, detail="Список участников содержит некорректные ID")
+    if len(user_ids) != len(set(user_ids)):
+        raise HTTPException(status_code=400, detail="Список участников содержит повторяющиеся ID")
 
     if group == "teachers":
         expected_ids = set(db.scalars(select(User.id).where(User.role == "teacher")).all())
