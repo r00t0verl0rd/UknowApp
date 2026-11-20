@@ -1,3 +1,10 @@
+{
+    servers {
+        trusted_proxies static private_ranges
+        client_ip_headers CF-Connecting-IP
+    }
+}
+
 uknowschool.ru, www.uknowschool.ru {
     encode zstd gzip
 
@@ -28,7 +35,9 @@ uknowschool.ru, www.uknowschool.ru {
     @backend path /api/* /docs /docs/* /openapi.json /redoc
 
     handle @backend {
-        reverse_proxy backend:8000
+        reverse_proxy backend:8000 {
+            header_up CF-Connecting-IP {http.request.client_ip}
+        }
     }
 
     handle {
