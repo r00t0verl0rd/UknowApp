@@ -684,7 +684,7 @@ html, body { overflow-x: clip;}
 .graph-panel { padding: 19px; border-radius: 16px;}
 .graph-panel .root-node { min-height: 68px; margin-bottom: 14px; padding: 10px 14px;}
 .graph-panel .root-node img { width: 44px; height: 44px;}
-.graph-panel .teacher-grid{ gap: 12px;}
+.graph-panel .teacher-grid{ column-gap: 12px;}
 .graph-panel .teacher-branch { padding: 10px; border-radius: 13px;}
 .graph-panel .teacher-card { min-height: 64px; padding: 9px 11px;}
 .graph-panel .student-list { gap: 8px; margin: 10px 0 0; padding: 0; overflow: visible;}
@@ -724,7 +724,7 @@ html, body { overflow-x: clip;}
 
 .user-row .person-info{min-width:calc(100% - 65px)}
 .role-tag{margin-left:45px}
-.teacher-grid, .chat-layout{grid-template-columns:1fr}
+.chat-layout{grid-template-columns:1fr}
 
 .root-node { max-width: 100%;}
 .sidebar { top: 0; inset: auto; z-index: 30; display: block; width: 100%; height: auto; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 9px; border-right: 0; border-bottom: 1px solid var(--line); box-shadow: 0 5px 18px rgba(47,31,84,.07);}
