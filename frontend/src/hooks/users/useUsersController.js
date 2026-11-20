@@ -5,9 +5,8 @@ import { useUserActionState } from "./useUserActionState.js";
 
 export function useUsersController({
   request, refresh, notify, setError, selectedChat, setSelectedChat,
-  setMessages, modal, setModal,
+  setMessages, modal, setModal, directory,
 }) {
-  const directory = useDirectoryState();
   const editor = useUserEditorState();
   const actions = useUserActionState();
   const {
