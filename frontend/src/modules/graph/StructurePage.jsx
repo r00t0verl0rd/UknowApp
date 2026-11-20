@@ -505,6 +505,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
           onPointerMove={moveDrag}
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
+          onLostPointerCapture={endDrag}
         >
           {allTeachers.map(teacher => <TeacherBranch
             key={teacher.id}
