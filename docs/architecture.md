@@ -109,7 +109,7 @@ frontend/src/
 
 ### Frontend boundaries
 
-- `app/App.jsx` owns application composition, global navigation, role-based page visibility and shared shell elements. It mounts the four feature entry components and does not call their feature controllers or render their internal pages/dialogs.
+- `app/App.jsx` owns application composition, global navigation, role-based page visibility and shared shell elements. It mounts `UsersModule`, `ChatsModule` and `AdministrationModule`; `UsersModule` composes `StructureModule` for the related graph workflow. The app shell does not call feature controllers or render their internal pages/dialogs.
 - `UsersModule`, `ChatsModule`, `AdministrationModule` and `StructureModule` are feature entry points. They connect each feature controller to its pages and dialogs; `UsersModule` composes `StructureModule` because the graph actions operate on the same user/assignment domain.
 - Each feature controller owns its data transformations, asynchronous workflows and lifecycle effects. The page components focus on rendering and forwarding user intent.
 - Feature API adapters live under `modules/<feature>/services/`. They own endpoint paths, HTTP details and payload serialization. Controllers coordinate operations through these adapters.
