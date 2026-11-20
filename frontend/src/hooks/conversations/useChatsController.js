@@ -81,6 +81,11 @@ export function useChatsController({
     }
   }, [setSelectedChat, setPage, setDraft, setAttachment, setMessageFilter, setMessages, request, setPersonalChats, profile?.role, setChats, setError]);
 
+  const openCreatePersonalChat = useCallback(() => {
+    setError("");
+    setModal({ mode: "create-personal" });
+  }, [setError, setModal]);
+
   const createPersonalChat = useCallback(async userId => {
     try {
       const chat = await createPersonalConversation(request, userId);
@@ -145,5 +150,5 @@ export function useChatsController({
     }
   }, [selectedChat, draft, attachment, request, setDraft, setAttachment, setMessages, setPersonalChats, setChats, notify, profile?.role, setError]);
 
-  return { visibleChats, visibleMessages, openChat, createPersonalChat, confirmDeleteMessage, sendChatMessage };
+  return { visibleChats, visibleMessages, openChat, openCreatePersonalChat, createPersonalChat, confirmDeleteMessage, sendChatMessage };
 }
