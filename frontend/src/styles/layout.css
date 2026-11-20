@@ -1623,11 +1623,16 @@ body, .chats-shell, .chats-main { background: var(--canvas);}
 :root:not([data-theme="dark-soft"]) .graph-panel .graph-legend-row > .graph-legend { border: 1px solid #e4deec; border-radius: 12px;}
 
 :root:not([data-theme="dark-soft"]) .graph-panel .teacher-branch { border: 1px solid #e7e1ed; border-radius: 16px; padding: 12px;}
-/* Dark graph cards must retain the same role hues as dark chat bubbles.
-   More specific selectors override the generic dark card surface rule above. */
+/* Structure graph: teacher cards stay lavender and student cards stay warm yellow. */
+.graph-panel .teacher-card { background: linear-gradient(112deg, #ebe4f0, #f6f3f7) !important; border-color: #d1c4da !important;}
+.graph-panel .teacher-card .avatar { background: #e2d7eb !important; color: #705b88 !important;}
+.graph-panel .student-card { background: linear-gradient(112deg, #f4eadb, #faf6ee) !important; border-color: #e0cda9 !important;}
+.graph-panel .student-card .avatar { background: #ecdfc6 !important; color: #90764c !important;}
+:root[data-theme="dark-soft"] .graph-panel .teacher-card { background: #393247 !important; border-color: #675879 !important; color: #edf0f5 !important;}
+:root[data-theme="dark-soft"] .graph-panel .student-card { background: #40382d !important; border-color: #746044 !important; color: #edf0f5 !important;}
+:root[data-theme="dark-soft"] .graph-panel .teacher-card .avatar { background: #514465 !important; color: #d0bce9 !important;}
+:root[data-theme="dark-soft"] .graph-panel .student-card .avatar { background: #574a38 !important; color: #e5c995 !important;}
 :root[data-theme="dark-soft"] .graph-panel .root-node { color: #edf0f5 !important;}
-:root[data-theme="dark-soft"] .graph-panel .teacher-card, :root[data-theme="dark-soft"] .graph-panel .person-info small,
-   softly tinted surfaces used by the dark theme's layered palette. */
 /* Apply the same lavender-tinted canvas consistently across every section. */
 :root:not([data-theme="dark-soft"]) body, :root:not([data-theme="dark-soft"]) .chats-shell, :root:not([data-theme="dark-soft"]) .chats-main { background: #f2eff7 !important;}
 :root:not([data-theme="dark-soft"]) .sidebar, :root:not([data-theme="dark-soft"]) .topbar, :root:not([data-theme="dark-soft"]) .graph-panel, :root:not([data-theme="dark-soft"]) .user-list > .user-row, :root:not([data-theme="dark-soft"]) .chat-layout, :root:not([data-theme="dark-soft"]) .chat-list, :root:not([data-theme="dark-soft"]) .chat-detail, :root:not([data-theme="dark-soft"]) .modal, :root:not([data-theme="dark-soft"]) .login-card, :root:not([data-theme="dark-soft"]) .user-info-popover, :root:not([data-theme="dark-soft"]) .credential-modal { background-color: #faf8fd !important;}
