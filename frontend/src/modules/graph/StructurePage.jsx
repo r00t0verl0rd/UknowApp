@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import Crosshair from "lucide-react/dist/esm/icons/crosshair.js";
 import GraduationCap from "lucide-react/dist/esm/icons/graduation-cap.js";
+import Link2Off from "lucide-react/dist/esm/icons/link-2-off.js";
 import Pencil from "lucide-react/dist/esm/icons/pencil.js";
 import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Smile from "lucide-react/dist/esm/icons/smile.js";
@@ -19,13 +20,13 @@ function StudentCard({ student, openEdit, unassignStudent, canUnassign = true })
       </div>
     </div>
     <div className="person-actions">
-      {canUnassign && <button type="button" className="icon-btn graph-person-action" title="Открепить от учителя" aria-label={`Открепить ${student.full_name} от учителя`} onClick={() => unassignStudent(student)}>↗</button>}
+      {canUnassign && <button type="button" className="icon-btn graph-person-action" title="Открепить от учителя" aria-label={`Открепить ${student.full_name} от учителя`} onClick={() => unassignStudent(student)}><Link2Off /></button>}
       <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil /></button>
     </div>
   </article>;
 }
 
-function TeacherObject({ teacher, students, openEdit, unassignStudent }) {
+function TeacherObject({ teacher, students, openEdit, unassignStudent, canUnassign = true }) {
   return <section className="graph-teacher-object">
     <header className="person-card teacher-card">
       <div className="person-main">
@@ -150,7 +151,7 @@ export default function StructurePage({
     return <section className="graph-panel is-teacher-view">
       <div className="graph-panel-heading"><b>Моя структура</b></div>
       <div className="graph-teacher-view">
-        <TeacherObject teacher={teacher} students={students} openEdit={openEdit} unassignStudent={unassignStudent} />
+        <TeacherObject teacher={teacher} students={students} openEdit={openEdit} unassignStudent={unassignStudent} canUnassign={false} />
       </div>
     </section>;
   }
@@ -199,6 +200,8 @@ export default function StructurePage({
                 </div>
               </section>
             </div>
+          </section>}
+          {customObjects.filter(item => item.parent_id === admin.id).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}>{item.title}</div>)}
           </section>}
           {customObjects.filter(item => item.parent_id === fon.id).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}>{item.title}</div>)}
         </section>}
