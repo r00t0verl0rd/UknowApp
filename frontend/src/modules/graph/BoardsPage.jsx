@@ -7,7 +7,7 @@ function objectPosition(item) {
   return { transform: `translate3d(${item.x || 0}px, ${item.y || 0}px, 0)` };
 }
 
-function BoardObject({ item, children, createGraphObject, deleteGraphObject, removeObject }) {
+function BoardObject({ item, children, createGraphObject, removeObject }) {
   return <div className="graph-board-node" data-object-id={item.id} style={objectPosition(item)}>
     <article className="graph-board-card">
       <header className="graph-board-object-header">
@@ -18,7 +18,7 @@ function BoardObject({ item, children, createGraphObject, deleteGraphObject, rem
         </div>
       </header>
       <div className="graph-board-children">
-        {children.map(child => <BoardObject key={child.id} item={child} children={child.children} createGraphObject={createGraphObject} deleteGraphObject={deleteGraphObject} removeObject={removeObject} />)}
+        {children.map(child => <BoardObject key={child.id} item={child} children={child.children} createGraphObject={createGraphObject} removeObject={removeObject} />)}
       </div>
     </article>
   </div>;
@@ -156,7 +156,7 @@ export default function BoardsPage({
       onLostPointerCapture={endObjectDrag}
     >
       <div className="graph-coordinate-world graph-object-world" ref={worldRef}>
-        {roots.map(item => <BoardObject key={item.id} item={item} children={item.children} createGraphObject={addObject} deleteGraphObject={deleteGraphObject} removeObject={removeObject} />)}
+        {roots.map(item => <BoardObject key={item.id} item={item} children={item.children} createGraphObject={addObject} removeObject={removeObject} />)}
         {!graphObjects.length && <div className="graph-board-empty">Доска пока пустая. Создайте первый объект.</div>}
       </div>
     </div>
