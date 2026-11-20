@@ -86,13 +86,13 @@ function dragPosition(drag, clientX, clientY, outer, inner) {
   const bounds = drag.boundaryRect;
   const element = drag.elementRect;
   const pointer = outer.toLocal(clientX, clientY);
-  const delta = outer.deltaToLocal(pointer.x - drag.startLocal.x, pointer.y - drag.startLocal.y);
+  const delta = { x: pointer.x - drag.startLocal.x, y: pointer.y - drag.startLocal.y };
   const zoom = inner.zoom;
   const clamp = (value, min, max) => min > max ? (min + max) / 2 : Math.max(min, Math.min(max, value));
-  const minX = (bounds.left - element.left) / zoom;
-  const maxX = (bounds.right - element.right) / zoom;
-  const minY = (bounds.top - element.top) / zoom;
-  const maxY = (bounds.bottom - element.bottom) / zoom;
+  const minX = outer.deltaToLocal(bounds.left - element.left, 0).x / zoom;
+  const maxX = outer.deltaToLocal(bounds.right - element.right, 0).x / zoom;
+  const minY = outer.deltaToLocal(0, bounds.top - element.top).y / zoom;
+  const maxY = outer.deltaToLocal(0, bounds.bottom - element.bottom).y / zoom;
   const snapped = inner.snapPoint({ x: drag.x + delta.x / zoom, y: drag.y + delta.y / zoom }, outer);
   return { x: clamp(snapped.x, drag.x + minX, drag.x + maxX), y: clamp(snapped.y, drag.y + minY, drag.y + maxY) };
 }
@@ -250,6 +250,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     const outer = outerCoordinatesRef.current;
     const updateBounds = () => outer.update(viewport);
     updateBounds();
+    if (graphWorldRef.current) graphWorldRef.current.style.transform = innerCoordinatesRef.current.transform();
     const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(updateBounds) : null;
     observer?.observe(viewport);
     window.addEventListener("resize", updateBounds, { passive: true });
@@ -491,6 +492,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
             studentLayout={teacherStudentLayout}
             isOwner
           />
+        </div>
         </div>
         </div>
       </section>}
