@@ -98,3 +98,10 @@ def test_forwarded_client_ip_is_trusted_only_from_proxy(monkeypatch):
     untrusted = request("198.51.100.4", {"cf-connecting-ip": "203.0.113.8"})
     assert security._client_ip(trusted) == "203.0.113.8"
     assert security._client_ip(untrusted) == "198.51.100.4"
+
+def test_health_checks_database_connection(api):
+    make_client, _, _ = api
+    response = make_client().get("/api/health")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["components"]["database"] == "ok"
+    assert response.json()["status"] == "degraded"
