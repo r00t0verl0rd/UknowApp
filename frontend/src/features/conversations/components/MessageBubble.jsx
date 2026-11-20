@@ -66,7 +66,7 @@ function ChatAudioPlayer({ src, label }) {
       onPause={() => setPlaying(false)}
       onEnded={() => { setPlaying(false); setCurrentTime(0); }}
     />
-    <button className="chat-audio-play" type="button" onClick={togglePlayback} aria-label={playing ? "Приостановить аудио" : "Воспроизвести аудио"}>
+    <button className="btn primary chat-audio-play" type="button" onClick={togglePlayback} aria-label={playing ? "Приостановить аудио" : "Воспроизвести аудио"}>
       {playing ? <Pause size={17} fill="currentColor" /> : <Play size={17} fill="currentColor" />}
     </button>
     <div className="chat-audio-track">
@@ -176,7 +176,7 @@ function MessageBubble({ message, onDelete, viewerRole }) {
         {message.sender_role === viewerRole && viewerRole !== "admin" && <span className={"message-read-status" + (message.panel_read_at ? " is-read" : "")} title={message.panel_read_at ? "Прочитано" : message.delivery_status === "pending" ? "Отправляется" : "Доставлено"}>
           {message.delivery_status === "pending" ? <Check size={14}/> : <CheckCheck size={15}/>}
         </span>}
-        {message.can_delete && <button type="button" className="message-delete-btn" onClick={() => onDelete?.(message)} title="Удалить своё сообщение у всех" aria-label="Удалить своё сообщение"><Trash2 size={14}/></button>}
+        {message.can_delete && <button type="button" className="icon-btn danger-icon message-delete-btn" onClick={() => onDelete?.(message)} title="Удалить своё сообщение у всех" aria-label="Удалить своё сообщение"><Trash2 size={14}/></button>}
       </div>
     </div>
     {message.text && <p>{message.text}</p>}
