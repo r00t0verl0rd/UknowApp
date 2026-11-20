@@ -5,7 +5,7 @@ import { signInRequest, signOutRequest } from "../../modules/authentication/serv
 export function useAuthController({
   authState, setError, setPage, setPushBusy, setPushState,
   setTeacherGraph, setUsers, setOverview, setChats, setPersonalChats,
-  setMessages, setSelectedChat, setDraft, setAttachment, setIssuedCredential,
+  setMessages, setSelectedChat, setDraft, setAttachment,
   notify,
 }) {
   const { login, password, setAuth, setProfile, setPassword } = authState;
@@ -67,8 +67,7 @@ export function useAuthController({
     setSelectedChat(null);
     setDraft("");
     setAttachment(null);
-    setIssuedCredential(null);
-  }, [setAuth, setProfile, setTeacherGraph, setUsers, setOverview, setChats, setPersonalChats, setMessages, setSelectedChat, setDraft, setAttachment, setIssuedCredential]);
+  }, [setAuth, setProfile, setTeacherGraph, setUsers, setOverview, setChats, setPersonalChats, setMessages, setSelectedChat, setDraft, setAttachment]);
 
   return { signIn, signOut };
 }
