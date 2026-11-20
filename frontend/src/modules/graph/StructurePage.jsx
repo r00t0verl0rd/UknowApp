@@ -342,7 +342,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     drag.element.style.willChange = "";
     drag.element.style.transition = "";
     dragRef.current = null;
-    if (Math.abs(x - drag.x) < 1 && Math.abs(y - drag.y) < 1) return;
+    if (!targetPosition && Math.abs(x - drag.x) < 1 && Math.abs(y - drag.y) < 1) return;
 
     if (drag.type === "cloud") {
       const next = { ...cloudLayoutRef.current, [drag.id]: { x, y } };
