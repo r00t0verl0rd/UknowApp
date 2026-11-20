@@ -231,47 +231,66 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     const isTeacher = profile?.role === "teacher";
     if (!isAdmin && !isTeacher) return;
 
-    const nextClouds = { ...cloudLayoutRef.current };
-    const nextStudents = { ...studentLayoutRef.current };
-    const nextTeacherStudents = { ...teacherStudentLayoutRef.current };
-    let cloudsChanged = false;
-    let studentsChanged = false;
-    let teacherStudentsChanged = false;
+    const previousClouds = cloudLayoutRef.current;
+    const previousStudents = studentLayoutRef.current;
+    const previousTeacherStudents = teacherStudentLayoutRef.current;
+    const nextClouds = { ...previousClouds };
+    const nextStudents = { ...previousStudents };
+    const nextTeacherStudents = { ...previousTeacherStudents };
 
-    const allocateGroup = (selector, layout, onAllocate) => {
+    const allocateGroup = (selector, layout) => {
       const elements = [...document.querySelectorAll(selector)];
       elements.forEach(element => {
         const id = element.dataset.dragId;
         if (!id || layout[id]) return;
         const siblings = elements.filter(other => other !== element);
         const position = findFreeGridPosition(element, siblings, { x: 0, y: 0 });
-        if (position.x || position.y) {
-          element.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
-          const parent = element.parentElement;
-          const bounds = parent.getBoundingClientRect();
-          const rect = element.getBoundingClientRect();
-          const requiredHeight = rect.bottom - bounds.top;
-          parent.style.minHeight = `${Math.max(parent.scrollHeight, requiredHeight)}px`;
-          layout[id] = position;
-          onAllocate(position, id);
-        }
+        element.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
+        layout[id] = position;
       });
     };
 
-    if (isAdmin) {
-      allocateGroup(".graph-panel:not(.is-teacher-view) > .teacher-grid > .teacher-branch", nextClouds, (position, id) => {
-        cloudsChanged = true;
-        saveCloudPosition(id, position.x, position.y);
+    const packGroups = (selector, layout) => {
+      const groups = new Map();
+      document.querySelectorAll(selector).forEach(element => {
+        const parent = element.parentElement;
+        if (!groups.has(parent)) groups.set(parent, []);
+        groups.get(parent).push(element);
       });
-      allocateGroup(".graph-panel:not(.is-teacher-view) .student-list > .student-card", nextStudents, () => { studentsChanged = true; });
-      allocateGroup(".graph-panel:not(.is-teacher-view) .unassigned-grid > .student-card", nextStudents, () => { studentsChanged = true; });
+      for (const elements of groups.values()) {
+        const packed = packGridGroup(elements, layout, null, null);
+        Object.assign(layout, packed);
+        elements.forEach(element => {
+          const position = packed[element.dataset.dragId];
+          if (position) element.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
+        });
+      }
+    };
+
+    if (isAdmin) {
+      allocateGroup(".graph-panel:not(.is-teacher-view) > .teacher-grid > .teacher-branch", nextClouds);
+      allocateGroup(".graph-panel:not(.is-teacher-view) .student-list > .student-card", nextStudents);
+      allocateGroup(".graph-panel:not(.is-teacher-view) .unassigned-grid > .student-card", nextStudents);
+      packGroups(".graph-panel:not(.is-teacher-view) > .teacher-grid > .teacher-branch", nextClouds);
+      packGroups(".graph-panel:not(.is-teacher-view) .student-list > .student-card", nextStudents);
+      packGroups(".graph-panel:not(.is-teacher-view) .unassigned-grid > .student-card", nextStudents);
     } else {
-      allocateGroup(".graph-panel.is-teacher-view .student-list > .student-card", nextTeacherStudents, () => { teacherStudentsChanged = true; });
+      allocateGroup(".graph-panel.is-teacher-view .student-list > .student-card", nextTeacherStudents);
+      packGroups(".graph-panel.is-teacher-view .student-list > .student-card", nextTeacherStudents);
     }
+
+    const cloudsChanged = Object.keys(nextClouds).some(id => previousClouds[id]?.x !== nextClouds[id]?.x || previousClouds[id]?.y !== nextClouds[id]?.y);
+    const studentsChanged = Object.keys(nextStudents).some(id => previousStudents[id]?.x !== nextStudents[id]?.x || previousStudents[id]?.y !== nextStudents[id]?.y);
+    const teacherStudentsChanged = Object.keys(nextTeacherStudents).some(id => previousTeacherStudents[id]?.x !== nextTeacherStudents[id]?.x || previousTeacherStudents[id]?.y !== nextTeacherStudents[id]?.y);
 
     if (cloudsChanged) {
       cloudLayoutRef.current = nextClouds;
       setCloudLayout(nextClouds);
+      Object.entries(nextClouds).forEach(([id, position]) => {
+        if (previousClouds[id]?.x !== position.x || previousClouds[id]?.y !== position.y) {
+          saveCloudPosition(id, position.x, position.y);
+        }
+      });
     }
     if (studentsChanged) {
       studentLayoutRef.current = nextStudents;
