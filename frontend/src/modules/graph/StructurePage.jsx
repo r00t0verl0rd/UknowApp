@@ -190,7 +190,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
         const handle = element.matches("[data-drag-id]") ? element : element.querySelector("[data-drag-id]");
         const id = handle?.dataset.dragId;
         if (!id) return;
-        const boundsElement = handle.dataset.dragType === "cloud" ? element.closest(".graph-panel") : element.parentElement;
+        const boundsElement = handle.dataset.dragType === "cloud" ? element.closest(".graph-coordinate-viewport") : element.parentElement;
         if (layout[id]) {
           const position = clampElementPosition(element, layout[id], boundsElement);
           if (position.x !== layout[id].x || position.y !== layout[id].y) {
