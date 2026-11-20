@@ -8,7 +8,8 @@ export function usePanelDataState({
   setPersonalChats, setUsers, setOverview, setTeacherGraph, setPage,
   setSelectedChat, setMessages,
 }) {
-  const request = useMemo(() => createApiClient(), []);\n  const [panelReady, setPanelReady] = useState(false);
+  const request = useMemo(() => createApiClient(), []);
+  const [panelReady, setPanelReady] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!auth) return;
@@ -41,6 +42,7 @@ export function usePanelDataState({
         setSelectedChat(null);
         setMessages([]);
       }
+      setPanelReady(true);
     } catch (error) {
       setError(error.message);
       const message = String(error.message).toLowerCase();
@@ -53,7 +55,11 @@ export function usePanelDataState({
     }
   }, [auth, request]);
 
-  useEffect(() => {\n    if (!auth) setPanelReady(false);\n  }, [auth]);\n\n  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    if (!auth) setPanelReady(false);
+  }, [auth]);
+
+  useEffect(() => { void refresh(); }, [refresh]);
 
   useEffect(() => {
     if (!auth || page !== "chats") return undefined;
