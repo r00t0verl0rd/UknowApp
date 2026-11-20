@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { createApiClient } from "../../services/api.js";
-import { getAdminBootstrap, getCurrentProfile, getInboxData, getTeacherGraph } from "../../modules/panel/services/panelApi.js";
+import { createPanelEventSource, getAdminBootstrap, getCurrentProfile, getInboxData, getTeacherGraph } from "../../modules/panel/services/panelApi.js";
 import { getChatMessages } from "../../modules/conversations/services/conversationsApi.js";
-
-const API = import.meta.env.VITE_API_BASE_URL || "";
 
 export function usePanelDataState({
   auth, page, selectedChat, setAuth, setProfile, setError, setChats,
@@ -108,7 +106,7 @@ export function usePanelDataState({
       }
     };
 
-    const eventSource = new EventSource(API + "/api/panel/events", { withCredentials: true });
+    const eventSource = createPanelEventSource();
     eventSource.addEventListener("update", syncChats);
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") void syncChats(null, true);
