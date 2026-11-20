@@ -11,12 +11,11 @@ from app.core.security import hash_web_password
 from app.main import app
 from app.models import User
 from app.modules.dependencies import get_db
-from app import core
 from app.core import security
 
 
 @pytest.fixture
-def api():
+def api(monkeypatch):
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
@@ -30,9 +29,9 @@ def api():
             yield db
 
     app.dependency_overrides[get_db] = override_get_db
-    security.SessionLocal = test_sessions
-    security.ADMIN_USERNAME = "test-admin"
-    security.ADMIN_PASSWORD = "a-long-test-password-123"
+    monkeypatch.setattr(security, "SessionLocal", test_sessions)
+    monkeypatch.setattr(security, "ADMIN_USERNAME", "test-admin")
+    monkeypatch.setattr(security, "ADMIN_PASSWORD", "a-long-test-password-123")
 
     with test_sessions() as db:
         db.add_all([
