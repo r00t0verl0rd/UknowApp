@@ -478,7 +478,7 @@ img, video, audio { max-width: 100%;}
 /* Keep the primary graph action at the top beside the legend. */
 /* Final graph-card sizing: keep the admin identity on one compact row and
    make student cards shrink safely inside narrow teacher branches. */
-.graph-panel .admin_node { display: grid; grid-template-columns: 50px minmax(0, 1fr); grid-template-rows: auto auto; align-items: center; justify-content: stretch; column-gap: 14px; width: min(100%, 420px); max-width: 100%; min-height: 68px; margin: 0 auto 24px; padding: 7px 26px 7px 19px; text-align: center; box-sizing: border-box;}
+.graph-panel .admin_node { display: grid; grid-template-columns: 50px minmax(0, 1fr); grid-template-rows: auto auto; align-items: center; justify-content: stretch; column-gap: 14px; width: min(100%, 380px); max-width: 100%; min-height: 68px; margin: 0 auto 24px; padding: 7px 26px 7px 19px; text-align: center; box-sizing: border-box;}
 .graph-panel .admin_node img { grid-row: 1 / span 2; width: 50px; height: 50px;}
 .graph-panel .admin_node > div { grid-column: 2; grid-row: 1 / span 2; display: flex; min-width: 0; flex-direction: column; align-items: center; justify-content: center; text-align: center;}
 .graph-panel .admin_node b, .graph-panel .admin_node small { display: block; max-width: 100%; width: 100%; margin: 0; text-align: center;}
@@ -848,7 +848,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 
 .graph-panel .graph-legend { padding: 7px 9px;}
 .graph-panel .graph-legend-row { margin-bottom: 14px;}
-.graph-panel .admin_node { width: min(100%, 420px); max-width: 100%; min-height: 68px; margin-bottom: 20px;}
+.graph-panel .admin_node { width: min(100%, 380px); max-width: 100%; min-height: 68px; margin-bottom: 20px;}
 .graph-panel .student-list { padding-left: 0;}
 .graph-panel .student-card { gap: 5px; padding: 8px 7px;}
 .graph-panel .student-card .avatar { flex-basis: 30px; width: 30px; height: 30px;}
@@ -921,7 +921,7 @@ button.chat-item.selected:not(.primary):not(.disconnect):not(.danger-icon) { bac
 .graph-panel .graph-legend-row .legend { font-size: 9px; gap: 3px;}
 
 .overlay:has(.create-participant-modal) { display: flex; align-items: flex-start; justify-content: center; padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain;}
-.overlay > .create-participant-modal { flex: 0 1 auto; width: min(100%, 420px); max-width: 420px; max-height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom))); min-height: 0; margin: auto 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;}
+.overlay > .create-participant-modal { flex: 0 1 auto; width: min(100%, 380px); max-width: 420px; max-height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom))); min-height: 0; margin: auto 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;}
 .create-participant-modal .modal-head { gap: 8px;}
 .create-participant-modal .modal-head h2 { font-size: clamp(17px, 5vw, 19px);}
 .create-participant-modal .stack label { gap: 5px; font-size: 12px;}
@@ -1866,7 +1866,7 @@ border-color: transparent !important;}
 }
 .graph-panel.is-teacher-view .teacher-grid > .teacher-card {
   justify-self: center;
-  width: min(100%, 420px);
+  width: min(100%, 380px);
   min-height: 76px;
   justify-content: center;
 }
