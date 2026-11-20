@@ -29,10 +29,6 @@ function positionStyle(position) {
   return { transform: `translate3d(${position?.x || 0}px, ${position?.y || 0}px, 0)` };
 }
 
-function snapToGrid(value) {
-  return Math.round(value / GRAPH_GRID_SIZE) * GRAPH_GRID_SIZE;
-}
-
 function findFreeGridPosition(element, siblings, currentPosition, boundsElement = element.parentElement, zoom = 1) {
   const bounds = boundsElement.getBoundingClientRect();
   const rect = element.getBoundingClientRect();
