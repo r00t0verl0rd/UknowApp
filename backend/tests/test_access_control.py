@@ -1,4 +1,7 @@
 from fastapi import status
+from starlette.requests import Request
+
+from app.core import security
 
 
 def login(client, username, password):
@@ -61,3 +64,23 @@ def test_panel_routes_require_authentication(api):
     make_client, _ = api
     client = make_client()
     assert client.get("/api/panel/conversations").status_code == status.HTTP_401_UNAUTHORIZED
+
+def test_forwarded_client_ip_is_trusted_only_from_proxy(monkeypatch):
+    monkeypatch.setattr(security, "TRUSTED_PROXY_IPS", {"127.0.0.1"})
+
+    def request(peer, headers):
+        return Request({
+            "type": "http",
+            "method": "POST",
+            "path": "/",
+            "headers": [(key.encode(), value.encode()) for key, value in headers.items()],
+            "client": (peer, 1234),
+            "server": ("testserver", 80),
+            "scheme": "http",
+            "query_string": b"",
+        })
+
+    trusted = request("127.0.0.1", {"cf-connecting-ip": "203.0.113.8"})
+    untrusted = request("198.51.100.4", {"cf-connecting-ip": "203.0.113.8"})
+    assert security._client_ip(trusted) == "203.0.113.8"
+    assert security._client_ip(untrusted) == "198.51.100.4"
