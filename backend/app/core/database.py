@@ -48,6 +48,10 @@ def create_tables() -> None:
     with engine.begin() as connection:
         connection.execute(text("DROP TABLE IF EXISTS graph_positions"))
 
+    # The graph now stores hierarchical objects; legacy teacher-only coordinates are obsolete.
+    with engine.begin() as connection:
+        connection.execute(text("DROP TABLE IF EXISTS graph_cloud_positions"))
+
     # Copy legacy Telegram bindings without changing or deleting users.telegram_id.
     # Existing bind dates were not stored, so linked_at remains NULL for migrated rows.
     with engine.begin() as connection:
