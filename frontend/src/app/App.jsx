@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from "react";
-import { useAuthState, useChatState, useDirectoryState, useGraphState, usePersonalChatState, useSettingsState, useUiState } from "../shared/hooks/useAppState.js";
+import { useAuthState, useChatState, useDirectoryState, useGraphState, usePersonalChatState, useSettingsState, useUiState } from "../shared/hooks/index.js";
 import LoginPage from "./authentication/LoginPage.jsx";
 import { usePushNotificationsState } from "../shared/hooks/notifications/usePushNotificationsState.js";
 import { useAuthController } from "../shared/hooks/authentication/useAuthController.js";
