@@ -21,5 +21,6 @@ USER app
 
 EXPOSE 8000
 
+# Trust only the Caddy container for forwarded client and scheme headers.
 # Keep one worker: the Telegram bot uses one long-polling process per token.
-CMD ["python", "-m", "uvicorn", "app.main:app", "--app-dir", "/app/backend", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+CMD ["python", "-m", "uvicorn", "app.main:app", "--app-dir", "/app/backend", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--proxy-headers", "--forwarded-allow-ips", "172.31.255.2"]
