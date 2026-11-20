@@ -13,9 +13,8 @@ class ConflictAwareDispatcher(Dispatcher):
     conflicts so the application-level handler can stop this polling task.
     """
 
-    @classmethod
+    @staticmethod
     async def _listen_updates(
-        cls,
         bot,
         polling_timeout=30,
         backoff_config=None,
