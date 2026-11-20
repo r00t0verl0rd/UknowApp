@@ -348,29 +348,71 @@ border-color: transparent !important;}.person-actions button:not(.danger-icon):h
   }
 }
 
-/* Conversations share the common workspace content surface and spacing. */
+
+/* Conversations keep the workspace canvas open: only individual items carry a surface. */
 .chats-main > .workspace-content:has(> .chat-list){
- display:grid;grid-template-columns:minmax(250px,320px) minmax(0,1fr);align-items:stretch;gap:14px;
+  display:grid;
+  grid-template-columns:minmax(250px,290px) minmax(0,1fr);
+  align-items:stretch;
+  gap:24px;
 }
 .chats-main > .workspace-content:has(> .chat-list) > .chat-list,
 .chats-main > .workspace-content:has(> .chat-list) > .chat-detail{
- min-width:0;min-height:560px;border:1px solid var(--line);border-radius:var(--ui-radius-lg);background:var(--surface);
+  min-width:0;
+  min-height:560px;
+  background:transparent;
+  border:0;
+  border-radius:0;
+  box-shadow:none;
 }
-.chats-main > .workspace-content:has(> .chat-list) > .chat-list{display:flex;flex-direction:column;gap:8px;padding:14px;overflow:hidden}
-.chats-main > .workspace-content:has(> .chat-list) > .chat-detail{display:flex;flex-direction:column;overflow:hidden}
-.chat-list > .chat-search-control,.chat-list > .chat-filter-segment,.chat-list > .personal-chat-create{flex:0 0 auto;min-width:0}
+.chats-main > .workspace-content:has(> .chat-list) > .chat-list{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  padding:0;
+  overflow:hidden;
+}
+.chats-main > .workspace-content:has(> .chat-list) > .chat-detail{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.chat-list > .chat-search-control,
+.chat-list > .chat-filter-segment,
+.chat-list > .personal-chat-create{flex:0 0 auto;min-width:0}
 .chat-list > .personal-chat-create{align-self:flex-start;width:fit-content}
-.chat-list > .chat-items-scroll{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;scrollbar-width:thin}
-.chat-detail > .messages{flex:1 1 auto;min-width:0;min-height:0;max-height:none;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
-:root[data-theme="dark-soft"] .chats-main > .workspace-content:has(> .chat-list) > .chat-list,
-:root[data-theme="dark-soft"] .chats-main > .workspace-content:has(> .chat-list) > .chat-detail{background:var(--surface);border-color:var(--line)}
-:root[data-theme="dark-soft"] .chat-detail > .messages,
-:root:not([data-theme="dark-soft"]) .chat-detail > .messages{background:var(--canvas)}
+.chat-list > .chat-items-scroll{
+  flex:1 1 auto;
+  min-height:0;
+  padding:2px 2px 4px 0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior-y:contain;
+  scrollbar-width:thin;
+}
+.chat-detail > .messages{
+  flex:1 1 auto;
+  min-width:0;
+  min-height:0;
+  max-height:none;
+  background:transparent;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior-y:contain;
+  -webkit-overflow-scrolling:touch;
+}
 @media(max-width:1024px){
- .chats-main > .workspace-content:has(> .chat-list){grid-template-columns:minmax(0,1fr);align-items:stretch;gap:10px}
- .chats-main > .workspace-content:has(> .chat-list) > .chat-list{min-height:0;height:min(38dvh,320px)}
- .chats-main > .workspace-content:has(> .chat-list) > .chat-detail{min-height:65dvh}
- .chats-main > .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) > .chat-detail{display:none}
- .chats-main > .workspace-content:has(> .chat-list):has(.mobile-chat-back) > .chat-list{display:none}
- .chats-main > .workspace-content:has(> .chat-list) > .chat-detail > .messages{min-height:180px}
+  .chats-main > .workspace-content:has(> .chat-list){
+    grid-template-columns:minmax(0,1fr);
+    align-items:stretch;
+    gap:18px;
+  }
+  .chats-main > .workspace-content:has(> .chat-list) > .chat-list{
+    min-height:0;
+    height:min(38dvh,320px);
+  }
+  .chats-main > .workspace-content:has(> .chat-list) > .chat-detail{min-height:65dvh}
+  .chats-main > .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) > .chat-detail{display:none}
+  .chats-main > .workspace-content:has(> .chat-list):has(.mobile-chat-back) > .chat-list{display:none}
+  .chats-main > .workspace-content:has(> .chat-list) > .chat-detail > .messages{min-height:180px}
 }
