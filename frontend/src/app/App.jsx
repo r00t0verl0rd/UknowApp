@@ -83,7 +83,7 @@ export default function App() {
     disconnectCandidate, setDisconnectCandidate, disconnectingTelegram, setDisconnectingTelegram,
   } = useUserActionState();
   const {
-    page, setPage, error, setError, toast, setToast, busy, setBusy, modal, setModal,
+    page, setPage, error, setError, toast, setToast, modal, setModal,
   } = useUiState();
   const [dataStats, setDataStats] = useState(null);
   const [dataBusy, setDataBusy] = useState(false);
@@ -112,7 +112,7 @@ export default function App() {
   // Загружает актуальные данные панели в зависимости от роли вошедшего пользователя.
   const refresh = useCallback(async () => {
     if (!auth) return;
-    setBusy(true); setError("");
+    setError("");
     try {
       const who = await request("/api/panel/me");
       setProfile(who);
@@ -146,7 +146,7 @@ export default function App() {
         setAuth("");
         setProfile(null);
       }
-    } finally { setBusy(false); }
+    }
   }, [auth, request]);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -799,7 +799,6 @@ export default function App() {
           <button type="button" className="theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
             {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
           </button>
-          <button type="button" className="icon-btn" onClick={refresh} title="Обновить" aria-label="Обновить"><RefreshCw className={busy ? "spin" : ""}/></button>
           <button className="logout" onClick={signOut} title="Выйти" aria-label="Выйти"><LogOut/></button>
         </div>
       </div>
@@ -813,7 +812,6 @@ export default function App() {
           <button type="button" className="theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
             {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
           </button>
-          <button type="button" className="icon-btn" onClick={refresh} title="Обновить" aria-label="Обновить"><RefreshCw className={busy ? "spin" : ""}/></button>
         </div>
       </header>
       <div className={"content" + (page === "chats" ? " chats-content" : "")}>
