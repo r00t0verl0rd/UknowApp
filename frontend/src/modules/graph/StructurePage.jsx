@@ -337,7 +337,6 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     const position = layout[id] || { x: 0, y: 0 };
     const boundsElement = type === "cloud" ? element.closest(".graph-coordinate-viewport") : element.parentElement;
     const outer = outerCoordinatesRef.current;
-    outer.update(graphViewportRef.current);
     dragRef.current = {
       type, id, element, teacherView, pointerId: event.pointerId,
       startLocal: outer.toLocal(event.clientX, event.clientY),
