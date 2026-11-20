@@ -7,6 +7,7 @@ import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Smile from "lucide-react/dist/esm/icons/smile.js";
 
 const STUDENT_LAYOUT_KEY = "uknowapp-graph-student-layout";
+const TEACHER_STUDENT_LAYOUT_KEY = "uknowapp-teacher-graph-student-layout";
 const EMPTY_CLOUD_POSITIONS = [];
 
 function readStudentLayout() {
@@ -69,6 +70,15 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
   const cloudStackRef = useRef(0);
   const [studentLayout, setStudentLayout] = useState(readStudentLayout);
   const studentLayoutRef = useRef(studentLayout);
+  const [teacherStudentLayout, setTeacherStudentLayout] = useState(() => {
+    try {
+      const layout = JSON.parse(localStorage.getItem(TEACHER_STUDENT_LAYOUT_KEY) || "{}");
+      return layout && typeof layout === "object" && !Array.isArray(layout) ? layout : {};
+    } catch {
+      return {};
+    }
+  });
+  const teacherStudentLayoutRef = useRef(teacherStudentLayout);
   const dragRef = useRef(null);
   const frameRef = useRef(0);
 
@@ -88,10 +98,11 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     const captureElement = event.currentTarget;
     const element = type === "cloud" ? handle.closest(".teacher-branch") : handle;
     if (type === "cloud") element.style.zIndex = String(++cloudStackRef.current);
-    const layout = type === "cloud" ? cloudLayoutRef.current : studentLayoutRef.current;
+    const teacherView = type === "student" && Boolean(handle.closest(".is-teacher-view"));
+    const layout = type === "cloud" ? cloudLayoutRef.current : teacherView ? teacherStudentLayoutRef.current : studentLayoutRef.current;
     const position = layout[id] || { x: 0, y: 0 };
     dragRef.current = {
-      type, id, element, pointerId: event.pointerId,
+      type, id, element, teacherView, pointerId: event.pointerId,
       startX: event.clientX, startY: event.clientY,
       x: position.x, y: position.y,
       nextX: position.x, nextY: position.y,
@@ -144,11 +155,14 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
       return;
     }
 
-    const next = { ...studentLayoutRef.current, [drag.id]: { x, y } };
-    studentLayoutRef.current = next;
-    setStudentLayout(next);
+    const layoutRef = drag.teacherView ? teacherStudentLayoutRef : studentLayoutRef;
+    const setLayout = drag.teacherView ? setTeacherStudentLayout : setStudentLayout;
+    const storageKey = drag.teacherView ? TEACHER_STUDENT_LAYOUT_KEY : STUDENT_LAYOUT_KEY;
+    const next = { ...layoutRef.current, [drag.id]: { x, y } };
+    layoutRef.current = next;
+    setLayout(next);
     try {
-      localStorage.setItem(STUDENT_LAYOUT_KEY, JSON.stringify(next));
+      localStorage.setItem(storageKey, JSON.stringify(next));
     } catch {
       // Student arrangement remains active for this page session if storage is unavailable.
     }
@@ -171,7 +185,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
           <TeacherBranch
             teacher={teacherGraph?.teacher || profile}
             students={teacherGraph?.students || []}
-            studentLayout={studentLayout}
+            studentLayout={teacherStudentLayout}
             isOwner
           />
         </div>
