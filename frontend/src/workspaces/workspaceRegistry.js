@@ -12,7 +12,7 @@ import StudentWorkspace from "./StudentWorkspace.jsx";
 export const workspaceRegistry = Object.freeze({
   admin: {
     Component: AdminWorkspace,
-    label: "УПРАВЛЕНИЕ ШКОЛОЙ",
+    label: "ЛИЧНЫЙ КАБИНЕТ АДМИНИСТРАТОРА",
     pages: ["graph", "chats", "users", "boards", "additional"],
     navigation: [
       { page: "graph", label: "Структура", icon: Activity },
@@ -24,7 +24,7 @@ export const workspaceRegistry = Object.freeze({
   },
   teacher: {
     Component: TeacherWorkspace,
-    label: "РАБОЧЕЕ МЕСТО УЧИТЕЛЯ",
+    label: "ЛИЧНЫЙ КАБИНЕТ УЧИТЕЛЯ",
     pages: ["chats", "graph"],
     navigation: [
       { page: "chats", label: "Диалоги", icon: MessageCircle },
