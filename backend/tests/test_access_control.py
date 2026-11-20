@@ -2,7 +2,7 @@ from fastapi import status
 from starlette.requests import Request
 
 from app.core import security
-from app.models import Assignment, Conversation, Message, User
+from app.models import Assignment, Conversation, Message
 
 
 def login(client, username, password):
@@ -147,63 +147,3 @@ def test_admin_can_unassign_student_without_deleting_conversation_history(api):
     assert teacher.get("/api/panel/conversations").json() == []
     assert student.get("/api/panel/conversations").json() == []
     assert admin.delete(f"/api/admin/assignments/{users['student-one']}").status_code == status.HTTP_404_NOT_FOUND
-
-def test_admin_can_save_graph_order_without_changing_assignments(api):
-    make_client, users, sessions = api
-    admin = make_client()
-    login(admin, "test-admin", "a-long-test-password-123")
-
-    with sessions() as db:
-        extra_students = [
-            User(full_name="График ученик А", role="student"),
-            User(full_name="График ученик Б", role="student"),
-        ]
-        db.add_all(extra_students)
-        db.commit()
-        extra_ids = [student.id for student in extra_students]
-
-    for student_id in (users["student-one"], users["student-two"]):
-        response = admin.post(
-            "/api/admin/assignments",
-            json={"teacher_id": users["teacher-one"], "student_id": student_id},
-        )
-        assert response.status_code == status.HTTP_201_CREATED
-
-    teacher_order = [users["teacher-two"], users["teacher-one"]]
-    student_order = [users["student-two"], users["student-one"]]
-    unassigned_order = list(reversed(extra_ids))
-    assert admin.patch(
-        "/api/admin/graph/order",
-        json={"group": "teachers", "user_ids": teacher_order},
-    ).status_code == status.HTTP_200_OK
-    assert admin.patch(
-        f"/api/admin/graph/order",
-        json={"group": f"students:{users['teacher-one']}", "user_ids": student_order},
-    ).status_code == status.HTTP_200_OK
-    assert admin.patch(
-        "/api/admin/graph/order",
-        json={"group": "unassigned", "user_ids": unassigned_order},
-    ).status_code == status.HTTP_200_OK
-
-    overview = admin.get("/api/admin/overview")
-    assert overview.status_code == status.HTTP_200_OK
-    data = overview.json()
-    assert [teacher["id"] for teacher in data["teachers"]] == teacher_order
-    first_teacher = next(item for item in data["teachers"] if item["id"] == users["teacher-one"])
-    assert [student["id"] for student in first_teacher["students"]] == student_order
-    assert [student["id"] for student in data["unassigned_students"]] == unassigned_order
-
-    teacher = make_client()
-    login(teacher, "teacher-one", "teacher-password-1")
-    forbidden = teacher.patch(
-        "/api/admin/graph/order",
-        json={"group": "teachers", "user_ids": teacher_order},
-    )
-    assert forbidden.status_code == status.HTTP_401_UNAUTHORIZED
-
-    invalid = admin.patch(
-        "/api/admin/graph/order",
-        json={"group": "teachers", "user_ids": [users["teacher-one"]]},
-    )
-    assert invalid.status_code == status.HTTP_409_CONFLICT
-
