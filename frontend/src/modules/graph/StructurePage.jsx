@@ -7,6 +7,7 @@ import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Smile from "lucide-react/dist/esm/icons/smile.js";
 
 const STUDENT_LAYOUT_KEY = "uknowapp-graph-student-layout";
+const EMPTY_CLOUD_POSITIONS = [];
 
 function readStudentLayout() {
   try {
@@ -25,7 +26,7 @@ function positionStyle(position) {
 }
 
 export default function StructurePage({ profile, teacherGraph, overview, openCreate, allTeachers, studentsByTeacherId, collapsedTeacherIds, setCollapsedTeacherIds, openEdit, setTeacherId, setStudentId, allStudents, setModal, unassignedStudents, unassignStudent, saveCloudPosition }) {
-  const cloudPositions = overview?.cloud_positions || [];
+  const cloudPositions = overview?.cloud_positions || EMPTY_CLOUD_POSITIONS;
   const [cloudLayout, setCloudLayout] = useState(() => positionMap(cloudPositions));
   const cloudLayoutRef = useRef(cloudLayout);
   const [studentLayout, setStudentLayout] = useState(readStudentLayout);
