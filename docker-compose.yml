@@ -9,6 +9,10 @@ services:
       DATABASE_URL: sqlite:////app/data/uknowapp.db
       PYTHONPATH: /app/backend
       TMPDIR: /app/data
+      TRUSTED_PROXY_IPS: 127.0.0.1,::1,172.31.255.2
+    networks:
+      app_net:
+        ipv4_address: 172.31.255.3
     volumes:
       - app_data:/app/data
     init: true
@@ -49,6 +53,9 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    networks:
+      app_net:
+        ipv4_address: 172.31.255.2
     restart: unless-stopped
     healthcheck:
       test:
@@ -62,6 +69,12 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+networks:
+  app_net:
+    ipam:
+      config:
+        - subnet: ${UKNOWAPP_DOCKER_SUBNET:-172.31.255.0/24}
 
 volumes:
   app_data:
