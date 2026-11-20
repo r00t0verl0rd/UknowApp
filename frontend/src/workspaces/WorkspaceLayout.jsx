@@ -3,6 +3,7 @@ import Moon from "lucide-react/dist/esm/icons/moon.js";
 import Sun from "lucide-react/dist/esm/icons/sun.js";
 import X from "lucide-react/dist/esm/icons/x.js";
 import Info from "lucide-react/dist/esm/icons/info.js";
+import { useEffect, useState } from "react";
 import AppToast from "../shared/components/AppToast.jsx";
 
 export default function WorkspaceLayout({
@@ -10,6 +11,14 @@ export default function WorkspaceLayout({
   pushToggle, signOut, error, setError, toast, children,
 }) {
   const additionalItem = role === "admin" ? navigation.find(item => item.page === "additional") : null;
+  const [showSchoolLabel, setShowSchoolLabel] = useState(() => window.matchMedia("(min-width: 1025px)").matches);
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1025px)");
+    const update = event => setShowSchoolLabel(event.matches);
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   const themeToggle = (
     <button type="button" className="theme-toggle" onClick={toggleTheme}
@@ -22,7 +31,7 @@ export default function WorkspaceLayout({
   return <div className={`shell chats-shell workspace-shell workspace-${role}`}>
     <aside className="sidebar">
       <div className="brand"><img src="/logo.png" alt="" /><span>Uknow<span>App</span></span></div>
-      <div className="school-label">{label}</div>
+      {showSchoolLabel && <div className="school-label">{label}</div>}
       <nav aria-label="Основная навигация">
         {navigation.filter(item => item.page !== "additional").map(item => {
           const Icon = item.icon;
