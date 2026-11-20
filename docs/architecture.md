@@ -49,53 +49,75 @@ The old top-level `config.py`, `database.py`, `security.py`, Telegram files, `me
 
 ## Frontend
 
+The frontend is organized around feature modules. `app/App.jsx` is the composition root: it connects the application-level controllers, renders the shared navigation and shell, and mounts the active feature page. It does not contain feature API workflows.
+
 ```text
 frontend/src/
 ├── app/
-│   └── App.jsx             # application composition and top-level orchestration
-├── modules/
-│   ├── administration/     # maintenance page and feature exports
-│   │   └── AdditionalPage.jsx
-│   ├── authentication/     # login page and authentication feature exports
-│   │   └── LoginPage.jsx
-│   ├── conversations/      # participant chat UI
-│   │   └── ChatsPage.jsx
-│   ├── graph/              # structure/graph page
-│   │   └── StructurePage.jsx
-│   ├── notifications/      # push notification client
-│   ├── personal-chat/      # private chat state
-│   ├── settings/           # appearance preferences
-│   └── users/              # user directory page and editor state
-│       └── UsersPage.jsx
-├── components/             # shared UI and layout components
+│   └── App.jsx
 ├── hooks/
 │   ├── app/
+│   │   └── usePanelDataState.js       # role-aware bootstrap, shared API client, SSE lifecycle
 │   ├── authentication/
+│   │   ├── useAuthController.js       # login/logout workflows
+│   │   └── useAuthState.js            # authentication form/session state
+│   ├── administration/
+│   │   └── useAdminDataController.js  # backups, restore, retention and statistics
+│   ├── boards/
+│   │   └── useBoardsState.js          # board data and object lifecycle
 │   ├── conversations/
+│   │   ├── useChatState.js            # chat view state
+│   │   └── useChatsController.js      # message lifecycle, filtering, scrolling and deep links
 │   ├── graph/
-│   ├── personal-chat/
+│   │   └── useGraphState.js
+│   ├── notifications/
+│   │   └── usePushNotificationsState.js
 │   ├── settings/
+│   │   └── useSettingsState.js        # theme state and persistence
 │   └── users/
-├── services/
-│   └── api.js              # shared authenticated API client
-├── styles/
-│   ├── tokens.css
-│   └── layout.css
-└── main.jsx
+│       ├── useDirectoryState.js
+│       ├── useUserActionState.js
+│       ├── useUserEditorState.js
+│       └── useUsersController.js      # user lifecycle, assignments and Telegram actions
+├── modules/
+│   ├── administration/
+│   │   ├── AdditionalPage.jsx
+│   │   └── services/adminDataApi.js
+│   ├── authentication/
+│   │   ├── LoginPage.jsx
+│   │   └── services/authApi.js
+│   ├── boards/
+│   │   ├── BoardsPage.jsx
+│   │   └── services/boardsApi.js
+│   ├── conversations/
+│   │   ├── ChatsPage.jsx
+│   │   ├── components/
+│   │   │   ├── ChatDialogs.jsx
+│   │   │   └── MessageBubble.jsx
+│   │   └── services/conversationsApi.js
+│   ├── graph/StructurePage.jsx
+│   ├── notifications/pushNotifications.js
+│   └── users/
+│       ├── UsersPage.jsx
+│       └── components/UserDialogs.jsx
+├── services/api.js                    # shared authenticated JSON API client
+└── styles/
+    ├── layout.css
+    └── tokens.css
 ```
 
 ### Frontend boundaries
 
-- `main.jsx` mounts the app and loads global styles.
-- `app/App.jsx` is the application composition root: it coordinates authentication, cross-feature state and actions, then renders the selected feature page.
-- Page markup lives with its feature: authentication, structure, users, conversations and administration each have an independent page component. Feature pages receive explicit state and action props; they do not import the application root.
-- `modules/<feature>` is the public boundary for a feature's UI and behavior.
-- `hooks/<feature>` owns state and reusable React behavior for that feature.
-- `services` owns communication with backend services.
-- `styles` owns design tokens and global layout rules.
+- `app/App.jsx` owns application composition, global navigation, role-based page visibility and shared shell elements.
+- Each feature controller owns its data transformations, asynchronous workflows and lifecycle effects. The page components focus on rendering and forwarding user intent.
+- Feature API adapters live under `modules/<feature>/services/`. They own endpoint paths, HTTP details and payload serialization. Controllers coordinate operations through these adapters.
+- `services/api.js` is the shared authenticated JSON transport. File uploads and binary backup transfers use feature-specific adapters because they require multipart or blob handling.
+- Authentication, push notifications, theme persistence, panel bootstrap/SSE, user management, conversations, boards and administration have separate ownership boundaries.
+- Feature components do not import the application root. The application root composes them through explicit props and controller results.
+- Boards are fully encapsulated: `BoardsPage` creates its own board controller and does not expose board state or API details to `App`.
 
-The former `App.jsx`, `useAppState.js`, `MessageBubble.jsx`, `pushNotifications.js`, `styles.css` and `tokens.css` paths remain thin compatibility entry points where applicable.
-
+The remaining composition in `App.jsx` is intentional: it connects shared session state, role-aware bootstrap data and feature controllers, then supplies the relevant state/actions to the selected page. Avoid moving feature workflows back into this file. When a feature grows further, move its page and controller wiring behind a feature-level entry component rather than introducing another global state hook.
+ 
 ## Dependency rules
 
 1. A feature may use `core`, `infrastructure` and other domain services through explicit imports.
