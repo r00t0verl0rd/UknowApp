@@ -143,7 +143,7 @@ export default function StructurePage({
   }
 
   function removeObject(item) {
-    if (window.confirm(`Удалить объект «${item.title}» и все вложенные в него пользовательские объекты?`)) {
+    if (window.confirm(`Удалить объект «${item.title}» и все вложенные в него объекты?`)) {
       deleteGraphObject(item.id);
     }
   }
@@ -185,22 +185,24 @@ export default function StructurePage({
           <header className="graph-object-header graph-fon-header">
             <b>Fon</b><span>Главный фон · родитель всех объектов</span>
             <button type="button" className="btn small outline" onClick={() => addObject(fon.id)}><Plus />Создать объект</button>
+            <button type="button" className="graph-object-delete" title="Удалить Fon" aria-label="Удалить Fon" onClick={() => removeObject(fon)}><Trash2 /></button>
           </header>
           {admin && <section className="graph-object-admin" data-object-id={admin.id} style={objectPosition(admin)}>
             <header className="graph-object-header graph-admin-header">
               <div className="graph-admin-identity"><img src="/logo.png" alt="" /><div><b>Администратор</b><span>Родитель областей и их содержимого</span></div></div>
               <button type="button" className="btn small outline" onClick={() => addObject(admin.id)}><Plus />Создать объект</button>
+              <button type="button" className="graph-object-delete" title="Удалить администратора" aria-label="Удалить администратора" onClick={() => removeObject(admin)}><Trash2 /></button>
             </header>
             <div className="graph-admin-areas">
               <section className="graph-object-area graph-assigned-area" data-object-id={assignedArea?.id}>
-                <header className="graph-area-header"><b>{assignedArea?.title || "Назначенные ученики"}</b><span>{unassignedStudents.length} учен.</span></header>
+                <header className="graph-area-header"><b>{assignedArea?.title || "Назначенные ученики"}</b><span>{unassignedStudents.length} учен.</span>{assignedArea && <button type="button" className="graph-object-delete" title="Удалить область" aria-label="Удалить область назначенных учеников" onClick={() => removeObject(assignedArea)}><Trash2 /></button>}</header>
                 <div className="graph-area-content graph-student-grid">
                   {unassignedStudents.map(student => <StudentCard key={student.id} student={student} openEdit={openEdit} canUnassign={false} />)}
                   {!unassignedStudents.length && <div className="empty-students">Нет учеников без назначения учителю</div>}
                 </div>
               </section>
               <section className="graph-object-area graph-teachers-area" data-object-id={teachersArea?.id}>
-                <header className="graph-area-header"><b>{teachersArea?.title || "Учителя"}</b><span>{allTeachers.length}</span></header>
+                <header className="graph-area-header"><b>{teachersArea?.title || "Учителя"}</b><span>{allTeachers.length}</span>{teachersArea && <button type="button" className="graph-object-delete" title="Удалить область" aria-label="Удалить область учителей" onClick={() => removeObject(teachersArea)}><Trash2 /></button>}</header>
                 <div className="graph-area-content graph-teachers-grid">
                   {allTeachers.map(teacher => <TeacherObject key={teacher.id} teacher={teacher} students={studentsByTeacherId?.get(teacher.id) || []} openEdit={openEdit} unassignStudent={unassignStudent} />)}
                   {!allTeachers.length && <div className="empty-students">Пока нет учителей</div>}
@@ -209,7 +211,7 @@ export default function StructurePage({
             </div>
             {customObjects.filter(item => item.parent_id === admin.id).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}><span>{item.title}</span><button type="button" className="graph-object-delete" title={`Удалить объект «${item.title}»`} aria-label={`Удалить объект «${item.title}»`} onClick={() => removeObject(item)}><Trash2 /></button></div>)}
           </section>}
-          {customObjects.filter(item => item.parent_id === fon.id).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}>{item.title}</div>)}
+          {customObjects.filter(item => item.parent_id === fon.id).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}><span>{item.title}</span><button type="button" className="graph-object-delete" title={`Удалить объект «${item.title}»`} aria-label={`Удалить объект «${item.title}»`} onClick={() => removeObject(item)}><Trash2 /></button></div>)}
         </div>}
       </div>
     </div>
