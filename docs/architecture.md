@@ -67,6 +67,7 @@ frontend/src/
 │   │   └── useBoardsState.js          # board data and object lifecycle
 │   ├── conversations/
 │   │   ├── useChatState.js            # chat view state
+│   │   ├── useChatActionState.js      # message deletion state
 │   │   └── useChatsController.js      # message lifecycle, filtering, scrolling and deep links
 │   ├── graph/
 │   │   └── useGraphState.js
@@ -116,7 +117,7 @@ frontend/src/
 - Feature components do not import the application root. The application root composes them through explicit props and controller results.
 - Boards are fully encapsulated: `BoardsPage` creates its own board controller and does not expose board state or API details to `App`.
 
-The remaining composition in `App.jsx` is intentional: it connects shared session state, role-aware bootstrap data and feature controllers, then supplies the relevant state/actions to the selected page. Avoid moving feature workflows back into this file. When a feature grows further, move its page and controller wiring behind a feature-level entry component rather than introducing another global state hook.
+`App.jsx` is intentionally the composition root, but it is now a small application shell rather than a feature implementation: it connects the shared session/bootstrap state, renders navigation, and mounts the active page. Feature workflows, API paths, binary transfers, dialogs and lifecycle effects live in their owning modules. Keep future changes within those boundaries; do not add domain API calls or CRUD handlers back to `App.jsx`.
  
 ## Dependency rules
 
