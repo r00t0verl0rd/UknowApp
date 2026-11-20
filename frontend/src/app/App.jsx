@@ -767,6 +767,7 @@ export default function App() {
       </nav>
       <div className="sidebar-bottom">
         {profile?.role === "admin" && <button type="button" className={`logout desktop-admin-extra${page === "additional" ? " active" : ""}`} onClick={() => setPage("additional")}><Info size={18}/>Дополнительно</button>}
+        <button type="button" className="logout desktop-sidebar-logout" onClick={signOut}><LogOut size={18}/>Выход</button>
         <div className="mobile-quick-actions">
           {pushToggle}
           <button type="button" className="theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
@@ -787,7 +788,6 @@ export default function App() {
             {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
           </button>
           <button type="button" className="icon-btn" onClick={refresh} title="Обновить" aria-label="Обновить"><RefreshCw className={busy ? "spin" : ""}/></button>
-          <button type="button" className="icon-btn topbar-logout" onClick={signOut} title="Выйти" aria-label="Выйти"><LogOut size={17}/></button>
         </div>
       </header>
       <div className={"content" + (page === "chats" ? " chats-content" : "")}>
@@ -800,7 +800,7 @@ export default function App() {
       </div>
     </main>
 
-    {modal && modal.mode !== "create-personal" && <div className="overlay" onMouseDown={() => setModal(null)}><section className={`modal${modal.mode === "create" ? " create-participant-modal" : ""}`} onMouseDown={e => e.stopPropagation()}>
+    {modal && modal.mode !== "create-personal" && <div className="overlay" onMouseDown={() => setModal(null)}><section className={`modal${modal.mode === "create" ? " create-participant-modal" : modal.mode === "edit" ? " participant-profile-modal" : ""}`} onMouseDown={e => e.stopPropagation()}>
       <div className="modal-head"><div><div className="eyebrow">{modal.mode === "create" ? "НОВЫЙ УЧАСТНИК" : modal.mode === "edit" ? "ПРОФИЛЬ УЧАСТНИКА" : "СВЯЗЬ УЧЕНИКА И УЧИТЕЛЯ"}</div><h2>{modal.mode === "create" ? "Добавить участника" : modal.mode === "edit" ? "Редактировать" : "Назначить ученика"}</h2></div><button className="icon-btn" onClick={() => setModal(null)}><X/></button></div>
       {modal.mode === "assign" ? <form className="stack" onSubmit={assign}>
         <label>Учитель<select value={teacherId} onChange={e => setTeacherId(e.target.value)} required>{allTeachers.map(t => <option value={t.id} key={t.id}>{t.full_name}</option>)}</select></label>
