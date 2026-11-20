@@ -649,6 +649,18 @@ export default function App() {
     } catch (e) { setError(e.message); }
   }
 
+  async function unassignStudent(student) {
+    if (!window.confirm(`Открепить ученика «${student.full_name}» от учителя? История переписки сохранится.`)) return;
+    setError("");
+    try {
+      await request(`/api/admin/assignments/${student.id}`, { method: "DELETE" });
+      await refresh();
+      notify("Ученик откреплён от учителя");
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
   function disconnectTelegram(user) {
     setDisconnectCandidate(user);
   }
@@ -796,7 +808,7 @@ export default function App() {
       </header>
       <div className={"content" + (page === "chats" ? " chats-content" : "")}>
         {error && <div className="alert alert-row">{error}<button onClick={() => setError("")}><X/></button></div>}
-        {page === "graph" && <StructurePage profile={profile} teacherGraph={teacherGraph} overview={overview} openCreate={openCreate} allTeachers={allTeachers} studentsByTeacherId={studentsByTeacherId} collapsedTeacherIds={collapsedTeacherIds} setCollapsedTeacherIds={setCollapsedTeacherIds} openEdit={openEdit} setTeacherId={setTeacherId} setStudentId={setStudentId} allStudents={allStudents} setModal={setModal} unassignedStudents={unassignedStudents} />}
+        {page === "graph" && <StructurePage profile={profile} teacherGraph={teacherGraph} overview={overview} openCreate={openCreate} allTeachers={allTeachers} studentsByTeacherId={studentsByTeacherId} collapsedTeacherIds={collapsedTeacherIds} setCollapsedTeacherIds={setCollapsedTeacherIds} openEdit={openEdit} setTeacherId={setTeacherId} setStudentId={setStudentId} allStudents={allStudents} setModal={setModal} unassignedStudents={unassignedStudents} unassignStudent={unassignStudent} />}
         {page === "users" && <UsersPage visibleUsers={visibleUsers} search={search} setSearch={setSearch} userSort={userSort} setUserSort={setUserSort} openCreate={openCreate} disconnectTelegram={disconnectTelegram} makeCode={makeCode} userInfo={userInfo} setUserInfo={setUserInfo} openEdit={openEdit} removeUser={removeUser} />}
         {page === "chats" && <ChatsPage profile={profile} chatSection={chatSection} setChatSection={setChatSection} personalChats={personalChats} setSelectedChat={setSelectedChat} setMessages={setMessages} chatFilter={chatFilter} setChatFilter={setChatFilter} openCreatePersonalChat={openCreatePersonalChat} chatSearch={chatSearch} setChatSearch={setChatSearch} visibleChats={visibleChats} openChat={openChat} selectedChat={selectedChat} setPage={setPage} draft={draft} setDraft={setDraft} messageFilter={messageFilter} setMessageFilter={setMessageFilter} messagesViewportRef={messagesViewportRef} visibleMessages={visibleMessages} messages={messages} setDeleteMessageCandidate={setDeleteMessageCandidate} attachment={attachment} setAttachment={setAttachment} sendChatMessage={sendChatMessage} />}
 
