@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { createApiClient } from "../../services/api.js";
+import { getAdminBootstrap, getCurrentProfile, getInboxData, getTeacherGraph } from "../../modules/panel/services/panelApi.js";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 
@@ -14,14 +15,14 @@ export function usePanelDataState({
     if (!auth) return;
     setError("");
     try {
-      const who = await request("/api/panel/me");
+      const who = await getCurrentProfile(request);
       setProfile(who);
 
       const roleRequest = who.role === "admin"
-        ? Promise.all([request("/api/admin/users"), request("/api/admin/overview")])
-        : who.role === "teacher" ? request("/api/panel/graph") : Promise.resolve(null);
-      const [conversations, roleData, personal] = await Promise.all([
-        request("/api/panel/conversations"), roleRequest, request("/api/panel/personal-conversations"),
+        ? getAdminBootstrap(request)
+        : who.role === "teacher" ? getTeacherGraph(request) : Promise.resolve(null);
+      const [[conversations, personal], roleData] = await Promise.all([
+        getInboxData(request), roleRequest,
       ]);
       setChats(conversations);
       setPersonalChats(personal);
@@ -91,9 +92,7 @@ export function usePanelDataState({
           if (!active) return;
           setMessages(rows);
         }
-        const [conversations, personal] = await Promise.all([
-          request("/api/panel/conversations"), request("/api/panel/personal-conversations"),
-        ]);
+        const [conversations, personal] = await getInboxData(request);
         if (!active) return;
         setChats(conversations);
         setPersonalChats(personal);
