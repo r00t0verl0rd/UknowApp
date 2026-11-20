@@ -21,7 +21,8 @@ import StructurePage from "../modules/graph/StructurePage.jsx";
 import BoardsPage from "../modules/boards/BoardsPage.jsx";
 import UsersPage from "../modules/users/UsersPage.jsx";
 import LoginPage from "../modules/authentication/LoginPage.jsx";
-import { detachPushSubscription, disablePushNotifications, enablePushNotifications, getPushNotificationState } from "../modules/notifications/pushNotifications.js";
+import { detachPushSubscription, enablePushNotifications, getPushNotificationState } from "../modules/notifications/pushNotifications.js";
+import { usePushNotificationsState } from "../hooks/notifications/usePushNotificationsState.js";
 import { usePanelDataState } from "../hooks/app/usePanelDataState.js";
 import { useUsersController } from "../hooks/users/useUsersController.js";
 import { useChatsController } from "../hooks/conversations/useChatsController.js";
@@ -80,8 +81,6 @@ export default function App() {
   const [dataStats, setDataStats] = useState(null);
   const [dataBusy, setDataBusy] = useState(false);
   const [retentionDays, setRetentionDays] = useState("30");
-  const [pushState, setPushState] = useState({ supported: false, enabled: false, permission: "default", reason: "Проверяем поддержку уведомлений…" });
-  const [pushBusy, setPushBusy] = useState(false);
   const { request, refresh } = usePanelDataState({
     auth, page, selectedChat, setAuth, setProfile, setError, setChats,
     setPersonalChats, setUsers: directory.setUsers, setOverview: directory.setOverview, setTeacherGraph, setPage,
@@ -114,6 +113,10 @@ export default function App() {
     notify, deleteMessageCandidate, deletingMessage, setDeletingMessage,
     setDeleteMessageCandidate,
   });
+  const {
+    pushState, pushBusy, setPushState, setPushBusy,
+    togglePushNotifications, pushButtonTitle,
+  } = usePushNotificationsState({ auth, selectedChat, notify, setError });
 
   useEffect(() => {
     if (userInfo === null) return undefined;
@@ -133,41 +136,6 @@ export default function App() {
   useEffect(() => {
     if (auth && profile?.role === "teacher") setPage("chats");
   }, [auth, profile?.role, setPage]);
-
-  useEffect(() => {
-    if (!auth) {
-      setPushState({ supported: false, enabled: false, permission: "default", reason: "Войдите в приложение" });
-      return undefined;
-    }
-    let active = true;
-    getPushNotificationState()
-      .then(async state => {
-        if (state.supported && state.permission === "granted" && !state.enabled) {
-          await enablePushNotifications();
-          state = await getPushNotificationState();
-        }
-        if (active) setPushState(state);
-      })
-      .catch(() => {
-        if (active) getPushNotificationState()
-          .then(state => { if (active) setPushState(state); })
-          .catch(() => {});
-      });
-    return () => { active = false; };
-  }, [auth]);
-
-  useEffect(() => {
-    const respondToPush = event => {
-      if (event.data?.type !== "UKNOW_CHECK_ACTIVE_CHAT" || !event.ports?.[0]) return;
-      event.ports[0].postMessage({
-        active: document.visibilityState === "visible"
-          && Number(selectedChat?.id) === Number(event.data.conversationId)
-          && (selectedChat?.type === "personal" ? "personal" : "conversation") === event.data.conversationType,
-      });
-    };
-    navigator.serviceWorker?.addEventListener("message", respondToPush);
-    return () => navigator.serviceWorker?.removeEventListener("message", respondToPush);
-  }, [selectedChat?.id, selectedChat?.type]);
 
   // Notification links restore the exact conversation after the inbox data is loaded.
   useEffect(() => {
@@ -277,41 +245,6 @@ export default function App() {
   function toggleTheme() {
     setTheme(current => current === "dark-soft" ? "light" : "dark-soft");
   }
-
-  async function togglePushNotifications() {
-    if (pushBusy) return;
-    if (!pushState.supported) {
-      notify(pushState.reason);
-      return;
-    }
-    if (pushState.permission === "denied") {
-      notify("Разрешите уведомления для UknowApp в настройках браузера");
-      return;
-    }
-    setPushBusy(true);
-    setError("");
-    try {
-      if (pushState.enabled) {
-        await disablePushNotifications();
-        notify("Push-уведомления отключены");
-      } else {
-        await enablePushNotifications();
-        notify("Push-уведомления включены");
-      }
-      setPushState(await getPushNotificationState());
-    } catch (error) {
-      setError(error.message || "Не удалось изменить настройки уведомлений");
-      try { setPushState(await getPushNotificationState()); } catch { /* Keep the last known state. */ }
-    } finally {
-      setPushBusy(false);
-    }
-  }
-
-  const pushButtonTitle = !pushState.supported
-    ? pushState.reason
-    : pushState.permission === "denied"
-      ? "Уведомления запрещены в настройках браузера"
-      : pushState.enabled ? "Отключить push-уведомления" : "Включить push-уведомления";
 
   const pushToggle = (
     <button
