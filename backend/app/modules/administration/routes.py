@@ -131,15 +131,18 @@ def graph_objects(_: Admin, db: Db):
             ensure(f"teacher:{teacher_id}", "teacher", teacher.full_name, teachers_area.id)
     for student_id, student in students.items():
         parent = objects.get(f"teacher:{assigned_to[student_id]}") if student_id in assigned_to else None
-        ensure(
-            f"student:{student_id}", "student", student.full_name,
-            parent.id if parent else assigned_area.id,
-        )
+        if assigned_area or parent:
+            ensure(
+                f"student:{student_id}", "student", student.full_name,
+                parent.id if parent else assigned_area.id,
+            )
 
     valid_keys = {"fon", "administrator", "assigned_students", "teachers"}
     valid_keys.difference_update(deleted_keys)
-    valid_keys.update(f"teacher:{user_id}" for user_id in teachers)
-    valid_keys.update(f"student:{user_id}" for user_id in students)
+    if teachers_area:
+        valid_keys.update(f"teacher:{user_id}" for user_id in teachers)
+    if assigned_area or teachers_area:
+        valid_keys.update(f"student:{user_id}" for user_id in students)
     valid_keys.update(key for key in objects if key.startswith("custom:"))
     for key, item in tuple(objects.items()):
         if key not in valid_keys:
