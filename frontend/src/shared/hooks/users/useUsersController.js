@@ -41,7 +41,7 @@ export function useUsersController({
     setDisconnectingTelegram,
   } = actions;
 
-  const allTeachers = useMemo(() => users.filter(user => user.role === "teacher"), [users]);
+  const allTeachers = useMemo(() => users.filter(user => user.role === "teacher").sort((a, b) => a.full_name.localeCompare(b.full_name, "ru", { sensitivity: "base" }) || String(a.id).localeCompare(String(b.id))), [users]);
   const allStudents = useMemo(() => users.filter(user => user.role === "student"), [users]);
   const studentsByTeacherId = useMemo(
     () => new Map((overview?.teachers || []).map(teacher => [teacher.id, teacher.students || []])),
