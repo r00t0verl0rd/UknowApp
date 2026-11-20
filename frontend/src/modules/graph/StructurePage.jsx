@@ -121,22 +121,31 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
 
   return (
     <>
-      {profile?.role === "teacher" && <section className="teacher-readonly-graph">
-        <div className="teacher-graph-root">
-          <div className="teacher-graph-card">
-            <div className="avatar teacher-avatar"><GraduationCap /></div>
-            <div><b>{teacherGraph?.teacher.full_name || profile?.full_name}</b><small>Вы · Учитель</small></div>
-            <span className="readonly-tag">Ваша группа</span>
-          </div>
-          <div className="teacher-graph-students">
-            <div className="teacher-graph-student-grid">
-              {(teacherGraph?.students || []).map(student => <div className="teacher-graph-card student" key={student.id}>
-                <div className="avatar student-avatar"><Smile /></div>
-                <div><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div>
-              </div>)}
+      {profile?.role === "teacher" && <section className="graph-panel teacher-readonly-graph">
+        <div
+          className="teacher-grid"
+          onPointerDown={handlePointerDown}
+          onPointerMove={moveDrag}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+        >
+          <section className="teacher-branch">
+            <div className="person-card teacher-card">
+              <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap /></div><div className="person-info"><b>{teacherGraph?.teacher.full_name || profile?.full_name}</b><small>Вы · Учитель · {(teacherGraph?.students || []).length} учен.</small></div></div>
             </div>
-            {!(teacherGraph?.students || []).length && <div className="empty-state">Пока нет назначенных учеников</div>}
-          </div>
+            <div className="student-list">
+              {(teacherGraph?.students || []).map(student => <div
+                className="person-card student-card"
+                key={student.id}
+                style={positionStyle(studentLayout[student.id])}
+                data-drag-type="student"
+                data-drag-id={student.id}
+              >
+                <div className="person-main"><div className="avatar student-avatar"><Smile /></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
+              </div>)}
+              {!(teacherGraph?.students || []).length && <div className="empty-students">Пока нет назначенных учеников</div>}
+            </div>
+          </section>
         </div>
       </section>}
 
