@@ -38,7 +38,7 @@ function TeacherObject({ teacher, students, openEdit, unassignStudent, canUnassi
       </div>
     </header>
     <div className="graph-student-children">
-      {students.map(student => <StudentCard key={student.id} student={student} openEdit={openEdit} unassignStudent={unassignStudent} />)}
+      {students.map(student => <StudentCard key={student.id} student={student} openEdit={openEdit} unassignStudent={unassignStudent} canUnassign={canUnassign} />)}
       {!students.length && <div className="empty-students">Нет назначенных учеников</div>}
     </div>
   </section>;
@@ -200,8 +200,7 @@ export default function StructurePage({
                 </div>
               </section>
             </div>
-          </section>}
-          {customObjects.filter(item => item.parent_id === admin.id).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}>{item.title}</div>)}
+            {customObjects.filter(item => item.parent_id === admin.id).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}>{item.title}</div>)}
           </section>}
           {customObjects.filter(item => item.parent_id === fon.id).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}>{item.title}</div>)}
         </section>}
