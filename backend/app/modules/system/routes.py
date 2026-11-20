@@ -8,7 +8,8 @@ from fastapi import (
     Request,
     Response,
 )
-from sqlalchemy import select
+from sqlalchemy import select, text
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import VAPID_PUBLIC_KEY
 from app.models import PushSubscription
@@ -52,8 +53,22 @@ def logout(request: Request, response: Response, db: Db):
 
 
 @router.get("/health")
-def health():
-    return {"status": "ok", "service": "uknowapp"}
+def health(request: Request, db: Db):
+    try:
+        db.execute(text("SELECT 1"))
+    except SQLAlchemyError as exc:
+        logger.error("Database health check failed (%s)", type(exc).__name__)
+        raise HTTPException(status_code=503, detail="Database unavailable") from exc
+
+    telegram_status = getattr(request.app.state, "telegram_status", "unknown")
+    return {
+        "status": "ok" if telegram_status in {"connected", "disabled"} else "degraded",
+        "service": "uknowapp",
+        "components": {
+            "database": "ok",
+            "telegram": telegram_status,
+        },
+    }
 
 @router.get("/push/public-key")
 def push_public_key():
