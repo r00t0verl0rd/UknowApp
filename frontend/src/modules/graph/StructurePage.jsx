@@ -168,6 +168,7 @@ export default function StructurePage({
       <div className="graph-legend"><b>Иерархия объектов</b><span>Перемещайте Fon и облачко администратора независимо.</span></div>
       <div className="graph-toolbar-actions">
         <button type="button" className="btn small outline" onClick={resetView} title="Сбросить масштаб"><Crosshair />Сбросить масштаб</button>
+        {!fon && <button type="button" className="btn small outline" onClick={() => addObject(null)}><Plus />Создать корневой объект</button>}
         <button type="button" className="btn primary graph-add-participant" onClick={() => openCreate()}><Plus />Добавить участника</button>
       </div>
     </div>
