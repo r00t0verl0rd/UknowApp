@@ -233,7 +233,7 @@ class GraphObject(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     parent_id: Mapped[int | None] = mapped_column(
-        ForeignKey("graph_objects.id", ondelete="CASCADE"), nullable=True, index=True,
+        ForeignKey("graph_objects.id", ondelete="CASCADE"), nullable=True,
     )
     object_key: Mapped[str] = mapped_column(String(160), nullable=False)
     object_type: Mapped[str] = mapped_column(String(40), nullable=False)
