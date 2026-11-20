@@ -3,11 +3,11 @@ import ChatDialogs from "./components/ChatDialogs.jsx";
 import { useChatsController } from "../../hooks/conversations/useChatsController.js";
 
 export default function ChatsModule({
-  page, auth, profile, chatState, personalState, users, error,
+  page, auth, profile, request, chatState, personalState, users, error, modal,
   setPage, setError, setModal, notify,
 }) {
   const state = useChatsController({
-    auth, request: chatState.request, profile, chatState, personalState,
+    auth, request, profile, chatState, personalState,
     setPage, setError, setModal, notify,
   });
 
@@ -31,7 +31,7 @@ export default function ChatsModule({
       sendChatMessage={state.sendChatMessage}
     />}
     <ChatDialogs
-      modal={undefined} setModal={setModal} users={users}
+      modal setModal={setModal} users={users}
       createPersonalChat={state.createPersonalChat} error={error} setError={setError}
       deleteMessageCandidate={state.deleteMessageCandidate}
       selectedChat={chatState.selectedChat} deletingMessage={state.deletingMessage}
