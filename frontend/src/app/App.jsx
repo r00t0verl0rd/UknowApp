@@ -18,7 +18,7 @@ import BellOff from "lucide-react/dist/esm/icons/bell-off.js";
 import AdditionalPage from "../modules/administration/AdditionalPage.jsx";
 import ChatsPage from "../modules/conversations/ChatsPage.jsx";
 import StructurePage from "../modules/graph/StructurePage.jsx";
-import BoardsPage from "../modules/graph/BoardsPage.jsx";
+import BoardsPage from "../modules/boards/BoardsPage.jsx";
 import UsersPage from "../modules/users/UsersPage.jsx";
 import LoginPage from "../modules/authentication/LoginPage.jsx";
 import { detachPushSubscription, disablePushNotifications, enablePushNotifications, getPushNotificationState } from "../modules/notifications/pushNotifications.js";
