@@ -94,7 +94,7 @@ function dragPosition(drag, clientX, clientY, outer, inner) {
   const maxX = outer.deltaToLocal(bounds.right - element.right, 0).x / zoom;
   const minY = outer.deltaToLocal(0, bounds.top - element.top).y / zoom;
   const maxY = outer.deltaToLocal(0, bounds.bottom - element.bottom).y / zoom;
-  const snapped = inner.snapPoint({ x: drag.x + delta.x / zoom, y: drag.y + delta.y / zoom }, outer);
+  const snapped = inner.snapPoint({ x: drag.x + delta.x, y: drag.y + delta.y }, outer);
   return { x: clamp(snapped.x, drag.x + minX, drag.x + maxX), y: clamp(snapped.y, drag.y + minY, drag.y + maxY) };
 }
 
@@ -353,7 +353,6 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     const outer = outerCoordinatesRef.current;
     dragRef.current = {
       type, id, element, teacherView, pointerId: event.pointerId,
-      startLocal: outer.toLocal(event.clientX, event.clientY),
       startGraph: innerCoordinatesRef.current.toGraphPoint(outer.toLocal(event.clientX, event.clientY)),
       x: position.x, y: position.y,
       nextX: position.x, nextY: position.y,
