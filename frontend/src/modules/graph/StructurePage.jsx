@@ -149,6 +149,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
   const cloudStackRef = useRef(0);
   const [studentLayout, setStudentLayout] = useState(readStudentLayout);
   const studentLayoutRef = useRef(studentLayout);
+  const [graphViewportHeight, setGraphViewportHeight] = useState(() => Math.max(360, Math.min(900, window.innerHeight * 0.7)));
   const [teacherStudentLayout, setTeacherStudentLayout] = useState(() => {
     try {
       const layout = JSON.parse(localStorage.getItem(TEACHER_STUDENT_LAYOUT_KEY) || "{}");
@@ -190,15 +191,19 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     const scheduleBoundsUpdate = () => {
       if (!boundsFrame) boundsFrame = requestAnimationFrame(updateBounds);
     };
+    const updateViewportSize = () => {
+      setGraphViewportHeight(Math.max(360, Math.min(900, window.innerHeight * 0.7)));
+      scheduleBoundsUpdate();
+    };
     updateBounds();
     if (graphWorldRef.current) graphWorldRef.current.style.transform = innerCoordinatesRef.current.transform();
     const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(scheduleBoundsUpdate) : null;
     observer?.observe(viewport);
-    window.addEventListener("resize", scheduleBoundsUpdate, { passive: true });
+    window.addEventListener("resize", updateViewportSize, { passive: true });
     window.addEventListener("scroll", scheduleBoundsUpdate, { passive: true, capture: true });
     return () => {
       observer?.disconnect();
-      window.removeEventListener("resize", scheduleBoundsUpdate);
+      window.removeEventListener("resize", updateViewportSize);
       window.removeEventListener("scroll", scheduleBoundsUpdate, true);
       if (boundsFrame) cancelAnimationFrame(boundsFrame);
     };
@@ -505,6 +510,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
         <div
           className="graph-coordinate-viewport"
           ref={graphViewportRef}
+          style={{ height: graphViewportHeight }}
           onWheel={handleGraphWheel}
           onPointerDownCapture={handleGraphPointerDownCapture}
           onPointerMoveCapture={handleGraphPointerMoveCapture}
@@ -544,6 +550,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
         <div
           className="graph-coordinate-viewport"
           ref={graphViewportRef}
+          style={{ height: graphViewportHeight }}
           onWheel={handleGraphWheel}
           onPointerDownCapture={handleGraphPointerDownCapture}
           onPointerMoveCapture={handleGraphPointerMoveCapture}
