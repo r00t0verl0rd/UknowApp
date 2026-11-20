@@ -55,8 +55,8 @@ export default function App() {
   } = usePushNotificationsState({ auth, selectedChat, notify, setError });
   const { signIn, signOut } = useAuthController({
     authState, setError, setPage, setPushBusy, setPushState, setTeacherGraph,
-    setUsers, setOverview, setChats, setPersonalChats, setMessages,
-    setSelectedChat, setDraft, setAttachment, setIssuedCredential, notify,
+    setUsers: directory.setUsers, setOverview: directory.setOverview,
+    setChats, setPersonalChats, setMessages, setSelectedChat, setDraft, setAttachment, notify,
   });
 
   useEffect(() => {
