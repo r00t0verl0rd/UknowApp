@@ -1874,21 +1874,7 @@ border-color: transparent !important;}
   grid-template-columns: minmax(0, 1fr);
   gap: 17px;
 }
-.graph-panel.is-teacher-view .teacher-branch {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: start;
-  width: 100%;
-  padding: 13px;
-  border: 1px solid #e9e2f2;
-  border-radius: 17px;
-  background: #f7f4fa;
-  box-shadow: 0 5px 18px rgba(67,47,105,.045);
-}
-.graph-panel.is-teacher-view .teacher-branch:hover {
-  transform: none;
-}
-.graph-panel.is-teacher-view .teacher-branch > .teacher-card {
+.graph-panel.is-teacher-view .teacher-grid > .teacher-card {
   justify-self: center;
   width: min(100%, 420px);
   min-height: 76px;
@@ -1910,9 +1896,4 @@ border-color: transparent !important;}
 }
 .graph-panel.is-teacher-view .student-list > .empty-students {
   grid-column: 1 / -1;
-}
-:root[data-theme="dark-soft"] .graph-panel.is-teacher-view .teacher-branch {
-  background: #242c38 !important;
-  border-color: #374253 !important;
-  box-shadow: none !important;
 }
