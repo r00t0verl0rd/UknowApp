@@ -7,7 +7,6 @@ from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import Command, CommandStart
 from aiogram.types import CallbackQuery
 from aiogram.types import Message as TgMessage
-
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.database import SessionLocal

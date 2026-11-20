@@ -29,7 +29,11 @@ from app.modules.communication.accounts import (
     get_messenger_account,
     get_messenger_user,
 )
-from app.modules.communication.contracts import InboundMessage, MessengerError, MessengerPlatform
+from app.modules.communication.contracts import (
+    InboundMessage,
+    MessengerError,
+    MessengerPlatform,
+)
 from app.modules.notifications.service import schedule_push
 from app.rate_limit import SlidingWindowLimiter
 

@@ -6,10 +6,11 @@ import logging
 import mimetypes
 import re
 import uuid
-from typing import Annotated
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Annotated
 
+from aiogram.exceptions import TelegramAPIError
 from app.event_hub import (
     publish_chat_update,
     subscribe_chat_updates,
@@ -61,9 +62,8 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import FileResponse, StreamingResponse
-from aiogram.exceptions import TelegramAPIError
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func, select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, selectinload
 
 logger = logging.getLogger(__name__)

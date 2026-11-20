@@ -4,12 +4,11 @@ import asyncio
 import json
 import logging
 import threading
-
-from requests.exceptions import RequestException
 from collections.abc import Iterable
 from urllib.parse import parse_qs, urlsplit
 
 from pywebpush import WebPushException, webpush
+from requests.exceptions import RequestException
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 

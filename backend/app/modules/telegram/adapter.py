@@ -24,8 +24,8 @@ from app.modules.communication.contracts import (
     InboundPoll,
     MessageKind,
     MessengerCapabilities,
-    MessengerPlatform,
     MessengerError,
+    MessengerPlatform,
     OutboundMessage,
 )
 
