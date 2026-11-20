@@ -7,6 +7,7 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     ForeignKey,
+    Float,
     Index,
     Integer,
     String,
@@ -221,3 +222,12 @@ class MessengerAccount(Base):
     )
 
     user: Mapped[User] = relationship()
+
+
+class GraphCloudPosition(Base):
+    __tablename__ = "graph_cloud_positions"
+
+    teacher_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    x: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    y: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
