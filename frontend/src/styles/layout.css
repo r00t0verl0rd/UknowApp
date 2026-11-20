@@ -1866,3 +1866,81 @@ border-color: transparent !important;}
 .graph-panel .teacher-card:active, .graph-panel .student-card:active { cursor: grabbing; }
 .graph-panel .teacher-branch.is-dragging, .graph-panel .student-card.is-dragging { position: relative; z-index: 4; cursor: grabbing; }
 .graph-panel .teacher-branch.is-dragging, .graph-panel .student-card.is-dragging { box-shadow: none !important; }
+
+
+/* Teacher panel: one centered purple teacher card with assigned students beneath it. */
+.graph-panel.is-teacher-view .teacher-grid {
+  display: flex !important;
+  justify-content: center;
+  align-items: flex-start;
+}
+.graph-panel.is-teacher-view .teacher-branch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(100%, 900px);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.graph-panel.is-teacher-view .teacher-branch:hover {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+.graph-panel.is-teacher-view .teacher-branch > .teacher-card {
+  align-self: center;
+  width: fit-content;
+  min-width: min(100%, 290px);
+  max-width: 100%;
+  justify-content: center;
+  padding: 15px 22px !important;
+  border: 1px solid #62459b !important;
+  border-radius: 14px !important;
+  background: linear-gradient(115deg, #62459b, #795bb0) !important;
+  color: #fff !important;
+  box-shadow: 0 5px 16px rgba(87, 62, 153, .18) !important;
+}
+.graph-panel.is-teacher-view .teacher-card .avatar {
+  background: rgba(255,255,255,.16) !important;
+  color: #fff !important;
+}
+.graph-panel.is-teacher-view .teacher-card .person-info b,
+.graph-panel.is-teacher-view .teacher-card .person-info small {
+  color: #fff !important;
+}
+.graph-panel.is-teacher-view .teacher-card .person-info b {
+  font-size: 15px;
+}
+.graph-panel.is-teacher-view .student-list {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  align-items: start;
+  gap: 9px;
+  margin-top: 18px;
+}
+.graph-panel.is-teacher-view .student-list > .student-card {
+  min-width: 0;
+}
+.graph-panel.is-teacher-view .empty-students {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+:root[data-theme="dark-soft"] .graph-panel.is-teacher-view .teacher-branch {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .graph-panel.is-teacher-view .teacher-branch:hover {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark-soft"] .graph-panel.is-teacher-view .teacher-branch > .teacher-card {
+  background: linear-gradient(115deg, #51416f, #66518a) !important;
+  border-color: #806ba5 !important;
+}
