@@ -107,8 +107,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 to{transform:rotate(360deg)}
 }
 .unassigned{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
-.unassigned-title { margin: 0 0 12px; color: var(--ink);}
-.unassigned-title { font-size: 14px;}
+.unassigned-title { margin: 0 0 12px; color: var(--ink); font-size: 14px;}
 .unassigned-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:9px}
 .unassigned-grid .person-card{flex-wrap:wrap;}
 /* Readability and layout refinement */
@@ -425,8 +424,8 @@ img, video, audio { max-width: 100%;}
 :root[data-theme="dark-soft"] .graph-panel .root-node img { background: transparent !important; box-shadow: none !important; border-radius: 0 !important;}
 :root[data-theme="dark-soft"] .graph-panel .root-node b { color: #edf0f6 !important;}
 :root[data-theme="dark-soft"] .graph-panel .root-node small { color: #aab4c5 !important;}
-:root[data-theme="dark-soft"] .graph-panel .teacher-branch {  border: 1px solid #3f4d61 !important; transform: none !important;}
-:root[data-theme="dark-soft"] .graph-panel .teacher-branch:hover { transform: none !important;}
+:root[data-theme="dark-soft"] .graph-panel .teacher-branch { border: 1px solid #3f4d61 !important;}
+:root[data-theme="dark-soft"] .graph-panel .teacher-branch:hover { transform: inherit;}
 :root[data-theme="dark-soft"] .graph-panel .teacher-card {  border: 1px solid #4c4b69 !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .student-card {  border: 1px solid #4a5864 !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .graph-panel .empty-students { background: #252e3a !important; border: 1px dashed #566176 !important; color: #aab4c5 !important;}
@@ -1003,7 +1002,8 @@ button:disabled { opacity: .5 !important;}
 :root[data-theme="dark-soft"] button:not(.primary):not(.disconnect):not(.danger-icon), :root[data-theme="dark-soft"] .btn:not(.primary):not(.disconnect):not(.danger-icon), :root[data-theme="dark-soft"] .sidebar nav button, :root[data-theme="dark-soft"] .icon-btn:not(.danger-icon), :root[data-theme="dark-soft"] .add-student, :root[data-theme="dark-soft"] .chat-item, :root[data-theme="dark-soft"] .alert-row button, :root[data-theme="dark-soft"] .modal-head button { background: #2b3443 !important; border-color: #414c60 !important; color: #c6cddd !important; box-shadow: none !important;}
 :root[data-theme="dark-soft"] .sidebar nav button.active, :root[data-theme="dark-soft"] .btn.primary { background: #71679e !important; border-color: #8b80b8 !important; color: #fff !important;}
 :root[data-theme="dark-soft"] .chat-item.selected, :root[data-theme="dark-soft"] button.chat-item.selected { background: #343449 !important; border-color: #514b6d !important; color: #d1c9f4 !important;}
-:root[data-theme="dark-soft"] .user-row:hover, :root[data-theme="dark-soft"] .person-card:hover, :root[data-theme="dark-soft"] .teacher-branch:hover { background: #293343 !important; border-color: #59657b !important; box-shadow: none !important; transform: none !important;}
+:root[data-theme="dark-soft"] .user-row:hover, :root[data-theme="dark-soft"] .person-card:hover { background: #293343 !important; border-color: #59657b !important; box-shadow: none !important; transform: none !important;}
+:root[data-theme="dark-soft"] .teacher-branch:hover { background: #293343 !important; border-color: #59657b !important; box-shadow: none !important;}
 }
 /* --------------------------------------------------------------------------
    UknowApp unified visual system
@@ -1900,3 +1900,9 @@ border-color: transparent !important;}
   .graph-panel > .unassigned { padding: 18px 10px 12px; margin-bottom: 20px; }
   .graph-panel > .unassigned .unassigned-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Browser-native graph movement: only the teacher header and student cards are drag handles. */
+.graph-panel .teacher-card, .graph-panel .student-card { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.graph-panel .teacher-card:active, .graph-panel .student-card:active { cursor: grabbing; }
+.graph-panel .teacher-branch.is-dragging, .graph-panel .student-card.is-dragging { position: relative; z-index: 4; cursor: grabbing; }
+.graph-panel .teacher-branch.is-dragging { box-shadow: 0 12px 28px rgba(67, 47, 105, .16); }
