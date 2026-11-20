@@ -72,7 +72,7 @@ export default function App() {
     setMessages, modal, setModal, directory,
   });
   const {
-    visibleChats, visibleMessages, openChat, createPersonalChat,
+    visibleChats, visibleMessages, openChat, openCreatePersonalChat, createPersonalChat,
     confirmDeleteMessage, sendChatMessage,
   } = useChatsController({
     request, profile, chatState, personalState, setPage, setError, setModal,
