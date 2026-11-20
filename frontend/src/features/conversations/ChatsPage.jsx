@@ -144,7 +144,7 @@ export default function ChatsPage({
       <section className="teacher-branch chat-detail">
         {selectedChat ? (
           <>
-            <header className="teacher-card chat-head">
+            <header className="chat-head">
               <button type="button" className="btn small mobile-chat-back"
                 onClick={() => {
                   setSelectedChat(null);
@@ -190,7 +190,7 @@ export default function ChatsPage({
             </div>
 
             {(selectedChat.type === "personal" || selectedChat.status === "active") && (
-              <form className="teacher-card chat-composer" onSubmit={sendChatMessage}>
+              <form className="chat-composer" onSubmit={sendChatMessage}>
                 <textarea value={draft} onChange={event => setDraft(event.target.value)}
                   onKeyDown={event => {
                     if (event.key === "Enter" && !event.shiftKey) {
@@ -209,8 +209,8 @@ export default function ChatsPage({
                 <div className="composer-footer">
                   <div className="composer-tools">
                     {selectedChat.type !== "personal" && (
-                      <label className="attach-control">
-                        <Paperclip size={16}/>Файл
+                      <label className="attach-control" aria-label="Прикрепить файл" title="Прикрепить файл">
+                        <Paperclip size={17}/>
                         <input type="file" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
                           onChange={event => setAttachment(event.target.files?.[0] || null)}/>
                       </label>
@@ -224,8 +224,9 @@ export default function ChatsPage({
                     )}
                   </div>
                   <button type="submit" className="btn primary composer-send"
+                    aria-label="Отправить сообщение" title="Отправить сообщение"
                     disabled={!draft.trim() && !attachment}>
-                    <Send size={15}/><span>Отправить</span>
+                    <Send size={16}/><span>Отправить</span>
                   </button>
                 </div>
               </form>
