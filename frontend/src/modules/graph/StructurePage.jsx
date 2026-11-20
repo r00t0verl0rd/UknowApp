@@ -289,9 +289,11 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
     if (pointers.size < 2) return;
     if (dragRef.current) {
-      dragRef.current.element.classList.remove("is-dragging");
-      dragRef.current.element.style.willChange = "";
-      dragRef.current.element.style.transition = "";
+      const activeDrag = dragRef.current;
+      activeDrag.element.style.transform = `translate3d(${activeDrag.x}px, ${activeDrag.y}px, 0)`;
+      activeDrag.element.classList.remove("is-dragging");
+      activeDrag.element.style.willChange = "";
+      activeDrag.element.style.transition = "";
       dragRef.current = null;
     }
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
