@@ -122,7 +122,7 @@ export function usePanelDataState({
       eventSource.close();
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [auth, page, selectedChat?.id, request]);
+  }, [auth, page, selectedChat?.id, selectedChat?.type, request]);
 
   return { request, refresh };
 }
