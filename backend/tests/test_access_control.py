@@ -2,7 +2,7 @@ from fastapi import status
 from starlette.requests import Request
 
 from app.core import security
-from app.models import Message
+from app.models import Assignment, Conversation, Message
 
 
 def login(client, username, password):
@@ -106,3 +106,44 @@ def test_health_checks_database_connection(api):
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["components"]["database"] == "ok"
     assert response.json()["status"] == "degraded"
+
+
+def test_admin_can_unassign_student_without_deleting_conversation_history(api):
+    make_client, users, sessions = api
+    admin = make_client()
+    login(admin, "test-admin", "a-long-test-password-123")
+    created = admin.post(
+        "/api/admin/assignments",
+        json={"teacher_id": users["teacher-one"], "student_id": users["student-one"]},
+    )
+    assert created.status_code == status.HTTP_201_CREATED
+    conversation_id = created.json()["id"]
+    with sessions() as db:
+        db.add(Message(
+            conversation_id=conversation_id,
+            sender_id=users["student-one"],
+            sender_role="student",
+            text="History must remain",
+        ))
+        db.commit()
+
+    response = admin.delete(f"/api/admin/assignments/{users['student-one']}")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {"ok": True, "student_id": users["student-one"]}
+
+    with sessions() as db:
+        assignment = db.query(Assignment).one()
+        conversation = db.get(Conversation, conversation_id)
+        assert assignment.active is False
+        assert assignment.closed_at is not None
+        assert conversation.status == "closed"
+        assert conversation.assignment_id is None
+        assert db.query(Message).filter(Message.conversation_id == conversation_id).one().text == "History must remain"
+
+    teacher = make_client()
+    login(teacher, "teacher-one", "teacher-password-1")
+    student = make_client()
+    login(student, "student-one", "student-password-1")
+    assert teacher.get("/api/panel/conversations").json() == []
+    assert student.get("/api/panel/conversations").json() == []
+    assert admin.delete(f"/api/admin/assignments/{users['student-one']}").status_code == status.HTTP_404_NOT_FOUND
