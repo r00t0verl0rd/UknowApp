@@ -335,6 +335,72 @@ border-color: transparent !important;}.person-actions button:not(.danger-icon):h
 @media (max-width: 900px) {.graph-object-viewport{ height: 72vh; min-height: 500px; }.graph-object-panel .graph-toolbar-actions{ flex-wrap: wrap; }
 }
 
+
+/* Mobile Safari: extend the workspace through the bottom safe area. */
+@media (max-width: 1024px) {
+  html {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  body {
+    position: relative;
+    width: 100%;
+    height: auto;
+    min-height: 100%;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  #root {
+    min-height: 100svh;
+    height: auto;
+    overflow: visible;
+  }
+  .chats-shell {
+    min-height: 100svh;
+    height: auto;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    overflow: visible;
+  }
+  .chats-main {
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+  }
+  .chats-main > .content:not(.chats-content) {
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
+  .chats-main > .content.chats-content {
+    height: auto;
+    min-height: calc(100svh - 112px);
+    overflow: visible;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
+  .chats-content > .chat-layout {
+    min-height: calc(100svh - 112px);
+    height: auto;
+    overflow: visible;
+  }
+  .chats-content > .chat-layout > .chat-list,
+  .chats-content > .chat-layout > .chat-detail {
+    height: auto;
+    min-height: calc(100svh - 112px);
+    overflow: visible;
+  }
+  .chats-content > .chat-layout > .chat-detail {
+    min-height: 0;
+  }
+  .chat-detail > .messages {
+    min-height: 180px;
+  }
+  .chat-composer {
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* iOS home-screen app: cover the notch/status-bar safe area with an opaque surface. */
 @supports (-webkit-touch-callout: none) {
   @media (display-mode: standalone) and (max-width: 1024px) {
