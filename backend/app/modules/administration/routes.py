@@ -35,7 +35,7 @@ from app.modules.users.service import (
     user_dict,
     validate_panel_username,
 )
-from app.schemas import AssignmentCreate, UserCreate, UserUpdate
+from app.request_validation import assignment_payload, user_create_payload, user_update_payload
 from app.security import hash_web_password
 from app.modules.dependencies import Admin, Db
 
@@ -88,19 +88,20 @@ def list_users(_: Admin, db: Db):
 
 
 @router.post("/admin/users", status_code=201)
-def create_user(payload: UserCreate, _: Admin, db: Db):
-    full_name = payload.full_name.strip()
+def create_user(payload: dict, _: Admin, db: Db):
+    payload = user_create_payload(payload)
+    full_name = payload["full_name"].strip()
     if len(full_name) < 2:
         raise HTTPException(status_code=400, detail="Имя должно содержать минимум два символа")
-    has_web_panel = payload.role in {"teacher", "student"}
-    web_username = validate_panel_username(db, payload.web_username or full_name) if has_web_panel else None
+    has_web_panel = payload.get("role") in {"teacher", "student"}
+    web_username = validate_panel_username(db, payload.get("web_username") or full_name) if has_web_panel else None
     issued_access_code = generate_panel_access_code() if has_web_panel else None
     user = User(
         full_name=full_name,
-        additional_info=((payload.additional_info or "").strip() or None) if payload.role == "student" else None,
+        additional_info=((payload.get("additional_info") or "").strip() or None) if payload.get("role") == "student" else None,
         web_username=web_username,
-        role=payload.role,
-        telegram_id=payload.telegram_id,
+        role=payload.get("role"),
+        telegram_id=payload.get("telegram_id"),
         web_password_hash=hash_web_password(issued_access_code) if issued_access_code else None,
     )
     db.add(user)
@@ -131,11 +132,12 @@ def create_user(payload: UserCreate, _: Admin, db: Db):
 
 
 @router.patch("/admin/users/{user_id}")
-def update_user(user_id: int, payload: UserUpdate, _: Admin, db: Db):
+def update_user(user_id: int, payload: dict, _: Admin, db: Db):
+    payload = user_update_payload(payload)
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
-    changes = payload.model_dump(exclude_unset=True)
+    changes = payload
     requested_web_username = changes.pop("web_username", None)
     # Panel access codes are generated server-side and only their hashes are stored.
     target_role = changes.get("role", user.role)
@@ -385,8 +387,8 @@ def generate_connection_code(user_id: int, _: Admin, db: Db):
     }
 
 @router.post("/admin/assignments", status_code=201)
-def assign_student_route(payload: AssignmentCreate, _: Admin, db: Db):
-    return assign_student(payload, db)
+def assign_student_route(payload: dict, _: Admin, db: Db):
+    return assign_student(assignment_payload(payload), db)
 
 
 
