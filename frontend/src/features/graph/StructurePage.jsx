@@ -12,7 +12,7 @@ export default function StructurePage({
 }) {
   const [collapsedTeacherIds, setCollapsedTeacherIds] = useState(() => new Set());
 
-  return <section className="graph-panel">
+  return <>
     <div className="graph-legend-row">
       <div className="legend graph-legend">
         <div className="graph-legend-item"><span className="teacher-dot" />Учителя <b>{overview?.counts?.teachers || 0}</b></div>
@@ -68,5 +68,5 @@ export default function StructurePage({
         </div>
       </div>)}</div>
     </section>}
-  </section>;
+  </>;
 }
