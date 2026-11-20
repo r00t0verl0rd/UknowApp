@@ -43,16 +43,17 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     if (event.button !== 0 || event.target.closest("button, a, input, select, textarea")) return;
     event.preventDefault();
     event.stopPropagation();
-    const element = event.currentTarget;
+    const captureElement = event.currentTarget;
+    const element = type === "cloud" ? captureElement.closest(".teacher-branch") : captureElement;
     const layout = type === "cloud" ? cloudLayoutRef.current : studentLayoutRef.current;
     const position = layout[id] || { x: 0, y: 0 };
     dragRef.current = {
-      type, id, element, pointerId: event.pointerId,
+      type, id, element, captureElement, pointerId: event.pointerId,
       startX: event.clientX, startY: event.clientY,
       x: position.x, y: position.y,
       nextX: position.x, nextY: position.y,
     };
-    element.setPointerCapture(event.pointerId);
+    captureElement.setPointerCapture(event.pointerId);
     element.classList.add("is-dragging");
     element.style.willChange = "transform";
     element.style.transition = "none";
