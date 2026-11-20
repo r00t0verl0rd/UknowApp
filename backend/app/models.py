@@ -74,6 +74,22 @@ class Assignment(Base):
     conversation: Mapped["Conversation"] = relationship(back_populates="assignment", uselist=False)
 
 
+class GraphPosition(Base):
+    """Persisted ordering of participants inside their own graph cloud."""
+
+    __tablename__ = "graph_positions"
+    __table_args__ = (
+        UniqueConstraint("group_key", "user_id", name="uq_graph_positions_group_user"),
+        UniqueConstraint("group_key", "position", name="uq_graph_positions_group_position"),
+        Index("ix_graph_positions_group_position", "group_key", "position"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    group_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
 class Conversation(Base):
     __tablename__ = "conversations"
 
