@@ -262,10 +262,8 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
       startX: event.clientX, startY: event.clientY,
       x: position.x, y: position.y,
       nextX: position.x, nextY: position.y,
-      ...(bounded ? {
-        boundaryRect: element.parentElement.getBoundingClientRect(),
-        elementRect: element.getBoundingClientRect(),
-      } : {}),
+      elementRect: element.getBoundingClientRect(),
+      ...(bounded ? { boundaryRect: element.parentElement.getBoundingClientRect() } : {}),
     };
     captureElement.setPointerCapture(event.pointerId);
     element.classList.add("is-dragging");
@@ -303,14 +301,41 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     let { x, y } = drag.type === "student"
       ? dragPosition(drag, event.clientX, event.clientY)
       : { x: snapToGrid(drag.x + event.clientX - drag.startX), y: snapToGrid(drag.y + event.clientY - drag.startY) };
-    const hit = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-drag-type]");
-    const target = drag.type === "cloud" ? hit?.closest(".teacher-branch") : hit;
-    const targetId = hit?.dataset.dragId;
-    const targetType = hit?.dataset.dragType;
-    const sameGroup = target && target !== drag.element && target.parentElement === drag.element.parentElement;
-    const canSwap = sameGroup && targetType === drag.type && targetId;
-    const swapTarget = canSwap ? target : null;
+    drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    const currentRect = drag.element.getBoundingClientRect();
+    const siblings = drag.type === "cloud"
+      ? drag.element.parentElement.querySelectorAll(":scope > .teacher-branch")
+      : drag.element.parentElement.querySelectorAll(":scope > .student-card");
+    let swapTarget = null;
+    let targetRatio = 0;
+    for (const sibling of siblings) {
+      if (sibling === drag.element) continue;
+      const rect = sibling.getBoundingClientRect();
+      const overlapWidth = Math.max(0, Math.min(currentRect.right, rect.right) - Math.max(currentRect.left, rect.left));
+      const overlapHeight = Math.max(0, Math.min(currentRect.bottom, rect.bottom) - Math.max(currentRect.top, rect.top));
+      const overlapArea = overlapWidth * overlapHeight;
+      const smallerArea = Math.min(currentRect.width * currentRect.height, rect.width * rect.height);
+      const ratio = smallerArea ? overlapArea / smallerArea : 0;
+      if (ratio > 0.5 && ratio > targetRatio) {
+        swapTarget = sibling;
+        targetRatio = ratio;
+      }
+    }
+    const targetHandle = swapTarget && (drag.type === "cloud" ? swapTarget.querySelector('[data-drag-type="cloud"]') : swapTarget);
+    const targetId = targetHandle?.dataset.dragId;
     let targetPosition = null;
+    if (swapTarget && targetId) {
+      const targetRect = swapTarget.getBoundingClientRect();
+      const layout = drag.type === "cloud" ? cloudLayoutRef.current : drag.teacherView ? teacherStudentLayoutRef.current : studentLayoutRef.current;
+      const previousTarget = layout[targetId] || { x: 0, y: 0 };
+      targetPosition = {
+        id: targetId,
+        x: previousTarget.x + drag.elementRect.left - targetRect.left,
+        y: previousTarget.y + drag.elementRect.top - targetRect.top,
+      };
+      x += targetRect.left - currentRect.left;
+      y += targetRect.top - currentRect.top;
+    }
     drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     if (swapTarget) {
       const currentRect = drag.element.getBoundingClientRect();
