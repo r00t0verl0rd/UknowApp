@@ -70,87 +70,6 @@ function findFreeGridPosition(element, siblings, currentPosition) {
 }
 
 
-function packGridGroup(elements, layout, draggedId, draggedPosition) {
-  const items = [...elements].map(element => {
-    const id = element.dataset.dragId;
-    const position = layout[id] || { x: 0, y: 0 };
-    const rect = element.getBoundingClientRect();
-    return {
-      element, id, width: rect.width, height: rect.height,
-      baseLeft: rect.left - position.x,
-      baseTop: rect.top - position.y,
-      preferredLeft: rect.left,
-      preferredTop: rect.top,
-      position,
-    };
-  }).filter(item => item.id);
-
-  const parent = elements[0]?.parentElement;
-  if (!parent || !items.length) return {};
-  const bounds = parent.getBoundingClientRect();
-  const gap = 8;
-  const placed = [];
-  const result = {};
-  items.sort((a, b) => (a.id === draggedId ? -1 : b.id === draggedId ? 1 : a.preferredTop - b.preferredTop || a.preferredLeft - b.preferredLeft));
-
-  for (const item of items) {
-    const preferred = item.id === draggedId && draggedPosition
-      ? { x: item.baseLeft + draggedPosition.x, y: item.baseTop + draggedPosition.y }
-      : { x: item.preferredLeft, y: item.preferredTop };
-    const maxColumn = Math.max(0, Math.floor((bounds.right - bounds.left - item.width) / GRAPH_GRID_SIZE));
-    const startColumn = Math.max(0, Math.min(maxColumn, Math.round((preferred.x - bounds.left) / GRAPH_GRID_SIZE)));
-    const startRow = Math.max(0, Math.round((preferred.y - bounds.top) / GRAPH_GRID_SIZE));
-    const maxRow = Math.max(
-      Math.ceil((Math.max(parent.scrollHeight, bounds.height) + 2400) / GRAPH_GRID_SIZE),
-      startRow + items.length * 100,
-    );
-    let chosen = null;
-
-    const fits = (left, top) => {
-      if (left < bounds.left - 1 || left + item.width > bounds.right + 1 || top < bounds.top - 1) return false;
-      return !placed.some(other =>
-        left < other.right + gap && left + item.width > other.left - gap &&
-        top < other.bottom + gap && top + item.height > other.top - gap
-      );
-    };
-
-    for (let radius = 0; radius <= maxRow && !chosen; radius += 1) {
-      for (let dx = -radius; dx <= radius && !chosen; dx += 1) {
-        const candidates = radius === 0 ? [[startColumn, startRow]] : [
-          [startColumn + dx, startRow - radius],
-          [startColumn + dx, startRow + radius],
-          [startColumn - radius, startRow + dx],
-          [startColumn + radius, startRow + dx],
-        ];
-        for (const [column, row] of candidates) {
-          if (column < 0 || column > maxColumn || row < 0 || row > maxRow) continue;
-          const left = bounds.left + column * GRAPH_GRID_SIZE;
-          const top = bounds.top + row * GRAPH_GRID_SIZE;
-          if (fits(left, top)) {
-            chosen = { left, top };
-            break;
-          }
-        }
-      }
-    }
-
-    if (!chosen) {
-      const row = Math.ceil((Math.max(0, ...placed.map(item => item.bottom)) - bounds.top + gap) / GRAPH_GRID_SIZE);
-      chosen = { left: bounds.left, top: bounds.top + row * GRAPH_GRID_SIZE };
-    }
-    const position = {
-      x: snapToGrid(chosen.left - item.baseLeft),
-      y: snapToGrid(chosen.top - item.baseTop),
-    };
-    result[item.id] = position;
-    placed.push({ left: chosen.left, top: chosen.top, right: chosen.left + item.width, bottom: chosen.top + item.height });
-  }
-
-  const requiredHeight = Math.max(0, ...placed.map(item => item.bottom - bounds.top)) + 12;
-  parent.style.minHeight = `${Math.max(parent.scrollHeight, requiredHeight)}px`;
-  return result;
-}
-
 function dragPosition(drag, clientX, clientY) {
   const bounds = drag.boundaryRect;
   const element = drag.elementRect;
@@ -258,33 +177,14 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
       });
     };
 
-    const packGroups = (selector, layout) => {
-      const groups = new Map();
-      document.querySelectorAll(selector).forEach(element => {
-        const parent = element.parentElement;
-        if (!groups.has(parent)) groups.set(parent, []);
-        groups.get(parent).push(element);
-      });
-      for (const elements of groups.values()) {
-        const packed = packGridGroup(elements, layout, null, null);
-        Object.assign(layout, packed);
-        elements.forEach(element => {
-          const position = packed[element.dataset.dragId];
-          if (position) element.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
-        });
-      }
-    };
+
 
     if (isAdmin) {
       allocateGroup(".graph-panel:not(.is-teacher-view) > .teacher-grid > .teacher-branch", nextClouds);
       allocateGroup(".graph-panel:not(.is-teacher-view) .student-list > .student-card", nextStudents);
       allocateGroup(".graph-panel:not(.is-teacher-view) .unassigned-grid > .student-card", nextStudents);
-      packGroups(".graph-panel:not(.is-teacher-view) > .teacher-grid > .teacher-branch", nextClouds);
-      packGroups(".graph-panel:not(.is-teacher-view) .student-list > .student-card", nextStudents);
-      packGroups(".graph-panel:not(.is-teacher-view) .unassigned-grid > .student-card", nextStudents);
     } else {
       allocateGroup(".graph-panel.is-teacher-view .student-list > .student-card", nextTeacherStudents);
-      packGroups(".graph-panel.is-teacher-view .student-list > .student-card", nextTeacherStudents);
     }
 
     const cloudsChanged = Object.keys(nextClouds).some(id => previousClouds[id]?.x !== nextClouds[id]?.x || previousClouds[id]?.y !== nextClouds[id]?.y);
@@ -404,45 +304,83 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     if (!drag || drag.pointerId !== event.pointerId) return;
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
     frameRef.current = 0;
-    const position = drag.type === "student"
+    let { x, y } = drag.type === "student"
       ? dragPosition(drag, event.clientX, event.clientY)
       : { x: snapToGrid(drag.x + event.clientX - drag.startX), y: snapToGrid(drag.y + event.clientY - drag.startY) };
-    drag.element.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
+    const hasMoved = Math.abs(x - drag.x) >= 1 || Math.abs(y - drag.y) >= 1;
+    drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    const currentRect = drag.element.getBoundingClientRect();
+    const siblings = hasMoved ? (drag.type === "cloud"
+      ? drag.element.parentElement.querySelectorAll(":scope > .teacher-branch")
+      : drag.element.parentElement.querySelectorAll(":scope > .student-card")) : [];
+    let swapTarget = null;
+    let targetRatio = 0;
+    for (const sibling of siblings) {
+      if (sibling === drag.element) continue;
+      const rect = sibling.getBoundingClientRect();
+      const overlapWidth = Math.max(0, Math.min(currentRect.right, rect.right) - Math.max(currentRect.left, rect.left));
+      const overlapHeight = Math.max(0, Math.min(currentRect.bottom, rect.bottom) - Math.max(currentRect.top, rect.top));
+      const overlapArea = overlapWidth * overlapHeight;
+      const smallerArea = Math.min(currentRect.width * currentRect.height, rect.width * rect.height);
+      const ratio = smallerArea ? overlapArea / smallerArea : 0;
+      if (ratio > 0.5 && ratio > targetRatio) {
+        swapTarget = sibling;
+        targetRatio = ratio;
+      }
+    }
+    if (!swapTarget && hasMoved) {
+      const siblings = drag.type === "cloud"
+        ? drag.element.parentElement.querySelectorAll(":scope > .teacher-branch")
+        : drag.element.parentElement.querySelectorAll(":scope > .student-card");
+      const layout = drag.type === "cloud" ? cloudLayoutRef.current : drag.teacherView ? teacherStudentLayoutRef.current : studentLayoutRef.current;
+      const safePosition = findFreeGridPosition(drag.element, siblings, { x, y });
+      x = safePosition.x;
+      y = safePosition.y;
+    }
+    const targetHandle = swapTarget && (drag.type === "cloud" ? swapTarget.querySelector('[data-drag-type="cloud"]') : swapTarget);
+    const targetId = targetHandle?.dataset.dragId;
+    let targetPosition = null;
+    if (swapTarget && targetId) {
+      const targetRect = swapTarget.getBoundingClientRect();
+      const layout = drag.type === "cloud" ? cloudLayoutRef.current : drag.teacherView ? teacherStudentLayoutRef.current : studentLayoutRef.current;
+      const previousTarget = layout[targetId] || { x: 0, y: 0 };
+      targetPosition = {
+        id: targetId,
+        x: previousTarget.x + drag.elementRect.left - targetRect.left,
+        y: previousTarget.y + drag.elementRect.top - targetRect.top,
+      };
+      x += targetRect.left - currentRect.left;
+      y += targetRect.top - currentRect.top;
+    }
+    drag.element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     drag.element.classList.remove("is-dragging");
     drag.element.style.willChange = "";
     drag.element.style.transition = "";
     dragRef.current = null;
-
-    const elements = drag.type === "cloud"
-      ? drag.element.parentElement.querySelectorAll(":scope > .teacher-branch")
-      : drag.element.parentElement.querySelectorAll(":scope > .student-card");
-    const layoutRef = drag.type === "cloud" ? cloudLayoutRef : drag.teacherView ? teacherStudentLayoutRef : studentLayoutRef;
-    const previousLayout = layoutRef.current;
-    const next = {
-      ...previousLayout,
-      ...packGridGroup(elements, previousLayout, drag.id, position),
-    };
-    layoutRef.current = next;
+    if (!targetPosition && Math.abs(x - drag.x) < 1 && Math.abs(y - drag.y) < 1) return;
 
     if (drag.type === "cloud") {
+      const next = { ...cloudLayoutRef.current, [drag.id]: { x, y } };
+      if (targetPosition) next[targetPosition.id] = { x: targetPosition.x, y: targetPosition.y };
+      cloudLayoutRef.current = next;
       setCloudLayout(next);
       setCloudStack(current => ({ ...current, [drag.id]: cloudStackRef.current }));
-      Object.entries(next).forEach(([id, item]) => {
-        const previous = previousLayout[id];
-        if (id === drag.id || previous?.x !== item.x || previous?.y !== item.y) {
-          saveCloudPosition(id, item.x, item.y);
-        }
-      });
+      saveCloudPosition(drag.id, x, y);
+      if (targetPosition) saveCloudPosition(targetPosition.id, targetPosition.x, targetPosition.y);
       return;
     }
 
+    const layoutRef = drag.teacherView ? teacherStudentLayoutRef : studentLayoutRef;
     const setLayout = drag.teacherView ? setTeacherStudentLayout : setStudentLayout;
     const storageKey = drag.teacherView ? TEACHER_STUDENT_LAYOUT_KEY : STUDENT_LAYOUT_KEY;
+    const next = { ...layoutRef.current, [drag.id]: { x, y } };
+    if (targetPosition) next[targetPosition.id] = { x: targetPosition.x, y: targetPosition.y };
+    layoutRef.current = next;
     setLayout(next);
     try {
       localStorage.setItem(storageKey, JSON.stringify(next));
     } catch {
-      // Keep the packed layout active for this page session if storage is unavailable.
+      // Student arrangement remains active for this page session if storage is unavailable.
     }
   }
 
