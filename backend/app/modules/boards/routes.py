@@ -12,15 +12,15 @@ from app.modules.dependencies import Admin, Db
 router = APIRouter(prefix="/api")
 
 
-def _graph_object_dict(item: GraphObject) -> dict:
+def _board_object_dict(item: GraphObject) -> dict:
     return {
         "id": item.id, "key": item.object_key, "type": item.object_type,
         "title": item.title, "parent_id": item.parent_id, "x": item.x, "y": item.y,
     }
 
 
-@router.get("/admin/graph/objects")
-def graph_objects(_: Admin, db: Db):
+@router.get("/admin/boards/objects")
+def board_objects(_: Admin, db: Db):
     # Remove legacy school-structure nodes; boards now contain only user-created objects.
     objects = db.scalars(select(GraphObject).order_by(GraphObject.id)).all()
     legacy_ids = {item.id for item in objects if not item.object_key.startswith("custom:")}
@@ -32,11 +32,11 @@ def graph_objects(_: Admin, db: Db):
             if item.id in legacy_ids:
                 db.delete(item)
         db.commit()
-    return [_graph_object_dict(item) for item in db.scalars(select(GraphObject).order_by(GraphObject.id)).all()]
+    return [_board_object_dict(item) for item in db.scalars(select(GraphObject).order_by(GraphObject.id)).all()]
 
 
-@router.patch("/admin/graph/objects/{object_id}/position")
-def update_graph_object_position(object_id: int, payload: dict, _: Admin, db: Db):
+@router.patch("/admin/boards/objects/{object_id}/position")
+def update_board_object_position(object_id: int, payload: dict, _: Admin, db: Db):
     x, y = payload.get("x"), payload.get("y")
     if any(isinstance(value, bool) or not isinstance(value, (int, float)) or abs(value) > 100000 or not math.isfinite(value) for value in (x, y)):
         raise HTTPException(status_code=422, detail="Некорректные координаты объекта")
@@ -45,11 +45,11 @@ def update_graph_object_position(object_id: int, payload: dict, _: Admin, db: Db
         raise HTTPException(status_code=404, detail="Объект графа не найден")
     item.x, item.y = x, y
     db.commit()
-    return _graph_object_dict(item)
+    return _board_object_dict(item)
 
 
-@router.post("/admin/graph/objects", status_code=201)
-def create_graph_object(payload: dict, _: Admin, db: Db):
+@router.post("/admin/boards/objects", status_code=201)
+def create_board_object(payload: dict, _: Admin, db: Db):
     title = str(payload.get("title") or "").strip()
     parent_id = payload.get("parent_id")
     object_type = str(payload.get("type") or "object").strip()
@@ -66,11 +66,11 @@ def create_graph_object(payload: dict, _: Admin, db: Db):
     db.add(item)
     db.commit()
     db.refresh(item)
-    return _graph_object_dict(item)
+    return _board_object_dict(item)
 
 
-@router.delete("/admin/graph/objects/{object_id}")
-def delete_graph_object(object_id: int, _: Admin, db: Db):
+@router.delete("/admin/boards/objects/{object_id}")
+def delete_board_object(object_id: int, _: Admin, db: Db):
     item = db.get(GraphObject, object_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Объект графа не найден")
