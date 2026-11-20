@@ -679,7 +679,7 @@ async def send_panel_message(
                 delivery_errors.append({
                     "name": recipient.full_name,
                     "role": recipient_role,
-                    "reason": "ошибка Telegram (" + type(exc).__name__ + ")",
+                    "reason": "ошибка Telegram (" + getattr(exc, "provider_error_type", type(exc).__name__) + ")",
                 })
     else:
         delivery_errors.extend(
@@ -812,7 +812,7 @@ async def send_panel_attachment(
                 logger.warning(
                     "Telegram delivery failed for conversation_id=%s: %s",
                     conversation.id,
-                    type(exc).__name__,
+                    getattr(exc, "provider_error_type", type(exc).__name__),
                 )
                 delivery_errors.append({
                     "name": recipient.full_name,
