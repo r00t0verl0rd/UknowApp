@@ -3,6 +3,7 @@
 import hashlib
 import logging
 import math
+import uuid
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, HTTPException
@@ -133,6 +134,7 @@ def graph_objects(_: Admin, db: Db):
     valid_keys = {"fon", "administrator", "assigned_students", "teachers"}
     valid_keys.update(f"teacher:{user_id}" for user_id in teachers)
     valid_keys.update(f"student:{user_id}" for user_id in students)
+    valid_keys.update(key for key in objects if key.startswith("custom:"))
     for key, item in tuple(objects.items()):
         if key not in valid_keys:
             db.delete(item)
@@ -164,7 +166,7 @@ def create_graph_object(payload: dict, _: Admin, db: Db):
     if parent_id is not None and db.get(GraphObject, parent_id) is None:
         raise HTTPException(status_code=404, detail="Родительский объект не найден")
     item = GraphObject(
-        object_key=f"custom:{__import__('uuid').uuid4().hex}",
+        object_key=f"custom:{uuid.uuid4().hex}",
         object_type=object_type, title=title, parent_id=parent_id,
     )
     db.add(item)
