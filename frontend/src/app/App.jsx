@@ -12,20 +12,14 @@ import Sun from "lucide-react/dist/esm/icons/sun.js";
 import Info from "lucide-react/dist/esm/icons/info.js";
 import Bell from "lucide-react/dist/esm/icons/bell.js";
 import BellOff from "lucide-react/dist/esm/icons/bell-off.js";
-import AdditionalPage from "../modules/administration/AdditionalPage.jsx";
-import ChatsPage from "../modules/conversations/ChatsPage.jsx";
-import ChatDialogs from "../modules/conversations/components/ChatDialogs.jsx";
-import StructurePage from "../modules/graph/StructurePage.jsx";
 import BoardsPage from "../modules/boards/BoardsPage.jsx";
-import UsersPage from "../modules/users/UsersPage.jsx";
-import UserDialogs from "../modules/users/components/UserDialogs.jsx";
+import UsersModule from "../modules/users/UsersModule.jsx";
+import ChatsModule from "../modules/conversations/ChatsModule.jsx";
+import AdministrationModule from "../modules/administration/AdministrationModule.jsx";
 import LoginPage from "../modules/authentication/LoginPage.jsx";
 import { usePushNotificationsState } from "../hooks/notifications/usePushNotificationsState.js";
 import { useAuthController } from "../hooks/authentication/useAuthController.js";
 import { usePanelDataState } from "../hooks/app/usePanelDataState.js";
-import { useUsersController } from "../hooks/users/useUsersController.js";
-import { useChatsController } from "../hooks/conversations/useChatsController.js";
-import { useAdminDataController } from "../hooks/administration/useAdminDataController.js";
 
 // Composition root: соединяет общие контроллеры, навигацию и страницы модулей.
 export default function App() {
@@ -56,29 +50,6 @@ export default function App() {
     window.setTimeout(() => setToast(""), 2600);
   }, [setToast]);
   const {
-    users, setUsers, overview, setOverview, search, setSearch, userSort, setUserSort,
-    userInfo, setUserInfo, issuedCredential, setIssuedCredential, savingUser,
-    name, setName, panelLogin, setPanelLogin, role, setRole, additionalInfo,
-    setAdditionalInfo, telegramId, setTelegramId, teacherId, setTeacherId,
-    studentId, setStudentId, code, setCode, deleteCandidate, setDeleteCandidate,
-    deletingUser, disconnectCandidate, setDisconnectCandidate,
-    disconnectingTelegram, allTeachers, allStudents,
-    studentsByTeacherId, visibleUsers, unassignedStudents, openCreate, openEdit,
-    saveUser, regeneratePanelAccessCode, removeUser, confirmRemoveUser, assign,
-    disconnectTelegram, confirmDisconnectTelegram, makeCode,
-  } = useUsersController({
-    request, refresh, notify, setError, selectedChat, setSelectedChat,
-    setMessages, modal, setModal, directory,
-  });
-  const {
-    visibleChats, visibleMessages, openChat, openCreatePersonalChat, createPersonalChat,
-    confirmDeleteMessage, sendChatMessage, deleteMessageCandidate, deletingMessage,
-    setDeleteMessageCandidate,
-  } = useChatsController({
-    auth, request, profile, chatState, personalState, setPage, setError, setModal,
-    notify,
-  });
-  const {
     pushState, pushBusy, setPushState, setPushBusy,
     togglePushNotifications, pushButtonTitle,
   } = usePushNotificationsState({ auth, selectedChat, notify, setError });
@@ -86,12 +57,6 @@ export default function App() {
     authState, setError, setPage, setPushBusy, setPushState, setTeacherGraph,
     setUsers, setOverview, setChats, setPersonalChats, setMessages,
     setSelectedChat, setDraft, setAttachment, setIssuedCredential, notify,
-  });
-  const {
-    dataStats, dataBusy, retentionDays, setRetentionDays, loadDataStats,
-    downloadAdminFile, uploadAdminFile, cleanupOldDialogues,
-  } = useAdminDataController({
-    auth, profile, page, request, refresh, notify, setError, setSelectedChat, setMessages,
   });
 
   useEffect(() => {
@@ -151,39 +116,29 @@ export default function App() {
       </header>
       <div className={"content" + (page === "chats" ? " chats-content" : "")}>
         {error && <div className="alert alert-row">{error}<button onClick={() => setError("")}><X/></button></div>}
-        {page === "graph" && <StructurePage profile={profile} teacherGraph={teacherGraph} overview={overview} openCreate={openCreate} allTeachers={allTeachers} studentsByTeacherId={studentsByTeacherId} openEdit={openEdit} setTeacherId={setTeacherId} setStudentId={setStudentId} allStudents={allStudents} setModal={setModal} unassignedStudents={unassignedStudents} />}
         {page === "boards" && profile?.role === "admin" && <BoardsPage />}
-        {page === "users" && <UsersPage visibleUsers={visibleUsers} search={search} setSearch={setSearch} userSort={userSort} setUserSort={setUserSort} openCreate={openCreate} disconnectTelegram={disconnectTelegram} makeCode={makeCode} userInfo={userInfo} setUserInfo={setUserInfo} openEdit={openEdit} removeUser={removeUser} />}
-        {page === "chats" && <ChatsPage profile={profile} chatSection={chatSection} setChatSection={setChatSection} personalChats={personalChats} setSelectedChat={setSelectedChat} setMessages={setMessages} chatFilter={chatFilter} setChatFilter={setChatFilter} openCreatePersonalChat={openCreatePersonalChat} chatSearch={chatSearch} setChatSearch={setChatSearch} visibleChats={visibleChats} openChat={openChat} selectedChat={selectedChat} setPage={setPage} draft={draft} setDraft={setDraft} messageFilter={messageFilter} setMessageFilter={setMessageFilter} messagesViewportRef={messagesViewportRef} visibleMessages={visibleMessages} messages={messages} setDeleteMessageCandidate={setDeleteMessageCandidate} attachment={attachment} setAttachment={setAttachment} sendChatMessage={sendChatMessage} />}
+        <UsersModule
+          page={page} profile={profile} directory={directory} request={request}
+          refresh={refresh} notify={notify} setError={setError}
+          selectedChat={selectedChat} setSelectedChat={setSelectedChat}
+          setMessages={setMessages} modal={modal} setModal={setModal}
+          teacherGraph={teacherGraph}
+        />
+        <ChatsModule
+          page={page} auth={auth} profile={profile} request={request}
+          chatState={chatState} personalState={personalState}
+          users={directory.users} error={error} modal={modal}
+          setPage={setPage} setError={setError} setModal={setModal} notify={notify}
+        />
+        <AdministrationModule
+          page={page} auth={auth} profile={profile} request={request}
+          refresh={refresh} notify={notify} setError={setError}
+          setSelectedChat={setSelectedChat} setMessages={setMessages}
+        />
 
-        {page === "additional" && profile?.role === "admin" && <AdditionalPage dataStats={dataStats} dataBusy={dataBusy} loadDataStats={loadDataStats} downloadAdminFile={downloadAdminFile} uploadAdminFile={uploadAdminFile} retentionDays={retentionDays} setRetentionDays={setRetentionDays} cleanupOldDialogues={cleanupOldDialogues} />}
       </div>
     </main>
 
-    <UserDialogs
-      modal={modal} setModal={setModal} assign={assign}
-      teacherId={teacherId} setTeacherId={setTeacherId}
-      allTeachers={allTeachers} studentId={studentId} setStudentId={setStudentId}
-      allStudents={allStudents} saveUser={saveUser} name={name} setName={setName}
-      panelLogin={panelLogin} setPanelLogin={setPanelLogin} role={role} setRole={setRole}
-      additionalInfo={additionalInfo} setAdditionalInfo={setAdditionalInfo}
-      telegramId={telegramId} setTelegramId={setTelegramId} users={users}
-      savingUser={savingUser} regeneratePanelAccessCode={regeneratePanelAccessCode}
-      removeUser={removeUser} deleteCandidate={deleteCandidate}
-      setDeleteCandidate={setDeleteCandidate} deletingUser={deletingUser}
-      confirmRemoveUser={confirmRemoveUser} disconnectCandidate={disconnectCandidate}
-      setDisconnectCandidate={setDisconnectCandidate} disconnectingTelegram={disconnectingTelegram}
-      confirmDisconnectTelegram={confirmDisconnectTelegram}
-      issuedCredential={issuedCredential} setIssuedCredential={setIssuedCredential}
-      notify={notify} code={code} setCode={setCode}
-    />
-    <ChatDialogs
-      modal={modal} setModal={setModal} users={users}
-      createPersonalChat={createPersonalChat} error={error} setError={setError}
-      deleteMessageCandidate={deleteMessageCandidate} selectedChat={selectedChat}
-      deletingMessage={deletingMessage} setDeleteMessageCandidate={setDeleteMessageCandidate}
-      confirmDeleteMessage={confirmDeleteMessage}
-    />
     {toast && <div className="toast"><Check/>{toast}</div>}
   </div>;
 }
