@@ -5,6 +5,7 @@ import Link2Off from "lucide-react/dist/esm/icons/link-2-off.js";
 import Pencil from "lucide-react/dist/esm/icons/pencil.js";
 import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Smile from "lucide-react/dist/esm/icons/smile.js";
+import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
 
 function objectPosition(item) {
   return { transform: `translate3d(${item?.x || 0}px, ${item?.y || 0}px, 0)` };
@@ -47,7 +48,7 @@ function TeacherObject({ teacher, students, openEdit, unassignStudent, canUnassi
 export default function StructurePage({
   profile, teacherGraph, graphObjects = [], allTeachers = [], studentsByTeacherId,
   unassignedStudents = [], openEdit, unassignStudent, openCreate, createGraphObject,
-  saveGraphObjectPosition,
+  saveGraphObjectPosition, deleteGraphObject,
 }) {
   const viewportRef = useRef(null);
   const worldRef = useRef(null);
@@ -141,6 +142,12 @@ export default function StructurePage({
     if (title?.trim()) createGraphObject({ title: title.trim(), parent_id: parentId });
   }
 
+  function removeObject(item) {
+    if (window.confirm(`Удалить объект «${item.title}» и все вложенные в него пользовательские объекты?`)) {
+      deleteGraphObject(item.id);
+    }
+  }
+
   useLayoutEffect(() => () => {
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
   }, []);
@@ -200,7 +207,7 @@ export default function StructurePage({
                 </div>
               </section>
             </div>
-            {customObjects.filter(item => item.parent_id === admin.id).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}>{item.title}</div>)}
+            {customObjects.filter(item => item.parent_id === admin.id).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}><span>{item.title}</span><button type="button" className="graph-object-delete" title={`Удалить объект «${item.title}»`} aria-label={`Удалить объект «${item.title}»`} onClick={() => removeObject(item)}><Trash2 /></button></div>)}
           </section>}
           {customObjects.filter(item => item.parent_id === fon.id).map(item => <div key={item.id} className="graph-custom-object" data-object-id={item.id} style={objectPosition(item)}>{item.title}</div>)}
         </div>}
