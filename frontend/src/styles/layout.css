@@ -8,7 +8,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .login-logo{object-fit:contain;display:block;margin:0 auto 22px}
 .login-card h1{text-align:center;margin:7px 0}
 .login-card>.eyebrow{text-align:center}
-.sidebar{position:fixed;inset:0 auto 0 0;display:flex;flex-direction:column;z-index:2}
+.sidebar{position:relative;inset:auto;display:flex;flex-direction:column}
 .brand{display:flex;align-items:center;font-weight:800;}
 
 .school-label,.eyebrow{font-weight:800;color:#a49bb4}
@@ -109,7 +109,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .unassigned-grid .person-card{flex-wrap:wrap;}
 /* Readability and layout refinement */
 .sidebar { width: 280px; padding: 28px 20px;}
-.main { margin-left: 280px;}
+ .main { margin-left: 0;}
 .brand { gap: 13px; padding: 0 9px 38px; font-size: 27px;}
 .brand img { width: 60px; height: 60px;}
 .sidebar nav button, .logout { font-size: 15px; padding: 14px;}
@@ -152,12 +152,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .brand { color: var(--purple);}
 .brand span span { color: var(--red);}
 .school-label, .eyebrow { color: #8977a8;}
-.sidebar { background: #fff; border-right: 1px solid var(--line); box-shadow: 8px 0 28px rgba(47,31,84,.035);}
-.sidebar nav button { color: #706982; transition: background .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease;}
+ .sidebar { background: var(--surface); border-right: 1px solid var(--line); box-shadow: none;}
+ .sidebar nav button { color: #706982; transition: background-color .18s ease, color .18s ease;}
 .sidebar nav button:hover { background: #f6f1fc; color: var(--purple);}
-.sidebar nav button.active { color: #fff; background: linear-gradient(105deg, #573e99, #7856bd); box-shadow: 0 5px 18px rgba(87,62,153,.24), 0 0 16px rgba(194,153,255,.20);}
+ .sidebar nav button.active { color: #fff; background: linear-gradient(105deg, #573e99, #7856bd); box-shadow: none;}
 .sidebar nav button.active i { color: #fff; background: rgba(255,255,255,.18);}
-.topbar { background: rgba(255,255,255,.94); border-bottom-color: var(--line); box-shadow: 0 4px 18px rgba(47,31,84,.025);}
+ .topbar { background: var(--surface); border-bottom-color: var(--line); box-shadow: none;}
 .topbar > div { color: #9a91aa;}
 .topbar b, .content { color: var(--ink);}
 .btn { background: #fff; color: var(--ink); border: 1px solid #e5deef; border-radius: 11px; transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease;}
@@ -718,8 +718,8 @@ html, body { overflow-x: clip;}
 .chats-content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding-bottom: 24px;}
 .chats-content > .chat-layout { flex: 1 1 auto; height: auto; min-height: 0;}
 /* Desktop spacing grows gently with the available viewport. */
-.sidebar { width: clamp(250px, 18vw, 280px);}
-.main { margin-left: clamp(250px, 18vw, 280px);}
+ .sidebar { width: auto;}
+ .main { margin-left: 0;}
 .content { padding-inline: clamp(30px, 2.5vw, 42px);}
 }
 @media (max-width: 1024px) {
@@ -1498,7 +1498,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 /* Shared full-viewport workspace for Structure, Users and Conversations.
    Keep useful inner cards (people, metrics, controls), flatten only redundant
    page-level frames and let the active page own the available main area. */
-.chats-shell { width: 100%; max-width: 100%; min-width: 0; min-height: 100dvh; height: 100dvh; overflow: hidden;}
+ .chats-shell { width: 100%; max-width: 100%; min-width: 0; min-height: 100dvh; height: 100dvh; overflow: hidden;}\n@media (min-width: 1025px) {\n  .chats-shell { display: grid; grid-template-columns: clamp(250px, 18vw, 280px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }\n  .chats-shell > .sidebar { position: relative; inset: auto; z-index: auto; width: auto; min-width: 0; box-shadow: none; }\n  .chats-shell > .main { min-width: 0; margin-left: 0; }\n}
 .chats-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100dvh; overflow: hidden;}
 .chats-main > .topbar { flex: 0 0 auto;}
 .chats-main > .content:not(.chats-content) { display: block; flex: 1 1 0; width: 100%; max-width: none; min-width: 0; min-height: 0; margin: 0; padding: clamp(16px, 2vw, 28px); box-sizing: border-box; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; scrollbar-gutter: stable;}
