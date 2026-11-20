@@ -224,9 +224,20 @@ class MessengerAccount(Base):
     user: Mapped[User] = relationship()
 
 
-class GraphCloudPosition(Base):
-    __tablename__ = "graph_cloud_positions"
+class GraphObject(Base):
+    __tablename__ = "graph_objects"
+    __table_args__ = (
+        UniqueConstraint("object_key", name="uq_graph_objects_key"),
+        Index("ix_graph_objects_parent_id", "parent_id"),
+    )
 
-    teacher_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    parent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("graph_objects.id", ondelete="CASCADE"), nullable=True, index=True,
+    )
+    object_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    object_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    title: Mapped[str] = mapped_column(String(160), nullable=False)
     x: Mapped[float] = mapped_column(Float, nullable=False, default=0)
     y: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
