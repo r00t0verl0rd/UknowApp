@@ -479,7 +479,7 @@ async def _deliver_student_message_to_teacher(
             logger.info(
                 "Messenger media copy with caption failed; retrying without caption "
                 "(conversation_id=%s error_type=%s)",
-                conversation.id, type(copy_error).__name__,
+                conversation.id, copy_error.provider_error_type,
             )
             notice_id = await gateway.send_text(
                 teacher_chat_id, "📎 Вложение от ученика: " + sender.full_name,
@@ -559,7 +559,7 @@ async def _deliver_teacher_reply(
         except MessengerError as exc:
             logger.info(
                 "Could not remove teacher's sent text from the messenger chat (error_type=%s)",
-                type(exc).__name__,
+                exc.provider_error_type,
             )
 
     for pending in unanswered_before_reply:
@@ -573,7 +573,7 @@ async def _deliver_teacher_reply(
             logger.info(
                 "Could not remove handled student message %s "
                 "(external_message_id=%s error_type=%s)",
-                pending.id, pending.destination_message_id, type(exc).__name__,
+                pending.id, pending.destination_message_id, exc.provider_error_type,
             )
     mark_messages_read_by_teacher(db, unanswered_before_reply)
 
@@ -655,7 +655,7 @@ async def process_inbound_message(
             except MessengerError as exc:
                 logger.debug(
                     "Could not remove teacher message sent without an active selection "
-                    "(error_type=%s)", type(exc).__name__,
+                    "(error_type=%s)", exc.provider_error_type,
                 )
             return InboundProcessResult(refresh_teacher_id=sender.id)
         recipient = conversation.assignment.student
