@@ -371,7 +371,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
       x: position.x, y: position.y,
       nextX: position.x, nextY: position.y,
       elementRect: element.getBoundingClientRect(),
-      boundaryRect: boundsElement.getBoundingClientRect(),
+      boundaryRect: type === "cloud" ? boundsElement : boundsElement.getBoundingClientRect(),
     };
     captureElement.setPointerCapture(event.pointerId);
     element.classList.add("is-dragging");
