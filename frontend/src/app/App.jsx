@@ -674,6 +674,29 @@ export default function App() {
     }
   }
 
+  async function deleteGraphObject(objectId) {
+    try {
+      await request(`/api/admin/graph/objects/${objectId}`, { method: "DELETE" });
+      setGraphObjects(current => {
+        const removed = new Set([objectId]);
+        let changed = true;
+        while (changed) {
+          changed = false;
+          for (const item of current) {
+            if (removed.has(item.parent_id) && !removed.has(item.id)) {
+              removed.add(item.id);
+              changed = true;
+            }
+          }
+        }
+        return current.filter(item => !removed.has(item.id));
+      });
+      notify("Объект удалён");
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
   async function unassignStudent(student) {
     if (!window.confirm(`Открепить ученика «${student.full_name}» от учителя? История переписки сохранится.`)) return;
     setError("");
@@ -830,7 +853,7 @@ export default function App() {
       </header>
       <div className={"content" + (page === "chats" ? " chats-content" : "")}>
         {error && <div className="alert alert-row">{error}<button onClick={() => setError("")}><X/></button></div>}
-        {page === "graph" && <StructurePage profile={profile} teacherGraph={teacherGraph} overview={overview} openCreate={openCreate} allTeachers={allTeachers} studentsByTeacherId={studentsByTeacherId} openEdit={openEdit} setTeacherId={setTeacherId} setStudentId={setStudentId} allStudents={allStudents} setModal={setModal} unassignedStudents={unassignedStudents} unassignStudent={unassignStudent} graphObjects={graphObjects} saveGraphObjectPosition={saveGraphObjectPosition} createGraphObject={createGraphObject} />}
+        {page === "graph" && <StructurePage profile={profile} teacherGraph={teacherGraph} overview={overview} openCreate={openCreate} allTeachers={allTeachers} studentsByTeacherId={studentsByTeacherId} openEdit={openEdit} setTeacherId={setTeacherId} setStudentId={setStudentId} allStudents={allStudents} setModal={setModal} unassignedStudents={unassignedStudents} unassignStudent={unassignStudent} graphObjects={graphObjects} saveGraphObjectPosition={saveGraphObjectPosition} createGraphObject={createGraphObject} deleteGraphObject={deleteGraphObject} />}
         {page === "users" && <UsersPage visibleUsers={visibleUsers} search={search} setSearch={setSearch} userSort={userSort} setUserSort={setUserSort} openCreate={openCreate} disconnectTelegram={disconnectTelegram} makeCode={makeCode} userInfo={userInfo} setUserInfo={setUserInfo} openEdit={openEdit} removeUser={removeUser} />}
         {page === "chats" && <ChatsPage profile={profile} chatSection={chatSection} setChatSection={setChatSection} personalChats={personalChats} setSelectedChat={setSelectedChat} setMessages={setMessages} chatFilter={chatFilter} setChatFilter={setChatFilter} openCreatePersonalChat={openCreatePersonalChat} chatSearch={chatSearch} setChatSearch={setChatSearch} visibleChats={visibleChats} openChat={openChat} selectedChat={selectedChat} setPage={setPage} draft={draft} setDraft={setDraft} messageFilter={messageFilter} setMessageFilter={setMessageFilter} messagesViewportRef={messagesViewportRef} visibleMessages={visibleMessages} messages={messages} setDeleteMessageCandidate={setDeleteMessageCandidate} attachment={attachment} setAttachment={setAttachment} sendChatMessage={sendChatMessage} />}
 
