@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useAuthState, useChatState, useDirectoryState, useGraphState, usePersonalChatState, useSettingsState, useUiState } from "../hooks/useAppState.js";
 import Activity from "lucide-react/dist/esm/icons/activity.js";
 import Layers from "lucide-react/dist/esm/icons/layers.js";
@@ -26,8 +26,7 @@ import { useAuthController } from "../hooks/authentication/useAuthController.js"
 import { usePanelDataState } from "../hooks/app/usePanelDataState.js";
 import { useUsersController } from "../hooks/users/useUsersController.js";
 import { useChatsController } from "../hooks/conversations/useChatsController.js";
-
-const API = import.meta.env.VITE_API_BASE_URL || "";
+import { useAdminDataController } from "../hooks/administration/useAdminDataController.js";
 
 async function copyText(value) {
   try {
@@ -77,9 +76,6 @@ export default function App() {
     page, setPage, error, setError, toast, setToast, modal, setModal,
   } = useUiState();
   const directory = useDirectoryState();
-  const [dataStats, setDataStats] = useState(null);
-  const [dataBusy, setDataBusy] = useState(false);
-  const [retentionDays, setRetentionDays] = useState("30");
   const { request, refresh } = usePanelDataState({
     auth, page, selectedChat, setAuth, setProfile, setError, setChats,
     setPersonalChats, setUsers: directory.setUsers, setOverview: directory.setOverview, setTeacherGraph, setPage,
@@ -95,7 +91,8 @@ export default function App() {
     name, setName, panelLogin, setPanelLogin, role, setRole, additionalInfo,
     setAdditionalInfo, telegramId, setTelegramId, teacherId, setTeacherId,
     studentId, setStudentId, code, setCode, deleteCandidate, setDeleteCandidate,
-    deletingUser, setDeletingUser, disconnectCandidate, setDisconnectCandidate,
+    deletingUser, setDeletingUser, deleteMessageCandidate, setDeleteMessageCandidate,
+    deletingMessage, setDeletingMessage, disconnectCandidate, setDisconnectCandidate,
     disconnectingTelegram, setDisconnectingTelegram, allTeachers, allStudents,
     studentsByTeacherId, visibleUsers, unassignedStudents, openCreate, openEdit,
     saveUser, regeneratePanelAccessCode, removeUser, confirmRemoveUser, assign,
@@ -120,6 +117,12 @@ export default function App() {
     authState, setError, setPage, setPushBusy, setPushState, setTeacherGraph,
     setUsers, setOverview, setChats, setPersonalChats, setMessages,
     setSelectedChat, setDraft, setAttachment, setIssuedCredential, notify,
+  });
+  const {
+    dataStats, dataBusy, retentionDays, setRetentionDays, loadDataStats,
+    downloadAdminFile, uploadAdminFile, cleanupOldDialogues,
+  } = useAdminDataController({
+    auth, profile, page, request, refresh, notify, setError, setSelectedChat, setMessages,
   });
 
   useEffect(() => {
@@ -164,87 +167,6 @@ export default function App() {
     localStorage.setItem("uknowapp-theme-v2", theme);
     document.documentElement.dataset.theme = theme;
   }, [theme]);
-
-  const loadDataStats = useCallback(async () => {
-    try {
-      setDataStats(await request("/api/admin/data/stats"));
-    } catch (e) {
-      setError(e.message);
-    }
-  }, [request]);
-
-  useEffect(() => {
-    if (auth && profile?.role === "admin" && page === "additional") void loadDataStats();
-  }, [auth, profile?.role, page, loadDataStats]);
-
-  async function downloadAdminFile(kind) {
-    try {
-      const response = await fetch(API + "/api/admin/data/" + kind, { credentials: "include" });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.detail || "Не удалось скачать файл");
-      }
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = ({ full: "uknowapp-full-backup.zip", database: "uknowapp-backup.sqlite3", media: "uknowapp-media.zip" })[kind] || "uknowapp-backup";
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-      notify("Файл подготовлен к скачиванию");
-    } catch (e) {
-      setError(e.message);
-    }
-  }
-
-  async function uploadAdminFile(kind, file) {
-    if (!file) return;
-    const warning = kind === "full"
-      ? "Полностью восстановить UknowApp из этой копии? Текущая база данных и все медиафайлы будут заменены."
-      : "Заменить текущую базу данных загруженной копией? Все текущие данные будут перезаписаны.";
-    if (!window.confirm(warning)) return;
-    setDataBusy(true);
-    setError("");
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      const response = await fetch(API + "/api/admin/data/" + kind, {
-        method: "POST", credentials: "include", body: form,
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.detail || "Не удалось загрузить файл");
-      notify(kind === "full" ? "Полная резервная копия восстановлена. Перезагрузите панель." : "База данных восстановлена. Перезагрузите панель.");
-      await loadDataStats();
-      if (kind === "full" || kind === "database") {
-        setSelectedChat(null);
-        setMessages([]);
-        await refresh();
-      }
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setDataBusy(false);
-    }
-  }
-
-  async function cleanupOldDialogues() {
-    const days = Number(retentionDays);
-    if (!window.confirm("Удалить переписки и медиафайлы старше " + days + " дней? Действие необратимо.")) return;
-    setDataBusy(true);
-    setError("");
-    try {
-      const result = await request("/api/admin/data/dialogues?days=" + days, { method: "DELETE" });
-      notify("Удалено сообщений: " + result.deleted_messages + ", личных: " + result.deleted_personal_messages + ", медиафайлов: " + result.deleted_media_files);
-      await loadDataStats();
-      await refresh();
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setDataBusy(false);
-    }
-  }
 
   function toggleTheme() {
     setTheme(current => current === "dark-soft" ? "light" : "dark-soft");
