@@ -439,7 +439,15 @@ export default function App() {
   }
 
   async function togglePushNotifications() {
-    if (!pushState.supported || pushBusy) return;
+    if (pushBusy) return;
+    if (!pushState.supported) {
+      notify(pushState.reason);
+      return;
+    }
+    if (pushState.permission === "denied") {
+      notify("Разрешите уведомления для UknowApp в настройках браузера");
+      return;
+    }
     setPushBusy(true);
     setError("");
     try {
@@ -470,7 +478,7 @@ export default function App() {
       type="button"
       className={`push-toggle${pushState.enabled ? " active" : ""}`}
       onClick={togglePushNotifications}
-      disabled={!pushState.supported || pushBusy || pushState.permission === "denied"}
+      disabled={pushBusy}
       title={pushBusy ? "Обновляем настройки уведомлений…" : pushButtonTitle}
       aria-label={pushButtonTitle}
       aria-pressed={pushState.enabled}
@@ -756,7 +764,7 @@ export default function App() {
             {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
           </button>
           <button type="button" className="icon-btn" onClick={refresh} title="Обновить" aria-label="Обновить"><RefreshCw className={busy ? "spin" : ""}/></button>
-          <button type="button" className="logout topbar-logout" onClick={signOut} title="Выйти" aria-label="Выйти"><LogOut size={17}/></button>
+          <button type="button" className="icon-btn topbar-logout" onClick={signOut} title="Выйти" aria-label="Выйти"><LogOut size={17}/></button>
         </div>
       </header>
       <div className={"content" + (page === "chats" ? " chats-content" : "")}>
