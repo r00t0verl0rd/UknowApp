@@ -16,7 +16,9 @@ export function createOuterCoordinateSystem(step = 12) {
       return bounds;
     },
     getBounds() {
-      return bounds;\n    },\n    toLocal(clientX, clientY) {
+      return bounds;
+    },
+    toLocal(clientX, clientY) {
       return {
         x: (clientX - bounds.left) / scaleX,
         y: (clientY - bounds.top) / scaleY,
