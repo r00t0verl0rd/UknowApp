@@ -13,8 +13,8 @@ from sqlalchemy.orm import selectinload
 from app.models import (
     Assignment,
     ConnectionCode,
-    GraphCloudPosition,
     Conversation,
+    GraphCloudPosition,
     Message,
     PanelSession,
     PersonalConversation,
