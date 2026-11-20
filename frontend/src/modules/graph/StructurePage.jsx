@@ -170,7 +170,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
       elements.forEach(element => {
         const id = element.dataset.dragId;
         if (!id || layout[id]) return;
-        const siblings = elements.filter(other => other !== element);
+        const siblings = elements.filter(other => other !== element && other.parentElement === element.parentElement);
         const position = findFreeGridPosition(element, siblings, { x: 0, y: 0 });
         element.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
         layout[id] = position;
