@@ -19,19 +19,20 @@ function moveItem(order, sourceId, targetId, after) {
 }
 
 export default function StructurePage({ profile, teacherGraph, overview, openCreate, allTeachers, studentsByTeacherId, collapsedTeacherIds, setCollapsedTeacherIds, openEdit, setTeacherId, setStudentId, allStudents, setModal, unassignedStudents, unassignStudent, saveGraphOrder }) {
-  const [teacherOrder, setTeacherOrder] = useState(() => allTeachers.map(item => item.id));
+  const graphTeachers = overview?.teachers || allTeachers;
+  const [teacherOrder, setTeacherOrder] = useState(() => graphTeachers.map(item => item.id));
   const [studentOrders, setStudentOrders] = useState({});
   const [unassignedOrder, setUnassignedOrder] = useState(() => unassignedStudents.map(item => item.id));
   const dragRef = useRef(null);
 
   useEffect(() => {
-    setTeacherOrder(allTeachers.map(item => item.id));
-    setStudentOrders(Object.fromEntries(allTeachers.map(teacher => [
+    setTeacherOrder(graphTeachers.map(item => item.id));
+    setStudentOrders(Object.fromEntries(graphTeachers.map(teacher => [
       teacher.id,
       (studentsByTeacherId.get(teacher.id) || []).map(student => student.id),
     ])));
     setUnassignedOrder(unassignedStudents.map(item => item.id));
-  }, [allTeachers, studentsByTeacherId, unassignedStudents]);
+  }, [graphTeachers, studentsByTeacherId, unassignedStudents]);
 
   function beginDrag(event, group, id, order) {
     if (event.button !== 0 || event.target.closest("button, a, input, select, textarea")) return;
@@ -129,7 +130,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
           </div>
         </section>}
         <div className="teacher-grid">
-          {orderedItems(allTeachers, teacherOrder).map(teacher => {
+          {orderedItems(graphTeachers, teacherOrder).map(teacher => {
             const students = studentsByTeacherId.get(teacher.id) || [];
             const order = studentOrders[teacher.id] || students.map(student => student.id);
             const studentsCollapsed = collapsedTeacherIds.has(teacher.id);
