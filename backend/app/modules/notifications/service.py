@@ -4,6 +4,8 @@ import asyncio
 import json
 import logging
 import threading
+
+from requests.exceptions import RequestException
 from collections.abc import Iterable
 from urllib.parse import parse_qs, urlsplit
 
@@ -89,7 +91,7 @@ def _deliver(targets: list[dict], payload: str) -> None:
                 expired_ids.append(target["id"])
             else:
                 logger.warning("Web Push delivery failed (status=%s)", status)
-        except Exception as exc:
+        except RequestException as exc:
             logger.warning("Web Push delivery failed (%s)", type(exc).__name__)
     if expired_ids:
         with SessionLocal() as db:
