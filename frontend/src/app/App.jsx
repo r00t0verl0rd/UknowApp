@@ -663,6 +663,7 @@ export default function App() {
   }
 
   async function saveGraphObjectPosition(objectId, x, y) {
+    setGraphObjects(current => current.map(item => item.id === objectId ? { ...item, x, y } : item));
     try {
       await request(`/api/admin/graph/objects/${objectId}/position`, {
         method: "PATCH",
