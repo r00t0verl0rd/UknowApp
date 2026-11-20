@@ -11,10 +11,10 @@ function orderedItems(items, order) {
   return [...order.map(id => byId.get(id)).filter(Boolean), ...items.filter(item => !order.includes(item.id))];
 }
 
-function moveItem(order, sourceId, targetId) {
+function moveItem(order, sourceId, targetId, after) {
   const next = order.filter(id => id !== sourceId);
   const targetIndex = next.indexOf(targetId);
-  next.splice(targetIndex < 0 ? next.length : targetIndex, 0, sourceId);
+  next.splice(targetIndex < 0 ? next.length : targetIndex + Number(after), 0, sourceId);
   return next;
 }
 
@@ -53,7 +53,12 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     drag.target?.classList.remove("is-drop-target");
     drag.target = target;
     target.classList.add("is-drop-target");
-    const next = moveItem(drag.order, drag.id, Number(target.dataset.sortId));
+    const bounds = target.getBoundingClientRect();
+    const horizontal = bounds.width > bounds.height;
+    const after = horizontal
+      ? event.clientX > bounds.left + bounds.width / 2
+      : event.clientY > bounds.top + bounds.height / 2;
+    const next = moveItem(drag.order, drag.id, Number(target.dataset.sortId), after);
     if (next.every((id, index) => id === drag.order[index])) return;
     drag.order = next;
     drag.changed = true;
