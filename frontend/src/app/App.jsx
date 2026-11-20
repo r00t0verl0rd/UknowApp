@@ -31,7 +31,7 @@ import { useAdminDataController } from "../hooks/administration/useAdminDataCont
 export default function App() {
   const authState = useAuthState();
   const { auth, setAuth, profile, setProfile, login, setLogin, password, setPassword } = authState;
-  const { theme, setTheme } = useSettingsState();
+  const { theme, toggleTheme } = useSettingsState();
   const { teacherGraph, setTeacherGraph } = useGraphState();
   const chatState = useChatState();
   const {
@@ -96,21 +96,6 @@ export default function App() {
   });
 
   useEffect(() => {
-    if (userInfo === null) return undefined;
-    const closeInfoOnOutsideClick = event => {
-      if (!event.target.closest?.(".user-info-wrap")) setUserInfo(null);
-    };
-    const closeInfoOnEscape = event => {
-      if (event.key === "Escape") setUserInfo(null);
-    };
-    document.addEventListener("pointerdown", closeInfoOnOutsideClick);
-    document.addEventListener("keydown", closeInfoOnEscape);
-    return () => {
-      document.removeEventListener("pointerdown", closeInfoOnOutsideClick);
-      document.removeEventListener("keydown", closeInfoOnEscape);
-    };
-  }, [userInfo]);
-  useEffect(() => {
     if (auth && profile?.role === "teacher") setPage("chats");
   }, [auth, profile?.role, setPage]);
 
@@ -132,15 +117,6 @@ export default function App() {
       .then(setMessages)
       .catch(error => setError(error.message));
   }, [auth, profile, chats, personalChats, request]);
-
-  useEffect(() => {
-    localStorage.setItem("uknowapp-theme-v2", theme);
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
-
-  function toggleTheme() {
-    setTheme(current => current === "dark-soft" ? "light" : "dark-soft");
-  }
 
   const pushToggle = (
     <button
