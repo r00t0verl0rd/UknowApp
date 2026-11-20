@@ -30,6 +30,8 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
   const cloudPositions = overview?.cloud_positions || EMPTY_CLOUD_POSITIONS;
   const [cloudLayout, setCloudLayout] = useState(() => positionMap(cloudPositions));
   const cloudLayoutRef = useRef(cloudLayout);
+  const [cloudStack, setCloudStack] = useState({});
+  const cloudStackRef = useRef(0);
   const [studentLayout, setStudentLayout] = useState(readStudentLayout);
   const studentLayoutRef = useRef(studentLayout);
   const dragRef = useRef(null);
@@ -50,6 +52,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     event.preventDefault();
     const captureElement = event.currentTarget;
     const element = type === "cloud" ? handle.closest(".teacher-branch") : handle;
+    if (type === "cloud") element.style.zIndex = String(++cloudStackRef.current);
     const layout = type === "cloud" ? cloudLayoutRef.current : studentLayoutRef.current;
     const position = layout[id] || { x: 0, y: 0 };
     dragRef.current = {
@@ -101,6 +104,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
       const next = { ...cloudLayoutRef.current, [drag.id]: { x, y } };
       cloudLayoutRef.current = next;
       setCloudLayout(next);
+      setCloudStack(current => ({ ...current, [drag.id]: cloudStackRef.current }));
       saveCloudPosition(drag.id, x, y);
       return;
     }
@@ -182,7 +186,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
             return <section
               className={`teacher-branch${studentsCollapsed ? " is-collapsed" : ""}`}
               key={teacher.id}
-              style={positionStyle(cloudLayout[teacher.id])}
+              style={{ ...positionStyle(cloudLayout[teacher.id]), zIndex: cloudStack[teacher.id] || 0 }}
             >
               <div className="person-card teacher-card" data-drag-type="cloud" data-drag-id={teacher.id}>
                 <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap /></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель · {students.length} учен.</small></div></div>
