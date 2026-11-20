@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useAuthState, useChatState, useDirectoryState, useGraphState, usePersonalChatState, useSettingsState, useUiState, useUserActionState, useUserEditorState } from "../hooks/useAppState.js";
 import Activity from "lucide-react/dist/esm/icons/activity.js";
+import Layers from "lucide-react/dist/esm/icons/layers.js";
 import Check from "lucide-react/dist/esm/icons/check.js";
 import LogOut from "lucide-react/dist/esm/icons/log-out.js";
 import MessageCircle from "lucide-react/dist/esm/icons/message-circle.js";
@@ -17,6 +18,7 @@ import BellOff from "lucide-react/dist/esm/icons/bell-off.js";
 import AdditionalPage from "../modules/administration/AdditionalPage.jsx";
 import ChatsPage from "../modules/conversations/ChatsPage.jsx";
 import StructurePage from "../modules/graph/StructurePage.jsx";
+import BoardsPage from "../modules/graph/BoardsPage.jsx";
 import UsersPage from "../modules/users/UsersPage.jsx";
 import LoginPage from "../modules/authentication/LoginPage.jsx";
 import { detachPushSubscription, disablePushNotifications, enablePushNotifications, getPushNotificationState } from "../modules/notifications/pushNotifications.js";
@@ -119,15 +121,15 @@ export default function App() {
 
       // Independent panel datasets are fetched together to avoid serial network waits.
       const roleRequest = who.role === "admin"
-        ? Promise.all([request("/api/admin/users"), request("/api/admin/overview"), request("/api/admin/graph/objects")])
+        ? Promise.all([request("/api/admin/users"), request("/api/admin/overview")])
         : who.role === "teacher" ? request("/api/panel/graph") : Promise.resolve(null);
       const [conversations, roleData, personal] = await Promise.all([
         request("/api/panel/conversations"), roleRequest, request("/api/panel/personal-conversations"),
       ]);
       setChats(conversations); setPersonalChats(personal);
       if (who.role === "admin") {
-        const [people, summary, objects] = roleData;
-        setUsers(people); setOverview(summary); setGraphObjects(objects);
+        const [people, summary] = roleData;
+        setUsers(people); setOverview(summary);
       } else if (who.role === "teacher") {
         setTeacherGraph(roleData);
         setGraphObjects([]); setUsers([]); setOverview(null);
@@ -150,6 +152,15 @@ export default function App() {
   }, [auth, request]);
 
   useEffect(() => { refresh(); }, [refresh]);
+
+  useEffect(() => {
+    if (!auth || profile?.role !== "admin" || page !== "boards") return undefined;
+    let active = true;
+    request("/api/admin/graph/objects")
+      .then(objects => { if (active) setGraphObjects(objects); })
+      .catch(error => { if (active) setError(error.message); });
+    return () => { active = false; };
+  }, [auth, profile?.role, page, request]);
 
   useEffect(() => {
     if (auth && profile?.role === "teacher") setPage("chats");
@@ -826,6 +837,7 @@ export default function App() {
         {(profile?.role === "admin" || profile?.role === "teacher") && <button className={page === "chats" ? "active" : ""} onClick={() => setPage("chats")}><MessageCircle/>Диалоги</button>}
         {profile?.role === "teacher" && <button className={page === "graph" ? "active" : ""} onClick={() => setPage("graph")}><Activity/>Структура</button>}
         {profile?.role === "admin" && <button className={page === "users" ? "active" : ""} onClick={() => setPage("users")}><Users/>Пользователи</button>}
+        {profile?.role === "admin" && <button className={page === "boards" ? "active" : ""} onClick={() => setPage("boards")}><Layers/>Доски</button>}
         {profile?.role === "student" && <button className={page === "chats" ? "active" : ""} onClick={() => setPage("chats")}><MessageCircle/>Диалоги</button>}
       </nav>
       <div className="sidebar-bottom">
@@ -853,7 +865,8 @@ export default function App() {
       </header>
       <div className={"content" + (page === "chats" ? " chats-content" : "")}>
         {error && <div className="alert alert-row">{error}<button onClick={() => setError("")}><X/></button></div>}
-        {page === "graph" && <StructurePage profile={profile} teacherGraph={teacherGraph} overview={overview} openCreate={openCreate} allTeachers={allTeachers} studentsByTeacherId={studentsByTeacherId} openEdit={openEdit} setTeacherId={setTeacherId} setStudentId={setStudentId} allStudents={allStudents} setModal={setModal} unassignedStudents={unassignedStudents} unassignStudent={unassignStudent} graphObjects={graphObjects} saveGraphObjectPosition={saveGraphObjectPosition} createGraphObject={createGraphObject} deleteGraphObject={deleteGraphObject} />}
+        {page === "graph" && <StructurePage profile={profile} teacherGraph={teacherGraph} overview={overview} openCreate={openCreate} allTeachers={allTeachers} studentsByTeacherId={studentsByTeacherId} openEdit={openEdit} setTeacherId={setTeacherId} setStudentId={setStudentId} allStudents={allStudents} setModal={setModal} unassignedStudents={unassignedStudents} />}
+        {page === "boards" && profile?.role === "admin" && <BoardsPage profile={profile} teacherGraph={teacherGraph} allTeachers={allTeachers} studentsByTeacherId={studentsByTeacherId} unassignedStudents={unassignedStudents} openEdit={openEdit} unassignStudent={unassignStudent} openCreate={openCreate} graphObjects={graphObjects} saveGraphObjectPosition={saveGraphObjectPosition} createGraphObject={createGraphObject} deleteGraphObject={deleteGraphObject} />}
         {page === "users" && <UsersPage visibleUsers={visibleUsers} search={search} setSearch={setSearch} userSort={userSort} setUserSort={setUserSort} openCreate={openCreate} disconnectTelegram={disconnectTelegram} makeCode={makeCode} userInfo={userInfo} setUserInfo={setUserInfo} openEdit={openEdit} removeUser={removeUser} />}
         {page === "chats" && <ChatsPage profile={profile} chatSection={chatSection} setChatSection={setChatSection} personalChats={personalChats} setSelectedChat={setSelectedChat} setMessages={setMessages} chatFilter={chatFilter} setChatFilter={setChatFilter} openCreatePersonalChat={openCreatePersonalChat} chatSearch={chatSearch} setChatSearch={setChatSearch} visibleChats={visibleChats} openChat={openChat} selectedChat={selectedChat} setPage={setPage} draft={draft} setDraft={setDraft} messageFilter={messageFilter} setMessageFilter={setMessageFilter} messagesViewportRef={messagesViewportRef} visibleMessages={visibleMessages} messages={messages} setDeleteMessageCandidate={setDeleteMessageCandidate} attachment={attachment} setAttachment={setAttachment} sendChatMessage={sendChatMessage} />}
 
