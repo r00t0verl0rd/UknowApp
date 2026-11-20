@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef } from "react";
+import { useBoardsState } from "../../hooks/boards/useBoardsState.js";
 import Crosshair from "lucide-react/dist/esm/icons/crosshair.js";
 import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
@@ -7,26 +8,25 @@ function objectPosition(item) {
   return { transform: `translate3d(${item.x || 0}px, ${item.y || 0}px, 0)` };
 }
 
-function BoardObject({ item, children, createBoardObject, removeObject }) {
+function BoardObject({ item, children, createObject, removeObject }) {
   return <div className="graph-board-node" data-object-id={item.id} style={objectPosition(item)}>
     <article className="graph-board-card">
       <header className="graph-board-object-header">
         <b>{item.title}</b>
         <div className="graph-board-object-actions">
-          <button type="button" title="Создать вложенный объект" aria-label={`Создать объект внутри «${item.title}»`} onClick={() => createBoardObject(item.id)}><Plus /></button>
+          <button type="button" title="Создать вложенный объект" aria-label={`Создать объект внутри «${item.title}»`} onClick={() => createObject(item.id)}><Plus /></button>
           <button type="button" title="Удалить объект" aria-label={`Удалить объект «${item.title}» и вложенные объекты`} onClick={() => removeObject(item)}><Trash2 /></button>
         </div>
       </header>
       <div className="graph-board-children">
-        {children.map(child => <BoardObject key={child.id} item={child} children={child.children} createBoardObject={createBoardObject} removeObject={removeObject} />)}
+        {children.map(child => <BoardObject key={child.id} item={child} children={child.children} createObject={createObject} removeObject={removeObject} />)}
       </div>
     </article>
   </div>;
 }
 
-export default function BoardsPage({
-  boardObjects = [], saveBoardObjectPosition, createBoardObject, deleteBoardObject,
-}) {
+export default function BoardsPage() {
+  const { boardObjects, loading, error, clearError, createObject, deleteObject, moveObject: moveBoardObject } = useBoardsState();
   const viewportRef = useRef(null);
   const worldRef = useRef(null);
   const dragRef = useRef(null);
@@ -120,17 +120,17 @@ export default function BoardsPage({
     drag.element.classList.remove("is-object-dragging");
     dragRef.current = null;
     if (Math.abs(x - drag.x) < 1 && Math.abs(y - drag.y) < 1) return;
-    await saveBoardObjectPosition(drag.item.id, x, y);
+    await moveBoardObject(drag.item.id, x, y).catch(() => {});
   }
 
   function addObject(parentId = null) {
     const title = window.prompt("Название нового объекта");
-    if (title?.trim()) createBoardObject({ title: title.trim(), parent_id: parentId });
+    if (title?.trim()) void createObject({ title: title.trim(), parent_id: parentId }).catch(() => {});
   }
 
   function removeObject(item) {
     if (window.confirm(`Удалить объект «${item.title}» и все вложенные в него объекты?`)) {
-      deleteBoardObject(item.id);
+      void deleteObject(item.id).catch(() => {});
     }
   }
 
@@ -139,6 +139,7 @@ export default function BoardsPage({
   }, []);
 
   return <section className="graph-panel graph-object-panel">
+    {error && <div className="alert alert-row" role="alert">{error}<button type="button" onClick={clearError} aria-label="Закрыть">×</button></div>}
     <div className="graph-legend-row">
       <div className="graph-legend"><b>Интерактивные доски</b><span>Создавайте объекты, объединяйте их в иерархии и перемещайте независимо.</span></div>
       <div className="graph-toolbar-actions">
@@ -156,8 +157,9 @@ export default function BoardsPage({
       onLostPointerCapture={endObjectDrag}
     >
       <div className="graph-coordinate-world graph-object-world" ref={worldRef}>
-        {roots.map(item => <BoardObject key={item.id} item={item} children={item.children} createBoardObject={addObject} removeObject={removeObject} />)}
-        {!boardObjects.length && <div className="graph-board-empty">Доска пока пустая. Создайте первый объект.</div>}
+        {roots.map(item => <BoardObject key={item.id} item={item} children={item.children} createObject={addObject} removeObject={removeObject} />)}
+        {loading && !boardObjects.length && <div className="graph-board-empty">Загружаем доску…</div>}
+        {!loading && !boardObjects.length && <div className="graph-board-empty">Доска пока пустая. Создайте первый объект.</div>}
       </div>
     </div>
   </section>;
