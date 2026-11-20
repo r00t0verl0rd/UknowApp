@@ -98,9 +98,12 @@ function packGridGroup(elements, layout, draggedId, draggedPosition) {
       ? { x: item.baseLeft + draggedPosition.x, y: item.baseTop + draggedPosition.y }
       : { x: item.preferredLeft, y: item.preferredTop };
     const maxColumn = Math.max(0, Math.floor((bounds.right - bounds.left - item.width) / GRAPH_GRID_SIZE));
-    const maxRow = Math.max(1, Math.ceil((Math.max(parent.scrollHeight, bounds.height) + 2400) / GRAPH_GRID_SIZE));
     const startColumn = Math.max(0, Math.min(maxColumn, Math.round((preferred.x - bounds.left) / GRAPH_GRID_SIZE)));
     const startRow = Math.max(0, Math.round((preferred.y - bounds.top) / GRAPH_GRID_SIZE));
+    const maxRow = Math.max(
+      Math.ceil((Math.max(parent.scrollHeight, bounds.height) + 2400) / GRAPH_GRID_SIZE),
+      startRow + items.length * 100,
+    );
     let chosen = null;
 
     const fits = (left, top) => {
@@ -202,6 +205,7 @@ function TeacherBranch({ teacher, students, studentLayout, studentsCollapsed = f
 
 export default function StructurePage({ profile, teacherGraph, overview, openCreate, allTeachers, studentsByTeacherId, collapsedTeacherIds, setCollapsedTeacherIds, openEdit, setTeacherId, setStudentId, allStudents, setModal, unassignedStudents, unassignStudent, saveCloudPosition }) {
   const cloudPositions = overview?.cloud_positions || EMPTY_CLOUD_POSITIONS;
+  const cloudPositionsInitializedRef = useRef(false);
   const [cloudLayout, setCloudLayout] = useState(() => positionMap(cloudPositions));
   const cloudLayoutRef = useRef(cloudLayout);
   const [cloudStack, setCloudStack] = useState({});
@@ -221,6 +225,10 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
   const frameRef = useRef(0);
 
   useEffect(() => {
+    if (!cloudPositionsInitializedRef.current) {
+      cloudPositionsInitializedRef.current = true;
+      return;
+    }
     const next = positionMap(cloudPositions);
     cloudLayoutRef.current = next;
     setCloudLayout(next);
