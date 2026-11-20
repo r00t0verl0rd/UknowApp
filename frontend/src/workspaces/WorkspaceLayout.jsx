@@ -54,7 +54,7 @@ export default function WorkspaceLayout({
         <small className="topbar-user">{profile.full_name}</small>
         <div className="topbar-actions">{pushToggle}{themeToggle}</div>
       </header>
-      <div className={"content" + (page === "chats" ? " chats-content" : "")}>
+      <div className={"content" + (page === "chats" ? " chats-content" : "") + (page === "additional" ? " page-additional" : "")}>
         {error && <div className="alert alert-row" role="alert">{error}
           <button type="button" onClick={() => setError("")} aria-label="Закрыть"><X/></button>
         </div>}
