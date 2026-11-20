@@ -86,7 +86,8 @@ function dragPosition(drag, clientX, clientY, outer, inner) {
   const bounds = drag.boundaryRect;
   const element = drag.elementRect;
   const pointer = outer.toLocal(clientX, clientY);
-  const delta = { x: pointer.x - drag.startLocal.x, y: pointer.y - drag.startLocal.y };
+  const graphPointer = inner.toGraphPoint(pointer);
+  const delta = { x: graphPointer.x - drag.startGraph.x, y: graphPointer.y - drag.startGraph.y };
   const zoom = inner.zoom;
   const clamp = (value, min, max) => min > max ? (min + max) / 2 : Math.max(min, Math.min(max, value));
   const minX = outer.deltaToLocal(bounds.left - element.left, 0).x / zoom;
@@ -157,6 +158,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
   const teacherStudentLayoutRef = useRef(teacherStudentLayout);
   const dragRef = useRef(null);
   const frameRef = useRef(0);
+  const transformFrameRef = useRef(0);
   const graphViewportRef = useRef(null);
   const graphWorldRef = useRef(null);
   const outerCoordinatesRef = useRef(createOuterCoordinateSystem(GRAPH_GRID_SIZE));
@@ -248,29 +250,41 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     const viewport = graphViewportRef.current;
     if (!viewport) return undefined;
     const outer = outerCoordinatesRef.current;
-    const updateBounds = () => outer.update(viewport);
+    let boundsFrame = 0;
+    const updateBounds = () => {
+      boundsFrame = 0;
+      outer.update(viewport);
+    };
+    const scheduleBoundsUpdate = () => {
+      if (!boundsFrame) boundsFrame = requestAnimationFrame(updateBounds);
+    };
     updateBounds();
     if (graphWorldRef.current) graphWorldRef.current.style.transform = innerCoordinatesRef.current.transform();
-    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(updateBounds) : null;
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(scheduleBoundsUpdate) : null;
     observer?.observe(viewport);
-    window.addEventListener("resize", updateBounds, { passive: true });
-    window.addEventListener("scroll", updateBounds, { passive: true, capture: true });
+    window.addEventListener("resize", scheduleBoundsUpdate, { passive: true });
+    window.addEventListener("scroll", scheduleBoundsUpdate, { passive: true, capture: true });
     return () => {
       observer?.disconnect();
-      window.removeEventListener("resize", updateBounds);
-      window.removeEventListener("scroll", updateBounds, true);
+      window.removeEventListener("resize", scheduleBoundsUpdate);
+      window.removeEventListener("scroll", scheduleBoundsUpdate, true);
+      if (boundsFrame) cancelAnimationFrame(boundsFrame);
     };
   }, [profile?.role]);
 
-  function applyGraphTransform() {
-    const world = graphWorldRef.current;
-    if (world) world.style.transform = innerCoordinatesRef.current.transform();
+  function scheduleGraphTransform() {
+    if (transformFrameRef.current) return;
+    transformFrameRef.current = requestAnimationFrame(() => {
+      transformFrameRef.current = 0;
+      const world = graphWorldRef.current;
+      if (world) world.style.transform = innerCoordinatesRef.current.transform();
+    });
   }
 
   function handleGraphWheel(event) {
     event.preventDefault();
     const point = outerCoordinatesRef.current.toLocal(event.clientX, event.clientY);
-    if (innerCoordinatesRef.current.zoomAt(point, Math.exp(-event.deltaY * 0.0015))) applyGraphTransform();
+    if (innerCoordinatesRef.current.zoomAt(point, Math.exp(-event.deltaY * 0.0015))) scheduleGraphTransform();
   }
 
   function handleGraphPointerDownCapture(event) {
@@ -340,6 +354,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
     dragRef.current = {
       type, id, element, teacherView, pointerId: event.pointerId,
       startLocal: outer.toLocal(event.clientX, event.clientY),
+      startGraph: innerCoordinatesRef.current.toGraphPoint(outer.toLocal(event.clientX, event.clientY)),
       x: position.x, y: position.y,
       nextX: position.x, nextY: position.y,
       elementRect: element.getBoundingClientRect(),
@@ -460,6 +475,7 @@ export default function StructurePage({ profile, teacherGraph, overview, openCre
 
   useEffect(() => () => {
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    if (transformFrameRef.current) cancelAnimationFrame(transformFrameRef.current);
     touchPointersRef.current.clear();
     pinchRef.current = null;
   }, []);
