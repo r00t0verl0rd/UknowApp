@@ -12,7 +12,7 @@ from sqlalchemy import select
 
 from app.config import VAPID_PUBLIC_KEY
 from app.models import PushSubscription
-from app.schemas import LoginRequest
+from app.request_validation import login_payload
 from app.security import (
     authenticate_panel_user,
     check_login_rate_limit,
@@ -29,14 +29,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
 
 @router.post("/auth/login")
-def login(payload: LoginRequest, request: Request, response: Response, db: Db):
+def login(payload: dict, request: Request, response: Response, db: Db):
+    payload = login_payload(payload)
     verify_request_origin(request)
-    check_login_rate_limit(request, payload.username)
-    identity = authenticate_panel_user(payload.username, payload.password)
+    check_login_rate_limit(request, payload["username"])
+    identity = authenticate_panel_user(payload["username"], payload["password"])
     if not identity:
-        record_failed_login(request, payload.username)
+        record_failed_login(request, payload["username"])
         raise HTTPException(status_code=401, detail="Неверный логин или пароль")
-    clear_username_failures(request, payload.username)
+    clear_username_failures(request, payload["username"])
     create_panel_session(db, identity, request, response)
     return {"ok": True, **identity}
 
