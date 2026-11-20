@@ -719,7 +719,7 @@ html, body { overflow-x: clip;}
 .content { padding-inline: clamp(30px, 2.5vw, 42px);}
 }
 @media (max-width: 1024px) {
-
+.workspace-admin .content.page-additional { display: none; }
 .sidebar nav button{flex:1;}
 .sidebar nav button i{display:none}
 
