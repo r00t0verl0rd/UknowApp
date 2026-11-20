@@ -10,7 +10,7 @@ export default function AdminWorkspace({ context }) {
   switch (page) {
     case "graph":
     case "users":
-      return <UsersModule page={page} profile={profile} directory={directory} request={request}
+      return <UsersModule page={page} directory={directory} request={request}
         refresh={refresh} notify={notify} setError={setError}
         selectedChat={chatState.selectedChat} setSelectedChat={chatState.setSelectedChat}
         setMessages={chatState.setMessages} modal={modal} setModal={setModal}/>;

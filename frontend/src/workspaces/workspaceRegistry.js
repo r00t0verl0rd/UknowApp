@@ -1,4 +1,3 @@
-import Activity from "lucide-react/dist/esm/icons/activity.js";
 import Layers from "lucide-react/dist/esm/icons/layers.js";
 import MessageCircle from "lucide-react/dist/esm/icons/message-circle.js";
 import Users from "lucide-react/dist/esm/icons/users.js";
@@ -25,11 +24,8 @@ export const workspaceRegistry = Object.freeze({
   teacher: {
     Component: TeacherWorkspace,
     label: "Личный кабинет учителя",
-    pages: ["chats", "graph"],
-    navigation: [
-      { page: "chats", label: "Диалоги", icon: MessageCircle },
-      { page: "graph", label: "Структура", icon: Activity },
-    ],
+    pages: ["chats"],
+    navigation: [{ page: "chats", label: "Диалоги", icon: MessageCircle }],
   },
   student: {
     Component: StudentWorkspace,

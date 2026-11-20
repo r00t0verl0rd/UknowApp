@@ -4,8 +4,8 @@ import StructurePage from "../graph/StructurePage.jsx";
 import { useUsersController } from "../../shared/hooks/users/useUsersController.js";
 
 export default function UsersModule({
-  page, profile, directory, request, refresh, notify, setError,
-  selectedChat, setSelectedChat, setMessages, modal, setModal, teacherGraph,
+  page, directory, request, refresh, notify, setError,
+  selectedChat, setSelectedChat, setMessages, modal, setModal,
 }) {
   const state = useUsersController({
     request, refresh, notify, setError, selectedChat, setSelectedChat,
@@ -21,7 +21,7 @@ export default function UsersModule({
       openEdit={state.openEdit} removeUser={state.removeUser}
     />}
     {page === "graph" && <StructurePage
-      profile={profile} teacherGraph={teacherGraph} overview={state.overview}
+      overview={state.overview}
       openCreate={state.openCreate} allTeachers={state.allTeachers}
       studentsByTeacherId={state.studentsByTeacherId} openEdit={state.openEdit}
       setTeacherId={state.setTeacherId} setStudentId={state.setStudentId}

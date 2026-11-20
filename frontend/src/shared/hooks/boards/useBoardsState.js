@@ -29,21 +29,6 @@ export function useBoardsState() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const reload = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const objects = await getBoardObjects();
-      setBoardObjects(objects);
-      return objects;
-    } catch (cause) {
-      setError(cause.message || "Не удалось загрузить доски");
-      throw cause;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     let active = true;
     getBoardObjects()
@@ -88,5 +73,5 @@ export function useBoardsState() {
 
   const clearError = useCallback(() => setError(""), []);
 
-  return { boardObjects, loading, error, clearError, createObject, deleteObject, moveObject, reload };
+  return { boardObjects, loading, error, clearError, createObject, deleteObject, moveObject };
 }

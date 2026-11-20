@@ -21,7 +21,7 @@ export default function ChatsModule({
       openCreatePersonalChat={state.openCreatePersonalChat}
       chatSearch={chatState.chatSearch} setChatSearch={chatState.setChatSearch}
       visibleChats={state.visibleChats} openChat={state.openChat}
-      selectedChat={chatState.selectedChat} setPage={setPage}
+      selectedChat={chatState.selectedChat}
       draft={chatState.draft} setDraft={chatState.setDraft}
       messageFilter={chatState.messageFilter} setMessageFilter={chatState.setMessageFilter}
       messagesViewportRef={chatState.messagesViewportRef}
