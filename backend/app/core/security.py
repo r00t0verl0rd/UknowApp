@@ -1,4 +1,5 @@
 import hashlib
+import ipaddress
 import secrets
 from datetime import UTC, datetime, timedelta
 
@@ -8,7 +9,7 @@ from sqlalchemy import select
 from app.models import PanelSession, User
 from app.rate_limit import SlidingWindowLimiter
 
-from .config import ADMIN_PASSWORD, ADMIN_USERNAME, ALLOWED_ORIGINS
+from .config import ADMIN_PASSWORD, ADMIN_USERNAME, ALLOWED_ORIGINS, TRUSTED_PROXY_IPS
 from .database import SessionLocal
 
 SESSION_COOKIE = "uknowapp_session"
@@ -90,8 +91,20 @@ def verify_request_origin(request: Request) -> None:
         raise HTTPException(status_code=403, detail="Запрос с этого источника запрещён")
 
 
+def _client_ip(request: Request) -> str:
+    peer = request.client.host if request.client else "unknown"
+    if peer not in TRUSTED_PROXY_IPS:
+        return peer
+
+    forwarded = request.headers.get("cf-connecting-ip") or request.headers.get("x-forwarded-for", "").split(",")[0]
+    try:
+        return str(ipaddress.ip_address(forwarded.strip()))
+    except ValueError:
+        return peer
+
+
 def _login_keys(request: Request, username: str) -> tuple[str, str]:
-    ip = request.client.host if request.client else "unknown"
+    ip = _client_ip(request)
     normalized = (username or "").strip().casefold()[:160]
     return "ip:" + ip, "user:" + ip + ":" + normalized
 
