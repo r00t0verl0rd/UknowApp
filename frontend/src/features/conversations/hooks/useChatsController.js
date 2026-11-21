@@ -172,6 +172,9 @@ export function useChatsController({
   const sendChatMessage = useCallback(async event => {
     event.preventDefault();
     const chat = selectedChat;
+    const chatKey = chat
+      ? (chat.type === "personal" ? "personal:" : "conversation:") + chat.id
+      : "";
     const text = draft.trim();
     const file = attachment;
     if (!chat || (!text && !file) || sendingMessage.current) return;
