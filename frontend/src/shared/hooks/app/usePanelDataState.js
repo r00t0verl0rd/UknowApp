@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createApiClient } from "../../../services/api.js";
 import { getAdminBootstrap, getCurrentProfile, getInboxData } from "../../services/panelApi.js";
 
@@ -9,34 +9,22 @@ export function usePanelDataState({
 }) {
   const request = useMemo(() => createApiClient(), []);
   const [panelReady, setPanelReady] = useState(false);
+  const refreshRevision = useRef(0);
 
   const refresh = useCallback(async () => {
     if (!auth) return;
+    const revision = ++refreshRevision.current;
     setError("");
+    let who;
     try {
-      const who = await getCurrentProfile(request);
+      who = await getCurrentProfile(request);
+      if (revision !== refreshRevision.current) return;
       setProfile(who);
-
-      const adminRequest = who.role === "admin" ? getAdminBootstrap(request) : Promise.resolve(null);
-      const [[conversations, personal], adminData] = await Promise.all([
-        getInboxData(request), adminRequest,
-      ]);
-      setChats(conversations);
-      setPersonalChats(personal);
-      if (who.role === "admin") {
-        const [people, summary] = adminData;
-        setUsers(people);
-        setOverview(summary);
-      } else {
-        setUsers([]);
-        setOverview(null);
-        if (who.role !== "teacher") {
-          setSelectedChat(null);
-          setMessages([]);
-        }
-      }
+      // The application shell only depends on the authenticated profile.
+      // Inbox and role-specific data continue loading without blocking it.
       setPanelReady(true);
     } catch (error) {
+      if (revision !== refreshRevision.current) return;
       setPanelReady(true);
       setError(error.message);
       const message = String(error.message).toLowerCase();
@@ -46,10 +34,38 @@ export function usePanelDataState({
         setAuth("");
         setProfile(null);
       }
+      return;
     }
+
+    const inboxTask = getInboxData(request).then(([conversations, personal]) => {
+      if (revision !== refreshRevision.current) return;
+      setChats(conversations);
+      setPersonalChats(personal);
+    });
+    const adminTask = who.role === "admin"
+      ? getAdminBootstrap(request).then(([people, summary]) => {
+        if (revision !== refreshRevision.current) return;
+        setUsers(people);
+        setOverview(summary);
+      })
+      : Promise.resolve().then(() => {
+        if (revision !== refreshRevision.current) return;
+        setUsers([]);
+        setOverview(null);
+        if (who.role !== "teacher") {
+          setSelectedChat(null);
+          setMessages([]);
+        }
+      });
+
+    const results = await Promise.allSettled([inboxTask, adminTask]);
+    if (revision !== refreshRevision.current) return;
+    const failed = results.find(result => result.status === "rejected");
+    if (failed) setError(failed.reason?.message || "Не удалось загрузить часть данных приложения");
   }, [auth, request]);
 
   useEffect(() => {
+    refreshRevision.current += 1;
     if (!auth) setPanelReady(false);
   }, [auth]);
 
