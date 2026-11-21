@@ -126,7 +126,7 @@ export function useAdminDataController({
   }, [retentionDays, setError, request, notify, loadDataStats, refresh]);
 
   return {
-    dataStats, dataBusy, retentionDays, setRetentionDays,
+    dataStats, restore, dataBusy: dataBusy || Boolean(pendingId), retentionDays, setRetentionDays,
     loadDataStats, downloadAdminFile, uploadAdminFile, cleanupOldDialogues,
   };
 }
