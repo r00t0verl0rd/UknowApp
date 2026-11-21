@@ -203,4 +203,5 @@ def publish_conversation_update(
             "student_id": conversation.student_id,
         },
         summary_by_role=conversation_event_summaries(db, conversation),
+        db=db,
     )

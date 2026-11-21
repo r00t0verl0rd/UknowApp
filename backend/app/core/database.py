@@ -125,6 +125,32 @@ def create_tables() -> None:
         ))
         connection.execute(text("DELETE FROM assignments WHERE active = 0"))
 
+    # Client-generated idempotency keys prevent duplicate panel messages after retries.
+    with engine.begin() as connection:
+        message_columns = {
+            column["name"] for column in inspect(connection).get_columns("messages")
+        }
+        if "client_message_id" not in message_columns:
+            connection.execute(text(
+                "ALTER TABLE messages ADD COLUMN client_message_id VARCHAR(64)",
+            ))
+        for column_name, definition in (
+            ("source_platform", "VARCHAR(32)"),
+            ("source_event_id", "VARCHAR(255)"),
+        ):
+            if column_name not in message_columns:
+                connection.execute(text(
+                    "ALTER TABLE messages ADD COLUMN " + column_name + " " + definition,
+                ))
+        connection.execute(text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_messages_client_message_id "
+            "ON messages (conversation_id, sender_id, client_message_id)",
+        ))
+        connection.execute(text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_messages_inbound_event "
+            "ON messages (sender_id, source_platform, source_event_id)",
+        ))
+
     # Составной индекс обслуживает историю и счётчики; отдельный индекс по conversation_id избыточен.
     with engine.begin() as connection:
         connection.execute(text("DROP INDEX IF EXISTS ix_messages_conversation_id"))
@@ -141,6 +167,20 @@ def create_tables() -> None:
         connection.execute(text(
             "CREATE INDEX IF NOT EXISTS ix_personal_messages_conversation_id_id "
             "ON personal_messages (conversation_id, id)",
+        ))
+
+    # Personal-chat idempotency prevents duplicate writes after client retries.
+    with engine.begin() as connection:
+        columns = {
+            column["name"] for column in inspect(connection).get_columns("personal_messages")
+        }
+        if "client_message_id" not in columns:
+            connection.execute(text(
+                "ALTER TABLE personal_messages ADD COLUMN client_message_id VARCHAR(64)",
+            ))
+        connection.execute(text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_personal_messages_client_message_id "
+            "ON personal_messages (conversation_id, sender_role, client_message_id)",
         ))
 
     # Read markers for private in-app conversations.

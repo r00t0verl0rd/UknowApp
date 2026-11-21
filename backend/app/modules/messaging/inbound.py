@@ -128,6 +128,8 @@ def persist_message(
 ) -> Message:
     body = safe_text if safe_text is not None else (inbound.text or inbound.caption)
     metadata = message_metadata(inbound)
+    metadata["source_platform"] = inbound.platform.value
+    metadata["source_event_id"] = inbound.event_id[:255]
     if sender.role == "student":
         metadata["teacher_read_at"] = None
     try:
@@ -143,9 +145,25 @@ def persist_message(
         metadata_json=json.dumps(metadata, ensure_ascii=False),
         delivery_status=status,
         source_message_id=source_message_id,
+        source_platform=inbound.platform.value,
+        source_event_id=inbound.event_id[:255] or None,
     )
     db.add(row)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        if inbound.event_id:
+            duplicate = db.scalar(
+                select(Message).where(
+                    Message.sender_id == sender.id,
+                    Message.source_platform == inbound.platform.value,
+                    Message.source_event_id == inbound.event_id[:255],
+                ).limit(1),
+            )
+            if duplicate:
+                return duplicate, False
+        raise
     db.refresh(row)
     conversation = db.get(Conversation, conversation_id)
     if conversation:
@@ -696,11 +714,28 @@ async def process_inbound_message(
             return InboundProcessResult(refresh_teacher_id=sender.id)
         recipient = conversation.assignment.student
 
+    if inbound.event_id:
+        duplicate = db.scalar(
+            select(Message).where(
+                Message.conversation_id == conversation.id,
+                Message.sender_id == sender.id,
+                Message.source_platform == inbound.platform.value,
+                Message.source_event_id == inbound.event_id[:255],
+            ).limit(1),
+        )
+        if duplicate:
+            return InboundProcessResult(
+                refresh_teacher_id=conversation.teacher_id,
+                force_teacher_panel_refresh=sender.role == "student",
+            )
+
     if contact_would_be_exposed(inbound):
-        persist_message(
+        _, created = persist_message(
             db, conversation.id, sender, inbound, "blocked_contact",
             "[Контактные данные скрыты системой]",
         )
+        if not created:
+            return InboundProcessResult(refresh_teacher_id=conversation.teacher_id)
         await gateway.send_text(
             inbound.external_chat_id,
             "Сообщение не отправлено: в нём обнаружены контактные данные. "
@@ -718,7 +753,12 @@ async def process_inbound_message(
 
     # Once accepted and committed, this message is delivered to UknowApp.
     # External messenger forwarding is tracked independently below.
-    row = persist_message(db, conversation.id, sender, inbound, "delivered")
+    row, created = persist_message(db, conversation.id, sender, inbound, "delivered")
+    if not created:
+        return InboundProcessResult(
+            refresh_teacher_id=conversation.teacher_id,
+            force_teacher_panel_refresh=sender.role == "student",
+        )
     metadata = json.loads(row.metadata_json or "{}")
     metadata["source_mode"] = "group_topic" if group_binding else "private"
     try:

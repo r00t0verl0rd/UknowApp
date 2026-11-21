@@ -72,6 +72,13 @@ def test_chat_delivery_ticks_follow_uknowapp_persistence_and_read_state(api):
     assert refreshed.status_code == 200
     assert refreshed.json()[0]["delivery_status"] == "delivered"
     assert refreshed.json()[0]["panel_read_at"] is not None
+    recovered = teacher.post(
+        f"/api/panel/conversations/{conversation_id}/sync",
+        json={"after_id": sent.json()["id"], "known_message_ids": [sent.json()["id"]]},
+    )
+    assert recovered.status_code == 200
+    assert recovered.json()["messages"] == []
+    assert recovered.json()["updated_messages"][0]["panel_read_at"] is not None
     direct = teacher.get(f"/api/panel/messages/{sent.json()['id']}")
     assert direct.status_code == 200
     assert direct.json()["panel_read_at"] is not None
@@ -92,9 +99,14 @@ def test_personal_chat_exposes_admin_read_receipt_to_sender(api):
     login(teacher, "teacher-one", "teacher-password-1")
     sent = teacher.post(
         f"/api/panel/personal-conversations/{conversation_id}/messages",
-        json={"text": "Личное сообщение"},
+        json={"text": "Личное сообщение", "client_message_id": "personal-retry-001"},
+    )
+    sent_duplicate = teacher.post(
+        f"/api/panel/personal-conversations/{conversation_id}/messages",
+        json={"text": "Личное сообщение", "client_message_id": "personal-retry-001"},
     )
     assert sent.status_code == 201
+    assert sent_duplicate.json()["id"] == sent.json()["id"]
     assert sent.json()["panel_read_at"] is None
 
     admin_received = admin.get(
@@ -111,6 +123,14 @@ def test_personal_chat_exposes_admin_read_receipt_to_sender(api):
     direct = teacher.get(f"/api/panel/personal-messages/{sent.json()['id']}")
     assert direct.status_code == 200
     assert direct.json()["panel_read_at"] is not None
+    recovered = teacher.post(
+        f"/api/panel/personal-conversations/{conversation_id}/sync",
+        json={"after_id": sent.json()["id"], "known_message_ids": [sent.json()["id"]]},
+    )
+    assert recovered.status_code == 200
+    assert recovered.json()["messages"] == []
+    assert recovered.json()["updated_messages"][0]["panel_read_at"] is not None
+    assert recovered.json()["summary"]["unread_count"] == 0
 
 
 class FakeMessengerAdapter:
@@ -291,6 +311,9 @@ def test_teacher_telegram_reply_without_student_telegram_is_delivered_in_uknowap
         result = asyncio.run(
             process_inbound_message(db, inbound, gateway),
         )
+        duplicate_result = asyncio.run(
+            process_inbound_message(db, inbound, gateway),
+        )
 
         row = db.query(Message).filter(
             Message.conversation_id == conversation.id,
@@ -298,6 +321,10 @@ def test_teacher_telegram_reply_without_student_telegram_is_delivered_in_uknowap
         metadata = json.loads(row.metadata_json or "{}")
 
         assert result.refresh_teacher_id == teacher.id
+        assert duplicate_result.refresh_teacher_id == teacher.id
+        assert db.query(Message).filter(
+            Message.conversation_id == conversation.id,
+        ).count() == 1
         assert row.delivery_status == "delivered"
         assert row.text == inbound.text
         assert metadata["messenger_deliveries"]["telegram"]["status"] == "not_connected"
@@ -307,3 +334,30 @@ def test_teacher_telegram_reply_without_student_telegram_is_delivered_in_uknowap
         # Incomplete pair: do not use Telegram send/delete APIs at all.
         assert gateway.sent_texts == []
         assert gateway.deleted_messages == []
+
+
+def test_panel_message_client_id_prevents_duplicate_persistence(api):
+    make_client, users, _ = api
+    admin = make_client()
+    login(admin, "test-admin", "a-long-test-password-123")
+    assignment = admin.post(
+        "/api/admin/assignments",
+        json={"teacher_id": users["teacher-one"], "student_id": users["student-one"]},
+    )
+    conversation_id = assignment.json()["id"]
+
+    teacher = make_client()
+    login(teacher, "teacher-one", "teacher-password-1")
+    payload = {"text": "Повторно отправленный запрос", "client_message_id": "retry-key-001"}
+    first = teacher.post(
+        f"/api/panel/conversations/{conversation_id}/messages",
+        json=payload,
+    )
+    second = teacher.post(
+        f"/api/panel/conversations/{conversation_id}/messages",
+        json=payload,
+    )
+    assert first.status_code == second.status_code == 201
+    assert first.json()["id"] == second.json()["id"]
+    rows = teacher.get(f"/api/panel/conversations/{conversation_id}/messages")
+    assert len(rows.json()) == 1

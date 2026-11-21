@@ -50,8 +50,8 @@ def _panel_message_dict(
     metadata = json.loads(item.metadata_json or "{}")
     if not expose_internal_metadata:
         for key in (
-            "source_chat_id", "source_thread_id", "telegram_deliveries",
-            "telegram_delivery_errors", "messenger_deliveries",
+            "source_chat_id", "source_thread_id", "source_platform", "source_event_id",
+            "telegram_deliveries", "telegram_delivery_errors", "messenger_deliveries",
             "teacher_inbox_media_message_id", "teacher_inbox_notice_message_id",
         ):
             metadata.pop(key, None)

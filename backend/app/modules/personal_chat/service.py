@@ -78,4 +78,5 @@ def publish_personal_update(
         read_at=read_at,
         audience={"participant_id": item.participant_id},
         summary_by_role=personal_event_summaries(db, item),
+        db=db,
     )

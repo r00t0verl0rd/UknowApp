@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { createPanelEventSource, getInboxData } from "../../../shared/services/panelApi.js";
-import { getChatMessage, getChatMessages, getChatSummary } from "../services/conversationsApi.js";
+import { syncChatState } from "../services/conversationsApi.js";
 
 const maxMessageId = rows => rows.reduce((max, row) => Math.max(max, Number(row.id) || 0), 0);
 
@@ -14,14 +14,14 @@ function mergeMessages(previous, incoming) {
   const clientIds = new Set(
     incoming.map(item => item.metadata?.client_message_id).filter(Boolean),
   );
-  const incomingById = new Map(incoming.map(item => [item.id, item]));
+  const incomingById = new Map(incoming.map(item => [Number(item.id), item]));
   const merged = previous
     .filter(item => !clientIds.has(item.metadata?.client_message_id))
-    .map(item => incomingById.has(item.id) ? incomingById.get(item.id) : item);
-  const known = new Set(merged.map(item => item.id));
+    .map(item => incomingById.has(Number(item.id)) ? incomingById.get(Number(item.id)) : item);
+  const known = new Set(merged.map(item => Number(item.id)));
   return [
     ...merged,
-    ...incoming.filter(item => !known.has(item.id)),
+    ...incoming.filter(item => !known.has(Number(item.id))),
   ];
 }
 
@@ -30,9 +30,11 @@ export function useConversationSync({
   setChats, setPersonalChats, setSelectedChat, setMessages,
 }) {
   const current = useRef(null);
-  const lastMessageId = useRef(0);
+  const lastMessageCursor = useRef({ chatKey: "", id: 0 });
+  const lastEventId = useRef(0);
   const pending = useRef(new Map());
   const processing = useRef(false);
+  const syncing = useRef(false);
 
   current.current = {
     selectedChat, messages, role,
@@ -40,72 +42,8 @@ export function useConversationSync({
   };
 
   useEffect(() => {
-    lastMessageId.current = 0;
-  }, [selectedChat?.id, selectedChat?.type]);
-
-  useEffect(() => {
-    if (messages.length) {
-      lastMessageId.current = Math.max(
-        lastMessageId.current,
-        maxMessageId(messages),
-      );
-    }
-  }, [messages]);
-
-  useEffect(() => {
     if (!auth || page !== "chats") return undefined;
     let active = true;
-
-    const refreshInbox = async () => {
-      const [conversations, personal] = await getInboxData(request);
-      if (!active) return;
-      current.current.setChats(conversations);
-      current.current.setPersonalChats(personal);
-    };
-
-    const refreshSelected = async (fullHistory = false) => {
-      const chat = current.current.selectedChat;
-      if (!chat) return;
-      const afterId = fullHistory ? 0 : Math.max(
-        lastMessageId.current,
-        maxMessageId(current.current.messages),
-      );
-      const rows = await getChatMessages(request, chat, afterId);
-      if (!active || !isSameChat(current.current.selectedChat, chat.id, chat.type)) return;
-      if (fullHistory) {
-        lastMessageId.current = maxMessageId(rows);
-        current.current.setMessages(rows);
-      } else if (rows.length) {
-        lastMessageId.current = Math.max(afterId, maxMessageId(rows));
-        current.current.setMessages(previous => mergeMessages(previous, rows));
-      }
-    };
-
-    const refreshOneMessage = async (chat, messageId) => {
-      try {
-        const row = await getChatMessage(request, chat, messageId);
-        if (!active || !isSameChat(current.current.selectedChat, chat.id, chat.type)) return;
-        current.current.setMessages(previous => mergeMessages(previous, [row]));
-      } catch {
-        // A concurrent deletion or a revoked conversation is reconciled by its next event.
-      }
-    };
-
-    const refreshSummary = async (type, id) => {
-      const chat = { id, type: type === "personal" ? "personal" : "conversation" };
-      try {
-        const summary = await getChatSummary(request, chat);
-        if (!active) return;
-        applySummary(type, id, summary);
-      } catch (error) {
-        if (!/404|не найден/i.test(String(error.message))) throw error;
-        if (type === "personal") {
-          current.current.setPersonalChats(items => items.filter(item => Number(item.id) !== Number(id)));
-        } else {
-          current.current.setChats(items => items.filter(item => Number(item.id) !== Number(id)));
-        }
-      }
-    };
 
     const applySummary = (type, id, summary) => {
       if (!summary || !active) return;
@@ -123,9 +61,46 @@ export function useConversationSync({
       ));
     };
 
+    const refreshInbox = async () => {
+      const [conversations, personal] = await getInboxData(request);
+      if (!active) return;
+      current.current.setChats(conversations);
+      current.current.setPersonalChats(personal);
+    };
+
+    const syncSelected = async () => {
+      const chat = current.current.selectedChat;
+      if (!chat || syncing.current) return;
+      syncing.current = true;
+      const knownMessages = current.current.messages
+        .filter(item => Number.isSafeInteger(Number(item.id)) && Number(item.id) > 0);
+      const chatKey = chat.type + ":" + chat.id;
+      if (lastMessageCursor.current.chatKey !== chatKey) {
+        lastMessageCursor.current = { chatKey, id: maxMessageId(knownMessages) };
+      }
+      const afterId = Math.max(lastMessageCursor.current.id, maxMessageId(knownMessages));
+      try {
+        const result = await syncChatState(
+          request,
+          chat,
+          afterId,
+          knownMessages.map(item => Number(item.id)),
+        );
+        if (!active || !isSameChat(current.current.selectedChat, chat.id, chat.type)) return;
+        const updated = [...(result.updated_messages || []), ...(result.messages || [])];
+        if (updated.length) {
+          lastMessageCursor.current.id = Math.max(afterId, maxMessageId(updated));
+          current.current.setMessages(previous => mergeMessages(previous, updated));
+        }
+        if (result.summary) applySummary(chat.type, chat.id, result.summary);
+      } finally {
+        syncing.current = false;
+      }
+    };
+
     const recover = async () => {
       await refreshInbox();
-      await refreshSelected(true);
+      await syncSelected();
     };
 
     const flush = async () => {
@@ -140,9 +115,7 @@ export function useConversationSync({
               conversation_id: id,
               conversation_type: type,
               deleted_message_ids: deletedIds,
-              updated_message_ids: updatedIds,
               refresh_messages: refreshMessages,
-              needs_summary: needsSummary,
             } = event;
             const chat = current.current.selectedChat;
             if (isSameChat(chat, id, type)) {
@@ -151,18 +124,12 @@ export function useConversationSync({
                   row => !deletedIds.has(Number(row.id)),
                 ));
               }
-              const jobs = [];
-              if (refreshMessages) jobs.push(refreshSelected());
-              for (const messageId of updatedIds) {
-                jobs.push(refreshOneMessage(chat, messageId));
-              }
-              await Promise.all(jobs);
+              if (refreshMessages) await syncSelected();
             }
-            if (needsSummary) await refreshSummary(type, Number(id));
           }));
         }
       } catch {
-        // A reconnect or queue-overflow resync restores the authoritative snapshot.
+        // Replayed events or the bounded resync endpoint restore only changed rows.
       } finally {
         processing.current = false;
         if (pending.current.size && active) void flush();
@@ -170,46 +137,30 @@ export function useConversationSync({
     };
 
     const source = createPanelEventSource();
-    let fallbackTimer = null;
-    let hasOpened = false;
-    const stopFallback = () => {
-      if (fallbackTimer !== null) {
-        window.clearInterval(fallbackTimer);
-        fallbackTimer = null;
-      }
-    };
-    const startFallback = () => {
-      if (fallbackTimer !== null) return;
-      // SSE is authoritative; use a low-frequency fallback only while disconnected.
-      fallbackTimer = window.setInterval(() => {
-        if (document.visibilityState !== "visible") return;
-        void refreshInbox()
-          .then(() => refreshSelected())
-          .catch(() => {});
-      }, 3000);
-    };
-
-    if (!source) {
-      startFallback();
-    } else {
+    if (source) {
+      let hasOpened = false;
       source.onopen = () => {
-        stopFallback();
-        if (hasOpened) {
-          void recover().catch(() => {});
-        } else {
+        if (!hasOpened) {
           hasOpened = true;
-          void refreshInbox()
-            .then(() => refreshSelected())
-            .catch(() => {});
+          // Reconcile the inbox snapshot boundary without reloading existing history.
+          void recover().catch(() => {});
         }
+        // On reconnect, Last-Event-ID replays missed events from the durable event log.
       };
-      source.onerror = () => startFallback();
+      source.onerror = () => {
+        // EventSource owns reconnect/backoff; avoid periodic polling while offline.
+      };
       source.addEventListener("update", event => {
         let payload;
         try {
           payload = JSON.parse(event.data || "{}");
         } catch {
           payload = { resync: true };
+        }
+        const eventId = Number(payload.event_id || event.lastEventId || 0);
+        if (Number.isSafeInteger(eventId) && eventId > 0) {
+          if (eventId <= lastEventId.current) return;
+          lastEventId.current = eventId;
         }
         if (payload.resync) {
           void recover().catch(() => {});
@@ -228,6 +179,7 @@ export function useConversationSync({
           : viewerRole === "teacher" ? "student"
             : viewerRole === "student" ? "teacher" : null;
 
+        let requiresReceiptSync = false;
         if (
           payload.action === "read"
           && isSameChat(selected, id, type)
@@ -235,11 +187,9 @@ export function useConversationSync({
           && payload.message_ids.length
         ) {
           if (viewerRole === "admin" && type !== "personal") {
-            // Admin receipts require both participants to have read the message.
-            // Re-read only the affected row so the shared two-reader state stays authoritative.
-            for (const messageId of payload.message_ids) {
-              void refreshOneMessage(selected, Number(messageId));
-            }
+            // The admin tick turns blue only after both participants have read.
+            // One batched sync refreshes all already loaded receipt states.
+            requiresReceiptSync = true;
           } else if (expectedReader === payload.actor_role) {
             const readIds = new Set(payload.message_ids.map(Number));
             const readAt = payload.read_at || new Date().toISOString();
@@ -256,34 +206,34 @@ export function useConversationSync({
           conversation_id: id,
           conversation_type: type,
           deleted_message_ids: new Set(),
-          updated_message_ids: new Set(),
           refresh_messages: false,
-          needs_summary: false,
         };
+        if (requiresReceiptSync) state.refresh_messages = true;
         if (payload.action === "delete" && payload.message_id) {
           state.deleted_message_ids.add(Number(payload.message_id));
-        } else if (payload.action === "delivery" && payload.message_id) {
-          state.updated_message_ids.add(Number(payload.message_id));
-        } else if (payload.action !== "read") {
+        } else if (payload.action === "read") {
+          // Participant read events are applied directly above unless the admin
+          // needs to reconcile the combined two-reader receipt.
+        } else {
           state.refresh_messages = true;
         }
-        if (!payload.summary) state.needs_summary = true;
         pending.current.set(key, state);
         void flush();
       });
+    } else {
+      // All supported target browsers and the installed web app provide EventSource.
+      // A one-shot state reconcile is safer than introducing a polling loop.
+      void recover().catch(() => {});
     }
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        void refreshInbox().then(() => refreshSelected()).catch(() => {});
-      }
+      if (document.visibilityState === "visible") void recover().catch(() => {});
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       active = false;
       pending.current.clear();
       source?.close();
-      stopFallback();
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [auth, page, request]);

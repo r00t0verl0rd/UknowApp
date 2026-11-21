@@ -164,7 +164,7 @@ export function useChatsController({
     if (!chat || (!text && !file)) return;
 
     const optimistic = chat.type !== "personal" && !file && Boolean(text);
-    const clientMessageId = optimistic
+    const clientMessageId = text || file
       ? (window.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2))
       : null;
     const optimisticId = clientMessageId ? "local-" + clientMessageId : null;
@@ -189,9 +189,9 @@ export function useChatsController({
       let sentMessage;
       if (chat.type === "personal") {
         if (file) throw new Error("В личных диалогах доступны только текстовые сообщения");
-        sentMessage = await sendPersonalMessage(request, chat.id, text);
+        sentMessage = await sendPersonalMessage(request, chat.id, text, clientMessageId);
       } else if (file) {
-        sentMessage = await sendConversationAttachment(chat.id, file, text);
+        sentMessage = await sendConversationAttachment(chat.id, file, text, clientMessageId);
       } else {
         sentMessage = await sendConversationText(request, chat.id, text, clientMessageId);
       }

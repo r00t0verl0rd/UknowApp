@@ -105,6 +105,13 @@ class PersonalMessage(Base):
     __table_args__ = (
         Index("ix_personal_messages_conversation_created_id", "conversation_id", "created_at", "id"),
         Index("ix_personal_messages_conversation_id_id", "conversation_id", "id"),
+        Index(
+            "uq_personal_messages_client_message_id",
+            "conversation_id",
+            "sender_role",
+            "client_message_id",
+            unique=True,
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -112,6 +119,7 @@ class PersonalMessage(Base):
     sender_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     sender_role: Mapped[str] = mapped_column(String(20), nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
+    client_message_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     admin_read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     participant_read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
@@ -132,6 +140,20 @@ class Message(Base):
     __table_args__ = (
         Index("ix_messages_conversation_created_id", "conversation_id", "created_at", "id"),
         Index("ix_messages_conversation_id_id", "conversation_id", "id"),
+        Index(
+            "uq_messages_client_message_id",
+            "conversation_id",
+            "sender_id",
+            "client_message_id",
+            unique=True,
+        ),
+        Index(
+            "uq_messages_inbound_event",
+            "sender_id",
+            "source_platform",
+            "source_event_id",
+            unique=True,
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -141,8 +163,11 @@ class Message(Base):
     content_type: Mapped[str] = mapped_column(String(40), default="text", nullable=False)
     text: Mapped[str] = mapped_column(Text, default="", nullable=False)
     metadata_json: Mapped[str] = mapped_column(Text, default="{}", nullable=False)
+    client_message_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     delivery_status: Mapped[str] = mapped_column(String(30), default="received", nullable=False)
     source_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    source_platform: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    source_event_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     destination_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
@@ -228,6 +253,22 @@ class MessengerAccount(Base):
     )
 
     user: Mapped[User] = relationship()
+
+
+class RealtimeEvent(Base):
+    """Durable ordered log of committed conversation/read/delivery events."""
+
+    __tablename__ = "realtime_events"
+    __table_args__ = (
+        Index("ix_realtime_events_created_at", "created_at"),
+        {"sqlite_autoincrement": True},
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    conversation_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    conversation_type: Mapped[str] = mapped_column(String(20), nullable=False, default="conversation")
+    payload_json: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
 
 class GraphObjectDeletion(Base):

@@ -22,11 +22,15 @@ from fastapi import (
 )
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy import and_, func, or_, select, update
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.database import SessionLocal
-from app.event_hub import subscribe_chat_updates, unsubscribe_chat_updates
+from app.event_hub import (
+    replay_chat_updates,
+    subscribe_chat_updates,
+    unsubscribe_chat_updates,
+)
 from app.infrastructure.storage.media import (
     MEDIA_DIR,
     delete_message_media,
@@ -198,19 +202,26 @@ def panel_me(principal: PanelUser, db: Db):
 
 
 @router.get("/panel/events")
-async def panel_events(request: Request, principal: PanelUser):
-    """Keep an authenticated browser connection open for conversation changes."""
+async def panel_events(request: Request, principal: PanelUser, db: Db):
+    """Stream live updates and replay missed events after automatic reconnection."""
+    queue = subscribe_chat_updates(principal)
+    try:
+        cursor = int(request.headers.get("last-event-id", "0") or 0)
+    except ValueError:
+        cursor = 0
+    replay = replay_chat_updates(db, principal, cursor) if cursor else []
+    # Do not keep a database connection checked out for the life of an SSE stream.
+    db.rollback()
 
     async def event_stream():
-        queue = subscribe_chat_updates(principal)
         try:
             yield "retry: 1500\n\n"
+            for event_id, payload in replay:
+                yield f"id: {event_id}\nevent: update\ndata: {payload}\n\n"
             while not await request.is_disconnected():
                 try:
                     payload = await asyncio.wait_for(queue.get(), timeout=15)
                 except TimeoutError:
-                    # SSE comment frames keep intermediaries from closing an idle
-                    # connection; they do not trigger a browser data callback.
                     yield ": keep-alive\n\n"
                     continue
                 try:
@@ -413,16 +424,43 @@ def send_personal_message(
         if not sender or sender.id != item.participant_id:
             raise HTTPException(status_code=403, detail="Нет доступа к личному диалогу")
         sender_id = sender.id
+    client_message_id = payload.get("client_message_id")
+    if client_message_id:
+        existing = db.scalar(
+            select(PersonalMessage).where(
+                PersonalMessage.conversation_id == item.id,
+                PersonalMessage.sender_role == principal["role"],
+                PersonalMessage.client_message_id == client_message_id,
+            ).limit(1),
+        )
+        if existing:
+            return _personal_message_dict(existing, principal)
+
     row = PersonalMessage(
         conversation_id=item.id,
         sender_id=sender_id,
         sender_role=principal["role"],
         text=payload["text"].strip(),
+        client_message_id=client_message_id,
     )
     if not row.text:
         raise HTTPException(status_code=400, detail="Введите сообщение")
     db.add(row)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        if client_message_id:
+            existing = db.scalar(
+                select(PersonalMessage).where(
+                    PersonalMessage.conversation_id == item.id,
+                    PersonalMessage.sender_role == principal["role"],
+                    PersonalMessage.client_message_id == client_message_id,
+                ).limit(1),
+            )
+            if existing:
+                return _personal_message_dict(existing, principal)
+        raise
     db.refresh(row)
     schedule_push(
         db,
@@ -501,6 +539,151 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
         )
         for item in rows
     ]
+
+
+def _sync_request_fields(payload: dict) -> tuple[int, list[int]]:
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=422, detail="Некорректный запрос синхронизации")
+    after_id = payload.get("after_id", 0)
+    known_ids = payload.get("known_message_ids", [])
+    if isinstance(after_id, bool) or not isinstance(after_id, int) or after_id < 0:
+        raise HTTPException(status_code=422, detail="Некорректный курсор сообщений")
+    if not isinstance(known_ids, list) or len(known_ids) > 5000:
+        raise HTTPException(status_code=422, detail="Некорректный список сообщений")
+    normalized = []
+    for value in known_ids:
+        if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+            raise HTTPException(status_code=422, detail="Некорректный идентификатор сообщения")
+        normalized.append(value)
+    return after_id, list(dict.fromkeys(normalized))
+
+
+@router.post("/panel/conversations/{conversation_id}/sync")
+def sync_conversation_state(
+    conversation_id: int,
+    payload: dict,
+    principal: PanelUser,
+    db: Db,
+):
+    """Recover message deltas and statuses of already loaded rows without history reload."""
+    after_id, known_ids = _sync_request_fields(payload)
+    conversation = _panel_visible_conversation(db, principal, conversation_id)
+    if principal["role"] in {"teacher", "student"}:
+        read_key = "teacher_read_at" if principal["role"] == "teacher" else "student_read_at"
+        sender_roles = ("student", "admin") if principal["role"] == "teacher" else ("teacher", "admin")
+        unread = db.scalars(
+            select(Message).where(
+                Message.conversation_id == conversation.id,
+                Message.sender_role.in_(sender_roles),
+                func.json_extract(Message.metadata_json, "$." + read_key).is_(None),
+                Message.id > after_id,
+            ),
+        ).all()
+        if unread:
+            read_at = datetime.now(UTC).isoformat()
+            for row in unread:
+                metadata = json.loads(row.metadata_json or "{}")
+                metadata[read_key] = read_at
+                row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+            db.commit()
+            publish_conversation_update(
+                db, conversation, action="read", actor_role=principal["role"],
+                message_ids=[row.id for row in unread], read_at=read_at,
+            )
+
+    new_rows = db.scalars(
+        select(Message)
+        .where(Message.conversation_id == conversation.id, Message.id > after_id)
+        .order_by(Message.created_at, Message.id),
+    ).all()
+    updated_rows = db.scalars(
+        select(Message)
+        .where(
+            Message.conversation_id == conversation.id,
+            Message.id.in_(known_ids or [-1]),
+        )
+        .order_by(Message.created_at, Message.id),
+    ).all()
+
+    def serialize(rows):
+        return [
+            _panel_message_dict(
+                row,
+                expose_internal_metadata=(principal["role"] == "admin"),
+                principal=principal,
+            )
+            for row in rows
+        ]
+    summary = conversation_dicts(
+        db, [conversation], include_telegram_ids=(principal["role"] == "admin"),
+        viewer_role=principal["role"],
+    )[0]
+    return {
+        "messages": serialized(new_rows),
+        "updated_messages": serialized(updated_rows),
+        "summary": summary,
+    }
+
+
+@router.post("/panel/personal-conversations/{conversation_id}/sync")
+def sync_personal_conversation_state(
+    conversation_id: int,
+    payload: dict,
+    principal: PanelUser,
+    db: Db,
+):
+    """Recover private-chat deltas and read markers for known messages."""
+    after_id, known_ids = _sync_request_fields(payload)
+    item = _personal_conversation(db, principal, conversation_id)
+    read_column = PersonalMessage.admin_read_at if principal["role"] == "admin" else PersonalMessage.participant_read_at
+    read_ids = db.scalars(
+        select(PersonalMessage.id).where(
+            PersonalMessage.conversation_id == item.id,
+            PersonalMessage.sender_role != principal["role"],
+            read_column.is_(None),
+            PersonalMessage.id > after_id,
+        ),
+    ).all()
+    if read_ids:
+        read_at = datetime.now(UTC)
+        db.execute(
+            update(PersonalMessage)
+            .where(PersonalMessage.id.in_(read_ids))
+            .values({read_column.key: read_at}),
+        )
+        db.commit()
+        publish_personal_update(
+            db, item, action="read", actor_role=principal["role"],
+            message_ids=read_ids, read_at=read_at.isoformat(),
+        )
+
+    new_rows = db.scalars(
+        select(PersonalMessage)
+        .options(selectinload(PersonalMessage.sender))
+        .where(PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id)
+        .order_by(PersonalMessage.created_at, PersonalMessage.id),
+    ).all()
+    updated_rows = db.scalars(
+        select(PersonalMessage)
+        .options(selectinload(PersonalMessage.sender))
+        .where(
+            PersonalMessage.conversation_id == item.id,
+            PersonalMessage.id.in_(known_ids or [-1]),
+        )
+        .order_by(PersonalMessage.created_at, PersonalMessage.id),
+    ).all()
+    unread_count = db.scalar(
+        select(func.count(PersonalMessage.id)).where(
+            PersonalMessage.conversation_id == item.id,
+            PersonalMessage.sender_role != principal["role"],
+            read_column.is_(None),
+        ),
+    ) or 0
+    return {
+        "messages": [_personal_message_dict(row, principal) for row in new_rows],
+        "updated_messages": [_personal_message_dict(row, principal) for row in updated_rows],
+        "summary": _personal_conversation_dict(item, principal["role"], unread_count),
+    }
 
 
 @router.get("/panel/messages/{message_id}")
@@ -895,6 +1078,26 @@ async def send_panel_message(
 
     sender, recipients, student, teacher = _panel_sender_and_recipients(db, principal, conversation)
 
+    client_message_id = payload.get("client_message_id")
+    if client_message_id:
+        existing = db.scalar(
+            select(Message).where(
+                Message.conversation_id == conversation.id,
+                Message.sender_id == sender.id,
+                Message.sender_role == principal["role"],
+                or_(
+                    Message.client_message_id == client_message_id,
+                    func.json_extract(Message.metadata_json, "$.client_message_id") == client_message_id,
+                ),
+            ).limit(1),
+        )
+        if existing:
+            return _panel_message_dict(
+                existing,
+                expose_internal_metadata=(principal["role"] == "admin"),
+                principal=principal,
+            )
+
     row = Message(
         conversation_id=conversation.id,
         sender_id=sender.id,
@@ -904,12 +1107,32 @@ async def send_panel_message(
         metadata_json=json.dumps({
             "source_mode": "web",
             "web_sender_role": principal["role"],
-            **({"client_message_id": payload["client_message_id"]} if payload.get("client_message_id") else {}),
+            **({"client_message_id": client_message_id} if client_message_id else {}),
         }, ensure_ascii=False),
+        client_message_id=client_message_id,
         delivery_status="delivered",
     )
     db.add(row)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        if client_message_id:
+            existing = db.scalar(
+                select(Message).where(
+                    Message.conversation_id == conversation.id,
+                    Message.sender_id == sender.id,
+                    Message.sender_role == principal["role"],
+                    Message.client_message_id == client_message_id,
+                ).limit(1),
+            )
+            if existing:
+                return _panel_message_dict(
+                    existing,
+                    expose_internal_metadata=(principal["role"] == "admin"),
+                    principal=principal,
+                )
+        raise
     db.refresh(row)
     # Publish immediately after UknowApp persistence; external delivery is independent.
     publish_conversation_update(db, conversation, message_id=row.id, sender_role=principal["role"])
@@ -955,12 +1178,31 @@ async def send_panel_attachment(
     background_tasks: BackgroundTasks,
     file: Annotated[UploadFile, File()],
     text: Annotated[str, Form()] = "",
+    client_message_id: Annotated[str | None, Form()] = None,
 ):
     # Ограничиваем размер до чтения файла целиком и сохраняем локальную копию для веб-панели.
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     if len(text or "") > 3900:
         raise HTTPException(status_code=400, detail="Текст к вложению слишком длинный")
     sender, recipients, student, teacher = _panel_sender_and_recipients(db, principal, conversation)
+    client_message_id = (client_message_id or "").strip() or None
+    if client_message_id and len(client_message_id) > 64:
+        raise HTTPException(status_code=400, detail="Некорректный ID отправки")
+    if client_message_id:
+        existing = db.scalar(
+            select(Message).where(
+                Message.conversation_id == conversation.id,
+                Message.sender_id == sender.id,
+                Message.sender_role == principal["role"],
+                Message.client_message_id == client_message_id,
+            ).limit(1),
+        )
+        if existing:
+            return _panel_message_dict(
+                existing,
+                expose_internal_metadata=(principal["role"] == "admin"),
+                principal=principal,
+            )
 
     if text_contains_contact_data((text or "").strip()):
         raise HTTPException(status_code=400, detail="Контактные данные нельзя отправлять через чат UknowApp")
@@ -985,12 +1227,34 @@ async def send_panel_attachment(
         metadata_json=json.dumps({
             "source_mode": "web",
             "web_sender_role": principal["role"],
+            **({"client_message_id": client_message_id} if client_message_id else {}),
             "media": media,
         }, ensure_ascii=False),
+        client_message_id=client_message_id,
         delivery_status="delivered",
     )
     db.add(row)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        delete_message_media(json.dumps({"media": media}, ensure_ascii=False))
+        if client_message_id:
+            existing = db.scalar(
+                select(Message).where(
+                    Message.conversation_id == conversation.id,
+                    Message.sender_id == sender.id,
+                    Message.sender_role == principal["role"],
+                    Message.client_message_id == client_message_id,
+                ).limit(1),
+            )
+            if existing:
+                return _panel_message_dict(
+                    existing,
+                    expose_internal_metadata=(principal["role"] == "admin"),
+                    principal=principal,
+                )
+        raise
     db.refresh(row)
     publish_conversation_update(
         db, conversation, message_id=row.id, sender_role=principal["role"],
