@@ -7,6 +7,7 @@ import Send from "lucide-react/dist/esm/icons/send.js";
 import X from "lucide-react/dist/esm/icons/x.js";
 import MessageBubble from "./components/MessageBubble.jsx";
 import EmptyState from "../../shared/components/EmptyState.jsx";
+import CountBadge from "../../shared/components/CountBadge.jsx";
 
 export default function ChatsPage({
   profile, chatSection, setChatSection, personalChats, setSelectedChat,
@@ -40,11 +41,11 @@ export default function ChatsPage({
                 setMessages([]);
               }}>
               Личные
-              {unreadPersonalCount > 0 && (
-                <span className="chat-tab-count">
-                  {unreadPersonalCount > 99 ? "99+" : unreadPersonalCount}
-                </span>
-              )}
+              <CountBadge
+                value={unreadPersonalCount}
+                label="непрочитанных личных сообщений"
+                hideWhenZero
+              />
             </button>
           </div>
         )}
@@ -124,13 +125,12 @@ export default function ChatsPage({
                   </div>
                 </div>
                 {(showMessageCount || unreadCount > 0) && (
-                  <span className={"chat-tab-count" + (!showMessageCount && unreadCount > 0 ? " chat-tab-count--unread" : "")}
+                  <CountBadge
+                    value={displayedCount}
+                    unread={!showMessageCount && unreadCount > 0}
                     title={showMessageCount ? "Всего сообщений" : "Непрочитанные сообщения"}
-                    aria-label={showMessageCount
-                      ? displayedCount + " сообщений всего"
-                      : displayedCount + " непрочитанных сообщений"}>
-                    {displayedCount > 99 ? "99+" : displayedCount}
-                  </span>
+                    label={showMessageCount ? "сообщений всего" : "непрочитанных сообщений"}
+                  />
                 )}
               </button>
             );
