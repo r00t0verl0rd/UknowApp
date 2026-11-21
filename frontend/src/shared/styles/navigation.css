@@ -1,5 +1,4 @@
-/* Общие правила меню для всех кабинетов и кнопки «Добавить участника».
-   Выделение показывает выбранный раздел, остальные кнопки выглядят одинаково. */
+/* Кнопки меню и добавления участника: единые цвета, размеры и состояния. */
 :root {
   --menu-bg: var(--ui-control-bg);
   --menu-border: var(--ui-border);
@@ -16,12 +15,43 @@
   --menu-active-text: #c6bdf0;
 }
 
-/* Селекторы достаточно точны, чтобы заменить старые стили без изменений в сетке. */
+/* Вертикальная навигация и нижний блок на компьютере. */
+.workspace-shell .sidebar nav {
+  display: grid;
+  gap: 4px;
+}
+.workspace-shell .sidebar-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.workspace-shell .sidebar-bottom > .ui-menu-control {
+  width: 100%;
+  margin: 0;
+}
+.workspace-shell .sidebar-bottom > :is(.desktop-admin-extra, .desktop-sidebar-logout) {
+  display: none;
+}
+@media (min-width: 1025px) {
+  .workspace-shell .sidebar-bottom > :is(.desktop-admin-extra, .desktop-sidebar-logout) {
+    display: flex;
+  }
+  .workspace-shell .sidebar-bottom > .desktop-sidebar-logout {
+    margin-top: 8px;
+  }
+}
+
+/* Общая кнопка меню и действия создания. */
 :root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control,
 :root .workspace-shell .content .graph-add-participant.ui-menu-control {
   -webkit-appearance: none !important;
   appearance: none !important;
   box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
   min-height: 42px;
   padding: 10px 12px !important;
   gap: 10px !important;
@@ -38,6 +68,17 @@
   letter-spacing: -.01em;
   text-decoration: none;
   text-align: left;
+  transition: background-color var(--ui-transition-fast), border-color var(--ui-transition-fast), color var(--ui-transition-fast);
+}
+:root .workspace-shell .content .graph-add-participant.ui-menu-control {
+  justify-content: center;
+  flex: 0 0 auto;
+  align-self: stretch;
+  min-width: 0;
+  max-width: 52%;
+  height: auto;
+  margin-left: 0;
+  white-space: nowrap;
 }
 :root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control > svg,
 :root .workspace-shell .content .graph-add-participant.ui-menu-control > svg {
@@ -53,18 +94,12 @@
   color: var(--menu-text) !important;
   box-shadow: none !important;
 }
-:root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control.active,
-:root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control[aria-current="page"] {
-  background: var(--menu-active-bg) !important;
-  border-color: var(--menu-active-border) !important;
-  color: var(--menu-active-text) !important;
-  box-shadow: none !important;
-}
-:root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control.active:hover,
+:root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control[aria-current="page"],
 :root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control[aria-current="page"]:hover {
   background: var(--menu-active-bg) !important;
   border-color: var(--menu-active-border) !important;
   color: var(--menu-active-text) !important;
+  box-shadow: none !important;
 }
 :root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control:focus-visible,
 :root .workspace-shell .content .graph-add-participant.ui-menu-control:focus-visible {
@@ -72,46 +107,67 @@
   outline-offset: 2px;
 }
 
-/* Имена, заголовки и пункты меню используют одну гарнитуру без тяжёлого Sora. */
+/* Для имен и меню используется единая гарнитура. */
 :root .workspace-shell :is(.person-info b, .role_node b, .school-label, .graph-legend) {
   font-family: var(--font-family-ui) !important;
 }
-:root .workspace-shell .person-info b,
-:root .workspace-shell .role_node b {
+:root .workspace-shell :is(.person-info b, .role_node b) {
   font-weight: 650;
 }
 :root .workspace-shell .graph-legend {
   font-weight: 600;
 }
 
-/* Горизонтальное меню на телефоне остаётся прокручиваемым. */
+/* На телефоне меню прокручивается горизонтально; действия переходят в верхнюю строку. */
 @media (max-width: 1024px) {
-  :root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control {
+  .workspace-shell .sidebar nav {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .workspace-shell .sidebar nav::-webkit-scrollbar {
+    display: none;
+  }
+  .workspace-shell .sidebar-bottom {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    display: flex;
+    margin: 0;
+  }
+  :root .workspace-shell .sidebar nav > button.ui-menu-control {
+    flex: 1 0 auto;
+    min-width: 0;
     min-height: 38px;
+    justify-content: center;
     padding: 9px 8px !important;
     font-size: clamp(11px, 3vw, 13px) !important;
     gap: 5px !important;
+    white-space: nowrap;
   }
   :root .workspace-shell .sidebar nav > button.ui-menu-control > svg {
-    flex-basis: 16px;
+    flex: 0 0 16px;
     width: 16px;
     height: 16px;
   }
   :root .workspace-shell .content .graph-add-participant.ui-menu-control {
+    flex: 0 1 auto;
     min-height: 38px;
+    max-width: 52%;
     padding: 8px 10px !important;
     font-size: clamp(11px, 3vw, 13px) !important;
     gap: 6px !important;
     text-align: center;
   }
   :root .workspace-shell .content .graph-add-participant.ui-menu-control > svg {
-    flex-basis: 15px;
+    flex: 0 0 15px;
     width: 15px;
     height: 15px;
   }
 }
 
-/* Старое мобильное правило не должно окрашивать новую кнопку иначе, чем меню. */
+/* Общие правила мобильной темы не меняют оформление кнопки создания. */
 :root[data-theme="dark-soft"] .workspace-shell .content:has(.role_node) button.graph-add-participant.ui-menu-control {
   background: var(--menu-bg) !important;
   background-image: none !important;

@@ -193,11 +193,11 @@ test("global SSE updates real counters across tabs and replays missed events", {
             <aside class="sidebar">
               <nav>
                 <button class="ui-menu-control" type="button">Диалоги</button>
-                <button class="ui-menu-control active" aria-current="page" type="button">Структура</button>
+                <button class="ui-menu-control" aria-current="page" type="button">Структура</button>
               </nav>
               <div class="sidebar-bottom">
-                <button class="logout desktop-admin-extra ui-menu-control" type="button">Дополнительно</button>
-                <button class="logout desktop-sidebar-logout ui-menu-control" type="button">Выход</button>
+                <button class="desktop-admin-extra ui-menu-control" type="button">Дополнительно</button>
+                <button class="desktop-sidebar-logout ui-menu-control" type="button">Выход</button>
               </div>
             </aside>
             <div class="content">
@@ -220,11 +220,11 @@ test("global SSE updates real counters across tabs and replays missed events", {
             };
           };
           const result = {
-            nav: styleOf(".sidebar nav button:not(.active)"),
+            nav: styleOf(".sidebar nav button:not([aria-current])"),
             additional: styleOf(".desktop-admin-extra"),
             logout: styleOf(".desktop-sidebar-logout"),
             create: styleOf(".graph-add-participant"),
-            selected: styleOf(".sidebar nav button.active"),
+            selected: styleOf(".sidebar nav button[aria-current=\"page\"]"),
             teacher: styleOf(".teacher-card .person-info b"),
           };
           fixture.remove();

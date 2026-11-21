@@ -7,6 +7,18 @@ import Button from "../shared/components/Button.jsx";
 import Modal from "../shared/components/Modal.jsx";
 import IconButton from "../shared/components/IconButton.jsx";
 
+// Одна разметка и один источник состояния для всех пунктов меню.
+function SidebarControl({ icon: Icon, children, current = false, className = "", onClick }) {
+  return <button
+    type="button"
+    className={["ui-menu-control", className].filter(Boolean).join(" ")}
+    aria-current={current ? "page" : undefined}
+    onClick={onClick}
+  >
+    <Icon size={18} aria-hidden="true" />{children}
+  </button>;
+}
+
 export default function WorkspaceLayout({
   role, profile, label, navigation, page, setPage, theme, toggleTheme,
   pushToggle, signOut, children,
@@ -42,28 +54,22 @@ export default function WorkspaceLayout({
       <div className="brand"><img src="/logo.png" alt="" /><span>Uknow<span>App</span></span></div>
       {showSchoolLabel && <div className="school-label">{label}</div>}
       <nav aria-label="Основная навигация">
-        {navigation.filter(item => item.page !== "additional").map(item => {
-          const Icon = item.icon;
-          return <button key={item.page} type="button"
-            className={`ui-menu-control${page === item.page ? " active" : ""}`}
-            aria-current={page === item.page ? "page" : undefined}
-            onClick={() => setPage(item.page)}>
-            <Icon size={18}/>{item.label}
-          </button>;
-        })}
+        {navigation.filter(item => item.page !== "additional").map(item =>
+          <SidebarControl key={item.page} icon={item.icon} current={page === item.page}
+            onClick={() => setPage(item.page)}>{item.label}</SidebarControl>
+        )}
       </nav>
       <div className="sidebar-bottom">
-        {additionalItem && <button type="button" className={`logout desktop-admin-extra ui-menu-control${page === "additional" ? " active" : ""}`}
-          aria-current={page === "additional" ? "page" : undefined}
-          onClick={() => setPage(additionalItem.page)}>
-          <Info size={18}/>{additionalItem.label}
-        </button>}
-        <button type="button" className="logout desktop-sidebar-logout ui-menu-control" onClick={() => setShowSignOutConfirm(true)}>
-          <LogOut size={18}/>Выход
-        </button>
+        {additionalItem && <SidebarControl icon={Info} className="desktop-admin-extra"
+          current={page === additionalItem.page} onClick={() => setPage(additionalItem.page)}>
+          {additionalItem.label}
+        </SidebarControl>}
+        <SidebarControl icon={LogOut} className="desktop-sidebar-logout" onClick={() => setShowSignOutConfirm(true)}>
+          Выход
+        </SidebarControl>
         <div className="mobile-quick-actions">
           {pushToggle}{themeToggle}
-          <IconButton className="logout" onClick={() => setShowSignOutConfirm(true)} title="Выйти" aria-label="Выйти"><LogOut/></IconButton>
+          <IconButton onClick={() => setShowSignOutConfirm(true)} title="Выйти" aria-label="Выйти"><LogOut/></IconButton>
         </div>
       </div>
     </aside>
