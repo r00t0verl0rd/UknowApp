@@ -1,4 +1,4 @@
-"""Persistent Web Push VAPID key management; invoked explicitly at startup/restore."""
+"""Хранение VAPID-ключей для Web Push."""
 
 import os
 from pathlib import Path
@@ -10,7 +10,7 @@ _VAPID_PRIVATE_KEY_OVERRIDE = os.getenv("VAPID_PRIVATE_KEY", "").strip()
 VAPID_PUBLIC_KEY = ""
 VAPID_PRIVATE_KEY = ""
 def reload_vapid_keys(data_dir: Path | None = None) -> None:
-    """Load the persistent VAPID key after data restoration or at startup."""
+    """Загрузить VAPID-ключ при запуске или восстановлении."""
     global VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY
 
     if _VAPID_PUBLIC_KEY_OVERRIDE and _VAPID_PRIVATE_KEY_OVERRIDE:

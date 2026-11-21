@@ -1,4 +1,4 @@
-"""Conversation access checks and safe message serialization."""
+"""Проверка доступа и подготовка сообщений для API."""
 
 import json
 
@@ -82,8 +82,7 @@ def _panel_message_dict(
         "content_type": item.content_type,
         "text": item.text,
         "metadata": metadata,
-        # A persisted message is delivered to its UknowApp conversation.
-        # Messenger transport results are exposed separately to administrators.
+        # Сообщение считается доставленным после сохранения в UknowApp.
         "delivery_status": (
             "blocked_contact" if item.delivery_status == "blocked_contact" else "delivered"
         ),
@@ -101,7 +100,7 @@ def _panel_message_dict(
 
 
 def _panel_message_status_dict(item: Message, principal: dict) -> dict:
-    """Return only mutable status fields for already-loaded rows during recovery."""
+    """Вернуть изменённые статусы загруженных сообщений."""
     metadata = json.loads(item.metadata_json or "{}")
     if item.sender_role == "teacher":
         read_at = metadata.get("student_read_at")

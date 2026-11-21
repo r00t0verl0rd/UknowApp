@@ -1,4 +1,4 @@
-"""Provider-neutral moderation rules for contact data in messages."""
+"""Проверка контактных данных в сообщениях."""
 
 import re
 

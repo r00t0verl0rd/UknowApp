@@ -1,1 +1,1 @@
-"""Notification delivery and subscription management."""
+"""Подписки и доставка уведомлений."""

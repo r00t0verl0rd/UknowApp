@@ -1,4 +1,4 @@
-"""Web Push delivery for authenticated UknowApp accounts."""
+"""Web Push для авторизованных пользователей."""
 
 import asyncio
 import json
@@ -28,7 +28,7 @@ def schedule_push(
     url: str = "/",
     include_admin: bool = False,
 ) -> None:
-    """Queue push delivery without delaying message persistence or Telegram handling."""
+    """Отправлять push в фоне, не задерживая сообщения."""
     if not vapid.VAPID_PRIVATE_KEY:
         return
     ids = {int(user_id) for user_id in user_ids if user_id}

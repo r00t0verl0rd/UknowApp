@@ -1,4 +1,4 @@
-"""One application pipeline for all inbound messenger messages."""
+"""Общая обработка входящих сообщений."""
 
 from __future__ import annotations
 
@@ -202,7 +202,7 @@ def current_student_conversation(db: Session, student_id: int) -> Conversation |
 def recent_conversation_messages(
     db: Session, conversation_id: int, limit: int = 12,
 ) -> list[Message]:
-    """Read only the visible tail of a conversation, in chronological order."""
+    """Получить доступную часть истории по времени."""
     rows = db.scalars(
         select(Message)
         .where(Message.conversation_id == conversation_id)
@@ -215,7 +215,7 @@ def recent_conversation_messages(
 def unanswered_conversation_messages(
     db: Session, conversation_id: int,
 ) -> list[Message]:
-    """Fetch student messages after the last non-blocked teacher reply."""
+    """Найти сообщения ученика после последнего ответа."""
     last_teacher_reply = db.scalar(
         select(Message)
         .where(
@@ -548,8 +548,7 @@ async def _deliver_student_message_to_teacher(
         )
         row.metadata_json = json.dumps(metadata, ensure_ascii=False)
 
-    # Text is shown through the refreshed teacher panel, not a separate copy.
-    # Only attachments have a Telegram copy_message identifier.
+    # Текст обновляется в панели, отдельно копируем только вложения.
     row.delivery_status = "delivered"
     db.commit()
     publish_conversation_update(
@@ -649,7 +648,7 @@ async def process_inbound_message(
     gateway: InboundMessengerPort,
     ui_handler: InboundUiHandler | None = None,
 ) -> InboundProcessResult:
-    """Run identity, routing, moderation, persistence and delivery as one flow."""
+    """Проверить, сохранить и доставить входящее сообщение."""
     sender = get_messenger_user(db, inbound.platform, inbound.external_user_id)
     group_binding = None
 
@@ -762,8 +761,7 @@ async def process_inbound_message(
     if sender.role == "teacher":
         mark_visible_messages_read_by_teacher(db, conversation)
 
-    # Once accepted and committed, this message is delivered to UknowApp.
-    # External messenger forwarding is tracked independently below.
+    # После записи сообщение доставлено в UknowApp.
     row, created = persist_message(db, conversation.id, sender, inbound, "delivered")
     if not created:
         return InboundProcessResult(
@@ -812,9 +810,7 @@ async def process_inbound_message(
             status="not_connected",
         )
         row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-        # UknowApp is the destination of record. When the pair is incomplete,
-        # keep the inbound message locally and make no provider-side send,
-        # delete, or forwarding attempt.
+        # При неполной привязке сообщение остаётся в UknowApp.
         row.delivery_status = "delivered"
         db.commit()
         publish_conversation_update(
@@ -853,8 +849,7 @@ async def process_inbound_message(
             status="failed",
         )
         row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-        # An external send/copy failure never rolls back the already persisted
-        # UknowApp delivery state.
+        # Ошибка внешней отправки не отменяет запись сообщения.
         row.delivery_status = "delivered"
         db.commit()
         publish_conversation_update(

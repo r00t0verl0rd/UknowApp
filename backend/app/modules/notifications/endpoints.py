@@ -1,4 +1,4 @@
-"""Validation for browser-provided Web Push delivery endpoints."""
+"""Проверка адресов Web Push."""
 
 import ipaddress
 import socket
@@ -13,7 +13,7 @@ _ALLOWED_SUFFIXES = (".push.services.mozilla.com", ".notify.windows.com")
 
 
 def is_safe_push_endpoint(endpoint: str) -> bool:
-    """Accept only known browser push services resolving exclusively to public IPs."""
+    """Разрешать известные Web Push-сервисы с публичными IP."""
     try:
         parsed = urlsplit(endpoint)
         hostname = parsed.hostname
