@@ -2,19 +2,23 @@
 
 import asyncio
 import json
+from threading import Lock
 
 _subscribers: dict[asyncio.Queue[str], asyncio.AbstractEventLoop] = {}
+_subscribers_lock = Lock()
 _QUEUE_SIZE = 64
 
 
 def subscribe_chat_updates() -> asyncio.Queue[str]:
     queue: asyncio.Queue[str] = asyncio.Queue(maxsize=_QUEUE_SIZE)
-    _subscribers[queue] = asyncio.get_running_loop()
+    with _subscribers_lock:
+        _subscribers[queue] = asyncio.get_running_loop()
     return queue
 
 
 def unsubscribe_chat_updates(queue: asyncio.Queue[str]) -> None:
-    _subscribers.pop(queue, None)
+    with _subscribers_lock:
+        _subscribers.pop(queue, None)
 
 
 def _enqueue(queue: asyncio.Queue[str], payload: str) -> None:
@@ -43,8 +47,11 @@ def publish_chat_update(
         "action": action,
         "actor_role": actor_role,
     })
-    for queue, loop in tuple(_subscribers.items()):
+    with _subscribers_lock:
+        subscribers = tuple(_subscribers.items())
+    for queue, loop in subscribers:
         try:
             loop.call_soon_threadsafe(_enqueue, queue, payload)
         except RuntimeError:
-            _subscribers.pop(queue, None)
+            with _subscribers_lock:
+                _subscribers.pop(queue, None)
