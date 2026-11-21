@@ -40,15 +40,17 @@ export function useChatsController({
       .catch(error => setError(error.message));
   }, [auth, profile, personalChats, chats, request, setPage, setChatSection, setSelectedChat, setMessages, setError]);
 
-  const visibleMessages = useMemo(() => messages.filter(message => {
-    const kind = message.metadata?.media?.kind || message.content_type;
-    if (messageFilter === "all") return true;
-    if (messageFilter === "media") return kind !== "text" || Boolean(message.metadata?.media);
-    if (messageFilter === "audio") return ["voice", "audio"].includes(kind);
-    if (messageFilter === "photos") return kind === "photo";
-    if (messageFilter === "files") return ["document", "video", "video_note", "video_sticker", "animation", "animated_sticker", "sticker"].includes(kind);
-    return true;
-  }), [messages, messageFilter]);
+  const visibleMessages = useMemo(() => {
+    if (messageFilter === "all") return messages;
+    return messages.filter(message => {
+      const kind = message.metadata?.media?.kind || message.content_type;
+      if (messageFilter === "media") return kind !== "text" || Boolean(message.metadata?.media);
+      if (messageFilter === "audio") return ["voice", "audio"].includes(kind);
+      if (messageFilter === "photos") return kind === "photo";
+      if (messageFilter === "files") return ["document", "video", "video_note", "video_sticker", "animation", "animated_sticker", "sticker"].includes(kind);
+      return true;
+    });
+  }, [messages, messageFilter]);
 
   const visibleChats = useMemo(() => {
     const query = chatSearch.trim().toLocaleLowerCase("ru");

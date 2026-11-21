@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
 import Check from "lucide-react/dist/esm/icons/check.js";
 import CheckCheck from "lucide-react/dist/esm/icons/check-check.js";
@@ -202,4 +202,4 @@ function MessageBubble({ message, onDelete, viewerRole }) {
   </div>;
 }
 
-export default MessageBubble;
+export default memo(MessageBubble);
