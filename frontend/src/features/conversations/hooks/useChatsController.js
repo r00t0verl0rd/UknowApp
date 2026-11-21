@@ -211,9 +211,14 @@ export function useChatsController({
         return [...reconciled, sentMessage];
       });
 
-      if (chat.type === "personal") notify("Сообщение отправлено внутри UknowApp");
-      else if (profile?.role === "admin" && sentMessage?.delivery_status !== "delivered") {
-        notify("Сообщение сохранено. Подробности доставки доступны в переписке.");
+      if (chat.type === "personal") {
+        notify("Сообщение отправлено внутри UknowApp");
+      } else if (profile?.role === "admin") {
+        const hasMessengerIssues = Object.values(sentMessage?.metadata?.messenger_deliveries || {})
+          .some(delivery => (delivery?.errors || []).length > 0);
+        notify(hasMessengerIssues
+          ? "Сообщение доставлено в UknowApp. Есть проблемы внешней доставки — подробности в сообщении."
+          : "Сообщение отправлено");
       } else if (sentMessage?.delivery_status === "delivered" && profile?.role !== "teacher") {
         notify("Сообщение отправлено");
       }
