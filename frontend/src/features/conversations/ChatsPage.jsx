@@ -48,39 +48,37 @@ export default function ChatsPage({
     <>
       <section className="teacher-branch chat-list">
         <div className="chat-list-actions">
-        {profile?.role === "admin" && (
-          <div className="chat-section-tabs" role="group" aria-label="Раздел диалогов">
-            <button type="button" className={"btn small" + (chatSection === "participants" ? " primary" : "")}
-              onClick={() => {
-                setChatSection("participants");
-                setSelectedChat(null);
-                setMessages([]);
-              }}>
-              Чаты участников
-            </button>
-            <button type="button" className={"btn small" + (chatSection === "personal" ? " primary" : "")}
-              onClick={() => {
-                setChatSection("personal");
-                setChatFilter("all");
-                setSelectedChat(null);
-                setMessages([]);
-              }}>
-              Личные
-              <CountBadge
-                value={unreadPersonalCount}
-                label="непрочитанных личных сообщений"
-                hideWhenZero
-              />
-            </button>
-          </div>
-        )}
-
-        {profile?.role === "admin" && chatSection === "personal" && (
-          <button type="button" className="btn outline personal-chat-create" onClick={openCreatePersonalChat} aria-label="Новый диалог" title="Новый диалог">
-            <Plus size={17}/><span>Новый диалог</span>
-          </button>
-        )}
-
+          {profile?.role === "admin" && (
+            <div className="chat-section-tabs" role="group" aria-label="Тип диалогов">
+              <button type="button" className="chat-section-tab"
+                aria-pressed={chatSection === "participants"} title="Чаты участников"
+                onClick={() => {
+                  setChatSection("participants");
+                  setSelectedChat(null);
+                  setMessages([]);
+                }}>
+                Участники
+              </button>
+              <button type="button" className="chat-section-tab"
+                aria-pressed={chatSection === "personal"} title="Личные диалоги"
+                onClick={() => {
+                  setChatSection("personal");
+                  setChatFilter("all");
+                  setSelectedChat(null);
+                  setMessages([]);
+                }}>
+                Личные
+                <CountBadge value={unreadPersonalCount}
+                  label="непрочитанных личных сообщений" hideWhenZero />
+              </button>
+            </div>
+          )}
+          {profile?.role === "admin" && chatSection === "personal" && (
+            <IconButton className="personal-chat-create" onClick={openCreatePersonalChat}
+              aria-label="Новый диалог" title="Новый личный диалог">
+              <Plus size={17}/>
+            </IconButton>
+          )}
         </div>
         {profile?.role !== "student" && (
           <div className="chat-list-filters">

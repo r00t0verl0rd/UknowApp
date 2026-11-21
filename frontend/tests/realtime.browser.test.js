@@ -258,6 +258,69 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize({ width: 1280, height: 720 });
 
+    // Переключатель диалогов и кнопка создания всегда остаются в одной строке.
+    for (const width of [320, 390, 760, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        const controls = await page.evaluate(selectedTheme => {
+          const previous = document.documentElement.dataset.theme;
+          document.documentElement.dataset.theme = selectedTheme;
+          const host = document.createElement("div");
+          host.className = "workspace-shell";
+          host.style.cssText = "position:fixed;left:0;top:0;visibility:hidden;pointer-events:none";
+          const panelWidth = Math.min(270, window.innerWidth - 20);
+          host.innerHTML = `
+            <div class="chat-list" style="box-sizing:border-box;width:${panelWidth}px;padding:12px">
+              <div class="chat-list-actions">
+                <div class="chat-section-tabs" role="group">
+                  <button class="chat-section-tab" aria-pressed="true">Участники</button>
+                  <button class="chat-section-tab" aria-pressed="false">Личные<span class="chat-tab-count">12</span></button>
+                </div>
+                <button class="icon-btn ui-icon-button personal-chat-create" aria-label="Новый диалог">+</button>
+              </div>
+            </div>
+          `;
+          document.body.append(host);
+          const actions = host.querySelector(".chat-list-actions");
+          const tabs = [...host.querySelectorAll(".chat-section-tab")];
+          const create = host.querySelector(".personal-chat-create");
+          const selected = getComputedStyle(tabs[0]);
+          const other = getComputedStyle(tabs[1]);
+          const result = {
+            rowWidth: actions.clientWidth,
+            rowScroll: actions.scrollWidth,
+            tabWidths: tabs.map(el => [el.clientWidth, el.scrollWidth]),
+            tabHeights: tabs.map(el => Math.round(el.getBoundingClientRect().height)),
+            tabWhiteSpace: tabs.map(el => getComputedStyle(el).whiteSpace),
+            newWidth: Math.round(create.getBoundingClientRect().width),
+            newHeight: Math.round(create.getBoundingClientRect().height),
+            verticalGap: Math.abs(create.getBoundingClientRect().top
+              + create.getBoundingClientRect().height / 2
+              - actions.getBoundingClientRect().top - actions.getBoundingClientRect().height / 2),
+            selectedBackground: selected.backgroundColor,
+            inactiveBackground: other.backgroundColor,
+          };
+          host.remove();
+          document.documentElement.dataset.theme = previous;
+          return result;
+        }, theme);
+        assert.ok(controls.rowScroll <= controls.rowWidth + 1,
+          `${theme} ${width}px: действия не выходят за границы`);
+        for (let i = 0; i < controls.tabWidths.length; i++) {
+          assert.equal(controls.tabWhiteSpace[i], "nowrap",
+            `${theme} ${width}px: без переноса текста вкладки ${i + 1}`);
+          assert.ok(controls.tabWidths[i][1] <= controls.tabWidths[i][0] + 1,
+            `${theme} ${width}px: надпись вкладки ${i + 1} помещается`);
+        }
+        assert.equal(controls.tabHeights[0], controls.tabHeights[1]);
+        assert.equal(controls.newWidth, 34);
+        assert.equal(controls.newHeight, 34);
+        assert.ok(controls.verticalGap <= 1);
+        assert.notEqual(controls.selectedBackground, controls.inactiveBackground);
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
+
     // Проверяем общий квадратный контур кнопок во всех кабинетах, модальных окнах и темах.
     const originalViewport = page.viewportSize();
     for (const width of [390, 1280]) {
