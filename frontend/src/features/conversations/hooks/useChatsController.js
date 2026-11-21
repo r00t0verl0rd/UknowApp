@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useChatActionState } from "./useChatActionState.js";
 import { useConversationSync } from "./useConversationSync.js";
+import { mergeConversationMessages } from "../services/messageState.js";
 import {
   createPersonalConversation, deleteChatMessage, getChatMessages,
   sendConversationAttachment,
@@ -14,12 +15,17 @@ export function useChatsController({
   const { deleteMessageCandidate, deletingMessage, setDeletingMessage, setDeleteMessageCandidate } = useChatActionState();
   const sendingMessage = useRef(false);
   const pendingClientMessage = useRef(null);
+  const activeChatKey = useRef("");
+  const openingChatRequest = useRef(0);
   const {
     chats, setChats, selectedChat, setSelectedChat, messages, setMessages,
     draft, setDraft, attachment, setAttachment, messagesViewportRef,
     chatSearch, chatFilter, messageFilter, setMessageFilter,
   } = chatState;
   const { personalChats, setPersonalChats, chatSection, setChatSection } = personalState;
+  activeChatKey.current = selectedChat
+    ? (selectedChat.type === "personal" ? "personal:" : "conversation:") + selectedChat.id
+    : "";
 
   useConversationSync({ auth, page, role: profile?.role, selectedChat, messages, request, setChats, setPersonalChats, setSelectedChat, setMessages });
 
@@ -33,14 +39,9 @@ export function useChatsController({
     const chat = source.find(item => Number(item.id) === conversationId);
     if (!chat) return;
     window.history.replaceState({}, "", window.location.pathname + window.location.hash);
-    setPage("chats");
     if (personal) setChatSection("personal");
-    setSelectedChat(chat);
-    setMessages([]);
-    void getChatMessages(request, chat)
-      .then(setMessages)
-      .catch(error => setError(error.message));
-  }, [auth, profile, personalChats, chats, request, setPage, setChatSection, setSelectedChat, setMessages, setError]);
+    void openChat(chat);
+  }, [auth, profile, personalChats, chats, setChatSection, openChat]);
 
   const visibleMessages = useMemo(() => {
     if (messageFilter === "all") return messages;
@@ -104,6 +105,9 @@ export function useChatsController({
   }, [selectedChat?.id, selectedChat?.type, messageFilter, messagesViewportRef]);
 
   const openChat = useCallback(async chat => {
+    const requestId = ++openingChatRequest.current;
+    const chatKey = (chat.type === "personal" ? "personal:" : "conversation:") + chat.id;
+    activeChatKey.current = chatKey;
     setSelectedChat(chat);
     setMessages([]);
     setPage("chats");
@@ -111,9 +115,15 @@ export function useChatsController({
     setAttachment(null);
     setMessageFilter("all");
     try {
-      setMessages(await getChatMessages(request, chat));
+      const loadedMessages = await getChatMessages(request, chat);
+      if (requestId !== openingChatRequest.current || activeChatKey.current !== chatKey) return;
+      // Preserve messages/status updates received over SSE while the initial
+      // history request was in flight instead of replacing the live message list.
+      setMessages(previous => mergeConversationMessages(previous, loadedMessages));
     } catch (error) {
-      setError(error.message);
+      if (requestId === openingChatRequest.current && activeChatKey.current === chatKey) {
+        setError(error.message);
+      }
     }
   }, [setSelectedChat, setPage, setDraft, setAttachment, setMessageFilter, setMessages, request, setError]);
 
