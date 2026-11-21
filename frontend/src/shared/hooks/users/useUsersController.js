@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useUserEditorState } from "./useUserEditorState.js";
 import { useUserActionState } from "./useUserActionState.js";
-import { createAssignment, createUser, createUserConnectionCode, deleteUser, disconnectUserTelegram, issuePanelAccessCode, updateUser } from "../../../features/users/services/usersApi.js";
+import { createAssignment, unassignStudent as unassignStudentApi, createUser, createUserConnectionCode, deleteUser, disconnectUserTelegram, issuePanelAccessCode, updateUser } from "../../../features/users/services/usersApi.js";
 
 export function useUsersController({
   request, refresh, notify, setError, selectedChat, setSelectedChat,
@@ -38,6 +38,7 @@ export function useUsersController({
   const {
     deleteCandidate, setDeleteCandidate, deletingUser, setDeletingUser,
     disconnectCandidate, setDisconnectCandidate, disconnectingTelegram,
+    unassignCandidate, setUnassignCandidate, unassigningStudent, setUnassigningStudent,
     setDisconnectingTelegram,
   } = actions;
 
@@ -174,6 +175,25 @@ export function useUsersController({
     }
   }, [request, teacherId, studentId, setModal, refresh, notify, setError]);
 
+  const requestUnassignStudent = useCallback(student => setUnassignCandidate(student), [setUnassignCandidate]);
+
+  const confirmUnassignStudent = useCallback(async () => {
+    const student = unassignCandidate;
+    if (!student || unassigningStudent) return;
+    setUnassigningStudent(true);
+    setError("");
+    try {
+      await unassignStudentApi(request, student.id);
+      setUnassignCandidate(null);
+      await refresh();
+      notify("Ученик отвязан от учителя");
+    } catch (error) {
+      setError(error.message || "Не удалось отвязать ученика");
+    } finally {
+      setUnassigningStudent(false);
+    }
+  }, [unassignCandidate, unassigningStudent, setUnassigningStudent, setError, request, setUnassignCandidate, refresh, notify]);
+
   const disconnectTelegram = useCallback(user => setDisconnectCandidate(user), [setDisconnectCandidate]);
 
   const confirmDisconnectTelegram = useCallback(async () => {
@@ -206,7 +226,8 @@ export function useUsersController({
     ...directory, ...editor, ...actions,
     allTeachers, allStudents, studentsByTeacherId, visibleUsers, unassignedStudents,
     openCreate, openEdit, saveUser, regeneratePanelAccessCode, removeUser,
-    confirmRemoveUser, assign, disconnectTelegram,
+    confirmRemoveUser, assign, requestUnassignStudent, unassignCandidate, setUnassignCandidate,
+    unassigningStudent, confirmUnassignStudent, disconnectTelegram,
     confirmDisconnectTelegram, makeCode,
   };
 }
