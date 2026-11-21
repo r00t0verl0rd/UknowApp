@@ -217,6 +217,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
               border: style.borderTopColor,
               borderWidth: style.borderTopWidth,
               radius: style.borderTopLeftRadius,
+              display: style.display,
             };
           };
           const result = {
@@ -245,6 +246,10 @@ test("global SSE updates real counters across tabs and replays missed events", {
         }
         assert.equal(result.teacher.family, expected.family, `${theme}: гарнитура карточки`);
         assert.notEqual(result.selected.background, expected.background, `${theme}: выделение активного раздела`);
+        for (const name of ["additional", "logout"]) {
+          assert.equal(result[name].display === "none", width < 1025,
+            `${theme} ${width}px ${name}: правильная видимость пункта`);
+        }
       }
     }
     await page.setViewportSize({ width: 1280, height: 720 });
