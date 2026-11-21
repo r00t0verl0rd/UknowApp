@@ -128,7 +128,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
       "--host", "127.0.0.1",
       "--port", String(APP_PORT),
       "--strictPort",
-    ], { cwd: process.cwd(), stdio: "ignore" });
+    ], { cwd: process.cwd(), env: { ...process.env, VITE_API_BASE_URL: "" }, stdio: "ignore" });
     await waitFor(async () => {
       const response = await fetch(APP_URL);
       return response.ok;
