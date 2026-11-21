@@ -17,6 +17,7 @@ export function useChatsController({
   const pendingClientMessage = useRef(null);
   const activeChatKey = useRef("");
   const openingChatRequest = useRef(0);
+  const openChatRef = useRef(null);
   const {
     chats, setChats, selectedChat, setSelectedChat, messages, setMessages,
     draft, setDraft, attachment, setAttachment, messagesViewportRef,
@@ -40,8 +41,8 @@ export function useChatsController({
     if (!chat) return;
     window.history.replaceState({}, "", window.location.pathname + window.location.hash);
     if (personal) setChatSection("personal");
-    void openChat(chat);
-  }, [auth, profile, personalChats, chats, setChatSection, openChat]);
+    void openChatRef.current?.(chat);
+  }, [auth, profile, personalChats, chats, setChatSection]);
 
   const visibleMessages = useMemo(() => {
     if (messageFilter === "all") return messages;
@@ -126,6 +127,7 @@ export function useChatsController({
       }
     }
   }, [setSelectedChat, setPage, setDraft, setAttachment, setMessageFilter, setMessages, request, setError]);
+  openChatRef.current = openChat;
 
   const openCreatePersonalChat = useCallback(() => {
     setError("");
