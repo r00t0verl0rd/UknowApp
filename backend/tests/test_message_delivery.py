@@ -56,6 +56,11 @@ def test_chat_delivery_ticks_follow_uknowapp_persistence_and_read_state(api):
     assert sent.json()["delivery_status"] == "delivered"
     assert sent.json()["panel_read_at"] is None
 
+    # The inbox count is based on unread state, not merely message delivery.
+    student_inbox_before_read = student.get("/api/panel/conversations")
+    assert student_inbox_before_read.status_code == 200
+    assert student_inbox_before_read.json()[0]["unread_count"] == 1
+
     # The student receives the message through the primary UknowApp inbox;
     # no Telegram account or external messenger is required.
     received = student.get(
@@ -63,6 +68,9 @@ def test_chat_delivery_ticks_follow_uknowapp_persistence_and_read_state(api):
     )
     assert received.status_code == 200
     assert received.json()[0]["text"] == "Ответ доступен в UknowApp"
+    student_inbox_after_read = student.get("/api/panel/conversations")
+    assert student_inbox_after_read.status_code == 200
+    assert student_inbox_after_read.json()[0]["unread_count"] == 0
 
     # Reading the message is a separate event and turns the sender's two grey
     # ticks into two blue ticks on the next authoritative server sync.
@@ -82,6 +90,23 @@ def test_chat_delivery_ticks_follow_uknowapp_persistence_and_read_state(api):
     direct = teacher.get(f"/api/panel/messages/{sent.json()['id']}")
     assert direct.status_code == 200
     assert direct.json()["panel_read_at"] is not None
+
+    # The reverse direction follows the same counter lifecycle.
+    student_reply = student.post(
+        f"/api/panel/conversations/{conversation_id}/messages",
+        json={"text": "Ответ ученика"},
+    )
+    assert student_reply.status_code == 201
+    teacher_inbox_before_read = teacher.get("/api/panel/conversations")
+    assert teacher_inbox_before_read.status_code == 200
+    assert teacher_inbox_before_read.json()[0]["unread_count"] == 1
+    teacher_read = teacher.get(
+        f"/api/panel/conversations/{conversation_id}/messages",
+    )
+    assert teacher_read.status_code == 200
+    teacher_inbox_after_read = teacher.get("/api/panel/conversations")
+    assert teacher_inbox_after_read.status_code == 200
+    assert teacher_inbox_after_read.json()[0]["unread_count"] == 0
 
 
 def test_personal_chat_exposes_admin_read_receipt_to_sender(api):
@@ -109,11 +134,18 @@ def test_personal_chat_exposes_admin_read_receipt_to_sender(api):
     assert sent_duplicate.json()["id"] == sent.json()["id"]
     assert sent.json()["panel_read_at"] is None
 
+    admin_inbox_before_read = admin.get("/api/panel/personal-conversations")
+    assert admin_inbox_before_read.status_code == 200
+    assert admin_inbox_before_read.json()[0]["unread_count"] == 1
+
     admin_received = admin.get(
         f"/api/panel/personal-conversations/{conversation_id}/messages",
     )
     assert admin_received.status_code == 200
     assert admin_received.json()[0]["text"] == "Личное сообщение"
+    admin_inbox_after_read = admin.get("/api/panel/personal-conversations")
+    assert admin_inbox_after_read.status_code == 200
+    assert admin_inbox_after_read.json()[0]["unread_count"] == 0
 
     teacher_refreshed = teacher.get(
         f"/api/panel/personal-conversations/{conversation_id}/messages",
