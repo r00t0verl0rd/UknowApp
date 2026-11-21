@@ -20,31 +20,76 @@ def assign_student(payload, db: Session) -> dict:
         raise HTTPException(status_code=400, detail="Выберите ученика")
 
     previous = db.scalars(
-        select(Assignment).where(Assignment.student_id == student.id, Assignment.active.is_(True)),
+        select(Assignment).where(
+            Assignment.student_id == student.id,
+            Assignment.active.is_(True),
+        ),
     ).all()
+
+    # Repeating the same assignment must not create another empty conversation.
+    current = next(
+        (
+            item.conversation
+            for item in previous
+            if item.teacher_id == teacher.id
+            and item.conversation
+            and item.conversation.status == "active"
+        ),
+        None,
+    )
+    if current:
+        return conversation_dict(db, current)
+
+    closed_conversation_ids = []
     for assignment in previous:
-        if assignment.conversation:
-            assignment.conversation.status = "closed"
-            assignment.conversation.assignment_id = None
+        conversation = assignment.conversation
+        if conversation:
+            conversation.status = "closed"
+            conversation.assignment_id = None
+            closed_conversation_ids.append(conversation.id)
+            db.query(TeacherSession).filter(
+                TeacherSession.conversation_id == conversation.id,
+            ).delete(synchronize_session=False)
         db.delete(assignment)
+
+    # Flush the detached conversation before searching for the history to restore.
+    db.flush()
+    conversation = db.scalar(
+        select(Conversation)
+        .where(
+            Conversation.teacher_id == teacher.id,
+            Conversation.student_id == student.id,
+            Conversation.status == "closed",
+            Conversation.assignment_id.is_(None),
+        )
+        .order_by(Conversation.created_at.desc(), Conversation.id.desc())
+        .limit(1),
+    )
 
     assignment = Assignment(teacher_id=teacher.id, student_id=student.id, active=True)
     db.add(assignment)
     db.flush()
-    conversation = Conversation(
-        assignment_id=assignment.id,
-        teacher_id=teacher.id,
-        student_id=student.id,
-        status="active",
-    )
-    db.add(conversation)
+
+    if conversation:
+        conversation.assignment_id = assignment.id
+        conversation.status = "active"
+    else:
+        conversation = Conversation(
+            assignment_id=assignment.id,
+            teacher_id=teacher.id,
+            student_id=student.id,
+            status="active",
+        )
+        db.add(conversation)
+
     db.commit()
     db.refresh(conversation)
+
+    for closed_id in closed_conversation_ids:
+        if closed_id != conversation.id:
+            publish_chat_update(closed_id)
     publish_chat_update(conversation.id)
     return conversation_dict(db, conversation)
-
-
-
 
 
 def unassign_student(student_id: int, db: Session) -> dict:
