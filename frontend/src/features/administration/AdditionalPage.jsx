@@ -3,6 +3,7 @@ import Check from "lucide-react/dist/esm/icons/check.js";
 import DatabaseIcon from "lucide-react/dist/esm/icons/database.js";
 import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw.js";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
+import Panel from "../../shared/components/Panel.jsx";
 
 function formatBytes(bytes) {
   if (!bytes) return "0 Б";
@@ -13,7 +14,7 @@ function formatBytes(bytes) {
 
 export default function AdditionalPage({ dataStats, dataBusy, loadDataStats, downloadAdminFile, uploadAdminFile, retentionDays, setRetentionDays, cleanupOldDialogues }) {
   return (
-    <section className="graph-panel additional-panel">
+    <Panel className="additional-panel">
       <div className="additional-heading"><div><div className="eyebrow">ОБСЛУЖИВАНИЕ ДАННЫХ</div><h2>Дополнительно</h2></div><button type="button" className="btn outline" onClick={loadDataStats} disabled={dataBusy}><RefreshCw size={15}/>Обновить</button></div>
       <div className="data-stats-grid">
         <article className="data-stat-card">
@@ -88,6 +89,6 @@ export default function AdditionalPage({ dataStats, dataBusy, loadDataStats, dow
         <div><div className="eyebrow">ХРАНЕНИЕ И ОЧИСТКА</div><h3>Удаление старых переписок и медиа</h3><p>Удаляются сообщения старше выбранного срока и связанные с ними архивные вложения. Аккаунты, назначения и сами диалоги сохраняются.</p></div>
         <div className="data-cleanup-actions"><label>Удалять старше<select value={retentionDays} onChange={e => setRetentionDays(e.target.value)} disabled={dataBusy}><option value="30">30 дней</option><option value="60">60 дней</option><option value="180">180 дней</option><option value="360">360 дней</option></select></label><button type="button" className="btn danger" onClick={cleanupOldDialogues} disabled={dataBusy}><Trash2 size={15}/>Удалить старые данные</button></div>
       </article>
-    </section>
+    </Panel>
   );
 }
