@@ -3,7 +3,7 @@ import ChatDialogs from "./components/ChatDialogs.jsx";
 import { useChatsController } from "./hooks/useChatsController.js";
 
 export default function ChatsModule({
-  page, auth, profile, request, chatState, personalState, users, error, modal,
+  page, auth, profile, request, chatState, personalState, inboxLoading, users, error, modal,
   setPage, setError, setModal, notify,
 }) {
   const state = useChatsController({
@@ -13,7 +13,7 @@ export default function ChatsModule({
 
   return <>
     {page === "chats" && <ChatsPage
-      profile={profile} chatSection={personalState.chatSection}
+      profile={profile} inboxLoading={inboxLoading} chatSection={personalState.chatSection}
       setChatSection={personalState.setChatSection}
       personalChats={personalState.personalChats}
       setSelectedChat={chatState.setSelectedChat} setMessages={chatState.setMessages}
