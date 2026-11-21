@@ -114,7 +114,7 @@ export default function ChatsPage({
                   </div>
                 </div>
                 {(showMessageCount || unreadCount > 0) && (
-                  <span className={"chat-count" + (showMessageCount ? " message-count" : " unread-badge")}
+                  <span className="chat-tab-count"
                     title={showMessageCount ? "Всего сообщений" : "Непрочитанные сообщения"}
                     aria-label={showMessageCount
                       ? displayedCount + " сообщений всего"

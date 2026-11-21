@@ -15,8 +15,8 @@ export default function StructurePage({
   return <>
     <div className="graph-legend-row">
       <div className="legend graph-legend">
-        <div className="graph-legend-item"><span className="teacher-dot" />Учителя <b>{overview?.counts?.teachers || 0}</b></div>
-        <div className="graph-legend-item"><span className="student-dot" />Ученики <b>{overview?.counts?.students || 0}</b></div>
+        <div className="graph-legend-item"><span className="teacher-dot" />Учителя <b className="chat-tab-count">{overview?.counts?.teachers || 0}</b></div>
+        <div className="graph-legend-item"><span className="student-dot" />Ученики <b className="chat-tab-count">{overview?.counts?.students || 0}</b></div>
       </div>
       <button type="button" className="btn primary graph-add-participant" onClick={() => openCreate()}><Plus />Добавить участника</button>
     </div>

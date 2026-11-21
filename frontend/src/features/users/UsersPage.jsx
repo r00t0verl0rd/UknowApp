@@ -18,7 +18,7 @@ export default function UsersPage({ visibleUsers, search, setSearch, userSort, s
                 <select className="user-sort" aria-label="Сортировка пользователей" value={userSort} onChange={e => setUserSort(e.target.value)}>
                   <option value="name-asc">По имени</option><option value="name-desc">Имя: Я — А</option><option value="teachers">Сначала учителя</option><option value="students">Сначала ученики</option>
                 </select>
-                <span className="user-count">Количество пользователей: <b>{visibleUsers.length}</b></span>
+                <span>Количество пользователей: <b className="chat-tab-count">{visibleUsers.length}</b></span>
                 <button className="btn primary user-add-btn" onClick={() => openCreate()}><Plus/>Добавить пользователя</button>
               </div>
               <div className="user-list">{visibleUsers.map(user => <div className={"user-row" + (userInfo === user.id ? " is-info-open" : "")} key={user.id}>
