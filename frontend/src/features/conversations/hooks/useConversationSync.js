@@ -13,7 +13,7 @@ const isSameChat = (chat, id, type) => (
 const conversationKey = (id, type) => (type === "personal" ? "personal:" : "conversation:") + id;
 
 export function useConversationSync({
-  auth, page, role, selectedChat, messages, request,
+  auth, role, selectedChat, messages, request,
   setChats, setPersonalChats, setSelectedChat, setMessages,
 }) {
   const current = useRef(null);
@@ -33,7 +33,7 @@ export function useConversationSync({
   };
 
   useEffect(() => {
-    if (!auth || page !== "chats") return undefined;
+    if (!auth) return undefined;
     let active = true;
 
     const applySummary = (type, id, summary) => {
@@ -121,8 +121,8 @@ export function useConversationSync({
       }
     };
 
-    const recover = async () => {
-      await refreshInbox();
+    const recover = async ({ refreshInbox: refresh = false } = {}) => {
+      if (refresh) await refreshInbox();
       await syncSelected();
     };
 
@@ -161,10 +161,17 @@ export function useConversationSync({
 
     const source = createPanelEventSource();
     if (source) {
+      let opened = false;
       source.onopen = () => {
-        // Replay Last-Event-ID covers committed events. Revision checks keep
-        // this inbox snapshot from replacing a newer event-driven counter.
-        void recover().catch(() => {});
+        // The first connection starts from the current stream position. The
+        // inbox snapshot has already been loaded by panel initialization.
+        // EventSource replays missed durable events after subsequent reconnects.
+        if (!opened) {
+          opened = true;
+          void syncSelected().catch(() => {});
+          return;
+        }
+        void syncSelected().catch(() => {});
       };
       source.onerror = () => {
         // EventSource owns reconnect/backoff; no periodic polling is required.
@@ -187,7 +194,7 @@ export function useConversationSync({
           if (Number.isSafeInteger(eventId) && eventId > lastEventId.current) {
             lastEventId.current = eventId;
           }
-          void recover().catch(() => {});
+          void recover({ refreshInbox: true }).catch(() => {});
           return;
         }
         if (Number.isSafeInteger(eventId) && eventId > 0) {
@@ -259,7 +266,7 @@ export function useConversationSync({
     }
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") void recover().catch(() => {});
+      if (document.visibilityState === "visible") void syncSelected().catch(() => {});
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
@@ -268,5 +275,5 @@ export function useConversationSync({
       source?.close();
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [auth, page, request]);
+  }, [auth, request]);
 }
