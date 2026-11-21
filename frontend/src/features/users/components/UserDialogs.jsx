@@ -3,6 +3,7 @@ import Copy from "lucide-react/dist/esm/icons/copy.js";
 import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw.js";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
 import X from "lucide-react/dist/esm/icons/x.js";
+import Unlink from "lucide-react/dist/esm/icons/unlink.js";
 import Modal from "../../../shared/components/Modal.jsx";
 import Button from "../../../shared/components/Button.jsx";
 import IconButton from "../../../shared/components/IconButton.jsx";
@@ -40,7 +41,7 @@ export default function UserDialogs({
   regeneratePanelAccessCode, removeUser, deleteCandidate, setDeleteCandidate,
   deletingUser, confirmRemoveUser, disconnectCandidate,
   setDisconnectCandidate, disconnectingTelegram, confirmDisconnectTelegram,
-  issuedCredential, setIssuedCredential, notify, code, setCode,
+  issuedCredential, setIssuedCredential, notify, code, setCode,\n  unassignCandidate, setUnassignCandidate, unassigningStudent, confirmUnassignStudent,
 }) {
   return <>
     {modal && modal.mode !== "create-personal" && <Modal onClose={() => setModal(null)} className={`${modal.mode === "create" ? "create-participant-modal" : modal.mode === "edit" ? "participant-profile-modal" : ""}`}>
@@ -74,6 +75,12 @@ export default function UserDialogs({
         <div className="modal-head"><div><div className="eyebrow">УДАЛЕНИЕ УЧАСТНИКА</div><h2 id="delete-user-title">Удалить участника?</h2></div><IconButton onClick={() => setDeleteCandidate(null)} disabled={deletingUser} aria-label="Закрыть"><X/></IconButton></div>
         <p className="hint">Профиль «<b>{deleteCandidate.full_name}</b>», связанные переписки и сообщения будут удалены. Это действие нельзя отменить.</p>
         <div className="modal-actions"><Button variant="ghost" onClick={() => setDeleteCandidate(null)} disabled={deletingUser}>Отмена</Button><Button variant="danger" onClick={confirmRemoveUser} disabled={deletingUser}>{deletingUser ? "Удаляем…" : <><Trash2/>Удалить участника</>}</Button></div>
+      </Modal>}
+
+    {unassignCandidate && <Modal onClose={() => setUnassignCandidate(null)} closeOnBackdrop={!unassigningStudent} className="confirm-delete-modal" role="alertdialog" labelledBy="unassign-student-title">
+        <div className="modal-head"><div><div className="eyebrow">ОТВЯЗКА УЧЕНИКА</div><h2 id="unassign-student-title">Отвязать ученика?</h2></div><IconButton onClick={() => setUnassignCandidate(null)} disabled={unassigningStudent} aria-label="Закрыть"><X/></IconButton></div>
+        <p className="hint">Ученик «<b>{unassignCandidate.full_name}</b>» будет отвязан от учителя и появится в разделе «Ученики без учителя». Активная переписка с учителем закроется, история сообщений сохранится.</p>
+        <div className="modal-actions"><Button variant="ghost" onClick={() => setUnassignCandidate(null)} disabled={unassigningStudent}>Отмена</Button><Button variant="danger" onClick={confirmUnassignStudent} disabled={unassigningStudent}>{unassigningStudent ? "Отвязываем…" : <><Unlink/>Отвязать ученика</>}</Button></div>
       </Modal>}
 
     {disconnectCandidate && <Modal onClose={() => setDisconnectCandidate(null)} closeOnBackdrop={!disconnectingTelegram} className="confirm-delete-modal" role="alertdialog" labelledBy="disconnect-telegram-title">
