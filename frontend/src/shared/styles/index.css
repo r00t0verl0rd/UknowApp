@@ -1,2 +1,11 @@
 @import "./tokens.css";
-@import "./layout.css";
+
+/* Keep these modules in source order: later feature rules intentionally refine
+   earlier base and workspace selectors without duplicating the cascade. */
+@import "./base.css";
+@import "./conversations.css";
+@import "./structure.css";
+@import "./workspace.css";
+@import "./components.css";
+@import "./theme.css";
+@import "./administration.css";
