@@ -154,6 +154,10 @@ test("global SSE updates real counters across tabs and replays missed events", {
     await waitFor(() => pendingPersonalResponses.length === 1);
     assert.equal(pendingPersonalResponses.length, 1,
       "the workspace shell must render before the personal inbox request finishes");
+    await page.getByRole("button", { name: "Диалоги" }).click();
+    await page.getByRole("button", { name: /Личные/ }).click();
+    await page.getByText("Загружаем личные диалоги…").waitFor({ state: "visible" });
+    await page.getByRole("button", { name: "Доски" }).click();
     for (const response of pendingPersonalResponses.splice(0)) {
       response.writeHead(200, { "Content-Type": "application/json" });
       response.end(JSON.stringify([personalChat]));
