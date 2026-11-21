@@ -2,6 +2,7 @@ import { useCallback, useEffect } from "react";
 import { useAuthState, useDirectoryState, useSettingsState, useUiState } from "../shared/hooks/index.js";
 import { useChatState } from "../features/conversations/hooks/useChatState.js";
 import { usePersonalChatState } from "../features/conversations/hooks/usePersonalChatState.js";
+import { useConversationSync } from "../features/conversations/hooks/useConversationSync.js";
 import LoginPage from "./authentication/LoginPage.jsx";
 import { usePushNotificationsState } from "../shared/hooks/notifications/usePushNotificationsState.js";
 import { useAuthController } from "../shared/hooks/authentication/useAuthController.js";
@@ -24,6 +25,10 @@ export default function App() {
     auth, setAuth, setProfile, setError, setChats,
     setPersonalChats, setUsers: directory.setUsers, setOverview: directory.setOverview,
     setSelectedChat, setMessages,
+  });
+  useConversationSync({
+    auth, role: profile?.role, selectedChat, messages: chatState.messages, request,
+    setChats, setPersonalChats, setSelectedChat, setMessages,
   });
   const notify = useCallback(message => {
     setToast(message);
