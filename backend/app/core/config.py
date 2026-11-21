@@ -9,6 +9,11 @@ load_dotenv(ROOT_DIR / ".env")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_BOT_ENABLED = os.getenv("TELEGRAM_BOT_ENABLED", "true").strip().lower() in {"1", "true", "yes", "on"}
 TELEGRAM_PROXY_URL = os.getenv("TELEGRAM_PROXY_URL", "").strip()
+TELEGRAM_MODE = os.getenv("TELEGRAM_MODE", "local").strip().lower()
+if TELEGRAM_MODE not in {"local", "remote"}:
+    raise ValueError("TELEGRAM_MODE must be local or remote")
+TELEGRAM_GATEWAY_URL = os.getenv("TELEGRAM_GATEWAY_URL", "").strip()
+TELEGRAM_GATEWAY_TOKEN = os.getenv("TELEGRAM_GATEWAY_TOKEN", "").strip()
 _VAPID_PUBLIC_KEY_OVERRIDE = os.getenv("VAPID_PUBLIC_KEY", "").strip()
 _VAPID_PRIVATE_KEY_OVERRIDE = os.getenv("VAPID_PRIVATE_KEY", "").strip()
 VAPID_PUBLIC_KEY = ""
