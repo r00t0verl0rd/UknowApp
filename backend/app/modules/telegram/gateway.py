@@ -183,7 +183,7 @@ async def bot_api(proxy_token: str, method: str, request: Request):
 @app.get("/file/bot{proxy_token}/{file_path:path}")
 async def bot_file(proxy_token: str, file_path: str, request: Request):
     authorize(request)
-    if proxy_token != REMOTE_TOKEN or not file_path or ".." in file_path.split("/"):
+    if proxy_token != REMOTE_TOKEN or not file_path or ".." in file_path.split("/") or file_path.startswith("/"):
         raise HTTPException(404, "Unknown file")
     # Telegram returns paths relative to the bot. Never accept arbitrary URLs.
     url = f"{TELEGRAM_API_URL}/file/bot{BOT_TOKEN}/" + quote(file_path, safe="/")
