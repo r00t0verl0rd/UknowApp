@@ -39,7 +39,7 @@ def seed_demo_data() -> None:
         assignment = Assignment(teacher_id=teacher.id, student_id=student.id, active=True)
         db.add(assignment)
         db.flush()
-        db.add(Conversation(assignment_id=assignment.id, status="active"))
+        db.add(Conversation(assignment=assignment, teacher=teacher, student=student, status="active"))
         db.commit()
 
 

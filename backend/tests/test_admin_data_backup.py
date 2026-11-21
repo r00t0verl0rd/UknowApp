@@ -180,6 +180,11 @@ def test_full_restore_is_staged_then_applied_before_app_start(api, monkeypatch, 
     assert uploaded.json()["restart_required"] is True
     assert (data_root / admin_data.PENDING_RESTORE_NAME).is_file()
 
+    restore_id = uploaded.json()["restore_id"]
+    assert admin.get("/api/admin/data/restore-status").json()["restore"] == {
+        "id": restore_id, "status": "pending",
+    }
+
     # The live directory is untouched until backend startup applies the prepared archive.
     assert (data_root / "obsolete.txt").is_file()
     with sqlite3.connect(data_root / "uknowapp.db") as connection:
@@ -189,6 +194,9 @@ def test_full_restore_is_staged_then_applied_before_app_start(api, monkeypatch, 
 
     with sqlite3.connect(data_root / "uknowapp.db") as connection:
         assert connection.execute("SELECT role FROM users WHERE id = 1").fetchone()[0] == "admin"
+    result = admin.get("/api/admin/data/restore-status").json()["restore"]
+    assert result["status"] == "completed"
+    assert result["id"] == restore_id
     assert media.read_bytes() == b"original-media"
     assert (data_root / "vapid_private.pem").read_bytes() == original_vapid_key
     assert (data_root / "future-state.json").read_text(encoding="utf-8") == "original-state"
