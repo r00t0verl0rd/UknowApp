@@ -1,4 +1,4 @@
-"""Assignment lifecycle and teacher/student linking."""
+"""Назначение учеников преподавателям."""
 
 from datetime import UTC, datetime
 
@@ -26,7 +26,7 @@ def assign_student(payload, db: Session) -> dict:
         ),
     ).all()
 
-    # Repeating the same assignment must not create another empty conversation.
+    # Повторное назначение не создаёт пустой диалог.
     current = next(
         (
             item.conversation
@@ -52,7 +52,7 @@ def assign_student(payload, db: Session) -> dict:
             ).delete(synchronize_session=False)
         db.delete(assignment)
 
-    # Flush the detached conversation before searching for the history to restore.
+    # Сохраняем изменения до поиска прежней переписки.
     db.flush()
     conversation = db.scalar(
         select(Conversation)

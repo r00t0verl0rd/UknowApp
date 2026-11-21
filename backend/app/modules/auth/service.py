@@ -1,4 +1,4 @@
-"""Panel authentication, login throttling and persistent browser sessions."""
+"""Авторизация, защита входа и сессии."""
 
 import hashlib
 import secrets
@@ -99,8 +99,7 @@ def create_panel_session(
     if not fingerprint:
         raise HTTPException(status_code=401, detail="Учётная запись недоступна")
 
-    # A new login replaces the browser's previous session, limiting the
-    # lifetime of any older token that may have been copied or exposed.
+    # Новый вход отзывает предыдущую браузерную сессию.
     revoke_panel_session(request, db)
     now = datetime.now(UTC)
     db.query(PanelSession).filter(PanelSession.expires_at < now).delete(synchronize_session=False)
@@ -119,7 +118,7 @@ def create_panel_session(
     secure = request.url.scheme == "https"
     cookie_name = SECURE_SESSION_COOKIE if secure else SESSION_COOKIE
     if secure:
-        # Remove a legacy development cookie when the site first moves to HTTPS.
+        # При переходе на HTTPS очищаем прежнюю cookie.
         response.delete_cookie(
             key=SESSION_COOKIE,
             path="/",
@@ -153,8 +152,7 @@ def _token_digest(token: str | None) -> str | None:
 
 
 def revoke_panel_session(request: Request, db) -> None:
-    # Revoke either cookie variant if a browser is transitioning from local HTTP
-    # development to HTTPS on the same host.
+    # При выходе отзываем оба варианта cookie.
     revoked = False
     tokens = {
         request.cookies.get(SECURE_SESSION_COOKIE),

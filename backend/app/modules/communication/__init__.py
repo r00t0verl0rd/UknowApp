@@ -1,4 +1,4 @@
-"""Messenger-independent communication contracts."""
+"""Общие интерфейсы обмена сообщениями."""
 
 from .contracts import (
     DeliveryResult,

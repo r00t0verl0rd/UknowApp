@@ -1,4 +1,4 @@
-"""Independent interactive-board object API."""
+"""API объектов интерактивной доски."""
 
 import math
 import uuid
@@ -21,7 +21,7 @@ def _board_object_dict(item: GraphObject) -> dict:
 
 @router.get("/admin/boards/objects")
 def board_objects(_: Admin, db: Db):
-    # Remove legacy school-structure nodes; boards now contain only user-created objects.
+    # Удаляем устаревшие узлы: доски хранят собственные объекты.
     objects = db.scalars(select(GraphObject).order_by(GraphObject.id)).all()
     legacy_ids = {item.id for item in objects if not item.object_key.startswith("custom:")}
     if legacy_ids:

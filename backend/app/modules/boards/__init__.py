@@ -1,1 +1,1 @@
-"""Independent interactive boards module."""
+"""Интерактивные доски."""

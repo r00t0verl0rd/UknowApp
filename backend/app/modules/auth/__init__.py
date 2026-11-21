@@ -1,1 +1,1 @@
-"""Panel authentication feature."""
+"""Авторизация веб-панели."""

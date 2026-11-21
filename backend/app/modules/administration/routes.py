@@ -1,4 +1,4 @@
-"""HTTP API веб-панели: авторизация, участники, переписки и доставка сообщений."""
+"""API управления пользователями и назначениями."""
 
 import hashlib
 import logging
@@ -142,7 +142,7 @@ def update_user(user_id: int, payload: dict, _: Admin, db: Db):
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     changes = payload
     requested_web_username = changes.pop("web_username", None)
-    # Panel access codes are generated server-side and only their hashes are stored.
+    # Создаём коды на сервере, в БД храним хеши.
     target_role = changes.get("role", user.role)
     issued_access_code = None
 
@@ -274,14 +274,13 @@ def disconnect_telegram(user_id: int, _: Admin, db: Db):
 
     disconnected_telegram_id = user.telegram_id
 
-    # Remove only the Telegram binding. The persistent access code remains valid
-    # for both participant roles and can be used to reconnect the same account.
+    # Удаляем только привязку Telegram, код доступа остаётся.
     user.telegram_id = None
     sync_messenger_account(
         db, user.id, MessengerPlatform.TELEGRAM, None,
     )
 
-    # A disconnected teacher must select a conversation again after reconnecting.
+    # После переподключения преподаватель выбирает диалог заново.
     if user.role == "teacher":
         db.query(TeacherSession).filter(
             TeacherSession.teacher_id == user.id,

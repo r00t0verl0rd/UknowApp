@@ -1,4 +1,4 @@
-"""Persistence and identity rules for external messenger accounts."""
+"""Привязка пользователей к мессенджерам."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ CONNECTION_CODE_RE = re.compile(r"^[A-HJ-NP-Z2-9]{8}$")
 
 
 class MessengerAccountConflict(Exception):
-    """Raised when an external identity is already owned by another user."""
+    """Аккаунт мессенджера занят другим пользователем."""
 
 
 def get_messenger_account(
@@ -40,7 +40,7 @@ def get_messenger_pair(
     student_id: int,
     platform: MessengerPlatform | str,
 ) -> tuple[MessengerAccount | None, MessengerAccount | None]:
-    """Return both linked conversation accounts with one local database query."""
+    """Получить связанные аккаунты участников одним запросом."""
     platform_value = platform.value if isinstance(platform, MessengerPlatform) else platform
     accounts = db.scalars(
         select(MessengerAccount).where(
@@ -80,7 +80,7 @@ def sync_messenger_account(
     external_chat_id: str | int | None = None,
     username: str | None = None,
 ) -> MessengerAccount | None:
-    """Create/update one provider identity, or remove it when ID is None."""
+    """Создать, обновить или удалить привязку аккаунта."""
     platform_value = platform.value if isinstance(platform, MessengerPlatform) else platform
     account = db.scalar(
         select(MessengerAccount).where(
@@ -139,7 +139,7 @@ def claim_messenger_connection_code(
     external_chat_id: str,
     username: str | None = None,
 ) -> tuple[User | None, str]:
-    """Claim the persistent UknowApp access code for one messenger identity."""
+    """Привязать аккаунт по постоянному коду доступа."""
     normalized = re.sub(r"[\s-]", "", raw_code).upper()
     if not CONNECTION_CODE_RE.fullmatch(normalized):
         return None, "invalid_format"
@@ -184,8 +184,7 @@ def claim_messenger_connection_code(
             telegram_id = int(external_user_id)
         except (TypeError, ValueError):
             return None, "invalid"
-        # Keep the old API field synchronized during the compatibility period.
-        # Ownership and conflicts are checked against messenger_accounts above.
+        # Сохраняем поле старого API для совместимости.
         user.telegram_id = telegram_id
 
     try:
