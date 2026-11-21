@@ -11,5 +11,6 @@ export function getInboxData(request) { return Promise.all([getPanelConversation
 const API = import.meta.env.VITE_API_BASE_URL || "";
 
 export function createPanelEventSource() {
+  if (typeof EventSource === "undefined") return null;
   return new EventSource(API + "/api/panel/events", { withCredentials: true });
 }

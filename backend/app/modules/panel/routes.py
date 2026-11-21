@@ -26,11 +26,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.database import SessionLocal
-from app.event_hub import (
-    publish_chat_update,
-    subscribe_chat_updates,
-    unsubscribe_chat_updates,
-)
+from app.event_hub import subscribe_chat_updates, unsubscribe_chat_updates
 from app.infrastructure.storage.media import (
     MEDIA_DIR,
     delete_message_media,
@@ -56,7 +52,7 @@ from app.modules.communication.contracts import (
     OutboundMessage,
 )
 from app.modules.communication.service import record_messenger_delivery
-from app.modules.conversations.service import conversation_dicts
+from app.modules.conversations.service import conversation_dicts, publish_conversation_update
 from app.modules.dependencies import Db, PanelUser
 from app.modules.messaging.moderation import text_contains_contact_data
 from app.modules.messaging.service import (
@@ -67,6 +63,7 @@ from app.modules.notifications.service import schedule_push
 from app.modules.personal_chat.service import (
     _personal_conversation,
     _personal_conversation_dict,
+    publish_personal_update,
 )
 from app.request_validation import message_payload, personal_conversation_payload
 
@@ -202,17 +199,23 @@ async def panel_events(request: Request, principal: PanelUser):
     """Keep an authenticated browser connection open for conversation changes."""
 
     async def event_stream():
-        queue = subscribe_chat_updates()
+        queue = subscribe_chat_updates(principal)
         try:
-            yield "retry: 5000\n\n"
+            yield "retry: 1500\n\n"
             while not await request.is_disconnected():
                 try:
-                    payload = await asyncio.wait_for(queue.get(), timeout=20)
+                    payload = await asyncio.wait_for(queue.get(), timeout=15)
                 except TimeoutError:
                     # SSE comment frames keep intermediaries from closing an idle
                     # connection; they do not trigger a browser data callback.
                     yield ": keep-alive\n\n"
                     continue
+                try:
+                    event_id = json.loads(payload).get("event_id")
+                except (TypeError, ValueError):
+                    event_id = None
+                if event_id is not None:
+                    yield f"id: {event_id}\n"
                 yield "event: update\ndata: " + payload + "\n\n"
         finally:
             unsubscribe_chat_updates(queue)
@@ -298,7 +301,7 @@ def create_personal_conversation(payload: dict, principal: PanelUser, db: Db):
         db.add(item)
         db.commit()
         db.refresh(item)
-    publish_chat_update(item.id, "personal")
+    publish_personal_update(db, item)
     return _personal_conversation_dict(item, principal["role"])
 
 
@@ -325,30 +328,8 @@ def panel_conversation_summary(conversation_id: int, principal: PanelUser, db: D
     )[0]
 
 
-@router.get("/panel/personal-conversations/{conversation_id}/messages")
-def personal_messages(conversation_id: int, principal: PanelUser, db: Db, after_id: int = 0):
-    item = _personal_conversation(db, principal, conversation_id)
-    read_column = PersonalMessage.admin_read_at if principal["role"] == "admin" else PersonalMessage.participant_read_at
-    read_result = db.execute(
-        update(PersonalMessage)
-        .where(
-            PersonalMessage.conversation_id == item.id,
-            PersonalMessage.sender_role != principal["role"],
-            read_column.is_(None),
-            PersonalMessage.id > after_id,
-        )
-        .values({read_column.key: datetime.now(UTC)}),
-    )
-    if read_result.rowcount:
-        db.commit()
-        publish_chat_update(item.id, "personal", action="read", actor_role=principal["role"])
-    rows = db.scalars(
-        select(PersonalMessage)
-        .options(selectinload(PersonalMessage.sender))
-        .where(PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id)
-        .order_by(PersonalMessage.created_at, PersonalMessage.id),
-    ).all()
-    return [{
+def _personal_message_dict(row: PersonalMessage, principal: dict) -> dict:
+    return {
         "id": row.id,
         "sender": row.sender.full_name if row.sender else "Администратор",
         "sender_role": row.sender_role,
@@ -366,7 +347,49 @@ def personal_messages(conversation_id: int, principal: PanelUser, db: Db, after_
             and row.participant_read_at else None
         ),
         "created_at": row.created_at.isoformat(),
-    } for row in rows]
+    }
+
+
+@router.get("/panel/personal-conversations/{conversation_id}/messages")
+def personal_messages(conversation_id: int, principal: PanelUser, db: Db, after_id: int = 0):
+    item = _personal_conversation(db, principal, conversation_id)
+    read_column = PersonalMessage.admin_read_at if principal["role"] == "admin" else PersonalMessage.participant_read_at
+    read_ids = db.scalars(
+        select(PersonalMessage.id).where(
+            PersonalMessage.conversation_id == item.id,
+            PersonalMessage.sender_role != principal["role"],
+            read_column.is_(None),
+            PersonalMessage.id > after_id,
+        ),
+    ).all()
+    if read_ids:
+        read_at = datetime.now(UTC)
+        db.execute(
+            update(PersonalMessage)
+            .where(PersonalMessage.id.in_(read_ids))
+            .values({read_column.key: read_at}),
+        )
+        db.commit()
+        publish_personal_update(
+            db, item, action="read", actor_role=principal["role"],
+            message_ids=read_ids, read_at=read_at.isoformat(),
+        )
+    rows = db.scalars(
+        select(PersonalMessage)
+        .options(selectinload(PersonalMessage.sender))
+        .where(PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id)
+        .order_by(PersonalMessage.created_at, PersonalMessage.id),
+    ).all()
+    return [_personal_message_dict(row, principal) for row in rows]
+
+
+@router.get("/panel/personal-messages/{message_id}")
+def personal_message(message_id: int, principal: PanelUser, db: Db):
+    row = db.get(PersonalMessage, message_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Сообщение не найдено")
+    _personal_conversation(db, principal, row.conversation_id)
+    return _personal_message_dict(row, principal)
 
 
 @router.post("/panel/personal-conversations/{conversation_id}/messages", status_code=201)
@@ -406,7 +429,7 @@ def send_personal_message(
         f"/?openConversation={item.id}&type=personal",
         include_admin=principal["role"] != "admin",
     )
-    publish_chat_update(item.id, "personal", row.id)
+    publish_personal_update(db, item, message_id=row.id, sender_role=principal["role"])
     return {
         "id": row.id,
         "sender": row.sender.full_name if row.sender else "Администратор",
@@ -426,7 +449,7 @@ def delete_personal_message(message_id: int, principal: PanelUser, db: Db):
     row = db.get(PersonalMessage, message_id)
     if not row:
         raise HTTPException(status_code=404, detail="Сообщение не найдено")
-    _personal_conversation(db, principal, row.conversation_id)
+    item = _personal_conversation(db, principal, row.conversation_id)
     if row.sender_role != principal["role"] or (
         principal["role"] != "admin" and row.sender_id != principal.get("user_id")
     ):
@@ -434,7 +457,7 @@ def delete_personal_message(message_id: int, principal: PanelUser, db: Db):
     conversation_id = row.conversation_id
     db.delete(row)
     db.commit()
-    publish_chat_update(conversation_id, "personal", message_id, "delete")
+    publish_personal_update(db, item, message_id=message_id, action="delete")
     return {"ok": True, "deleted_message_id": message_id}
 
 
@@ -459,11 +482,9 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
                 metadata[read_key] = now
                 row.metadata_json = json.dumps(metadata, ensure_ascii=False)
             db.commit()
-            publish_chat_update(
-                conversation.id,
-                action="read",
-                actor_role=principal["role"],
-                message_ids=[row.id for row in unread],
+            publish_conversation_update(
+                db, conversation, action="read", actor_role=principal["role"],
+                message_ids=[row.id for row in unread], read_at=now,
             )
     rows = db.scalars(
         select(Message)
@@ -478,6 +499,19 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
         )
         for item in rows
     ]
+
+
+@router.get("/panel/messages/{message_id}")
+def panel_message(message_id: int, principal: PanelUser, db: Db):
+    item = db.get(Message, message_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Сообщение не найдено")
+    _panel_visible_conversation(db, principal, item.conversation_id)
+    return _panel_message_dict(
+        item,
+        expose_internal_metadata=(principal["role"] == "admin"),
+        principal=principal,
+    )
 
 
 @router.delete("/panel/messages/{message_id}")
@@ -563,7 +597,7 @@ async def delete_panel_message(
     delete_message_media(item.metadata_json)
     db.delete(item)
     db.commit()
-    publish_chat_update(conversation.id, message_id=message_id, action="delete")
+    publish_conversation_update(db, conversation, message_id=message_id, action="delete")
 
     return {
         "ok": True,
@@ -627,6 +661,8 @@ def _save_panel_messenger_results(
     conversation: Conversation,
     results: dict[str, dict[str, list[dict]]],
 ) -> None:
+    if not results:
+        return
     metadata = json.loads(row.metadata_json or "{}")
     for platform, result in results.items():
         record_messenger_delivery(
@@ -640,7 +676,10 @@ def _save_panel_messenger_results(
     # live in metadata.messenger_deliveries and never overwrite this field.
     row.delivery_status = "delivered"
     db.commit()
-    publish_chat_update(conversation.id, message_id=row.id)
+    publish_conversation_update(
+        db, conversation, message_id=row.id, action="delivery",
+        sender_role=row.sender_role,
+    )
 
 
 async def _deliver_panel_message(
@@ -871,7 +910,7 @@ async def send_panel_message(
     db.commit()
     db.refresh(row)
     # Publish immediately after UknowApp persistence; external delivery is independent.
-    publish_chat_update(conversation.id, message_id=row.id)
+    publish_conversation_update(db, conversation, message_id=row.id, sender_role=principal["role"])
     push_recipients = [student.id, teacher.id] if principal["role"] == "admin" else ([student.id] if principal["role"] == "teacher" else [teacher.id])
     schedule_push(
         db, push_recipients, "Новое сообщение · UknowApp",
@@ -951,6 +990,9 @@ async def send_panel_attachment(
     db.add(row)
     db.commit()
     db.refresh(row)
+    publish_conversation_update(
+        db, conversation, message_id=row.id, sender_role=principal["role"],
+    )
     push_recipients = [student.id, teacher.id] if principal["role"] == "admin" else ([student.id] if principal["role"] == "teacher" else [teacher.id])
     schedule_push(
         db, push_recipients, "Новое сообщение · UknowApp",

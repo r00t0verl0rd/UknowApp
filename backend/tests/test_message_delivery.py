@@ -72,6 +72,9 @@ def test_chat_delivery_ticks_follow_uknowapp_persistence_and_read_state(api):
     assert refreshed.status_code == 200
     assert refreshed.json()[0]["delivery_status"] == "delivered"
     assert refreshed.json()[0]["panel_read_at"] is not None
+    direct = teacher.get(f"/api/panel/messages/{sent.json()['id']}")
+    assert direct.status_code == 200
+    assert direct.json()["panel_read_at"] is not None
 
 
 def test_personal_chat_exposes_admin_read_receipt_to_sender(api):
@@ -105,6 +108,9 @@ def test_personal_chat_exposes_admin_read_receipt_to_sender(api):
     )
     assert teacher_refreshed.status_code == 200
     assert teacher_refreshed.json()[0]["panel_read_at"] is not None
+    direct = teacher.get(f"/api/panel/personal-messages/{sent.json()['id']}")
+    assert direct.status_code == 200
+    assert direct.json()["panel_read_at"] is not None
 
 
 class FakeMessengerAdapter:

@@ -14,7 +14,6 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.event_hub import publish_chat_update
 from app.models import (
     Assignment,
     Conversation,
@@ -35,6 +34,7 @@ from app.modules.communication.contracts import (
     MessengerPlatform,
 )
 from app.modules.communication.service import record_messenger_delivery
+from app.modules.conversations.service import publish_conversation_update
 from app.modules.notifications.service import schedule_push
 from app.rate_limit import SlidingWindowLimiter
 
@@ -162,7 +162,10 @@ def persist_message(
             f"/?openConversation={conversation.id}",
             include_admin=True,
         )
-    publish_chat_update(conversation_id)
+    if conversation:
+        publish_conversation_update(
+            db, conversation, message_id=row.id, sender_role=sender.role,
+        )
     return row
 
 
@@ -214,15 +217,23 @@ def mark_messages_read_by_teacher(db: Session, messages: list[Message]) -> None:
     if not messages:
         return
     now = datetime.now(UTC).isoformat()
-    changed = False
+    changed_by_conversation: dict[int, list[int]] = {}
     for row in messages:
         metadata = json.loads(row.metadata_json or "{}")
         if metadata.get("teacher_read_at") is None:
             metadata["teacher_read_at"] = now
             row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-            changed = True
-    if changed:
-        db.commit()
+            changed_by_conversation.setdefault(row.conversation_id, []).append(row.id)
+    if not changed_by_conversation:
+        return
+    db.commit()
+    for conversation_id, message_ids in changed_by_conversation.items():
+        conversation = db.get(Conversation, conversation_id)
+        if conversation:
+            publish_conversation_update(
+                db, conversation, action="read", actor_role="teacher",
+                message_ids=message_ids, read_at=now,
+            )
 
 
 def mark_visible_messages_read_by_teacher(
@@ -511,7 +522,10 @@ async def _deliver_student_message_to_teacher(
 
     row.delivery_status = "delivered"
     db.commit()
-    publish_chat_update(conversation.id)
+    publish_conversation_update(
+        db, conversation, message_id=row.id, action="delivery",
+        sender_role=row.sender_role,
+    )
     teacher_session = db.get(TeacherSession, teacher.id)
     if teacher_session and teacher_session.conversation_id != conversation.id:
         clear_teacher_session(db, teacher)
@@ -569,8 +583,10 @@ async def _deliver_teacher_reply(
     row.metadata_json = json.dumps(metadata, ensure_ascii=False)
     row.delivery_status = "delivered"
     db.commit()
-    publish_chat_update(conversation.id)
-
+    publish_conversation_update(
+        db, conversation, message_id=row.id, action="delivery",
+        sender_role=row.sender_role,
+    )
     if inbound.text:
         try:
             await gateway.delete_message(
@@ -715,8 +731,11 @@ async def process_inbound_message(
         metadata["source_thread_id"] = inbound.external_thread_id if group_binding else None
     row.metadata_json = json.dumps(metadata, ensure_ascii=False)
     db.commit()
-    publish_chat_update(conversation.id)
     await gateway.archive_media(inbound, row)
+    publish_conversation_update(
+        db, conversation, message_id=row.id, action="delivery",
+        sender_role=sender.role,
+    )
 
     teacher_account, student_account = get_messenger_pair(
         db, conversation.teacher_id, conversation.student_id, inbound.platform,
@@ -746,8 +765,10 @@ async def process_inbound_message(
         # delete, or forwarding attempt.
         row.delivery_status = "delivered"
         db.commit()
-        publish_chat_update(conversation.id)
-
+        publish_conversation_update(
+            db, conversation, message_id=row.id, action="delivery",
+            sender_role=row.sender_role,
+        )
         if sender.role == "teacher":
             mark_messages_read_by_teacher(db, unanswered_before_reply)
 
@@ -784,7 +805,10 @@ async def process_inbound_message(
         # UknowApp delivery state.
         row.delivery_status = "delivered"
         db.commit()
-        publish_chat_update(conversation.id)
+        publish_conversation_update(
+            db, conversation, message_id=row.id, action="delivery",
+            sender_role=row.sender_role,
+        )
         logger.warning(
             "Could not forward inbound messenger message (platform=%s conversation_id=%s error_type=%s)",
             inbound.platform.value, conversation.id, type(exc).__name__,

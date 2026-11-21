@@ -19,7 +19,7 @@ export function useChatsController({
   } = chatState;
   const { personalChats, setPersonalChats, chatSection, setChatSection } = personalState;
 
-  useConversationSync({ auth, page, role: profile?.role, selectedChat, messages, request, setChats, setPersonalChats, setMessages });
+  useConversationSync({ auth, page, role: profile?.role, selectedChat, messages, request, setChats, setPersonalChats, setSelectedChat, setMessages });
 
   useEffect(() => {
     if (!auth || !profile) return;

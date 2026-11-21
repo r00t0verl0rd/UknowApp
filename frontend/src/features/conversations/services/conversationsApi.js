@@ -11,6 +11,13 @@ export function getChatSummary(request, chat) {
   return request(base + chat.id + "/summary");
 }
 
+export function getChatMessage(request, chat, messageId) {
+  const path = chat.type === "personal"
+    ? "/api/panel/personal-messages/"
+    : "/api/panel/messages/";
+  return request(path + messageId);
+}
+
 export function createPersonalConversation(request, userId) {
   return request("/api/panel/personal-conversations", {
     method: "POST",
