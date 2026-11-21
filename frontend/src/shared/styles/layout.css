@@ -68,7 +68,7 @@
 .chat-item .person-info b{font-size:13px}
 .chat-item .person-info small{margin-top:3px;font-size:10px}
 .chat-item > .role-tag{flex:0 0 28px;width:28px;height:28px;display:grid;place-items:center;margin:0;padding:0;border:1px solid var(--ui-border);border-radius:50%;background:var(--ui-control-bg);color:var(--muted);font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
-.chat-item > .chat-count.unread-badge{border:0;background:var(--button-primary);color:#fff;box-shadow:0 2px 6px color-mix(in srgb,var(--button-primary) 22%,transparent)}
+.chat-item > .chat-count.unread-badge{border:1px solid #eab308;background:linear-gradient(145deg,#fde047,#facc15);color:#713f12;box-shadow:0 0 7px rgba(250,204,21,.58),0 0 15px rgba(250,204,21,.32),inset 0 1px 0 rgba(255,255,255,.55);font-weight:900;text-shadow:0 1px 0 rgba(255,255,255,.28)}
 .chat-item > .chat-count.message-count{border-radius:var(--ui-radius-sm)}
 .chat-item.has-unread:not(.selected) > .person-main > .person-info b{font-weight:800;color:var(--ink)}
 .chat-item.has-unread:not(.selected){border-left:3px solid var(--role-student)!important}
@@ -339,7 +339,7 @@
 .chat-section-tabs{display:flex;align-items:center;gap:4px;min-width:0;padding:3px;border:1px solid var(--ui-border);border-radius:10px;background:var(--canvas)}
 .chat-section-tabs > .btn:not(.primary):not(.danger):not(.disconnect){flex:1 1 0;min-width:0;min-height:34px;padding:7px 9px;border:0!important;border-radius:7px!important;background:transparent!important;color:var(--muted)!important;box-shadow:none!important;font-size:11px;white-space:nowrap}
 .chat-section-tabs > .btn.primary{background:var(--surface)!important;color:var(--ink)!important;box-shadow:var(--ui-shadow-soft)!important}
-.chat-tab-count{display:inline-grid;place-items:center;min-width:19px;height:19px;margin-left:4px;padding:0 5px;border-radius:7px;background:color-mix(in srgb,var(--button-primary) 12%,var(--surface));color:var(--button-primary);font-size:10px;font-variant-numeric:tabular-nums}
+.chat-tab-count{display:inline-grid;place-items:center;min-width:19px;height:19px;margin-left:4px;padding:0 5px;border:1px solid #eab308;border-radius:7px;background:linear-gradient(145deg,#fde047,#facc15);color:#713f12;box-shadow:0 0 7px rgba(250,204,21,.5),0 0 13px rgba(250,204,21,.25);font-size:10px;font-weight:900;font-variant-numeric:tabular-nums}
 .personal-chat-create{width:100%;min-height:36px;justify-content:center;font-size:11px}
 .chat-list > .search{height:38px;border-radius:9px;background:var(--canvas)}
 .chat-list > .search input{font-size:12px;background:transparent;color:var(--ink)}

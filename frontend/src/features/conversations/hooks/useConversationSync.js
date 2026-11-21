@@ -85,7 +85,7 @@ export function useConversationSync({
           await Promise.all(events.map(async event => {
             const {
               conversation_id: id, conversation_type: type,
-              deleted_message_ids: deletedIds, read_actor_roles: readRoles,
+              deleted_message_ids: deletedIds,
               refresh_messages: refreshMessages,
             } = event;
             if (!id) return;
@@ -95,15 +95,7 @@ export function useConversationSync({
                 const deleted = new Set(deletedIds.map(Number));
                 current.current.setMessages(rows => rows.filter(row => !deleted.has(Number(row.id))));
               }
-              if (readRoles.some(actorRole => actorRole !== current.current.role)) {
-                const rows = await getChatMessages(request, chat);
-                if (active) {
-                  current.current.setMessages(rows);
-                  lastMessageId.current = maxMessageId(rows);
-                }
-              } else if (refreshMessages) {
-                await refreshSelected();
-              }
+              if (refreshMessages) await refreshSelected();
             }
             await updateSummary(type, Number(id));
           }));
@@ -129,14 +121,11 @@ export function useConversationSync({
         conversation_id: payload.conversation_id,
         conversation_type: type,
         deleted_message_ids: [],
-        read_actor_roles: [],
         refresh_messages: false,
       };
       if (payload.action === "delete" && payload.message_id) {
         eventState.deleted_message_ids.push(payload.message_id);
-      } else if (payload.action === "read") {
-        if (payload.actor_role) eventState.read_actor_roles.push(payload.actor_role);
-      } else {
+      } else if (payload.action !== "read") {
         eventState.refresh_messages = true;
       }
       pending.current.set(key, eventState);
