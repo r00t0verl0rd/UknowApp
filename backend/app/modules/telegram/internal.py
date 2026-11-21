@@ -63,14 +63,16 @@ async def process_update_inbox(bot, dispatcher: Dispatcher, stop: asyncio.Event)
             now = datetime.now(UTC).replace(tzinfo=None)
             pending = db.scalar(
                 select(TelegramUpdate)
-                .where(
-                    TelegramUpdate.state == "pending",
-                    (TelegramUpdate.next_attempt_at.is_(None))
-                    | (TelegramUpdate.next_attempt_at <= now),
-                )
+                .where(TelegramUpdate.state == "pending")
                 .order_by(TelegramUpdate.update_id)
                 .limit(1)
             )
+            # Do not process later updates ahead of an earlier failing update:
+            # teacher selection and replies depend on message order.
+            if pending and pending.next_attempt_at is not None:
+                retry_at = pending.next_attempt_at.replace(tzinfo=None)
+                if retry_at > now:
+                    pending = None
             update_id = pending.update_id if pending else None
             payload = pending.payload if pending else None
 
