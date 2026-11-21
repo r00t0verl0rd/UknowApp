@@ -10,7 +10,7 @@ import EmptyState from "../../shared/components/EmptyState.jsx";
 import CountBadge from "../../shared/components/CountBadge.jsx";
 
 export default function ChatsPage({
-  profile, chatSection, setChatSection, personalChats, setSelectedChat,
+  profile, inboxLoading, chatSection, setChatSection, personalChats, setSelectedChat,
   setMessages, chatFilter, setChatFilter, openCreatePersonalChat, chatSearch,
   setChatSearch, visibleChats, openChat, selectedChat, draft, setDraft,
   messageFilter, setMessageFilter, messagesViewportRef, visibleMessages, messages,
@@ -137,7 +137,9 @@ export default function ChatsPage({
           })}
           {!visibleChats.length && (
             <EmptyState>
-              {profile?.role === "admin" && chatSection === "personal"
+              {inboxLoading
+                ? (profile?.role === "admin" && chatSection === "personal" ? "Загружаем личные диалоги…" : "Загружаем диалоги…")
+                : profile?.role === "admin" && chatSection === "personal"
                 ? "Личных диалогов пока нет"
                 : profile?.role === "student"
                   ? "Пока нет активной переписки с учителем"
