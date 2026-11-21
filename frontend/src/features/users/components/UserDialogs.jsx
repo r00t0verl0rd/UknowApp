@@ -70,13 +70,13 @@ export default function UserDialogs({
     </Modal>}
 
     {deleteCandidate && <Modal onClose={() => setDeleteCandidate(null)} closeOnBackdrop={!deletingUser} className="confirm-delete-modal" role="alertdialog" labelledBy="delete-user-title">
-        <div className="modal-head"><div><div className="eyebrow">УДАЛЕНИЕ УЧАСТНИКА</div><h2 id="delete-user-title">Удалить участника?</h2></div><button className="icon-btn" type="button" onClick={() => setDeleteCandidate(null)} disabled={deletingUser} aria-label="Закрыть"><X/></button></div>
+        <div className="modal-head"><div><div className="eyebrow">УДАЛЕНИЕ УЧАСТНИКА</div><h2 id="delete-user-title">Удалить участника?</h2></div><IconButton onClick={() => setDeleteCandidate(null)} disabled={deletingUser} aria-label="Закрыть"><X/></IconButton></div>
         <p className="hint">Профиль «<b>{deleteCandidate.full_name}</b>», связанные переписки и сообщения будут удалены. Это действие нельзя отменить.</p>
         <div className="modal-actions"><Button variant="ghost" onClick={() => setDeleteCandidate(null)} disabled={deletingUser}>Отмена</Button><Button variant="danger" onClick={confirmRemoveUser} disabled={deletingUser}>{deletingUser ? "Удаляем…" : <><Trash2/>Удалить участника</>}</Button></div>
       </Modal>}
 
     {disconnectCandidate && <Modal onClose={() => setDisconnectCandidate(null)} closeOnBackdrop={!disconnectingTelegram} className="confirm-delete-modal" role="alertdialog" labelledBy="disconnect-telegram-title">
-        <div className="modal-head"><div><div className="eyebrow">ОТКЛЮЧЕНИЕ TELEGRAM</div><h2 id="disconnect-telegram-title">Отключить Telegram?</h2></div><button className="icon-btn" type="button" onClick={() => setDisconnectCandidate(null)} disabled={disconnectingTelegram} aria-label="Закрыть"><X/></button></div>
+        <div className="modal-head"><div><div className="eyebrow">ОТКЛЮЧЕНИЕ TELEGRAM</div><h2 id="disconnect-telegram-title">Отключить Telegram?</h2></div><IconButton onClick={() => setDisconnectCandidate(null)} disabled={disconnectingTelegram} aria-label="Закрыть"><X/></IconButton></div>
         <p className="hint">Отключить Telegram у пользователя «<b>{disconnectCandidate.full_name}</b>»? Профиль и история переписки останутся в системе. Отправлять и получать сообщения через бота он не сможет до повторного подключения.</p>
         <div className="modal-actions"><Button variant="ghost" onClick={() => setDisconnectCandidate(null)} disabled={disconnectingTelegram}>Отмена</Button><Button variant="danger" onClick={confirmDisconnectTelegram} disabled={disconnectingTelegram}>{disconnectingTelegram ? "Отключаем…" : "Отключить Telegram"}</Button></div>
       </Modal>}
