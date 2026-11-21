@@ -33,6 +33,7 @@ function waitFor(check, timeout = 12000) {
 
 test("global SSE updates real counters across tabs and replays missed events", { timeout: 60000 }, async () => {
   const streams = new Set();
+  const pendingPersonalResponses = [];
   const eventLog = [];
   const lastEventIds = [];
   let maxActiveStreams = 0;
@@ -84,7 +85,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
       body = [];
     } else if (path === "/api/panel/personal-conversations") {
       personalRequests += 1;
-      body = [personalChat];
+      pendingPersonalResponses.push(response);
+      return;
     } else if (path === "/api/admin/users") {
       body = [];
     } else if (path === "/api/admin/overview") {
