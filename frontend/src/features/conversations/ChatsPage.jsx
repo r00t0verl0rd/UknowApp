@@ -158,7 +158,6 @@ export default function ChatsPage({
                   : profile?.role === "student"
                     ? selectedChat.teacher.full_name
                     : selectedChat.student.full_name}</b>
-                {selectedChat.type === "personal" && <small>Личный диалог · только UknowApp</small>}
                 {selectedChat.type !== "personal" && profile?.role === "admin"
                   && <small>{selectedChat.teacher.full_name}</small>}
                 {selectedChat.type !== "personal" && profile?.role === "student"
