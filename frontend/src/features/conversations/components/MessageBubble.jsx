@@ -219,7 +219,7 @@ function MessageBubble({ message, onDelete, viewerRole }) {
         <div className="message-delivery-error" key={index}>
           <span className="message-delivery-name">{details.platform}</span>
           {details.name && <><span className="message-delivery-dash"> · </span><span className="message-delivery-name">{details.name}</span></>}
-          {details.role && <span className="message-delivery-role"> ({details.role})</span>}
+          {details.role && <span className="message-delivery-name"> ({details.role})</span>}
           <span className="message-delivery-dash"> — </span>
           <span className="message-delivery-reason">{details.reason || "Причина не указана."}</span>
         </div>
