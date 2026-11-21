@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createApiClient } from "../../../services/api.js";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { request } from "../../services/api.js";
 import { getAdminBootstrap, getCurrentProfile, getInboxData } from "../../services/panelApi.js";
 import { mergeInboxSnapshot } from "../../services/inboxState.js";
 
@@ -8,7 +8,6 @@ export function usePanelDataState({
   setPersonalChats, setUsers, setOverview,
   setSelectedChat, setMessages,
 }) {
-  const request = useMemo(() => createApiClient(), []);
   const refreshRevision = useRef(0);
   const refreshTask = useRef(null);
   const inboxRowRevision = useRef(new Map());

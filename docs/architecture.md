@@ -28,7 +28,7 @@ Routes and services belong to their business modules. Keep provider-specific Tel
 - `shared/hooks/` — cross-feature state and controllers.
 - `shared/services/` — shared inbox state and the singleton panel event stream.
 - `shared/styles/` — design tokens and ordered CSS modules.
-- `services/api.js` — shared authenticated JSON transport.
+- `shared/services/api.js` — shared authenticated JSON transport.
 - `main.jsx` — React entry point.
 
 `app/App.jsx` is the composition root. It connects authentication, shared session/bootstrap state and global conversation synchronization, then mounts the workspace for the current role. Feature pages own their presentation and feature-specific actions; API adapters live alongside their feature.

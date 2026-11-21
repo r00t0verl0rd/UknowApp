@@ -566,7 +566,6 @@ async def _deliver_teacher_reply(
     inbound: InboundMessage,
     row: Message,
     conversation: Conversation,
-    teacher: User,
     student: User,
     student_chat_id: str,
     unanswered_before_reply: list[Message],
@@ -833,7 +832,7 @@ async def process_inbound_message(
     try:
         if sender.role == "student":
             await _deliver_student_message_to_teacher(
-                db, inbound, row, conversation, sender, recipient,
+                db, inbound, row, conversation, recipient,
                 recipient_chat_id, gateway,
             )
         else:

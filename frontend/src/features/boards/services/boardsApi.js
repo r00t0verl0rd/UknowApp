@@ -1,6 +1,5 @@
-import { createApiClient } from "../../../services/api.js";
+import { request } from "../../../shared/services/api.js";
 
-const request = createApiClient();
 const BOARD_OBJECTS_URL = "/api/admin/boards/objects";
 
 export function getBoardObjects() {

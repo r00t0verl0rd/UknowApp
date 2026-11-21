@@ -365,7 +365,7 @@ def _personal_message_dict(row: PersonalMessage, principal: dict) -> dict:
     }
 
 
-def _personal_message_status_dict(row: PersonalMessage, principal: dict) -> dict:
+def _personal_message_status_dict(row: PersonalMessage) -> dict:
     read_at = (
         row.admin_read_at if row.sender_role != "admin"
         else row.participant_read_at
@@ -694,7 +694,7 @@ def sync_personal_conversation_state(
         ).all())
     return {
         "messages": [_personal_message_dict(row, principal) for row in new_rows],
-        "updated_messages": [_personal_message_status_dict(row, principal) for row in updated_rows],
+        "updated_messages": [_personal_message_status_dict(row) for row in updated_rows],
         "summary": _personal_summaries(db, [item], principal["role"])[0],
     }
 
