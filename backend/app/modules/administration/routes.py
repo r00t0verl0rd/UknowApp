@@ -9,6 +9,8 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
+from app.core.security import hash_web_password
+from app.infrastructure.storage.media import delete_message_media
 from app.models import (
     Assignment,
     ConnectionCode,
@@ -30,7 +32,6 @@ from app.modules.communication.accounts import (
 )
 from app.modules.communication.contracts import MessengerPlatform
 from app.modules.dependencies import Admin, Db
-from app.infrastructure.storage.media import delete_message_media
 from app.modules.users.service import (
     generate_panel_access_code,
     user_dict,
@@ -41,7 +42,6 @@ from app.request_validation import (
     user_create_payload,
     user_update_payload,
 )
-from app.core.security import hash_web_password
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")

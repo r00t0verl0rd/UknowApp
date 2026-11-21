@@ -12,10 +12,6 @@ from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.config import VAPID_PUBLIC_KEY
-from app.models import PushSubscription
-from app.modules.dependencies import Db, PanelUser
-from app.modules.notifications.endpoints import is_safe_push_endpoint
-from app.request_validation import login_payload
 from app.core.security import (
     authenticate_panel_user,
     check_login_rate_limit,
@@ -26,6 +22,10 @@ from app.core.security import (
     revoke_panel_session,
     verify_request_origin,
 )
+from app.models import PushSubscription
+from app.modules.dependencies import Db, PanelUser
+from app.modules.notifications.endpoints import is_safe_push_endpoint
+from app.request_validation import login_payload
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
