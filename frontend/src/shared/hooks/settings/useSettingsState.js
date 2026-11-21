@@ -12,5 +12,5 @@ export function useSettingsState() {
     setTheme(current => current === "dark-soft" ? "light" : "dark-soft");
   }, []);
 
-  return { theme, setTheme, toggleTheme };
+  return { theme, toggleTheme };
 }

@@ -37,8 +37,8 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run realtime browser integration tests
         run: npm run test:browser
-      - name: Lint design tokens
-        run: npx --yes stylelint@16 src/shared/styles/tokens.css --config ../.stylelintrc.json
+      - name: Lint shared styles
+        run: npx --yes stylelint@16 'src/shared/styles/*.css' --config ../.stylelintrc.json
 
   backend:
     runs-on: ubuntu-latest

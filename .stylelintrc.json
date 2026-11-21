@@ -4,5 +4,38 @@
     "color-no-invalid-hex": true,
     "declaration-block-no-duplicate-properties": true,
     "no-duplicate-selectors": true
-  }
+  },
+  "overrides": [
+    {
+      "files": [
+        "frontend/src/shared/styles/*.css"
+      ],
+      "rules": {
+        "no-duplicate-selectors": null
+      }
+    },
+    {
+      "files": [
+        "frontend/src/shared/styles/tokens.css"
+      ],
+      "rules": {
+        "no-duplicate-selectors": true
+      }
+    },
+    {
+      "files": [
+        "frontend/src/shared/styles/workspace-refinements.css"
+      ],
+      "rules": {
+        "declaration-block-no-duplicate-properties": [
+          true,
+          {
+            "ignore": [
+              "consecutive-duplicates-with-different-values"
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

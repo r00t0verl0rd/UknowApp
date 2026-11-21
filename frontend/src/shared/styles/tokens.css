@@ -118,6 +118,10 @@
   --role-student-soft: #fff0cf;
   --role-student-border: #e9cf98;
   --role-teacher: #8a65c5;
+  --teacher-avatar-text: #705b88;
+  --teacher-avatar-background: #e2d7eb;
+  --teacher-card-border: #d1c4da;
+  --teacher-card-background: linear-gradient(112deg, #ebe4f0, #f6f3f7);
   --role-teacher-soft: #eee4fb;
   --role-teacher-border: #d3c0ed;
   --role-admin-soft: #e2f0df;
@@ -185,6 +189,10 @@
   --role-student-soft: #39342e;
   --role-student-border: #625440;
   --role-teacher: #aa9bcf;
+  --teacher-avatar-text: #d0bce9;
+  --teacher-avatar-background: #514465;
+  --teacher-card-border: #675879;
+  --teacher-card-background: #393247;
   --role-teacher-soft: #35313f;
   --role-teacher-border: #554b68;
   --role-admin-soft: #303a32;

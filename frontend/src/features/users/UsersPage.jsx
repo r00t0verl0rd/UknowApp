@@ -10,6 +10,7 @@ import Unlink from "lucide-react/dist/esm/icons/unlink.js";
 import Users from "lucide-react/dist/esm/icons/users.js";
 import X from "lucide-react/dist/esm/icons/x.js";
 import EmptyState from "../../shared/components/EmptyState.jsx";
+import Button from "../../shared/components/Button.jsx";
 
 export default function UsersPage({ visibleUsers, loading, search, setSearch, userSort, setUserSort, openCreate, disconnectTelegram, makeCode, userInfo, setUserInfo, openEdit, removeUser }) {
   return (
@@ -20,7 +21,7 @@ export default function UsersPage({ visibleUsers, loading, search, setSearch, us
                   <option value="name-asc">По имени</option><option value="name-desc">Имя: Я — А</option><option value="teachers">Сначала учителя</option><option value="students">Сначала ученики</option>
                 </select>
                 <span>Количество пользователей: <b className="chat-tab-count">{visibleUsers.length}</b></span>
-                <button className="btn primary user-add-btn" onClick={() => openCreate()}><Plus/>Добавить пользователя</button>
+                <Button variant="primary" className="user-add-btn" onClick={() => openCreate()}><Plus/>Добавить пользователя</Button>
               </div>
               <div className="user-list">{!visibleUsers.length && loading ? <EmptyState>Загружаем список участников…</EmptyState> : visibleUsers.map(user => <div className={"user-row" + (userInfo === user.id ? " is-info-open" : "")} key={user.id}>
                 <div className={"avatar " + user.role}>{user.role === "teacher" ? <GraduationCap/> : user.role === "student" ? <Smile/> : <Users/>}</div>
