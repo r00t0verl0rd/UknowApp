@@ -79,7 +79,7 @@ async def spool_worker(client: aiohttp.ClientSession, stop: asyncio.Event):
         if not row or row[3] > time.time():
             try:
                 await asyncio.wait_for(stop.wait(), timeout=0.5)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 pass
             continue
         update_id, payload, attempts, _next_try = row
@@ -96,7 +96,7 @@ async def spool_worker(client: aiohttp.ClientSession, stop: asyncio.Event):
                 db.execute("DELETE FROM telegram_updates WHERE update_id = ?", (update_id,))
         except asyncio.CancelledError:
             raise
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - spool must retry even on unexpected transport failure
             logger.warning("Primary delivery retry (update_id=%s error_type=%s)", update_id, type(exc).__name__)
             with connection() as db:
                 db.execute(
@@ -154,7 +154,7 @@ async def telegram_webhook(request: Request):
         update = json.loads(body)
         update_id = update["update_id"]
         if not isinstance(update_id, int) or isinstance(update_id, bool):
-            raise ValueError("Invalid update id")
+            raise TypeError("Invalid update id")
     except (KeyError, TypeError, ValueError):
         raise HTTPException(400, "Invalid Telegram update") from None
     with connection() as db:
