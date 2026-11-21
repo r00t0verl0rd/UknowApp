@@ -358,6 +358,12 @@ def personal_messages(conversation_id: int, principal: PanelUser, db: Db, after_
         "text": row.text,
         "metadata": {},
         "delivery_status": "delivered",
+        "panel_read_at": (
+            row.admin_read_at.isoformat() if row.sender_role != "admin"
+            and row.admin_read_at else
+            row.participant_read_at.isoformat() if row.sender_role == "admin"
+            and row.participant_read_at else None
+        ),
         "created_at": row.created_at.isoformat(),
     } for row in rows]
 
@@ -409,6 +415,7 @@ def send_personal_message(
         "text": row.text,
         "metadata": {},
         "delivery_status": "delivered",
+        "panel_read_at": None,
         "created_at": row.created_at.isoformat(),
     }
 
