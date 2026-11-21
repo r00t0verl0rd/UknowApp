@@ -127,7 +127,11 @@ export function useConversationSync({
       if (fallbackTimer !== null) return;
       // SSE is the primary real-time transport. Poll only while it is unavailable.
       fallbackTimer = window.setInterval(() => {
-        if (document.visibilityState === "visible") void recover().catch(() => {});
+        if (document.visibilityState !== "visible") return;
+        // Keep fallback work incremental; do not reload complete message history.
+        void refreshInbox()
+          .then(() => refreshSelected())
+          .catch(() => {});
       }, 5000);
     };
     source.onopen = () => {
