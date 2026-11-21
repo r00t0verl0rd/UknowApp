@@ -9,6 +9,7 @@ import AdminWorkspace from "./AdminWorkspace.jsx";
 import TeacherWorkspace from "./TeacherWorkspace.jsx";
 import StudentWorkspace from "./StudentWorkspace.jsx";
 
+// Новые роли добавляются здесь вместе с серверными проверками доступа.
 export const workspaceRegistry = Object.freeze({
   admin: {
     Component: AdminWorkspace,

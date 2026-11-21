@@ -106,6 +106,7 @@ def record_messenger_delivery(
             else "not_connected"
         )
 
+    # Внешний сбой не меняет статус сообщения в базе UknowApp.
     channels = metadata.setdefault("messenger_deliveries", {})
     channels[platform_value] = {
         "status": status,

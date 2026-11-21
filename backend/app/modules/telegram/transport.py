@@ -28,6 +28,7 @@ def create_telegram_bot(token: str) -> Bot:
     if mode != "local":
         raise ValueError("TELEGRAM_API_MODE must be 'cloud' or 'local'")
 
+    # Локальный API читает файлы из доступного backend кеша.
     api = TelegramAPIServer.from_base(
         TELEGRAM_API_URL, is_local=True,
         wrap_local_file=TelegramFiles(Path("/var/lib/telegram-bot-api"), TELEGRAM_FILES_DIR),

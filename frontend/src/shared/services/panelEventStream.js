@@ -1,3 +1,4 @@
+// Одно SSE-подключение обслуживает все открытые разделы приложения.
 let source = null;
 const subscribers = new Set();
 let closeGeneration = 0;
