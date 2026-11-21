@@ -15,3 +15,5 @@
 @import "./admin-tools.css";
 @import "./board-objects.css";
 @import "./standalone.css";
+/* Последний слой: общий стиль кнопок-иконок без разрозненных исключений. */
+@import "./icon-actions.css";

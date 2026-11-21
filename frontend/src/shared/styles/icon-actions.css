@@ -1,0 +1,113 @@
+/* Единый стиль кнопок с одной иконкой для всех кабинетов и диалогов.
+   Новые кнопки создаём через IconButton; размер и тон задаются его параметрами. */
+:root {
+  --icon-action-size: 34px;
+  --icon-action-radius: 9px;
+}
+
+/* Стабильный квадрат с видимой рамкой на любых устройствах. */
+:root .ui-icon-button.ui-icon-button {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  box-sizing: border-box !important;
+  flex: 0 0 var(--icon-action-size) !important;
+  width: var(--icon-action-size) !important;
+  min-width: var(--icon-action-size) !important;
+  max-width: var(--icon-action-size) !important;
+  height: var(--icon-action-size) !important;
+  min-height: var(--icon-action-size) !important;
+  padding: 0 !important;
+  margin: 0;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: var(--icon-action-radius) !important;
+  background: var(--ui-control-bg) !important;
+  color: var(--ui-control-text) !important;
+  box-shadow: none !important;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+:root .ui-icon-button.ui-icon-button svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  stroke-width: 1.8;
+}
+:root .ui-icon-button.ui-icon-button:hover:not(:disabled) {
+  background: var(--ui-control-hover) !important;
+  border-color: var(--ui-border-strong) !important;
+  color: var(--purple) !important;
+}
+:root .ui-icon-button.ui-icon-button:focus-visible {
+  outline: 2px solid var(--purple) !important;
+  outline-offset: 2px;
+  box-shadow: var(--ui-focus) !important;
+}
+:root .ui-icon-button.ui-icon-button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+/* Цвет опасного действия меняется, форма и размер остаются общими. */
+:root .ui-icon-button.ui-icon-button--danger {
+  background: var(--button-danger-bg) !important;
+  border-color: var(--button-danger-border) !important;
+  color: var(--button-danger-text) !important;
+}
+:root .ui-icon-button.ui-icon-button--danger:hover:not(:disabled) {
+  background: var(--button-danger-hover-bg) !important;
+  border-color: var(--button-danger-hover-border) !important;
+  color: var(--button-danger-hover-text) !important;
+}
+/* Компактные и крупные кнопки нужны там, где ограничено место. */
+:root .ui-icon-button.ui-icon-button--compact { --icon-action-size: 30px; }
+:root .ui-icon-button.ui-icon-button--large { --icon-action-size: 40px; }
+
+/* Карточки преподавателя и ученика: одинаковые стрелки, карандаши и действия. */
+:root .content:has(.role_node) .person-actions .ui-icon-button,
+:root .content:has(.role_node) .student-card > .ui-icon-button,
+:root .content:has(.role_node) .unassigned-student-actions > .ui-icon-button {
+  flex-basis: var(--icon-action-size) !important;
+  width: var(--icon-action-size) !important;
+  min-width: var(--icon-action-size) !important;
+  max-width: var(--icon-action-size) !important;
+  height: var(--icon-action-size) !important;
+  min-height: var(--icon-action-size) !important;
+}
+/* Отдельное оформление для тёмной темы уже задано CSS-переменными. */
+:root[data-theme="dark-soft"] .ui-icon-button.ui-icon-button {
+  background: var(--ui-control-bg) !important;
+  border-color: var(--ui-border) !important;
+  color: var(--ui-control-text) !important;
+}
+:root[data-theme="dark-soft"] .ui-icon-button.ui-icon-button:hover:not(:disabled) {
+  background: var(--ui-control-hover) !important;
+  border-color: var(--ui-border-strong) !important;
+  color: var(--purple) !important;
+}
+:root[data-theme="dark-soft"] .ui-icon-button.ui-icon-button--danger {
+  background: var(--button-danger-bg) !important;
+  border-color: var(--button-danger-border) !important;
+  color: var(--button-danger-text) !important;
+}
+:root[data-theme="dark-soft"] .ui-icon-button.ui-icon-button--danger:hover:not(:disabled) {
+  background: var(--button-danger-hover-bg) !important;
+  border-color: var(--button-danger-hover-border) !important;
+  color: var(--button-danger-hover-text) !important;
+}
+/* Форма и рамка не зависят от наличия мыши. */
+@media (hover: none), (pointer: coarse) {
+  :root .ui-icon-button.ui-icon-button {
+    border: 1px solid var(--ui-border) !important;
+    background: var(--ui-control-bg) !important;
+    color: var(--ui-control-text) !important;
+  }
+  :root .ui-icon-button.ui-icon-button--danger {
+    border-color: var(--button-danger-border) !important;
+    background: var(--button-danger-bg) !important;
+    color: var(--button-danger-text) !important;
+  }
+}
