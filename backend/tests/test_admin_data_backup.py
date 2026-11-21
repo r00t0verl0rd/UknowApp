@@ -8,6 +8,7 @@ import zipfile
 
 from fastapi import status
 
+from app.core import config
 from app.modules.administration import data as admin_data
 
 
@@ -45,6 +46,20 @@ def create_database(path, media_path=None):
         connection.commit()
 
 
+def create_vapid_key(path):
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+
+    key = ec.generate_private_key(ec.SECP256R1())
+    private_key = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    path.write_bytes(private_key)
+    return private_key
+
+
 def make_legacy_archive(database_path, media_bytes):
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
@@ -65,6 +80,8 @@ def setup_data_root(monkeypatch, root):
     monkeypatch.setattr(admin_data, "DATA_DIR", root)
     monkeypatch.setattr(admin_data, "MEDIA_DIR", root / "media")
     monkeypatch.setattr(admin_data, "_database_path", lambda: root / "uknowapp.db")
+    monkeypatch.setattr(config, "VAPID_PUBLIC_KEY", config.VAPID_PUBLIC_KEY)
+    monkeypatch.setattr(config, "VAPID_PRIVATE_KEY", config.VAPID_PRIVATE_KEY)
 
 
 def test_full_backup_contains_complete_data_directory_and_checksums(api, monkeypatch, tmp_path):
@@ -79,7 +96,7 @@ def test_full_backup_contains_complete_data_directory_and_checksums(api, monkeyp
         data_root / "uknowapp.db",
         media_path="photo.bin",
     )
-    (data_root / "vapid_private.pem").write_text("private-key", encoding="utf-8")
+    create_vapid_key(data_root / "vapid_private.pem")
     future_file = data_root / "future" / "worker-state.json"
     future_file.parent.mkdir()
     future_file.write_text('{"ready":true}', encoding="utf-8")
@@ -117,7 +134,7 @@ def test_full_restore_is_staged_then_applied_before_app_start(api, monkeypatch, 
     media.parent.mkdir(parents=True)
     media.write_bytes(b"original-media")
     create_database(data_root / "uknowapp.db", media_path="photo.bin")
-    (data_root / "vapid_private.pem").write_text("original-key", encoding="utf-8")
+    original_vapid_key = create_vapid_key(data_root / "vapid_private.pem")
     (data_root / "future-state.json").write_text("original-state", encoding="utf-8")
 
     admin = make_client()
@@ -129,7 +146,7 @@ def test_full_restore_is_staged_then_applied_before_app_start(api, monkeypatch, 
         connection.execute("UPDATE users SET role = 'changed'")
         connection.commit()
     media.write_bytes(b"changed-media")
-    (data_root / "vapid_private.pem").write_text("changed-key", encoding="utf-8")
+    create_vapid_key(data_root / "vapid_private.pem")
     (data_root / "obsolete.txt").write_text("remove-me", encoding="utf-8")
 
     uploaded = admin.post(
@@ -156,7 +173,7 @@ def test_full_restore_is_staged_then_applied_before_app_start(api, monkeypatch, 
     with sqlite3.connect(data_root / "uknowapp.db") as connection:
         assert connection.execute("SELECT role FROM users WHERE id = 1").fetchone()[0] == "admin"
     assert media.read_bytes() == b"original-media"
-    assert (data_root / "vapid_private.pem").read_text(encoding="utf-8") == "original-key"
+    assert (data_root / "vapid_private.pem").read_bytes() == original_vapid_key
     assert (data_root / "future-state.json").read_text(encoding="utf-8") == "original-state"
     assert not (data_root / "obsolete.txt").exists()
     assert not (data_root / admin_data.PENDING_RESTORE_NAME).exists()
@@ -171,7 +188,7 @@ def test_legacy_full_backup_restores_database_and_media_and_keeps_current_key(
     setup_data_root(monkeypatch, data_root)
 
     create_database(data_root / "uknowapp.db")
-    (data_root / "vapid_private.pem").write_text("target-key", encoding="utf-8")
+    target_vapid_key = create_vapid_key(data_root / "vapid_private.pem")
     old_database = tmp_path / "old.sqlite3"
     create_database(old_database)
     archive_bytes = make_legacy_archive(old_database, b"legacy-media")
@@ -187,4 +204,4 @@ def test_legacy_full_backup_restores_database_and_media_and_keeps_current_key(
     assert admin_data.apply_pending_data_restore() is True
 
     assert (data_root / "media" / "legacy.bin").read_bytes() == b"legacy-media"
-    assert (data_root / "vapid_private.pem").read_text(encoding="utf-8") == "target-key"
+    assert (data_root / "vapid_private.pem").read_bytes() == target_vapid_key
