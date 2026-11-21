@@ -128,7 +128,61 @@ therefore connect different platforms to one user independently, and a
 reconnection to the same platform account updates that account instead of
 creating a duplicate.
 
-## Next
+## Stage 6 — UknowApp is the delivery authority
 
-The next stage can add MAX as an independent adapter without changing the
-user, role, access-code, or conversation model.
+UknowApp message persistence and external messenger delivery are separate
+facts. The message is committed to the shared conversation first. Once
+committed, the UknowApp message status is `delivered`, regardless of whether
+the recipient has a Telegram/MAX account or whether an external provider is
+available. Only UknowApp moderation can leave a persisted message in
+`blocked_contact`.
+
+External send results are stored in
+`metadata.messenger_deliveries[platform]` with an independent channel status,
+delivered copy identifiers, and errors. A failure in one channel never changes
+the UknowApp delivery status. Panel messages are fanned out through all
+currently registered adapters; each platform is attempted only for recipients
+who linked that platform.
+
+The historical Telegram keys `telegram_deliveries` and
+`telegram_delivery_errors` remain as compatibility projections for existing
+forum-topic routing and old messages. New code should use the generic
+`messenger_deliveries` ledger.
+
+The UI receipt states are based only on UknowApp:
+- one grey check — the send request is still pending;
+- two grey checks — the message is stored and available in the UknowApp inbox;
+- two blue checks — the recipient has read it in UknowApp.
+
+The `panel_read_at` field is returned for both ordinary and personal
+conversations, so the same `MessageBubble` component can render receipts
+without knowing which external messengers are connected.
+
+## Stage 7 — optional messenger modules
+
+Telegram remains enabled by default when a bot token is configured. It can be
+turned off without deleting its credentials by setting
+`TELEGRAM_BOT_ENABLED=false`. In this state UknowApp starts with an empty
+communication registry, while conversation storage, in-app delivery, push
+notifications, and read receipts continue to work.
+
+`CommunicationService` exposes the enabled platform registry and allows
+additional adapters to be registered independently. The existing platform
+enum and `messenger_accounts` constraints already allow a single UknowApp
+user to link Telegram and MAX simultaneously.
+
+## Next — MAX adapter
+
+The MAX integration should implement the normalized adapter contracts and the
+provider operations required by the shared inbound workflow. It should own
+only MAX authentication, webhooks/events, provider API calls, and media
+translation. The shared access-code, identity, moderation, conversation,
+persistence, delivery-receipt, and notification rules must remain in UknowApp.
+
+Verify MAX with these scenarios before enabling it:
+- MAX is the only enabled messenger;
+- Telegram and MAX are enabled in parallel;
+- a recipient is linked only to Telegram, only to MAX, or to both;
+- a recipient has no external messenger account;
+- an external provider is unavailable or returns a duplicate event;
+- UknowApp remains usable while every external adapter is disabled.
