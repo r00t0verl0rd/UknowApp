@@ -31,7 +31,7 @@
   flex-direction:column;
   overflow:hidden;
 }
-.chat-list > .search{flex:0 0 auto;width:100%;max-width:none;min-width:0;box-sizing:border-box}
+.chat-list-filters > .search{flex:0 0 auto;width:100%;max-width:none;min-width:0;box-sizing:border-box}
 .chat-list > .legend{flex:0 0 auto;flex-wrap:wrap;max-width:100%}
 .chat-items-scroll{
   display:flex;
@@ -323,8 +323,8 @@
 @media(max-width:420px){
   .chats-main > .workspace-content:has(> .chat-list){padding:7px}
   .chat-list{gap:8px}
-  .chat-detail > .chat-head{grid-template-columns:auto minmax(0,1fr);gap:7px}
-  .chat-head-tools{grid-column:1/-1;justify-content:flex-end}
+  .chat-detail > .chat-head{grid-template-columns:36px minmax(0,1fr) auto;gap:5px}
+  .chat-head-tools{justify-content:flex-end}
   .chat-head-tools select{max-width:100%;min-width:0}
   .chat-head-person b{font-size:12px}
   .message{max-width:96%}
@@ -339,6 +339,9 @@
 
 /* Conversations: one quiet control row, one clear filter, no competing pills. */
 .chats-main > .workspace-content > .chat-list{background:var(--surface);border:1px solid var(--ui-border);border-radius:14px;padding:12px}
+.chat-list-actions,.chat-list-filters{display:flex;flex-direction:column;gap:6px;min-width:0}
+.chat-list-actions:empty{display:none}
+.chat-section-tabs > .btn{flex:1 1 0}
 .chat-section-tabs{display:flex;align-items:center;gap:4px;min-width:0;padding:3px;border:1px solid var(--ui-border);border-radius:10px;background:var(--canvas)}
 .chat-section-tabs > .btn:not(.primary):not(.danger):not(.disconnect){flex:1 1 0;min-width:0;min-height:34px;padding:7px 9px;border:0!important;border-radius:7px!important;background:transparent!important;color:var(--muted)!important;box-shadow:none!important;font-size:11px;white-space:nowrap}
 .chat-section-tabs > .btn.primary{background:var(--surface)!important;color:var(--ink)!important;box-shadow:var(--ui-shadow-soft)!important}
@@ -366,8 +369,8 @@ font-weight:700;
 font-variant-numeric:tabular-nums;
 line-height:1;}
 .personal-chat-create{width:100%;min-height:36px;justify-content:center;font-size:11px}
-.chat-list > .search{height:38px;border-radius:9px;background:var(--canvas)}
-.chat-list > .search input{font-size:12px;background:transparent;color:var(--ink)}
+.chat-list-filters > .search{height:38px;border-radius:9px;background:var(--canvas)}
+.chat-list-filters > .search input{font-size:12px;background:transparent;color:var(--ink)}
 .chat-filter{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:34px;color:var(--muted);font-size:11px}
 .chat-filter select{min-width:0;max-width:65%;height:32px;padding:0 9px;border:1px solid var(--ui-border);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit}
 .chat-items-scroll{gap:5px;padding:1px}
@@ -382,9 +385,25 @@ line-height:1;}
   .chats-main > .workspace-content:has(.role_node){flex:1 1 auto;align-self:stretch;width:100%;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
 }
 @media(max-width:760px){
-  .chat-list,.chat-detail{padding:9px;border-radius:12px}
+  .chats-main > .workspace-content:has(> .chat-list){padding:4px}
+  .chats-main > .workspace-content:has(> .chat-list) > .chat-list{padding:6px;gap:6px}
+  .chat-list-actions,.chat-list-filters{flex-direction:row;align-items:center}
+  .chat-section-tabs,.chat-list-filters > .search{flex:1;min-width:0}
+  .chat-list-actions .personal-chat-create{width:40px;min-width:40px;height:40px;padding:0}
+  .personal-chat-create span,.mobile-chat-back span,.chat-filter > span,.composer-send span{display:none}
+  .chat-list-filters .chat-filter select{max-width:100%;width:auto}
+  .chat-items-scroll > .chat-item{min-height:44px;padding:5px 8px}
+  .chat-detail > .chat-head{padding:4px;gap:5px}
+  .mobile-chat-back{justify-content:center;width:36px;min-height:40px;padding:0}
+  .chat-detail .chat-composer{grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:4px;padding:4px;margin-top:2px}
+  .chat-composer .composer-footer{gap:3px}
+  .chat-composer .composer-tools:empty{display:none}
+  .chat-composer .composer-send{width:40px;height:40px;min-width:40px;padding:0}
+  .chat-composer:has(.selected-file){grid-template-columns:minmax(0,1fr)}
+  .chat-composer .selected-file{max-width:min(48vw,220px)}
+  .chat-detail{border-radius:10px}
   .chat-detail{border:0;padding:0}
   .chat-section-tabs > .btn{font-size:10px}
-  .chat-list > .search{width:100%}
+  .chat-list-filters > .search{width:100%}
 }
 

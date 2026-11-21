@@ -47,6 +47,7 @@ export default function ChatsPage({
   return (
     <>
       <section className="teacher-branch chat-list">
+        <div className="chat-list-actions">
         {profile?.role === "admin" && (
           <div className="chat-section-tabs" role="group" aria-label="Раздел диалогов">
             <button type="button" className={"btn small" + (chatSection === "participants" ? " primary" : "")}
@@ -75,13 +76,14 @@ export default function ChatsPage({
         )}
 
         {profile?.role === "admin" && chatSection === "personal" && (
-          <button type="button" className="btn outline personal-chat-create" onClick={openCreatePersonalChat}>
-            <Plus size={15}/>Новый диалог
+          <button type="button" className="btn outline personal-chat-create" onClick={openCreatePersonalChat} aria-label="Новый диалог" title="Новый диалог">
+            <Plus size={17}/><span>Новый диалог</span>
           </button>
         )}
 
+        </div>
         {profile?.role !== "student" && (
-          <>
+          <div className="chat-list-filters">
             <label className="search">
               <Search size={16}/>
               <input aria-label="Поиск по имени" placeholder="Поиск по имени"
@@ -103,7 +105,7 @@ export default function ChatsPage({
                 </select>
               </label>
             )}
-          </>
+          </div>
         )}
 
         <div className="chat-items-scroll">
@@ -237,7 +239,7 @@ export default function ChatsPage({
                       : profile?.role === "student"
                         ? "Сообщение учителю…"
                         : "Ответить ученику…"}
-                  rows={2} maxLength={4000}/>
+                  rows={1} maxLength={4000}/>
                 <div className="composer-footer">
                   <div className="composer-tools">
                     {selectedChat.type !== "personal" && (

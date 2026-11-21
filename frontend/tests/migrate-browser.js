@@ -52,6 +52,16 @@ try {
     await page.getByRole("button", { name: "Личные" }).click();
     const [teacher] = (await (await api.get(url + "/api/admin/users")).json()).filter(user => user.role === "teacher");
     const dialog = page.getByRole("dialog", { name: "Создать диалог" });
+    for (const width of [320, 390, 768, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      const nav = page.getByRole("navigation", { name: "Основная навигация" });
+      if (width <= 760) {
+        const tops = await nav.getByRole("button").evaluateAll(items => items.map(item => item.offsetTop));
+        assert.equal(new Set(tops).size, 1);
+      }
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    }
+    await page.setViewportSize({ width: 390, height: 800 });
     async function openPersonal() {
       await page.getByRole("button", { name: "Новый диалог" }).click();
       await dialog.getByLabel("Участник").selectOption(String(teacher.id));
@@ -80,6 +90,7 @@ try {
     assert.equal((await trash.locator("svg").boundingBox()).width, 12);
     await trash.click();
     await page.getByRole("alertdialog").getByRole("button", { name: "Отмена" }).click();
+    await page.getByRole('button', { name: 'Назад к списку диалогов' }).click();
     await openPersonal();
     await message.waitFor();
     const personal = await (await api.get(url + "/api/panel/personal-conversations")).json();
