@@ -65,6 +65,7 @@ async def run_telegram_bot(bot, dispatcher, app) -> None:
             # start_polling normally runs until shutdown. If it returns while
             # the application is still alive, treat that as an unexpected stop
             # and bring polling back instead of silently leaving the bot offline.
+            app.state.telegram_status = "unavailable"
             logger.error("TELEGRAM_POLLING_STOPPED_UNEXPECTEDLY")
             if asyncio.get_running_loop().time() - polling_started_at >= 60:
                 retry_delay = 5
@@ -89,6 +90,18 @@ async def run_telegram_bot(bot, dispatcher, app) -> None:
             logger.error(
                 "Telegram bot could not connect (error_type=%s). Retrying in %s seconds; "
                 "the admin panel remains available.",
+                type(exc).__name__,
+                retry_delay,
+            )
+            await asyncio.sleep(retry_delay)
+            retry_delay = min(retry_delay * 2, 60)
+        except Exception as exc:
+            # A non-Telegram exception must not silently kill the polling task:
+            # the web API stays up while the bot reconnects with backoff.
+            # Do not log exception text; URLs can contain the bot token.
+            app.state.telegram_status = "unavailable"
+            logger.error(
+                "Telegram polling crashed (error_type=%s). Retrying in %s seconds.",
                 type(exc).__name__,
                 retry_delay,
             )
