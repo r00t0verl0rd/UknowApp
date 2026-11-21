@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useChatActionState } from "./useChatActionState.js";
-import { useConversationSync } from "./useConversationSync.js";
 import { mergeConversationMessages } from "../services/messageState.js";
 import {
   createPersonalConversation, deleteChatMessage, getChatMessages,
@@ -27,8 +26,6 @@ export function useChatsController({
   activeChatKey.current = selectedChat
     ? (selectedChat.type === "personal" ? "personal:" : "conversation:") + selectedChat.id
     : "";
-
-  useConversationSync({ auth, page, role: profile?.role, selectedChat, messages, request, setChats, setPersonalChats, setSelectedChat, setMessages });
 
   useEffect(() => {
     if (!auth || !profile) return;
