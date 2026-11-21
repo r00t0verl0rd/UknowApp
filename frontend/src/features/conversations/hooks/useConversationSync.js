@@ -159,7 +159,6 @@ export function useConversationSync({
               conversation_id: id,
               conversation_type: type,
               conversation_key: key,
-              conversation_key: key,
               deleted_message_ids: deletedIds,
               refresh_messages: refreshMessages,
             } = event;
@@ -251,6 +250,7 @@ export function useConversationSync({
       const state = pending.current.get(key) || {
         conversation_id: id,
         conversation_type: type,
+        conversation_key: key,
         deleted_message_ids: new Set(),
         refresh_messages: false,
       };
