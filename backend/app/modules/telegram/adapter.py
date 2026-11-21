@@ -14,7 +14,7 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
 from aiogram.types import FSInputFile
 
-from app.infrastructure.storage.media import MEDIA_DIR, safe_media_type
+from app.infrastructure.storage.media import ATTACHMENT_SIZE_ERROR, MAX_ATTACHMENT_BYTES, MEDIA_DIR, safe_media_type
 from app.models import Message
 from app.modules.communication.contracts import (
     DeliveryResult,
@@ -314,6 +314,8 @@ class TelegramAdapter:
         path = (root / message.media.storage_key).resolve()
         if root not in path.parents or not path.is_file():
             raise FileNotFoundError("Stored attachment is unavailable")
+        if path.stat().st_size > MAX_ATTACHMENT_BYTES:
+            raise ValueError(ATTACHMENT_SIZE_ERROR)
         return path
 
     async def _send_native_media(

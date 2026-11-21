@@ -30,24 +30,17 @@ uknowschool.ru, www.uknowschool.ru {
     @html path / /index.html
     header @html Cache-Control "no-cache, must-revalidate"
 
-    @fullRestore {
+    @chatUpload {
         method POST
-        path /api/admin/data/full
+        path /api/panel/conversations/*/attachments
     }
-    @databaseRestore {
-        method POST
-        path /api/admin/data/database
+    # Allow multipart headers in addition to the 1 GiB attachment.
+    request_body @chatUpload {
+        max_size 1074790400
     }
     @ordinaryApi {
         path /api/*
-        not path /api/admin/data/full /api/admin/data/database
-    }
-    # File limit plus 1 MiB for multipart framing.
-    request_body @fullRestore {
-        max_size 2148532224
-    }
-    request_body @databaseRestore {
-        max_size 1074790400
+        not path /api/admin/data/full /api/admin/data/database /api/panel/conversations/*/attachments
     }
     request_body @ordinaryApi {
         max_size 22MB

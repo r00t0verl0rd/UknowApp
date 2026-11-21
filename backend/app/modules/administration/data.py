@@ -56,9 +56,6 @@ RESTORE_BACKUP_PREFIX = ".uknowapp-restore-backup-"
 RESTORE_UPLOAD_LOCK = ".uknowapp-restore-upload.lock"
 INTERNAL_PREFIX = ".uknowapp-"
 
-MAX_DATABASE_BYTES = 1024 * 1024 * 1024
-MAX_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024
-MAX_UNPACKED_ARCHIVE_BYTES = 4 * 1024 * 1024 * 1024
 MAX_ARCHIVE_ENTRIES = 100000
 FULL_BACKUP_FORMAT = "uknowapp-full-backup-v2"
 LEGACY_FULL_BACKUP_FORMAT = "uknowapp-full-backup-v1"
@@ -134,10 +131,17 @@ def _safe_data_entry(value: str) -> Path:
     return Path(*relative.parts[1:])
 
 
+def _require_backup_space(directory: Path, required: int) -> None:
+    # Keep working space for the live database, logs and concurrent requests.
+    if shutil.disk_usage(directory).free < required + 256 * 1024 * 1024:
+        raise HTTPException(status_code=507, detail="Недостаточно свободного места для резервной копии")
+
+
 def _create_database_snapshot(destination: Path) -> None:
     database = _database_path()
     if not database.is_file():
         raise HTTPException(status_code=404, detail="Файл базы данных не найден")
+    _require_backup_space(destination.parent, database.stat().st_size)
     with sqlite3.connect(database) as source, sqlite3.connect(destination) as target:
         source.backup(target)
 
@@ -197,6 +201,7 @@ def _copy_live_files(
     ):
         target = destination / relative
         target.parent.mkdir(parents=True, exist_ok=True)
+        _require_backup_space(target.parent, source.stat().st_size)
         shutil.copy2(source, target)
 
 
@@ -272,6 +277,7 @@ def _build_full_backup(archive_path: Path, staging_root: Path) -> dict:
     for source, relative in _iter_data_files(data_dir, database):
         target = staged_data / relative
         target.parent.mkdir(parents=True, exist_ok=True)
+        _require_backup_space(target.parent, source.stat().st_size)
         shutil.copy2(source, target)
 
     staged_database = staged_data / database_relative
@@ -288,10 +294,6 @@ def _build_full_backup(archive_path: Path, staging_root: Path) -> dict:
         relative = path.relative_to(staged_data).as_posix()
         size, checksum = _hash_file(path)
         total_unpacked += size
-        if relative == database_relative.as_posix() and size > MAX_DATABASE_BYTES:
-            raise HTTPException(status_code=413, detail="База данных превышает 1 ГБ")
-        if total_unpacked > MAX_UNPACKED_ARCHIVE_BYTES:
-            raise HTTPException(status_code=413, detail="Каталог data превышает лимит архива 4 ГБ")
         file_records.append({
             "path": "data/" + relative,
             "size": size,
@@ -318,6 +320,7 @@ def _build_full_backup(archive_path: Path, staging_root: Path) -> dict:
         "unpacked_bytes": total_unpacked,
         "missing_media_references": missing_media,
     }
+    _require_backup_space(archive_path.parent, total_unpacked)
     with zipfile.ZipFile(
         archive_path,
         "w",
@@ -340,17 +343,13 @@ def _build_full_backup(archive_path: Path, staging_root: Path) -> dict:
             "manifest.json",
             json.dumps(manifest, ensure_ascii=False, separators=(",", ":")),
         )
-    if archive_path.stat().st_size > MAX_ARCHIVE_BYTES:
-        raise HTTPException(status_code=413, detail="Резервная копия превышает 2 ГБ")
     return manifest
 
 
-def _validate_archive_limits(archive: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
+def _validate_archive_entries(archive: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
     entries = archive.infolist()
     if len(entries) > MAX_ARCHIVE_ENTRIES:
         raise HTTPException(status_code=413, detail="В архиве слишком много файлов")
-    if sum(item.file_size for item in entries) > MAX_UNPACKED_ARCHIVE_BYTES:
-        raise HTTPException(status_code=413, detail="Содержимое архива превышает 4 ГБ")
     names = [item.filename for item in entries]
     if len(names) != len(set(names)):
         raise HTTPException(status_code=400, detail="Архив содержит повторяющиеся имена файлов")
@@ -365,6 +364,8 @@ def _validate_archive_limits(archive: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
 
 def _read_archive_manifest(archive: zipfile.ZipFile) -> dict:
     try:
+        if archive.getinfo("manifest.json").file_size > 64 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Слишком большой служебный manifest.json")
         manifest = json.loads(archive.read("manifest.json"))
     except (KeyError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         raise HTTPException(status_code=400, detail="В архиве отсутствует корректный manifest.json") from exc
@@ -407,7 +408,6 @@ def _extract_v2_archive(
         or declared_file_count != len(records)
         or type(declared_unpacked_bytes) is not int
         or declared_unpacked_bytes != declared_total
-        or declared_total > MAX_UNPACKED_ARCHIVE_BYTES
     ):
         raise HTTPException(status_code=400, detail="Счётчики файлов в manifest не совпадают")
     record_map = {}
@@ -428,8 +428,6 @@ def _extract_v2_archive(
             raise HTTPException(status_code=400, detail="Некорректный размер или SHA-256 файла в manifest")
         if archive_name in record_map:
             raise HTTPException(status_code=400, detail="Manifest содержит повторяющиеся файлы")
-        if relative == database_relative and size > MAX_DATABASE_BYTES:
-            raise HTTPException(status_code=413, detail="База данных в архиве превышает 1 ГБ")
         record_map[archive_name] = (relative, size, checksum.lower())
 
     archive_names = {
@@ -490,8 +488,6 @@ def _extract_legacy_archive(
     database_info = next((item for item in entries if item.filename == "database.sqlite3"), None)
     if database_info is None:
         raise HTTPException(status_code=400, detail="В старой резервной копии отсутствует база данных")
-    if database_info.file_size > MAX_DATABASE_BYTES:
-        raise HTTPException(status_code=413, detail="База данных в архиве превышает 1 ГБ")
 
     staged_data.mkdir(parents=True, exist_ok=True)
     _copy_live_files(staged_data, excluded_top_level={"media"})
@@ -521,7 +517,8 @@ def _prepare_restore_archive(archive_path: Path, staged_data: Path) -> dict:
     expected_database = _database_relative_path(data_dir)
     try:
         with zipfile.ZipFile(archive_path) as archive:
-            entries = _validate_archive_limits(archive)
+            entries = _validate_archive_entries(archive)
+            _require_backup_space(archive_path.parent, sum(item.file_size for item in entries))
             manifest = _read_archive_manifest(archive)
             archive_format = manifest.get("format")
             if archive_format == FULL_BACKUP_FORMAT:
@@ -917,12 +914,9 @@ async def restore_full_backup(_: Admin, file: Annotated[UploadFile, File()]):
         os.close(lock_descriptor)
         stage_dir = Path(tempfile.mkdtemp(prefix=RESTORE_STAGE_PREFIX, dir=data_dir))
         archive_path = stage_dir / "backup.zip"
-        total = 0
         with archive_path.open("wb") as target:
             while chunk := await file.read(1024 * 1024):
-                total += len(chunk)
-                if total > MAX_ARCHIVE_BYTES:
-                    raise HTTPException(status_code=413, detail="Архив превышает 2 ГБ")
+                _require_backup_space(Path(target.name).parent, len(chunk))
                 target.write(chunk)
 
         restore_info = _prepare_restore_archive(archive_path, stage_dir / "data")
@@ -984,13 +978,10 @@ async def restore_database(_: Admin, file: Annotated[UploadFile, File()]):
         raise HTTPException(status_code=400, detail="Загрузите файл SQLite (.db, .sqlite или .sqlite3)")
     database = _database_path()
     temp_path = _temporary_path(".uknowapp-restore-", ".sqlite3", DATA_DIR)
-    total = 0
     try:
         with temp_path.open("wb") as handle:
             while chunk := await file.read(1024 * 1024):
-                total += len(chunk)
-                if total > MAX_DATABASE_BYTES:
-                    raise HTTPException(status_code=413, detail="Файл базы данных превышает 1 ГБ")
+                _require_backup_space(Path(handle.name).parent, len(chunk))
                 handle.write(chunk)
         _validate_database(temp_path)
         database.parent.mkdir(parents=True, exist_ok=True)

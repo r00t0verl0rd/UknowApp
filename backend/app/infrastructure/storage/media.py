@@ -8,6 +8,9 @@ from app.core.config import ROOT_DIR
 logger = logging.getLogger(__name__)
 MEDIA_DIR = ROOT_DIR / "data" / "media"
 
+MAX_ATTACHMENT_BYTES = 1024 ** 3
+ATTACHMENT_SIZE_ERROR = "Максимальный размер вложения — 1024 МиБ"
+
 SAFE_MEDIA_TYPES = {
     "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp",
     "audio/mpeg", "audio/mp3", "audio/ogg", "audio/opus", "audio/wav",

@@ -11,6 +11,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.database import SessionLocal
 from app.models import TeacherPanel, User
+from app.infrastructure.storage.media import ATTACHMENT_SIZE_ERROR, MAX_ATTACHMENT_BYTES
 from app.modules.messaging.inbound import (
     bind_student_forum_topic,
     clear_teacher_session,
@@ -273,6 +274,17 @@ async def bind_student_group(message: TgMessage, bot: Bot):
 async def route_message(message: TgMessage, bot: Bot):
     adapter = TelegramAdapter(bot)
     inbound = adapter.normalize_message(message)
+    if inbound.media:
+        size = inbound.media.file_size
+        if size is None and inbound.media.provider_file_id:
+            try:
+                remote = await bot.get_file(inbound.media.provider_file_id)
+                size = remote.file_size
+            except TelegramAPIError:
+                size = None
+        if size is None or size > MAX_ATTACHMENT_BYTES:
+            await message.answer(ATTACHMENT_SIZE_ERROR if size is not None else "Не удалось определить размер вложения.")
+            return
     with SessionLocal() as db:
         result = await process_inbound_message(
             db,

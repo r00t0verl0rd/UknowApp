@@ -34,6 +34,7 @@ from app.event_hub import (
     unsubscribe_chat_updates,
 )
 from app.infrastructure.storage.media import (
+    MAX_ATTACHMENT_BYTES, ATTACHMENT_SIZE_ERROR,
     MEDIA_DIR,
     delete_message_media,
     media_content_disposition,
@@ -996,8 +997,8 @@ async def _deliver_panel_message(
 
 async def _store_panel_attachment(file: UploadFile, conversation_id: int):
     """Validate and persist an uploaded attachment; return normalized metadata."""
-    if file.size is not None and file.size > 20 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="Максимальный размер файла — 20 МБ")
+    if file.size is not None and file.size > MAX_ATTACHMENT_BYTES:
+        raise HTTPException(status_code=413, detail=ATTACHMENT_SIZE_ERROR)
     original_name = (file.filename or "attachment").replace("\\", "/").rsplit("/", 1)[-1]
     original_name = "".join(
         char for char in original_name
@@ -1016,8 +1017,8 @@ async def _store_panel_attachment(file: UploadFile, conversation_id: int):
     def copy_upload():
         with target_path.open("xb") as target:
             while chunk := file.file.read(1024 * 1024):
-                if target.tell() + len(chunk) > 20 * 1024 * 1024:
-                    raise HTTPException(status_code=413, detail="Максимальный размер файла — 20 МБ")
+                if target.tell() + len(chunk) > MAX_ATTACHMENT_BYTES:
+                    raise HTTPException(status_code=413, detail=ATTACHMENT_SIZE_ERROR)
                 target.write(chunk)
             return target.tell()
 
