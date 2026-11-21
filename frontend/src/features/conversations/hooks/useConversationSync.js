@@ -116,7 +116,26 @@ export function useConversationSync({
     };
 
     const source = createPanelEventSource();
-    source.onopen = () => { void recover().catch(() => {}); };
+    let fallbackTimer = null;
+    const stopFallback = () => {
+      if (fallbackTimer !== null) {
+        window.clearInterval(fallbackTimer);
+        fallbackTimer = null;
+      }
+    };
+    const startFallback = () => {
+      if (fallbackTimer !== null) return;
+      // SSE is the primary real-time transport. Poll only while it is unavailable.
+      fallbackTimer = window.setInterval(() => {
+        if (document.visibilityState === "visible") void recover().catch(() => {});
+      }, 5000);
+    };
+    source.onopen = () => {
+      stopFallback();
+      void recover().catch(() => {});
+    };
+    source.onerror = () => startFallback();
+    if (typeof EventSource === "undefined") startFallback();
     source.addEventListener("update", event => {
       let payload;
       try { payload = JSON.parse(event.data || "{}"); } catch { payload = { resync: true }; }
@@ -168,6 +187,7 @@ export function useConversationSync({
       active = false;
       pending.current.clear();
       source.close();
+      stopFallback();
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [auth, page, request]);

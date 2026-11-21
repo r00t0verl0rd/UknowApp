@@ -870,6 +870,8 @@ async def send_panel_message(
     db.add(row)
     db.commit()
     db.refresh(row)
+    # Publish immediately after UknowApp persistence; external delivery is independent.
+    publish_chat_update(conversation.id, message_id=row.id)
     push_recipients = [student.id, teacher.id] if principal["role"] == "admin" else ([student.id] if principal["role"] == "teacher" else [teacher.id])
     schedule_push(
         db, push_recipients, "Новое сообщение · UknowApp",

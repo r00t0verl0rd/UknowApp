@@ -108,13 +108,22 @@ export default function ChatsPage({
                 aria-pressed={isSelected} onClick={() => openChat(chat)}>
                 <div className="person-main">
                   <div className="avatar chat-avatar"><MessageCircle size={17}/></div>
-                  <div className="person-info">
-                    <b>{title}</b>
-                    {secondary && <small>{secondary}</small>}
+                  <div className={"person-info" + (showMessageCount ? " participant-chat-names" : "")}>
+                    {showMessageCount ? (
+                      <>
+                        <b className="participant-teacher-name">{chat.teacher.full_name}</b>
+                        <small className="participant-student-name">{chat.student.full_name}</small>
+                      </>
+                    ) : (
+                      <>
+                        <b>{title}</b>
+                        {secondary && <small>{secondary}</small>}
+                      </>
+                    )}
                   </div>
                 </div>
                 {(showMessageCount || unreadCount > 0) && (
-                  <span className="chat-tab-count"
+                  <span className={"chat-tab-count" + (!showMessageCount && unreadCount > 0 ? " chat-tab-count--unread" : "")}
                     title={showMessageCount ? "Всего сообщений" : "Непрочитанные сообщения"}
                     aria-label={showMessageCount
                       ? displayedCount + " сообщений всего"
