@@ -12,7 +12,7 @@ import os
 import re
 import sqlite3
 import time
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from pathlib import Path
 from urllib.parse import quote, urlsplit
 
@@ -45,11 +45,17 @@ def validate_configuration() -> None:
         raise RuntimeError("TELEGRAM_PRIMARY_URL must use HTTPS")
 
 
+@contextmanager
 def connection():
+    """Commit or roll back the short spool transaction and close its handle."""
     SPOOL_PATH.parent.mkdir(parents=True, exist_ok=True)
     db = sqlite3.connect(str(SPOOL_PATH), timeout=30)
-    db.execute("PRAGMA busy_timeout=30000")
-    return db
+    try:
+        db.execute("PRAGMA busy_timeout=30000")
+        with db:
+            yield db
+    finally:
+        db.close()
 
 
 def init_spool():
