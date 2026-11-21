@@ -9,11 +9,12 @@ import CountBadge from "../../shared/components/CountBadge.jsx";
 import Button from "../../shared/components/Button.jsx";
 
 export default function StructurePage({
-  overview, openCreate, allTeachers = [],
+  overview, loading, openCreate, allTeachers = [],
   studentsByTeacherId = new Map(), openEdit, setTeacherId, setStudentId,
   allStudents = [], setModal, unassignedStudents = [],
 }) {
   const [collapsedTeacherIds, setCollapsedTeacherIds] = useState(() => new Set());
+  if (loading && !overview) return <EmptyState>Загружаем структуру школы…</EmptyState>;
 
   return <>
     <div className="graph-legend-row">
