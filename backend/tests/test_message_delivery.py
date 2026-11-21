@@ -1,8 +1,8 @@
 """Regression tests for UknowApp-first message delivery and read receipts."""
 
-from app.models import PersonalConversation
 from app.modules.communication.contracts import (
     DeliveryResult,
+    MessageKind,
     MessengerCapabilities,
     MessengerPlatform,
     OutboundMessage,
@@ -134,10 +134,7 @@ def test_communication_service_registers_multiple_independent_channels():
         result = asyncio.run(communication.send(OutboundMessage(
             platform=platform,
             external_chat_id="recipient",
-            content_type=__import__(
-                "app.modules.communication.contracts",
-                fromlist=["MessageKind"],
-            ).MessageKind.TEXT,
+            content_type=MessageKind.TEXT,
             text="Independent transport",
         )))
         assert result.platform == platform
