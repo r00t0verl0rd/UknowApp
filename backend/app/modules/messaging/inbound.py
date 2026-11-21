@@ -249,30 +249,6 @@ def unanswered_conversation_messages(
     ).all()
 
 
-def unanswered_student_messages(rows: list[Message]) -> list[Message]:
-    # Rows already exist in the UknowApp database. External messenger failures
-    # must not make an in-app message disappear from the conversation workflow.
-    last_teacher_index = -1
-    for index, row in enumerate(rows):
-        if row.sender_role == "teacher" and row.delivery_status != "blocked_contact":
-            last_teacher_index = index
-    return [
-        row
-        for index, row in enumerate(rows)
-        if index > last_teacher_index
-        and row.sender_role == "student"
-        and row.delivery_status != "blocked_contact"
-    ]
-
-
-def pending_student_messages(rows: list[Message]) -> list[Message]:
-    return [
-        row
-        for row in unanswered_student_messages(rows)
-        if json.loads(row.metadata_json or "{}").get("teacher_read_at") is None
-    ]
-
-
 def mark_messages_read_by_teacher(db: Session, messages: list[Message]) -> None:
     if not messages:
         return
