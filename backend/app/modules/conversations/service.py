@@ -6,7 +6,6 @@ from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.event_hub import publish_chat_update
-
 from app.models import Conversation, Message
 from app.modules.users.service import user_dict
 

@@ -52,7 +52,10 @@ from app.modules.communication.contracts import (
     OutboundMessage,
 )
 from app.modules.communication.service import record_messenger_delivery
-from app.modules.conversations.service import conversation_dicts, publish_conversation_update
+from app.modules.conversations.service import (
+    conversation_dicts,
+    publish_conversation_update,
+)
 from app.modules.dependencies import Db, PanelUser
 from app.modules.messaging.moderation import text_contains_contact_data
 from app.modules.messaging.service import (
@@ -454,7 +457,6 @@ def delete_personal_message(message_id: int, principal: PanelUser, db: Db):
         principal["role"] != "admin" and row.sender_id != principal.get("user_id")
     ):
         raise HTTPException(status_code=403, detail="Можно удалить только собственное сообщение")
-    conversation_id = row.conversation_id
     db.delete(row)
     db.commit()
     publish_personal_update(db, item, message_id=message_id, action="delete")

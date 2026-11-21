@@ -5,8 +5,8 @@ from sqlalchemy import and_, case, func, select
 from sqlalchemy.orm import Session
 
 from app.event_hub import publish_chat_update
-
 from ...models import PersonalConversation, PersonalMessage
+
 
 def _personal_conversation(db: Session, principal: dict, conversation_id: int) -> PersonalConversation:
     conversation = db.get(PersonalConversation, conversation_id)
@@ -15,6 +15,7 @@ def _personal_conversation(db: Session, principal: dict, conversation_id: int) -
     if principal["role"] != "admin" and conversation.participant_id != principal.get("user_id"):
         raise HTTPException(status_code=404, detail="Личный диалог не найден")
     return conversation
+
 
 def _personal_conversation_dict(item: PersonalConversation, viewer_role: str, unread_count: int = 0) -> dict:
     participant = item.participant
@@ -26,6 +27,7 @@ def _personal_conversation_dict(item: PersonalConversation, viewer_role: str, un
         "created_at": item.created_at.isoformat(),
         "unread_count": unread_count,
     }
+
 
 def personal_event_summaries(db: Session, item: PersonalConversation) -> dict[str, dict]:
     """Build live unread counters for the administrator and the participant."""
@@ -50,6 +52,7 @@ def personal_event_summaries(db: Session, item: PersonalConversation) -> dict[st
             item, participant_role, int(counts[1] or 0),
         ),
     }
+
 
 def publish_personal_update(
     db: Session,
