@@ -1,4 +1,4 @@
-// Message timestamps without a zone are UTC values from the backend.
+// Даты без часового пояса считаем временем UTC.
 export const MESSAGE_DAY_MS = 24 * 60 * 60 * 1000;
 
 export function parseMessageDate(value) {

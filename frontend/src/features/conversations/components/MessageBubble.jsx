@@ -136,8 +136,7 @@ function MessageBubble({ message, onDelete, onError, viewerRole, personalChat, n
   }, [message.id, media?.archive_status]);
   const sourceKind = media?.kind || message.content_type;
   const mimeType = (media?.mime_type || "").toLowerCase();
-  // Telegram documents may actually contain playable audio/video or images.
-  // Detect the browser presentation from MIME while preserving special types.
+  // Документы Telegram могут содержать воспроизводимое медиа.
   const kind = sourceKind === "video_note"
     ? "video_note"
     : sourceKind === "animated_sticker"

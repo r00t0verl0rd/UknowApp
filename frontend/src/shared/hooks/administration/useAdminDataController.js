@@ -46,7 +46,7 @@ export function useAdminDataController({
           return;
         }
       } catch {
-        // The backend can be unavailable while Docker restarts it.
+        // Во время перезапуска Docker backend может быть недоступен.
       }
       if (!controller.signal.aborted) {
         delay = Math.min(delay * 2, 10000);

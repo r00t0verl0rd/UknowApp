@@ -20,8 +20,7 @@ export default function ChatsPage({
 }) {
   const [messageNowMs, setMessageNowMs] = useState(Date.now);
 
-  // A single timer updates all visible timestamps exactly when the next
-  // message becomes 24 hours old, without polling or per-bubble timers.
+  // Один таймер обновляет даты сообщений при достижении 24 часов.
   useEffect(() => {
     let nextBoundary = Infinity;
     for (const message of visibleMessages) {

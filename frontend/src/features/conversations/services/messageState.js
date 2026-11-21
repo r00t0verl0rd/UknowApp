@@ -36,7 +36,7 @@ function compareMessages(left, right) {
 }
 
 function preserveMonotonicState(previous, incoming) {
-  // Status sync returns already-loaded rows even when nothing changed.
+  // Сверка возвращает статусы известных сообщений.
   if (Object.keys(incoming).every(key => (
     key === "metadata"
       ? Object.keys(incoming.metadata || {}).every(field => previous.metadata?.[field] === incoming.metadata[field])

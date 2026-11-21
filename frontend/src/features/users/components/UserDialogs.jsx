@@ -16,7 +16,7 @@ async function copyText(value) {
       return true;
     }
   } catch {
-    // Fall through to the browser clipboard fallback.
+    // Если API буфера недоступно, используем запасной способ.
   }
   const textarea = document.createElement("textarea");
   textarea.value = value;

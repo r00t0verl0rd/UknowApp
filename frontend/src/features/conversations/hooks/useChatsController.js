@@ -126,8 +126,7 @@ export function useChatsController({
     try {
       const loadedMessages = await getChatMessages(request, chat, controller.signal);
       if (controller.signal.aborted || activeChatKey.current !== chatKey) return;
-      // Preserve messages/status updates received over SSE while the initial
-      // history request was in flight instead of replacing the live message list.
+      // При загрузке истории сохраняем обновления из SSE.
       setMessages(previous => mergeConversationMessages(previous, loadedMessages, chatKey));
     } catch (error) {
       if (!controller.signal.aborted && activeChatKey.current === chatKey) {

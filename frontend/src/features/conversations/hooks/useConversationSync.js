@@ -116,9 +116,7 @@ export function useConversationSync({
             continue;
           }
 
-          // A newer event for this dialog arrived while the request was in
-          // flight. Do not let its older response overwrite the event state.
-          // Run one fresh targeted sync with the latest cursor instead.
+          // Новое событие уже пришло: старый ответ запроса игнорируем.
           if (revisionAtStart !== (eventRevision.current.get(chatKey) || 0)) {
             syncQueued.current = true;
             continue;
@@ -178,8 +176,7 @@ export function useConversationSync({
           }));
         }
       } catch {
-        // The event cursor has advanced; request an authoritative recovery so
-        // a transient API failure cannot silently consume the only event copy.
+        // Курсор сдвинулся: запрашиваем сверку с сервером.
         recoveryPending.current = true;
         void recover({ refreshInbox: true }).catch(() => {});
       } finally {
@@ -241,7 +238,7 @@ export function useConversationSync({
         && payload.message_ids.length
       ) {
         if (viewerRole === "admin" && type !== "personal") {
-          // Admin receipts cover both participants; reconcile from the server.
+          // Администратор видит статусы обоих участников.
         } else if (expectedReader === payload.actor_role) {
           const readIds = new Set(payload.message_ids.map(Number));
           const readAt = payload.read_at || new Date().toISOString();
@@ -283,7 +280,7 @@ export function useConversationSync({
       },
     );
     if (!unsubscribe) {
-      // One-shot reconciliation is safer than introducing a polling loop.
+      // Единичная сверка безопаснее постоянного polling.
       void recover().catch(() => {});
     }
 
