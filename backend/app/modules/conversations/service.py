@@ -43,13 +43,10 @@ def conversation_dicts(
             func.json_extract(Message.metadata_json, "$.student_read_at").is_(None),
         )
     elif viewer_role == "admin":
-        unread_condition = or_(
-            and_(
-                Message.sender_role == "student",
+        unread_condition = and_(
+            Message.sender_role.in_(("teacher", "student")),
+            or_(
                 func.json_extract(Message.metadata_json, "$.teacher_read_at").is_(None),
-            ),
-            and_(
-                Message.sender_role == "teacher",
                 func.json_extract(Message.metadata_json, "$.student_read_at").is_(None),
             ),
         )

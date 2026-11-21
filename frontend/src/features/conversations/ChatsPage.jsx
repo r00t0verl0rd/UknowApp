@@ -84,7 +84,9 @@ export default function ChatsPage({
         <div className="chat-items-scroll">
           {visibleChats.map(chat => {
             const personal = chat.type === "personal";
+            const showMessageCount = profile?.role === "admin" && chatSection === "participants" && !personal;
             const unreadCount = Number(chat.unread_count) || 0;
+            const displayedCount = showMessageCount ? Number(chat.message_count) || 0 : unreadCount;
             const isSelected = selectedChat?.id === chat.id
               && (selectedChat?.type === "personal") === personal;
             const title = personal
@@ -103,7 +105,7 @@ export default function ChatsPage({
             return (
               <button key={chat.id} type="button"
                 className={"student-card chat-item" + (isSelected ? " selected" : "")
-                  + (unreadCount > 0 ? " has-unread" : "")}
+                  + (unreadCount > 0 && !showMessageCount ? " has-unread" : "")}
                 aria-pressed={isSelected} onClick={() => openChat(chat)}>
                 <div className="person-main">
                   <div className="avatar chat-avatar"><MessageCircle size={17}/></div>
@@ -112,11 +114,13 @@ export default function ChatsPage({
                     {secondary && <small>{secondary}</small>}
                   </div>
                 </div>
-                {unreadCount > 0 && (
-                  <span className="role-tag chat-count unread-badge"
-                    title="Непрочитанные сообщения"
-                    aria-label={unreadCount + " непрочитанных сообщений"}>
-                    {unreadCount > 99 ? "99+" : unreadCount}
+                {(showMessageCount || unreadCount > 0) && (
+                  <span className={"role-tag chat-count" + (showMessageCount ? " message-count" : " unread-badge")}
+                    title={showMessageCount ? "Всего сообщений" : "Непрочитанные сообщения"}
+                    aria-label={showMessageCount
+                      ? displayedCount + " сообщений всего"
+                      : displayedCount + " непрочитанных сообщений"}>
+                    {displayedCount > 99 ? "99+" : displayedCount}
                   </span>
                 )}
               </button>
