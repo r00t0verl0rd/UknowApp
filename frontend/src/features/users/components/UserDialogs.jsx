@@ -4,6 +4,8 @@ import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw.js";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
 import X from "lucide-react/dist/esm/icons/x.js";
 import Modal from "../../../shared/components/Modal.jsx";
+import Button from "../../../shared/components/Button.jsx";
+import IconButton from "../../../shared/components/IconButton.jsx";
 
 async function copyText(value) {
   try {
@@ -41,12 +43,12 @@ export default function UserDialogs({
 }) {
   return <>
     {modal && modal.mode !== "create-personal" && <Modal onClose={() => setModal(null)} className={`${modal.mode === "create" ? "create-participant-modal" : modal.mode === "edit" ? "participant-profile-modal" : ""}`}>
-      <div className="modal-head"><div><div className="eyebrow">{modal.mode === "create" ? "НОВЫЙ УЧАСТНИК" : modal.mode === "edit" ? "ПРОФИЛЬ УЧАСТНИКА" : "СВЯЗЬ УЧЕНИКА И УЧИТЕЛЯ"}</div><h2>{modal.mode === "create" ? "Добавить участника" : modal.mode === "edit" ? "Редактировать" : "Назначить ученика"}</h2></div><button className="icon-btn" onClick={() => setModal(null)}><X/></button></div>
+      <div className="modal-head"><div><div className="eyebrow">{modal.mode === "create" ? "НОВЫЙ УЧАСТНИК" : modal.mode === "edit" ? "ПРОФИЛЬ УЧАСТНИКА" : "СВЯЗЬ УЧЕНИКА И УЧИТЕЛЯ"}</div><h2>{modal.mode === "create" ? "Добавить участника" : modal.mode === "edit" ? "Редактировать" : "Назначить ученика"}</h2></div><IconButton onClick={() => setModal(null)}><X/></IconButton></div>
       {modal.mode === "assign" ? <form className="stack" onSubmit={assign}>
         <label>Учитель<select value={teacherId} onChange={event => setTeacherId(event.target.value)} required>{allTeachers.map(teacher => <option value={teacher.id} key={teacher.id}>{teacher.full_name}</option>)}</select></label>
         <label>Ученик<select value={studentId} onChange={event => setStudentId(event.target.value)} required>{allStudents.map(student => <option value={student.id} key={student.id}>{student.full_name}</option>)}</select></label>
         <p className="hint">Если у ученика уже есть активное назначение, оно будет заменено новым.</p>
-        <button className="btn primary" disabled={!allStudents.length}>Создать связь</button>
+        <Button type="submit" variant="primary" disabled={!allStudents.length}>Создать связь</Button>
       </form> : <form className="stack" onSubmit={saveUser}>
         <label>Имя и фамилия<input value={name} onChange={event => { const nextName = event.target.value; setName(nextName); if (!panelLogin || panelLogin === name) setPanelLogin(nextName); }} minLength="2" maxLength="160" required autoFocus/></label>
         {role === "student" && <label>Доп. инфо<input value={additionalInfo} onChange={event => setAdditionalInfo(event.target.value)} maxLength="500"/></label>}
@@ -59,38 +61,38 @@ export default function UserDialogs({
           </div>
           {modal.mode === "edit" && users.find(user => user.id === modal.id)?.role === role && <div className="panel-credential-row panel-access-row">
             <span>Код доступа</span>
-            <div className="panel-access-value"><b>XXXX-XXXX</b><button type="button" className="btn outline password-code-refresh" onClick={regeneratePanelAccessCode} disabled={savingUser} title="Старый код сразу перестанет действовать"><RefreshCw size={12}/>Обновить код</button></div>
+            <div className="panel-access-value"><b>XXXX-XXXX</b><Button variant="outline" className="password-code-refresh" onClick={regeneratePanelAccessCode} disabled={savingUser} title="Старый код сразу перестанет действовать"><RefreshCw size={12}/>Обновить код</Button></div>
           </div>}
         </div>}
         {modal.mode === "edit" && role !== users.find(user => user.id === modal.id)?.role && <p className="hint">При смене роли активные назначения будут закрыты. История переписок сохранится.</p>}
-        <div className="modal-actions"><button className="btn primary" disabled={savingUser}>{savingUser ? "Сохраняем…" : <><Check/>Сохранить</>}</button>{modal.mode === "edit" && <button type="button" className="user-action-btn danger-icon user-delete" onClick={() => removeUser(users.find(user => user.id === modal.id))} disabled={savingUser} title="Удалить пользователя" aria-label="Удалить пользователя"><Trash2 size={16}/></button>}</div>
+        <div className="modal-actions"><Button type="submit" variant="primary" disabled={savingUser}>{savingUser ? "Сохраняем…" : <><Check/>Сохранить</>}</Button>{modal.mode === "edit" && <button type="button" className="user-action-btn danger-icon user-delete" onClick={() => removeUser(users.find(user => user.id === modal.id))} disabled={savingUser} title="Удалить пользователя" aria-label="Удалить пользователя"><Trash2 size={16}/></button>}</div>
       </form>}
     </Modal>}
 
     {deleteCandidate && <Modal onClose={() => setDeleteCandidate(null)} closeOnBackdrop={!deletingUser} className="confirm-delete-modal" role="alertdialog" labelledBy="delete-user-title">
         <div className="modal-head"><div><div className="eyebrow">УДАЛЕНИЕ УЧАСТНИКА</div><h2 id="delete-user-title">Удалить участника?</h2></div><button className="icon-btn" type="button" onClick={() => setDeleteCandidate(null)} disabled={deletingUser} aria-label="Закрыть"><X/></button></div>
         <p className="hint">Профиль «<b>{deleteCandidate.full_name}</b>», связанные переписки и сообщения будут удалены. Это действие нельзя отменить.</p>
-        <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setDeleteCandidate(null)} disabled={deletingUser}>Отмена</button><button type="button" className="btn danger" onClick={confirmRemoveUser} disabled={deletingUser}>{deletingUser ? "Удаляем…" : <><Trash2/>Удалить участника</>}</button></div>
+        <div className="modal-actions"><Button variant="ghost" onClick={() => setDeleteCandidate(null)} disabled={deletingUser}>Отмена</Button><Button variant="danger" onClick={confirmRemoveUser} disabled={deletingUser}>{deletingUser ? "Удаляем…" : <><Trash2/>Удалить участника</>}</Button></div>
       </Modal>}
 
     {disconnectCandidate && <Modal onClose={() => setDisconnectCandidate(null)} closeOnBackdrop={!disconnectingTelegram} className="confirm-delete-modal" role="alertdialog" labelledBy="disconnect-telegram-title">
         <div className="modal-head"><div><div className="eyebrow">ОТКЛЮЧЕНИЕ TELEGRAM</div><h2 id="disconnect-telegram-title">Отключить Telegram?</h2></div><button className="icon-btn" type="button" onClick={() => setDisconnectCandidate(null)} disabled={disconnectingTelegram} aria-label="Закрыть"><X/></button></div>
         <p className="hint">Отключить Telegram у пользователя «<b>{disconnectCandidate.full_name}</b>»? Профиль и история переписки останутся в системе. Отправлять и получать сообщения через бота он не сможет до повторного подключения.</p>
-        <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setDisconnectCandidate(null)} disabled={disconnectingTelegram}>Отмена</button><button type="button" className="btn danger" onClick={confirmDisconnectTelegram} disabled={disconnectingTelegram}>{disconnectingTelegram ? "Отключаем…" : "Отключить Telegram"}</button></div>
+        <div className="modal-actions"><Button variant="ghost" onClick={() => setDisconnectCandidate(null)} disabled={disconnectingTelegram}>Отмена</Button><Button variant="danger" onClick={confirmDisconnectTelegram} disabled={disconnectingTelegram}>{disconnectingTelegram ? "Отключаем…" : "Отключить Telegram"}</Button></div>
       </Modal>}
 
     {issuedCredential && <Modal onClose={() => setIssuedCredential(null)} className="credential-modal">
-      <div className="modal-head"><div><div className="eyebrow">{issuedCredential.role === "student" ? "ЕДИНЫЙ КОД ДОСТУПА УЧЕНИКА" : "ЕДИНЫЙ КОД ДОСТУПА УЧИТЕЛЯ"}</div><h2>{issuedCredential.full_name}</h2></div><button className="icon-btn" onClick={() => setIssuedCredential(null)}><X/></button></div>
-      <div className="credential-field"><div className="credential-field-label">Логин</div><div className="credential-field-value"><b>{issuedCredential.username}</b><button type="button" className="icon-btn" onClick={async () => notify(await copyText(issuedCredential.username) ? "Логин скопирован" : "Не удалось скопировать логин")} aria-label="Скопировать логин"><Copy size={16}/></button></div></div>
-      <div className="credential-field credential-field-code"><div className="credential-field-label">Код доступа</div><div className="credential-field-value"><b>{issuedCredential.code}</b><button type="button" className="icon-btn" onClick={async () => notify(await copyText(issuedCredential.code) ? "Код доступа скопирован" : "Не удалось скопировать код доступа")} aria-label="Скопировать код доступа"><Copy size={16}/></button></div></div>
-      <div className="modal-actions credential-actions"><button type="button" className="btn primary" onClick={async () => notify(await copyText("Логин: " + issuedCredential.username + "\nКод доступа: " + issuedCredential.code) ? "Данные для входа скопированы" : "Не удалось скопировать данные")}><Copy size={16}/>Скопировать данные</button></div>
+      <div className="modal-head"><div><div className="eyebrow">{issuedCredential.role === "student" ? "ЕДИНЫЙ КОД ДОСТУПА УЧЕНИКА" : "ЕДИНЫЙ КОД ДОСТУПА УЧИТЕЛЯ"}</div><h2>{issuedCredential.full_name}</h2></div><IconButton onClick={() => setIssuedCredential(null)}><X/></IconButton></div>
+      <div className="credential-field"><div className="credential-field-label">Логин</div><div className="credential-field-value"><b>{issuedCredential.username}</b><IconButton onClick={async () => notify(await copyText(issuedCredential.username) ? "Логин скопирован" : "Не удалось скопировать логин")} aria-label="Скопировать логин"><Copy size={16}/></IconButton></div></div>
+      <div className="credential-field credential-field-code"><div className="credential-field-label">Код доступа</div><div className="credential-field-value"><b>{issuedCredential.code}</b><IconButton onClick={async () => notify(await copyText(issuedCredential.code) ? "Код доступа скопирован" : "Не удалось скопировать код доступа")} aria-label="Скопировать код доступа"><Copy size={16}/></IconButton></div></div>
+      <div className="modal-actions credential-actions"><Button variant="primary" onClick={async () => notify(await copyText("Логин: " + issuedCredential.username + "\nКод доступа: " + issuedCredential.code) ? "Данные для входа скопированы" : "Не удалось скопировать данные")}><Copy size={16}/>Скопировать данные</Button></div>
     </Modal>}
 
     {code && <Modal onClose={() => setCode(null)}>
-      <div className="modal-head"><div><div className="eyebrow">ПОДКЛЮЧЕНИЕ TELEGRAM</div><h2>{code.full_name}</h2></div><button className="icon-btn" onClick={() => setCode(null)}><X/></button></div>
+      <div className="modal-head"><div><div className="eyebrow">ПОДКЛЮЧЕНИЕ TELEGRAM</div><h2>{code.full_name}</h2></div><IconButton onClick={() => setCode(null)}><X/></IconButton></div>
       <div className="invite-code">{code.code}</div>
       <p className="hint">{code.shared_access ? `Это единый код ${code.role === "student" ? "ученика" : "учителя"}: он подходит для входа в веб-панель вместе с логином и для подключения Telegram. Он действует, пока администратор не заменит его новым.` : "Передайте этот код ученику для подключения Telegram. Он действует до первого успешного подключения и используется один раз."}</p>
-      <div className="modal-actions"><button className="btn ghost" onClick={() => setCode(null)}>Закрыть</button><button className="btn primary" onClick={async () => notify(await copyText(code.code) ? "Код скопирован" : "Не удалось скопировать код")}><Copy/>Скопировать</button></div>
+      <div className="modal-actions"><Button variant="ghost" onClick={() => setCode(null)}>Закрыть</Button><Button variant="primary" onClick={async () => notify(await copyText(code.code) ? "Код скопирован" : "Не удалось скопировать код")}><Copy/>Скопировать</Button></div>
     </Modal>}
   </>;
 }
