@@ -56,7 +56,7 @@ export default function AdditionalPage({ dataStats, dataBusy, loadDataStats, dow
             <button type="button" className="btn primary" onClick={() => downloadAdminFile("full")} disabled={dataBusy}>Скачать полную резервную копию</button>
             <label className="btn outline data-upload-label">{dataBusy ? "Обработка…" : "Восстановить из полной копии"}<input type="file" accept=".zip" disabled={dataBusy} onChange={e => { uploadAdminFile("full", e.target.files?.[0]); e.target.value = ""; }}/></label>
           </div>
-          <p className="data-warning">Восстановление заменит весь каталог data. В Docker backend перезапустится автоматически; при локальном запуске перезапустите backend вручную. Файл .env, токен Telegram и конфигурация сервера в архив не входят.</p>
+          <p className="data-warning">Восстановление заменит весь каталог data. В Docker backend перезапустится автоматически; при локальном запуске перезапустите backend вручную. Файл .env, токен Telegram и конфигурация сервера в архив не входят. Перед экспортом проверяются ссылки на вложения: при отсутствующих медиафайлах полная копия не создаётся.</p>
         </article>
         <article className="data-tool-card">
           <div className="data-tool-icon"><DatabaseIcon/></div>
