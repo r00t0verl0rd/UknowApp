@@ -19,7 +19,7 @@ def login_admin(client):
     assert response.status_code == status.HTTP_200_OK
 
 
-def create_database(path, media_path=None, marker="source"):
+def create_database(path, media_path=None):
     path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(path) as connection:
         connection.executescript(
@@ -170,10 +170,10 @@ def test_legacy_full_backup_restores_database_and_media_and_keeps_current_key(
     data_root = tmp_path / "data"
     setup_data_root(monkeypatch, data_root)
 
-    create_database(data_root / "uknowapp.db", marker="target")
+    create_database(data_root / "uknowapp.db")
     (data_root / "vapid_private.pem").write_text("target-key", encoding="utf-8")
     old_database = tmp_path / "old.sqlite3"
-    create_database(old_database, marker="legacy")
+    create_database(old_database)
     archive_bytes = make_legacy_archive(old_database, b"legacy-media")
 
     admin = make_client()
