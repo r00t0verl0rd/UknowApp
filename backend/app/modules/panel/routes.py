@@ -416,7 +416,12 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
                 metadata[read_key] = now
                 row.metadata_json = json.dumps(metadata, ensure_ascii=False)
             db.commit()
-            publish_chat_update(conversation.id, action="read", actor_role=principal["role"])
+            publish_chat_update(
+                conversation.id,
+                action="read",
+                actor_role=principal["role"],
+                message_ids=[row.id for row in unread],
+            )
     rows = db.scalars(
         select(Message)
         .where(Message.conversation_id == conversation.id, Message.id > after_id)
@@ -547,7 +552,7 @@ def _save_panel_delivery_result(db: Session, row: Message, conversation: Convers
         metadata["telegram_delivery_errors"] = delivery_errors
     row.metadata_json = json.dumps(metadata, ensure_ascii=False)
     row.delivery_status = (
-        "delivered" if (delivered or row.sender_role == "teacher") and not delivery_errors
+        "delivered" if delivered and not delivery_errors
         else ("partial" if delivered else "failed")
     )
     db.commit()
@@ -716,7 +721,7 @@ async def send_panel_message(
                     "chat_id": target["chat_id"],
                     "thread_id": target.get("message_thread_id"),
                 })
-            except (MessengerError, OSError, ValueError) as exc:
+            except Exception as exc:
                 logger.warning(
                     "Telegram delivery failed for conversation_id=%s: %s",
                     conversation.id,
@@ -854,7 +859,7 @@ async def send_panel_attachment(
                     "chat_id": target["chat_id"],
                     "thread_id": target.get("message_thread_id"),
                 })
-            except (MessengerError, OSError, ValueError) as exc:
+            except Exception as exc:
                 logger.warning(
                     "Telegram delivery failed for conversation_id=%s: %s",
                     conversation.id,

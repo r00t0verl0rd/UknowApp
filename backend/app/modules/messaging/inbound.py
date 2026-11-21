@@ -714,7 +714,7 @@ async def process_inbound_message(
                 "reason": "Аккаунт получателя не подключён к " + inbound.platform.value.upper(),
             }]
             row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-            row.delivery_status = "delivered"
+            row.delivery_status = "failed"
             db.commit()
             publish_chat_update(conversation.id)
             mark_messages_read_by_teacher(db, unanswered_before_reply)

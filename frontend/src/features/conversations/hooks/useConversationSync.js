@@ -121,6 +121,27 @@ export function useConversationSync({
       if (payload.resync) { void recover().catch(() => {}); return; }
       if (!payload.conversation_id) return;
       const type = payload.conversation_type || "conversation";
+      const selected = current.current.selectedChat;
+      const viewerRole = current.current.role;
+      const expectedReader = viewerRole === "teacher" ? "student"
+        : viewerRole === "student" ? "teacher" : null;
+      if (
+        payload.action === "read"
+        && expectedReader === payload.actor_role
+        && selected
+        && Number(selected.id) === Number(payload.conversation_id)
+        && (selected.type === "personal") === (type === "personal")
+        && Array.isArray(payload.message_ids)
+        && payload.message_ids.length
+      ) {
+        const readIds = new Set(payload.message_ids.map(Number));
+        const readAt = new Date().toISOString();
+        current.current.setMessages(rows => rows.map(row =>
+          readIds.has(Number(row.id)) && row.sender_role === viewerRole && !row.panel_read_at
+            ? { ...row, panel_read_at: readAt }
+            : row
+        ));
+      }
       const key = type + ":" + payload.conversation_id;
       const eventState = pending.current.get(key) || {
         conversation_id: payload.conversation_id,

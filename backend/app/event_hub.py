@@ -39,6 +39,7 @@ def publish_chat_update(
     message_id: int | None = None,
     action: str = "upsert",
     actor_role: str | None = None,
+    message_ids: list[int] | None = None,
 ) -> None:
     payload = json.dumps({
         "conversation_id": int(conversation_id),
@@ -46,6 +47,7 @@ def publish_chat_update(
         "message_id": int(message_id) if message_id is not None else None,
         "action": action,
         "actor_role": actor_role,
+        "message_ids": [int(item) for item in message_ids] if message_ids else [],
     })
     with _subscribers_lock:
         subscribers = tuple(_subscribers.items())
