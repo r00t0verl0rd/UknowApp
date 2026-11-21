@@ -583,6 +583,7 @@ def apply_pending_data_restore() -> bool:
     data_dir = DATA_DIR.resolve()
     data_dir.mkdir(parents=True, exist_ok=True)
     marker_path = data_dir / PENDING_RESTORE_NAME
+    (data_dir / RESTORE_UPLOAD_LOCK).unlink(missing_ok=True)
     if not marker_path.is_file():
         _cleanup_orphaned_restore_stages(data_dir)
         return False
@@ -614,6 +615,8 @@ def apply_pending_data_restore() -> bool:
             return True
 
         if status == "applying":
+            if not backup_dir.is_dir() or backup_dir.is_symlink():
+                raise RuntimeError("Не найдена страховочная копия незавершённого восстановления")
             original_entries = marker.get("original_entries")
             if not isinstance(original_entries, list) or not all(
                 isinstance(name, str) and Path(name).name == name for name in original_entries
