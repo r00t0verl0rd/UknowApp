@@ -31,8 +31,10 @@
   justify-content: center;
   gap: 4px;
   min-width: 0;
+  box-sizing: border-box;
+  height: 34px;
   min-height: 34px;
-  padding: 7px 5px !important;
+  padding: 6px 5px !important;
   border: 1px solid transparent !important;
   border-radius: 7px !important;
   background: transparent !important;
