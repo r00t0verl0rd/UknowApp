@@ -50,7 +50,7 @@ export function useAuthController({
       await detachPushSubscription();
       await signOutRequest();
     } catch {
-      // Clear the local view even when the server is temporarily unreachable.
+      // Очищаем данные экрана, даже если сервер временно недоступен.
     }
     localStorage.removeItem("uknowapp-auth");
     sessionStorage.removeItem("uknowapp-auth");

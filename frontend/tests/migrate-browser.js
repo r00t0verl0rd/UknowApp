@@ -18,7 +18,7 @@ try {
     await page.reload();
   }
   if (process.argv[2] === "export") {
-    // Inspect the actual production HTML before React or its stylesheet can paint.
+    // Проверяем готовый HTML до первого отображения React и стилей.
     const beforeReact = await browser.newPage();
     await beforeReact.route("**/assets/**", route => route.abort());
     await beforeReact.goto(url);
@@ -108,7 +108,7 @@ try {
       res.url().endsWith("/api/admin/data/full") && res.request().method() === "POST");
     await page.locator('input[accept=".zip"]').setInputFiles(archive);
     assert.equal((await uploading).status(), 202);
-    // Restoring the source database replaces the target admin session.
+    // Восстановление базы заменяет сессию администратора.
     await page.getByRole("button", { name: "Войти" }).waitFor({ timeout: 120000 });
     await login();
     await page.getByText("Полная копия восстановлена.", { exact: false }).waitFor();

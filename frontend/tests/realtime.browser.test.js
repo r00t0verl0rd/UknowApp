@@ -23,7 +23,7 @@ function waitFor(check, timeout = 12000) {
     const poll = async () => {
       try {
         if (await check()) return resolve();
-      } catch { /* Keep waiting for the browser or server to become ready. */ }
+      } catch { /* Ожидаем готовности браузера или сервера. */ }
       if (Date.now() - started > timeout) return reject(new Error("Timed out waiting for browser integration condition"));
       setTimeout(poll, 40);
     };

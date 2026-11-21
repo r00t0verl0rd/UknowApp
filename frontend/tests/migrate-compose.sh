@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# This test owns the Compose projects, ports and volumes of its disposable CI runner.
+# Тест использует отдельные проекты Compose, порты и тома.
 : "${GITHUB_ACTIONS:?Requires a disposable GitHub Actions runner}"
 test ! -e .env
 work=$(mktemp -d)
@@ -12,7 +12,7 @@ ADMIN_USERNAME=migration-admin
 ADMIN_PASSWORD=$ADMIN_PASSWORD
 TELEGRAM_BOT_ENABLED=false
 EOF
-# Keep the production proxy rules. Only the public hostname/TLS changes for localhost.
+# Сохраняем правила прокси, меняем только адрес и TLS для localhost.
 sed 's/^uknowschool.ru, www.uknowschool.ru {/http:\/\/localhost {/' frontend/Caddyfile > "$work/Caddyfile"
 cat > "$work/override.yml" <<EOF
 services:

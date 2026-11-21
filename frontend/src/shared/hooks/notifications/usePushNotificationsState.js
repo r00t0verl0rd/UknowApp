@@ -69,7 +69,7 @@ export function usePushNotificationsState({ auth, selectedChat, notify, setError
       setPushState(await getPushNotificationState());
     } catch (error) {
       setError(error.message || "Не удалось изменить настройки уведомлений");
-      try { setPushState(await getPushNotificationState()); } catch { /* Keep the last known state. */ }
+      try { setPushState(await getPushNotificationState()); } catch { /* Сохраняем последнее известное состояние. */ }
     } finally {
       setPushBusy(false);
     }

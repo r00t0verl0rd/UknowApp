@@ -1,6 +1,6 @@
 #!/bin/sh
-# Restart only containers that Docker has marked unhealthy.
-# Crashed containers are already handled by restart: unless-stopped.
+# Перезапускаем только контейнеры со статусом unhealthy.
+# Упавшие контейнеры Docker перезапускает самостоятельно.
 set -eu
 
 APP_DIR="/home/deploy/UknowApp"

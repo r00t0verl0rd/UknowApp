@@ -21,7 +21,7 @@ export function usePanelDataState({
       const revision = ++refreshRevision.current;
       const revisionsAtStart = new Map(inboxRowRevision.current);
       const profileTask = getCurrentProfile(request);
-      // Both requests start together. Keep inbox data private until the session is confirmed.
+      // Запускаем запросы вместе; показываем сообщения только после проверки сессии.
       const inboxResult = getInboxData(request).catch(() => null);
       let who;
       try {
