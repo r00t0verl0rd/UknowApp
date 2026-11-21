@@ -519,8 +519,8 @@ async def restore_dialogues(
 
 @router.delete("/dialogues")
 def cleanup_dialogues(days: int, _: Admin, db: Annotated[Session, Depends(_get_db)]):
-    if days not in {30, 60, 120}:
-        raise HTTPException(status_code=400, detail="Выберите срок 30, 60 или 120 дней")
+    if days not in {30, 60, 180, 360}:
+        raise HTTPException(status_code=400, detail="Выберите срок 30, 60, 180 или 360 дней")
     cutoff = datetime.now(UTC) - timedelta(days=days)
     old_rows = db.scalars(select(Message).where(Message.created_at < cutoff)).all()
     old_personal_rows = db.scalars(select(PersonalMessage).where(PersonalMessage.created_at < cutoff)).all()
