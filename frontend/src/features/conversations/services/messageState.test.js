@@ -66,3 +66,21 @@ test("server echo replaces optimistic client message without duplication", () =>
   assert.equal(result.length, 1);
   assert.equal(result[0].id, 15);
 });
+
+test("terminal delivery and metadata read markers never move backwards", () => {
+  const result = mergeConversationMessages(
+    [{
+      id: 21,
+      delivery_status: "blocked_contact",
+      metadata: { teacher_read_at: "2026-11-21T10:05:00Z" },
+    }],
+    [{
+      id: 21,
+      delivery_status: "delivered",
+      metadata: { teacher_read_at: "2026-11-21T10:01:00Z" },
+    }],
+    "conversation:21",
+  );
+  assert.equal(result[0].delivery_status, "blocked_contact");
+  assert.equal(result[0].metadata.teacher_read_at, "2026-11-21T10:05:00Z");
+});
