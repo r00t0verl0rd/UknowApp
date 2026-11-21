@@ -28,10 +28,10 @@ export default function ChatDialogs({
     </Modal>}
 
     {deleteMessageCandidate && <Modal onClose={() => setDeleteMessageCandidate(null)} closeOnBackdrop={!deletingMessage} className="confirm-delete-modal" role="alertdialog" labelledBy="delete-message-title">
-        <div className="modal-head"><div><div className="eyebrow">УДАЛЕНИЕ СООБЩЕНИЯ</div><h2 id="delete-message-title">Удалить у всех?</h2></div><button className="icon-btn" type="button" onClick={() => setDeleteMessageCandidate(null)} disabled={deletingMessage} aria-label="Закрыть"><X/></button></div>
+        <div className="modal-head"><div><div className="eyebrow">УДАЛЕНИЕ СООБЩЕНИЯ</div><h2 id="delete-message-title">Удалить у всех?</h2></div><IconButton onClick={() => setDeleteMessageCandidate(null)} disabled={deletingMessage} aria-label="Закрыть"><X/></IconButton></div>
         <p className="hint">{selectedChat?.type === "personal" ? "Сообщение будет удалено из личного диалога UknowApp. Чужие сообщения удалить нельзя." : "Сообщение будет удалено из переписки UknowApp и предпринята попытка удалить его копии в Telegram у всех получателей. Чужие сообщения удалить нельзя."}</p>
         <div className="message-delete-preview">{deleteMessageCandidate.text || deleteMessageCandidate.metadata?.media?.file_name || "Вложение"}</div>
-        <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setDeleteMessageCandidate(null)} disabled={deletingMessage}>Отмена</button><Button variant="danger" onClick={confirmDeleteMessage} disabled={deletingMessage}>{deletingMessage ? "Удаляем…" : <><Trash2/>Удалить у всех</>}</Button></div>
+        <div className="modal-actions"><Button variant="ghost" onClick={() => setDeleteMessageCandidate(null)} disabled={deletingMessage}>Отмена</Button><Button variant="danger" onClick={confirmDeleteMessage} disabled={deletingMessage}>{deletingMessage ? "Удаляем…" : <><Trash2/>Удалить у всех</>}</Button></div>
       </Modal>}
   </>;
 }
