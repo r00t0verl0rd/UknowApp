@@ -568,7 +568,8 @@ def _rollback_partial_restore(
             if destination.exists() or destination.is_symlink():
                 _remove_path(destination)
             previous.rename(destination)
-        backup_dir.rmdir()
+        # Keep the empty backup directory until the journal says "prepared".
+        # If the process stops now, the next startup can safely repeat the rollback.
 
 
 def _cleanup_orphaned_restore_stages(data_dir: Path) -> None:
