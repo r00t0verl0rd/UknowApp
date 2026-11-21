@@ -124,6 +124,23 @@ def test_full_backup_contains_complete_data_directory_and_checksums(api, monkeyp
             assert hashlib.sha256(content).hexdigest() == record["sha256"]
 
 
+def test_full_backup_refuses_missing_media_references(api, monkeypatch, tmp_path):
+    make_client, _, _ = api
+    data_root = tmp_path / "data"
+    setup_data_root(monkeypatch, data_root)
+    create_database(
+        data_root / "uknowapp.db",
+        media_path="missing-photo.jpg",
+    )
+
+    admin = make_client()
+    login_admin(admin)
+    response = admin.get("/api/admin/data/full")
+
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert "отсутствующие медиафайлы" in response.json()["detail"]
+
+
 def test_full_restore_is_staged_then_applied_before_app_start(api, monkeypatch, tmp_path):
     make_client, _, _ = api
     monkeypatch.delenv("UKNOWAPP_AUTO_RESTART_ON_RESTORE", raising=False)
