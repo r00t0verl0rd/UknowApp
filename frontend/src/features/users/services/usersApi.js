@@ -11,3 +11,5 @@ export function createAssignment(request, teacherId, studentId) { return request
 export function disconnectUserTelegram(request, userId) { return request("/api/admin/users/" + userId + "/disconnect-telegram", { method: "POST" }); }
 
 export function createUserConnectionCode(request, userId) { return request("/api/admin/users/" + userId + "/connection-code", { method: "POST" }); }
+
+export function unassignStudent(request, studentId) { return request("/api/admin/assignments/" + studentId, { method: "DELETE" }); }
