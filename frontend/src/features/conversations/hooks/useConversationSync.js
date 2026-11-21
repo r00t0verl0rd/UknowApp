@@ -174,7 +174,10 @@ export function useConversationSync({
           }));
         }
       } catch {
-        // Event replay and targeted sync recover changed rows after transient errors.
+        // The event cursor has advanced; request an authoritative recovery so
+        // a transient API failure cannot silently consume the only event copy.
+        recoveryPending.current = true;
+        void recover({ refreshInbox: true }).catch(() => {});
       } finally {
         processing.current = false;
         if (pending.current.size && active) void flush();
