@@ -1,0 +1,4 @@
+{$TELEGRAM_DOMAIN} {
+    encode zstd gzip
+    reverse_proxy telegram-gateway:8001
+}
