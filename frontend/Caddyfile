@@ -13,7 +13,7 @@ uknowschool.ru, www.uknowschool.ru {
         Referrer-Policy strict-origin-when-cross-origin
         X-Frame-Options DENY
         Permissions-Policy "camera=(), microphone=(), geolocation=()"
-        # Public SHA-256 checksums of the two first-paint blocks in index.html.
+        # SHA-256 хеши встроенных блоков из index.html.
         # pragma: allowlist nextline secret
         Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'sha256-j9Vi7swJyH2f2Bo2Q+idsQcbWhP/7LXrVpWg5FaC29k='; style-src 'self' 'sha256-c89WvS93uH+u1HenfJGPLlQvvXD/lz/NqyFE7OrrraQ=' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'"
         -Server
@@ -25,8 +25,7 @@ uknowschool.ru, www.uknowschool.ru {
     @api path /api/*
     header @api Cache-Control "no-store"
 
-    # Always revalidate the app shell so every role receives the latest
-    # hashed Vite bundle after a frontend deployment.
+    # После обновления приложения всегда проверяем актуальность HTML.
     @html path / /index.html
     header @html Cache-Control "no-cache, must-revalidate"
 
@@ -34,7 +33,7 @@ uknowschool.ru, www.uknowschool.ru {
         method POST
         path /api/panel/conversations/*/attachments
     }
-    # Allow multipart headers in addition to the 1 GiB attachment.
+    # Учитываем заголовки при загрузке вложения до 1 ГиБ.
     request_body @chatUpload {
         max_size 1074790400
     }

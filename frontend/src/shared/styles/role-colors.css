@@ -1,6 +1,6 @@
 /* --------------------------------------------------------------------------
-   UknowApp role-first color language — shared by graph, chats and user lists.
-   The same three semantic colors identify people everywhere in the product.
+   Общие цвета текущих ролей для структуры, чатов и пользователей.
+   При добавлении ролей расширяем палитру последовательно.
    -------------------------------------------------------------------------- */
 /* Фон не чисто белый, чтобы карточки были заметны. */
 body, .chats-shell, .chats-main{ background: var(--canvas);}.sidebar, .topbar, .user-list > .user-row, .modal, .login-card, .credential-modal{ background-color: var(--surface);}/* Цвета ролей одинаковы в структуре и сообщениях. */

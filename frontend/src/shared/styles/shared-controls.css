@@ -1,7 +1,5 @@
 /* --------------------------------------------------------------------------
-   UknowApp unified visual system
-   Shared component surfaces and interaction states across desktop and
-   mobile layouts, and both color themes. Layout-specific sizing remains above.
+   Общий стиль элементов управления для всех размеров экрана и тем.
    -------------------------------------------------------------------------- */
 /* Единая подсветка фокуса и анимация элементов. */
 button, input, select, textarea{ font-family: inherit;}button:not(.chat-item), .btn, .logout, .add-student, .user-action-btn{ transition: background-color var(--ui-transition-fast), border-color var(--ui-transition-fast), color var(--ui-transition-fast), box-shadow var(--ui-transition-fast), transform var(--ui-transition-fast);}:where(button, input, select, textarea, [tabindex]):focus-visible{ outline: none; box-shadow: var(--ui-focus);}/* Плоские кнопки в списках и карточках. */
