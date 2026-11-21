@@ -6,6 +6,7 @@ import CircleX from "lucide-react/dist/esm/icons/circle-x.js";
 import Play from "lucide-react/dist/esm/icons/play.js";
 import Pause from "lucide-react/dist/esm/icons/pause.js";
 import { formatMessageTime } from "../services/formatMessageTime.js";
+import IconButton from "../../../shared/components/IconButton.jsx";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 
@@ -194,7 +195,7 @@ function MessageBubble({ message, onDelete, onError, viewerRole, personalChat, n
             {blocked ? <CircleX size={15}/> : pending ? <Check size={14}/> : <CheckCheck size={15}/>}
           </span>;
         })()}
-        {message.can_delete && <button type="button" className="message-delete-btn" onClick={() => onDelete?.(message)} title="Удалить своё сообщение у всех" aria-label="Удалить своё сообщение"><Trash2 size={12} strokeWidth={1.75} aria-hidden="true"/></button>}
+        {message.can_delete && <IconButton size="compact" tone="danger" className="message-delete-btn" onClick={() => onDelete?.(message)} title="Удалить своё сообщение у всех" aria-label="Удалить своё сообщение"><Trash2 size={12} strokeWidth={1.75} aria-hidden="true"/></IconButton>}
       </div>
     </div>
     {message.text && <p>{message.text}</p>}

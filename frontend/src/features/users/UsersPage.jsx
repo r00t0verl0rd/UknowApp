@@ -11,6 +11,7 @@ import Users from "lucide-react/dist/esm/icons/users.js";
 import X from "lucide-react/dist/esm/icons/x.js";
 import Modal from "../../shared/components/Modal.jsx";
 import Button from "../../shared/components/Button.jsx";
+import IconButton from "../../shared/components/IconButton.jsx";
 
 export default function UsersPage({ visibleUsers, search, setSearch, userSort, setUserSort, openCreate, disconnectTelegram, makeCode, userInfo, setUserInfo, openEdit, removeUser }) {
   return (
@@ -31,7 +32,7 @@ export default function UsersPage({ visibleUsers, search, setSearch, userSort, s
                     ? <button className="user-action-btn connect-toggle disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram" aria-label="Отключить Telegram"><Unlink/><span>Отключить</span></button>
                     : <button className="user-action-btn connect-toggle connect" onClick={() => makeCode(user)} title="Создать код для подключения" aria-label="Подключить участника"><Link2/><span>Подключить</span></button>}
                   <div className="user-info-wrap">
-                    <button
+                    <IconButton
                       className={"user-action-btn user-info-btn" + (userInfo === user.id ? " is-open" : "")}
                       type="button"
                       title="Информация об участнике"
@@ -39,16 +40,16 @@ export default function UsersPage({ visibleUsers, search, setSearch, userSort, s
                       aria-expanded={userInfo === user.id}
                       aria-haspopup="dialog"
                       onClick={() => setUserInfo(current => current === user.id ? null : user.id)}
-                    ><Info/></button>
+                    ><Info/></IconButton>
                     {userInfo === user.id && <Modal className="user-details" labelledBy="user-details-title" onClose={() => setUserInfo(null)}>
-                      <div className="modal-head"><h2 id="user-details-title">{user.full_name}</h2><button type="button" onClick={() => setUserInfo(null)} aria-label="Закрыть"><X size={14}/></button></div>
+                      <div className="modal-head"><h2 id="user-details-title">{user.full_name}</h2><IconButton onClick={() => setUserInfo(null)} aria-label="Закрыть"><X size={14}/></IconButton></div>
                       <div className="user-info-line"><Link2 size={14}/><span>{user.telegram_id ? "Telegram подключён" : "Telegram не подключён"}</span></div>
                       <div className="user-info-login"><span>Telegram ID</span><b>{user.telegram_id || "Не подключён"}</b></div>
                       {["teacher", "student"].includes(user.role) && <div className="user-info-login"><span>Логин</span><b>{user.web_username || user.full_name}</b></div>}
                     </Modal>}
                   </div>
-                  <button className="user-action-btn edit-btn" onClick={() => openEdit(user)} title="Изменить профиль" aria-label="Изменить профиль"><Pencil/></button>
-                  <button className="user-action-btn danger-icon user-delete" onClick={() => removeUser(user)} title="Удалить пользователя" aria-label="Удалить пользователя"><Trash2/></button>
+                  <IconButton className="user-action-btn edit-btn" onClick={() => openEdit(user)} title="Изменить профиль" aria-label={`Изменить профиль ${user.full_name}`}><Pencil/></IconButton>
+                  <IconButton className="user-action-btn danger-icon user-delete" tone="danger" onClick={() => removeUser(user)} title="Удалить пользователя" aria-label={`Удалить пользователя ${user.full_name}`}><Trash2/></IconButton>
                 </div>
               </div>)}</div>
             </>

@@ -68,7 +68,7 @@ export default function UserDialogs({
           </div>}
         </div>}
         {modal.mode === "edit" && role !== users.find(user => user.id === modal.id)?.role && <p className="hint">При смене роли активные назначения будут закрыты. История переписок сохранится.</p>}
-        <div className="modal-actions"><Button type="submit" variant="primary" disabled={savingUser}>{savingUser ? "Сохраняем…" : <><Check/>Сохранить</>}</Button>{modal.mode === "edit" && <button type="button" className="user-action-btn danger-icon user-delete" onClick={() => removeUser(users.find(user => user.id === modal.id))} disabled={savingUser} title="Удалить пользователя" aria-label="Удалить пользователя"><Trash2 size={16}/></button>}</div>
+        <div className="modal-actions"><Button type="submit" variant="primary" disabled={savingUser}>{savingUser ? "Сохраняем…" : <><Check/>Сохранить</>}</Button>{modal.mode === "edit" && <IconButton tone="danger" className="user-action-btn danger-icon user-delete" onClick={() => removeUser(users.find(user => user.id === modal.id))} disabled={savingUser} title="Удалить пользователя" aria-label="Удалить пользователя"><Trash2 size={16}/></IconButton>}</div>
       </form>}
     </Modal>}
 

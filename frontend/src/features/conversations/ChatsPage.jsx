@@ -10,6 +10,7 @@ import MessageBubble from "./components/MessageBubble.jsx";
 import { MESSAGE_DAY_MS, parseMessageDate } from "./services/formatMessageTime.js";
 import EmptyState from "../../shared/components/EmptyState.jsx";
 import CountBadge from "../../shared/components/CountBadge.jsx";
+import IconButton from "../../shared/components/IconButton.jsx";
 
 export default function ChatsPage({
   setError, profile, inboxLoading, chatSection, setChatSection, personalChats, setSelectedChat,
@@ -88,10 +89,10 @@ export default function ChatsPage({
               <input aria-label="Поиск по имени" placeholder="Поиск по имени"
                 value={chatSearch} onChange={event => setChatSearch(event.target.value)}/>
               {chatSearch && (
-                <button type="button" className="icon-btn" onClick={() => setChatSearch("")}
+                <IconButton size="compact" onClick={() => setChatSearch("")}
                   aria-label="Очистить поиск">
                   <X size={14}/>
-                </button>
+                </IconButton>
               )}
             </label>
             {(profile?.role === "teacher" || (profile?.role === "admin" && chatSection === "personal")) && (
@@ -242,7 +243,7 @@ export default function ChatsPage({
                 <div className="composer-footer">
                   <div className="composer-tools">
                     {selectedChat.type !== "personal" && (
-                      <label className="attach-control" aria-label="Прикрепить файл" title="Прикрепить файл">
+                      <label className="attach-control ui-icon-button" aria-label="Прикрепить файл" title="Прикрепить файл">
                         <Paperclip size={17}/>
                         <input type="file" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
                           onChange={event => setAttachment(event.target.files?.[0] || null)}/>
@@ -251,8 +252,8 @@ export default function ChatsPage({
                     {attachment && (
                       <span className="selected-file">
                         <span className="selected-file-name">{attachment.name}</span>
-                        <button type="button" className="icon-btn" onClick={() => setAttachment(null)}
-                          aria-label="Убрать файл"><X size={14}/></button>
+                        <IconButton size="compact" onClick={() => setAttachment(null)}
+                          aria-label="Убрать файл"><X size={14}/></IconButton>
                       </span>
                     )}
                   </div>

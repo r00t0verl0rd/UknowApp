@@ -4,6 +4,7 @@ import { useChatState } from "../features/conversations/hooks/useChatState.js";
 import { usePersonalChatState } from "../features/conversations/hooks/usePersonalChatState.js";
 import { useConversationSync } from "../features/conversations/hooks/useConversationSync.js";
 import AppToast from "../shared/components/AppToast.jsx";
+import IconButton from "../shared/components/IconButton.jsx";
 import LoginPage from "./authentication/LoginPage.jsx";
 import { usePushNotificationsState } from "../shared/hooks/notifications/usePushNotificationsState.js";
 import { useAuthController } from "../shared/hooks/authentication/useAuthController.js";
@@ -75,12 +76,12 @@ function Application({ setError, notify }) {
     chatState, personalState, directory, inboxLoading, adminDataLoading,
   };
   const pushToggle = (
-    <button type="button" className={`push-toggle${push.pushState.enabled ? " active" : ""}`}
+    <IconButton className={`push-toggle${push.pushState.enabled ? " active" : ""}`}
       onClick={push.togglePushNotifications} disabled={push.pushBusy}
       title={push.pushBusy ? "Обновляем настройки уведомлений…" : push.pushButtonTitle}
       aria-label={push.pushButtonTitle} aria-pressed={push.pushState.enabled}>
       {push.pushState.enabled ? <workspaceIcons.PushOn size={17}/> : <workspaceIcons.PushOff size={17}/>}
-    </button>
+    </IconButton>
   );
 
   return <WorkspaceLayout role={profile.role} profile={profile} label={workspace.label}

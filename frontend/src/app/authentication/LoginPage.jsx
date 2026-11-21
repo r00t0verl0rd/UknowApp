@@ -2,14 +2,15 @@ import ChevronRight from "lucide-react/dist/esm/icons/chevron-right.js";
 import Moon from "lucide-react/dist/esm/icons/moon.js";
 import Sun from "lucide-react/dist/esm/icons/sun.js";
 import Button from "../../shared/components/Button.jsx";
+import IconButton from "../../shared/components/IconButton.jsx";
 
 export default function LoginPage({ theme, toggleTheme, signIn, login, setLogin, password, setPassword }) {
   return (
     <div className="login-screen">
         <div className="login-card">
-          <button type="button" className="theme-toggle login-theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
+          <IconButton className="theme-toggle login-theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
             {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
-          </button>
+          </IconButton>
           <img src="/logo.png" alt="UknowApp" className="login-logo" />
           <h1>UknowApp</h1>
           <form onSubmit={signIn} className="stack">

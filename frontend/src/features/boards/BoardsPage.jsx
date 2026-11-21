@@ -2,6 +2,7 @@ import { memo, useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import { useBoardsState } from "../../shared/hooks/boards/useBoardsState.js";
 import Panel from "../../shared/components/Panel.jsx";
 import Button from "../../shared/components/Button.jsx";
+import IconButton from "../../shared/components/IconButton.jsx";
 import Crosshair from "lucide-react/dist/esm/icons/crosshair.js";
 import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
@@ -20,8 +21,8 @@ const BoardObject = memo(function BoardObject({ item, children, positionsRef, cr
       <header className="graph-board-object-header">
         <b>{item.title}</b>
         <div className="graph-board-object-actions">
-          <button type="button" title="Создать вложенный объект" aria-label={`Создать объект внутри «${item.title}»`} onClick={() => createObject(item.id)}><Plus /></button>
-          <button type="button" title="Удалить объект" aria-label={`Удалить объект «${item.title}» и вложенные объекты`} onClick={() => removeObject(item)}><Trash2 /></button>
+          <IconButton size="compact" title="Создать вложенный объект" aria-label={`Создать объект внутри «${item.title}»`} onClick={() => createObject(item.id)}><Plus /></IconButton>
+          <IconButton size="compact" tone="danger" title="Удалить объект" aria-label={`Удалить объект «${item.title}» и вложенные объекты`} onClick={() => removeObject(item)}><Trash2 /></IconButton>
         </div>
       </header>
       <div className="graph-board-children">

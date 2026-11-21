@@ -8,6 +8,7 @@ import Unlink from "lucide-react/dist/esm/icons/unlink.js";
 import EmptyState from "../../shared/components/EmptyState.jsx";
 import CountBadge from "../../shared/components/CountBadge.jsx";
 import Button from "../../shared/components/Button.jsx";
+import IconButton from "../../shared/components/IconButton.jsx";
 
 export default function StructurePage({
   overview, loading, openCreate, allTeachers = [],
@@ -32,13 +33,13 @@ export default function StructurePage({
           <div className="teacher-card">
             <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap /></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель · {students.length} учен.</small></div></div>
             <div className="person-actions">
-              <button type="button" className={`danger-icon teacher-collapse-btn${collapsed ? "" : " is-expanded"}`} title={collapsed ? "Показать учеников" : "Скрыть учеников"} aria-label={collapsed ? "Показать учеников" : "Скрыть учеников"} aria-expanded={!collapsed} onClick={() => setCollapsedTeacherIds(current => {
+              <IconButton tone="danger" className={`danger-icon teacher-collapse-btn${collapsed ? "" : " is-expanded"}`} title={collapsed ? "Показать учеников" : "Скрыть учеников"} aria-label={collapsed ? "Показать учеников" : "Скрыть учеников"} aria-expanded={!collapsed} onClick={() => setCollapsedTeacherIds(current => {
                 const next = new Set(current);
                 if (next.has(teacher.id)) next.delete(teacher.id);
                 else next.add(teacher.id);
                 return next;
-              })}><ChevronRight /></button>
-              <button type="button" title="Редактировать" onClick={() => openEdit(teacher)}><Pencil /></button>
+              })}><ChevronRight /></IconButton>
+              <IconButton title="Редактировать преподавателя" aria-label={`Редактировать преподавателя ${teacher.full_name}`} onClick={() => openEdit(teacher)}><Pencil /></IconButton>
             </div>
           </div>
           {!collapsed && <button type="button" className="add-student" onClick={() => {
@@ -49,8 +50,8 @@ export default function StructurePage({
           {!collapsed && <div className="student-list">
             {students.map(student => <div className="student-card" key={student.id}>
               <div className="person-main"><div className="avatar student-avatar"><Smile /></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
-              <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil /></button>
-              <button type="button" className="icon-btn graph-person-action" title="Отвязать от учителя" aria-label={"Отвязать ученика " + student.full_name + " от учителя"} onClick={() => unassignStudent(student)}><Unlink /></button>
+              <IconButton className="graph-person-action" title="Редактировать ученика" aria-label={`Редактировать ученика ${student.full_name}`} onClick={() => openEdit(student)}><Pencil /></IconButton>
+              <IconButton className="graph-person-action" title="Отвязать от учителя" aria-label={"Отвязать ученика " + student.full_name + " от учителя"} onClick={() => unassignStudent(student)}><Unlink /></IconButton>
             </div>)}
             {!students.length && <div className="empty-students">Нет назначенных учеников</div>}
           </div>}
@@ -63,7 +64,7 @@ export default function StructurePage({
       <div className="unassigned-grid">{unassignedStudents.map(student => <div className="student-card unassigned-student-card" key={student.id}>
         <div className="person-main"><div className="avatar student-avatar"><Smile /></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
         <div className="unassigned-student-actions">
-          <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil /></button>
+          <IconButton className="graph-person-action" title="Редактировать ученика" aria-label={`Редактировать ученика ${student.full_name}`} onClick={() => openEdit(student)}><Pencil /></IconButton>
           <Button type="button" size="small" variant="outline" disabled={!allTeachers.length} onClick={() => {
             setStudentId(String(student.id));
             setTeacherId(String(allTeachers[0]?.id || ""));

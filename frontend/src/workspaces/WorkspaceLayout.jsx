@@ -63,7 +63,7 @@ export default function WorkspaceLayout({
         </button>
         <div className="mobile-quick-actions">
           {pushToggle}{themeToggle}
-          <button type="button" className="logout" onClick={() => setShowSignOutConfirm(true)} title="Выйти" aria-label="Выйти"><LogOut/></button>
+          <IconButton className="logout" onClick={() => setShowSignOutConfirm(true)} title="Выйти" aria-label="Выйти"><LogOut/></IconButton>
         </div>
       </div>
     </aside>
