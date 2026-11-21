@@ -7,6 +7,10 @@ RUN --mount=type=cache,target=/root/.npm npm ci --no-fund --no-audit
 COPY index.html vite.config.js ./
 COPY public ./public
 COPY src ./src
+COPY scripts/generate_icons.py ./scripts/generate_icons.py
+# Генерируем значки из оригинального логотипа при каждой сборке.
+RUN apk add --no-cache python3 py3-pillow \
+    && python3 scripts/generate_icons.py
 ARG VITE_API_BASE_URL=""
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 RUN npm run build
