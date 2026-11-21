@@ -13,7 +13,7 @@ from aiogram.types import (
     KeyboardButton,
     ReplyKeyboardMarkup,
 )
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import (
@@ -29,7 +29,6 @@ from app.modules.communication.contracts import MessengerError, MessengerPlatfor
 from app.modules.messaging.inbound import (
     InboundUiResult,
     clear_teacher_session,
-    conversation_messages,
     get_teacher_conversation,
     mark_visible_messages_read_by_teacher,
     pending_student_messages,
@@ -253,8 +252,23 @@ def teacher_chat_view(
     conversation: Conversation,
 ) -> str:
     student = conversation.assignment.student
-    rows = conversation_messages(db, conversation.id)
-    visible_rows = rows[-12:]
+    # The Telegram chat view shows at most 12 messages. Do not load the
+    # entire conversation history (including archived media metadata) on
+    # every teacher panel refresh.
+    visible_rows = list(reversed(db.scalars(
+        select(Message)
+        .where(Message.conversation_id == conversation.id)
+        .order_by(Message.created_at.desc(), Message.id.desc())
+        .limit(12),
+    ).all()))
+    total_messages = (
+        len(visible_rows)
+        if len(visible_rows) < 12
+        else db.scalar(
+            select(func.count(Message.id))
+            .where(Message.conversation_id == conversation.id)
+        ) or 0
+    )
     lines = [
         "🔸 " + escape(student.full_name),
         "",
@@ -265,8 +279,8 @@ def teacher_chat_view(
         for row in visible_rows:
             sender_label = "Ученик" if row.sender_role == "student" else "Администратор" if row.sender_role == "admin" else "Вы"
             lines.append(sender_label + ": " + escape(message_preview(row)))
-    if len(rows) > len(visible_rows):
-        lines.insert(1, "Показаны последние " + str(len(visible_rows)) + " из " + str(len(rows)) + " сообщений.")
+    if total_messages > len(visible_rows):
+        lines.insert(1, "Показаны последние " + str(len(visible_rows)) + " из " + str(total_messages) + " сообщений.")
     return "\n".join(lines)[:3900]
 
 
