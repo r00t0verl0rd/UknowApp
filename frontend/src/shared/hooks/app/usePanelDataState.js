@@ -11,7 +11,6 @@ export function usePanelDataState({
   const request = useMemo(() => createApiClient(), []);
   const refreshRevision = useRef(0);
   const refreshTask = useRef(null);
-  const inboxRevision = useRef(0);
   const inboxRowRevision = useRef(new Map());
 
   const refresh = useCallback(() => {
@@ -38,17 +37,24 @@ export function usePanelDataState({
       return;
     }
 
-      const inboxRevisionAtStart = inboxRevision.current;
+      const revisionsAtStart = new Map(inboxRowRevision.current);
       const inboxTask = getInboxData(request).then(([conversations, personal]) => {
         if (revision !== refreshRevision.current) return;
-        if (inboxRevisionAtStart === inboxRevision.current) {
-          setChats(conversations);
-          setPersonalChats(personal);
-          return;
-        }
-        // Preserve SSE changes that arrived while the initial snapshot was loading.
-        setChats(current => mergeInboxSnapshot(conversations, current));
-        setPersonalChats(current => mergeInboxSnapshot(personal, current));
+        const changedRows = new Set(
+          [...inboxRowRevision.current].filter(([key, value]) => (
+            value > (revisionsAtStart.get(key) || 0)
+          )).map(([key]) => key),
+        );
+        const changedConversations = new Set(
+          [...changedRows].filter(key => key.startsWith("conversation:"))
+            .map(key => Number(key.slice("conversation:".length))),
+        );
+        const changedPersonal = new Set(
+          [...changedRows].filter(key => key.startsWith("personal:"))
+            .map(key => Number(key.slice("personal:".length))),
+        );
+        setChats(current => mergeInboxSnapshot(conversations, current, changedConversations));
+        setPersonalChats(current => mergeInboxSnapshot(personal, current, changedPersonal));
       });
 
       const adminTask = who.role === "admin"
@@ -89,5 +95,5 @@ export function usePanelDataState({
 
   useEffect(() => { void refresh(); }, [refresh]);
 
-  return { request, refresh, inboxRevision, inboxRowRevision };
+  return { request, refresh, inboxRowRevision };
 }

@@ -15,7 +15,7 @@ const isSameChat = (chat, id, type) => (
 const conversationKey = (id, type) => (type === "personal" ? "personal:" : "conversation:") + id;
 
 export function useConversationSync({
-  auth, role, selectedChat, messages, request, inboxRevision, inboxRowRevision,
+  auth, role, selectedChat, messages, request, inboxRowRevision,
   setChats, setPersonalChats, setSelectedChat, setMessages,
 }) {
   const current = useRef(null);
@@ -40,7 +40,7 @@ export function useConversationSync({
 
     const applySummary = (type, id, summary) => {
       if (!summary || !active) return;
-      inboxRevision.current += 1;
+
       const rowKey = conversationKey(id, type);
       inboxRowRevision.current.set(rowKey, (inboxRowRevision.current.get(rowKey) || 0) + 1);
       if (type === "personal") {
@@ -198,7 +198,7 @@ export function useConversationSync({
       }
       if (payload.resync) {
         recoveryPending.current = true;
-        inboxRevision.current += 1;
+
         const selectedChat = current.current.selectedChat;
         if (selectedChat) {
           const key = conversationKey(selectedChat.id, selectedChat.type);
@@ -218,7 +218,10 @@ export function useConversationSync({
       const key = conversationKey(id, type);
       eventRevision.current.set(key, (eventRevision.current.get(key) || 0) + 1);
       if (payload.summary) applySummary(type, id, payload.summary);
-      else inboxRevision.current += 1;
+      else {
+        recoveryPending.current = true;
+        void recover({ refreshInbox: true }).catch(() => {});
+      }
 
       const selected = current.current.selectedChat;
       const viewerRole = current.current.role;
