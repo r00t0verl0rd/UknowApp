@@ -539,6 +539,23 @@ async def handle_teacher_keyboard_message(
         await remove_action_message()
         return InboundUiResult(True)
 
+    # Ordinary teacher replies vastly outnumber keyboard selections. Check
+    # assigned student names before assembling page previews and unread counts.
+    is_student_label = db.scalar(
+        select(User.id)
+        .join(Assignment, Assignment.student_id == User.id)
+        .join(Conversation, Assignment.id == Conversation.assignment_id)
+        .where(
+            Assignment.teacher_id == teacher.id,
+            Assignment.active.is_(True),
+            Conversation.status == "active",
+            func.trim(User.full_name) == body,
+        )
+        .limit(1),
+    )
+    if is_student_label is None:
+        return InboundUiResult(False)
+
     actions, page, total_pages, legacy_student_labels = teacher_keyboard_actions(
         db, teacher, page,
     )
