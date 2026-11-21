@@ -5,6 +5,8 @@ import X from "lucide-react/dist/esm/icons/x.js";
 import Info from "lucide-react/dist/esm/icons/info.js";
 import { useEffect, useState } from "react";
 import AppToast from "../shared/components/AppToast.jsx";
+import Button from "../shared/components/Button.jsx";
+import Modal from "../shared/components/Modal.jsx";
 import IconButton from "../shared/components/IconButton.jsx";
 
 export default function WorkspaceLayout({
@@ -13,6 +15,14 @@ export default function WorkspaceLayout({
 }) {
   const additionalItem = role === "admin" ? navigation.find(item => item.page === "additional") : null;
   const [showSchoolLabel, setShowSchoolLabel] = useState(() => window.matchMedia("(min-width: 1025px)").matches);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const confirmSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    await signOut();
+  };
 
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1025px)");
@@ -50,12 +60,12 @@ export default function WorkspaceLayout({
           onClick={() => setPage(additionalItem.page)}>
           <Info size={18}/>{additionalItem.label}
         </button>}
-        <button type="button" className="logout desktop-sidebar-logout" onClick={signOut}>
+        <button type="button" className="logout desktop-sidebar-logout" onClick={() => setShowSignOutConfirm(true)}>
           <LogOut size={18}/>Выход
         </button>
         <div className="mobile-quick-actions">
           {pushToggle}{themeToggle}
-          <button type="button" className="logout" onClick={signOut} title="Выйти" aria-label="Выйти"><LogOut/></button>
+          <button type="button" className="logout" onClick={() => setShowSignOutConfirm(true)} title="Выйти" aria-label="Выйти"><LogOut/></button>
         </div>
       </div>
     </aside>
@@ -71,6 +81,23 @@ export default function WorkspaceLayout({
         {children}
       </div>
     </main>
+    {showSignOutConfirm && <Modal
+      onClose={() => setShowSignOutConfirm(false)}
+      closeOnBackdrop={!signingOut}
+      className="confirm-delete-modal"
+      role="alertdialog"
+      labelledBy="sign-out-title"
+      describedBy="sign-out-description"
+    >
+      <div className="modal-head">
+        <div><div className="eyebrow">ЗАВЕРШЕНИЕ СЕАНСА</div><h2 id="sign-out-title">Выйти из аккаунта?</h2></div>
+      </div>
+      <p className="hint" id="sign-out-description">Вы действительно хотите выйти из аккаунта?</p>
+      <div className="modal-actions">
+        <Button variant="ghost" onClick={() => setShowSignOutConfirm(false)} disabled={signingOut}>Нет</Button>
+        <Button variant="primary" onClick={confirmSignOut} disabled={signingOut}>{signingOut ? "Выходим…" : "Да"}</Button>
+      </div>
+    </Modal>}
     <AppToast message={toast}/>
   </div>;
 }
