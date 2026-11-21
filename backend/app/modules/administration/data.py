@@ -43,6 +43,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin/data", tags=["admin-data"])
 Admin = Annotated[str, Depends(require_admin)]
 
+
+def _get_db():
+    with SessionLocal() as db:
+        yield db
+
 DATA_DIR = MEDIA_DIR.parent.resolve()
 PENDING_RESTORE_NAME = ".uknowapp-restore-pending.json"
 RESTORE_STAGE_PREFIX = ".uknowapp-restore-stage-"
@@ -929,7 +934,7 @@ async def restore_database(_: Admin, file: Annotated[UploadFile, File()]):
 
 
 @router.delete("/dialogues")
-def cleanup_dialogues(days: int, _: Admin, db: Annotated[Session, Depends(lambda: SessionLocal())]):
+def cleanup_dialogues(days: int, _: Admin, db: Annotated[Session, Depends(_get_db)]):
     if days not in {30, 60, 180, 360}:
         raise HTTPException(status_code=400, detail="Выберите срок 30, 60, 180 или 360 дней")
     cutoff = datetime.now(UTC) - timedelta(days=days)
