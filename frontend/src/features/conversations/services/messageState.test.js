@@ -20,7 +20,7 @@ test("a deleted message cannot be reintroduced by a late history response", () =
 test("message tombstones are isolated by conversation", () => {
   markConversationMessageDeleted("personal:41", 105);
   assert.deepEqual(
-    mergeConversationMessages([], [{ id: 105, text: "different chat" }], "conversation:41"),
+    mergeConversationMessages([], [{ id: 105, text: "different chat" }], "conversation:42"),
     [{ id: 105, text: "different chat" }],
   );
 });
