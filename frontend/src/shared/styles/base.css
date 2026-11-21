@@ -10,5 +10,5 @@
 .toast-close svg{width:14px;height:14px}
 .unassigned{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}.unassigned-title{ margin: 0 0 12px; color: var(--ink); font-size: 14px;}.unassigned-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:9px}.unassigned-grid .student-card{flex-wrap:wrap;}
 /* Читаемость и расположение элементов. */
-.main{ margin-left: 0;}.login-card{ padding: 42px;}.topbar > div{ font-size: 14px;}.btn.small, .legend, .empty-students, .add-student{ font-size: 12px;}.eyebrow{ font-size: 11px; letter-spacing: 1.6px;}/* Statistics are intentionally compact to give the hierarchy more space. */
+.main{ margin-left: 0;}.login-card{ padding: 42px;}.topbar > div{ font-size: 14px;}.btn.small, .legend, .empty-students, .add-student{ font-size: 12px;}.eyebrow{ font-size: 11px; letter-spacing: 1.6px;}/* Компактная статистика оставляет место для структуры. */
 
