@@ -8,7 +8,6 @@ import asyncio
 import hmac
 import json
 import logging
-from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 
 from aiogram import Dispatcher
@@ -32,8 +31,6 @@ async def accept_update(request: Request):
     if not hmac.compare_digest(provided, TELEGRAM_GATEWAY_TOKEN):
         raise HTTPException(401, "Unauthorized")
 
-    if request.headers.get("content-length") and int(request.headers["content-length"]) > MAX_UPDATE_SIZE:
-        raise HTTPException(413, "Update too large")
     body = bytearray()
     async for chunk in request.stream():
         body.extend(chunk)
@@ -44,7 +41,7 @@ async def accept_update(request: Request):
         update_id = payload["update_id"]
         if not isinstance(update_id, int) or isinstance(update_id, bool) or not isinstance(payload, dict):
             raise ValueError("Invalid Telegram update")
-    except (ValueError, TypeError, KeyError):
+    except (ValueError, TypeError, KeyError, UnicodeDecodeError):
         raise HTTPException(400, "Invalid Telegram update") from None
 
     with SessionLocal() as db:
