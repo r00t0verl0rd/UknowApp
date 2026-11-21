@@ -36,10 +36,12 @@ for (const file of fs.readdirSync(cssDir).filter(name => name.endsWith(".css")))
   const ast = postcss.parse(source, { from: file });
   ast.walkRules(rule => {
     rules++;
-    rule.walkDecls(decl => {
+    // У вложенных CSS-правил считаем декларации один раз.
+    for (const decl of rule.nodes ?? []) {
+      if (decl.type !== "decl") continue;
       declarations++;
       if (decl.important) important++;
-    });
+    }
     for (const [, className] of rule.selector.matchAll(/\.([A-Za-z_][\w-]*)/g)) {
       selectorUses.set(className, (selectorUses.get(className) ?? 0) + 1);
       // Буквальное отсутствие в JSX/JS ещё не доказывает, что класс не используется.
@@ -73,3 +75,9 @@ const referencedTokens = new Set([...allCss.matchAll(/var\(\s*(--[\w-]+)/g)]
 const unusedTokens = [...new Set(definitions)]
   .filter(name => !referencedTokens.has(name) && !sourceText.includes(name));
 console.log("Переменные без использования в CSS и JS:", JSON.stringify(unusedTokens));
+
+// Новые неиспользуемые токены не должны накапливаться в проекте.
+if (unusedTokens.length) {
+  console.error("Неиспользуемые CSS-переменные требуют удаления или применения.");
+  process.exitCode = 1;
+}
