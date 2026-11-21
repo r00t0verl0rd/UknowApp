@@ -80,6 +80,12 @@
   --role-teacher-border: #d3c0ed;
   --role-admin-soft: #e2f0df;
   --role-admin-border: #c0d9bb;
+  /* Одна зелёная палитра для администратора и назначения ученика. */
+  --admin-card-bg: #eaf0e9;
+  --admin-card-border: #d2dfd0;
+  --admin-action-text: #42634a;
+  --admin-action-hover: #dce9da;
+  --admin-action-hover-border: #b5cbb7;
 }
 
 :root[data-theme="dark-soft"] {
@@ -148,4 +154,9 @@
   --role-teacher-border: #554b68;
   --role-admin-soft: #303a32;
   --role-admin-border: #4c6250;
+  --admin-card-bg: #2e3933;
+  --admin-card-border: #485c4d;
+  --admin-action-text: #edf0f5;
+  --admin-action-hover: #394940;
+  --admin-action-hover-border: #637d69;
 }
