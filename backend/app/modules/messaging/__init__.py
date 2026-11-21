@@ -1,1 +1,1 @@
-"""Message delivery, access control and serialization."""
+"""Доставка сообщений, доступ и форматы."""

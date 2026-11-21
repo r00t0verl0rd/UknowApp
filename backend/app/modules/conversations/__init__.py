@@ -1,1 +1,1 @@
-"""Participant conversations domain."""
+"""Переписки участников."""

@@ -1,4 +1,4 @@
-"""Conversation-domain serialization and unread-count queries."""
+"""Данные переписок и счётчики непрочитанных."""
 
 import json
 
@@ -114,7 +114,7 @@ def _message_preview(item: Message | None) -> str:
 
 
 def conversation_event_summaries(db: Session, conversation: Conversation) -> dict[str, dict]:
-    """Build one authoritative counter/preview snapshot for each panel role."""
+    """Сформировать счётчики и превью для роли."""
     teacher_unread = and_(
         Message.sender_role.in_(("student", "admin")),
         func.json_extract(Message.metadata_json, "$.teacher_read_at").is_(None),
@@ -175,7 +175,7 @@ def publish_conversation_update(
     sender_role: str | None = None,
     read_at: str | None = None,
 ) -> None:
-    """Publish a committed conversation change with role-specific live counters."""
+    """Передать событие чата с актуальными счётчиками."""
     publish_chat_update(
         conversation.id,
         message_id=message_id,

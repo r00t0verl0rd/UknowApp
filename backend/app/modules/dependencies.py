@@ -1,4 +1,4 @@
-"""Shared FastAPI dependencies for feature routers."""
+"""Общие зависимости HTTP-маршрутов."""
 
 from typing import Annotated
 

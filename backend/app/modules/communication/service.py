@@ -1,8 +1,4 @@
-"""Application-owned outbound communication service.
-
-UknowApp owns message persistence and read state. Messenger adapters only
-report delivery to their own external channels.
-"""
+"""Отправка сообщений через подключённые мессенджеры."""
 
 from __future__ import annotations
 
@@ -18,7 +14,7 @@ from .contracts import (
 
 
 class OutboundMessengerAdapter(Protocol):
-    """Provider adapter surface required by outbound application workflows."""
+    """Интерфейс отправки через адаптер."""
 
     @property
     def platform(self) -> MessengerPlatform:
@@ -33,7 +29,7 @@ class OutboundMessengerAdapter(Protocol):
 
 
 class CommunicationService:
-    """Registry and dispatcher for independently enabled messenger adapters."""
+    """Реестр активных адаптеров."""
 
     def __init__(
         self, adapters: Iterable[OutboundMessengerAdapter] = (),
@@ -44,11 +40,11 @@ class CommunicationService:
 
     @property
     def platforms(self) -> tuple[MessengerPlatform, ...]:
-        """Return only channels whose adapters are currently enabled."""
+        """Получить активные каналы."""
         return tuple(self._adapters)
 
     def register(self, adapter: OutboundMessengerAdapter) -> None:
-        """Register one optional provider without coupling it to other providers."""
+        """Добавить независимый адаптер мессенджера."""
         platform = adapter.platform
         if platform in self._adapters:
             raise ValueError(f"Duplicate messenger adapter: {platform.value}")
@@ -97,7 +93,7 @@ def record_messenger_delivery(
     errors: Iterable[dict] = (),
     status: str | None = None,
 ) -> None:
-    """Record provider delivery separately from UknowApp message delivery."""
+    """Сохранить результат внешней отправки отдельно."""
     platform_value = platform.value if isinstance(platform, MessengerPlatform) else str(platform)
     delivered_items = [dict(item) for item in delivered]
     error_items = [dict(item) for item in errors]
@@ -116,9 +112,7 @@ def record_messenger_delivery(
         "delivered": delivered_items,
         "errors": error_items,
     }
-
-    # Keep the old Telegram keys during the transition so existing group-topic
-    # routing and delete operations continue to work for historical messages.
+    # Поля Telegram остаются для маршрутизации и удаления копий.
     if platform_value == MessengerPlatform.TELEGRAM.value:
         metadata["telegram_deliveries"] = [
             {

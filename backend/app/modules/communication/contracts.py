@@ -1,8 +1,4 @@
-"""Messenger-independent communication contracts.
-
-These types describe the boundary between UknowApp and external messaging
-platforms. They deliberately contain no aiogram, MAX, or WhatsApp types.
-"""
+"""Общие типы и интерфейсы мессенджеров."""
 
 from __future__ import annotations
 
@@ -14,7 +10,7 @@ from typing import Protocol
 
 
 class MessengerError(Exception):
-    """A provider operation failed at the messenger integration boundary."""
+    """Ошибка обращения к внешнему мессенджеру."""
 
     def __init__(self, operation: str, cause: Exception) -> None:
         self.operation = operation
@@ -46,7 +42,7 @@ class MessageKind(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class InboundMedia:
-    """A media reference owned by the receiving platform adapter."""
+    """Ссылка на медиафайл мессенджера."""
 
     file_name: str | None = None
     mime_type: str | None = None
@@ -71,7 +67,7 @@ class InboundPoll:
 
 @dataclass(frozen=True, slots=True)
 class InboundMessage:
-    """A normalized user message received from any supported messenger."""
+    """Сообщение в едином внутреннем формате."""
 
     platform: MessengerPlatform
     event_id: str
@@ -96,7 +92,7 @@ class InboundMessage:
 
 @dataclass(frozen=True, slots=True)
 class OutboundMedia:
-    """A reference to media already stored by UknowApp."""
+    """Ссылка на сохранённый файл UknowApp."""
 
     storage_key: str
     file_name: str
@@ -105,7 +101,7 @@ class OutboundMedia:
 
 @dataclass(frozen=True, slots=True)
 class OutboundMessage:
-    """A platform-neutral request to deliver a message to an external chat."""
+    """Запрос отправки сообщения во внешний чат."""
 
     platform: MessengerPlatform
     external_chat_id: str
@@ -119,7 +115,7 @@ class OutboundMessage:
 
 @dataclass(frozen=True, slots=True)
 class DeliveryResult:
-    """The external identifiers and timestamp returned after a delivery."""
+    """Идентификаторы сообщения и время отправки."""
 
     platform: MessengerPlatform
     external_chat_id: str
@@ -129,7 +125,7 @@ class DeliveryResult:
 
 @dataclass(frozen=True, slots=True)
 class MessengerCapabilities:
-    """Features an adapter can expose without promising platform parity."""
+    """Возможности подключённого мессенджера."""
 
     text: bool = True
     attachments: bool = False
@@ -141,7 +137,7 @@ class MessengerCapabilities:
 
 
 class MessengerAdapter(Protocol):
-    """Minimal contract implemented by each concrete messenger adapter."""
+    """Интерфейс адаптера мессенджера."""
 
     @property
     def platform(self) -> MessengerPlatform:
@@ -154,9 +150,9 @@ class MessengerAdapter(Protocol):
     def normalize_event(
         self, payload: Mapping[str, object],
     ) -> Sequence[InboundMessage]:
-        """Convert a provider event into zero or more normalized messages."""
+        """Преобразовать внешнее событие в сообщения UknowApp."""
         ...
 
     async def send(self, message: OutboundMessage) -> DeliveryResult:
-        """Deliver a normalized message and return its provider identifiers."""
+        """Отправить сообщение и вернуть внешние идентификаторы."""
         ...
