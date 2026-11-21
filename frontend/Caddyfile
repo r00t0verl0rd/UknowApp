@@ -28,7 +28,26 @@ uknowschool.ru, www.uknowschool.ru {
     @html path / /index.html
     header @html Cache-Control "no-cache, must-revalidate"
 
-    request_body @api {
+    @fullRestore {
+        method POST
+        path /api/admin/data/full
+    }
+    @databaseRestore {
+        method POST
+        path /api/admin/data/database
+    }
+    @ordinaryApi {
+        path /api/*
+        not path /api/admin/data/full /api/admin/data/database
+    }
+    # File limit plus 1 MiB for multipart framing.
+    request_body @fullRestore {
+        max_size 2148532224
+    }
+    request_body @databaseRestore {
+        max_size 1074790400
+    }
+    request_body @ordinaryApi {
         max_size 22MB
     }
 

@@ -11,7 +11,7 @@ export default function AdministrationModule({
   });
   if (page !== "additional") return null;
   return <AdditionalPage
-    dataStats={state.dataStats} dataBusy={state.dataBusy}
+    dataStats={state.dataStats} restore={state.restore} dataBusy={state.dataBusy}
     loadDataStats={state.loadDataStats}
     downloadAdminFile={state.downloadAdminFile}
     uploadAdminFile={state.uploadAdminFile}

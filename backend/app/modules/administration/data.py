@@ -50,6 +50,7 @@ def _get_db():
 
 DATA_DIR = MEDIA_DIR.parent.resolve()
 PENDING_RESTORE_NAME = ".uknowapp-restore-pending.json"
+RESTORE_RESULT_NAME = ".uknowapp-restore-result.json"
 RESTORE_STAGE_PREFIX = ".uknowapp-restore-stage-"
 RESTORE_BACKUP_PREFIX = ".uknowapp-restore-backup-"
 RESTORE_UPLOAD_LOCK = ".uknowapp-restore-upload.lock"
@@ -538,7 +539,7 @@ def _prepare_restore_archive(archive_path: Path, staged_data: Path) -> dict:
         raise HTTPException(status_code=400, detail="Файл не является корректным ZIP-архивом") from exc
 
 
-def _write_pending_marker(marker_path: Path, payload: dict) -> None:
+def _write_restore_record(marker_path: Path, payload: dict) -> None:
     temporary = marker_path.with_name(marker_path.name + ".tmp")
     with temporary.open("w", encoding="utf-8") as target:
         json.dump(payload, target, ensure_ascii=False, separators=(",", ":"))
@@ -547,10 +548,32 @@ def _write_pending_marker(marker_path: Path, payload: dict) -> None:
     os.replace(temporary, marker_path)
 
 
+def _finish_restore(data_dir: Path, marker: dict, status: str) -> None:
+    _write_restore_record(data_dir / RESTORE_RESULT_NAME, {
+        "id": marker["stage"].removeprefix(RESTORE_STAGE_PREFIX),
+        "status": status,
+        "finished_at": datetime.now(UTC).isoformat(),
+    })
+    (data_dir / PENDING_RESTORE_NAME).unlink(missing_ok=True)
+
+
+def _restore_status(data_dir: Path) -> dict | None:
+    for name in (PENDING_RESTORE_NAME, RESTORE_RESULT_NAME):
+        try:
+            record = json.loads((data_dir / name).read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            continue
+        if name == PENDING_RESTORE_NAME:
+            return {"id": record["stage"].removeprefix(RESTORE_STAGE_PREFIX), "status": "pending"}
+        return record
+    return None
+
+
 def _control_names(stage_name: str, backup_name: str) -> set[str]:
     return {
         PENDING_RESTORE_NAME,
         PENDING_RESTORE_NAME + ".tmp",
+        RESTORE_RESULT_NAME,
         stage_name,
         backup_name,
     }
@@ -620,7 +643,7 @@ def apply_pending_data_restore() -> bool:
         if status == "committed":
             shutil.rmtree(backup_dir, ignore_errors=True)
             shutil.rmtree(stage_dir, ignore_errors=True)
-            marker_path.unlink(missing_ok=True)
+            _finish_restore(data_dir, marker, "completed")
             return True
 
         if status == "applying":
@@ -634,7 +657,7 @@ def apply_pending_data_restore() -> bool:
             _rollback_partial_restore(data_dir, stage_name, backup_name, original_entries)
             marker["status"] = "prepared"
             marker.pop("original_entries", None)
-            _write_pending_marker(marker_path, marker)
+            _write_restore_record(marker_path, marker)
         elif status != "prepared":
             raise RuntimeError("Неизвестное состояние восстановления резервной копии")
 
@@ -649,7 +672,7 @@ def apply_pending_data_restore() -> bool:
                 "Подготовленный архив не прошёл повторную проверку; текущие данные не изменены",
             )
             shutil.rmtree(stage_dir, ignore_errors=True)
-            marker_path.unlink(missing_ok=True)
+            _finish_restore(data_dir, marker, "failed")
             return False
         original_entries = [
             child.name for child in data_dir.iterdir()
@@ -658,7 +681,7 @@ def apply_pending_data_restore() -> bool:
         backup_dir.mkdir()
         marker["status"] = "applying"
         marker["original_entries"] = original_entries
-        _write_pending_marker(marker_path, marker)
+        _write_restore_record(marker_path, marker)
         engine.dispose()
 
         try:
@@ -675,7 +698,7 @@ def apply_pending_data_restore() -> bool:
             reload_vapid_keys(data_dir)
             marker["status"] = "committed"
             marker["missing_media_references"] = restore_info["missing_media"]
-            _write_pending_marker(marker_path, marker)
+            _write_restore_record(marker_path, marker)
         except Exception:
             try:
                 _rollback_partial_restore(data_dir, stage_name, backup_name, original_entries)
@@ -688,14 +711,14 @@ def apply_pending_data_restore() -> bool:
                     "Восстановление завершилось ошибкой, автоматический откат также не удался",
                 ) from rollback_error
             shutil.rmtree(stage_dir, ignore_errors=True)
-            marker_path.unlink(missing_ok=True)
+            _finish_restore(data_dir, marker, "failed")
             engine.dispose()
             logger.exception("Резервная копия UknowApp не применена; исходные данные восстановлены")
             return False
 
         shutil.rmtree(backup_dir, ignore_errors=True)
         shutil.rmtree(stage_dir, ignore_errors=True)
-        marker_path.unlink(missing_ok=True)
+        _finish_restore(data_dir, marker, "completed")
         logger.info("Полная резервная копия UknowApp восстановлена до запуска приложения")
         return True
     except Exception:
@@ -730,16 +753,18 @@ def _add_media_files(archive: zipfile.ZipFile) -> int:
     return count
 
 
+@router.get("/restore-status")
+def restore_status(_: Admin):
+    return {"restore": _restore_status(DATA_DIR)}
+
+
 @router.get("/stats")
 def data_stats(_: Admin):
     database = _database_path()
-    backup_path = _temporary_path(".uknowapp-db-stats-", ".sqlite3", DATA_DIR)
-    try:
-        with sqlite3.connect(database) as source, sqlite3.connect(backup_path) as target:
-            source.backup(target)
-        database_size = backup_path.stat().st_size
-    finally:
-        backup_path.unlink(missing_ok=True)
+    with sqlite3.connect(f"file:{database}?mode=ro", uri=True) as source:
+        page_count = source.execute("PRAGMA page_count").fetchone()[0]
+        page_size = source.execute("PRAGMA page_size").fetchone()[0]
+        database_size = page_count * page_size
 
     with SessionLocal() as db:
         users = db.query(User).all()
@@ -773,6 +798,7 @@ def data_stats(_: Admin):
         personal_message_count = db.query(PersonalMessage).count()
         active_assignments = sum(1 for item in assignments if item.active)
         return {
+            "restore": _restore_status(DATA_DIR),
             "database_bytes": database_size,
             "media_bytes": _folder_size(MEDIA_DIR),
             "users": len(users),
@@ -901,7 +927,7 @@ async def restore_full_backup(_: Admin, file: Annotated[UploadFile, File()]):
 
         restore_info = _prepare_restore_archive(archive_path, stage_dir / "data")
         backup_name = RESTORE_BACKUP_PREFIX + uuid.uuid4().hex
-        _write_pending_marker(marker_path, {
+        _write_restore_record(marker_path, {
             "status": "prepared",
             "created_at": datetime.now(UTC).isoformat(),
             "stage": stage_dir.name,
@@ -934,6 +960,7 @@ async def restore_full_backup(_: Admin, file: Annotated[UploadFile, File()]):
             status_code=202,
             content={
                 "ok": True,
+                "restore_id": stage_dir.name.removeprefix(RESTORE_STAGE_PREFIX),
                 "restart_required": True,
                 "automatic_restart": automatic_restart,
                 "legacy_format": restore_info["legacy"],

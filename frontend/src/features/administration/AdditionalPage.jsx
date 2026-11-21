@@ -12,7 +12,7 @@ function formatBytes(bytes) {
   return (bytes / (1024 ** index)).toLocaleString("ru-RU", { maximumFractionDigits: index ? 1 : 0 }) + " " + units[index];
 }
 
-export default function AdditionalPage({ dataStats, dataBusy, loadDataStats, downloadAdminFile, uploadAdminFile, retentionDays, setRetentionDays, cleanupOldDialogues }) {
+export default function AdditionalPage({ dataStats, restore, dataBusy, loadDataStats, downloadAdminFile, uploadAdminFile, retentionDays, setRetentionDays, cleanupOldDialogues }) {
   return (
     <Panel className="additional-panel">
       <div className="additional-heading"><div><div className="eyebrow">ОБСЛУЖИВАНИЕ ДАННЫХ</div><h2>Дополнительно</h2></div><button type="button" className="btn outline" onClick={loadDataStats} disabled={dataBusy}><RefreshCw size={15}/>Обновить</button></div>
@@ -57,6 +57,12 @@ export default function AdditionalPage({ dataStats, dataBusy, loadDataStats, dow
             <button type="button" className="btn primary" onClick={() => downloadAdminFile("full")} disabled={dataBusy}>Скачать полную резервную копию</button>
             <label className="btn outline data-upload-label">{dataBusy ? "Обработка…" : "Восстановить из полной копии"}<input type="file" accept=".zip" disabled={dataBusy} onChange={e => { uploadAdminFile("full", e.target.files?.[0]); e.target.value = ""; }}/></label>
           </div>
+          {restore && <p role="status" className="data-warning">
+            {restore.status === "completed" ? "Полная копия восстановлена."
+              : restore.status === "failed" ? "Восстановление не выполнено. Сохранены исходные данные."
+              : "Архив принят. Ожидаем результат после перезапуска сервера."}
+            {restore.finished_at && " " + new Date(restore.finished_at).toLocaleString("ru-RU")}
+          </p>}
           <p className="data-warning">Восстановление заменит весь каталог data. В Docker backend перезапустится автоматически; при локальном запуске перезапустите backend вручную. Файл .env, токен Telegram и конфигурация сервера в архив не входят. Перед экспортом проверяются ссылки на вложения: при отсутствующих медиафайлах полная копия не создаётся.</p>
         </article>
         <article className="data-tool-card">

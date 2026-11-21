@@ -4,6 +4,15 @@ export function getAdminDataStats(request) {
   return request("/api/admin/data/stats");
 }
 
+export async function getRestoreStatus(signal) {
+  const response = await fetch(API + "/api/admin/data/restore-status", {
+    credentials: "include", cache: "no-store", signal,
+  });
+  if (response.status === 401 || response.status === 403) return { status: "login" };
+  if (!response.ok) throw new Error("Сервер временно недоступен");
+  return (await response.json()).restore;
+}
+
 export async function downloadAdminBackup(kind) {
   const response = await fetch(API + "/api/admin/data/" + kind, { credentials: "include" });
   if (!response.ok) {
