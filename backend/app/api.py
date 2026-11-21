@@ -1,4 +1,4 @@
-"""Composition of feature-specific HTTP routers."""
+"""Общие HTTP-маршруты модулей."""
 
 from fastapi import APIRouter
 
@@ -7,6 +7,7 @@ from .modules.boards.routes import router as boards_router
 from .modules.panel.routes import router as panel_router
 from .modules.system.routes import router as system_router
 
+# Собираем маршруты модулей в единый API.
 router = APIRouter()
 router.include_router(system_router)
 router.include_router(administration_router)

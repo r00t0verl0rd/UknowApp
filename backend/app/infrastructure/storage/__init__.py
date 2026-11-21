@@ -1,1 +1,1 @@
-"""Persistent file storage adapters."""
+"""Хранение файлов приложения."""

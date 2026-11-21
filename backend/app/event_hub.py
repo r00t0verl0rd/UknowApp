@@ -1,4 +1,4 @@
-"""Ordered, durable and authenticated event delivery for conversations."""
+"""События переписок с хранением и проверкой доступа."""
 
 import asyncio
 import json
@@ -24,7 +24,7 @@ _EVENT_RETENTION_DAYS = 14
 
 
 def subscribe_chat_updates(principal: dict | None = None) -> asyncio.Queue[str]:
-    """Subscribe one authenticated panel identity to its own conversation events."""
+    """Подписать участника на разрешённые события чатов."""
     queue: asyncio.Queue[str] = asyncio.Queue(maxsize=_QUEUE_SIZE)
     with _subscribers_lock:
         _subscribers[queue] = (asyncio.get_running_loop(), principal)
@@ -73,8 +73,7 @@ def _enqueue(queue: asyncio.Queue[str], payload: str, event_id: int | None) -> N
                 queue.get_nowait()
             except asyncio.QueueEmpty:
                 break
-        # The authoritative DB event log allows the client to recover without
-        # reloading message history after this bounded queue overflows.
+        # Журнал БД позволяет восстановить события после переполнения очереди.
         resync_payload = {"resync": True}
         if event_id is not None:
             resync_payload["event_id"] = event_id
@@ -95,7 +94,7 @@ def _persist_event(db: Session, conversation_id: int, conversation_type: str, pa
     event_id = event.id
     db.commit()
 
-    # Keep replay bounded. Cleanup is amortized so it is not part of every send.
+    # Ограничиваем повтор событий и не очищаем журнал при каждой отправке.
     if event_id % 100 == 0:
         cutoff = datetime.now(UTC) - timedelta(days=_EVENT_RETENTION_DAYS)
         db.execute(delete(RealtimeEvent).where(RealtimeEvent.created_at < cutoff))
@@ -133,7 +132,7 @@ def publish_chat_update(
     summary_by_role: dict[str, dict] | None = None,
     db: Session | None = None,
 ) -> None:
-    """Persist a committed change before notifying active browser/app subscribers."""
+    """Сохранить событие до оповещения подписчиков."""
     payload = {
         "conversation_id": int(conversation_id),
         "conversation_type": conversation_type,
@@ -160,7 +159,7 @@ def publish_chat_update(
             event_id = None
             payload["resync"] = True
     else:
-        # Kept for isolated event-hub tests and internal non-database signals.
+        # Используется в тестах и внутренних сигналах без БД.
         event_id = next(_fallback_event_ids)
 
     _dispatch(payload, event_id)
@@ -171,7 +170,7 @@ def replay_chat_updates(
     principal: dict,
     after_event_id: int,
 ) -> list[tuple[int, str]]:
-    """Replay durable events after EventSource reconnect, scoped to the caller."""
+    """Восстановить доступные события после переподключения."""
     if after_event_id <= 0:
         return []
 

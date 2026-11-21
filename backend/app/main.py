@@ -46,12 +46,11 @@ def seed_demo_data() -> None:
 
 # Telegram работает в фоновой задаче: временная недоступность Telegram не должна останавливать API.
 async def run_telegram_bot(bot, dispatcher, app) -> None:
-    """Run polling in the background; Telegram outages must not stop the web API."""
+    """Запускать Telegram в фоне, не блокируя веб-панель."""
     retry_delay = 5
     while True:
         try:
-            # This call can time out when Telegram is unreachable. It must never
-            # run directly in the FastAPI startup path.
+            # Не блокируем запуск API ожиданием Telegram.
             bot_info = await bot.get_me()
             app.state.telegram_status = "connected"
             logger.warning(
@@ -63,9 +62,7 @@ async def run_telegram_bot(bot, dispatcher, app) -> None:
             logger.warning("TELEGRAM_POLLING_STARTED")
             polling_started_at = asyncio.get_running_loop().time()
             await dispatcher.start_polling(bot, handle_signals=False)
-            # start_polling normally runs until shutdown. If it returns while
-            # the application is still alive, treat that as an unexpected stop
-            # and bring polling back instead of silently leaving the bot offline.
+            # Если polling завершился неожиданно, запускаем его снова.
             logger.error("TELEGRAM_POLLING_STOPPED_UNEXPECTEDLY")
             if asyncio.get_running_loop().time() - polling_started_at >= 60:
                 retry_delay = 5
@@ -75,8 +72,7 @@ async def run_telegram_bot(bot, dispatcher, app) -> None:
             raise
         except TelegramConflictError:
             app.state.telegram_status = "conflict"
-            # A Telegram conflict means another process is polling this bot.
-            # Retrying forever only creates noisy logs and repeated takeovers.
+            # При конфликте polling прекращаем повторы: бот уже запущен где-то ещё.
             logger.critical(
                 "TELEGRAM_POLLING_CONFLICT: another process is already calling getUpdates "
                 "for this bot. Polling has been stopped; close the other bot instance "
@@ -85,8 +81,7 @@ async def run_telegram_bot(bot, dispatcher, app) -> None:
             return
         except TelegramAPIError as exc:
             app.state.telegram_status = "unavailable"
-            # Telegram Bot API request URLs may contain the bot token.
-            # Log the exception type only; never print request URLs or headers.
+            # Не пишем токен в логи: выводим только тип ошибки.
             logger.error(
                 "Telegram bot could not connect (error_type=%s). Retrying in %s seconds; "
                 "the admin panel remains available.",
@@ -119,8 +114,7 @@ async def lifespan(app: FastAPI):
         app.state.telegram_bot = bot
         app.state.communication = CommunicationService([TelegramAdapter(bot)])
 
-        # A non-blocking OS lock prevents two local Uvicorn processes (including
-        # accidental duplicate launches) from polling the same Telegram bot.
+        # Файловая блокировка не допускает второго polling в этом процессе.
         token_fingerprint = hashlib.sha256(TELEGRAM_BOT_TOKEN.encode("utf-8")).hexdigest()[:20]
         lock_path = os.path.join(tempfile.gettempdir(), f"uknowapp-telegram-{token_fingerprint}.lock")
         polling_lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)

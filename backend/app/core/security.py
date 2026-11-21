@@ -1,4 +1,4 @@
-"""Stateless password, origin and network security primitives."""
+"""Проверки паролей, источников запросов и сети."""
 
 import hashlib
 import ipaddress
@@ -8,7 +8,7 @@ from .config import ADMIN_PASSWORD, ADMIN_USERNAME, ALLOWED_ORIGINS, TRUSTED_PRO
 
 
 def verify_admin(username: str, password: str) -> bool:
-    # Never allow the documented fallback credentials to authenticate an admin.
+    # Не разрешаем вход с паролем из шаблона.
     if ADMIN_PASSWORD in {"change-me-now", "replace-with-a-long-random-password"}:
         return False
     return (
@@ -39,12 +39,12 @@ def verify_web_password(password: str, stored: str | None) -> bool:
 
 
 def verify_request_origin(request: Request) -> None:
-    """Reject cross-origin state-changing browser requests (CSRF defence)."""
+    """Запретить опасные запросы с чужого сайта (CSRF)."""
     if request.method.upper() in {"GET", "HEAD", "OPTIONS"}:
         return
     origin = request.headers.get("origin")
     if not origin:
-        # Non-browser clients do not send Origin; cookie-based browser requests do.
+        # Проверяем Origin только для браузерных запросов с cookie.
         return
     origin = origin.strip().rstrip("/")
     current_origin = str(request.base_url).rstrip("/")
@@ -69,5 +69,5 @@ def _client_ip(request: Request) -> str:
 
 
 def normalize_login(value: str | None) -> str:
-    """Use the same Unicode-safe key for lookup and login collision checks."""
+    """Нормализовать логин для поиска и проверки уникальности."""
     return (value or "").strip().casefold()

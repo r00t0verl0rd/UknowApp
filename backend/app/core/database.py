@@ -35,7 +35,8 @@ if is_sqlite:
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
-# Model imports and schema upgrades are coordinated by app.migrations at startup.
+# Модели и миграции загружаются при запуске приложения.
+# Создание таблиц не выполняет миграции существующей схемы.
 def create_tables() -> None:
-    """Create currently registered SQLAlchemy tables without application dependencies."""
+    """Создать таблицы зарегистрированных моделей."""
     Base.metadata.create_all(bind=engine)

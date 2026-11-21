@@ -1,4 +1,4 @@
-"""Explicit database initialization and one-time, versioned upgrades."""
+"""Создание схемы и версионированные миграции БД."""
 
 from datetime import UTC, datetime
 from sqlalchemy import text
@@ -28,7 +28,7 @@ def _mark_applied(version: str) -> None:
 
 
 def initialize_database() -> None:
-    # Register tables explicitly at the application composition boundary.
+    # Регистрируем модели до создания таблиц.
     from app import models  # noqa: F401
 
     create_tables()
@@ -38,8 +38,7 @@ def initialize_database() -> None:
             "version VARCHAR(100) PRIMARY KEY, applied_at TIMESTAMP NOT NULL)"
         ))
 
-    # Legacy DDL contains SQLite-specific pragmas and table rebuilds.
-    # On a fresh PostgreSQL database, create_tables() already creates the schema.
+    # Миграции старой схемы выполняются только для SQLite.
     if not _is_applied(_LEGACY_VERSION):
         if is_sqlite:
             migrate_legacy_schema()

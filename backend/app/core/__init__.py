@@ -1,1 +1,1 @@
-"""Application core: configuration, persistence and security."""
+"""Настройки, база данных и безопасность."""

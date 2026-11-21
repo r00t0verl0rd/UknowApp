@@ -1,4 +1,4 @@
-"""Shared media safety and local storage helpers."""
+"""Безопасное хранение медиафайлов."""
 
 import json
 import logging
@@ -29,7 +29,7 @@ SAFE_MEDIA_TYPES = {
 
 
 def safe_media_type(value: str | None) -> str:
-    """Only return known browser-safe MIME types; unknown types are downloads."""
+    """Неизвестные типы файлов отдавать на скачивание."""
     normalized = (value or "").split(";", 1)[0].strip().lower()
     return normalized if normalized in SAFE_MEDIA_TYPES else "application/octet-stream"
 

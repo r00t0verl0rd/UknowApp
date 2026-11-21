@@ -1,1 +1,1 @@
-"""UknowApp backend package."""
+"""Серверная часть UknowApp."""

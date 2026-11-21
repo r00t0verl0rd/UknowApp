@@ -1,1 +1,1 @@
-"""Adapters to external and persistent infrastructure."""
+"""Адаптеры внешних сервисов и хранилища."""
