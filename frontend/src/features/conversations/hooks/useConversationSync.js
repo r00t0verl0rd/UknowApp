@@ -26,6 +26,8 @@ export function useConversationSync({
   const syncQueued = useRef(false);
   const eventRevision = useRef(new Map());
   const inboxRequestRevision = useRef(0);
+  const inboxRowRevision = useRef(new Map());
+  const recoveryPending = useRef(false);
 
   current.current = {
     selectedChat, messages, role,
@@ -39,6 +41,8 @@ export function useConversationSync({
     const applySummary = (type, id, summary) => {
       if (!summary || !active) return;
       inboxRevision.current += 1;
+      const rowKey = conversationKey(id, type);
+      inboxRowRevision.current.set(rowKey, (inboxRowRevision.current.get(rowKey) || 0) + 1);
       if (type === "personal") {
         current.current.setPersonalChats(items => items.some(item => Number(item.id) === Number(id))
           ? items.map(item => Number(item.id) === Number(id) ? { ...item, ...summary } : item)
@@ -55,17 +59,25 @@ export function useConversationSync({
 
     const refreshInbox = async () => {
       const requestRevision = ++inboxRequestRevision.current;
-      const revisionAtStart = inboxRevision.current;
+      const revisionsAtStart = new Map(inboxRowRevision.current);
       const [conversations, personal] = await getInboxData(request);
       if (!active || requestRevision !== inboxRequestRevision.current) return;
-      if (revisionAtStart === inboxRevision.current) {
-        current.current.setChats(conversations);
-        current.current.setPersonalChats(personal);
-        return;
-      }
-      // Preserve live event summaries if an event arrived during recovery.
-      current.current.setChats(items => mergeInboxSnapshot(conversations, items));
-      current.current.setPersonalChats(items => mergeInboxSnapshot(personal, items));
+
+      const changedRows = new Set(
+        [...inboxRowRevision.current].filter(([key, revision]) => (
+          revision > (revisionsAtStart.get(key) || 0)
+        )).map(([key]) => key),
+      );
+      const changedConversations = new Set(
+        [...changedRows].filter(key => key.startsWith("conversation:"))
+          .map(key => Number(key.slice("conversation:".length))),
+      );
+      const changedPersonal = new Set(
+        [...changedRows].filter(key => key.startsWith("personal:"))
+          .map(key => Number(key.slice("personal:".length))),
+      );
+      current.current.setChats(items => mergeInboxSnapshot(conversations, items, changedConversations));
+      current.current.setPersonalChats(items => mergeInboxSnapshot(personal, items, changedPersonal));
     };
 
     const syncSelected = async () => {
@@ -124,8 +136,14 @@ export function useConversationSync({
     };
 
     const recover = async ({ refreshInbox: refresh = false } = {}) => {
-      if (refresh) await refreshInbox();
-      await syncSelected();
+      try {
+        if (refresh) await refreshInbox();
+        await syncSelected();
+        recoveryPending.current = false;
+      } catch (error) {
+        recoveryPending.current = true;
+        throw error;
+      }
     };
 
     const flush = async () => {
@@ -163,17 +181,14 @@ export function useConversationSync({
 
     const source = createPanelEventSource();
     if (source) {
-      let opened = false;
       source.onopen = () => {
-        // The first connection starts from the current stream position. The
-        // inbox snapshot has already been loaded by panel initialization.
-        // EventSource replays missed durable events after subsequent reconnects.
-        if (!opened) {
-          opened = true;
+        // The first connection does not reload inbox lists. On reconnect the
+        // browser replays durable events using Last-Event-ID automatically.
+        if (recoveryPending.current) {
+          void recover({ refreshInbox: true }).catch(() => {});
+        } else {
           void syncSelected().catch(() => {});
-          return;
         }
-        void syncSelected().catch(() => {});
       };
       source.onerror = () => {
         // EventSource owns reconnect/backoff; no periodic polling is required.
@@ -186,25 +201,24 @@ export function useConversationSync({
           payload = { resync: true };
         }
         const eventId = Number(payload.event_id || event.lastEventId || 0);
+        if (Number.isSafeInteger(eventId) && eventId > 0) {
+          if (eventId <= lastEventId.current) return;
+          lastEventId.current = eventId;
+        }
         if (payload.resync) {
+          recoveryPending.current = true;
           inboxRevision.current += 1;
           const selectedChat = current.current.selectedChat;
           if (selectedChat) {
             const key = conversationKey(selectedChat.id, selectedChat.type);
             eventRevision.current.set(key, (eventRevision.current.get(key) || 0) + 1);
           }
-          if (Number.isSafeInteger(eventId) && eventId > lastEventId.current) {
-            lastEventId.current = eventId;
-          }
           void recover({ refreshInbox: true }).catch(() => {});
           return;
         }
-        if (Number.isSafeInteger(eventId) && eventId > 0) {
-          if (eventId <= lastEventId.current) return;
-          lastEventId.current = eventId;
-        }
         if (!payload.conversation_id) {
-          inboxRevision.current += 1;
+          recoveryPending.current = true;
+          void recover({ refreshInbox: true }).catch(() => {});
           return;
         }
 
@@ -268,7 +282,9 @@ export function useConversationSync({
     }
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") void syncSelected().catch(() => {});
+      if (document.visibilityState !== "visible") return;
+      if (recoveryPending.current) void recover({ refreshInbox: true }).catch(() => {});
+      else void syncSelected().catch(() => {});
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {

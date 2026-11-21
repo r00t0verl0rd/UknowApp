@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { createApiClient } from "../../../services/api.js";
 import { getAdminBootstrap, getCurrentProfile, getInboxData } from "../../services/panelApi.js";
 import { mergeInboxSnapshot } from "../../services/inboxState.js";
@@ -9,7 +9,6 @@ export function usePanelDataState({
   setSelectedChat, setMessages,
 }) {
   const request = useMemo(() => createApiClient(), []);
-  const [panelReady, setPanelReady] = useState(false);
   const refreshRevision = useRef(0);
   const inboxRevision = useRef(0);
 
@@ -22,12 +21,8 @@ export function usePanelDataState({
       who = await getCurrentProfile(request);
       if (revision !== refreshRevision.current) return;
       setProfile(who);
-      // The application shell only depends on the authenticated profile.
-      // Inbox and role-specific data continue loading without blocking it.
-      setPanelReady(true);
     } catch (error) {
       if (revision !== refreshRevision.current) return;
-      setPanelReady(true);
       setError(error.message);
       const message = String(error.message).toLowerCase();
       if (["учитель", "ученик", "логин", "сессия", "войдите", "учётная запись"].some(term => message.includes(term)) || message.includes("401")) {
@@ -76,10 +71,9 @@ export function usePanelDataState({
 
   useEffect(() => {
     refreshRevision.current += 1;
-    if (!auth) setPanelReady(false);
   }, [auth]);
 
   useEffect(() => { void refresh(); }, [refresh]);
 
-  return { request, refresh, panelReady, inboxRevision };
+  return { request, refresh, inboxRevision };
 }

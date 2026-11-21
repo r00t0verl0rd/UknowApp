@@ -21,7 +21,7 @@ export default function App() {
   const { page, setPage, error, setError, toast, setToast, modal, setModal } = useUiState();
   const directory = useDirectoryState();
   const workspace = profile ? workspaceRegistry[profile.role] : null;
-  const { request, refresh, panelReady, inboxRevision } = usePanelDataState({
+  const { request, refresh, inboxRevision } = usePanelDataState({
     auth, setAuth, setProfile, setError, setChats,
     setPersonalChats, setUsers: directory.setUsers, setOverview: directory.setOverview,
     setSelectedChat, setMessages,
@@ -36,10 +36,10 @@ export default function App() {
   }, [setToast]);
 
   useEffect(() => {
-    if (!auth || !panelReady || !profile?.role || !workspace) return;
+    if (!auth || !profile?.role || !workspace) return;
     const accessiblePage = workspace.pages.includes(page) ? page : workspace.pages[0];
     setPage(accessiblePage, { replace: true });
-  }, [auth, panelReady, profile?.role, page, setPage, workspace]);
+  }, [auth, profile?.role, page, setPage, workspace]);
 
   const push = usePushNotificationsState({ auth, selectedChat, notify, setError });
   const { signIn, signOut } = useAuthController({
@@ -50,7 +50,7 @@ export default function App() {
 
   if (!auth) return <LoginPage theme={theme} toggleTheme={toggleTheme} signIn={signIn}
     login={login} setLogin={setLogin} password={password} setPassword={setPassword} error={error} />;
-  if (!panelReady || !profile) return null;
+  if (!profile) return null;
   if (!workspace) return null;
 
   const workspacePage = workspace.pages.includes(page) ? page : workspace.pages[0];
