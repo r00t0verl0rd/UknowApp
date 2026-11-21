@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { createPanelEventSource, getInboxData } from "../../../shared/services/panelApi.js";
 import { syncChatState } from "../services/conversationsApi.js";
+import { mergeConversationMessages } from "../services/messageState.js";
 
 const maxMessageId = rows => rows.reduce((max, row) => Math.max(max, Number(row.id) || 0), 0);
 
@@ -9,26 +10,7 @@ const isSameChat = (chat, id, type) => (
   && (chat?.type === "personal") === (type === "personal")
 );
 
-function mergeMessages(previous, incoming) {
-  if (!incoming.length) return previous;
-  const clientIds = new Set(
-    incoming.map(item => item.metadata?.client_message_id).filter(Boolean),
-  );
-  const incomingById = new Map(incoming.map(item => [Number(item.id), item]));
-  const merged = previous
-    .filter(item => !clientIds.has(item.metadata?.client_message_id))
-    .map(item => {
-      const update = incomingById.get(Number(item.id));
-      return update
-        ? { ...item, ...update, metadata: { ...(item.metadata || {}), ...(update.metadata || {}) } }
-        : item;
-    });
-  const known = new Set(merged.map(item => Number(item.id)));
-  return [
-    ...merged,
-    ...incoming.filter(item => !known.has(Number(item.id))),
-  ];
-}
+const conversationKey = (id, type) => (type === "personal" ? "personal:" : "conversation:") + id;
 
 export function useConversationSync({
   auth, page, role, selectedChat, messages, request,
@@ -41,6 +23,8 @@ export function useConversationSync({
   const processing = useRef(false);
   const syncing = useRef(false);
   const syncQueued = useRef(false);
+  const eventRevision = useRef(new Map());
+  const inboxRevision = useRef(0);
 
   current.current = {
     selectedChat, messages, role,
@@ -53,6 +37,7 @@ export function useConversationSync({
 
     const applySummary = (type, id, summary) => {
       if (!summary || !active) return;
+      inboxRevision.current += 1;
       if (type === "personal") {
         current.current.setPersonalChats(items => items.some(item => Number(item.id) === Number(id))
           ? items.map(item => Number(item.id) === Number(id) ? { ...item, ...summary } : item)
@@ -68,8 +53,9 @@ export function useConversationSync({
     };
 
     const refreshInbox = async () => {
+      const revisionAtStart = inboxRevision.current;
       const [conversations, personal] = await getInboxData(request);
-      if (!active) return;
+      if (!active || revisionAtStart !== inboxRevision.current) return;
       current.current.setChats(conversations);
       current.current.setPersonalChats(personal);
     };
@@ -88,11 +74,12 @@ export function useConversationSync({
           if (!chat || document.visibilityState !== "visible") break;
           const knownMessages = current.current.messages
             .filter(item => Number.isSafeInteger(Number(item.id)) && Number(item.id) > 0);
-          const chatKey = chat.type + ":" + chat.id;
+          const chatKey = conversationKey(chat.id, chat.type);
           if (lastMessageCursor.current.chatKey !== chatKey) {
             lastMessageCursor.current = { chatKey, id: maxMessageId(knownMessages) };
           }
           const afterId = Math.max(lastMessageCursor.current.id, maxMessageId(knownMessages));
+          const revisionAtStart = eventRevision.current.get(chatKey) || 0;
           const result = await syncChatState(
             request,
             chat,
@@ -104,10 +91,19 @@ export function useConversationSync({
             syncQueued.current = true;
             continue;
           }
+
+          // A newer event for this dialog arrived while the request was in
+          // flight. Do not let its older response overwrite the event state.
+          // Run one fresh targeted sync with the latest cursor instead.
+          if (revisionAtStart !== (eventRevision.current.get(chatKey) || 0)) {
+            syncQueued.current = true;
+            continue;
+          }
+
           const updated = [...(result.updated_messages || []), ...(result.messages || [])];
           if (updated.length) {
             lastMessageCursor.current.id = Math.max(afterId, maxMessageId(updated));
-            current.current.setMessages(previous => mergeMessages(previous, updated));
+            current.current.setMessages(previous => mergeConversationMessages(previous, updated));
           }
           if (result.summary) applySummary(chat.type, chat.id, result.summary);
         } while (syncQueued.current && active);
@@ -150,7 +146,7 @@ export function useConversationSync({
           }));
         }
       } catch {
-        // Replayed events or the bounded resync endpoint restore only changed rows.
+        // Event replay and targeted sync recover changed rows after transient errors.
       } finally {
         processing.current = false;
         if (pending.current.size && active) void flush();
@@ -160,12 +156,12 @@ export function useConversationSync({
     const source = createPanelEventSource();
     if (source) {
       source.onopen = () => {
-        // Replay Last-Event-ID covers committed events; targeted sync also repairs
-        // the rare crash window between message commit and outbox persistence.
+        // Replay Last-Event-ID covers committed events. Revision checks keep
+        // this inbox snapshot from replacing a newer event-driven counter.
         void recover().catch(() => {});
       };
       source.onerror = () => {
-        // EventSource owns reconnect/backoff; avoid periodic polling while offline.
+        // EventSource owns reconnect/backoff; no periodic polling is required.
       };
       source.addEventListener("update", event => {
         let payload;
@@ -186,11 +182,17 @@ export function useConversationSync({
           if (eventId <= lastEventId.current) return;
           lastEventId.current = eventId;
         }
-        if (!payload.conversation_id) return;
+        if (!payload.conversation_id) {
+          inboxRevision.current += 1;
+          return;
+        }
 
         const id = Number(payload.conversation_id);
         const type = payload.conversation_type || "conversation";
+        const key = conversationKey(id, type);
+        eventRevision.current.set(key, (eventRevision.current.get(key) || 0) + 1);
         if (payload.summary) applySummary(type, id, payload.summary);
+        else inboxRevision.current += 1;
 
         const selected = current.current.selectedChat;
         const viewerRole = current.current.role;
@@ -199,7 +201,6 @@ export function useConversationSync({
           : viewerRole === "teacher" ? "student"
             : viewerRole === "student" ? "teacher" : null;
 
-        let requiresReceiptSync = false;
         if (
           payload.action === "read"
           && isSameChat(selected, id, type)
@@ -207,9 +208,8 @@ export function useConversationSync({
           && payload.message_ids.length
         ) {
           if (viewerRole === "admin" && type !== "personal") {
-            // The admin tick turns blue only after both participants have read.
-            // One batched sync refreshes all already loaded receipt states.
-            requiresReceiptSync = true;
+            // The admin receipt represents both participants; reconcile from
+            // the server rather than guessing which participant read first.
           } else if (expectedReader === payload.actor_role) {
             const readIds = new Set(payload.message_ids.map(Number));
             const readAt = payload.read_at || new Date().toISOString();
@@ -221,28 +221,28 @@ export function useConversationSync({
           }
         }
 
-        const key = type + ":" + id;
         const state = pending.current.get(key) || {
           conversation_id: id,
           conversation_type: type,
           deleted_message_ids: new Set(),
           refresh_messages: false,
         };
-        if (requiresReceiptSync) state.refresh_messages = true;
         if (payload.action === "delete" && payload.message_id) {
           state.deleted_message_ids.add(Number(payload.message_id));
-        } else if (payload.action === "read") {
-          // Participant read events are applied directly above unless the admin
-          // needs to reconcile the combined two-reader receipt.
-        } else {
+        }
+        // Read events also request an incremental status reconcile. This heals
+        // races with a concurrent send/read and keeps MessageBubble authoritative.
+        if (payload.action === "read" || payload.action !== "delete") {
           state.refresh_messages = true;
         }
         pending.current.set(key, state);
+        if (syncing.current && isSameChat(current.current.selectedChat, id, type)) {
+          syncQueued.current = true;
+        }
         void flush();
       });
     } else {
-      // All supported target browsers and the installed web app provide EventSource.
-      // A one-shot state reconcile is safer than introducing a polling loop.
+      // One-shot reconciliation is safer than introducing a polling loop.
       void recover().catch(() => {});
     }
 
