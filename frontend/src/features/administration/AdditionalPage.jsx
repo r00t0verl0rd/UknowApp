@@ -44,19 +44,19 @@ export default function AdditionalPage({ dataStats, dataBusy, loadDataStats, dow
         <article className="data-tool-card data-tool-primary">
           <div className="data-tool-icon"><ArchiveIcon/></div>
           <div className="data-tool-copy">
-            <div className="data-tool-kicker">ПОЛНАЯ КОПИЯ · ZIP</div>
+            <div className="data-tool-kicker">ПОЛНЫЙ ПЕРЕНОС ДАННЫХ · ZIP</div>
             <h3>Полная резервная копия UknowApp</h3>
-            <p>Один файл для сохранения и переноса всего приложения. Внутри — база данных и все медиафайлы.</p>
+            <p>Один архив для резервного копирования и переезда на другой сервер. В него автоматически попадает всё содержимое каталога data.</p>
             <div className="data-includes">
               <b><Check size={14}/> Что входит</b>
-              <ul><li>Все пользователи, роли, назначения и диалоги</li><li>Вся текстовая история и данные сообщений</li><li>Фотографии, аудио, голосовые, видео и документы</li><li>Настройки, служебные данные и связи между записями</li></ul>
+              <ul><li>Полная база SQLite: пользователи, роли, назначения и переписки</li><li>Все фотографии, аудио, голосовые, видео и документы</li><li>Ключ Web Push и остальные служебные файлы из data</li><li>Все будущие файлы в data автоматически, без изменения экспортера</li></ul>
             </div>
           </div>
           <div className="data-tool-actions">
             <button type="button" className="btn primary" onClick={() => downloadAdminFile("full")} disabled={dataBusy}>Скачать полную резервную копию</button>
             <label className="btn outline data-upload-label">{dataBusy ? "Обработка…" : "Восстановить из полной копии"}<input type="file" accept=".zip" disabled={dataBusy} onChange={e => { uploadAdminFile("full", e.target.files?.[0]); e.target.value = ""; }}/></label>
           </div>
-          <p className="data-warning">Восстановление полностью заменит текущую базу данных и папку медиафайлов. Используйте копию, созданную в UknowApp.</p>
+          <p className="data-warning">Восстановление заменит весь каталог data. В Docker backend перезапустится автоматически; при локальном запуске перезапустите backend вручную. Файл .env, токен Telegram и конфигурация сервера в архив не входят.</p>
         </article>
         <article className="data-tool-card">
           <div className="data-tool-icon"><DatabaseIcon/></div>
@@ -83,7 +83,7 @@ export default function AdditionalPage({ dataStats, dataBusy, loadDataStats, dow
           </div>
         </article>
       </div>
-      <div className="data-backup-hint"><b>Для обычного резервного копирования достаточно одной кнопки.</b><span>Скачайте полную резервную копию ZIP. В ней уже есть база данных, переписки и медиафайлы. Отдельные файлы предназначены для специальных случаев.</span></div>
+      <div className="data-backup-hint"><b>Для резервного копирования и переноса сервера используйте полную копию.</b><span>Архив содержит весь каталог data, включая базу, медиафайлы, ключ Web Push и другие файлы. Конфигурацию .env переносите отдельно.</span></div>
       <article className="data-cleanup-card">
         <div><div className="eyebrow">ХРАНЕНИЕ И ОЧИСТКА</div><h3>Удаление старых переписок и медиа</h3><p>Удаляются сообщения старше выбранного срока и связанные с ними архивные вложения. Аккаунты, назначения и сами диалоги сохраняются.</p></div>
         <div className="data-cleanup-actions"><label>Удалять старше<select value={retentionDays} onChange={e => setRetentionDays(e.target.value)} disabled={dataBusy}><option value="30">30 дней</option><option value="60">60 дней</option><option value="180">180 дней</option><option value="360">360 дней</option></select></label><button type="button" className="btn danger" onClick={cleanupOldDialogues} disabled={dataBusy}><Trash2 size={15}/>Удалить старые данные</button></div>
