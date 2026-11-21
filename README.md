@@ -2,6 +2,13 @@
 
 UknowApp is a school messaging MVP with a React admin panel, a FastAPI backend, SQLite storage and a Telegram bot.
 
+## Telegram deployment modes
+
+- **Local (default):** `TELEGRAM_MODE=local`. The main backend runs the existing aiogram long-polling worker using `TELEGRAM_BOT_TOKEN`. Existing deployments require no configuration changes.
+- **Remote:** `TELEGRAM_MODE=remote`. The main backend keeps all school data, chat workflows, attachments and teacher panels, while a separate Telegram gateway owns the real bot token, receives Telegram webhooks, and proxies Bot API calls and media streams over an authenticated HTTPS connection. Set `TELEGRAM_GATEWAY_URL` and `TELEGRAM_GATEWAY_TOKEN` on the primary; do not configure the BotFather token there.
+
+Follow [the two-server deployment and rollback guide](deploy/telegram/README.md) when moving the bot to a secondary VPS. **Never run local polling and remote webhook mode simultaneously for the same token.** The primary uses a durable inbound-update inbox and the gateway has its own persistent retry spool; the database and archived files remain exclusively on the main server.
+
 ## Local development on macOS
 
 Use a supported Python release (recommended: Python 3.11 or newer). Python 3.9 reached end of life on 2025-10-31 and no longer receives security updates. Existing Python 3.9 environments may still run with compatible dependency versions, but should be migrated to a supported interpreter.
