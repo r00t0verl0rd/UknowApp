@@ -102,7 +102,10 @@ class PersonalConversation(Base):
 
 class PersonalMessage(Base):
     __tablename__ = "personal_messages"
-    __table_args__ = (Index("ix_personal_messages_conversation_created_id", "conversation_id", "created_at", "id"),)
+    __table_args__ = (
+        Index("ix_personal_messages_conversation_created_id", "conversation_id", "created_at", "id"),
+        Index("ix_personal_messages_conversation_id_id", "conversation_id", "id"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     conversation_id: Mapped[int] = mapped_column(ForeignKey("personal_conversations.id"), nullable=False)
@@ -126,7 +129,10 @@ class TeacherSession(Base):
 class Message(Base):
     __tablename__ = "messages"
     # Ускоряет выборку истории и сортировку сообщений внутри одного диалога.
-    __table_args__ = (Index("ix_messages_conversation_created_id", "conversation_id", "created_at", "id"),)
+    __table_args__ = (
+        Index("ix_messages_conversation_created_id", "conversation_id", "created_at", "id"),
+        Index("ix_messages_conversation_id_id", "conversation_id", "id"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     conversation_id: Mapped[int] = mapped_column(ForeignKey("conversations.id"), nullable=False)

@@ -132,6 +132,16 @@ def create_tables() -> None:
             "CREATE INDEX IF NOT EXISTS ix_messages_conversation_created_id "
             "ON messages (conversation_id, created_at, id)",
         ))
+        connection.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_messages_conversation_id_id "
+            "ON messages (conversation_id, id)",
+        ))
+
+    with engine.begin() as connection:
+        connection.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_personal_messages_conversation_id_id "
+            "ON personal_messages (conversation_id, id)",
+        ))
 
     # Read markers for private in-app conversations.
     with engine.begin() as connection:
