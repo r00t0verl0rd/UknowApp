@@ -25,6 +25,7 @@ export function useConversationSync({
   const syncQueued = useRef(false);
   const eventRevision = useRef(new Map());
   const inboxRevision = useRef(0);
+  const inboxRequestRevision = useRef(0);
 
   current.current = {
     selectedChat, messages, role,
@@ -53,9 +54,14 @@ export function useConversationSync({
     };
 
     const refreshInbox = async () => {
+      const requestRevision = ++inboxRequestRevision.current;
       const revisionAtStart = inboxRevision.current;
       const [conversations, personal] = await getInboxData(request);
-      if (!active || revisionAtStart !== inboxRevision.current) return;
+      if (
+        !active
+        || requestRevision !== inboxRequestRevision.current
+        || revisionAtStart !== inboxRevision.current
+      ) return;
       current.current.setChats(conversations);
       current.current.setPersonalChats(personal);
     };
