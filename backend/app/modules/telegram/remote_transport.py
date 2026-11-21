@@ -18,8 +18,8 @@ class GatewaySession(AiohttpSession):
     def __init__(self, gateway_url: str, service_key: str):
         target = gateway_url.rstrip("/")
         parts = urlsplit(target)
-        if parts.scheme not in {"http", "https"} or not parts.netloc or parts.username or parts.password or parts.query or parts.fragment:
-            raise ValueError("TELEGRAM_GATEWAY_URL must be an HTTP(S) origin without credentials or query")
+        if (parts.scheme != "https" and not (parts.scheme == "http" and parts.hostname in {"localhost", "127.0.0.1", "::1"})) or not parts.netloc or parts.username or parts.password or parts.query or parts.fragment or parts.path not in {"", "/"}:
+            raise ValueError("TELEGRAM_GATEWAY_URL must be HTTPS (HTTP permitted for localhost tests) and contain no path, credentials or query")
         if not service_key or len(service_key) < 32:
             raise ValueError("TELEGRAM_GATEWAY_TOKEN must have at least 32 characters")
         self._service_key = service_key
