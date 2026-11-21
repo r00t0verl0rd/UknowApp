@@ -149,7 +149,7 @@ The separate **База данных отдельно** and **Медиафайл
 - The backend is not published directly to the internet; Caddy is the only public web service.
 - Browser requests use the same domain in production, so the frontend does not need a hardcoded API host.
 - SQLite is stored on a persistent volume. For a larger multi-instance deployment, move to PostgreSQL and redesign Telegram polling as a separately managed single worker before scaling the API.
-- HTTP Basic authentication is retained for this MVP. Use HTTPS, a unique strong admin password, SSH key authentication and a VPS firewall. Before production use with real student data, add stronger account/session management, access auditing, rate limiting and a tested backup/restore process.
+- The web panel uses server-managed sessions in secure, HTTP-only cookies; teacher credentials are stored as salted PBKDF2 hashes. Use HTTPS, a unique strong administrator password, SSH key authentication and a VPS firewall. Keep access auditing and backup/restore procedures under regular review.
 
 
 ## Web panel roles and messaging
