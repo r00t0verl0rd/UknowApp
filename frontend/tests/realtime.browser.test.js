@@ -179,6 +179,36 @@ test("global SSE updates real counters across tabs and replays missed events", {
     assert.notEqual(themeStyles.light.teacher, themeStyles["dark-soft"].teacher);
     assert.notEqual(themeStyles.light.student, themeStyles["dark-soft"].student);
 
+    // Назначение ученика повторяет зелёный фон и рамку карточки администратора.
+    for (const theme of ["light", "dark-soft"]) {
+      const colors = await page.evaluate(selectedTheme => {
+        const previous = document.documentElement.dataset.theme;
+        document.documentElement.dataset.theme = selectedTheme;
+        const root = document.createElement("div");
+        root.className = "content";
+        root.innerHTML = `
+          <div class="role_node">Администратор</div>
+          <div class="teacher-branch"><button type="button" class="add-student">Назначить ученика</button></div>
+        `;
+        document.body.append(root);
+        const adminStyle = getComputedStyle(root.querySelector(".role_node"));
+        const actionStyle = getComputedStyle(root.querySelector(".add-student"));
+        const colors = {
+          adminBackground: adminStyle.backgroundColor,
+          adminBorder: adminStyle.borderTopColor,
+          actionBackground: actionStyle.backgroundColor,
+          actionBorder: actionStyle.borderTopColor,
+        };
+        root.remove();
+        document.documentElement.dataset.theme = previous;
+        return colors;
+      }, theme);
+      assert.equal(colors.actionBackground, colors.adminBackground,
+        `${theme}: фон назначения соответствует карточке администратора`);
+      assert.equal(colors.actionBorder, colors.adminBorder,
+        `${theme}: рамка назначения соответствует карточке администратора`);
+    }
+
     // Проверяем общий квадратный контур кнопок во всех кабинетах, модальных окнах и темах.
     const originalViewport = page.viewportSize();
     for (const width of [390, 1280]) {
