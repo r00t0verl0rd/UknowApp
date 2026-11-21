@@ -22,7 +22,7 @@ export default function StructurePage({
         <div className="graph-legend-item"><span className="teacher-dot" />Учителя <CountBadge as="b" value={overview?.counts?.teachers || 0} label="учителей"/></div>
         <div className="graph-legend-item"><span className="student-dot" />Ученики <CountBadge as="b" value={overview?.counts?.students || 0} label="учеников"/></div>
       </div>
-      <Button type="button" variant="primary" className="graph-add-participant" onClick={() => openCreate()}><Plus />Добавить участника</Button>
+      <Button type="button" className="graph-add-participant ui-menu-control" onClick={() => openCreate()}><Plus />Добавить участника</Button>
     </div>
     <div className="role_node"><img src="/logo.png" alt="" /><div><b>Администратор</b><small>Полное управление</small></div></div>
     <div className="grid">

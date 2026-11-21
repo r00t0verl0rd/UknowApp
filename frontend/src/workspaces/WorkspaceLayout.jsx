@@ -45,7 +45,7 @@ export default function WorkspaceLayout({
         {navigation.filter(item => item.page !== "additional").map(item => {
           const Icon = item.icon;
           return <button key={item.page} type="button"
-            className={page === item.page ? "active" : ""}
+            className={`ui-menu-control${page === item.page ? " active" : ""}`}
             aria-current={page === item.page ? "page" : undefined}
             onClick={() => setPage(item.page)}>
             <Icon size={18}/>{item.label}
@@ -53,12 +53,12 @@ export default function WorkspaceLayout({
         })}
       </nav>
       <div className="sidebar-bottom">
-        {additionalItem && <button type="button" className="logout desktop-admin-extra"
+        {additionalItem && <button type="button" className={`logout desktop-admin-extra ui-menu-control${page === "additional" ? " active" : ""}`}
           aria-current={page === "additional" ? "page" : undefined}
           onClick={() => setPage(additionalItem.page)}>
           <Info size={18}/>{additionalItem.label}
         </button>}
-        <button type="button" className="logout desktop-sidebar-logout" onClick={() => setShowSignOutConfirm(true)}>
+        <button type="button" className="logout desktop-sidebar-logout ui-menu-control" onClick={() => setShowSignOutConfirm(true)}>
           <LogOut size={18}/>Выход
         </button>
         <div className="mobile-quick-actions">

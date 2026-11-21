@@ -8,7 +8,7 @@
   color-scheme: light;
 
   /* Основной шрифт интерфейса. */
-  --font-family-ui: Onest, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-family-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   /* Длительность анимаций. */
   --ui-transition-fast: 160ms ease;

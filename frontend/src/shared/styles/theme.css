@@ -38,7 +38,7 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, te
 }
 /* На компьютере вложения и отправка в одной строке. */
 /* Ненавязчивые подсказки полей входа. */
-.login-card .stack input::placeholder{ font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; font-weight: 400; letter-spacing: .1px; opacity: .82;}
+.login-card .stack input::placeholder{ font-family: var(--font-family-ui); font-size: 14px; font-weight: 400; letter-spacing: .1px; opacity: .82;}
 /* Цвета сообщений согласованы с карточками ролей. */
 /* Учитываем верхнюю безопасную область iPhone. */
 @media (max-width: 1024px) {.chats-main > .topbar{ box-sizing: border-box; height: calc(54px + env(safe-area-inset-top, 0px)); min-height: calc(54px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px);}

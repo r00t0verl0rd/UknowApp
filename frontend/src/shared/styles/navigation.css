@@ -1,0 +1,112 @@
+/* Общие правила меню для всех кабинетов и кнопки «Добавить участника».
+   Выделение показывает выбранный раздел, остальные кнопки выглядят одинаково. */
+:root {
+  --menu-bg: var(--ui-control-bg);
+  --menu-border: var(--ui-border);
+  --menu-text: var(--ui-control-text);
+  --menu-hover-bg: var(--ui-control-hover);
+  --menu-hover-border: var(--ui-border-strong);
+  --menu-active-bg: #e7dff3;
+  --menu-active-border: #d1c1e6;
+  --menu-active-text: #573e99;
+}
+:root[data-theme="dark-soft"] {
+  --menu-active-bg: #353149;
+  --menu-active-border: #49415f;
+  --menu-active-text: #c6bdf0;
+}
+
+/* Селекторы достаточно точны, чтобы заменить старые стили без изменений в сетке. */
+:root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control,
+:root .workspace-shell .graph-add-participant.ui-menu-control {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  box-sizing: border-box;
+  min-height: 42px;
+  padding: 10px 12px !important;
+  gap: 10px !important;
+  border: 1px solid var(--menu-border) !important;
+  border-radius: 11px !important;
+  background: var(--menu-bg) !important;
+  background-image: none !important;
+  color: var(--menu-text) !important;
+  box-shadow: none !important;
+  font-family: var(--font-family-ui) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1.35;
+  letter-spacing: -.01em;
+  text-decoration: none;
+  text-align: left;
+}
+:root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control > svg,
+:root .workspace-shell .graph-add-participant.ui-menu-control > svg {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.9;
+}
+:root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control:hover:not(:disabled),
+:root .workspace-shell .graph-add-participant.ui-menu-control:hover:not(:disabled) {
+  background: var(--menu-hover-bg) !important;
+  border-color: var(--menu-hover-border) !important;
+  color: var(--menu-text) !important;
+  box-shadow: none !important;
+}
+:root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control.active,
+:root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control[aria-current="page"] {
+  background: var(--menu-active-bg) !important;
+  border-color: var(--menu-active-border) !important;
+  color: var(--menu-active-text) !important;
+  box-shadow: none !important;
+}
+:root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control.active:hover,
+:root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control[aria-current="page"]:hover {
+  background: var(--menu-active-bg) !important;
+  border-color: var(--menu-active-border) !important;
+  color: var(--menu-active-text) !important;
+}
+:root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control:focus-visible,
+:root .workspace-shell .graph-add-participant.ui-menu-control:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 2px;
+}
+
+/* Имена, заголовки и пункты меню используют одну гарнитуру без тяжёлого Sora. */
+:root .workspace-shell :is(.person-info b, .role_node b, .school-label, .graph-legend) {
+  font-family: var(--font-family-ui) !important;
+}
+:root .workspace-shell .person-info b,
+:root .workspace-shell .role_node b {
+  font-weight: 650;
+}
+:root .workspace-shell .graph-legend {
+  font-weight: 600;
+}
+
+/* Горизонтальное меню на телефоне остаётся прокручиваемым. */
+@media (max-width: 1024px) {
+  :root .workspace-shell .sidebar nav > button.ui-menu-control {
+    min-height: 38px;
+    padding: 9px 8px !important;
+    font-size: clamp(10px, 2.8vw, 13px) !important;
+    gap: 5px !important;
+  }
+  :root .workspace-shell .sidebar nav > button.ui-menu-control > svg {
+    flex-basis: 16px;
+    width: 16px;
+    height: 16px;
+  }
+  :root .workspace-shell .graph-add-participant.ui-menu-control {
+    min-height: 38px;
+    padding: 8px 10px !important;
+    font-size: clamp(10px, 2.8vw, 13px) !important;
+    gap: 6px !important;
+    text-align: center;
+  }
+  :root .workspace-shell .graph-add-participant.ui-menu-control > svg {
+    flex-basis: 15px;
+    width: 15px;
+    height: 15px;
+  }
+}
