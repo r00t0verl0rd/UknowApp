@@ -721,7 +721,7 @@ async def send_panel_message(
                     "chat_id": target["chat_id"],
                     "thread_id": target.get("message_thread_id"),
                 })
-            except Exception as exc:
+            except (MessengerError, OSError, ValueError, TypeError, RuntimeError) as exc:
                 logger.warning(
                     "Telegram delivery failed for conversation_id=%s: %s",
                     conversation.id,
@@ -859,7 +859,7 @@ async def send_panel_attachment(
                     "chat_id": target["chat_id"],
                     "thread_id": target.get("message_thread_id"),
                 })
-            except Exception as exc:
+            except (MessengerError, OSError, ValueError, TypeError, RuntimeError) as exc:
                 logger.warning(
                     "Telegram delivery failed for conversation_id=%s: %s",
                     conversation.id,
