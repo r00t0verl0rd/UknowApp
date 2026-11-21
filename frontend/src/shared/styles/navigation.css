@@ -86,10 +86,10 @@
 
 /* Горизонтальное меню на телефоне остаётся прокручиваемым. */
 @media (max-width: 1024px) {
-  :root .workspace-shell .sidebar nav > button.ui-menu-control {
+  :root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control {
     min-height: 38px;
     padding: 9px 8px !important;
-    font-size: clamp(10px, 2.8vw, 13px) !important;
+    font-size: clamp(11px, 3vw, 13px) !important;
     gap: 5px !important;
   }
   :root .workspace-shell .sidebar nav > button.ui-menu-control > svg {
@@ -100,7 +100,7 @@
   :root .workspace-shell .content .graph-add-participant.ui-menu-control {
     min-height: 38px;
     padding: 8px 10px !important;
-    font-size: clamp(10px, 2.8vw, 13px) !important;
+    font-size: clamp(11px, 3vw, 13px) !important;
     gap: 6px !important;
     text-align: center;
   }
