@@ -16,7 +16,6 @@ export function usePanelDataState({
     try {
       const who = await getCurrentProfile(request);
       setProfile(who);
-      setPanelReady(true);
 
       const adminRequest = who.role === "admin" ? getAdminBootstrap(request) : Promise.resolve(null);
       const [[conversations, personal], adminData] = await Promise.all([
@@ -38,6 +37,7 @@ export function usePanelDataState({
       }
       setPanelReady(true);
     } catch (error) {
+      setPanelReady(true);
       setError(error.message);
       const message = String(error.message).toLowerCase();
       if (["учитель", "ученик", "логин", "сессия", "войдите", "учётная запись"].some(term => message.includes(term)) || message.includes("401")) {
