@@ -39,6 +39,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
   let inboxRequests = 0;
   let personalRequests = 0;
   let syncRequests = 0;
+  let latestUnread = personalChat.unread_count;
   let apiServer;
   let vite;
   let browser;
@@ -47,6 +48,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     response.write(`id: ${event.event_id}\nevent: update\ndata: ${JSON.stringify(event)}\n\n`);
   };
   const publish = event => {
+    if (event.summary) latestUnread = event.summary.unread_count;
     eventLog.push(event);
     for (const response of streams) writeEvent(response, event);
   };
@@ -108,7 +110,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
           delivery_status: "delivered",
           panel_read_at: "2026-11-21T11:00:00+00:00",
         }],
-        summary: { ...personalChat, unread_count: 0 },
+        summary: { ...personalChat, unread_count: latestUnread },
       };
     }
 
@@ -173,10 +175,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
     assert.equal(await page.getByLabel("4 непрочитанных личных сообщений").count(), 1,
       "duplicate event IDs must not apply twice");
 
-    await page.getByRole("button", { name: "Доски" }).click();
-    await waitFor(() => streams.size === 1);
-    for (const response of [...streams]) response.end();
-    await waitFor(() => streams.size === 0);
+    await page.getByRole("button", { name: /Учитель/ }).click();
+    await page.getByText("Проверка адресной синхронизации").waitFor({ state: "visible" });
     publish({
       event_id: 102,
       conversation_id: 5,
