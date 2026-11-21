@@ -1,20 +1,19 @@
-"""One-time compatibility upgrades for historical SQLite databases."""
+"""Обновление существующей схемы SQLite."""
 
 from sqlalchemy import inspect, text
 from app.core.database import engine
 
 
 def migrate_legacy_schema() -> None:
-    # Remove the temporary graph ordering table introduced by the reverted drag-sort feature.
+    # Удаляем временную таблицу сортировки структуры.
     with engine.begin() as connection:
         connection.execute(text("DROP TABLE IF EXISTS graph_positions"))
 
-    # The graph now stores hierarchical objects; legacy teacher-only coordinates are obsolete.
+    # Структура хранит иерархию, старые координаты не нужны.
     with engine.begin() as connection:
         connection.execute(text("DROP TABLE IF EXISTS graph_cloud_positions"))
 
-    # Copy legacy Telegram bindings without changing or deleting users.telegram_id.
-    # Existing bind dates were not stored, so linked_at remains NULL for migrated rows.
+    # Переносим привязки Telegram, не изменяя пользователей.
     with engine.begin() as connection:
         connection.execute(text(
             """
@@ -39,13 +38,13 @@ def migrate_legacy_schema() -> None:
             """,
         ))
 
-    # Remove the obsolete soft-disable flag from existing user tables.
+    # Удаляем неиспользуемый признак отключения.
     with engine.begin() as connection:
         user_columns = {column["name"] for column in inspect(connection).get_columns("users")}
         if "active" in user_columns:
             connection.execute(text("ALTER TABLE users DROP COLUMN active"))
 
-    # Archived conversations retain participant IDs without keeping obsolete assignments.
+    # Сохраняем участников архивных диалогов.
     with engine.connect() as connection:
         conversation_columns = {
             column["name"] for column in inspect(connection).get_columns("conversations")
@@ -86,7 +85,7 @@ def migrate_legacy_schema() -> None:
         ))
         connection.execute(text("DELETE FROM assignments WHERE active = 0"))
 
-    # Client-generated idempotency keys prevent duplicate panel messages after retries.
+    # Ключи запросов исключают дубли при повторной отправке.
     with engine.begin() as connection:
         message_columns = {
             column["name"] for column in inspect(connection).get_columns("messages")
@@ -130,7 +129,7 @@ def migrate_legacy_schema() -> None:
             "ON personal_messages (conversation_id, id)",
         ))
 
-    # Personal-chat idempotency prevents duplicate writes after client retries.
+    # Защищаем личные сообщения от повторной записи.
     with engine.begin() as connection:
         columns = {
             column["name"] for column in inspect(connection).get_columns("personal_messages")
@@ -144,7 +143,7 @@ def migrate_legacy_schema() -> None:
             "ON personal_messages (conversation_id, sender_role, client_message_id)",
         ))
 
-    # Read markers for private in-app conversations.
+    # Метки прочтения личных переписок.
     with engine.begin() as connection:
         columns = {column["name"] for column in inspect(connection).get_columns("personal_messages")}
         for column_name in ("admin_read_at", "participant_read_at"):
@@ -164,16 +163,14 @@ def migrate_legacy_schema() -> None:
         with engine.begin() as connection:
             connection.execute(text("ALTER TABLE users ADD COLUMN additional_info VARCHAR(500)"))
 
-    # Existing teachers receive their current full name as the initial web login.
+    # Изначальный логин преподавателя — его имя.
     with engine.begin() as connection:
         connection.execute(text(
             "UPDATE users SET web_username = full_name "
             "WHERE role = 'teacher' AND (web_username IS NULL OR TRIM(web_username) = '')",
         ))
 
-    # create_all does not add columns to an existing database. Keep this small,
-    # idempotent migration here so existing local SQLite installs are upgraded
-    # automatically when the backend starts.
+    # Дополняем существующую SQLite-схему при запуске.
     with engine.begin() as connection:
         columns = {
             column["name"]

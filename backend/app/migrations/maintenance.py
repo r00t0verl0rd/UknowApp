@@ -1,4 +1,4 @@
-"""Startup housekeeping that must continue after schema upgrades are complete."""
+"""Очистка устаревших данных после миграций."""
 
 from datetime import UTC, datetime, timedelta
 from sqlalchemy import text

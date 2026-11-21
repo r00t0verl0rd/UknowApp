@@ -1,1 +1,1 @@
-"""Business capabilities grouped by domain."""
+"""Бизнес-модули приложения."""

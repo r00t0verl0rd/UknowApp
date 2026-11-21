@@ -132,7 +132,7 @@ def _safe_data_entry(value: str) -> Path:
 
 
 def _require_backup_space(directory: Path, required: int) -> None:
-    # Keep working space for the live database, logs and concurrent requests.
+    # Оставляем место для БД и параллельных запросов.
     if shutil.disk_usage(directory).free < required + 256 * 1024 * 1024:
         raise HTTPException(status_code=507, detail="Недостаточно свободного места для резервной копии")
 
@@ -596,8 +596,7 @@ def _rollback_partial_restore(
             if destination.exists() or destination.is_symlink():
                 _remove_path(destination)
             previous.rename(destination)
-        # Keep the empty backup directory until the journal says "prepared".
-        # If the process stops now, the next startup can safely repeat the rollback.
+        # Сохраняем папку копии до фиксации восстановления.
 
 
 def _cleanup_orphaned_restore_stages(data_dir: Path) -> None:
@@ -608,7 +607,7 @@ def _cleanup_orphaned_restore_stages(data_dir: Path) -> None:
 
 
 def apply_pending_data_restore() -> bool:
-    """Apply a verified restore before DB migrations and background workers start."""
+    """Восстановить данные до миграций и фоновых задач."""
     data_dir = DATA_DIR.resolve()
     data_dir.mkdir(parents=True, exist_ok=True)
     marker_path = data_dir / PENDING_RESTORE_NAME

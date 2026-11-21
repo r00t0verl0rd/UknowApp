@@ -42,7 +42,7 @@ class User(Base):
 @event.listens_for(User, "before_insert")
 @event.listens_for(User, "before_update")
 def _refresh_login_lookup(_mapper, _connection, user: User) -> None:
-    # All ORM create/edit paths keep the indexed casefold key in sync.
+    # При изменениях синхронизируем индексированный логин.
     user.web_login_key = normalize_login(user.web_username or user.full_name)
 
 
@@ -210,7 +210,7 @@ class TeacherPanel(Base):
 
 
 class StudentTelegramGroup(Base):
-    """Telegram forum topic linked to one student's UknowApp conversation."""
+    """Тема Telegram, привязанная к переписке ученика."""
 
     __tablename__ = "student_telegram_groups"
     __table_args__ = (
@@ -228,7 +228,7 @@ class StudentTelegramGroup(Base):
 
 
 class MessengerAccount(Base):
-    """External messenger identity linked to one UknowApp user."""
+    """Аккаунт мессенджера, привязанный к пользователю."""
 
     __tablename__ = "messenger_accounts"
     __table_args__ = (
@@ -266,7 +266,7 @@ class MessengerAccount(Base):
 
 
 class RealtimeEvent(Base):
-    """Durable ordered log of committed conversation/read/delivery events."""
+    """Журнал событий сообщений и прочтения."""
 
     __tablename__ = "realtime_events"
     __table_args__ = (

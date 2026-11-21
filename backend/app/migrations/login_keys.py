@@ -1,4 +1,4 @@
-"""Add and populate a Unicode-safe indexed login lookup for existing users."""
+"""Индексированный поиск логина с учётом Unicode."""
 
 from sqlalchemy import inspect, select, text
 from app.core.database import SessionLocal, engine
@@ -15,7 +15,7 @@ def migrate_login_keys() -> None:
             "CREATE INDEX IF NOT EXISTS ix_users_web_login_key ON users (web_login_key)"
         ))
 
-    # Python casefold() preserves Unicode semantics (including Cyrillic) on SQLite.
+    # casefold() корректно нормализует Unicode, включая кириллицу.
     with SessionLocal() as db:
         for user in db.scalars(select(User)).all():
             user.web_login_key = normalize_login(user.web_username or user.full_name)

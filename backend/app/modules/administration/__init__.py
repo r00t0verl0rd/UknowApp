@@ -1,1 +1,1 @@
-"""Administration workflows and data maintenance."""
+"""Администрирование и обслуживание данных."""

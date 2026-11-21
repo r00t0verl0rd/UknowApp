@@ -1,1 +1,1 @@
-"""Teacher/student assignment domain."""
+"""Назначения учеников преподавателям."""
