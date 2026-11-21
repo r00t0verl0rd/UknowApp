@@ -19,22 +19,26 @@ export default function App() {
   const { setPersonalChats } = personalState;
   const { page, setPage, error, setError, toast, setToast, modal, setModal } = useUiState();
   const directory = useDirectoryState();
+  const workspace = profile ? workspaceRegistry[profile.role] : null;
   const { request, refresh, panelReady } = usePanelDataState({
     auth, setAuth, setProfile, setError, setChats,
     setPersonalChats, setUsers: directory.setUsers, setOverview: directory.setOverview,
-    setPage, setSelectedChat, setMessages,
+    setSelectedChat, setMessages,
   });
   const notify = useCallback(message => {
     setToast(message);
     window.setTimeout(() => setToast(""), 2600);
   }, [setToast]);
+
   useEffect(() => {
-    if (auth && profile?.role === "teacher") setPage("chats");
-  }, [auth, profile?.role, setPage]);
+    if (!auth || !panelReady || !profile || !workspace) return;
+    const accessiblePage = workspace.pages.includes(page) ? page : workspace.pages[0];
+    setPage(accessiblePage, { replace: true });
+  }, [auth, panelReady, profile, page, setPage, workspace]);
 
   const push = usePushNotificationsState({ auth, selectedChat, notify, setError });
   const { signIn, signOut } = useAuthController({
-    authState, setError, setPage, setPushBusy: push.setPushBusy, setPushState: push.setPushState,
+    authState, setError, setPushBusy: push.setPushBusy, setPushState: push.setPushState,
     setUsers: directory.setUsers, setOverview: directory.setOverview,
     setChats, setPersonalChats, setMessages, setSelectedChat, setDraft, setAttachment, notify,
   });
@@ -42,9 +46,8 @@ export default function App() {
   if (!auth) return <LoginPage theme={theme} toggleTheme={toggleTheme} signIn={signIn}
     login={login} setLogin={setLogin} password={password} setPassword={setPassword} error={error} />;
   if (!panelReady || !profile) return null;
-
-  const workspace = workspaceRegistry[profile.role];
   if (!workspace) return null;
+
   const workspacePage = workspace.pages.includes(page) ? page : workspace.pages[0];
   const context = {
     auth, profile, page: workspacePage, setPage, request, refresh, notify, error, setError, modal, setModal,
