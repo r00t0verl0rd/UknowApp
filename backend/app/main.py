@@ -14,6 +14,7 @@ from .api import router
 from .core.config import (
     ALLOWED_ORIGINS,
     SEED_DEMO_DATA,
+    TELEGRAM_BOT_ENABLED,
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_PROXY_URL,
 )
@@ -106,7 +107,7 @@ async def lifespan(app: FastAPI):
     bot = None
     dispatcher = None
     polling_lock_fd = None
-    if TELEGRAM_BOT_TOKEN:
+    if TELEGRAM_BOT_ENABLED and TELEGRAM_BOT_TOKEN:
         from .modules.telegram.bot import create_dispatcher
 
         bot = create_telegram_bot(TELEGRAM_BOT_TOKEN, TELEGRAM_PROXY_URL)
@@ -138,7 +139,10 @@ async def lifespan(app: FastAPI):
     else:
         app.state.telegram_bot = None
         app.state.communication = CommunicationService()
-        logger.error("TELEGRAM_BOT_TOKEN_EMPTY: Telegram bot is disabled; admin API remains available.")
+        if not TELEGRAM_BOT_ENABLED:
+            logger.info("TELEGRAM_MODULE_DISABLED: UknowApp runs without the optional Telegram adapter.")
+        else:
+            logger.info("TELEGRAM_MODULE_DISABLED: no Telegram bot token is configured.")
     try:
         yield
     finally:
@@ -160,7 +164,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="UknowApp API",
-    description="Школьная система приватной переписки ученика и учителя через Telegram-бота.",
+    description="Школьная система переписки: UknowApp — источник истины, внешние мессенджеры — подключаемые каналы.",
     version="0.1.0",
     lifespan=lifespan,
 )
