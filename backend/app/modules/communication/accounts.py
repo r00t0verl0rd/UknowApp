@@ -34,6 +34,25 @@ def get_messenger_account(
     )
 
 
+def get_messenger_pair(
+    db: Session,
+    teacher_id: int,
+    student_id: int,
+    platform: MessengerPlatform | str,
+) -> tuple[MessengerAccount | None, MessengerAccount | None]:
+    """Return both linked conversation accounts with one local database query."""
+    platform_value = platform.value if isinstance(platform, MessengerPlatform) else platform
+    accounts = db.scalars(
+        select(MessengerAccount).where(
+            MessengerAccount.user_id.in_((teacher_id, student_id)),
+            MessengerAccount.platform == platform_value,
+            MessengerAccount.status == "linked",
+        ),
+    ).all()
+    by_user_id = {account.user_id: account for account in accounts}
+    return by_user_id.get(teacher_id), by_user_id.get(student_id)
+
+
 def get_messenger_user(
     db: Session,
     platform: MessengerPlatform | str,

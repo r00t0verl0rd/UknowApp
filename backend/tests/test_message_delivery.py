@@ -4,7 +4,7 @@ import json
 """Regression tests for UknowApp-first message delivery and read receipts."""
 
 from app.models import Assignment, Conversation, Message, User
-from app.modules.communication.accounts import sync_messenger_account
+from app.modules.communication.accounts import get_messenger_pair, sync_messenger_account
 from app.modules.communication.contracts import (
     DeliveryResult,
     InboundMessage,
@@ -205,6 +205,38 @@ class FakeInboundGateway:
         self.deleted_messages.append((external_chat_id, external_message_id))
 
 
+def test_messenger_pair_requires_both_participants_on_same_platform(api):
+    _, users, sessions = api
+    with sessions() as db:
+        teacher_id = users["teacher-one"]
+        student_id = users["student-one"]
+        sync_messenger_account(
+            db, teacher_id, MessengerPlatform.TELEGRAM,
+            external_user_id="teacher-telegram-user",
+        )
+        db.commit()
+
+        teacher_account, student_account = get_messenger_pair(
+            db, teacher_id, student_id, MessengerPlatform.TELEGRAM,
+        )
+        assert teacher_account is not None
+        assert student_account is None
+
+        sync_messenger_account(
+            db, student_id, MessengerPlatform.TELEGRAM,
+            external_user_id="student-telegram-user",
+        )
+        db.commit()
+        teacher_account, student_account = get_messenger_pair(
+            db, teacher_id, student_id, MessengerPlatform.TELEGRAM,
+        )
+        assert teacher_account is not None
+        assert student_account is not None
+        assert get_messenger_pair(
+            db, teacher_id, student_id, MessengerPlatform.MAX,
+        ) == (None, None)
+
+
 def test_teacher_telegram_reply_without_student_telegram_is_delivered_in_uknowapp(api):
     _, users, sessions = api
     gateway = FakeInboundGateway()
@@ -266,7 +298,6 @@ def test_teacher_telegram_reply_without_student_telegram_is_delivered_in_uknowap
         assert metadata["telegram_delivery_errors"][0]["reason"] == (
             "Аккаунт получателя не подключён к TELEGRAM"
         )
-        assert gateway.sent_texts[0][1] == (
-            "Ответ сохранён в UknowApp. Ученик увидит его в своей личной панели."
-        )
-        assert gateway.deleted_messages == [("teacher-telegram-chat", "101")]
+        # Incomplete pair: do not use Telegram send/delete APIs at all.
+        assert gateway.sent_texts == []
+        assert gateway.deleted_messages == []

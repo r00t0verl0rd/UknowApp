@@ -47,7 +47,7 @@ from app.models import (
     TeacherSession,
     User,
 )
-from app.modules.communication.accounts import get_messenger_account
+from app.modules.communication.accounts import get_messenger_account, get_messenger_pair
 from app.modules.communication.contracts import (
     MessageKind,
     MessengerError,
@@ -76,9 +76,10 @@ router = APIRouter(prefix="/api")
 def _panel_student_telegram_target(
     db: Session,
     conversation: Conversation,
+    account=None,
 ) -> dict | None:
     student = conversation.student
-    account = get_messenger_account(db, student.id, MessengerPlatform.TELEGRAM)
+    account = account or get_messenger_account(db, student.id, MessengerPlatform.TELEGRAM)
     if not account:
         return None
     target = {"chat_id": account.external_chat_id or account.external_user_id}
@@ -652,27 +653,36 @@ async def _deliver_panel_message(
     student: User,
     body: str,
     content_type: MessageKind,
-    student_telegram_target: dict | None = None,
     media: OutboundMedia | None = None,
 ) -> dict[str, dict[str, list[dict]]]:
-    """Fan out a saved UknowApp message to every enabled, linked messenger."""
+    """Send through a provider only when teacher and student both linked it."""
     results: dict[str, dict[str, list[dict]]] = {}
     if communication is None:
         return results
 
     for platform in communication.platforms:
+        teacher_account, student_account = get_messenger_pair(
+            db, conversation.teacher_id, conversation.student_id, platform,
+        )
+        # A one-sided connection is not a delivery route. Skip the adapter
+        # entirely instead of sending to only one participant or probing it.
+        if not teacher_account or not student_account:
+            continue
+
+        accounts_by_user = {
+            conversation.teacher_id: teacher_account,
+            conversation.student_id: student_account,
+        }
+        student_telegram_target = (
+            _panel_student_telegram_target(db, conversation, student_account)
+            if platform == MessengerPlatform.TELEGRAM
+            and any(role == "student" for _, role in recipients)
+            else None
+        )
         delivered: list[dict] = []
         errors: list[dict] = []
         for recipient, recipient_role in recipients:
-            account = get_messenger_account(db, recipient.id, platform)
-            if not account:
-                errors.append({
-                    "name": recipient.full_name,
-                    "role": recipient_role,
-                    "reason": platform.value.upper() + " не подключён",
-                })
-                continue
-
+            account = accounts_by_user[recipient.id]
             target = (
                 student_telegram_target
                 if platform == MessengerPlatform.TELEGRAM and recipient_role == "student"
@@ -844,16 +854,6 @@ async def send_panel_message(
 
     sender, recipients, student, teacher = _panel_sender_and_recipients(db, principal, conversation)
 
-    student_target = (
-        _panel_student_telegram_target(db, conversation)
-        if any(role == "student" for _, role in recipients) else None
-    )
-
-    student_target = (
-        _panel_student_telegram_target(db, conversation)
-        if any(role == "student" for _, role in recipients) else None
-    )
-
     row = Message(
         conversation_id=conversation.id,
         sender_id=sender.id,
@@ -891,16 +891,16 @@ async def send_panel_message(
         student,
         body,
         MessageKind.TEXT,
-        student_telegram_target=student_target,
     )
     _save_panel_messenger_results(db, row, conversation, messenger_results)
 
-    background_tasks.add_task(
-        _refresh_teacher_panel_after_web_delivery,
-        bot,
-        teacher.id,
-        conversation.id,
-    )
+    if bot and MessengerPlatform.TELEGRAM.value in messenger_results:
+        background_tasks.add_task(
+            _refresh_teacher_panel_after_web_delivery,
+            bot,
+            teacher.id,
+            conversation.id,
+        )
 
     return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"), principal=principal)
 
@@ -935,11 +935,6 @@ async def send_panel_attachment(
         "local_path": relative.as_posix(),
         "archive_status": "stored",
     }
-    student_target = (
-        _panel_student_telegram_target(db, conversation)
-        if any(role == "student" for _, role in recipients) else None
-    )
-
     row = Message(
         conversation_id=conversation.id,
         sender_id=sender.id,
@@ -975,7 +970,6 @@ async def send_panel_attachment(
         student,
         row.text,
         MessageKind(kind),
-        student_telegram_target=student_target,
         media=OutboundMedia(
             storage_key=relative.as_posix(),
             file_name=original_name,
@@ -984,10 +978,11 @@ async def send_panel_attachment(
     )
     _save_panel_messenger_results(db, row, conversation, messenger_results)
 
-    background_tasks.add_task(
-        _refresh_teacher_panel_after_web_delivery,
-        bot,
-        teacher.id,
-        conversation.id,
-    )
+    if bot and MessengerPlatform.TELEGRAM.value in messenger_results:
+        background_tasks.add_task(
+            _refresh_teacher_panel_after_web_delivery,
+            bot,
+            teacher.id,
+            conversation.id,
+        )
     return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"), principal=principal)

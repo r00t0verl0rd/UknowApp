@@ -27,6 +27,7 @@ from app.modules.communication.accounts import (
     CONNECTION_CODE_RE,
     claim_messenger_connection_code,
     get_messenger_account,
+    get_messenger_pair,
     get_messenger_user,
 )
 from app.modules.communication.contracts import (
@@ -718,10 +719,15 @@ async def process_inbound_message(
     publish_chat_update(conversation.id)
     await gateway.archive_media(inbound, row)
 
-    recipient_account = get_messenger_account(db, recipient.id, inbound.platform)
+    teacher_account, student_account = get_messenger_pair(
+        db, conversation.teacher_id, conversation.student_id, inbound.platform,
+    )
+    recipient_account = (
+        student_account if recipient.role == "student" else teacher_account
+    )
     recipient_chat_id = (
         recipient_account.external_chat_id or recipient_account.external_user_id
-        if recipient_account else None
+        if teacher_account and student_account and recipient_account else None
     )
     if not recipient_chat_id:
         metadata = json.loads(row.metadata_json or "{}")
@@ -736,33 +742,16 @@ async def process_inbound_message(
             status="not_connected",
         )
         row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-        # The external channel is optional: the recipient still receives this
-        # message in their UknowApp conversation and via in-app notifications.
+        # UknowApp is the destination of record. When the pair is incomplete,
+        # keep the inbound message locally and make no provider-side send,
+        # delete, or forwarding attempt.
         row.delivery_status = "delivered"
         db.commit()
         publish_chat_update(conversation.id)
 
         if sender.role == "teacher":
             mark_messages_read_by_teacher(db, unanswered_before_reply)
-            if inbound.text:
-                try:
-                    await gateway.delete_message(
-                        inbound.external_chat_id, inbound.external_message_id,
-                    )
-                except MessengerError as exc:
-                    logger.info(
-                        "Could not remove teacher text after UknowApp delivery (error_type=%s)",
-                        type(exc).__name__,
-                    )
-            confirmation = "Ответ сохранён в UknowApp. Ученик увидит его в своей личной панели."
-        else:
-            confirmation = "Сообщение доставлено учителю в UknowApp. Он увидит его в личной панели."
 
-        await gateway.send_text(
-            inbound.external_chat_id,
-            confirmation,
-            inbound.external_thread_id,
-        )
         return InboundProcessResult(
             refresh_teacher_id=conversation.teacher_id,
             force_teacher_panel_refresh=sender.role == "student",
