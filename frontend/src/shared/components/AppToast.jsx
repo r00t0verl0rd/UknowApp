@@ -1,4 +1,4 @@
-import CircleX from "lucide-react/dist/esm/icons/circle-x.js";
+import CircleAlert from "lucide-react/dist/esm/icons/circle-alert.js";
 import X from "lucide-react/dist/esm/icons/x.js";
 import { createPortal } from "react-dom";
 import Check from "lucide-react/dist/esm/icons/check.js";
@@ -6,9 +6,9 @@ import Check from "lucide-react/dist/esm/icons/check.js";
 export default function AppToast({ message, onDismiss }) {
   return message ? createPortal(
     <div className={onDismiss ? "toast toast-error" : "toast"} role={onDismiss ? "alert" : "status"}>
-      {onDismiss ? <CircleX aria-hidden="true"/> : <Check aria-hidden="true"/>}
-      <span>{message}</span>
-      {onDismiss && <button type="button" aria-label="Закрыть уведомление об ошибке" onClick={onDismiss}><X/></button>}
+      {onDismiss ? <CircleAlert size={18} aria-hidden="true"/> : <Check size={16} aria-hidden="true"/>}
+      <span className="toast-message">{message}</span>
+      {onDismiss && <button className="toast-close" type="button" aria-label="Закрыть уведомление об ошибке" onClick={onDismiss}><X size={14} strokeWidth={1.8} aria-hidden="true"/></button>}
     </div>,
     document.body,
   ) : null;

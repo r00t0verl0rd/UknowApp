@@ -22,6 +22,18 @@ try {
     await page.getByRole("button", { name: "Войти" }).click();
     const alert = page.getByRole("alert");
     await alert.getByText("Введите логин").waitFor();
+    const close = alert.getByRole("button", { name: "Закрыть уведомление об ошибке" });
+    for (const width of [390, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        await page.evaluate(value => { document.documentElement.dataset.theme = value; }, theme);
+        const icon = await close.locator("svg").boundingBox();
+        const target = await close.boundingBox();
+        assert.equal(icon.width, 14);
+        assert.equal(icon.height, 14);
+        assert.ok(target.width >= 40 && target.height >= 40);
+      }
+    }
     await alert.getByRole("button", { name: "Закрыть уведомление об ошибке" }).click();
     await alert.waitFor({ state: "hidden" });
   }
