@@ -5,6 +5,7 @@ from sqlalchemy import and_, case, func, select
 from sqlalchemy.orm import Session
 
 from app.event_hub import publish_chat_update
+
 from ...models import PersonalConversation, PersonalMessage
 
 
