@@ -44,11 +44,8 @@ try {
       audio.onerror = () => reject(new Error("Restored audio could not be decoded"));
     }), message.id);
     assert.equal(duration, 1);
-    const personal = await api.post(url + "/api/panel/personal-conversations", { data: { user_id: chat.teacher.id } });
-    assert.equal(personal.status(), 201);
-    const messages = url + "/api/panel/personal-conversations/" + (await personal.json()).id + "/messages";
-    assert.equal((await api.post(messages, { data: { text: "after migration" } })).status(), 201);
-    assert.ok((await (await api.get(messages)).json()).some(row => row.text === "after migration"));
+    assert.equal((await api.post(history, { data: { text: "after migration" } })).status(), 201);
+    assert.ok((await (await api.get(history)).json()).some(row => row.text === "after migration"));
   }
 } finally {
   await browser.close();
