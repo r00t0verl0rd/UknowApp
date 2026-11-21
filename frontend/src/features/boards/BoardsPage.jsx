@@ -1,5 +1,6 @@
 import { memo, useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import { useBoardsState } from "../../shared/hooks/boards/useBoardsState.js";
+import Panel from "../../shared/components/Panel.jsx";
 import Crosshair from "lucide-react/dist/esm/icons/crosshair.js";
 import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
@@ -180,7 +181,7 @@ export default function BoardsPage() {
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
   }, []);
 
-  return <section className="graph-panel graph-object-panel">
+  return <Panel className="graph-object-panel">
     {error && <div className="alert alert-row" role="alert">{error}<button type="button" onClick={clearError} aria-label="Закрыть">×</button></div>}
     <BoardToolbar onResetView={resetView} onAddObject={addObject} />
     <div
@@ -198,5 +199,5 @@ export default function BoardsPage() {
         {!loading && !boardObjects.length && <div className="graph-board-empty">Доска пока пустая. Создайте первый объект.</div>}
       </div>
     </div>
-  </section>;
+  </Panel>;
 }
