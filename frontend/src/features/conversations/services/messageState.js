@@ -35,8 +35,17 @@ function preserveMonotonicState(previous, incoming) {
   if (Number.isFinite(previousRead) && (!Number.isFinite(incomingRead) || previousRead > incomingRead)) {
     result.panel_read_at = previous.panel_read_at;
   }
-  if (previous.delivery_status === "delivered" && incoming.delivery_status === "pending") {
-    result.delivery_status = previous.delivery_status;
+  const previousStatus = previous.delivery_status;
+  if (previousStatus && previousStatus !== "pending" && incoming.delivery_status !== previousStatus) {
+    result.delivery_status = previousStatus;
+  }
+  for (const key of ["teacher_read_at", "student_read_at"]) {
+    const previousReadAt = Date.parse(previous.metadata?.[key] || "");
+    const incomingReadAt = Date.parse(incoming.metadata?.[key] || "");
+    if (Number.isFinite(previousReadAt)
+      && (!Number.isFinite(incomingReadAt) || previousReadAt > incomingReadAt)) {
+      result.metadata[key] = previous.metadata[key];
+    }
   }
   return result;
 }
