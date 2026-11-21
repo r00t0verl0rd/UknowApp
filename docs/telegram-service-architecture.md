@@ -4,11 +4,23 @@
 
 Prepare UknowApp to run the Telegram Bot API integration on a separate foreign server using Telegram webhooks, while keeping the application backend, business rules, persistent media storage, and database on the primary server.
 
-This document describes the target architecture. It does not claim that the remote service or webhook flow is implemented yet.
+This document describes both deployment modes. The local mode is the original
+polling implementation. The remote gateway, protected Bot API transport, durable
+inbound inbox and secondary-VPS Compose setup are implemented in the
+`feature/telegram-dual-server-mode` branch, but **production cutover has not been
+performed or validated with a live BotFather token**. Deployment instructions are
+at `deploy/telegram/README.md`.
 
-## Current implementation
+The current code uses independent 32+ character shared secrets over HTTPS for
+gateway-to-primary and primary-to-gateway requests, not per-message HMAC
+signatures/nonces. Telegram webhook authentication uses its dedicated webhook
+secret header. Replay duplicates are deduplicated by the Telegram update ID at
+the primary durable inbox; the system provides at-least-once processing, not
+exactly-once side effects.
 
-- FastAPI starts aiogram long polling inside the main backend process.
+## Local-mode implementation
+
+- With `TELEGRAM_MODE=local` (the default), FastAPI starts aiogram long polling inside the main backend process.
 - Telegram handlers directly use SQLAlchemy sessions, application models, and the event hub.
 - Handlers archive Telegram attachments into the primary server's persistent media directory.
 - The web API directly calls the aiogram Bot for sending, copying, editing, and deleting Telegram messages and files.
@@ -104,12 +116,12 @@ Requirements:
 
 ## Migration sequence
 
-1. **Inventory and contracts (current stage):** document every inbound update, Bot API operation, file flow, and current database side effect. No runtime behavior changes.
-2. **Introduce a gateway boundary:** replace direct Bot API calls in application code with an application-owned Telegram gateway interface, initially backed by the existing local aiogram Bot. Keep behavior unchanged.
-3. **Separate update processing:** make update handling callable from a trusted internal entry point, add durable idempotent acceptance, and remove assumptions that updates arrive only from local polling.
-4. **Implement the foreign gateway:** webhook receiver, Telegram token ownership, outbound command API, retry handling, and secure file relay.
-5. **Cut over:** deploy the gateway, configure Telegram webhook, verify inbound and outbound behavior, then disable local polling. Keep a controlled rollback path.
-6. **Remove transitional code:** delete polling-only code and proxy configuration only after the webhook deployment is stable.
+1. **Inventory and contracts (implemented):** document every inbound update, Bot API operation, file flow, and current database side effect. No runtime behavior changes.
+2. **Introduce a gateway boundary (implemented):** replace direct Bot API calls in application code with an application-owned Telegram gateway interface, initially backed by the existing local aiogram Bot. Keep behavior unchanged.
+3. **Separate update processing (implemented; update-ID deduplication, not globally exactly-once):** make update handling callable from a trusted internal entry point, add durable idempotent acceptance, and remove assumptions that updates arrive only from local polling.
+4. **Implement the foreign gateway (implemented in the feature branch):** webhook receiver, Telegram token ownership, outbound command API, retry handling, and secure file relay.
+5. **Cut over (NOT DONE):** deploy the gateway, configure Telegram webhook, verify inbound and outbound behavior, then disable local polling. Keep a controlled rollback path.
+6. **Remove transitional code (NOT DONE):** delete polling-only code and proxy configuration only after the webhook deployment is stable.
 
 Each step should be a small, independently reviewable change. Do not change the database schema unless a concrete requirement cannot be met with the existing models and durable processing design.
 
