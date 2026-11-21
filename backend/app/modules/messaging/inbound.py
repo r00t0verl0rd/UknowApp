@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Protocol
 
-from sqlalchemy import select
+from sqlalchemy import select, tuple_
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -207,6 +207,48 @@ def conversation_messages(db: Session, conversation_id: int) -> list[Message]:
     ).all()
 
 
+def recent_conversation_messages(
+    db: Session, conversation_id: int, limit: int = 12,
+) -> list[Message]:
+    """Read only the visible tail of a conversation, in chronological order."""
+    rows = db.scalars(
+        select(Message)
+        .where(Message.conversation_id == conversation_id)
+        .order_by(Message.created_at.desc(), Message.id.desc())
+        .limit(limit),
+    ).all()
+    return list(reversed(rows))
+
+
+def unanswered_conversation_messages(
+    db: Session, conversation_id: int,
+) -> list[Message]:
+    """Fetch student messages after the last non-blocked teacher reply."""
+    last_teacher_reply = db.scalar(
+        select(Message)
+        .where(
+            Message.conversation_id == conversation_id,
+            Message.sender_role == "teacher",
+            Message.delivery_status != "blocked_contact",
+        )
+        .order_by(Message.created_at.desc(), Message.id.desc())
+        .limit(1),
+    )
+    query = select(Message).where(
+        Message.conversation_id == conversation_id,
+        Message.sender_role == "student",
+        Message.delivery_status != "blocked_contact",
+    )
+    if last_teacher_reply is not None:
+        query = query.where(
+            tuple_(Message.created_at, Message.id)
+            > (last_teacher_reply.created_at, last_teacher_reply.id),
+        )
+    return db.scalars(
+        query.order_by(Message.created_at, Message.id),
+    ).all()
+
+
 def unanswered_student_messages(rows: list[Message]) -> list[Message]:
     # Rows already exist in the UknowApp database. External messenger failures
     # must not make an in-app message disappear from the conversation workflow.
@@ -257,12 +299,12 @@ def mark_messages_read_by_teacher(db: Session, messages: list[Message]) -> None:
 def mark_visible_messages_read_by_teacher(
     db: Session, conversation: Conversation,
 ) -> None:
-    rows = conversation_messages(db, conversation.id)
+    rows = recent_conversation_messages(db, conversation.id)
     mark_messages_read_by_teacher(
         db,
         [
             row
-            for row in rows[-12:]
+            for row in rows
             if row.sender_role == "student" and row.delivery_status != "blocked_contact"
         ],
     )
@@ -527,17 +569,19 @@ async def _deliver_student_message_to_teacher(
             )
             metadata["teacher_inbox_notice_message_id"] = int(notice_id)
         metadata["teacher_inbox_media_message_id"] = int(copied_id)
-    record_messenger_delivery(
-        metadata,
-        inbound.platform,
-        delivered=[{
-            "user_id": teacher.id,
-            "external_message_id": str(copied_id),
-            "external_chat_id": teacher_chat_id,
-        }],
-    )
-    row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+        record_messenger_delivery(
+            metadata,
+            inbound.platform,
+            delivered=[{
+                "user_id": teacher.id,
+                "external_message_id": str(copied_id),
+                "external_chat_id": teacher_chat_id,
+            }],
+        )
+        row.metadata_json = json.dumps(metadata, ensure_ascii=False)
 
+    # Text is shown through the refreshed teacher panel, not a separate copy.
+    # Only attachments have a Telegram copy_message identifier.
     row.delivery_status = "delivered"
     db.commit()
     publish_conversation_update(
@@ -745,7 +789,7 @@ async def process_inbound_message(
         return InboundProcessResult(refresh_teacher_id=conversation.teacher_id)
 
     unanswered_before_reply = (
-        unanswered_student_messages(conversation_messages(db, conversation.id))
+        unanswered_conversation_messages(db, conversation.id)
         if sender.role == "teacher" else []
     )
     if sender.role == "teacher":
