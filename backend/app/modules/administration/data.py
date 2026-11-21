@@ -298,6 +298,14 @@ def _build_full_backup(archive_path: Path, staging_root: Path) -> dict:
         })
 
     missing_media = _count_missing_media_references(staged_database, staged_data)
+    if missing_media:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Полная копия не создана: база ссылается на отсутствующие медиафайлы "
+                f"({missing_media}). Исправьте или восстановите вложения и повторите экспорт."
+            ),
+        )
     manifest = {
         "format": FULL_BACKUP_FORMAT,
         "format_version": 2,
