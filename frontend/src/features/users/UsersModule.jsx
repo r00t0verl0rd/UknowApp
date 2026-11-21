@@ -47,7 +47,9 @@ export default function UsersModule({
       disconnectingTelegram={state.disconnectingTelegram}
       confirmDisconnectTelegram={state.confirmDisconnectTelegram}
       issuedCredential={state.issuedCredential} setIssuedCredential={state.setIssuedCredential}
-      notify={notify} code={state.code} setCode={state.setCode}\n      unassignCandidate={state.unassignCandidate} setUnassignCandidate={state.setUnassignCandidate}\n      unassigningStudent={state.unassigningStudent} confirmUnassignStudent={state.confirmUnassignStudent}
+      notify={notify} code={state.code} setCode={state.setCode}
+      unassignCandidate={state.unassignCandidate} setUnassignCandidate={state.setUnassignCandidate}
+      unassigningStudent={state.unassigningStudent} confirmUnassignStudent={state.confirmUnassignStudent}
     />
   </>;
 }
