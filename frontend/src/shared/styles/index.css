@@ -1,12 +1,18 @@
 @import "./tokens.css";
 
-/* Keep these modules in source order: later feature rules intentionally refine
-   earlier base and workspace selectors without duplicating the cascade. */
+/* Order follows the original cascade. Split modules are adjacent pieces of
+   their former files, so selectors retain the same source-order semantics. */
 @import "./base.css";
 @import "./conversations.css";
 @import "./structure.css";
-@import "./workspace.css";
-@import "./components.css";
+@import "./inbox.css";
+@import "./graph-and-theme.css";
+@import "./workspace-layout.css";
+@import "./shared-controls.css";
+@import "./users.css";
+@import "./workspace-refinements.css";
 @import "./theme.css";
-@import "./administration.css";
-@import "./application.css";
+@import "./role-colors.css";
+@import "./admin-tools.css";
+@import "./board-objects.css";
+@import "./standalone.css";
