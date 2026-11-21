@@ -3,6 +3,7 @@ import Copy from "lucide-react/dist/esm/icons/copy.js";
 import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw.js";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
 import X from "lucide-react/dist/esm/icons/x.js";
+import Modal from "../../../shared/components/Modal.jsx";
 
 async function copyText(value) {
   try {
@@ -39,7 +40,7 @@ export default function UserDialogs({
   issuedCredential, setIssuedCredential, notify, code, setCode,
 }) {
   return <>
-    {modal && modal.mode !== "create-personal" && <div className="overlay" onMouseDown={() => setModal(null)}><section className={`modal${modal.mode === "create" ? " create-participant-modal" : modal.mode === "edit" ? " participant-profile-modal" : ""}`} onMouseDown={event => event.stopPropagation()}>
+    {modal && modal.mode !== "create-personal" && <Modal onClose={() => setModal(null)} className={`${modal.mode === "create" ? "create-participant-modal" : modal.mode === "edit" ? "participant-profile-modal" : ""}`}>
       <div className="modal-head"><div><div className="eyebrow">{modal.mode === "create" ? "НОВЫЙ УЧАСТНИК" : modal.mode === "edit" ? "ПРОФИЛЬ УЧАСТНИКА" : "СВЯЗЬ УЧЕНИКА И УЧИТЕЛЯ"}</div><h2>{modal.mode === "create" ? "Добавить участника" : modal.mode === "edit" ? "Редактировать" : "Назначить ученика"}</h2></div><button className="icon-btn" onClick={() => setModal(null)}><X/></button></div>
       {modal.mode === "assign" ? <form className="stack" onSubmit={assign}>
         <label>Учитель<select value={teacherId} onChange={event => setTeacherId(event.target.value)} required>{allTeachers.map(teacher => <option value={teacher.id} key={teacher.id}>{teacher.full_name}</option>)}</select></label>
@@ -64,36 +65,32 @@ export default function UserDialogs({
         {modal.mode === "edit" && role !== users.find(user => user.id === modal.id)?.role && <p className="hint">При смене роли активные назначения будут закрыты. История переписок сохранится.</p>}
         <div className="modal-actions"><button className="btn primary" disabled={savingUser}>{savingUser ? "Сохраняем…" : <><Check/>Сохранить</>}</button>{modal.mode === "edit" && <button type="button" className="user-action-btn danger-icon user-delete" onClick={() => removeUser(users.find(user => user.id === modal.id))} disabled={savingUser} title="Удалить пользователя" aria-label="Удалить пользователя"><Trash2 size={16}/></button>}</div>
       </form>}
-    </section></div>}
+    </Modal>}
 
-    {deleteCandidate && <div className="overlay" onMouseDown={() => !deletingUser && setDeleteCandidate(null)}>
-      <section className="modal confirm-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-user-title" onMouseDown={event => event.stopPropagation()}>
+    {deleteCandidate && <Modal onClose={() => setDeleteCandidate(null)} closeOnBackdrop={!deletingUser} className="confirm-delete-modal" role="alertdialog" labelledBy="delete-user-title">
         <div className="modal-head"><div><div className="eyebrow">УДАЛЕНИЕ УЧАСТНИКА</div><h2 id="delete-user-title">Удалить участника?</h2></div><button className="icon-btn" type="button" onClick={() => setDeleteCandidate(null)} disabled={deletingUser} aria-label="Закрыть"><X/></button></div>
         <p className="hint">Профиль «<b>{deleteCandidate.full_name}</b>», связанные переписки и сообщения будут удалены. Это действие нельзя отменить.</p>
         <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setDeleteCandidate(null)} disabled={deletingUser}>Отмена</button><button type="button" className="btn danger" onClick={confirmRemoveUser} disabled={deletingUser}>{deletingUser ? "Удаляем…" : <><Trash2/>Удалить участника</>}</button></div>
-      </section>
-    </div>}
+      </Modal>}
 
-    {disconnectCandidate && <div className="overlay" onMouseDown={() => !disconnectingTelegram && setDisconnectCandidate(null)}>
-      <section className="modal confirm-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="disconnect-telegram-title" onMouseDown={event => event.stopPropagation()}>
+    {disconnectCandidate && <Modal onClose={() => setDisconnectCandidate(null)} closeOnBackdrop={!disconnectingTelegram} className="confirm-delete-modal" role="alertdialog" labelledBy="disconnect-telegram-title">
         <div className="modal-head"><div><div className="eyebrow">ОТКЛЮЧЕНИЕ TELEGRAM</div><h2 id="disconnect-telegram-title">Отключить Telegram?</h2></div><button className="icon-btn" type="button" onClick={() => setDisconnectCandidate(null)} disabled={disconnectingTelegram} aria-label="Закрыть"><X/></button></div>
         <p className="hint">Отключить Telegram у пользователя «<b>{disconnectCandidate.full_name}</b>»? Профиль и история переписки останутся в системе. Отправлять и получать сообщения через бота он не сможет до повторного подключения.</p>
         <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setDisconnectCandidate(null)} disabled={disconnectingTelegram}>Отмена</button><button type="button" className="btn danger" onClick={confirmDisconnectTelegram} disabled={disconnectingTelegram}>{disconnectingTelegram ? "Отключаем…" : "Отключить Telegram"}</button></div>
-      </section>
-    </div>}
+      </Modal>}
 
-    {issuedCredential && <div className="overlay" onMouseDown={() => setIssuedCredential(null)}><section className="modal credential-modal" onMouseDown={event => event.stopPropagation()}>
+    {issuedCredential && <Modal onClose={() => setIssuedCredential(null)} className="credential-modal">
       <div className="modal-head"><div><div className="eyebrow">{issuedCredential.role === "student" ? "ЕДИНЫЙ КОД ДОСТУПА УЧЕНИКА" : "ЕДИНЫЙ КОД ДОСТУПА УЧИТЕЛЯ"}</div><h2>{issuedCredential.full_name}</h2></div><button className="icon-btn" onClick={() => setIssuedCredential(null)}><X/></button></div>
       <div className="credential-field"><div className="credential-field-label">Логин</div><div className="credential-field-value"><b>{issuedCredential.username}</b><button type="button" className="icon-btn" onClick={async () => notify(await copyText(issuedCredential.username) ? "Логин скопирован" : "Не удалось скопировать логин")} aria-label="Скопировать логин"><Copy size={16}/></button></div></div>
       <div className="credential-field credential-field-code"><div className="credential-field-label">Код доступа</div><div className="credential-field-value"><b>{issuedCredential.code}</b><button type="button" className="icon-btn" onClick={async () => notify(await copyText(issuedCredential.code) ? "Код доступа скопирован" : "Не удалось скопировать код доступа")} aria-label="Скопировать код доступа"><Copy size={16}/></button></div></div>
       <div className="modal-actions credential-actions"><button type="button" className="btn primary" onClick={async () => notify(await copyText("Логин: " + issuedCredential.username + "\nКод доступа: " + issuedCredential.code) ? "Данные для входа скопированы" : "Не удалось скопировать данные")}><Copy size={16}/>Скопировать данные</button></div>
-    </section></div>}
+    </Modal>}
 
-    {code && <div className="overlay" onMouseDown={() => setCode(null)}><section className="modal" onMouseDown={event => event.stopPropagation()}>
+    {code && <Modal onClose={() => setCode(null)}>
       <div className="modal-head"><div><div className="eyebrow">ПОДКЛЮЧЕНИЕ TELEGRAM</div><h2>{code.full_name}</h2></div><button className="icon-btn" onClick={() => setCode(null)}><X/></button></div>
       <div className="invite-code">{code.code}</div>
       <p className="hint">{code.shared_access ? `Это единый код ${code.role === "student" ? "ученика" : "учителя"}: он подходит для входа в веб-панель вместе с логином и для подключения Telegram. Он действует, пока администратор не заменит его новым.` : "Передайте этот код ученику для подключения Telegram. Он действует до первого успешного подключения и используется один раз."}</p>
       <div className="modal-actions"><button className="btn ghost" onClick={() => setCode(null)}>Закрыть</button><button className="btn primary" onClick={async () => notify(await copyText(code.code) ? "Код скопирован" : "Не удалось скопировать код")}><Copy/>Скопировать</button></div>
-    </section></div>}
+    </Modal>}
   </>;
 }
