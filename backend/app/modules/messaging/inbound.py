@@ -732,10 +732,11 @@ async def process_inbound_message(
     row.metadata_json = json.dumps(metadata, ensure_ascii=False)
     db.commit()
     await gateway.archive_media(inbound, row)
-    publish_conversation_update(
-        db, conversation, message_id=row.id, action="delivery",
-        sender_role=sender.role,
-    )
+    if inbound.media:
+        publish_conversation_update(
+            db, conversation, message_id=row.id, action="delivery",
+            sender_role=sender.role,
+        )
 
     teacher_account, student_account = get_messenger_pair(
         db, conversation.teacher_id, conversation.student_id, inbound.platform,
