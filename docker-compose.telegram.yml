@@ -1,0 +1,48 @@
+# Deploy on the secondary VPS; run: docker compose -f docker-compose.telegram.yml up -d --build
+services:
+  telegram-gateway:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ["python", "-m", "uvicorn", "app.modules.telegram.gateway:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "1"]
+    env_file: .env.telegram
+    environment:
+      PYTHONPATH: /app/backend
+      TELEGRAM_SPOOL_PATH: /app/gateway-data/telegram_spool.sqlite3
+    volumes:
+      - telegram_gateway_data:/app/gateway-data
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    init: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=4).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  telegram-proxy:
+    image: caddy:2
+    environment:
+      TELEGRAM_DOMAIN: ${TELEGRAM_DOMAIN:?Set TELEGRAM_DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/telegram/Caddyfile:/etc/caddy/Caddyfile:ro
+      - telegram_caddy_data:/data
+      - telegram_caddy_config:/config
+    depends_on:
+      telegram-gateway:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  telegram_gateway_data:
+  telegram_caddy_data:
+  telegram_caddy_config:
