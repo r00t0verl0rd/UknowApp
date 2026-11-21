@@ -199,7 +199,7 @@ export default function ChatsPage({
                   placeholder={selectedChat.type === "personal"
                     ? "Личное сообщение…"
                     : profile?.role === "admin"
-                      ? "Сообщение от администратора обеим сторонам…"
+                      ? "Сообщение…"
                       : profile?.role === "student"
                         ? "Сообщение учителю…"
                         : "Ответить ученику…"}
@@ -215,7 +215,7 @@ export default function ChatsPage({
                     )}
                     {attachment && (
                       <span className="selected-file">
-                        {attachment.name}
+                        <span className="selected-file-name">{attachment.name}</span>
                         <button type="button" className="icon-btn" onClick={() => setAttachment(null)}
                           aria-label="Убрать файл"><X size={14}/></button>
                       </span>
