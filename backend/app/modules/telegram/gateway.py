@@ -67,17 +67,16 @@ async def spool_worker(client: aiohttp.ClientSession, stop: asyncio.Event):
     while not stop.is_set():
         with connection() as db:
             row = db.execute(
-                "SELECT update_id, payload, attempts FROM telegram_updates "
-                "WHERE next_try <= ? ORDER BY update_id LIMIT 1",
-                (time.time(),),
+                "SELECT update_id, payload, attempts, next_try FROM telegram_updates "
+                "ORDER BY update_id LIMIT 1",
             ).fetchone()
-        if not row:
+        if not row or row[3] > time.time():
             try:
                 await asyncio.wait_for(stop.wait(), timeout=0.5)
             except asyncio.TimeoutError:
                 pass
             continue
-        update_id, payload, attempts = row
+        update_id, payload, attempts, _next_try = row
         try:
             async with client.post(
                 PRIMARY_URL + "/api/internal/telegram/updates",
