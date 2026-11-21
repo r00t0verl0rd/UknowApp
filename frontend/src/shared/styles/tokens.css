@@ -62,6 +62,8 @@
   --surface-raised: #ffffff;
   --surface-input: #ffffff;
   --surface-input-hover: #f5f1fa;
+  --surface-soft: #f1edf7;
+  --panel: #faf8fd;
   --placeholder: #a49daf;
   --danger: #bd4050;
   --success: #299b62;
@@ -127,6 +129,8 @@
   --surface-raised: #202938;
   --surface-input: #202a38;
   --surface-input-hover: #303a4c;
+  --surface-soft: #293344;
+  --panel: #202938;
   --placeholder: #aab4c5;
   --danger: #e58c98;
   --success: #83c69c;
