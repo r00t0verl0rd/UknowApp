@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { createPanelEventSource, getInboxData } from "../../../shared/services/panelApi.js";
+import { getInboxData } from "../../../shared/services/panelApi.js";
+import { subscribePanelEvents } from "../../../shared/services/panelEventStream.js";
 import { syncChatState } from "../services/conversationsApi.js";
 import { mergeConversationMessages } from "../services/messageState.js";
 import { mergeInboxSnapshot } from "../../../shared/services/inboxState.js";
@@ -26,8 +27,6 @@ export function useConversationSync({
   const syncQueued = useRef(false);
   const eventRevision = useRef(new Map());
   const inboxRequestRevision = useRef(0);
-  const inboxRowRevision = useRef(new Map());
-  const recoveryPending = useRef(false);
 
   current.current = {
     selectedChat, messages, role,
@@ -41,8 +40,6 @@ export function useConversationSync({
     const applySummary = (type, id, summary) => {
       if (!summary || !active) return;
       inboxRevision.current += 1;
-      const rowKey = conversationKey(id, type);
-      inboxRowRevision.current.set(rowKey, (inboxRowRevision.current.get(rowKey) || 0) + 1);
       if (type === "personal") {
         current.current.setPersonalChats(items => items.some(item => Number(item.id) === Number(id))
           ? items.map(item => Number(item.id) === Number(id) ? { ...item, ...summary } : item)
@@ -59,25 +56,17 @@ export function useConversationSync({
 
     const refreshInbox = async () => {
       const requestRevision = ++inboxRequestRevision.current;
-      const revisionsAtStart = new Map(inboxRowRevision.current);
+      const revisionAtStart = inboxRevision.current;
       const [conversations, personal] = await getInboxData(request);
       if (!active || requestRevision !== inboxRequestRevision.current) return;
-
-      const changedRows = new Set(
-        [...inboxRowRevision.current].filter(([key, revision]) => (
-          revision > (revisionsAtStart.get(key) || 0)
-        )).map(([key]) => key),
-      );
-      const changedConversations = new Set(
-        [...changedRows].filter(key => key.startsWith("conversation:"))
-          .map(key => Number(key.slice("conversation:".length))),
-      );
-      const changedPersonal = new Set(
-        [...changedRows].filter(key => key.startsWith("personal:"))
-          .map(key => Number(key.slice("personal:".length))),
-      );
-      current.current.setChats(items => mergeInboxSnapshot(conversations, items, changedConversations));
-      current.current.setPersonalChats(items => mergeInboxSnapshot(personal, items, changedPersonal));
+      if (revisionAtStart === inboxRevision.current) {
+        current.current.setChats(conversations);
+        current.current.setPersonalChats(personal);
+        return;
+      }
+      // Preserve live event summaries if an event arrived during recovery.
+      current.current.setChats(items => mergeInboxSnapshot(conversations, items));
+      current.current.setPersonalChats(items => mergeInboxSnapshot(personal, items));
     };
 
     const syncSelected = async () => {
@@ -136,14 +125,8 @@ export function useConversationSync({
     };
 
     const recover = async ({ refreshInbox: refresh = false } = {}) => {
-      try {
-        if (refresh) await refreshInbox();
-        await syncSelected();
-        recoveryPending.current = false;
-      } catch (error) {
-        recoveryPending.current = true;
-        throw error;
-      }
+      if (refresh) await refreshInbox();
+      await syncSelected();
     };
 
     const flush = async () => {
@@ -179,118 +162,103 @@ export function useConversationSync({
       }
     };
 
-    const source = createPanelEventSource();
-    if (source) {
-      source.onopen = () => {
-        // The first connection does not reload inbox lists. On reconnect the
-        // browser replays durable events using Last-Event-ID automatically.
-        if (recoveryPending.current) {
-          void recover({ refreshInbox: true }).catch(() => {});
-        } else {
-          void syncSelected().catch(() => {});
+    const handleEvent = event => {
+      let payload;
+      try {
+        payload = JSON.parse(event.data || "{}");
+      } catch {
+        payload = { resync: true };
+      }
+      const eventId = Number(payload.event_id || event.lastEventId || 0);
+      if (payload.resync) {
+        inboxRevision.current += 1;
+        const selectedChat = current.current.selectedChat;
+        if (selectedChat) {
+          const key = conversationKey(selectedChat.id, selectedChat.type);
+          eventRevision.current.set(key, (eventRevision.current.get(key) || 0) + 1);
         }
-      };
-      source.onerror = () => {
-        // EventSource owns reconnect/backoff; no periodic polling is required.
-      };
-      source.addEventListener("update", event => {
-        let payload;
-        try {
-          payload = JSON.parse(event.data || "{}");
-        } catch {
-          payload = { resync: true };
-        }
-        const eventId = Number(payload.event_id || event.lastEventId || 0);
-        if (Number.isSafeInteger(eventId) && eventId > 0) {
-          if (eventId <= lastEventId.current) return;
+        if (Number.isSafeInteger(eventId) && eventId > lastEventId.current) {
           lastEventId.current = eventId;
         }
-        if (payload.resync) {
-          recoveryPending.current = true;
-          inboxRevision.current += 1;
-          const selectedChat = current.current.selectedChat;
-          if (selectedChat) {
-            const key = conversationKey(selectedChat.id, selectedChat.type);
-            eventRevision.current.set(key, (eventRevision.current.get(key) || 0) + 1);
-          }
-          void recover({ refreshInbox: true }).catch(() => {});
-          return;
-        }
-        if (!payload.conversation_id) {
-          recoveryPending.current = true;
-          void recover({ refreshInbox: true }).catch(() => {});
-          return;
-        }
+        void recover({ refreshInbox: true }).catch(() => {});
+        return;
+      }
+      if (Number.isSafeInteger(eventId) && eventId > 0) {
+        if (eventId <= lastEventId.current) return;
+        lastEventId.current = eventId;
+      }
+      if (!payload.conversation_id) {
+        inboxRevision.current += 1;
+        return;
+      }
 
-        const id = Number(payload.conversation_id);
-        const type = payload.conversation_type || "conversation";
-        const key = conversationKey(id, type);
-        eventRevision.current.set(key, (eventRevision.current.get(key) || 0) + 1);
-        if (payload.summary) applySummary(type, id, payload.summary);
-        else inboxRevision.current += 1;
+      const id = Number(payload.conversation_id);
+      const type = payload.conversation_type || "conversation";
+      const key = conversationKey(id, type);
+      eventRevision.current.set(key, (eventRevision.current.get(key) || 0) + 1);
+      if (payload.summary) applySummary(type, id, payload.summary);
+      else inboxRevision.current += 1;
 
-        const selected = current.current.selectedChat;
-        const viewerRole = current.current.role;
-        const expectedReader = selected?.type === "personal"
-          ? (viewerRole === "admin" ? selected.participant?.role : "admin")
-          : viewerRole === "teacher" ? "student"
-            : viewerRole === "student" ? "teacher" : null;
+      const selected = current.current.selectedChat;
+      const viewerRole = current.current.role;
+      const expectedReader = selected?.type === "personal"
+        ? (viewerRole === "admin" ? selected.participant?.role : "admin")
+        : viewerRole === "teacher" ? "student"
+          : viewerRole === "student" ? "teacher" : null;
 
-        if (
-          payload.action === "read"
-          && isSameChat(selected, id, type)
-          && Array.isArray(payload.message_ids)
-          && payload.message_ids.length
-        ) {
-          if (viewerRole === "admin" && type !== "personal") {
-            // The admin receipt represents both participants; reconcile from
-            // the server rather than guessing which participant read first.
-          } else if (expectedReader === payload.actor_role) {
-            const readIds = new Set(payload.message_ids.map(Number));
-            const readAt = payload.read_at || new Date().toISOString();
-            current.current.setMessages(rows => rows.map(row => (
-              readIds.has(Number(row.id)) && row.sender_role === viewerRole && !row.panel_read_at
-                ? { ...row, panel_read_at: readAt }
-                : row
-            )));
-          }
+      if (
+        payload.action === "read"
+        && isSameChat(selected, id, type)
+        && Array.isArray(payload.message_ids)
+        && payload.message_ids.length
+      ) {
+        if (viewerRole === "admin" && type !== "personal") {
+          // Admin receipts cover both participants; reconcile from the server.
+        } else if (expectedReader === payload.actor_role) {
+          const readIds = new Set(payload.message_ids.map(Number));
+          const readAt = payload.read_at || new Date().toISOString();
+          current.current.setMessages(rows => rows.map(row => (
+            readIds.has(Number(row.id)) && row.sender_role === viewerRole && !row.panel_read_at
+              ? { ...row, panel_read_at: readAt }
+              : row
+          )));
         }
+      }
 
-        const state = pending.current.get(key) || {
-          conversation_id: id,
-          conversation_type: type,
-          deleted_message_ids: new Set(),
-          refresh_messages: false,
-        };
-        if (payload.action === "delete" && payload.message_id) {
-          state.deleted_message_ids.add(Number(payload.message_id));
-        }
-        // Read events also request an incremental status reconcile. This heals
-        // races with a concurrent send/read and keeps MessageBubble authoritative.
-        if (payload.action !== "delete") {
-          state.refresh_messages = true;
-        }
-        pending.current.set(key, state);
-        if (syncing.current && isSameChat(current.current.selectedChat, id, type)) {
-          syncQueued.current = true;
-        }
-        void flush();
-      });
-    } else {
-      // One-shot reconciliation is safer than introducing a polling loop.
+      const state = pending.current.get(key) || {
+        conversation_id: id,
+        conversation_type: type,
+        deleted_message_ids: new Set(),
+        refresh_messages: false,
+      };
+      if (payload.action === "delete" && payload.message_id) {
+        state.deleted_message_ids.add(Number(payload.message_id));
+      }
+      if (payload.action !== "delete") state.refresh_messages = true;
+      pending.current.set(key, state);
+      if (syncing.current && isSameChat(current.current.selectedChat, id, type)) {
+        syncQueued.current = true;
+      }
+      void flush();
+    };
+
+    const unsubscribe = subscribePanelEvents(
+      handleEvent,
+      () => { void syncSelected().catch(() => {}); },
+    );
+    if (!unsubscribe) {
+      // EventSource is unavailable: perform a single reconciliation, never poll.
       void recover().catch(() => {});
     }
 
     const onVisibilityChange = () => {
-      if (document.visibilityState !== "visible") return;
-      if (recoveryPending.current) void recover({ refreshInbox: true }).catch(() => {});
-      else void syncSelected().catch(() => {});
+      if (document.visibilityState === "visible") void syncSelected().catch(() => {});
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       active = false;
       pending.current.clear();
-      source?.close();
+      unsubscribe?.();
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [auth, request]);

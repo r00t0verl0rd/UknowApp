@@ -7,7 +7,7 @@
     "dev": "vite --host 127.0.0.1 --port 22222 --strictPort",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 22222 --strictPort",
-    "test": "node --test src/shared/services/inboxState.test.js"
+    "test": "node --test src/shared/services/inboxState.test.js src/shared/services/panelEventStream.test.js src/features/conversations/services/messageState.test.js"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
