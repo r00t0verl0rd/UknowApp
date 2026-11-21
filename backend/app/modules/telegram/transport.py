@@ -1,5 +1,6 @@
-"""Transport for a self-hosted Telegram Bot API server."""
+"""Bot API transport; select Telegram cloud or self-hosted server via environment."""
 
+import os
 from pathlib import Path
 
 from aiogram import Bot
@@ -20,6 +21,14 @@ class TelegramFiles(SimpleFilesPathWrapper):
 
 
 def create_telegram_bot(token: str) -> Bot:
+    mode = os.getenv("TELEGRAM_API_MODE", "local").strip().lower()
+    if mode == "cloud":
+        # The default aiogram session uses api.telegram.org and downloads
+        # Telegram files via HTTPS rather than relying on a mounted cache.
+        return Bot(token=token)
+    if mode != "local":
+        raise ValueError("TELEGRAM_API_MODE must be 'cloud' or 'local'")
+
     api = TelegramAPIServer.from_base(
         TELEGRAM_API_URL, is_local=True,
         wrap_local_file=TelegramFiles(Path("/var/lib/telegram-bot-api"), TELEGRAM_FILES_DIR),
