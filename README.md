@@ -116,23 +116,33 @@ docker compose up -d --build
 docker compose logs -f backend frontend
 ```
 
-### 5. Database backup
+### 5. Full backup and server migration
 
-Create a consistent SQLite backup from the running container, then copy both the database and archived attachments to the VPS host:
+Use **Дополнительно → Полная резервная копия UknowApp** in the administrator panel. The ZIP contains the complete `data/` directory, not only a hand-picked list of files:
+- a consistent SQLite snapshot created through SQLite's online backup API (WAL-safe);
+- all archived media and attachments;
+- the Web Push private key;
+- every other regular file stored under `data/`, including files added by future modules.
 
-```bash
-docker compose exec backend python -c "import sqlite3; source=sqlite3.connect('/app/data/uknowapp.db'); target=sqlite3.connect('/tmp/uknowapp-backup.db'); source.backup(target); target.close(); source.close()"
-docker compose cp backend:/tmp/uknowapp-backup.db ./uknowapp-backup.db
-docker compose cp backend:/app/data/media ./media-backup
-```
+The versioned manifest records each file's size and SHA-256 checksum. Restore verifies the file list, checksums, archive paths and SQLite integrity before it schedules any replacement. Older `uknowapp-full-backup-v1` archives remain importable; because that old format never contained the Web Push key or other data files, the destination's existing non-media data files are retained when importing one.
 
-The database backup contains student and teacher data; the media backup contains private voice messages, videos, photos and documents. Store both securely and protect access to them. Restore the database to `data/uknowapp.db` and media files to `data/media/` together so message references remain valid. The `app_data`, `caddy_data` and `caddy_config` volumes must not be removed when updating the containers.
+The full restore is staged first and does not modify live data during upload. In Docker Compose, the backend then restarts automatically and applies the staged directory before database migrations and Telegram polling start. For a direct local Uvicorn launch, stop and start the backend process after the upload; the prepared restore is applied during its next startup. If startup is interrupted during the directory swap, the restore journal allows the next startup to roll back or resume safely.
+
+For a move to another VPS:
+1. Download the full ZIP from the old server.
+2. Deploy the UknowApp code on the new server and configure its own `.env` (domain, admin credentials, Telegram token and other secrets).
+3. Sign in to the new administrator panel and upload the ZIP in **Дополнительно**.
+4. Let the Docker backend restart and apply the data. For a non-Docker deployment, restart Uvicorn manually.
+5. Verify users, conversations, attachments, Web Push and Telegram before deleting the old server.
+
+The ZIP intentionally does **not** contain `.env`, Telegram bot tokens, domain settings, TLS certificates or Caddy configuration. Those belong to the server deployment and must be configured separately. Keep the archive private: it contains personal data, message history, credentials hashes and the Web Push private key.
+
+The separate **База данных отдельно** and **Медиафайлы отдельно** operations remain available for specialist recovery tasks. They are not a substitute for the full ZIP when moving servers. The `app_data`, `caddy_data` and `caddy_config` Docker volumes must not be removed during ordinary application updates.
 
 **Important SQLite notes:**
-- UknowApp uses SQLite write-ahead logging (WAL). While the app is running, recent committed changes may be in `uknowapp.db-wal`; never copy only the raw `.db` file or delete `-wal` / `-shm` files manually. Use SQLite's online backup API as shown above.
-- Message text and metadata are stored in SQLite; attachment bytes are stored separately in `data/media/`. A complete portable backup must include both.
+- UknowApp uses SQLite write-ahead logging (WAL). Never copy only the raw live `.db` file or delete `-wal` / `-shm` files manually. The in-app full backup uses SQLite's online backup API.
+- Message text and metadata are stored in SQLite; attachment bytes are stored separately in `data/media/`. The full archive packages both and checks that media references are accounted for.
 - Deleting records makes their pages reusable, but does not necessarily shrink the database file immediately. Do not run `VACUUM` on every request or automatically at startup: it needs extra disk space and can block access while rebuilding the database. Compaction should be an explicit maintenance operation after a backup.
-- Keep the database and media archive together when moving UknowApp. A future in-app export should package a consistent SQLite backup, the media directory and a versioned manifest; import should validate the archive and database before replacing live data.
 
 ## Deployment notes
 
