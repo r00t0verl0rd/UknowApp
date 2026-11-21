@@ -265,8 +265,10 @@ test("global SSE updates real counters across tabs and replays missed events", {
         return result;
       }, theme);
       assert.equal(state[0].rotation, "none", `${theme}: свёрнутый список — стрелка влево`);
-      const matrix = new DOMMatrix(state[1].rotation);
-      assert.ok(Math.abs(matrix.a) < .01 && matrix.b < -.99,
+      const matrixMatch = /^matrix\(([^)]+)\)$/.exec(state[1].rotation);
+      assert.ok(matrixMatch, `${theme}: ожидаем матрицу поворота`);
+      const [a, b] = matrixMatch[1].split(",").map(Number);
+      assert.ok(Math.abs(a) < .01 && b < -.99,
         `${theme}: открытый список — стрелка вниз`);
       assert.equal(state[0].background, state[1].background);
       assert.equal(state[0].border, state[1].border);
