@@ -46,7 +46,7 @@ def reload_vapid_keys(data_dir: Path | None = None) -> None:
             encryption_algorithm=serialization.NoEncryption(),
         )
         vapid_path.write_bytes(vapid_pem)
-        os.chmod(vapid_path, 0o600)
+    os.chmod(vapid_path, 0o600)
 
     vapid_public = vapid_key.public_key().public_bytes(
         encoding=serialization.Encoding.X962,
