@@ -5,6 +5,7 @@ import Pencil from "lucide-react/dist/esm/icons/pencil.js";
 import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Smile from "lucide-react/dist/esm/icons/smile.js";
 import EmptyState from "../../shared/components/EmptyState.jsx";
+import CountBadge from "../../shared/components/CountBadge.jsx";
 
 export default function StructurePage({
   overview, openCreate, allTeachers = [],
@@ -16,8 +17,8 @@ export default function StructurePage({
   return <>
     <div className="graph-legend-row">
       <div className="legend graph-legend">
-        <div className="graph-legend-item"><span className="teacher-dot" />Учителя <b className="chat-tab-count">{overview?.counts?.teachers || 0}</b></div>
-        <div className="graph-legend-item"><span className="student-dot" />Ученики <b className="chat-tab-count">{overview?.counts?.students || 0}</b></div>
+        <div className="graph-legend-item"><span className="teacher-dot" />Учителя <CountBadge as="b" value={overview?.counts?.teachers || 0} label="учителей"/></div>
+        <div className="graph-legend-item"><span className="student-dot" />Ученики <CountBadge as="b" value={overview?.counts?.students || 0} label="учеников"/></div>
       </div>
       <button type="button" className="btn primary graph-add-participant" onClick={() => openCreate()}><Plus />Добавить участника</button>
     </div>
