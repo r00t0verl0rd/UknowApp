@@ -14,7 +14,7 @@ export default function StructurePage({
   allStudents = [], setModal, unassignedStudents = [],
 }) {
   const [collapsedTeacherIds, setCollapsedTeacherIds] = useState(() => new Set());
-  if (loading && !overview) return <EmptyState>Загружаем структуру школы…</EmptyState>;
+  if (loading) return <EmptyState>Загружаем структуру школы…</EmptyState>;
 
   return <>
     <div className="graph-legend-row">

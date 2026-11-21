@@ -18,7 +18,7 @@ export function useChatsController({
   const openingChatRequest = useRef(0);
   const openChatRef = useRef(null);
   const {
-    chats, setChats, selectedChat, setSelectedChat, messages, setMessages,
+    chats, setChats, selectedChat, setSelectedChat, messages, setMessages, setMessagesLoading,
     draft, setDraft, attachment, setAttachment, messagesViewportRef,
     chatSearch, chatFilter, messageFilter, setMessageFilter,
   } = chatState;
@@ -108,6 +108,7 @@ export function useChatsController({
     activeChatKey.current = chatKey;
     setSelectedChat(chat);
     setMessages([]);
+    setMessagesLoading(true);
     setPage("chats");
     setDraft("");
     setAttachment(null);
@@ -122,8 +123,12 @@ export function useChatsController({
       if (requestId === openingChatRequest.current && activeChatKey.current === chatKey) {
         setError(error.message);
       }
+    } finally {
+      if (requestId === openingChatRequest.current && activeChatKey.current === chatKey) {
+        setMessagesLoading(false);
+      }
     }
-  }, [setSelectedChat, setPage, setDraft, setAttachment, setMessageFilter, setMessages, request, setError]);
+  }, [setSelectedChat, setPage, setDraft, setAttachment, setMessageFilter, setMessages, setMessagesLoading, request, setError]);
   openChatRef.current = openChat;
 
   const openCreatePersonalChat = useCallback(() => {

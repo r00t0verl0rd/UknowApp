@@ -13,7 +13,7 @@ export default function ChatsPage({
   profile, inboxLoading, chatSection, setChatSection, personalChats, setSelectedChat,
   setMessages, chatFilter, setChatFilter, openCreatePersonalChat, chatSearch,
   setChatSearch, visibleChats, openChat, selectedChat, draft, setDraft,
-  messageFilter, setMessageFilter, messagesViewportRef, visibleMessages, messages,
+  messageFilter, setMessageFilter, messagesViewportRef, visibleMessages, messages, messagesLoading,
   setDeleteMessageCandidate, attachment, setAttachment, sendChatMessage,
 }) {
   const unreadPersonalCount = personalChats.reduce(
@@ -194,7 +194,7 @@ export default function ChatsPage({
                   onDelete={setDeleteMessageCandidate} viewerRole={profile?.role}
                   personalChat={selectedChat.type === "personal"}/>
               ))}
-              {!messages.length && <EmptyState>Сообщений пока нет</EmptyState>}
+              {!messages.length && <EmptyState>{messagesLoading ? "Загружаем сообщения…" : "Сообщений пока нет"}</EmptyState>}
               {!!messages.length && !visibleMessages.length
                 && <EmptyState>Нет сообщений этого типа</EmptyState>}
             </div>

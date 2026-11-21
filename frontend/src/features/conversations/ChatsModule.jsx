@@ -26,6 +26,7 @@ export default function ChatsModule({
       messageFilter={chatState.messageFilter} setMessageFilter={chatState.setMessageFilter}
       messagesViewportRef={chatState.messagesViewportRef}
       visibleMessages={state.visibleMessages} messages={chatState.messages}
+      messagesLoading={chatState.messagesLoading}
       setDeleteMessageCandidate={state.setDeleteMessageCandidate}
       attachment={chatState.attachment} setAttachment={chatState.setAttachment}
       sendChatMessage={state.sendChatMessage}

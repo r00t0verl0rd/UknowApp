@@ -50,7 +50,10 @@ export default function App() {
 
   if (!auth) return <LoginPage theme={theme} toggleTheme={toggleTheme} signIn={signIn}
     login={login} setLogin={setLogin} password={password} setPassword={setPassword} error={error} />;
-  if (!profile) return null;
+  if (!profile) return <div className="app-boot-screen" role="status" aria-live="polite">
+    <img src="/logo.png" alt="" />
+    <span>Загружаем UknowApp…</span>
+  </div>;
   if (!workspace) return null;
 
   const workspacePage = workspace.pages.includes(page) ? page : workspace.pages[0];
