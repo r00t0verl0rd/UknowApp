@@ -158,6 +158,8 @@ export function useConversationSync({
             const {
               conversation_id: id,
               conversation_type: type,
+              conversation_key: key,
+              conversation_key: key,
               deleted_message_ids: deletedIds,
               refresh_messages: refreshMessages,
             } = event;
@@ -254,6 +256,7 @@ export function useConversationSync({
       };
       if (payload.action === "delete" && payload.message_id) {
         state.deleted_message_ids.add(Number(payload.message_id));
+        markConversationMessageDeleted(key, payload.message_id);
       }
       if (payload.action !== "delete") state.refresh_messages = true;
       pending.current.set(key, state);

@@ -1,10 +1,14 @@
 const deletedByConversation = new Map();
 const MAX_DELETED_IDS = 5000;
+const MAX_TOMBSTONE_CONVERSATIONS = 100;
 
 export function markConversationMessageDeleted(conversationKey, messageId) {
   if (!conversationKey || !Number.isSafeInteger(Number(messageId))) return;
   let deleted = deletedByConversation.get(conversationKey);
   if (!deleted) {
+    if (deletedByConversation.size >= MAX_TOMBSTONE_CONVERSATIONS) {
+      deletedByConversation.delete(deletedByConversation.keys().next().value);
+    }
     deleted = new Set();
     deletedByConversation.set(conversationKey, deleted);
   }
