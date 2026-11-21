@@ -167,6 +167,8 @@
 .message-time{color:var(--muted);font-size:10px;font-weight:500;white-space:nowrap}
 .message-read-status{display:inline-flex;align-items:center;color:var(--muted);line-height:1}
 .message-read-status.is-read{color:var(--purple)}
+.message-read-status.is-failed{color:var(--danger,#ef4444)}
+.message-read-status.is-partial{color:var(--warning,#d97706)}
 .message-delete-btn{flex:0 0 28px;width:28px;height:28px;padding:0}
 .message p{margin:7px 0 0;color:var(--ink);font-size:12px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
 .message b small{margin-left:6px;color:var(--muted);font-size:10px;font-weight:500}
