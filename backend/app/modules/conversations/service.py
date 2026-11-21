@@ -20,21 +20,19 @@ def conversation_dicts(
         return []
 
     conversation_ids = [item.id for item in conversations]
-    latest_rank = (
-        select(
-            Message.id.label("message_id"),
-            func.row_number().over(
-                partition_by=Message.conversation_id,
-                order_by=[Message.created_at.desc(), Message.id.desc()],
-            ).label("position"),
-        )
-        .where(Message.conversation_id.in_(conversation_ids))
-        .subquery()
+    latest_id = (
+        select(Message.id)
+        .where(Message.conversation_id == Conversation.id)
+        .order_by(Message.created_at.desc(), Message.id.desc())
+        .limit(1)
+        .correlate(Conversation)
+        .scalar_subquery()
     )
     latest_messages = db.scalars(
         select(Message)
-        .join(latest_rank, Message.id == latest_rank.c.message_id)
-        .where(latest_rank.c.position == 1),
+        .select_from(Conversation)
+        .join(Message, Message.id == latest_id)
+        .where(Conversation.id.in_(conversation_ids)),
     ).all()
     latest_by_conversation = {item.conversation_id: item for item in latest_messages}
 
@@ -80,22 +78,7 @@ def conversation_dicts(
             "created_at": conversation.created_at.isoformat(),
             "teacher": user_dict(conversation.teacher, include_telegram_id=include_telegram_ids),
             "student": user_dict(conversation.student, include_telegram_id=include_telegram_ids),
-            "last_message": (
-                (last_message.text or "Сообщение") if last_message.content_type == "text"
-                else (
-                    (json.loads(last_message.metadata_json or "{}").get("media") or {}).get("file_name")
-                    or {
-                        "photo": "🖼 Фотография",
-                        "voice": "🎤 Голосовое сообщение",
-                        "audio": "🎵 Аудио",
-                        "video": "🎬 Видео",
-                        "video_note": "⭕ Видеосообщение",
-                        "document": "📎 Документ",
-                        "sticker": "Стикер",
-                        "animation": "GIF-анимация",
-                    }.get(last_message.content_type, "📎 Вложение")
-                ) + ((": " + last_message.text) if last_message.text else "")
-            ) if last_message else "Переписка пока пуста",
+            "last_message": _message_preview(last_message),
             "last_message_at": last_message.created_at.isoformat() if last_message else None,
             "message_count": message_count,
             "unread_count": unread_count,

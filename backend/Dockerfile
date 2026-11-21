@@ -7,15 +7,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 COPY backend/requirements.txt /app/backend/requirements.txt
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r /app/backend/requirements.txt
-
-COPY backend /app/backend
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r /app/backend/requirements.txt
 
 RUN groupadd --system app \
     && useradd --system --gid app --home-dir /app app \
     && mkdir -p /app/data \
-    && chown -R app:app /app
+    && chown app:app /app /app/data
+
+COPY --chown=app:app backend /app/backend
 
 USER app
 

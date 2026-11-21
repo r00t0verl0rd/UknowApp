@@ -92,19 +92,23 @@ export function useConversationSync({
           syncQueued.current = false;
           const chat = current.current.selectedChat;
           if (!chat || document.visibilityState !== "visible") break;
-          const knownMessages = current.current.messages
-            .filter(item => Number.isSafeInteger(Number(item.id)) && Number(item.id) > 0);
           const chatKey = conversationKey(chat.id, chat.type);
-          if (lastMessageCursor.current.chatKey !== chatKey) {
-            lastMessageCursor.current = { chatKey, id: maxMessageId(knownMessages) };
+          const knownIds = [];
+          let afterId = lastMessageCursor.current.chatKey === chatKey ? lastMessageCursor.current.id : 0;
+          for (const message of current.current.messages) {
+            const id = Number(message.id);
+            if (Number.isSafeInteger(id) && id > 0) {
+              knownIds.push(id);
+              afterId = Math.max(afterId, id);
+            }
           }
-          const afterId = Math.max(lastMessageCursor.current.id, maxMessageId(knownMessages));
+          lastMessageCursor.current = { chatKey, id: afterId };
           const revisionAtStart = eventRevision.current.get(chatKey) || 0;
           const result = await syncChatState(
             request,
             chat,
             afterId,
-            knownMessages.map(item => Number(item.id)),
+            knownIds,
           );
           if (!active) break;
           if (!isSameChat(current.current.selectedChat, chat.id, chat.type)) {

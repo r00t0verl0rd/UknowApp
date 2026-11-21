@@ -23,7 +23,7 @@ from fastapi import (
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, load_only, selectinload
 
 from app.core.database import SessionLocal
 from app.event_hub import (
@@ -610,6 +610,7 @@ def sync_conversation_state(
         batch_ids = known_ids[start:start + 500]
         updated_rows.extend(db.scalars(
             select(Message)
+            .options(load_only(Message.id, Message.sender_role, Message.delivery_status, Message.metadata_json))
             .where(
                 Message.conversation_id == conversation.id,
                 Message.id.in_(batch_ids),
@@ -684,6 +685,7 @@ def sync_personal_conversation_state(
         batch_ids = known_ids[start:start + 500]
         updated_rows.extend(db.scalars(
             select(PersonalMessage)
+            .options(load_only(PersonalMessage.id, PersonalMessage.sender_role, PersonalMessage.admin_read_at, PersonalMessage.participant_read_at))
             .where(
                 PersonalMessage.conversation_id == item.id,
                 PersonalMessage.id.in_(batch_ids),

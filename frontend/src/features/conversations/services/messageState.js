@@ -24,7 +24,25 @@ const timeValue = item => {
   return Number.isFinite(value) ? value : null;
 };
 
+function compareMessages(left, right) {
+  const leftTime = timeValue(left);
+  const rightTime = timeValue(right);
+  if (leftTime !== null && rightTime !== null && leftTime !== rightTime) {
+    return leftTime - rightTime;
+  }
+  const leftId = Number(left.id);
+  const rightId = Number(right.id);
+  return Number.isFinite(leftId) && Number.isFinite(rightId) ? leftId - rightId : 0;
+}
+
 function preserveMonotonicState(previous, incoming) {
+  // Status sync returns already-loaded rows even when nothing changed.
+  if (Object.keys(incoming).every(key => (
+    key === "metadata"
+      ? Object.keys(incoming.metadata || {}).every(field => previous.metadata?.[field] === incoming.metadata[field])
+      : Object.hasOwn(previous, key) && previous[key] === incoming[key]
+  ))) return previous;
+
   const result = {
     ...previous,
     ...incoming,
@@ -68,22 +86,17 @@ export function mergeConversationMessages(previous, incoming, conversationKey = 
   const mergedById = new Map();
 
   for (const item of visiblePrevious) {
-    if (clientIds.has(item.metadata?.client_message_id)) continue;
     const update = incomingById.get(messageId(item));
+    if (!update && clientIds.has(item.metadata?.client_message_id)) continue;
     mergedById.set(messageId(item), update ? preserveMonotonicState(item, update) : item);
   }
   for (const item of incomingById.values()) {
     if (!mergedById.has(messageId(item))) mergedById.set(messageId(item), item);
   }
 
-  return [...mergedById.values()].sort((left, right) => {
-    const leftTime = timeValue(left);
-    const rightTime = timeValue(right);
-    if (leftTime !== null && rightTime !== null && leftTime !== rightTime) {
-      return leftTime - rightTime;
-    }
-    const leftId = Number(left.id);
-    const rightId = Number(right.id);
-    return Number.isFinite(leftId) && Number.isFinite(rightId) ? leftId - rightId : 0;
-  });
+  const merged = [...mergedById.values()];
+  if (merged.length === previous.length && merged.every((item, index) => (
+    item === previous[index] && (index === 0 || compareMessages(previous[index - 1], item) <= 0)
+  ))) return previous;
+  return merged.sort(compareMessages);
 }

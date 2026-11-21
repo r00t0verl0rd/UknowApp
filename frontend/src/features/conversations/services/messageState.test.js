@@ -84,3 +84,16 @@ test("terminal delivery and metadata read markers never move backwards", () => {
   assert.equal(result[0].delivery_status, "blocked_contact");
   assert.equal(result[0].metadata.teacher_read_at, "2026-11-21T10:05:00Z");
 });
+
+test("repeated status sync reuses the loaded history and its message objects", () => {
+  const previous = [{ id: 9, text: "hello", panel_read_at: null }];
+  const updated = mergeConversationMessages(previous, [{ id: 9, panel_read_at: null }]);
+  assert.equal(updated, previous);
+});
+
+test("a repeated server echo with a client ID preserves confirmed read state", () => {
+  const metadata = { client_message_id: "client-9" };
+  const previous = [{ id: 9, metadata, panel_read_at: "2026-11-21T10:03:00Z" }];
+  const updated = mergeConversationMessages(previous, [{ id: 9, metadata, panel_read_at: null }]);
+  assert.equal(updated[0].panel_read_at, previous[0].panel_read_at);
+});

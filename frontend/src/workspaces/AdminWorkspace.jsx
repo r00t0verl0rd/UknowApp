@@ -1,9 +1,19 @@
-import BoardsPage from "../features/boards/index.js";
-import UsersModule from "../features/users/index.js";
+import { lazy, Suspense } from "react";
 import ChatsModule from "../features/conversations/index.js";
-import AdministrationModule from "../features/administration/index.js";
 
-export default function AdminWorkspace({ context }) {
+const BoardsPage = lazy(() => import("../features/boards/index.js"));
+const UsersModule = lazy(() => import("../features/users/index.js"));
+const AdministrationModule = lazy(() => import("../features/administration/index.js"));
+
+export default function AdminWorkspace(props) {
+  return (
+    <Suspense fallback={<p role="status">Загружаем раздел…</p>}>
+      <AdminPage {...props} />
+    </Suspense>
+  );
+}
+
+function AdminPage({ context }) {
   const { page, auth, profile, request, refresh, notify, setError, modal, setModal,
     setPage, chatState, personalState, directory, inboxLoading, adminDataLoading } = context;
 
