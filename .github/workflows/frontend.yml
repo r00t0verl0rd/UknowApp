@@ -41,6 +41,8 @@ jobs:
         run: npm run test:browser
       - name: Lint shared styles
         run: npx --yes stylelint@16 'src/shared/styles/*.css' --config ../.stylelintrc.json
+      - name: Audit CSS selectors against React sources
+        run: node scripts/audit-css.mjs
 
   migration:
     runs-on: ubuntu-24.04
