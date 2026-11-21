@@ -24,7 +24,7 @@ Last measured on 2026-11-21 from `main`.
 | `board-objects.css` | Hierarchical board nodes, object actions and canvas |
 | `standalone.css` | Installed-app safe-area treatment |
 
-The modules are contiguous, ordered extractions of the former stylesheet sections. Their concatenated source was checked against each previous module before the old files were removed. Import order is intentional; do not alphabetize it. The old `layout.css`, `workspace.css`, `components.css`, `administration.css` and `application.css` files are no longer present.
+The modules are ordered extractions of the former stylesheet sections. Their concatenated source was checked against the previous files before those files were removed. Import order is intentional; do not alphabetize it. The old `layout.css`, `workspace.css`, `components.css`, `administration.css` and `application.css` files are no longer present.
 
 ## Shared React primitives
 
@@ -39,7 +39,7 @@ Reusable UI primitives live in `frontend/src/shared/components`:
 - `CountBadge`: shared unread and total counters with accessible labels and consistent overflow display.
 - `AppToast`: shared application notification.
 
-The user and conversation dialogs now use the same modal/button primitives; structure and conversation screens use the same empty-state component; counters in the structure legend and conversation navigation use the same badge. Boards and administration pages use the same panel primitive. Feature components still own content and business behavior; the shared primitives own common structural and interaction contracts.
+The user and conversation dialogs now use the same modal/button primitives; structure and conversation screens use the same empty-state component; counters in the structure legend and conversation navigation use the same badge. Boards and administration pages use the same panel primitive. Feature components still own content and business behavior; shared primitives own common structural and interaction contracts.
 
 ## Design tokens
 
@@ -51,7 +51,7 @@ The user and conversation dialogs now use the same modal/button primitives; stru
 - Semantic surfaces and feedback: application foreground/background, input and panel surfaces, placeholders, danger, success, warning and informational colors.
 - Existing brand, role, button and message tokens.
 
-The dark theme overrides semantic variables under `:root[data-theme="dark-soft"]`. React components do not need to change when adding another theme; new values can be supplied through the semantic CSS variables.
+The dark theme overrides semantic variables under `:root[data-theme="dark-soft"]`. Components do not need to change when adding another theme; values can be supplied through semantic CSS variables.
 
 ## Current source measurements
 
@@ -66,9 +66,10 @@ Current style inventory:
 - 626 `!important` declarations remain.
 - 186 selector groups appear more than once across the ordered modules. Some are responsive/theme variants; others are legacy refinements and need component-by-component cascade review.
 - 1,205 parsed CSS rule blocks.
-- No unresolved CSS custom-property references in the stylesheet set.
+- No unresolved CSS custom-property references.
+- All 14 imported style modules were checked for balanced CSS blocks after extraction.
 
-The stylesheet has been split into smaller, focused files, but all historical cascade complexity has not yet been removed. Further removal of important declarations and repeated selectors requires component-by-component visual regression checks because specificity, source order, media conditions and theme variants interact.
+The stylesheet is now organized into focused modules, but all historical cascade complexity has not yet been removed. Further removal of important declarations and repeated selectors requires component-by-component visual regression checks because specificity, source order, media conditions and theme variants interact.
 
 ## Maintenance rules
 
