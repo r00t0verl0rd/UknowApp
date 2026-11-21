@@ -3,6 +3,7 @@ import X from "lucide-react/dist/esm/icons/x.js";
 import Modal from "../../../shared/components/Modal.jsx";
 import Button from "../../../shared/components/Button.jsx";
 import IconButton from "../../../shared/components/IconButton.jsx";
+import FormField from "../../../shared/components/FormField.jsx";
 
 export default function ChatDialogs({
   modal, setModal, users, createPersonalChat, error, setError,
@@ -19,7 +20,7 @@ export default function ChatDialogs({
         if (selected) void createPersonalChat(selected.id);
         else setError("Выберите участника из списка учителей и учеников");
       }}>
-        <label>Участник<input name="participant" list="personal-participant-options" placeholder="Начните вводить имя" autoComplete="off" autoFocus required/></label>
+        <FormField label="Участник"><input name="participant" list="personal-participant-options" placeholder="Начните вводить имя" autoComplete="off" autoFocus required/></FormField>
         <datalist id="personal-participant-options">{users.filter(user => ["teacher", "student"].includes(user.role)).map(user => <option value={user.full_name} key={user.id}>{user.role === "teacher" ? "Учитель" : "Ученик"}</option>)}</datalist>
         <p className="hint">Начните вводить имя и выберите нужного участника. Личный диалог будет доступен только внутри UknowApp.</p>
         {error && <p className="form-error" role="alert">{error}</p>}
