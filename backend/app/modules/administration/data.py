@@ -554,7 +554,6 @@ def _rollback_partial_restore(
     backup_name: str,
     original_entries: list[str],
 ) -> None:
-    stage_dir = data_dir / stage_name
     backup_dir = data_dir / backup_name
     protected = _control_names(stage_name, backup_name)
     for child in list(data_dir.iterdir()):
