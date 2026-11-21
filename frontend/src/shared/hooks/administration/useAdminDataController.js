@@ -47,16 +47,19 @@ export function useAdminDataController({
   const uploadAdminFile = useCallback(async (kind, file) => {
     if (!file) return;
     const warning = kind === "full"
-      ? "Полностью восстановить UknowApp из этой копии? Текущая база данных и все медиафайлы будут заменены."
+      ? "Подготовить перенос UknowApp из этой копии? После перезапуска backend весь текущий каталог data будет заменён содержимым архива."
       : "Заменить текущую базу данных загруженной копией? Все текущие данные будут перезаписаны.";
     if (!window.confirm(warning)) return;
     setDataBusy(true);
     setError("");
     try {
-      await uploadAdminBackup(kind, file);
-      notify(kind === "full"
-        ? "Полная резервная копия восстановлена. Перезагрузите панель."
-        : "База данных восстановлена. Перезагрузите панель.");
+      const result = await uploadAdminBackup(kind, file);
+      if (kind === "full" && result.restart_required) {
+        const notice = [result.message, ...(result.warnings || [])].filter(Boolean).join(" ");
+        notify(notice);
+        return;
+      }
+      notify("База данных восстановлена. Перезагрузите панель.");
       await loadDataStats();
       if (kind === "full" || kind === "database") {
         setSelectedChat(null);
