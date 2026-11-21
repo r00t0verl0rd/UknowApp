@@ -41,7 +41,8 @@ export default function UserDialogs({
   regeneratePanelAccessCode, removeUser, deleteCandidate, setDeleteCandidate,
   deletingUser, confirmRemoveUser, disconnectCandidate,
   setDisconnectCandidate, disconnectingTelegram, confirmDisconnectTelegram,
-  issuedCredential, setIssuedCredential, notify, code, setCode,\n  unassignCandidate, setUnassignCandidate, unassigningStudent, confirmUnassignStudent,
+  issuedCredential, setIssuedCredential, notify, code, setCode,
+  unassignCandidate, setUnassignCandidate, unassigningStudent, confirmUnassignStudent,
 }) {
   return <>
     {modal && modal.mode !== "create-personal" && <Modal onClose={() => setModal(null)} className={`${modal.mode === "create" ? "create-participant-modal" : modal.mode === "edit" ? "participant-profile-modal" : ""}`}>
