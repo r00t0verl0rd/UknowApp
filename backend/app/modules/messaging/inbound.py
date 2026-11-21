@@ -34,6 +34,7 @@ from app.modules.communication.contracts import (
     MessengerError,
     MessengerPlatform,
 )
+from app.modules.communication.service import record_messenger_delivery
 from app.modules.notifications.service import schedule_push
 from app.rate_limit import SlidingWindowLimiter
 
@@ -186,16 +187,18 @@ def conversation_messages(db: Session, conversation_id: int) -> list[Message]:
 
 
 def unanswered_student_messages(rows: list[Message]) -> list[Message]:
+    # Rows already exist in the UknowApp database. External messenger failures
+    # must not make an in-app message disappear from the conversation workflow.
     last_teacher_index = -1
     for index, row in enumerate(rows):
-        if row.sender_role == "teacher" and row.delivery_status == "delivered":
+        if row.sender_role == "teacher" and row.delivery_status != "blocked_contact":
             last_teacher_index = index
     return [
         row
         for index, row in enumerate(rows)
         if index > last_teacher_index
         and row.sender_role == "student"
-        and row.delivery_status == "delivered"
+        and row.delivery_status != "blocked_contact"
     ]
 
 
@@ -231,7 +234,7 @@ def mark_visible_messages_read_by_teacher(
         [
             row
             for row in rows[-12:]
-            if row.sender_role == "student" and row.delivery_status == "delivered"
+            if row.sender_role == "student" and row.delivery_status != "blocked_contact"
         ],
     )
 
@@ -495,7 +498,16 @@ async def _deliver_student_message_to_teacher(
             )
             metadata["teacher_inbox_notice_message_id"] = int(notice_id)
         metadata["teacher_inbox_media_message_id"] = int(copied_id)
-        row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+    record_messenger_delivery(
+        metadata,
+        inbound.platform,
+        delivered=[{
+            "user_id": teacher.id,
+            "external_message_id": str(copied_id),
+            "external_chat_id": teacher_chat_id,
+        }],
+    )
+    row.metadata_json = json.dumps(metadata, ensure_ascii=False)
 
     row.delivery_status = "delivered"
     db.commit()
@@ -544,12 +556,16 @@ async def _deliver_teacher_reply(
     )
     row.destination_message_id = int(copied_id)
     metadata = json.loads(row.metadata_json or "{}")
-    metadata["telegram_deliveries"] = [{
-        "user_id": student.id,
-        "telegram_message_id": row.destination_message_id,
-        "chat_id": int(destination_chat_id),
-        "thread_id": int(destination_thread_id) if destination_thread_id is not None else None,
-    }]
+    record_messenger_delivery(
+        metadata,
+        inbound.platform,
+        delivered=[{
+            "user_id": student.id,
+            "external_message_id": str(copied_id),
+            "external_chat_id": destination_chat_id,
+            "external_thread_id": destination_thread_id,
+        }],
+    )
     row.metadata_json = json.dumps(metadata, ensure_ascii=False)
     row.delivery_status = "delivered"
     db.commit()
@@ -684,7 +700,9 @@ async def process_inbound_message(
     if sender.role == "teacher":
         mark_visible_messages_read_by_teacher(db, conversation)
 
-    row = persist_message(db, conversation.id, sender, inbound, "pending")
+    # Once accepted and committed, this message is delivered to UknowApp.
+    # External messenger forwarding is tracked independently below.
+    row = persist_message(db, conversation.id, sender, inbound, "delivered")
     metadata = json.loads(row.metadata_json or "{}")
     metadata["source_mode"] = "group_topic" if group_binding else "private"
     try:
@@ -706,17 +724,25 @@ async def process_inbound_message(
         if recipient_account else None
     )
     if not recipient_chat_id:
-        if sender.role == "teacher":
-            metadata = json.loads(row.metadata_json or "{}")
-            metadata["telegram_delivery_errors"] = [{
+        metadata = json.loads(row.metadata_json or "{}")
+        record_messenger_delivery(
+            metadata,
+            inbound.platform,
+            errors=[{
                 "name": recipient.full_name,
-                "role": "student",
+                "role": recipient.role,
                 "reason": "Аккаунт получателя не подключён к " + inbound.platform.value.upper(),
-            }]
-            row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-            row.delivery_status = "failed"
-            db.commit()
-            publish_chat_update(conversation.id)
+            }],
+            status="not_connected",
+        )
+        row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+        # The external channel is optional: the recipient still receives this
+        # message in their UknowApp conversation and via in-app notifications.
+        row.delivery_status = "delivered"
+        db.commit()
+        publish_chat_update(conversation.id)
+
+        if sender.role == "teacher":
             mark_messages_read_by_teacher(db, unanswered_before_reply)
             if inbound.text:
                 try:
@@ -725,20 +751,22 @@ async def process_inbound_message(
                     )
                 except MessengerError as exc:
                     logger.info(
-                        "Could not remove teacher text after in-app delivery (error_type=%s)",
+                        "Could not remove teacher text after UknowApp delivery (error_type=%s)",
                         type(exc).__name__,
                     )
-            return InboundProcessResult(refresh_teacher_id=sender.id)
+            confirmation = "Ответ сохранён в UknowApp. Ученик увидит его в своей личной панели."
+        else:
+            confirmation = "Сообщение доставлено учителю в UknowApp. Он увидит его в личной панели."
 
-        row.delivery_status = "failed"
-        db.commit()
-        publish_chat_update(conversation.id)
         await gateway.send_text(
             inbound.external_chat_id,
-            "Не удалось отправить сообщение. Попробуйте позже.",
+            confirmation,
             inbound.external_thread_id,
         )
-        return InboundProcessResult(refresh_teacher_id=conversation.teacher_id)
+        return InboundProcessResult(
+            refresh_teacher_id=conversation.teacher_id,
+            force_teacher_panel_refresh=sender.role == "student",
+        )
 
     try:
         if sender.role == "student":
@@ -752,7 +780,21 @@ async def process_inbound_message(
                 recipient_chat_id, unanswered_before_reply, gateway,
             )
     except (MessengerError, SQLAlchemyError, ValueError, OSError) as exc:
-        row.delivery_status = "failed"
+        metadata = json.loads(row.metadata_json or "{}")
+        record_messenger_delivery(
+            metadata,
+            inbound.platform,
+            errors=[{
+                "name": recipient.full_name,
+                "role": recipient.role,
+                "reason": "Ошибка внешнего канала (" + type(exc).__name__ + ")",
+            }],
+            status="failed",
+        )
+        row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+        # An external send/copy failure never rolls back the already persisted
+        # UknowApp delivery state.
+        row.delivery_status = "delivered"
         db.commit()
         publish_chat_update(conversation.id)
         logger.warning(
@@ -760,9 +802,9 @@ async def process_inbound_message(
             inbound.platform.value, conversation.id, type(exc).__name__,
         )
         response = (
-            "Не удалось доставить сообщение. Попробуйте ещё раз позже."
+            "Ответ сохранён в UknowApp, но не удалось отправить его копию во внешний мессенджер."
             if sender.role == "teacher"
-            else "Не удалось отправить сообщение. Попробуйте ещё раз позже."
+            else "Сообщение сохранено в UknowApp, но не удалось отправить уведомление во внешний мессенджер."
         )
         await gateway.send_text(
             inbound.external_chat_id, response, inbound.external_thread_id,
