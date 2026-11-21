@@ -4,6 +4,7 @@ import GraduationCap from "lucide-react/dist/esm/icons/graduation-cap.js";
 import Pencil from "lucide-react/dist/esm/icons/pencil.js";
 import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Smile from "lucide-react/dist/esm/icons/smile.js";
+import Unlink from "lucide-react/dist/esm/icons/unlink.js";
 import EmptyState from "../../shared/components/EmptyState.jsx";
 import CountBadge from "../../shared/components/CountBadge.jsx";
 import Button from "../../shared/components/Button.jsx";
@@ -11,7 +12,7 @@ import Button from "../../shared/components/Button.jsx";
 export default function StructurePage({
   overview, loading, openCreate, allTeachers = [],
   studentsByTeacherId = new Map(), openEdit, setTeacherId, setStudentId,
-  allStudents = [], setModal, unassignedStudents = [],
+  allStudents = [], setModal, unassignedStudents = [], unassignStudent,
 }) {
   const [collapsedTeacherIds, setCollapsedTeacherIds] = useState(() => new Set());
   if (loading) return <EmptyState>Загружаем структуру школы…</EmptyState>;
@@ -51,6 +52,7 @@ export default function StructurePage({
             {students.map(student => <div className="student-card" key={student.id}>
               <div className="person-main"><div className="avatar student-avatar"><Smile /></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
               <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil /></button>
+              <button type="button" className="icon-btn graph-person-action" title="Отвязать от учителя" aria-label={"Отвязать ученика " + student.full_name + " от учителя"} onClick={() => unassignStudent(student)}><Unlink /></button>
             </div>)}
             {!students.length && <div className="empty-students">Нет назначенных учеников</div>}
           </div>}
