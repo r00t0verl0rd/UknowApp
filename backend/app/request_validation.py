@@ -1,4 +1,4 @@
-"""Small request validators for the HTTP API without application-level Pydantic models."""
+"""Проверки входных данных HTTP API."""
 
 from collections.abc import Mapping
 from typing import Any

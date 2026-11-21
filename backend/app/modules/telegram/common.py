@@ -1,4 +1,4 @@
-"""Telegram identity compatibility helpers and shared text checks."""
+"""Привязка Telegram и проверки текста."""
 
 from sqlalchemy.orm import Session
 

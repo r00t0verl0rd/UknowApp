@@ -1,4 +1,4 @@
-"""Telegram polling entry point used by the FastAPI application."""
+"""Фоновое получение событий Telegram."""
 
 from aiogram import Dispatcher
 
@@ -6,12 +6,7 @@ from .handlers import router
 
 
 class ConflictAwareDispatcher(Dispatcher):
-    """Stop polling on TelegramConflictError instead of aiogram's endless retry.
-
-    aiogram 3.22.0 catches every exception inside Dispatcher._listen_updates().
-    We retain its normal retry behavior for network errors, but re-raise polling
-    conflicts so the application-level handler can stop this polling task.
-    """
+    """Остановить polling при конфликте другого экземпляра."""
 
     @staticmethod
     async def _listen_updates(
@@ -20,8 +15,7 @@ class ConflictAwareDispatcher(Dispatcher):
         backoff_config=None,
         allowed_updates=None,
     ):
-        # Reuse aiogram's own internal helpers to stay aligned with the installed
-        # aiogram version while changing only its TelegramConflictError behavior.
+        # Используем внутренние средства aiogram, меняя только обработку конфликта.
         base_globals = Dispatcher._listen_updates.__func__.__globals__
         Backoff = base_globals["Backoff"]
         default_backoff_config = base_globals["DEFAULT_BACKOFF_CONFIG"]

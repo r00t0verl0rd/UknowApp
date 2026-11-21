@@ -1,4 +1,4 @@
-"""Bot API transport; select Telegram cloud or self-hosted server via environment."""
+"""Подключение к облачному или локальному Telegram API."""
 
 import os
 from pathlib import Path
@@ -11,7 +11,7 @@ from app.core.config import TELEGRAM_API_URL, TELEGRAM_FILES_DIR
 
 
 class TelegramFiles(SimpleFilesPathWrapper):
-    """Map getFile paths to the read-only Bot API cache on this host."""
+    """Проверить путь файла в локальном кеше Telegram."""
 
     def to_local(self, path: Path | str) -> Path:
         local = Path(super().to_local(path)).resolve()
@@ -23,8 +23,7 @@ class TelegramFiles(SimpleFilesPathWrapper):
 def create_telegram_bot(token: str) -> Bot:
     mode = os.getenv("TELEGRAM_API_MODE", "local").strip().lower()
     if mode == "cloud":
-        # The default aiogram session uses api.telegram.org and downloads
-        # Telegram files via HTTPS rather than relying on a mounted cache.
+        # Облачный API скачивает файлы по HTTPS без локального кеша.
         return Bot(token=token)
     if mode != "local":
         raise ValueError("TELEGRAM_API_MODE must be 'cloud' or 'local'")

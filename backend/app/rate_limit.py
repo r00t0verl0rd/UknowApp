@@ -1,4 +1,4 @@
-"""Thread-safe in-memory sliding-window rate limiter shared by app features."""
+"""Потокобезопасное ограничение частоты запросов."""
 
 import threading
 import time
@@ -7,7 +7,7 @@ from collections.abc import Hashable
 
 
 class SlidingWindowLimiter:
-    """Track attempts per key without duplicating window/pruning logic."""
+    """Считать запросы по ключу в скользящем окне."""
 
     def __init__(self, max_keys: int = 10_000):
         self._attempts: dict[Hashable, deque[float]] = {}

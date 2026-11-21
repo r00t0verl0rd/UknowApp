@@ -101,8 +101,7 @@ def teacher_conversations(db: Session, teacher: User) -> list[dict]:
     unread_by_conversation: dict[int, list[Message]] = defaultdict(list)
 
     if conversation_ids:
-        # Both scalar lookups use the existing (conversation_id, created_at, id)
-        # index. Don't materialize every message for every assigned student.
+        # Используем индекс, не загружая все сообщения учеников.
         latest_id = (
             select(Message.id)
             .where(Message.conversation_id == Conversation.id)
@@ -152,8 +151,7 @@ def teacher_conversations(db: Session, teacher: User) -> list[dict]:
                 )
             unread_ranges.append(condition)
 
-        # Only student messages after the last teacher reply can be pending.
-        # Keep JSON read checks identical to the original Python implementation.
+        # Неотвеченные сообщения начинаются после ответа учителя.
         for row in db.scalars(
             select(Message)
             .where(
@@ -181,7 +179,7 @@ def teacher_conversations(db: Session, teacher: User) -> list[dict]:
             "latest": latest,
             "last_at": latest.created_at.isoformat() if latest else assignment.created_at.isoformat(),
         })
-    # Keep all assigned students visible; students with unread messages come first.
+    # Показываем всех учеников; непрочитанные идут первыми.
     items.sort(key=lambda item: (item["unanswered"] > 0, item["last_at"]), reverse=True)
     return items
 
@@ -309,7 +307,7 @@ def teacher_chat_view(
     conversation: Conversation,
 ) -> str:
     student = conversation.assignment.student
-    # A 13th row tells us whether a total-count query is needed.
+    # Дополнительная строка показывает, нужен ли подсчёт.
     rows = recent_conversation_messages(db, conversation.id, limit=13)
     visible_rows = rows[-12:]
     lines = [
@@ -336,7 +334,7 @@ async def _update_teacher_panel_locked(
     teacher: User,
     force_keyboard_refresh: bool = False,
 ) -> bool:
-    """Update the panel and replace its keyboard only when its content changes."""
+    """Обновить панель и клавиатуру только при изменениях."""
     telegram_account = get_messenger_account(db, teacher.id, MessengerPlatform.TELEGRAM)
     if not telegram_account:
         return False
@@ -371,8 +369,7 @@ async def _update_teacher_panel_locked(
         and panel.chat_id == telegram_chat_id
     ):
         try:
-            # Reply keyboards belong to the chat, not to an editable message.
-            # The persistent keyboard remains active while only the panel text changes.
+            # Клавиатура привязана к чату, а не к сообщению.
             await bot.edit_message_text(
                 chat_id=panel.chat_id,
                 message_id=panel.message_id,
@@ -405,9 +402,7 @@ async def _update_teacher_panel_locked(
     old_message_id = panel.message_id if panel else None
     old_keyboard_version = panel.keyboard_version if panel else None
 
-    # Sending the new markup directly replaces the chat-level reply keyboard.
-    # Do not remove it in a separate message: some Telegram clients defer the
-    # placeholder redraw until the next user message after a remove/restore pair.
+    # Новая клавиатура заменяет старую без промежуточного удаления.
     sent = await bot.send_message(
         chat_id=telegram_chat_id,
         text=text,
@@ -433,8 +428,7 @@ async def _update_teacher_panel_locked(
     db.commit()
 
     if old_chat_id and old_message_id and old_message_id != sent.message_id:
-        # Current panels use a chat-level reply keyboard, not inline buttons.
-        # Only legacy panels need the extra Telegram edit request.
+        # Текущая панель использует клавиатуру чата.
         if old_keyboard_version < TEACHER_KEYBOARD_VERSION:
             try:
                 await bot.edit_message_reply_markup(
@@ -459,8 +453,7 @@ async def _update_teacher_panel_locked(
     return True
 
 
-# Telegram may process several updates for the same teacher concurrently.
-# Serialize panel edits/creation so two handlers cannot create competing panels.
+# Обновляем панель последовательно, без гонки обработчиков.
 _teacher_panel_locks: dict[int, asyncio.Lock] = {}
 
 
@@ -487,7 +480,7 @@ async def handle_teacher_keyboard_message(
     teacher: User,
     gateway,
 ) -> InboundUiResult:
-    """Interpret Telegram's reply-keyboard text as a UI action in the shared flow."""
+    """Обработать нажатие кнопки клавиатуры Telegram."""
     body = inbound.text.strip()
     if not body:
         return InboundUiResult(False)
@@ -507,7 +500,7 @@ async def handle_teacher_keyboard_message(
         await remove_action_message()
         return InboundUiResult(True, force_keyboard_refresh=True)
 
-    # Navigation and refresh never need message previews or an unread scan.
+    # Навигация не требует загрузки истории и счётчиков.
     if body in {TEACHER_BACK_LABEL, TEACHER_REFRESH_LABEL}:
         if body == TEACHER_BACK_LABEL:
             clear_teacher_session(db, teacher)
@@ -539,8 +532,7 @@ async def handle_teacher_keyboard_message(
         await remove_action_message()
         return InboundUiResult(True)
 
-    # Ordinary teacher replies vastly outnumber keyboard selections. Check
-    # assigned student names before assembling page previews and unread counts.
+    # Обычные ответы не должны пересобирать весь список учеников.
     is_student_label = db.scalar(
         select(User.id)
         .join(Assignment, Assignment.student_id == User.id)

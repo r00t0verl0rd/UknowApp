@@ -1,4 +1,4 @@
-"""Telegram commands and transport-level event routing."""
+"""Команды и маршрутизация событий Telegram."""
 
 import logging
 
@@ -56,8 +56,7 @@ async def start(message: TgMessage, bot: Bot):
         if user.role == "teacher":
             clear_teacher_session(db, user)
             try:
-                # Open the persistent teacher panel directly; do not send a
-                # separate confirmation message after /start.
+                # Открываем панель учителя без дополнительного сообщения.
                 await update_teacher_panel(bot, db, user, force_keyboard_refresh=True)
             except (TelegramAPIError, SQLAlchemyError) as exc:
                 logger.warning(
@@ -176,7 +175,7 @@ async def choose_conversation(callback: CallbackQuery, bot: Bot):
 
 @router.message(Command("bind_group"))
 async def bind_student_group(message: TgMessage, bot: Bot):
-    """Bind the current Telegram forum topic to the linked student account."""
+    """Привязать тему Telegram к ученику."""
     if not message.from_user:
         return
     if message.chat.type != "supergroup" or not message.chat.is_forum or not message.message_thread_id:
@@ -190,8 +189,7 @@ async def bind_student_group(message: TgMessage, bot: Bot):
         await message.answer("Слишком часто. Повторите привязку через минуту.")
         return
 
-    # Verify the sender before making any Telegram API calls. Unlinked users
-    # must not be able to use /bind_group to generate requests from our bot.
+    # Проверяем привязку пользователя перед запросом к Telegram.
     with SessionLocal() as db:
         student = get_linked_user(db, telegram_id)
         if not student or student.role != "student":
@@ -202,9 +200,7 @@ async def bind_student_group(message: TgMessage, bot: Bot):
             await message.answer("Сначала попросите администратора назначить вам активного учителя.")
             return
 
-    # Telegram may deliver /bind_group while hiding ordinary group messages
-    # from bots with Group Privacy Mode enabled. Verify that this bot can
-    # actually receive the student's regular messages before binding the topic.
+    # Проверяем, что бот видит сообщения группы перед привязкой.
     try:
         bot_info = await bot.get_me()
         can_read_group_messages = bool(

@@ -1,4 +1,4 @@
-"""User-domain validation and public serialization helpers."""
+"""Проверки и данные пользователей для API."""
 
 import secrets
 
