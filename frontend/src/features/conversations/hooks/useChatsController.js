@@ -143,8 +143,9 @@ export function useChatsController({
       const result = await deleteChatMessage(request, message, selectedChat?.type === "personal");
       setMessages(current => current.filter(item => item.id !== message.id));
       setDeleteMessageCandidate(null);
-      if (result.telegram_failed > 0) {
-        notify("Удалено из UknowApp. Не удалось удалить копии в Telegram: " + result.telegram_failed + ". Возможно, Telegram уже не разрешает их удаление.");
+      const messengerFailed = Number(result.messenger_failed ?? result.telegram_failed ?? 0);
+      if (messengerFailed > 0) {
+        notify("Сообщение удалено из UknowApp. Не удалось удалить копии во внешних мессенджерах: " + messengerFailed + ".");
       } else {
         notify("Сообщение удалено у всех участников");
       }
