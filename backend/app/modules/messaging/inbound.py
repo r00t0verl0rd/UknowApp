@@ -26,7 +26,6 @@ from app.models import (
 from app.modules.communication.accounts import (
     CONNECTION_CODE_RE,
     claim_messenger_connection_code,
-    get_messenger_account,
     get_messenger_pair,
     get_messenger_user,
 )
