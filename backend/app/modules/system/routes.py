@@ -19,8 +19,8 @@ from app.modules.auth.service import (
     create_panel_session,
     record_failed_login,
     revoke_panel_session,
-    verify_request_origin,
 )
+from app.core.security import verify_request_origin
 from app.models import PushSubscription
 from app.modules.dependencies import Db, PanelUser
 from app.modules.notifications import vapid
