@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { getInboxData } from "../../../shared/services/panelApi.js";
 import { subscribePanelEvents } from "../../../shared/services/panelEventStream.js";
 import { syncChatState } from "../services/conversationsApi.js";
-import { mergeConversationMessages } from "../services/messageState.js";
+import { markConversationMessageDeleted, mergeConversationMessages } from "../services/messageState.js";
 import { mergeInboxSnapshot } from "../../../shared/services/inboxState.js";
 
 const maxMessageId = rows => rows.reduce((max, row) => Math.max(max, Number(row.id) || 0), 0);
@@ -124,7 +124,7 @@ export function useConversationSync({
           const updated = [...(result.updated_messages || []), ...(result.messages || [])];
           if (updated.length) {
             lastMessageCursor.current.id = Math.max(afterId, maxMessageId(updated));
-            current.current.setMessages(previous => mergeConversationMessages(previous, updated));
+            current.current.setMessages(previous => mergeConversationMessages(previous, updated, chatKey));
           }
           if (result.summary) applySummary(chat.type, chat.id, result.summary);
         } while (syncQueued.current && active);
@@ -164,6 +164,7 @@ export function useConversationSync({
             const chat = current.current.selectedChat;
             if (isSameChat(chat, id, type)) {
               if (deletedIds.size) {
+                for (const messageId of deletedIds) markConversationMessageDeleted(key, messageId);
                 current.current.setMessages(rows => rows.filter(
                   row => !deletedIds.has(Number(row.id)),
                 ));

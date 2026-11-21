@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useChatActionState } from "./useChatActionState.js";
-import { mergeConversationMessages } from "../services/messageState.js";
+import { markConversationMessageDeleted, mergeConversationMessages } from "../services/messageState.js";
 import {
   createPersonalConversation, deleteChatMessage, getChatMessages,
   sendConversationAttachment,
@@ -117,7 +117,7 @@ export function useChatsController({
       if (requestId !== openingChatRequest.current || activeChatKey.current !== chatKey) return;
       // Preserve messages/status updates received over SSE while the initial
       // history request was in flight instead of replacing the live message list.
-      setMessages(previous => mergeConversationMessages(previous, loadedMessages));
+      setMessages(previous => mergeConversationMessages(previous, loadedMessages, chatKey));
     } catch (error) {
       if (requestId === openingChatRequest.current && activeChatKey.current === chatKey) {
         setError(error.message);
@@ -152,6 +152,8 @@ export function useChatsController({
     setError("");
     try {
       const result = await deleteChatMessage(request, message, selectedChat?.type === "personal");
+      const chatKey = (selectedChat?.type === "personal" ? "personal:" : "conversation:") + selectedChat?.id;
+      markConversationMessageDeleted(chatKey, message.id);
       setMessages(current => current.filter(item => item.id !== message.id));
       setDeleteMessageCandidate(null);
       const messengerFailed = Number(result.messenger_failed ?? result.telegram_failed ?? 0);
@@ -222,7 +224,7 @@ export function useChatsController({
         setDraft("");
         setAttachment(null);
       }
-      setMessages(current => mergeConversationMessages(current, [sentMessage]));
+      setMessages(current => mergeConversationMessages(current, [sentMessage], chatKey));
 
       if (chat.type === "personal") {
         notify("Сообщение отправлено внутри UknowApp");
