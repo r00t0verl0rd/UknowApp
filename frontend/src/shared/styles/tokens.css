@@ -1,4 +1,4 @@
-/* Canonical design tokens: one light palette and one dark override. */
+/* Общие цвета и размеры светлой и тёмной тем. */
 :root {
   font-family: var(--font-family-ui);
   color: var(--app-foreground);
@@ -7,7 +7,7 @@
   text-rendering: optimizeLegibility;
   color-scheme: light;
 
-  /* Typography: one scale for all workspaces and reusable components. */
+  /* Единая шкала текста для всех экранов. */
   --font-family-ui: Onest, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-family-heading: Sora, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-family-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -28,7 +28,7 @@
   --line-height-normal: 1.45;
   --line-height-relaxed: 1.6;
 
-  /* Spacing scale: multiples and half-steps share one rhythm. */
+  /* Единая шкала отступов. */
   --space-1: 4px;
   --space-1-5: 6px;
   --space-2: 8px;
@@ -42,7 +42,7 @@
   --space-8: 32px;
   --space-10: 40px;
 
-  /* Shared geometry, control sizes and interaction timing. */
+  /* Общие размеры элементов и длительности анимаций. */
   --ui-radius-xs: 7px;
   --ui-radius-pill: 999px;
   --ui-control-height-sm: 34px;
@@ -56,7 +56,7 @@
   --ui-z-toast: 80;
   --ui-z-overlay: 1000;
 
-  /* Semantic page and feedback surfaces. */
+  /* Цвета поверхностей и уведомлений. */
   --app-foreground: #29223f;
   --app-background: #f7f6fb;
   --surface-raised: #ffffff;
@@ -71,7 +71,7 @@
   --info: #3398ed;
   --ui-shadow-message: 0 2px 8px rgba(41, 34, 63, .035);
 
-  /* Brand and semantic colors. */
+  /* Цвета бренда и состояний. */
   --purple: #6046a5;
   --purple2: #785fc0;
   --red: #df5967;
@@ -86,7 +86,7 @@
   --red-soft: #fff0f1;
   --red-border: #f2d6da;
 
-  /* Shared component and control tokens. */
+  /* Общие настройки компонентов и кнопок. */
   --ui-radius-sm: 9px;
   --ui-radius-md: 12px;
   --ui-radius-lg: 16px;
@@ -113,7 +113,7 @@
   --button-danger-hover-text: #a92332;
   --ui-shadow-raised: 0 9px 26px rgba(38, 29, 58, .10);
 
-  /* Role colors. */
+  /* Цвета ролей. */
   --role-student: #c58c2e;
   --role-student-soft: #fff0cf;
   --role-student-border: #e9cf98;
@@ -146,7 +146,7 @@
   color: var(--app-foreground);
   background: var(--app-background);
 
-  /* Dark palette and semantic colors. */
+  /* Цвета тёмной темы. */
   --purple: #9b91c2;
   --purple2: #897eaf;
   --red: #e58c98;
@@ -160,7 +160,7 @@
   --red-soft: #402d37;
   --red-border: #65404b;
 
-  /* Shared component and control tokens. */
+  /* Общие настройки компонентов и кнопок. */
   --ui-border: #3a4659;
   --ui-border-strong: #596780;
   --ui-control-bg: #293344;
@@ -184,7 +184,7 @@
   --button-danger-hover-text: #f5c0c7;
   --ui-shadow-raised: 0 10px 28px rgba(0, 0, 0, .24);
 
-  /* Role colors. */
+  /* Цвета ролей. */
   --role-student: #c9aa70;
   --role-student-soft: #39342e;
   --role-student-border: #625440;

@@ -1,4 +1,4 @@
-/* Standalone mobile app: cover the notch/status-bar safe area with an opaque surface. */
+/* Безопасные отступы мобильного приложения. */
 @media (display-mode: standalone) and (max-width: 1024px) {
   html, body, #root, .chats-shell{
     background: var(--surface) !important;
