@@ -6,6 +6,7 @@ import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Smile from "lucide-react/dist/esm/icons/smile.js";
 import EmptyState from "../../shared/components/EmptyState.jsx";
 import CountBadge from "../../shared/components/CountBadge.jsx";
+import Button from "../../shared/components/Button.jsx";
 
 export default function StructurePage({
   overview, openCreate, allTeachers = [],
@@ -20,7 +21,7 @@ export default function StructurePage({
         <div className="graph-legend-item"><span className="teacher-dot" />Учителя <CountBadge as="b" value={overview?.counts?.teachers || 0} label="учителей"/></div>
         <div className="graph-legend-item"><span className="student-dot" />Ученики <CountBadge as="b" value={overview?.counts?.students || 0} label="учеников"/></div>
       </div>
-      <button type="button" className="btn primary graph-add-participant" onClick={() => openCreate()}><Plus />Добавить участника</button>
+      <Button type="button" variant="primary" className="graph-add-participant" onClick={() => openCreate()}><Plus />Добавить участника</Button>
     </div>
     <div className="role_node"><img src="/logo.png" alt="" /><div><b>Администратор</b><small>Полное управление</small></div></div>
     <div className="grid">
@@ -62,11 +63,11 @@ export default function StructurePage({
         <div className="person-main"><div className="avatar student-avatar"><Smile /></div><div className="person-info"><b>{student.full_name}</b>{student.additional_info && <small className="student-additional-info">{student.additional_info}</small>}</div></div>
         <div className="unassigned-student-actions">
           <button type="button" className="icon-btn graph-person-action" title="Редактировать" onClick={() => openEdit(student)}><Pencil /></button>
-          <button type="button" className="btn small outline" disabled={!allTeachers.length} onClick={() => {
+          <Button type="button" size="small" variant="outline" disabled={!allTeachers.length} onClick={() => {
             setStudentId(String(student.id));
             setTeacherId(String(allTeachers[0]?.id || ""));
             setModal({ mode: "assign" });
-          }}>Назначить</button>
+          }}>Назначить</Button>
         </div>
       </div>)}</div>
     </section>}
