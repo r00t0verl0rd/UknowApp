@@ -6,6 +6,7 @@ import Search from "lucide-react/dist/esm/icons/search.js";
 import Send from "lucide-react/dist/esm/icons/send.js";
 import X from "lucide-react/dist/esm/icons/x.js";
 import MessageBubble from "./components/MessageBubble.jsx";
+import EmptyState from "../../shared/components/EmptyState.jsx";
 
 export default function ChatsPage({
   profile, chatSection, setChatSection, personalChats, setSelectedChat,
@@ -135,7 +136,7 @@ export default function ChatsPage({
             );
           })}
           {!visibleChats.length && (
-            <div className="empty-state">
+            <EmptyState>
               {profile?.role === "admin" && chatSection === "personal"
                 ? "Личных диалогов пока нет"
                 : profile?.role === "student"
@@ -143,7 +144,7 @@ export default function ChatsPage({
                   : profile?.role === "admin"
                     ? "Активных диалогов участников нет"
                     : "По выбранному фильтру ничего не найдено"}
-            </div>
+            </EmptyState>
           )}
         </div>
       </section>
@@ -191,9 +192,9 @@ export default function ChatsPage({
                   onDelete={setDeleteMessageCandidate} viewerRole={profile?.role}
                   personalChat={selectedChat.type === "personal"}/>
               ))}
-              {!messages.length && <div className="empty-state">Сообщений пока нет</div>}
+              {!messages.length && <EmptyState>Сообщений пока нет</EmptyState>}
               {!!messages.length && !visibleMessages.length
-                && <div className="empty-state">Нет сообщений этого типа</div>}
+                && <EmptyState>Нет сообщений этого типа</EmptyState>}
             </div>
 
             {(selectedChat.type === "personal" || selectedChat.status === "active") && (
@@ -240,11 +241,11 @@ export default function ChatsPage({
             )}
           </>
         ) : (
-          <div className="empty-state">
+          <EmptyState>
             {profile?.role === "student"
               ? "Ваша переписка с учителем появится здесь"
               : "Выберите ученика слева"}
-          </div>
+          </EmptyState>
         )}
       </section>
     </>
