@@ -62,7 +62,7 @@ def health(request: Request, db: Db):
 
     telegram_status = getattr(request.app.state, "telegram_status", "unknown")
     return {
-        "status": "ok" if telegram_status in {"connected", "disabled"} else "degraded",
+        "status": "ok" if telegram_status in {"connected", "disabled", "remote"} else "degraded",
         "service": "uknowapp",
         "components": {
             "database": "ok",
