@@ -5,6 +5,7 @@ import X from "lucide-react/dist/esm/icons/x.js";
 import Info from "lucide-react/dist/esm/icons/info.js";
 import { useEffect, useState } from "react";
 import AppToast from "../shared/components/AppToast.jsx";
+import IconButton from "../shared/components/IconButton.jsx";
 
 export default function WorkspaceLayout({
   role, profile, label, navigation, page, setPage, theme, toggleTheme,
@@ -21,11 +22,11 @@ export default function WorkspaceLayout({
   }, []);
 
   const themeToggle = (
-    <button type="button" className="theme-toggle" onClick={toggleTheme}
+    <IconButton className="theme-toggle" onClick={toggleTheme}
       title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"}
       aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
       {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
-    </button>
+    </IconButton>
   );
 
   return <div className={`shell chats-shell workspace-shell workspace-${role}`}>
