@@ -34,6 +34,6 @@ jobs:
         env:
           PYTHONPATH: backend
           TELEGRAM_BOT_ENABLED: 'false'
-          ADMIN_PASSWORD: 'ci-secret-at-least-16-chars'
+          ADMIN_PASSWORD: 'ci-placeholder-only-not-a-real-secret' # pragma: allowlist secret
           DATABASE_URL: 'sqlite://'
         run: pytest -q backend/tests
