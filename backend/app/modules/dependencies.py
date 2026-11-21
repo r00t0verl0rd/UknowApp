@@ -6,7 +6,7 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
-from app.core.security import require_admin, require_panel_user
+from app.modules.auth.service import require_admin, require_panel_user
 
 
 def get_db():

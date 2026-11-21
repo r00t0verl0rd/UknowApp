@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    event,
     DateTime,
     Float,
     ForeignKey,
@@ -17,6 +18,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .core.database import Base
+from .core.security import normalize_login
 
 
 def utcnow() -> datetime:
@@ -30,10 +32,18 @@ class User(Base):
     full_name: Mapped[str] = mapped_column(String(160), nullable=False)
     additional_info: Mapped[str | None] = mapped_column(String(500), nullable=True)
     web_username: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    web_login_key: Mapped[str | None] = mapped_column(String(320), nullable=True, index=True)
     role: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     telegram_id: Mapped[int | None] = mapped_column(BigInteger, unique=True, nullable=True, index=True)
     web_password_hash: Mapped[str | None] = mapped_column(String(160), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+
+@event.listens_for(User, "before_insert")
+@event.listens_for(User, "before_update")
+def _refresh_login_lookup(_mapper, _connection, user: User) -> None:
+    # All ORM create/edit paths keep the indexed casefold key in sync.
+    user.web_login_key = normalize_login(user.web_username or user.full_name)
 
 
 class PushSubscription(Base):

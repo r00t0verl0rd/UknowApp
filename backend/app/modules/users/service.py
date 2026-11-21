@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import ADMIN_USERNAME
+from app.core.security import normalize_login
 from app.models import User
 
 
@@ -36,11 +37,12 @@ def validate_panel_username(db: Session, username: str, exclude_user_id: int | N
         raise HTTPException(status_code=400, detail="Логин должен содержать от 2 до 160 символов")
     if cleaned.casefold() == ADMIN_USERNAME.casefold():
         raise HTTPException(status_code=409, detail="Этот логин зарезервирован для администратора")
-    users = db.scalars(select(User).where(User.role.in_(["teacher", "student"]))).all()
-    for user in users:
-        if user.id == exclude_user_id:
-            continue
-        existing = (user.web_username or user.full_name).strip()
-        if existing.casefold() == cleaned.casefold():
-            raise HTTPException(status_code=409, detail="Этот логин уже используется другим участником")
+    statement = select(User.id).where(
+        User.role.in_(["teacher", "student"]),
+        User.web_login_key == normalize_login(cleaned),
+    )
+    if exclude_user_id is not None:
+        statement = statement.where(User.id != exclude_user_id)
+    if db.scalar(statement.limit(1)) is not None:
+        raise HTTPException(status_code=409, detail="Этот логин уже используется другим участником")
     return cleaned

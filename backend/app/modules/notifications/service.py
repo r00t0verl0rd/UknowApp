@@ -13,6 +13,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.core import config
+from app.modules.notifications import vapid
 from app.models import PushSubscription
 from app.modules.notifications.endpoints import is_safe_push_endpoint
 
@@ -28,7 +29,7 @@ def schedule_push(
     include_admin: bool = False,
 ) -> None:
     """Queue push delivery without delaying message persistence or Telegram handling."""
-    if not config.VAPID_PRIVATE_KEY:
+    if not vapid.VAPID_PRIVATE_KEY:
         return
     ids = {int(user_id) for user_id in user_ids if user_id}
     conditions = [PushSubscription.user_id.in_(ids)] if ids else []
@@ -83,7 +84,7 @@ def _deliver(targets: list[dict], payload: str) -> None:
                     "keys": target["keys"],
                 },
                 data=payload,
-                vapid_private_key=config.VAPID_PRIVATE_KEY,
+                vapid_private_key=vapid.VAPID_PRIVATE_KEY,
                 vapid_claims={"sub": config.VAPID_SUBJECT},
                 ttl=86400,
                 timeout=8,

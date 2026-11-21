@@ -17,10 +17,12 @@ from .core.config import (
     TELEGRAM_BOT_ENABLED,
     TELEGRAM_BOT_TOKEN,
 )
-from .core.database import SessionLocal, create_tables
+from .core.database import SessionLocal
+from .migrations import initialize_database
 from .models import Assignment, Conversation, User
 from .modules.administration.data import apply_pending_data_restore
 from .modules.communication.service import CommunicationService
+from .modules.notifications.vapid import reload_vapid_keys
 from .modules.telegram.adapter import TelegramAdapter
 from .modules.telegram.transport import create_telegram_bot
 
@@ -99,7 +101,8 @@ async def run_telegram_bot(bot, dispatcher, app) -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     apply_pending_data_restore()
-    create_tables()
+    reload_vapid_keys()
+    initialize_database()
     if SEED_DEMO_DATA:
         seed_demo_data()
 

@@ -11,8 +11,7 @@ from fastapi import (
 from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.core import config
-from app.core.security import (
+from app.modules.auth.service import (
     authenticate_panel_user,
     check_login_rate_limit,
     clear_panel_cookies,
@@ -24,6 +23,7 @@ from app.core.security import (
 )
 from app.models import PushSubscription
 from app.modules.dependencies import Db, PanelUser
+from app.modules.notifications import vapid
 from app.modules.notifications.endpoints import is_safe_push_endpoint
 from app.request_validation import login_payload
 
@@ -72,7 +72,7 @@ def health(request: Request, db: Db):
 
 @router.get("/push/public-key")
 def push_public_key():
-    return {"enabled": bool(config.VAPID_PUBLIC_KEY), "public_key": config.VAPID_PUBLIC_KEY or None}
+    return {"enabled": bool(vapid.VAPID_PUBLIC_KEY), "public_key": vapid.VAPID_PUBLIC_KEY or None}
 
 
 @router.post("/push/subscribe")

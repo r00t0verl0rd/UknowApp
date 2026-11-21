@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 from starlette.background import BackgroundTask
 
 from app.core.database import SessionLocal, engine
-from app.core.security import require_admin
+from app.modules.auth.service import require_admin
 from app.event_hub import publish_chat_update
 from app.infrastructure.storage.media import MEDIA_DIR, delete_message_media
 from app.models import (
@@ -690,7 +690,7 @@ def apply_pending_data_restore() -> bool:
                 child.rename(data_dir / child.name)
 
             _validate_database(_database_path())
-            from app.core.config import reload_vapid_keys
+            from app.modules.notifications.vapid import reload_vapid_keys
 
             reload_vapid_keys(data_dir)
             marker["status"] = "committed"
@@ -699,7 +699,7 @@ def apply_pending_data_restore() -> bool:
         except Exception:
             try:
                 _rollback_partial_restore(data_dir, stage_name, backup_name, original_entries)
-                from app.core.config import reload_vapid_keys
+                from app.modules.notifications.vapid import reload_vapid_keys
 
                 reload_vapid_keys(data_dir)
             except Exception as rollback_error:
