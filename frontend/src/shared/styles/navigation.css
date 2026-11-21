@@ -110,3 +110,16 @@
     height: 15px;
   }
 }
+
+/* Старое мобильное правило не должно окрашивать новую кнопку иначе, чем меню. */
+:root[data-theme="dark-soft"] .workspace-shell .content:has(.role_node) button.graph-add-participant.ui-menu-control {
+  background: var(--menu-bg) !important;
+  background-image: none !important;
+  border-color: var(--menu-border) !important;
+  color: var(--menu-text) !important;
+}
+:root[data-theme="dark-soft"] .workspace-shell .content:has(.role_node) button.graph-add-participant.ui-menu-control:hover:not(:disabled) {
+  background: var(--menu-hover-bg) !important;
+  border-color: var(--menu-hover-border) !important;
+  color: var(--menu-text) !important;
+}
