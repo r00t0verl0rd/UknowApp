@@ -12,6 +12,7 @@ export function usePanelDataState({
   const refreshRevision = useRef(0);
   const refreshTask = useRef(null);
   const inboxRevision = useRef(0);
+  const inboxRowRevision = useRef(new Map());
 
   const refresh = useCallback(() => {
     if (!auth) return Promise.resolve();
@@ -88,5 +89,5 @@ export function usePanelDataState({
 
   useEffect(() => { void refresh(); }, [refresh]);
 
-  return { request, refresh, inboxRevision };
+  return { request, refresh, inboxRevision, inboxRowRevision };
 }

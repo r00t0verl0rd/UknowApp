@@ -15,7 +15,7 @@ const isSameChat = (chat, id, type) => (
 const conversationKey = (id, type) => (type === "personal" ? "personal:" : "conversation:") + id;
 
 export function useConversationSync({
-  auth, role, selectedChat, messages, request, inboxRevision,
+  auth, role, selectedChat, messages, request, inboxRevision, inboxRowRevision,
   setChats, setPersonalChats, setSelectedChat, setMessages,
 }) {
   const current = useRef(null);
@@ -27,7 +27,6 @@ export function useConversationSync({
   const syncQueued = useRef(false);
   const eventRevision = useRef(new Map());
   const inboxRequestRevision = useRef(0);
-  const inboxRowRevision = useRef(new Map());
   const recoveryPending = useRef(false);
 
   current.current = {
