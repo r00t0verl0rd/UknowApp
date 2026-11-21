@@ -11,8 +11,8 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install -r /app/backend/requi
 
 RUN groupadd --system app \
     && useradd --system --gid app --home-dir /app app \
-    && mkdir -p /app/data \
-    && chown app:app /app /app/data
+    && mkdir -p /app/data /app/gateway-data \
+    && chown app:app /app /app/data /app/gateway-data
 
 COPY --chown=app:app backend /app/backend
 
