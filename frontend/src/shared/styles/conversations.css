@@ -38,7 +38,6 @@
   flex:1 1 0;
   flex-direction:column;
   align-items:stretch;
-  gap:8px;
   min-width:0;
   min-height:0;
   overflow-x:hidden;
@@ -54,28 +53,27 @@
   gap:10px;
   width:100%;
   min-width:0;
-  min-height:60px;
   text-align:left;
   cursor:pointer;
 }
 .chat-item > .person-main{flex:1 1 auto;gap:9px}
-.chat-item > .person-main > .avatar{flex:0 0 36px;width:36px;height:36px}
+.chat-item > .person-main > .avatar{flex:0 0 36px;}
 .chat-item > .person-main > .person-info{flex:1 1 auto;min-width:0;overflow:hidden}
-.chat-item .person-info b{font-size:13px}
+
 .chat-item .person-info small{margin-top:3px;font-size:10px}
 
 
 
 
 .chat-item.has-unread:not(.selected) > .person-main > .person-info b{font-weight:800;color:var(--ink)}
-.chat-item.has-unread:not(.selected){border-left:3px solid var(--role-student)!important}
+
 .chat-item.selected,
 :root[data-theme="dark-soft"] .chat-item.selected{
   background:color-mix(in srgb,var(--button-primary) 10%,var(--surface))!important;
   border-color:color-mix(in srgb,var(--button-primary) 18%,var(--ui-border))!important;
   box-shadow:inset 3px 0 0 var(--button-primary)!important;
 }
-.chat-item.has-unread:not(.selected){border-left:2px solid var(--button-primary)!important}
+
 .chat-items-scroll > .empty-state{padding:18px 8px}
 .chat-detail > .chat-head{
   display:flex;
@@ -299,7 +297,6 @@
     grid-template-columns:minmax(0,1fr);
     grid-template-rows:minmax(0,1fr);
     gap:0;
-    padding:10px;
   }
   .chats-main > .workspace-content:has(> .chat-list) > .chat-list,
   .chats-main > .workspace-content:has(> .chat-list) > .chat-detail{
@@ -309,8 +306,8 @@
   }
   .chats-main > .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) > .chat-detail{display:none}
   .chats-main > .workspace-content:has(> .chat-list):has(.mobile-chat-back) > .chat-list{display:none}
-  .chat-detail > .chat-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;padding:10px}
-  .mobile-chat-back{display:inline-flex;align-items:center;gap:4px;padding:6px 8px;white-space:nowrap}
+  .chat-detail > .chat-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;}
+  .mobile-chat-back{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
   .chat-head-tools select{min-width:100px;max-width:135px;padding:6px;font-size:11px}
   .messages{padding:12px 2px}
   .message{max-width:92%}
