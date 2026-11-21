@@ -147,3 +147,29 @@ def test_admin_can_unassign_student_without_deleting_conversation_history(api):
     assert teacher.get("/api/panel/conversations").json() == []
     assert student.get("/api/panel/conversations").json() == []
     assert admin.delete(f"/api/admin/assignments/{users['student-one']}").status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_admin_dialogue_cleanup_accepts_all_retention_options(api, monkeypatch, tmp_path):
+    from app.modules.administration import data as admin_data
+
+    make_client, _, sessions = api
+    monkeypatch.setattr(admin_data, "SessionLocal", sessions)
+    monkeypatch.setattr(admin_data, "MEDIA_DIR", tmp_path)
+
+    admin = make_client()
+    login(admin, "test-admin", "a-long-test-password-123")
+
+    for days in (30, 60, 180, 360):
+        response = admin.delete(
+            "/api/admin/data/dialogues",
+            params={"days": days},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["days"] == days
+
+    unsupported = admin.delete(
+        "/api/admin/data/dialogues",
+        params={"days": 120},
+    )
+    assert unsupported.status_code == status.HTTP_400_BAD_REQUEST
+    assert unsupported.json()["detail"] == "Выберите срок 30, 60, 180 или 360 дней"
