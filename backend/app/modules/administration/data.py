@@ -658,12 +658,18 @@ def apply_pending_data_restore() -> bool:
                 child.rename(data_dir / child.name)
 
             _validate_database(_database_path())
+            from app.core.config import reload_vapid_keys
+
+            reload_vapid_keys(data_dir)
             marker["status"] = "committed"
             marker["missing_media_references"] = restore_info["missing_media"]
             _write_pending_marker(marker_path, marker)
         except Exception:
             try:
                 _rollback_partial_restore(data_dir, stage_name, backup_name, original_entries)
+                from app.core.config import reload_vapid_keys
+
+                reload_vapid_keys(data_dir)
             except Exception as rollback_error:
                 logger.exception("Полный откат восстановления UknowApp не удался")
                 raise RuntimeError(
