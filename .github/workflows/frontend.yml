@@ -31,6 +31,12 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+      - name: Install browser test runtime
+        run: npm install --no-save playwright@1.56.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run realtime browser integration tests
+        run: npm run test:browser
       - name: Lint design tokens
         run: npx --yes stylelint@16 src/shared/styles/tokens.css --config ../.stylelintrc.json
 
