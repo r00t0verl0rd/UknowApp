@@ -51,8 +51,8 @@ def _panel_message_dict(
     if not expose_internal_metadata:
         for key in (
             "source_chat_id", "source_thread_id", "telegram_deliveries",
-            "telegram_delivery_errors", "teacher_inbox_media_message_id",
-            "teacher_inbox_notice_message_id",
+            "telegram_delivery_errors", "messenger_deliveries",
+            "teacher_inbox_media_message_id", "teacher_inbox_notice_message_id",
         ):
             metadata.pop(key, None)
         for key in ("photo", "document", "audio", "video", "voice", "video_note", "sticker", "animation"):
@@ -82,7 +82,11 @@ def _panel_message_dict(
         "content_type": item.content_type,
         "text": item.text,
         "metadata": metadata,
-        "delivery_status": item.delivery_status,
+        # A persisted message is delivered to its UknowApp conversation.
+        # Messenger transport results are exposed separately to administrators.
+        "delivery_status": (
+            "blocked_contact" if item.delivery_status == "blocked_contact" else "delivered"
+        ),
         "panel_read_at": (
             metadata.get("student_read_at") if item.sender_role == "teacher"
             else metadata.get("teacher_read_at") if item.sender_role == "student"
