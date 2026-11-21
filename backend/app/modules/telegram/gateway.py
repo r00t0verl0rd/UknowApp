@@ -39,10 +39,19 @@ def validate_configuration() -> None:
         raise RuntimeError("Set a valid TELEGRAM_BOT_TOKEN on the secondary server")
     if len(GATEWAY_TOKEN) < 32 or len(WEBHOOK_SECRET) < 32:
         raise RuntimeError("TELEGRAM_GATEWAY_TOKEN and TELEGRAM_WEBHOOK_SECRET must be at least 32 characters")
-    if not WEBHOOK_URL.startswith("https://") or not WEBHOOK_URL.endswith("/telegram/webhook"):
-        raise RuntimeError("TELEGRAM_WEBHOOK_URL must be an HTTPS URL ending in /telegram/webhook")
-    if urlsplit(PRIMARY_URL).scheme != "https" or not urlsplit(PRIMARY_URL).netloc:
-        raise RuntimeError("TELEGRAM_PRIMARY_URL must use HTTPS")
+    if not re.fullmatch(r"[A-Za-z0-9_-]{32,256}", WEBHOOK_SECRET):
+        raise RuntimeError("TELEGRAM_WEBHOOK_SECRET must contain only A-Z, a-z, 0-9, _ and -")
+    webhook_parts = urlsplit(WEBHOOK_URL)
+    if (webhook_parts.scheme != "https" or not webhook_parts.hostname
+            or webhook_parts.username or webhook_parts.password
+            or webhook_parts.query or webhook_parts.fragment
+            or webhook_parts.path != "/telegram/webhook"):
+        raise RuntimeError("TELEGRAM_WEBHOOK_URL must be a public HTTPS URL ending in /telegram/webhook")
+    primary_parts = urlsplit(PRIMARY_URL)
+    if (primary_parts.scheme != "https" or not primary_parts.hostname
+            or primary_parts.username or primary_parts.password
+            or primary_parts.query or primary_parts.fragment or primary_parts.path not in {"", "/"}):
+        raise RuntimeError("TELEGRAM_PRIMARY_URL must be an HTTPS origin without path or credentials")
 
 
 @contextmanager
