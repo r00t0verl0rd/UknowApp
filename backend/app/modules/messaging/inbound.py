@@ -199,14 +199,6 @@ def current_student_conversation(db: Session, student_id: int) -> Conversation |
     return assignment.conversation if assignment else None
 
 
-def conversation_messages(db: Session, conversation_id: int) -> list[Message]:
-    return db.scalars(
-        select(Message)
-        .where(Message.conversation_id == conversation_id)
-        .order_by(Message.created_at, Message.id),
-    ).all()
-
-
 def recent_conversation_messages(
     db: Session, conversation_id: int, limit: int = 12,
 ) -> list[Message]:

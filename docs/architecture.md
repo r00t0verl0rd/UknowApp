@@ -23,7 +23,7 @@ Routes and services belong to their business modules. Keep provider-specific Tel
 
 - `app/` — application root and authentication entry.
 - `workspaces/` — role-specific workspace composition and shared layout.
-- `features/` — administration, boards, conversations, graph, notifications, users and video feature boundaries.
+- `features/` — administration, boards, conversations, graph, notifications and users. The [video feature plan](video-feature.md) describes a future module.
 - `shared/components/` — reusable UI primitives.
 - `shared/hooks/` — cross-feature state and controllers.
 - `shared/services/` — shared inbox state and the singleton panel event stream.

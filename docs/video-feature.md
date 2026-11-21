@@ -1,8 +1,8 @@
-# Video feature boundary
+# Planned video feature
 
 The video feature is an independent domain and must not be coupled to a particular workspace.
 
-Planned internal boundaries:
+When implemented, the feature should use these boundaries:
 - `components/`: call surface, participant tiles, device controls and call status.
 - `hooks/`: call lifecycle, local device state and room participation.
 - `services/`: signaling transport, room API and media-device adapters.
