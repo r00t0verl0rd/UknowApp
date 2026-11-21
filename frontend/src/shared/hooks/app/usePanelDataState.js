@@ -4,7 +4,7 @@ import { getAdminBootstrap, getCurrentProfile, getInboxData } from "../../servic
 
 export function usePanelDataState({
   auth, setAuth, setProfile, setError, setChats,
-  setPersonalChats, setUsers, setOverview, setPage,
+  setPersonalChats, setUsers, setOverview,
   setSelectedChat, setMessages,
 }) {
   const request = useMemo(() => createApiClient(), []);
@@ -32,7 +32,6 @@ export function usePanelDataState({
         setUsers([]);
         setOverview(null);
         if (who.role !== "teacher") {
-          setPage("chats");
           setSelectedChat(null);
           setMessages([]);
         }
@@ -55,7 +54,6 @@ export function usePanelDataState({
   }, [auth]);
 
   useEffect(() => { void refresh(); }, [refresh]);
-
 
 
   return { request, refresh, panelReady };
