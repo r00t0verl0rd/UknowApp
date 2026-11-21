@@ -26,7 +26,7 @@ export default function UsersModule({
       studentsByTeacherId={state.studentsByTeacherId} openEdit={state.openEdit}
       setTeacherId={state.setTeacherId} setStudentId={state.setStudentId}
       allStudents={state.allStudents} setModal={setModal}
-      unassignedStudents={state.unassignedStudents}
+      unassignedStudents={state.unassignedStudents} unassignStudent={state.requestUnassignStudent}
     />}
     <UserDialogs
       modal={modal} setModal={setModal} assign={state.assign}
@@ -47,7 +47,7 @@ export default function UsersModule({
       disconnectingTelegram={state.disconnectingTelegram}
       confirmDisconnectTelegram={state.confirmDisconnectTelegram}
       issuedCredential={state.issuedCredential} setIssuedCredential={state.setIssuedCredential}
-      notify={notify} code={state.code} setCode={state.setCode}
+      notify={notify} code={state.code} setCode={state.setCode}\n      unassignCandidate={state.unassignCandidate} setUnassignCandidate={state.setUnassignCandidate}\n      unassigningStudent={state.unassigningStudent} confirmUnassignStudent={state.confirmUnassignStudent}
     />
   </>;
 }
