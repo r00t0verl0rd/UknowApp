@@ -1,3 +1,6 @@
+import asyncio
+import json
+
 """Regression tests for UknowApp-first message delivery and read receipts."""
 
 from app.models import Assignment, Conversation, Message, User
@@ -247,14 +250,14 @@ def test_teacher_telegram_reply_without_student_telegram_is_delivered_in_uknowap
             content_type=MessageKind.TEXT,
             text="Ответ преподавателя без Telegram у ученика",
         )
-        result = __import__("asyncio").run(
+        result = asyncio.run(
             process_inbound_message(db, inbound, gateway),
         )
 
         row = db.query(Message).filter(
             Message.conversation_id == conversation.id,
         ).one()
-        metadata = __import__("json").loads(row.metadata_json or "{}")
+        metadata = json.loads(row.metadata_json or "{}")
 
         assert result.refresh_teacher_id == teacher.id
         assert row.delivery_status == "delivered"
