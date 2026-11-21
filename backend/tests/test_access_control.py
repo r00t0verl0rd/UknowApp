@@ -173,3 +173,119 @@ def test_admin_dialogue_cleanup_accepts_all_retention_options(api, monkeypatch, 
     )
     assert unsupported.status_code == status.HTTP_400_BAD_REQUEST
     assert unsupported.json()["detail"] == "Выберите срок 30, 60, 180 или 360 дней"
+
+
+
+def test_reassigning_student_to_same_teacher_restores_conversation_history(api):
+    make_client, users, sessions = api
+    admin = make_client()
+    login(admin, "test-admin", "a-long-test-password-123")
+
+    created = admin.post(
+        "/api/admin/assignments",
+        json={"teacher_id": users["teacher-one"], "student_id": users["student-one"]},
+    )
+    assert created.status_code == status.HTTP_201_CREATED
+    conversation_id = created.json()["id"]
+
+    with sessions() as db:
+        db.add(Message(
+            conversation_id=conversation_id,
+            sender_id=users["student-one"],
+            sender_role="student",
+            text="История должна восстановиться",
+        ))
+        db.commit()
+
+    unassigned = admin.delete(f"/api/admin/assignments/{users['student-one']}")
+    assert unassigned.status_code == status.HTTP_200_OK
+
+    restored = admin.post(
+        "/api/admin/assignments",
+        json={"teacher_id": users["teacher-one"], "student_id": users["student-one"]},
+    )
+    assert restored.status_code == status.HTTP_201_CREATED
+    assert restored.json()["id"] == conversation_id
+    assert restored.json()["status"] == "active"
+
+    with sessions() as db:
+        conversation = db.get(Conversation, conversation_id)
+        active_assignment = db.query(Assignment).filter(Assignment.active.is_(True)).one()
+        messages = db.query(Message).filter(Message.conversation_id == conversation_id).all()
+        assert conversation.status == "active"
+        assert conversation.assignment_id == active_assignment.id
+        assert active_assignment.teacher_id == users["teacher-one"]
+        assert active_assignment.student_id == users["student-one"]
+        assert len(messages) == 1
+        assert messages[0].text == "История должна восстановиться"
+        assert db.query(Conversation).count() == 1
+
+    teacher = make_client()
+    login(teacher, "teacher-one", "teacher-password-1")
+    inbox = teacher.get("/api/panel/conversations")
+    history = teacher.get(f"/api/panel/conversations/{conversation_id}/messages")
+    assert inbox.status_code == status.HTTP_200_OK
+    assert [item["id"] for item in inbox.json()] == [conversation_id]
+    assert history.status_code == status.HTTP_200_OK
+    assert history.json()[0]["text"] == "История должна восстановиться"
+
+
+def test_reassigning_student_to_different_teacher_creates_separate_conversation(api):
+    make_client, users, sessions = api
+    admin = make_client()
+    login(admin, "test-admin", "a-long-test-password-123")
+
+    first = admin.post(
+        "/api/admin/assignments",
+        json={"teacher_id": users["teacher-one"], "student_id": users["student-one"]},
+    )
+    assert first.status_code == status.HTTP_201_CREATED
+    old_conversation_id = first.json()["id"]
+
+    with sessions() as db:
+        db.add(Message(
+            conversation_id=old_conversation_id,
+            sender_id=users["student-one"],
+            sender_role="student",
+            text="История прежнего учителя",
+        ))
+        db.commit()
+
+    unassigned = admin.delete(f"/api/admin/assignments/{users['student-one']}")
+    assert unassigned.status_code == status.HTTP_200_OK
+
+    second = admin.post(
+        "/api/admin/assignments",
+        json={"teacher_id": users["teacher-two"], "student_id": users["student-one"]},
+    )
+    assert second.status_code == status.HTTP_201_CREATED
+    new_conversation_id = second.json()["id"]
+    assert new_conversation_id != old_conversation_id
+
+    with sessions() as db:
+        old_conversation = db.get(Conversation, old_conversation_id)
+        new_conversation = db.get(Conversation, new_conversation_id)
+        assert old_conversation.status == "closed"
+        assert old_conversation.assignment_id is None
+        assert new_conversation.status == "active"
+        assert db.query(Message).filter(
+            Message.conversation_id == old_conversation_id,
+        ).one().text == "История прежнего учителя"
+
+    teacher_one = make_client()
+    login(teacher_one, "teacher-one", "teacher-password-1")
+    teacher_two = make_client()
+    login(teacher_two, "teacher-two", "teacher-password-2")
+    student = make_client()
+    login(student, "student-one", "student-password-1")
+
+    assert teacher_one.get("/api/panel/conversations").json() == []
+    assert [item["id"] for item in teacher_two.get("/api/panel/conversations").json()] == [
+        new_conversation_id,
+    ]
+    assert [item["id"] for item in student.get("/api/panel/conversations").json()] == [
+        new_conversation_id,
+    ]
+    assert teacher_two.get(
+        f"/api/panel/conversations/{old_conversation_id}/messages",
+    ).status_code == status.HTTP_404_NOT_FOUND
