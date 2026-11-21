@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { createPanelEventSource, getInboxData } from "../../../shared/services/panelApi.js";
 import { syncChatState } from "../services/conversationsApi.js";
 import { mergeConversationMessages } from "../services/messageState.js";
+import { mergeInboxSnapshot } from "../../../shared/services/inboxState.js";
 
 const maxMessageId = rows => rows.reduce((max, row) => Math.max(max, Number(row.id) || 0), 0);
 
@@ -13,7 +14,7 @@ const isSameChat = (chat, id, type) => (
 const conversationKey = (id, type) => (type === "personal" ? "personal:" : "conversation:") + id;
 
 export function useConversationSync({
-  auth, role, selectedChat, messages, request,
+  auth, role, selectedChat, messages, request, inboxRevision,
   setChats, setPersonalChats, setSelectedChat, setMessages,
 }) {
   const current = useRef(null);
@@ -24,7 +25,6 @@ export function useConversationSync({
   const syncing = useRef(false);
   const syncQueued = useRef(false);
   const eventRevision = useRef(new Map());
-  const inboxRevision = useRef(0);
   const inboxRequestRevision = useRef(0);
 
   current.current = {
@@ -57,13 +57,15 @@ export function useConversationSync({
       const requestRevision = ++inboxRequestRevision.current;
       const revisionAtStart = inboxRevision.current;
       const [conversations, personal] = await getInboxData(request);
-      if (
-        !active
-        || requestRevision !== inboxRequestRevision.current
-        || revisionAtStart !== inboxRevision.current
-      ) return;
-      current.current.setChats(conversations);
-      current.current.setPersonalChats(personal);
+      if (!active || requestRevision !== inboxRequestRevision.current) return;
+      if (revisionAtStart === inboxRevision.current) {
+        current.current.setChats(conversations);
+        current.current.setPersonalChats(personal);
+        return;
+      }
+      // Preserve live event summaries if an event arrived during recovery.
+      current.current.setChats(items => mergeInboxSnapshot(conversations, items));
+      current.current.setPersonalChats(items => mergeInboxSnapshot(personal, items));
     };
 
     const syncSelected = async () => {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createApiClient } from "../../../services/api.js";
 import { getAdminBootstrap, getCurrentProfile, getInboxData } from "../../services/panelApi.js";
+import { mergeInboxSnapshot } from "../../services/inboxState.js";
 
 export function usePanelDataState({
   auth, setAuth, setProfile, setError, setChats,
@@ -10,6 +11,7 @@ export function usePanelDataState({
   const request = useMemo(() => createApiClient(), []);
   const [panelReady, setPanelReady] = useState(false);
   const refreshRevision = useRef(0);
+  const inboxRevision = useRef(0);
 
   const refresh = useCallback(async () => {
     if (!auth) return;
@@ -37,10 +39,18 @@ export function usePanelDataState({
       return;
     }
 
+    const inboxRevisionAtStart = inboxRevision.current;
     const inboxTask = getInboxData(request).then(([conversations, personal]) => {
       if (revision !== refreshRevision.current) return;
-      setChats(conversations);
-      setPersonalChats(personal);
+      if (inboxRevisionAtStart === inboxRevision.current) {
+        setChats(conversations);
+        setPersonalChats(personal);
+        return;
+      }
+      // SSE changed one or more rows while the initial snapshot was loading.
+      // Merge that live state over the snapshot instead of rolling it back.
+      setChats(current => mergeInboxSnapshot(conversations, current));
+      setPersonalChats(current => mergeInboxSnapshot(personal, current));
     });
     const adminTask = who.role === "admin"
       ? getAdminBootstrap(request).then(([people, summary]) => {
@@ -71,6 +81,5 @@ export function usePanelDataState({
 
   useEffect(() => { void refresh(); }, [refresh]);
 
-
-  return { request, refresh, panelReady };
+  return { request, refresh, panelReady, inboxRevision };
 }

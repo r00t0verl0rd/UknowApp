@@ -21,13 +21,13 @@ export default function App() {
   const { page, setPage, error, setError, toast, setToast, modal, setModal } = useUiState();
   const directory = useDirectoryState();
   const workspace = profile ? workspaceRegistry[profile.role] : null;
-  const { request, refresh, panelReady } = usePanelDataState({
+  const { request, refresh, panelReady, inboxRevision } = usePanelDataState({
     auth, setAuth, setProfile, setError, setChats,
     setPersonalChats, setUsers: directory.setUsers, setOverview: directory.setOverview,
     setSelectedChat, setMessages,
   });
   useConversationSync({
-    auth, role: profile?.role, selectedChat, messages: chatState.messages, request,
+    auth, role: profile?.role, selectedChat, messages: chatState.messages, request, inboxRevision,
     setChats, setPersonalChats, setSelectedChat, setMessages,
   });
   const notify = useCallback(message => {
