@@ -18,7 +18,7 @@
 
 /* Селекторы достаточно точны, чтобы заменить старые стили без изменений в сетке. */
 :root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control,
-:root .workspace-shell .graph-add-participant.ui-menu-control {
+:root .workspace-shell .content .graph-add-participant.ui-menu-control {
   -webkit-appearance: none !important;
   appearance: none !important;
   box-sizing: border-box;
@@ -40,14 +40,14 @@
   text-align: left;
 }
 :root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control > svg,
-:root .workspace-shell .graph-add-participant.ui-menu-control > svg {
+:root .workspace-shell .content .graph-add-participant.ui-menu-control > svg {
   flex: 0 0 18px;
   width: 18px;
   height: 18px;
   stroke-width: 1.9;
 }
 :root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control:hover:not(:disabled),
-:root .workspace-shell .graph-add-participant.ui-menu-control:hover:not(:disabled) {
+:root .workspace-shell .content .graph-add-participant.ui-menu-control:hover:not(:disabled) {
   background: var(--menu-hover-bg) !important;
   border-color: var(--menu-hover-border) !important;
   color: var(--menu-text) !important;
@@ -67,7 +67,7 @@
   color: var(--menu-active-text) !important;
 }
 :root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control:focus-visible,
-:root .workspace-shell .graph-add-participant.ui-menu-control:focus-visible {
+:root .workspace-shell .content .graph-add-participant.ui-menu-control:focus-visible {
   outline: 2px solid var(--purple);
   outline-offset: 2px;
 }
@@ -97,14 +97,14 @@
     width: 16px;
     height: 16px;
   }
-  :root .workspace-shell .graph-add-participant.ui-menu-control {
+  :root .workspace-shell .content .graph-add-participant.ui-menu-control {
     min-height: 38px;
     padding: 8px 10px !important;
     font-size: clamp(10px, 2.8vw, 13px) !important;
     gap: 6px !important;
     text-align: center;
   }
-  :root .workspace-shell .graph-add-participant.ui-menu-control > svg {
+  :root .workspace-shell .content .graph-add-participant.ui-menu-control > svg {
     flex-basis: 15px;
     width: 15px;
     height: 15px;
