@@ -285,33 +285,19 @@ def personal_conversations(principal: PanelUser, db: Db):
     items = db.scalars(statement).all()
     if not items:
         return []
-    read_column = PersonalMessage.admin_read_at if principal["role"] == "admin" else PersonalMessage.participant_read_at
-    counts = db.execute(
-        select(PersonalMessage.conversation_id, func.count(PersonalMessage.id))
-        .where(
-            PersonalMessage.conversation_id.in_([item.id for item in items]),
-            PersonalMessage.sender_role != principal["role"],
-            read_column.is_(None),
-        )
+    return _personal_summaries(db, items, principal["role"])
+
+
+def _personal_summaries(db: Session, items: list[PersonalConversation], role: str) -> list[dict]:
+    read_at = PersonalMessage.admin_read_at if role == "admin" else PersonalMessage.participant_read_at
+    unread = func.count(PersonalMessage.id).filter(PersonalMessage.sender_role != role, read_at.is_(None))
+    rows = db.execute(
+        select(PersonalMessage.conversation_id, unread, func.max(PersonalMessage.created_at))
+        .where(PersonalMessage.conversation_id.in_([item.id for item in items]))
         .group_by(PersonalMessage.conversation_id),
-    ).all()
-    unread_by_conversation = dict(counts)
-    return [
-        _personal_conversation_dict(item, principal["role"], unread_by_conversation.get(item.id, 0))
-        for item in items
-    ]
-
-
-def _personal_summary_with_unread(db: Session, item: PersonalConversation, principal: dict) -> dict:
-    read_column = PersonalMessage.admin_read_at if principal["role"] == "admin" else PersonalMessage.participant_read_at
-    unread_count = db.scalar(
-        select(func.count(PersonalMessage.id)).where(
-            PersonalMessage.conversation_id == item.id,
-            PersonalMessage.sender_role != principal["role"],
-            read_column.is_(None),
-        ),
-    ) or 0
-    return _personal_conversation_dict(item, principal["role"], unread_count)
+    )
+    stats = {chat_id: (count, latest) for chat_id, count, latest in rows}
+    return [_personal_conversation_dict(item, role, *stats.get(item.id, (0, None))) for item in items]
 
 
 @router.post("/panel/personal-conversations", status_code=201)
@@ -336,13 +322,13 @@ def create_personal_conversation(payload: dict, principal: PanelUser, db: Db):
         else:
             publish_personal_update(db, item)
             return _personal_conversation_dict(item, principal["role"])
-    return _personal_summary_with_unread(db, item, principal)
+    return _personal_summaries(db, [item], principal["role"])[0]
 
 
 @router.get("/panel/personal-conversations/{conversation_id}/summary")
 def personal_conversation_summary(conversation_id: int, principal: PanelUser, db: Db):
     item = _personal_conversation(db, principal, conversation_id)
-    return _personal_summary_with_unread(db, item, principal)
+    return _personal_summaries(db, [item], principal["role"])[0]
 
 
 @router.get("/panel/conversations/{conversation_id}/summary")
@@ -703,17 +689,10 @@ def sync_personal_conversation_state(
             )
             .order_by(PersonalMessage.created_at, PersonalMessage.id),
         ).all())
-    unread_count = db.scalar(
-        select(func.count(PersonalMessage.id)).where(
-            PersonalMessage.conversation_id == item.id,
-            PersonalMessage.sender_role != principal["role"],
-            read_column.is_(None),
-        ),
-    ) or 0
     return {
         "messages": [_personal_message_dict(row, principal) for row in new_rows],
         "updated_messages": [_personal_message_status_dict(row, principal) for row in updated_rows],
-        "summary": _personal_conversation_dict(item, principal["role"], unread_count),
+        "summary": _personal_summaries(db, [item], principal["role"])[0],
     }
 
 

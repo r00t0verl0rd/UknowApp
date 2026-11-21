@@ -130,7 +130,7 @@ export default function ChatsPage({
                 : "";
 
             return (
-              <button key={chat.id} type="button"
+              <button key={(personal ? "personal:" : "conversation:") + chat.id} type="button"
                 className={"student-card chat-item" + (isSelected ? " selected" : "")
                   + (unreadCount > 0 && !showMessageCount ? " has-unread" : "")}
                 aria-pressed={isSelected} onClick={() => openChat(chat)}>
@@ -270,7 +270,7 @@ export default function ChatsPage({
           <EmptyState>
             {profile?.role === "student"
               ? "Ваша переписка с учителем появится здесь"
-              : "Выберите ученика слева"}
+              : "Выберите диалог из списка"}
           </EmptyState>
         )}
       </section>

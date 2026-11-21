@@ -60,7 +60,6 @@ export function useChatsController({
     const personal = personalChats.filter(chat =>
       (!query || chat.title.toLocaleLowerCase("ru").includes(query))
       && (chatFilter === "all" || Number(chat.unread_count || 0) > 0));
-    if (profile?.role === "admin" && chatSection === "personal") return personal;
     const regular = profile?.role === "student" ? chats.slice(0, 1) : chats.filter(chat => {
       const names = profile?.role === "admin"
         ? chat.teacher.full_name + " " + chat.student.full_name
@@ -69,7 +68,12 @@ export function useChatsController({
       const matchesFilter = profile?.role !== "teacher" || chatFilter === "all" || Number(chat.unread_count || 0) > 0;
       return matchesSearch && matchesFilter;
     });
-    return profile?.role === "admin" ? regular : [...regular, ...personal];
+    const rows = profile?.role === "admin"
+      ? (chatSection === "personal" ? personal : regular)
+      : [...regular, ...personal];
+    return rows.sort((a, b) => Number(b.unread_count > 0) - Number(a.unread_count > 0)
+      || (b.last_message_at || b.created_at || "").localeCompare(a.last_message_at || a.created_at || "")
+      || b.id - a.id);
   }, [chats, personalChats, chatSection, chatSearch, chatFilter, profile?.role]);
 
   useLayoutEffect(() => {

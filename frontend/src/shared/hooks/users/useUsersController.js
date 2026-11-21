@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useUserEditorState } from "./useUserEditorState.js";
 import { useUserActionState } from "./useUserActionState.js";
 import { createAssignment, unassignStudent as unassignStudentApi, createUser, createUserConnectionCode, deleteUser, disconnectUserTelegram, issuePanelAccessCode, updateUser } from "../../../features/users/services/usersApi.js";
@@ -14,21 +14,6 @@ export function useUsersController({
     userSort, setUserSort, userInfo, setUserInfo,
   } = directory;
 
-  useEffect(() => {
-    if (userInfo === null) return undefined;
-    const closeOnOutsideClick = event => {
-      if (!event.target.closest?.(".user-info-wrap")) setUserInfo(null);
-    };
-    const closeOnEscape = event => {
-      if (event.key === "Escape") setUserInfo(null);
-    };
-    document.addEventListener("pointerdown", closeOnOutsideClick);
-    document.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.removeEventListener("pointerdown", closeOnOutsideClick);
-      document.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [userInfo, setUserInfo]);
   const {
     issuedCredential, setIssuedCredential, savingUser, setSavingUser,
     name, setName, panelLogin, setPanelLogin, role, setRole,

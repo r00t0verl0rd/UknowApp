@@ -1,5 +1,7 @@
 """Access checks and serialization for private conversations."""
 
+from datetime import datetime
+
 from fastapi import HTTPException
 from sqlalchemy import and_, case, func, select
 from sqlalchemy.orm import Session
@@ -18,7 +20,10 @@ def _personal_conversation(db: Session, principal: dict, conversation_id: int) -
     return conversation
 
 
-def _personal_conversation_dict(item: PersonalConversation, viewer_role: str, unread_count: int = 0) -> dict:
+def _personal_conversation_dict(
+    item: PersonalConversation, viewer_role: str, unread_count: int = 0,
+    last_message_at: datetime | None = None,
+) -> dict:
     participant = item.participant
     return {
         "id": item.id,
@@ -27,6 +32,7 @@ def _personal_conversation_dict(item: PersonalConversation, viewer_role: str, un
         "title": participant.full_name if viewer_role == "admin" else "Администратор",
         "created_at": item.created_at.isoformat(),
         "unread_count": unread_count,
+        "last_message_at": last_message_at.isoformat() if last_message_at else None,
     }
 
 
@@ -44,13 +50,14 @@ def personal_event_summaries(db: Session, item: PersonalConversation) -> dict[st
         select(
             func.coalesce(func.sum(case((admin_unread, 1), else_=0)), 0),
             func.coalesce(func.sum(case((participant_unread, 1), else_=0)), 0),
+            func.max(PersonalMessage.created_at),
         ).where(PersonalMessage.conversation_id == item.id),
     ).one()
     participant_role = item.participant.role
     return {
-        "admin": _personal_conversation_dict(item, "admin", int(counts[0] or 0)),
+        "admin": _personal_conversation_dict(item, "admin", int(counts[0] or 0), counts[2]),
         participant_role: _personal_conversation_dict(
-            item, participant_role, int(counts[1] or 0),
+            item, participant_role, int(counts[1] or 0), counts[2],
         ),
     }
 
