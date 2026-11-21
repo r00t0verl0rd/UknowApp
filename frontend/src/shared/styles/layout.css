@@ -67,9 +67,35 @@
 .chat-item > .person-main > .person-info{flex:1 1 auto;min-width:0;overflow:hidden}
 .chat-item .person-info b{font-size:13px}
 .chat-item .person-info small{margin-top:3px;font-size:10px}
-.chat-item > .role-tag{flex:0 0 28px;width:28px;height:28px;display:grid;place-items:center;margin:0;padding:0;border:1px solid var(--ui-border);border-radius:50%;background:var(--ui-control-bg);color:var(--muted);font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
-.chat-item > .chat-count.unread-badge{border:1px solid #eab308;background:linear-gradient(145deg,#fde047,#facc15);color:#713f12;box-shadow:0 0 7px rgba(250,204,21,.58),0 0 15px rgba(250,204,21,.32),inset 0 1px 0 rgba(255,255,255,.55);font-weight:900;text-shadow:0 1px 0 rgba(255,255,255,.28)}
-.chat-item > .chat-count.message-count{border-radius:var(--ui-radius-sm)}
+.chat-item > .chat-count{
+  display:grid;
+  flex:0 0 auto;
+  place-items:center;
+  min-width:22px;
+  height:22px;
+  margin:0;
+  padding:0 6px;
+  border:1px solid transparent;
+  border-radius:999px;
+  background:var(--ui-control-bg);
+  color:var(--muted);
+  font-size:11px;
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+  line-height:1;
+}
+.chat-item > .chat-count.unread-badge{
+  background:var(--role-student-soft);
+  color:var(--role-student);
+  font-weight:700;
+}
+.chat-item > .chat-count.message-count{
+  border-radius:999px;
+}
+:root[data-theme="dark-soft"] .chat-item > .chat-count.unread-badge{
+  background:var(--role-student-soft);
+  color:var(--role-student);
+}
 .chat-item.has-unread:not(.selected) > .person-main > .person-info b{font-weight:800;color:var(--ink)}
 .chat-item.has-unread:not(.selected){border-left:3px solid var(--role-student)!important}
 .chat-item.selected,
