@@ -63,3 +63,13 @@ for (const [name, files] of [...candidates].sort((a, b) => (
 )).slice(0, 100)) {
   console.log(name + "\t" + [...files].join(", "));
 }
+
+const tokenFile = fs.readFileSync(path.join(cssDir, "tokens.css"), "utf8");
+const allCss = fs.readdirSync(cssDir).filter(name => name.endsWith(".css"))
+  .map(name => fs.readFileSync(path.join(cssDir, name), "utf8")).join("\n");
+const definitions = [...tokenFile.matchAll(/^\s*(--[\w-]+)\s*:/gm)].map(match => match[1]);
+const unusedTokens = [...new Set(definitions)].filter(name => {
+  const expression = new RegExp("var\\\\(\\\\s*" + name + "(?![\\\\w-])");
+  return !expression.test(allCss) && !sourceText.includes(name);
+});
+console.log("Переменные без использования в CSS и JS:", JSON.stringify(unusedTokens));
