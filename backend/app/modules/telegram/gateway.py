@@ -11,6 +11,7 @@ import logging
 import os
 import re
 import sqlite3
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import quote, urlsplit
@@ -40,7 +41,7 @@ def validate_configuration() -> None:
         raise RuntimeError("TELEGRAM_GATEWAY_TOKEN and TELEGRAM_WEBHOOK_SECRET must be at least 32 characters")
     if not WEBHOOK_URL.startswith("https://") or not WEBHOOK_URL.endswith("/telegram/webhook"):
         raise RuntimeError("TELEGRAM_WEBHOOK_URL must be an HTTPS URL ending in /telegram/webhook")
-    if urlsplit(PRIMARY_URL).scheme != "https":
+    if urlsplit(PRIMARY_URL).scheme != "https" or not urlsplit(PRIMARY_URL).netloc:
         raise RuntimeError("TELEGRAM_PRIMARY_URL must use HTTPS")
 
 
@@ -63,13 +64,12 @@ def init_spool():
 
 
 async def spool_worker(client: aiohttp.ClientSession, stop: asyncio.Event):
-    loop = asyncio.get_running_loop()
     while not stop.is_set():
         with connection() as db:
             row = db.execute(
                 "SELECT update_id, payload, attempts FROM telegram_updates "
                 "WHERE next_try <= ? ORDER BY update_id LIMIT 1",
-                (loop.time(),),
+                (time.time(),),
             ).fetchone()
         if not row:
             try:
@@ -96,7 +96,7 @@ async def spool_worker(client: aiohttp.ClientSession, stop: asyncio.Event):
             with connection() as db:
                 db.execute(
                     "UPDATE telegram_updates SET attempts=?, next_try=? WHERE update_id=?",
-                    (attempts + 1, loop.time() + min(300, 2 ** min(attempts + 1, 8)), update_id),
+                    (attempts + 1, time.time() + min(300, 2 ** min(attempts + 1, 8)), update_id),
                 )
 
 
