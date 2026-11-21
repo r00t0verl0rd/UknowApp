@@ -20,7 +20,7 @@ export default function App() {
   const { page, setPage, error, setError, toast, setToast, modal, setModal } = useUiState();
   const directory = useDirectoryState();
   const { request, refresh, panelReady } = usePanelDataState({
-    auth, page, selectedChat, setAuth, setProfile, setError, setChats,
+    auth, setAuth, setProfile, setError, setChats,
     setPersonalChats, setUsers: directory.setUsers, setOverview: directory.setOverview,
     setPage, setSelectedChat, setMessages,
   });

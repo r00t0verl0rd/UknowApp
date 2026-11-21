@@ -33,25 +33,24 @@ export function useConversationSync({
       current.current.setPersonalChats(personal);
     };
 
-    const refreshSelected = async () => {
+    const refreshSelected = async (fullHistory = false) => {
       const chat = current.current.selectedChat;
       if (!chat) return;
-      const afterId = Math.max(lastMessageId.current, Number(current.current.messages[current.current.messages.length - 1]?.id) || 0);
-      lastMessageId.current = afterId;
+      const afterId = fullHistory ? 0 : Math.max(
+        lastMessageId.current,
+        Number(current.current.messages[current.current.messages.length - 1]?.id) || 0,
+      );
       const rows = await getChatMessages(request, chat, afterId);
-      if (!active || !rows.length) return;
-      lastMessageId.current = Math.max(lastMessageId.current, maxMessageId(rows));
-      current.current.setMessages(previous => {
-        const known = new Set(previous.map(item => item.id));
-        return [...previous, ...rows.filter(item => !known.has(item.id))];
-      });
-    };
-
-    const recover = async () => {
-      try {
-        await Promise.all([refreshInbox(), refreshSelected()]);
-      } catch {
-        // Preserve the current view; the next reconnect retries recovery.
+      if (!active) return;
+      if (fullHistory) {
+        lastMessageId.current = maxMessageId(rows);
+        current.current.setMessages(rows);
+      } else if (rows.length) {
+        lastMessageId.current = Math.max(afterId, maxMessageId(rows));
+        current.current.setMessages(previous => {
+          const known = new Set(previous.map(item => item.id));
+          return [...previous, ...rows.filter(item => !known.has(item.id))];
+        });
       }
     };
 
