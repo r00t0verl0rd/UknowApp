@@ -170,6 +170,21 @@ function MessageBubble({ message, onDelete, viewerRole, personal = false }) {
     video_sticker: "Видео-стикер",
     animation: "Анимация"
   }[sourceKind] || "Вложение");
+
+  const channelLabels = { telegram: "Telegram", max: "MAX", whatsapp: "WhatsApp" };
+  const messengerIssues = Object.entries(message.metadata?.messenger_deliveries || {})
+    .flatMap(([platform, delivery]) => (delivery?.errors || []).map(error => ({
+      ...(typeof error === "string" ? { reason: error } : error),
+      platform: channelLabels[platform] || platform.toUpperCase(),
+    })));
+  const legacyTelegramIssues = messengerIssues.length
+    ? []
+    : (message.metadata?.telegram_delivery_errors || []).map(error => ({
+      ...(typeof error === "string" ? { reason: error } : error),
+      platform: "Telegram",
+    }));
+  const deliveryIssues = [...messengerIssues, ...legacyTelegramIssues];
+
   return <div ref={bubbleRef} className={"message " + message.sender_role}>
     <div className="message-topline">
       {!(viewerRole === "teacher" && message.sender_role !== "admin") && <b>{message.sender}</b>}
@@ -179,21 +194,16 @@ function MessageBubble({ message, onDelete, viewerRole, personal = false }) {
           const status = message.delivery_status || "unknown";
           const read = Boolean(message.panel_read_at);
           const title = read ? "Прочитано в UknowApp"
-            : personal ? "Доставлено в UknowApp"
-              : status === "pending" ? "Отправляется в Telegram"
-                : status === "partial" ? "Частично доставлено в Telegram"
-                  : status === "failed" ? "Не доставлено в Telegram"
-                    : status === "blocked_contact" ? "Сообщение заблокировано: контактные данные не отправлены"
-                      : status === "delivered" ? "Доставлено в Telegram"
-                        : "Статус доставки не подтверждён";
+            : status === "blocked_contact" ? "Сообщение заблокировано системой"
+              : status === "pending" ? "Сохраняется в UknowApp"
+                : "Доставлено в UknowApp";
           const statusClass = read ? " is-read"
-            : ["failed", "blocked_contact"].includes(status) ? " is-failed"
-              : ["partial", "unknown"].includes(status) ? " is-partial" : "";
+            : status === "blocked_contact" ? " is-failed"
+              : status === "pending" ? " is-partial" : "";
           return <span className={"message-read-status" + statusClass} title={title} aria-label={title}>
             {status === "pending" ? <Check size={14}/>
-              : ["failed", "blocked_contact"].includes(status) ? <CircleX size={15}/>
-                : ["partial", "unknown"].includes(status) ? <CircleAlert size={15}/>
-                  : <CheckCheck size={15}/>}
+              : status === "blocked_contact" ? <CircleX size={15}/>
+                : <CheckCheck size={15}/>}
           </span>;
         })()}
         {message.can_delete && <button type="button" className="icon-btn danger-icon message-delete-btn" onClick={() => onDelete?.(message)} title="Удалить своё сообщение у всех" aria-label="Удалить своё сообщение"><Trash2 size={14}/></button>}
@@ -206,24 +216,17 @@ function MessageBubble({ message, onDelete, viewerRole, personal = false }) {
     {mediaUrl && ["document", "photo"].includes(kind) && <a className="chat-media-download" href={mediaUrl} download={media?.file_name || label}>Скачать файл: {media?.file_name || label}</a>}
     {!mediaUrl && media && <small className="chat-media-status">{media.archive_status === "too_large_for_telegram_download" ? "Файл больше 20 МБ: Telegram не позволяет сохранить копию для веб-панели. Оригинал остаётся в исходном чате Telegram." : media.archive_status === "download_failed" ? "Не удалось сохранить копию вложения. Проверьте оригинал в Telegram." : "Загрузка вложения…"}</small>}
     {!media && !message.text && <p>Вложение: {message.content_type}</p>}
-    {viewerRole === "admin" && (message.delivery_status && message.delivery_status !== "delivered" || message.metadata?.telegram_delivery_errors?.length > 0) && <div className="message-delivery">
-      <div className="message-delivery-heading">{message.delivery_status === "pending"
-        ? "Сообщение сохранено. Отправка в Telegram…"
-        : message.delivery_status === "blocked_contact"
-          ? "Сообщение заблокировано: контактные данные скрыты и не отправлены"
-          : message.delivery_status === "partial"
-          ? "В Telegram доставлено не всем адресатам"
-          : "В Telegram не доставлено. Сообщение сохранено в UknowApp"}</div>
-      {message.metadata?.telegram_delivery_errors?.length ? message.metadata.telegram_delivery_errors.map((error, index) => {
-        const details = typeof error === "string"
-          ? (() => { const separator = error.indexOf(":"); return separator < 0 ? { reason: error } : { name: error.slice(0, separator).trim(), reason: error.slice(separator + 1).trim() }; })()
-          : error;
-        return <div className="message-delivery-error" key={index}>
-          {details.name && <span className={"message-delivery-name" + (details.role ? " " + details.role : "")}>{details.name}</span>}
-          {details.name && <span className="message-delivery-dash"> — </span>}
+    {viewerRole === "admin" && deliveryIssues.length > 0 && <div className="message-delivery">
+      <div className="message-delivery-heading">Сообщение доставлено в UknowApp. Проблемы внешних каналов:</div>
+      {deliveryIssues.map((details, index) => (
+        <div className="message-delivery-error" key={index}>
+          <span className="message-delivery-name">{details.platform}</span>
+          {details.name && <><span className="message-delivery-dash"> · </span><span className="message-delivery-name">{details.name}</span></>}
+          {details.role && <span className="message-delivery-role"> ({details.role})</span>}
+          <span className="message-delivery-dash"> — </span>
           <span className="message-delivery-reason">{details.reason || "Причина не указана."}</span>
-        </div>;
-      }) : <div className="message-delivery-error"><span className="message-delivery-reason">Причина не указана.</span></div>}
+        </div>
+      ))}
     </div>}
   </div>;
 }
