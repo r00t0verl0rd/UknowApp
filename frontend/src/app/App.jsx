@@ -31,10 +31,10 @@ export default function App() {
   }, [setToast]);
 
   useEffect(() => {
-    if (!auth || !panelReady || !profile || !workspace) return;
+    if (!auth || !panelReady || !profile?.role || !workspace) return;
     const accessiblePage = workspace.pages.includes(page) ? page : workspace.pages[0];
     setPage(accessiblePage, { replace: true });
-  }, [auth, panelReady, profile, page, setPage, workspace]);
+  }, [auth, panelReady, profile?.role, page, setPage, workspace]);
 
   const push = usePushNotificationsState({ auth, selectedChat, notify, setError });
   const { signIn, signOut } = useAuthController({
