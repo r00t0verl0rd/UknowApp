@@ -179,6 +179,63 @@ test("global SSE updates real counters across tabs and replays missed events", {
     assert.notEqual(themeStyles.light.teacher, themeStyles["dark-soft"].teacher);
     assert.notEqual(themeStyles.light.student, themeStyles["dark-soft"].student);
 
+    // Проверяем общий квадратный контур кнопок во всех кабинетах, модальных окнах и темах.
+    const originalViewport = page.viewportSize();
+    for (const width of [390, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        const styles = await page.evaluate(currentTheme => {
+          const previousTheme = document.documentElement.dataset.theme;
+          document.documentElement.dataset.theme = currentTheme;
+          const sample = document.createElement("div");
+          sample.className = "content";
+          sample.style.cssText = "position:fixed;top:0;left:0;z-index:-1;visibility:hidden";
+          sample.innerHTML = `
+            <div class="role_node"></div>
+            <div class="teacher-card"><div class="person-actions">
+              <button class="icon-btn ui-icon-button danger-icon teacher-collapse-btn"></button>
+              <button class="icon-btn ui-icon-button"></button>
+            </div></div>
+            <div class="student-card">
+              <button class="icon-btn ui-icon-button graph-person-action"></button>
+            </div>
+            <div class="user-actions"><button class="icon-btn ui-icon-button user-action-btn edit-btn"></button></div>
+            <div class="modal"><div class="modal-head"><button class="icon-btn ui-icon-button"></button></div></div>
+            <div class="graph-board-object-actions"><button class="icon-btn ui-icon-button ui-icon-button--compact"></button></div>
+          `;
+          document.body.appendChild(sample);
+          const selectors = [
+            ".teacher-card .teacher-collapse-btn", ".teacher-card .person-actions .ui-icon-button:not(.danger-icon)",
+            ".student-card .graph-person-action", ".user-actions .edit-btn",
+            ".modal-head .ui-icon-button", ".graph-board-object-actions .ui-icon-button",
+          ];
+          const result = selectors.map(selector => {
+            const el = sample.querySelector(selector);
+            const style = getComputedStyle(el);
+            const rect = el.getBoundingClientRect();
+            return {
+              selector, width: Math.round(rect.width), height: Math.round(rect.height),
+              border: style.borderTopWidth, borderStyle: style.borderTopStyle,
+              radius: parseFloat(style.borderTopLeftRadius), background: style.backgroundColor,
+            };
+          });
+          sample.remove();
+          document.documentElement.dataset.theme = previousTheme;
+          return result;
+        }, theme);
+        for (const style of styles) {
+          const expected = style.selector.includes("graph-board-object") ? 30 : 34;
+          assert.equal(style.width, expected, `${theme} ${width}px ${style.selector} width`);
+          assert.equal(style.height, expected, `${theme} ${width}px ${style.selector} height`);
+          assert.equal(style.border, "1px", `${theme} ${width}px ${style.selector} border`);
+          assert.equal(style.borderStyle, "solid", `${theme} ${width}px ${style.selector} border style`);
+          assert.ok(style.radius >= 8, `${theme} ${width}px ${style.selector} border radius`);
+          assert.notEqual(style.background, "rgba(0, 0, 0, 0)", `${theme} ${width}px ${style.selector} background`);
+        }
+      }
+    }
+    await page.setViewportSize(originalViewport);
+
     await waitFor(() => pendingPersonalResponses.length === 1);
     assert.equal(pendingPersonalResponses.length, 1,
       "the workspace shell must render before the personal inbox request finishes");
