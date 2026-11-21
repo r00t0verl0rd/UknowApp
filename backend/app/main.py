@@ -16,19 +16,19 @@ from .core.config import (
     SEED_DEMO_DATA,
     TELEGRAM_BOT_ENABLED,
     TELEGRAM_BOT_TOKEN,
-    TELEGRAM_PROXY_URL,
-    TELEGRAM_MODE,
-    TELEGRAM_GATEWAY_URL,
     TELEGRAM_GATEWAY_TOKEN,
+    TELEGRAM_GATEWAY_URL,
+    TELEGRAM_MODE,
+    TELEGRAM_PROXY_URL,
 )
 from .core.database import SessionLocal, create_tables
 from .models import Assignment, Conversation, User
 from .modules.administration.data import apply_pending_data_restore
 from .modules.communication.service import CommunicationService
 from .modules.telegram.adapter import TelegramAdapter
-from .modules.telegram.transport import create_telegram_bot
-from .modules.telegram.remote_transport import create_remote_bot
 from .modules.telegram.internal import process_update_inbox
+from .modules.telegram.remote_transport import create_remote_bot
+from .modules.telegram.transport import create_telegram_bot
 
 logger = logging.getLogger(__name__)
 
