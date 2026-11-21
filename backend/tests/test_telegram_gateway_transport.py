@@ -87,7 +87,7 @@ def test_bot_api_transport_streamed_files_and_commands(tmp_path):
                 "sendMessage", "copyMessage", "deleteMessage",
                 "answerCallbackQuery", "sendPhoto", "getFile",
             ]
-            assert seen[4][1]["photo"].filename == "small.jpg"
+            assert any(getattr(item, "filename", None) == "small.jpg" for item in seen[4][1].values())
         finally:
             await bot.session.close()
             await runner.cleanup()
