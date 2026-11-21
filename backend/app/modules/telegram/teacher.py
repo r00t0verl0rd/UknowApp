@@ -29,9 +29,9 @@ from app.modules.communication.contracts import MessengerError, MessengerPlatfor
 from app.modules.messaging.inbound import (
     InboundUiResult,
     clear_teacher_session,
-    recent_conversation_messages,
     get_teacher_conversation,
     mark_visible_messages_read_by_teacher,
+    recent_conversation_messages,
     set_teacher_session,
 )
 
