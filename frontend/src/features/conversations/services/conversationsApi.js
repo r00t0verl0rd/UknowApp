@@ -30,10 +30,13 @@ export function sendPersonalMessage(request, chatId, text) {
   });
 }
 
-export function sendConversationText(request, chatId, text) {
+export function sendConversationText(request, chatId, text, clientMessageId) {
   return request("/api/panel/conversations/" + chatId + "/messages", {
     method: "POST",
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({
+      text,
+      ...(clientMessageId ? { client_message_id: clientMessageId } : {}),
+    }),
   });
 }
 

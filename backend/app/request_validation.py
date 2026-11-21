@@ -92,4 +92,8 @@ def personal_conversation_payload(payload: Any) -> dict:
 def message_payload(payload: Any) -> dict:
     data = _object(payload)
     _string(data, "text", required=True, minimum=1, maximum=3900)
-    return {"text": data["text"]}
+    _string(data, "client_message_id", maximum=64)
+    result = {"text": data["text"]}
+    if data.get("client_message_id"):
+        result["client_message_id"] = data["client_message_id"]
+    return result

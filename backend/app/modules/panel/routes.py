@@ -13,6 +13,7 @@ from typing import Annotated
 from aiogram.exceptions import TelegramAPIError
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     File,
     Form,
     HTTPException,
@@ -20,10 +21,11 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import FileResponse, StreamingResponse
-from sqlalchemy import func, select, update
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.database import SessionLocal
 from app.event_hub import (
     publish_chat_update,
     subscribe_chat_updates,
@@ -73,33 +75,67 @@ router = APIRouter(prefix="/api")
 def _panel_student_telegram_target(
     db: Session,
     conversation: Conversation,
-    rows: list[Message],
 ) -> dict | None:
     student = conversation.student
     account = get_messenger_account(db, student.id, MessengerPlatform.TELEGRAM)
     if not account:
         return None
     target = {"chat_id": account.external_chat_id or account.external_user_id}
-    last_reply_index = max(
-        (
-            i for i, item in enumerate(rows)
-            if item.sender_role in {"teacher", "admin"}
-            and item.delivery_status in {"delivered", "partial"}
-            and (
-                item.sender_role == "teacher"
-                or any(
-                    delivery.get("user_id") == student.id
-                    for delivery in (json.loads(item.metadata_json or "{}").get("telegram_deliveries") or [])
-                )
-                or not json.loads(item.metadata_json or "{}").get("telegram_deliveries")
-            )
-        ),
-        default=-1,
+
+    teacher_reply = db.execute(
+        select(Message.id, Message.created_at, Message.metadata_json)
+        .where(
+            Message.conversation_id == conversation.id,
+            Message.sender_role == "teacher",
+            Message.delivery_status.in_(("delivered", "partial")),
+        )
+        .order_by(Message.created_at.desc(), Message.id.desc())
+        .limit(1),
+    ).first()
+
+    admin_replies = db.execute(
+        select(Message.id, Message.created_at, Message.metadata_json)
+        .where(
+            Message.conversation_id == conversation.id,
+            Message.sender_role == "admin",
+            Message.delivery_status.in_(("delivered", "partial")),
+        )
+        .order_by(Message.created_at.desc(), Message.id.desc()),
+    ).all()
+    admin_reply = None
+    for candidate in admin_replies:
+        metadata = json.loads(candidate.metadata_json or "{}")
+        deliveries = metadata.get("telegram_deliveries") or []
+        if not deliveries or any(delivery.get("user_id") == student.id for delivery in deliveries):
+            admin_reply = candidate
+            break
+
+    last_reply = max(
+        (item for item in (teacher_reply, admin_reply) if item is not None),
+        key=lambda item: (item.created_at, item.id),
+        default=None,
     )
-    for incoming in reversed(rows[last_reply_index + 1:]):
-        if incoming.sender_role != "student":
-            continue
-        incoming_meta = json.loads(incoming.metadata_json or "{}")
+    incoming_query = select(Message.metadata_json).where(
+        Message.conversation_id == conversation.id,
+        Message.sender_role == "student",
+    )
+    if last_reply is not None:
+        incoming_query = incoming_query.where(
+            or_(
+                Message.created_at > last_reply.created_at,
+                and_(
+                    Message.created_at == last_reply.created_at,
+                    Message.id > last_reply.id,
+                ),
+            ),
+        )
+    incoming_metadata = db.scalar(
+        incoming_query
+        .order_by(Message.created_at.desc(), Message.id.desc())
+        .limit(1),
+    )
+    if incoming_metadata is not None:
+        incoming_meta = json.loads(incoming_metadata or "{}")
         if incoming_meta.get("source_mode") == "group_topic":
             try:
                 group_chat_id = int(incoming_meta["source_chat_id"])
@@ -115,10 +151,8 @@ def _panel_student_telegram_target(
                 return {"chat_id": group_chat_id, "message_thread_id": thread_id}
         return target
 
-    # Preserve the group topic used by the last answer after an administrator
-    # has intervened and there is no newer student message.
-    if last_reply_index >= 0:
-        response_meta = json.loads(rows[last_reply_index].metadata_json or "{}")
+    if last_reply is not None:
+        response_meta = json.loads(last_reply.metadata_json or "{}")
         for delivery in response_meta.get("telegram_deliveries") or []:
             if delivery.get("user_id") != student.id or delivery.get("thread_id") is None:
                 continue
@@ -135,9 +169,6 @@ def _panel_student_telegram_target(
             if linked_topic:
                 return {"chat_id": group_chat_id, "message_thread_id": thread_id}
 
-    # If the conversation has no usable recent delivery route yet, fall back
-    # to the student's current verified forum-topic binding instead of always
-    # sending the first teacher-initiated message to the private bot chat.
     current_binding = db.get(StudentTelegramGroup, student.id)
     if current_binding:
         return {
@@ -145,7 +176,6 @@ def _panel_student_telegram_target(
             "message_thread_id": current_binding.thread_id,
         }
     return target
-
 
 @router.get("/panel/me")
 def panel_me(principal: PanelUser, db: Db):
@@ -607,26 +637,31 @@ async def _store_panel_attachment(request: Request, file: UploadFile, conversati
     return content, original_name, relative, mime_type, kind
 
 
-async def _refresh_teacher_panel_after_web_delivery(bot, db: Session, teacher: User, conversation: Conversation) -> None:
-    """Refresh the teacher's Telegram panel after a web message has been persisted."""
-    teacher_account = get_messenger_account(db, teacher.id, MessengerPlatform.TELEGRAM)
-    if not bot or not teacher_account:
+async def _refresh_teacher_panel_after_web_delivery(bot, teacher_id: int, conversation_id: int) -> None:
+    """Refresh the teacher's Telegram panel without holding the web request open."""
+    if not bot:
         return
     try:
-        from app.modules.telegram.teacher import (
-            clear_teacher_session,
-            update_teacher_panel,
-        )
-        current_session = db.get(TeacherSession, teacher.id)
-        if current_session and current_session.conversation_id != conversation.id:
-            clear_teacher_session(db, teacher)
-        await update_teacher_panel(bot, db, teacher)
+        with SessionLocal() as db:
+            teacher = db.get(User, teacher_id)
+            conversation = db.get(Conversation, conversation_id)
+            if not teacher or not conversation:
+                return
+            if not get_messenger_account(db, teacher.id, MessengerPlatform.TELEGRAM):
+                return
+            from app.modules.telegram.teacher import (
+                clear_teacher_session,
+                update_teacher_panel,
+            )
+            current_session = db.get(TeacherSession, teacher.id)
+            if current_session and current_session.conversation_id != conversation.id:
+                clear_teacher_session(db, teacher)
+            await update_teacher_panel(bot, db, teacher)
     except (TelegramAPIError, SQLAlchemyError) as exc:
-        # Delivery is already committed; a panel refresh failure must not undo it.
         logger.warning(
             "Could not refresh teacher panel after web delivery "
             "(teacher_id=%s conversation_id=%s error_type=%s)",
-            teacher.id, conversation.id, type(exc).__name__,
+            teacher_id, conversation_id, type(exc).__name__,
         )
 
 
@@ -637,6 +672,7 @@ async def send_panel_message(
     request: Request,
     principal: PanelUser,
     db: Db,
+    background_tasks: BackgroundTasks,
 ):
     payload = message_payload(payload)
     # Сначала сохраняем сообщение в БД, затем отправляем его адресатам в Telegram.
@@ -649,12 +685,8 @@ async def send_panel_message(
 
     sender, recipients, student, teacher = _panel_sender_and_recipients(db, principal, conversation)
 
-    rows = db.scalars(
-        select(Message).where(Message.conversation_id == conversation.id)
-        .order_by(Message.created_at, Message.id),
-    ).all()
     student_target = (
-        _panel_student_telegram_target(db, conversation, rows)
+        _panel_student_telegram_target(db, conversation)
         if any(role == "student" for _, role in recipients) else None
     )
 
@@ -664,7 +696,11 @@ async def send_panel_message(
         sender_role=principal["role"],
         content_type="text",
         text=body,
-        metadata_json=json.dumps({"source_mode": "web", "web_sender_role": principal["role"]}, ensure_ascii=False),
+        metadata_json=json.dumps({
+            "source_mode": "web",
+            "web_sender_role": principal["role"],
+            **({"client_message_id": payload["client_message_id"]} if payload.get("client_message_id") else {}),
+        }, ensure_ascii=False),
         delivery_status="pending",
     )
     db.add(row)
@@ -740,7 +776,12 @@ async def send_panel_message(
 
     _save_panel_delivery_result(db, row, conversation, delivered, delivery_errors)
 
-    await _refresh_teacher_panel_after_web_delivery(bot, db, teacher, conversation)
+    background_tasks.add_task(
+        _refresh_teacher_panel_after_web_delivery,
+        bot,
+        teacher.id,
+        conversation.id,
+    )
 
     return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"), principal=principal)
 
@@ -751,6 +792,7 @@ async def send_panel_attachment(
     request: Request,
     principal: PanelUser,
     db: Db,
+    background_tasks: BackgroundTasks,
     file: Annotated[UploadFile, File()],
     text: Annotated[str, Form()] = "",
 ):
@@ -878,5 +920,10 @@ async def send_panel_attachment(
 
     _save_panel_delivery_result(db, row, conversation, delivered, delivery_errors)
 
-    await _refresh_teacher_panel_after_web_delivery(bot, db, teacher, conversation)
+    background_tasks.add_task(
+        _refresh_teacher_panel_after_web_delivery,
+        bot,
+        teacher.id,
+        conversation.id,
+    )
     return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"), principal=principal)

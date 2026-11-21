@@ -157,32 +157,75 @@ export function useChatsController({
 
   const sendChatMessage = useCallback(async event => {
     event.preventDefault();
-    if (!selectedChat || (!draft.trim() && !attachment)) return;
+    const chat = selectedChat;
+    const text = draft.trim();
+    const file = attachment;
+    if (!chat || (!text && !file)) return;
+
+    const optimistic = chat.type !== "personal" && !file && Boolean(text);
+    const clientMessageId = optimistic
+      ? (window.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2))
+      : null;
+    const optimisticId = clientMessageId ? "local-" + clientMessageId : null;
+
+    if (optimistic) {
+      setDraft("");
+      setMessages(current => [...current, {
+        id: optimisticId,
+        sender: profile?.full_name || "",
+        sender_role: profile?.role || "",
+        can_delete: false,
+        content_type: "text",
+        text,
+        metadata: { client_message_id: clientMessageId },
+        delivery_status: "pending",
+        panel_read_at: null,
+        created_at: new Date().toISOString(),
+      }]);
+    }
+
     try {
       let sentMessage;
-      if (selectedChat.type === "personal") {
-        if (attachment) throw new Error("В личных диалогах доступны только текстовые сообщения");
-        sentMessage = await sendPersonalMessage(request, selectedChat.id, draft.trim());
-      } else if (attachment) {
-        sentMessage = await sendConversationAttachment(selectedChat.id, attachment, draft.trim());
+      if (chat.type === "personal") {
+        if (file) throw new Error("В личных диалогах доступны только текстовые сообщения");
+        sentMessage = await sendPersonalMessage(request, chat.id, text);
+      } else if (file) {
+        sentMessage = await sendConversationAttachment(chat.id, file, text);
       } else {
-        sentMessage = await sendConversationText(request, selectedChat.id, draft.trim());
+        sentMessage = await sendConversationText(request, chat.id, text, clientMessageId);
       }
-      setDraft("");
-      setAttachment(null);
-      setMessages(current => current.some(item => item.id === sentMessage.id)
-        ? current.map(item => item.id === sentMessage.id ? sentMessage : item)
-        : [...current, sentMessage]);
-      if (selectedChat.type === "personal") notify("Сообщение отправлено внутри UknowApp");
+
+      if (!optimistic) {
+        setDraft("");
+        setAttachment(null);
+      }
+      setMessages(current => {
+        const reconciled = clientMessageId
+          ? current.filter(item => item.id !== optimisticId && item.metadata?.client_message_id !== clientMessageId)
+          : current;
+        const existing = reconciled.findIndex(item => item.id === sentMessage.id);
+        if (existing >= 0) {
+          return reconciled.map(item => item.id === sentMessage.id ? sentMessage : item);
+        }
+        return [...reconciled, sentMessage];
+      });
+
+      if (chat.type === "personal") notify("Сообщение отправлено внутри UknowApp");
       else if (profile?.role === "admin" && sentMessage?.delivery_status !== "delivered") {
         notify("Сообщение сохранено. Подробности доставки доступны в переписке.");
       } else if (sentMessage?.delivery_status === "delivered" && profile?.role !== "teacher") {
         notify("Сообщение отправлено");
       }
     } catch (error) {
+      if (clientMessageId) {
+        setMessages(current => current.filter(item =>
+          item.id !== optimisticId && item.metadata?.client_message_id !== clientMessageId
+        ));
+        setDraft(current => current || text);
+      }
       setError(error.message);
     }
-  }, [selectedChat, draft, attachment, request, setDraft, setAttachment, setMessages, notify, profile?.role, setError]);
+  }, [selectedChat, draft, attachment, request, setDraft, setMessages, setAttachment, notify, profile?.role, profile?.full_name, setError]);
 
   return { visibleChats, visibleMessages, openChat, openCreatePersonalChat, createPersonalChat, confirmDeleteMessage, sendChatMessage, deleteMessageCandidate, deletingMessage, setDeleteMessageCandidate };
 }

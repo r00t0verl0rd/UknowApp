@@ -47,9 +47,11 @@ export function useConversationSync({
         current.current.setMessages(rows);
       } else if (rows.length) {
         lastMessageId.current = Math.max(afterId, maxMessageId(rows));
+        const clientIds = new Set(rows.map(item => item.metadata?.client_message_id).filter(Boolean));
         current.current.setMessages(previous => {
-          const known = new Set(previous.map(item => item.id));
-          return [...previous, ...rows.filter(item => !known.has(item.id))];
+          const reconciled = previous.filter(item => !clientIds.has(item.metadata?.client_message_id));
+          const known = new Set(reconciled.map(item => item.id));
+          return [...reconciled, ...rows.filter(item => !known.has(item.id))];
         });
       }
     };
