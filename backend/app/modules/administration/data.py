@@ -383,11 +383,16 @@ def _extract_v2_archive(
     records = manifest.get("files")
     if not isinstance(records, list) or not records or len(records) > MAX_ARCHIVE_ENTRIES:
         raise HTTPException(status_code=400, detail="В manifest отсутствует список файлов data")
+    if any(
+        not isinstance(item, dict)
+        or type(item.get("size")) is not int
+        or item["size"] < 0
+        for item in records
+    ):
+        raise HTTPException(status_code=400, detail="Некорректный размер файла в manifest")
     declared_file_count = manifest.get("file_count")
     declared_unpacked_bytes = manifest.get("unpacked_bytes")
-    declared_total = sum(
-        item.get("size", 0) for item in records if isinstance(item, dict)
-    )
+    declared_total = sum(item["size"] for item in records)
     if (
         type(declared_file_count) is not int
         or declared_file_count != len(records)
