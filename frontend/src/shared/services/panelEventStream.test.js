@@ -32,6 +32,12 @@ test("shares one EventSource and closes it after the final subscriber leaves", a
     unsubscribeFirst();
     assert.equal(instances[0].closed, false);
     unsubscribeSecond();
+    assert.equal(instances[0].closed, false);
+    const unsubscribeThird = subscribePanelEvents(() => {});
+    assert.equal(instances.length, 1);
+    assert.equal(instances[0].closed, false);
+    unsubscribeThird();
+    await Promise.resolve();
     assert.equal(instances[0].closed, true);
   } finally {
     globalThis.EventSource = original;

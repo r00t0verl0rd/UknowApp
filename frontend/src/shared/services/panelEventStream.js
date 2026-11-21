@@ -1,5 +1,6 @@
 let source = null;
 const subscribers = new Set();
+let closeGeneration = 0;
 
 function openStream() {
   if (source || typeof EventSource === "undefined") return;
@@ -15,14 +16,19 @@ function openStream() {
 
 export function subscribePanelEvents(onUpdate, onOpen) {
   if (typeof EventSource === "undefined") return null;
+  closeGeneration += 1;
   const subscriber = { onUpdate, onOpen };
   subscribers.add(subscriber);
   openStream();
   return () => {
     subscribers.delete(subscriber);
     if (!subscribers.size && source) {
-      source.close();
-      source = null;
+      const generation = ++closeGeneration;
+      queueMicrotask(() => {
+        if (generation !== closeGeneration || subscribers.size || !source) return;
+        source.close();
+        source = null;
+      });
     }
   };
 }
