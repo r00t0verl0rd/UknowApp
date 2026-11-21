@@ -43,6 +43,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
   let apiServer;
   let vite;
   let browser;
+  const apiPaths = [];
+  const pageErrors = [];
 
   const writeEvent = (response, event) => {
     response.write(`id: ${event.event_id}\nevent: update\ndata: ${JSON.stringify(event)}\n\n`);
@@ -55,6 +57,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
 
   apiServer = createServer((request, response) => {
     const path = new URL(request.url, "http://localhost").pathname;
+    apiPaths.push(path);
     if (path === "/api/panel/events") {
       const lastEventId = Number(request.headers["last-event-id"] || 0);
       lastEventIds.push(lastEventId);
@@ -135,8 +138,16 @@ test("global SSE updates real counters across tabs and replays missed events", {
     const context = await browser.newContext();
     await context.addInitScript(() => localStorage.setItem("uknowapp-auth", "1"));
     const page = await context.newPage();
+    page.on("pageerror", error => pageErrors.push(error.stack || error.message));
     await page.goto(APP_URL + "/boards");
-    await page.getByRole("button", { name: "Доски" }).waitFor({ state: "visible" });
+    try {
+      await page.getByRole("button", { name: "Доски" }).waitFor({ state: "visible" });
+    } catch (error) {
+      console.log("Browser page after startup:", await page.locator("body").innerText());
+      console.log("API requests:", apiPaths);
+      console.log("Browser errors:", pageErrors);
+      throw error;
+    }
 
     await waitFor(() => streams.size === 1 && inboxRequests > 0 && personalRequests > 0);
     await delay(300);
