@@ -56,7 +56,15 @@ export function useConversationSync({
 
     const updateSummary = async (type, id) => {
       const chat = { id, type: type === "personal" ? "personal" : "conversation" };
-      const summary = await getChatSummary(request, chat);
+      let summary;
+      try {
+        summary = await getChatSummary(request, chat);
+      } catch (error) {
+        if (!/404|не найден/i.test(String(error.message))) throw error;
+        if (type === "personal") current.current.setPersonalChats(items => items.filter(item => item.id !== id));
+        else current.current.setChats(items => items.filter(item => item.id !== id));
+        return;
+      }
       if (!active) return;
       if (type === "personal") {
         current.current.setPersonalChats(items => items.some(item => item.id === id)
