@@ -119,10 +119,10 @@
   flex:1 1 0;
   flex-direction:column;
   align-items:flex-start;
-  gap:10px;
+  gap:6px;
   min-width:0;
   min-height:0;
-  padding:16px 4px;
+  padding:10px 4px;
   overflow-x:hidden;
   overflow-y:auto;
   background:transparent;
@@ -134,7 +134,7 @@
   width:fit-content;
   max-width:min(92%,720px);
   min-width:0;
-  padding:9px 11px;
+  padding:6px 9px;
   border:1px solid var(--ui-border);
   border-radius:13px;
   background:var(--surface);
@@ -160,15 +160,18 @@
   border-color:var(--role-admin-border);
   background:linear-gradient(110deg,var(--role-admin-soft),color-mix(in srgb,var(--surface) 24%,var(--role-admin-soft)));
 }
-.message-topline{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}
+.message-topline{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
 .message-topline > b{min-width:0;overflow:hidden;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
-.message-tools{display:inline-flex;flex:0 0 auto;align-items:center;gap:6px}
+.message-tools{display:inline-flex;flex:0 0 auto;align-items:center;gap:4px}
 .message-time{color:var(--muted);font-size:10px;font-weight:500;white-space:nowrap}
 .message-read-status{display:inline-flex;align-items:center;color:var(--muted);line-height:1}
 .message-read-status.is-read{color:var(--info)}
 .message-read-status.is-failed{color:var(--danger,#ef4444)}
-.message-delete-btn{flex:0 0 28px;width:28px;height:28px;padding:0}
-.message p{margin:7px 0 0;color:var(--ink);font-size:12px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.message-delete-btn{display:inline-grid;place-items:center;flex:0 0 24px;width:24px;height:24px;padding:0;border:0;border-radius:6px;background:transparent;color:#fff;opacity:.78}
+.message-delete-btn svg{width:12px;height:12px;filter:drop-shadow(0 0 1px #51495e)}
+.message-delete-btn:hover,.message-delete-btn:focus-visible{opacity:1;background:rgba(40,32,52,.2)}
+.message-delete-btn:focus-visible{outline:2px solid var(--ink)}
+.message p{margin:2px 0 0;color:var(--ink);font-size:12px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
 .message b small{margin-left:6px;color:var(--muted);font-size:10px;font-weight:500}
 
 

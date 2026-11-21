@@ -243,15 +243,10 @@ export function useChatsController({
       }
       setMessages(current => mergeConversationMessages(current, [sentMessage], chatKey));
 
-      if (chat.type === "personal") {
-        notify("Сообщение отправлено внутри UknowApp");
-      } else if (profile?.role === "admin") {
+      if (chat.type !== "personal" && profile?.role === "admin") {
         const hasMessengerIssues = Object.values(sentMessage?.metadata?.messenger_deliveries || {})
           .some(delivery => (delivery?.errors || []).length > 0);
         if (hasMessengerIssues) setError("Сообщение доставлено в UknowApp. Подробности внешней доставки доступны в переписке.");
-        else notify("Сообщение отправлено");
-      } else if (sentMessage?.delivery_status === "delivered" && profile?.role !== "teacher") {
-        notify("Сообщение отправлено");
       }
     } catch (error) {
       if (clientMessageId) {
@@ -264,7 +259,7 @@ export function useChatsController({
     } finally {
       sendingMessage.current = false;
     }
-  }, [selectedChat, draft, attachment, request, setDraft, setMessages, setAttachment, notify, profile?.role, profile?.full_name, setError]);
+  }, [selectedChat, draft, attachment, request, setDraft, setMessages, setAttachment, profile?.role, profile?.full_name, setError]);
 
   return { creating, visibleChats, visibleMessages, openChat, openCreatePersonalChat, createPersonalChat, confirmDeleteMessage, sendChatMessage, deleteMessageCandidate, deletingMessage, setDeleteMessageCandidate };
 }
