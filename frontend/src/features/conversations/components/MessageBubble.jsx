@@ -5,20 +5,12 @@ import CheckCheck from "lucide-react/dist/esm/icons/check-check.js";
 import CircleX from "lucide-react/dist/esm/icons/circle-x.js";
 import Play from "lucide-react/dist/esm/icons/play.js";
 import Pause from "lucide-react/dist/esm/icons/pause.js";
+import { formatMessageTime } from "../services/formatMessageTime.js";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
 
 // Высоты декоративной звуковой волны общие для всех плееров — не создаём массив при каждом рендере.
 const AUDIO_WAVE_BARS = [4, 7, 10, 6, 13, 8, 15, 10, 6, 12, 17, 9, 5, 13, 8, 16, 11, 6, 14, 9, 17, 7, 12, 5, 15, 9, 13, 6, 11, 16, 8, 12, 5, 14, 9, 7];
-function formatLocalTime(value, options) {
-  if (!value) return "";
-  // SQLite timestamps without an explicit offset are stored as UTC.
-  // The browser automatically applies the viewer's local time zone.
-  const normalized = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value) ? value : value + "Z";
-  const date = new Date(normalized);
-  return Number.isNaN(date.getTime()) ? "" : date.toLocaleString("ru-RU", options);
-}
-
 function formatAudioTime(value) {
   if (!Number.isFinite(value) || value < 0) return "0:00";
   const minutes = Math.floor(value / 60);
@@ -100,7 +92,7 @@ function ChatAudioPlayer({ src, label }) {
   </div>;
 }
 
-function MessageBubble({ message, onDelete, onError, viewerRole, personalChat }) {
+function MessageBubble({ message, onDelete, onError, viewerRole, personalChat, nowMs }) {
   const [mediaUrl, setMediaUrl] = useState("");
   const bubbleRef = useRef(null);
   const media = message.metadata?.media;
@@ -188,7 +180,7 @@ function MessageBubble({ message, onDelete, onError, viewerRole, personalChat })
     <div className="message-topline">
       {!(viewerRole === "teacher" && message.sender_role !== "admin") && <b>{message.sender}</b>}
       <div className="message-tools">
-        <time className="message-time">{formatLocalTime(message.created_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</time>
+        <time className="message-time">{formatMessageTime(message.created_at, nowMs)}</time>
         {message.sender_role === viewerRole && (viewerRole !== "admin" || personalChat) && (() => {
           const status = message.delivery_status || "unknown";
           const read = Boolean(message.panel_read_at);

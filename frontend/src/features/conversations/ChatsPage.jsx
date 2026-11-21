@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left.js";
 import MessageCircle from "lucide-react/dist/esm/icons/message-circle.js";
 import Paperclip from "lucide-react/dist/esm/icons/paperclip.js";
@@ -6,6 +7,7 @@ import Search from "lucide-react/dist/esm/icons/search.js";
 import Send from "lucide-react/dist/esm/icons/send.js";
 import X from "lucide-react/dist/esm/icons/x.js";
 import MessageBubble from "./components/MessageBubble.jsx";
+import { MESSAGE_DAY_MS, parseMessageDate } from "./services/formatMessageTime.js";
 import EmptyState from "../../shared/components/EmptyState.jsx";
 import CountBadge from "../../shared/components/CountBadge.jsx";
 
@@ -16,6 +18,28 @@ export default function ChatsPage({
   messageFilter, setMessageFilter, messagesViewportRef, visibleMessages, messages, messagesLoading,
   setDeleteMessageCandidate, attachment, setAttachment, sendChatMessage,
 }) {
+  const [messageNowMs, setMessageNowMs] = useState(Date.now);
+
+  // A single timer updates all visible timestamps exactly when the next
+  // message becomes 24 hours old, without polling or per-bubble timers.
+  useEffect(() => {
+    let nextBoundary = Infinity;
+    for (const message of visibleMessages) {
+      const sentAt = parseMessageDate(message.created_at);
+      if (sentAt === null) continue;
+      const boundary = sentAt + MESSAGE_DAY_MS;
+      if (boundary > messageNowMs && boundary < nextBoundary) {
+        nextBoundary = boundary;
+      }
+    }
+    if (nextBoundary === Infinity) return undefined;
+    const timeout = window.setTimeout(
+      () => setMessageNowMs(Date.now()),
+      Math.max(1, nextBoundary - Date.now() + 10),
+    );
+    return () => window.clearTimeout(timeout);
+  }, [visibleMessages, messageNowMs]);
+
   const unreadPersonalCount = personalChats.reduce(
     (total, chat) => total + (Number(chat.unread_count) || 0), 0,
   );
@@ -190,7 +214,7 @@ export default function ChatsPage({
               {visibleMessages.map(message => (
                 <MessageBubble onError={setError} message={message} key={message.id}
                   onDelete={setDeleteMessageCandidate} viewerRole={profile?.role}
-                  personalChat={selectedChat.type === "personal"}/>
+                  personalChat={selectedChat.type === "personal"} nowMs={messageNowMs}/>
               ))}
               {!messagesLoading && !messages.length && <EmptyState>Сообщений пока нет</EmptyState>}
               {!!messages.length && !visibleMessages.length
