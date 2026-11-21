@@ -191,6 +191,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
           fixture.style.cssText = "position:fixed;left:0;top:0;visibility:hidden;pointer-events:none";
           fixture.innerHTML = `
             <aside class="sidebar">
+              <div class="school-label">Управление школой</div>
               <nav>
                 <button class="ui-menu-control" type="button">Диалоги</button>
                 <button class="ui-menu-control" aria-current="page" type="button">Структура</button>
@@ -221,6 +222,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
             };
           };
           const result = {
+            schoolLabel: styleOf(".sidebar .school-label"),
             nav: styleOf(".sidebar nav button:not([aria-current])"),
             additional: styleOf(".desktop-admin-extra"),
             logout: styleOf(".desktop-sidebar-logout"),
@@ -232,6 +234,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
           document.documentElement.dataset.theme = previous;
           return result;
         }, theme);
+        assert.equal(result.schoolLabel.display === "none", width < 1025,
+          `${theme} ${width}px: подпись школы видна только на компьютере`);
         const expected = result.nav;
         for (const name of ["additional", "logout", "create"]) {
           const item = result[name];

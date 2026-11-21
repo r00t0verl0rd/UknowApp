@@ -2,7 +2,7 @@ import LogOut from "lucide-react/dist/esm/icons/log-out.js";
 import Moon from "lucide-react/dist/esm/icons/moon.js";
 import Sun from "lucide-react/dist/esm/icons/sun.js";
 import Info from "lucide-react/dist/esm/icons/info.js";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Button from "../shared/components/Button.jsx";
 import Modal from "../shared/components/Modal.jsx";
 import IconButton from "../shared/components/IconButton.jsx";
@@ -24,7 +24,6 @@ export default function WorkspaceLayout({
   pushToggle, signOut, children,
 }) {
   const additionalItem = role === "admin" ? navigation.find(item => item.page === "additional") : null;
-  const [showSchoolLabel, setShowSchoolLabel] = useState(() => window.matchMedia("(min-width: 1025px)").matches);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
@@ -33,13 +32,6 @@ export default function WorkspaceLayout({
     setSigningOut(true);
     await signOut();
   };
-
-  useEffect(() => {
-    const media = window.matchMedia("(min-width: 1025px)");
-    const update = event => setShowSchoolLabel(event.matches);
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
 
   const themeToggle = (
     <IconButton className="theme-toggle" onClick={toggleTheme}
@@ -52,7 +44,7 @@ export default function WorkspaceLayout({
   return <div className={`shell chats-shell workspace-shell workspace-${role}`}>
     <aside className="sidebar">
       <div className="brand"><img src="/logo.png" alt="" /><span>Uknow<span>App</span></span></div>
-      {showSchoolLabel && <div className="school-label">{label}</div>}
+      <div className="school-label">{label}</div>
       <nav aria-label="Основная навигация">
         {navigation.filter(item => item.page !== "additional").map(item =>
           <SidebarControl key={item.page} icon={item.icon} current={page === item.page}

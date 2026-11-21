@@ -121,6 +121,9 @@
 
 /* На телефоне меню прокручивается горизонтально; действия переходят в верхнюю строку. */
 @media (max-width: 1024px) {
+  .workspace-shell .sidebar .school-label {
+    display: none;
+  }
   .workspace-shell .sidebar nav {
     display: flex;
     gap: 4px;
