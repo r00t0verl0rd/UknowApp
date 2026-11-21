@@ -16,7 +16,6 @@ from .core.config import (
     SEED_DEMO_DATA,
     TELEGRAM_BOT_ENABLED,
     TELEGRAM_BOT_TOKEN,
-    TELEGRAM_PROXY_URL,
 )
 from .core.database import SessionLocal, create_tables
 from .models import Assignment, Conversation, User
@@ -112,7 +111,7 @@ async def lifespan(app: FastAPI):
     if TELEGRAM_BOT_ENABLED and TELEGRAM_BOT_TOKEN:
         from .modules.telegram.bot import create_dispatcher
 
-        bot = create_telegram_bot(TELEGRAM_BOT_TOKEN, TELEGRAM_PROXY_URL)
+        bot = create_telegram_bot(TELEGRAM_BOT_TOKEN)
         app.state.telegram_status = "connecting"
         app.state.telegram_bot = bot
         app.state.communication = CommunicationService([TelegramAdapter(bot)])

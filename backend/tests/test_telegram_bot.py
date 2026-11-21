@@ -18,6 +18,7 @@ from app.modules.communication.contracts import (
     OutboundMessage,
 )
 from app.modules.messaging.inbound import process_inbound_message
+from app.modules.telegram import transport
 from app.modules.telegram.adapter import TelegramAdapter
 from app.modules.telegram.teacher import (
     handle_teacher_keyboard_message,
@@ -25,6 +26,38 @@ from app.modules.telegram.teacher import (
     teacher_conversations,
     teacher_panel_view,
 )
+
+
+def test_self_hosted_api_archives_large_mounted_file(tmp_path, monkeypatch):
+    cache = tmp_path / "remote-cache"
+    cache.mkdir()
+    size = 21 * 1024 * 1024
+    with (cache / "lesson.bin").open("wb") as sample:
+        sample.truncate(size)
+    monkeypatch.setattr(transport, "TELEGRAM_FILES_DIR", cache)
+    monkeypatch.setattr(transport, "TELEGRAM_API_URL", "http://telegram-private:8081")
+
+    async def run():
+        bot = transport.create_telegram_bot("123:" + "a" * 32)
+        try:
+            assert bot.session.api.api_url(bot.token, "getMe").startswith("http://telegram-private:8081/")
+            async def get_file(self, file_id):
+                return SimpleNamespace(file_path="/var/lib/telegram-bot-api/lesson.bin")
+            monkeypatch.setattr(type(bot), "get_file", get_file)
+            adapter = TelegramAdapter(bot, tmp_path / "archive")
+            inbound, = adapter.normalize_event({
+                "chat_id": 1, "message_id": 2, "content_type": "document",
+                "media": {"file_id": "fixture", "file_name": "lesson.bin", "file_size": size},
+            })
+            row = SimpleNamespace(id=2, conversation_id=1, metadata_json="{}")
+            await adapter.archive_media(inbound, row)
+            media = json.loads(row.metadata_json)["media"]
+            assert media["archive_status"] == "stored"
+            assert (tmp_path / "archive" / media["local_path"]).stat().st_size == size
+        finally:
+            await bot.session.close()
+
+    asyncio.run(run())
 
 
 class NoMediaCopyGateway:

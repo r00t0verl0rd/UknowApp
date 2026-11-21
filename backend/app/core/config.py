@@ -8,7 +8,8 @@ load_dotenv(ROOT_DIR / ".env")
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_BOT_ENABLED = os.getenv("TELEGRAM_BOT_ENABLED", "true").strip().lower() in {"1", "true", "yes", "on"}
-TELEGRAM_PROXY_URL = os.getenv("TELEGRAM_PROXY_URL", "").strip()
+TELEGRAM_API_URL = os.getenv("TELEGRAM_API_URL", "http://telegram-bot-api:8081").strip()
+TELEGRAM_FILES_DIR = Path(os.getenv("TELEGRAM_FILES_DIR", "/var/lib/telegram-bot-api"))
 _VAPID_PUBLIC_KEY_OVERRIDE = os.getenv("VAPID_PUBLIC_KEY", "").strip()
 _VAPID_PRIVATE_KEY_OVERRIDE = os.getenv("VAPID_PRIVATE_KEY", "").strip()
 VAPID_PUBLIC_KEY = ""

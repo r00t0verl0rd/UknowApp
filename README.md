@@ -12,7 +12,7 @@ Create the environment file once:
 cp .env.example .env
 ```
 
-Set `TELEGRAM_BOT_TOKEN` in `.env` to enable the bot. Change `ADMIN_PASSWORD` before using the admin panel.
+To enable Telegram, configure the [self-hosted Bot API](docs/telegram-service-architecture.md) and set `TELEGRAM_BOT_TOKEN` in `.env`. Change `ADMIN_PASSWORD` before using the admin panel.
 
 ### Terminal 1 — backend and Telegram bot
 
@@ -55,7 +55,7 @@ Teachers continue to get a persistent Reply Keyboard with their active students,
 
 Incoming non-text messages from students are also copied as native Telegram messages into the teacher's private bot chat, preceded by a short student-name label. Photos, videos, video notes, voice messages, audio, documents, animations, stickers and other copyable message types can be opened or played directly in Telegram. These attachment copies remain in the teacher's chat history after a reply; the conversation panel also shows the attachment type and its caption when present.
 
-The local SQLite database is created at `data/uknowapp.db`. Telegram attachments are archived under `data/media/` and shown in the admin conversation view (voice playback, video notes, photos, video and downloadable documents). Keep the `.env` file and the entire `data/` directory private; both are excluded from Git. The hosted Telegram Bot API currently allows downloads up to 20 MB; larger attachments are still forwarded by Telegram but cannot be archived locally by this version.
+The local SQLite database is created at `data/uknowapp.db`. Telegram attachments are archived under `data/media/` and shown in the admin conversation view (voice playback, video notes, photos, video and downloadable documents). Keep the `.env` file and the entire `data/` directory private; both are excluded from Git. The self-hosted Bot API supplies downloaded files through a read-only cache. UknowApp copies them into its own media archive.
 
 ## VPS deployment with Docker Compose
 

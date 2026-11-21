@@ -273,30 +273,32 @@ class TelegramAdapter:
         }
         metadata["media"] = media
         try:
-            if item.file_size and item.file_size > 20 * 1024 * 1024:
-                media["archive_status"] = "too_large_for_telegram_download"
-            else:
-                suffix = Path(file_name or "").suffix.lower()
-                if not suffix:
-                    suffix = mimetypes.guess_extension(item.mime_type or "") or {
-                        "voice": ".ogg", "video_note": ".mp4", "video": ".mp4",
-                        "photo": ".jpg", "sticker": ".webp", "animation": ".mp4",
-                    }.get(field, ".bin")
-                if field == "sticker":
-                    suffix = {
-                        "video_sticker": ".webm",
-                        "animated_sticker": ".tgs",
-                        "sticker": ".webp",
-                    }[media_kind]
-                relative = Path(str(row.conversation_id)) / (uuid.uuid4().hex + suffix[:12])
-                root = self._media_dir.resolve()
-                target = (root / relative).resolve()
-                if root not in target.parents:
-                    raise ValueError("Unsafe media archive path")
-                target.parent.mkdir(parents=True, exist_ok=True)
-                await self._bot.download(item.provider_file_id, destination=target)
-                media["local_path"] = relative.as_posix()
-                media["archive_status"] = "stored"
+            suffix = Path(file_name or "").suffix.lower()
+            if not suffix:
+                suffix = mimetypes.guess_extension(item.mime_type or "") or {
+                    "voice": ".ogg", "video_note": ".mp4", "video": ".mp4",
+                    "photo": ".jpg", "sticker": ".webp", "animation": ".mp4",
+                }.get(field, ".bin")
+            if field == "sticker":
+                suffix = {
+                    "video_sticker": ".webm",
+                    "animated_sticker": ".tgs",
+                    "sticker": ".webp",
+                }[media_kind]
+            relative = Path(str(row.conversation_id)) / (uuid.uuid4().hex + suffix[:12])
+            root = self._media_dir.resolve()
+            target = (root / relative).resolve()
+            if root not in target.parents:
+                raise ValueError("Unsafe media archive path")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            partial = target.with_suffix(".part")
+            try:
+                await self._bot.download(item.provider_file_id, destination=partial)
+                partial.replace(target)
+            finally:
+                partial.unlink(missing_ok=True)
+            media["local_path"] = relative.as_posix()
+            media["archive_status"] = "stored"
         except (TelegramAPIError, OSError, ValueError) as exc:
             logger.warning(
                 "Could not archive Telegram media (message_id=%s error_type=%s)",

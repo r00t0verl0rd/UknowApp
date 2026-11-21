@@ -1,4 +1,11 @@
 services:
+  telegram-bot-api:
+    extends:
+      file: compose.telegram.yml
+      service: telegram-bot-api
+    profiles: [telegram]
+    networks: [app_net]
+
   backend:
     build:
       context: .
@@ -6,6 +13,7 @@ services:
     env_file:
       - .env
     environment:
+      TELEGRAM_FILES_DIR: /var/lib/telegram-bot-api
       DATABASE_URL: sqlite:////app/data/uknowapp.db
       PYTHONPATH: /app/backend
       TMPDIR: /app/data
@@ -16,6 +24,7 @@ services:
         ipv4_address: 172.31.255.3
     volumes:
       - app_data:/app/data
+      - ${TELEGRAM_CACHE_HOST_DIR:-/srv/uknow-telegram}:/var/lib/telegram-bot-api:ro
     init: true
     read_only: true
     tmpfs:

@@ -1,136 +1,28 @@
-# Telegram service architecture
+# Размещение Telegram Bot API
 
-## Goal
+UknowApp получает обновления через long polling и отправляет сообщения через один адрес `TELEGRAM_API_URL`. Обработчики, SQLite, веб-панель и архив `data/media` находятся на основном сервере. Без токена или при `TELEGRAM_BOT_ENABLED=false` приложение работает без Telegram.
 
-Prepare UknowApp to run the Telegram Bot API integration on a separate foreign server using Telegram webhooks, while keeping the application backend, business rules, persistent media storage, and database on the primary server.
+## На одной машине
 
-This document describes the target architecture. It does not claim that the remote service or webhook flow is implemented yet.
+В основном `.env` задайте `TELEGRAM_BOT_TOKEN`, `COMPOSE_PROFILES=telegram`, `TELEGRAM_API_ID` и `TELEGRAM_API_HASH` (учётные данные приложения с my.telegram.org). Оставьте адрес `http://telegram-bot-api:8081`. Выполните `docker compose up -d --build`. Compose запускает Bot API в локальном режиме. Backend обращается к нему по внутренней сети Docker. Снаружи порт по умолчанию привязан только к loopback.
 
-## Current implementation
+## На двух машинах
 
-- FastAPI starts aiogram long polling inside the main backend process.
-- Telegram handlers directly use SQLAlchemy sessions, application models, and the event hub.
-- Handlers archive Telegram attachments into the primary server's persistent media directory.
-- The web API directly calls the aiogram Bot for sending, copying, editing, and deleting Telegram messages and files.
-- The teacher panel stores Telegram chat/message identifiers in the primary database.
+1. На сервере Bot API разместите `compose.telegram.yml`. В отдельном `.env` этой машины укажите `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `TELEGRAM_CACHE_HOST_DIR=/srv/uknow-telegram` и `TELEGRAM_LISTEN_IP` с адресом приватного интерфейса, например `10.44.0.2`. Запустите `docker compose -f compose.telegram.yml up -d`. Токен бота и школьная база на этапе настройки этого контейнера не нужны.
+2. Обеспечьте закрытый канал между серверами, например WireGuard. Разрешите порт 8081 по этому каналу только основному серверу. Запросы Bot API содержат токен в URL. Не публикуйте HTTP-порт в интернете.
+3. На основном сервере смонтируйте удалённый каталог кеша только для чтения, например через SSHFS. Используйте отдельную учётную запись с доступом на чтение и включите доступ из контейнера. Пример для уже настроенного SSH-доступа: `sshfs -o ro,allow_other,reconnect telegram-reader@10.44.0.2:/srv/uknow-telegram /mnt/uknow-telegram`. Настройте системное монтирование до запуска Docker и проверьте `mountpoint /mnt/uknow-telegram` после перезагрузки.
+4. В основном `.env` укажите `TELEGRAM_BOT_TOKEN`, `TELEGRAM_API_URL=http://10.44.0.2:8081` и `TELEGRAM_CACHE_HOST_DIR=/mnt/uknow-telegram`. Оставьте `COMPOSE_PROFILES` пустым. Запустите `docker compose up -d --build`. Если ранее работал сервис профиля telegram, остановите его перед переключением.
 
-A proxy URL only changes the network route for Bot API calls. It does not separate the Telegram process or its business logic dependencies.
+## Файлы и резервное копирование
 
-## Target topology
+Сервис Bot API возвращает абсолютный путь в своём кеше. В обоих вариантах backend видит кеш по пути `/var/lib/telegram-bot-api` только для чтения. Дайте пользователю backend права прохода по каталогам и чтения скачанных файлов (проверьте `docker compose exec backend id`). Для запуска Python вне Docker задайте `TELEGRAM_FILES_DIR` с реальной точкой монтирования и `TELEGRAM_API_URL` с адресом Bot API, доступным из процесса Python. Вложения из Telegram копируются частями в архив приложения. Исходящие файлы передаются Bot API через multipart. Лимит отдельной формы загрузки в веб-панели задаётся независимо.
 
-```
-Telegram
-   | HTTPS webhook
-   v
-Foreign Telegram gateway
-   | authenticated inbound event delivery
-   v
-Primary UknowApp backend
-   | business logic + SQLAlchemy
-   v
-Primary database and media storage
+Полная резервная копия UknowApp включает успешно архивированные файлы. Состояние самого Bot API и его кеш находятся отдельно. Для переезда действующего экземпляра Bot API сохраните также его рабочий каталог.
 
-Primary UknowApp backend
-   | authenticated outbound Telegram commands
-   v
-Foreign Telegram gateway
-   | Telegram Bot API
-   v
-Telegram
-```
+## Переключение действующего бота
 
-### Foreign Telegram gateway responsibilities
+Заранее проверьте новую установку с отдельным тестовым ботом. Перед первым переходом остановите старый polling рабочего бота и вызовите `logOut` на облачном Bot API с его токеном. После подтверждения запустите единственный экземпляр polling в UknowApp. При переносе уже работающего локального сервера следуйте процедуре Telegram для `deleteWebhook`, `close` и переноса каталога бота. Не запускайте двух получателей обновлений с одним токеном.
 
-- Own the Telegram bot token. The token must not be required by the primary backend after cutover.
-- Expose a public HTTPS webhook endpoint and configure Telegram's webhook secret token.
-- Validate Telegram webhook requests and reject invalid requests.
-- Forward updates to the primary backend over an authenticated private API.
-- Execute outbound Bot API commands requested by the primary backend.
-- Transfer inbound attachment bytes to the primary backend when the application needs to archive them.
-- Keep only transient delivery state and operational logs; do not connect to the UknowApp database or own application records.
+Проверьте `/start`, обмен текстом в обе стороны и получение вложения больше 20 МБ. Откройте его из веб-панели и проверьте наличие файла в полной копии. Если текст работает, но вложение недоступно, проверьте монтирование и права backend на файл из `getFile`.
 
-### Primary backend responsibilities
-
-- Remain the only owner of users, assignments, conversations, messages, access codes, teacher panel state, and business rules.
-- Process normalized Telegram updates using the existing application logic, adapted away from direct Bot API calls.
-- Decide which Telegram actions are required and issue them through a gateway client.
-- Store and serve all archived attachments in the existing primary media storage.
-- Persist delivery state and idempotency records in the existing database or an application-owned durable queue. No separate database is required for the gateway.
-
-## Required contracts
-
-### Inbound update delivery
-
-The gateway sends the original Telegram Update payload to a private backend endpoint, together with a stable event identifier derived from the bot identity and Telegram `update_id`.
-
-Requirements:
-
-- Authenticate gateway-to-backend requests with a dedicated secret (prefer HMAC over the exact request body, timestamp, and nonce, with constant-time signature comparison).
-- Enforce a timestamp window and reject replayed nonces.
-- Persist/deduplicate the update before acknowledging it as accepted.
-- Treat retries as normal: the same update may be delivered more than once.
-- Return success only after durable acceptance. If the backend is unavailable, the gateway must retry with bounded exponential backoff and retain the event until acknowledged.
-- Do not log bot tokens, webhook secrets, authorization headers, or private message contents unnecessarily.
-
-### Outbound Bot API commands
-
-The primary backend calls a private gateway API using a separate service credential.
-
-The command contract must cover every operation currently used by UknowApp, including:
-
-- send text and media messages;
-- copy messages between chats;
-- edit message text and reply markup;
-- delete messages;
-- answer callback queries;
-- get bot identity and chat-member status;
-- download Telegram files and return their bytes or stream them securely.
-
-Requirements:
-
-- Include a stable command/idempotency identifier for retryable operations.
-- Return Telegram message identifiers and relevant Bot API results to the primary backend.
-- Apply request timeouts, bounded retries, and explicit error mapping.
-- Support multipart/streamed file transfer; do not place large binary files in JSON.
-- Never expose the gateway API publicly without authentication and network restrictions.
-
-### Media flow
-
-- The gateway downloads Telegram attachments using the bot token.
-- It transfers bytes to a private backend endpoint.
-- The primary backend validates size and MIME type, writes the file to the existing persistent media volume, and stores only application-owned metadata/path in the database.
-- Outgoing attachments are read from primary storage and streamed to the gateway for Bot API upload.
-- Telegram `file_id` values may be retained as transport metadata where useful, but they must not replace the primary archive or become a dependency for the web panel.
-
-## Migration sequence
-
-1. **Inventory and contracts (current stage):** document every inbound update, Bot API operation, file flow, and current database side effect. No runtime behavior changes.
-2. **Introduce a gateway boundary:** replace direct Bot API calls in application code with an application-owned Telegram gateway interface, initially backed by the existing local aiogram Bot. Keep behavior unchanged.
-3. **Separate update processing:** make update handling callable from a trusted internal entry point, add durable idempotent acceptance, and remove assumptions that updates arrive only from local polling.
-4. **Implement the foreign gateway:** webhook receiver, Telegram token ownership, outbound command API, retry handling, and secure file relay.
-5. **Cut over:** deploy the gateway, configure Telegram webhook, verify inbound and outbound behavior, then disable local polling. Keep a controlled rollback path.
-6. **Remove transitional code:** delete polling-only code and proxy configuration only after the webhook deployment is stable.
-
-Each step should be a small, independently reviewable change. Do not change the database schema unless a concrete requirement cannot be met with the existing models and durable processing design.
-
-## Compatibility checklist
-
-Before cutover, verify all of the following against the current behavior:
-
-- /start, /menu, account linking, and access-code validation;
-- student private messages and supported media;
-- teacher replies, persistent teacher panel, inline callbacks, and keyboard actions;
-- student forum-topic binding and group permission checks;
-- message copy/forward behavior and destination message identifiers;
-- delivery status updates and teacher-panel refreshes;
-- attachment archiving, web download/preview, deletion, and size limits;
-- personal/admin messages sent from the web panel;
-- Telegram outage behavior, duplicate webhook deliveries, gateway restart, and backend restart.
-
-## Security boundaries
-
-- Bot token: foreign gateway only.
-- Database credentials: primary backend only.
-- Webhook secret and gateway service credentials: separate secrets, rotated independently.
-- Gateway API: private network where possible, otherwise HTTPS plus request signatures, timestamp/nonce validation, rate limits, and strict request-size limits.
-- Media: validate content and enforce limits on the primary backend; never trust gateway-supplied paths.
+[Официальная документация Telegram](https://github.com/tdlib/telegram-bot-api#moving-a-bot-to-a-local-server)
