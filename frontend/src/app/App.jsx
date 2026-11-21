@@ -21,7 +21,7 @@ export default function App() {
   const { page, setPage, error, setError, toast, setToast, modal, setModal } = useUiState();
   const directory = useDirectoryState();
   const workspace = profile ? workspaceRegistry[profile.role] : null;
-  const { request, refresh, inboxRowRevision } = usePanelDataState({
+  const { request, refresh, inboxRowRevision, inboxLoading, adminDataLoading } = usePanelDataState({
     auth, setAuth, setProfile, setError, setChats,
     setPersonalChats, setUsers: directory.setUsers, setOverview: directory.setOverview,
     setSelectedChat, setMessages,
@@ -56,7 +56,7 @@ export default function App() {
   const workspacePage = workspace.pages.includes(page) ? page : workspace.pages[0];
   const context = {
     auth, profile, page: workspacePage, setPage, request, refresh, notify, error, setError, modal, setModal,
-    chatState, personalState, directory,
+    chatState, personalState, directory, inboxLoading, adminDataLoading,
   };
   const pushToggle = (
     <button type="button" className={`push-toggle${push.pushState.enabled ? " active" : ""}`}
