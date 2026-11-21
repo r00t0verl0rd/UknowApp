@@ -373,7 +373,7 @@ line-height:1;}
 .chat-item > .person-main > .avatar{width:32px;height:32px;flex-basis:32px;border-radius:10px}
 .chat-item > .person-main > .chat-avatar{background:var(--button-bg);color:var(--button-primary)}
 .chat-item .person-info b{font-size:12px;font-weight:650}
-.chat-item .person-info small{font-size:10px}
+
 .chat-item.has-unread:not(.selected){border-left:2px solid var(--button-primary)!important;background:color-mix(in srgb,var(--button-primary) 5%,transparent)}
 @media(min-width:1025px){
   .chats-main > .workspace-content:has(.role_node){flex:1 1 auto;align-self:stretch;width:100%;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
