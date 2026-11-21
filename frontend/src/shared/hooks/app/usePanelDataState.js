@@ -37,39 +37,39 @@ export function usePanelDataState({
       return;
     }
 
-    const inboxRevisionAtStart = inboxRevision.current;
-    const inboxTask = getInboxData(request).then(([conversations, personal]) => {
-      if (revision !== refreshRevision.current) return;
-      if (inboxRevisionAtStart === inboxRevision.current) {
-        setChats(conversations);
-        setPersonalChats(personal);
-        return;
-      }
-      // SSE changed one or more rows while the initial snapshot was loading.
-      // Merge that live state over the snapshot instead of rolling it back.
-      setChats(current => mergeInboxSnapshot(conversations, current));
-      setPersonalChats(current => mergeInboxSnapshot(personal, current));
-    });
-    const adminTask = who.role === "admin"
-      ? getAdminBootstrap(request).then(([people, summary]) => {
+      const inboxRevisionAtStart = inboxRevision.current;
+      const inboxTask = getInboxData(request).then(([conversations, personal]) => {
         if (revision !== refreshRevision.current) return;
-        setUsers(people);
-        setOverview(summary);
-      })
-      : Promise.resolve().then(() => {
-        if (revision !== refreshRevision.current) return;
+        if (inboxRevisionAtStart === inboxRevision.current) {
+          setChats(conversations);
+          setPersonalChats(personal);
+          return;
+        }
+        // Preserve SSE changes that arrived while the initial snapshot was loading.
+        setChats(current => mergeInboxSnapshot(conversations, current));
+        setPersonalChats(current => mergeInboxSnapshot(personal, current));
+      });
+
+      const adminTask = who.role === "admin"
+        ? getAdminBootstrap(request).then(([people, summary]) => {
+          if (revision !== refreshRevision.current) return;
+          setUsers(people);
+          setOverview(summary);
+        })
+        : Promise.resolve();
+
+      if (who.role !== "admin") {
         setUsers([]);
         setOverview(null);
         if (who.role !== "teacher") {
           setSelectedChat(null);
           setMessages([]);
         }
-      });
+      }
 
-    const results = await Promise.allSettled([inboxTask, adminTask]);
-    if (revision !== refreshRevision.current) return;
-    const failed = results.find(result => result.status === "rejected");
-    if (failed) setError(failed.reason?.message || "Не удалось загрузить часть данных приложения");
+      // Background layers settle independently; one optional failure must not
+      // display a global warning over an otherwise usable workspace.
+      await Promise.allSettled([inboxTask, adminTask]);
     })();
     refreshTask.current = task;
     task.then(
