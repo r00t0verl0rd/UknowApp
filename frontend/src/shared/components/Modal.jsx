@@ -1,18 +1,28 @@
+import { useEffect } from "react";
+import { createPortal } from "react-dom";
+
 export default function Modal({
-  children,
-  className = "",
-  onClose,
-  closeOnBackdrop = true,
-  role = "dialog",
-  labelledBy,
-  describedBy,
-  ariaModal = true,
+  children, className = "", onClose, closeOnBackdrop = true,
+  role = "dialog", labelledBy, describedBy, ariaModal = true,
 }) {
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = event => {
+      if (event.key === "Escape" && closeOnBackdrop) onClose?.();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [closeOnBackdrop, onClose]);
+
   const closeFromBackdrop = event => {
     if (event.target === event.currentTarget && closeOnBackdrop) onClose?.();
   };
 
-  return (
+  return createPortal(
     <div className="overlay" onMouseDown={closeFromBackdrop}>
       <section
         className={["modal", className].filter(Boolean).join(" ")}
@@ -24,6 +34,7 @@ export default function Modal({
       >
         {children}
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
