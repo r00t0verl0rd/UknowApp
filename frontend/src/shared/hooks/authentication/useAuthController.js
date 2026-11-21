@@ -3,7 +3,7 @@ import { detachPushSubscription, enablePushNotifications, getPushNotificationSta
 import { signInRequest, signOutRequest } from "../../../app/authentication/services/authApi.js";
 
 export function useAuthController({
-  authState, setError, setPage, setPushBusy, setPushState,
+  authState, setError, setPushBusy, setPushState,
   setUsers, setOverview, setChats, setPersonalChats,
   setMessages, setSelectedChat, setDraft, setAttachment,
   notify,
@@ -39,13 +39,12 @@ export function useAuthController({
       localStorage.setItem("uknowapp-auth", "1");
       sessionStorage.removeItem("uknowapp-auth");
       setProfile(result);
-      setPage(["student", "teacher"].includes(result.role) ? "chats" : "graph");
       setAuth("1");
       setPassword("");
     } catch (error) {
       setError(error.message || "Не удалось войти");
     }
-  }, [login, password, setError, setPushBusy, setPushState, notify, setProfile, setPage, setAuth, setPassword]);
+  }, [login, password, setError, setPushBusy, setPushState, notify, setProfile, setAuth, setPassword]);
 
   const signOut = useCallback(async () => {
     try {
