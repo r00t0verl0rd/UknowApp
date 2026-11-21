@@ -11,12 +11,12 @@ from fastapi import (
 from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.config import VAPID_PUBLIC_KEY
+from app.core.config import VAPID_PUBLIC_KEY
 from app.models import PushSubscription
 from app.modules.dependencies import Db, PanelUser
 from app.modules.notifications.endpoints import is_safe_push_endpoint
 from app.request_validation import login_payload
-from app.security import (
+from app.core.security import (
     authenticate_panel_user,
     check_login_rate_limit,
     clear_panel_cookies,

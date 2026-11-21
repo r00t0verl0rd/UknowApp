@@ -30,7 +30,7 @@ from app.modules.communication.accounts import (
 )
 from app.modules.communication.contracts import MessengerPlatform
 from app.modules.dependencies import Admin, Db
-from app.modules.media.service import delete_message_media
+from app.infrastructure.storage.media import delete_message_media
 from app.modules.users.service import (
     generate_panel_access_code,
     user_dict,
@@ -41,7 +41,7 @@ from app.request_validation import (
     user_create_payload,
     user_update_payload,
 )
-from app.security import hash_web_password
+from app.core.security import hash_web_password
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
@@ -400,6 +400,6 @@ def unassign_student_route(student_id: int, _: Admin, db: Db):
 
 
 
-from app.admin_data import router as admin_data_router
+from app.modules.administration.data import router as admin_data_router
 
 router.include_router(admin_data_router)

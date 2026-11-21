@@ -11,14 +11,6 @@ export function getChatSummary(request, chat) {
   return request(base + chat.id + "/summary");
 }
 
-export function getConversations(request) {
-  return request("/api/panel/conversations");
-}
-
-export function getPersonalConversations(request) {
-  return request("/api/panel/personal-conversations");
-}
-
 export function createPersonalConversation(request, userId) {
   return request("/api/panel/personal-conversations", {
     method: "POST",

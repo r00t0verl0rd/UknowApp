@@ -49,7 +49,7 @@ from app.modules.communication.contracts import (
 )
 from app.modules.conversations.service import conversation_dicts
 from app.modules.dependencies import Db, PanelUser
-from app.modules.media.service import (
+from app.infrastructure.storage.media import (
     MEDIA_DIR,
     delete_message_media,
     media_content_disposition,
@@ -64,7 +64,7 @@ from app.modules.personal_chat.service import (
     _personal_conversation,
     _personal_conversation_dict,
 )
-from app.push_notifications import schedule_push
+from app.modules.notifications.service import schedule_push
 from app.request_validation import message_payload, personal_conversation_payload
 
 logger = logging.getLogger(__name__)

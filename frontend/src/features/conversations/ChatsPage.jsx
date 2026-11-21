@@ -1,5 +1,4 @@
 import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left.js";
-import CheckCheck from "lucide-react/dist/esm/icons/check-check.js";
 import MessageCircle from "lucide-react/dist/esm/icons/message-circle.js";
 import Paperclip from "lucide-react/dist/esm/icons/paperclip.js";
 import Plus from "lucide-react/dist/esm/icons/plus.js";

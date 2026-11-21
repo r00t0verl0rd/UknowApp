@@ -107,7 +107,7 @@ async def lifespan(app: FastAPI):
     dispatcher = None
     polling_lock_fd = None
     if TELEGRAM_BOT_TOKEN:
-        from .telegram_bot import create_dispatcher
+        from .modules.telegram.bot import create_dispatcher
 
         bot = create_telegram_bot(TELEGRAM_BOT_TOKEN, TELEGRAM_PROXY_URL)
         app.state.telegram_status = "connecting"
