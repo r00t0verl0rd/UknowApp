@@ -101,7 +101,6 @@ export default function ChatsPage({
               : !personal && profile?.role === "student"
                 ? "Учитель"
                 : "";
-            const avatarClass = profile?.role === "student" ? "teacher-avatar" : "student-avatar";
 
             return (
               <button key={chat.id} type="button"
@@ -109,7 +108,7 @@ export default function ChatsPage({
                   + (unreadCount > 0 && !showMessageCount ? " has-unread" : "")}
                 aria-pressed={isSelected} onClick={() => openChat(chat)}>
                 <div className="person-main">
-                  <div className={"avatar " + avatarClass}><MessageCircle size={17}/></div>
+                  <div className="avatar chat-avatar"><MessageCircle size={17}/></div>
                   <div className="person-info">
                     <b>{title}</b>
                     {secondary && <small>{secondary}</small>}
