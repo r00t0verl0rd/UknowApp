@@ -19,6 +19,26 @@ try {
   }
   await login();
   if (process.argv[2] === "export") {
+    await page.goto(url + "/dialogs");
+    await page.getByRole("button", { name: "Личные" }).click();
+    const [teacher] = (await (await api.get(url + "/api/admin/users")).json()).filter(user => user.role === "teacher");
+    const dialog = page.getByRole("dialog", { name: "Создать диалог" });
+    async function openPersonal() {
+      await page.getByRole("button", { name: "Новый диалог" }).click();
+      await dialog.getByLabel("Участник").selectOption(String(teacher.id));
+      await dialog.getByRole("button", { name: "Создать диалог" }).click();
+      await dialog.waitFor({ state: "hidden" });
+    }
+    await openPersonal();
+    await page.getByPlaceholder("Личное сообщение…").fill("Проверка личного диалога");
+    await page.getByRole("button", { name: "Отправить сообщение" }).click();
+    const message = page.locator(".messages").getByText("Проверка личного диалога", { exact: true });
+    await message.waitFor();
+    await openPersonal();
+    await message.waitFor();
+    const personal = await (await api.get(url + "/api/panel/personal-conversations")).json();
+    assert.deepEqual(personal.map(chat => chat.participant.id), [teacher.id]);
+    await page.goto(url + "/additional");
     const downloading = page.waitForEvent("download");
     await page.getByRole("button", { name: "Скачать полную резервную копию" }).click();
     await (await downloading).saveAs(archive);

@@ -6,25 +6,29 @@ import IconButton from "../../../shared/components/IconButton.jsx";
 import FormField from "../../../shared/components/FormField.jsx";
 
 export default function ChatDialogs({
-  modal, setModal, users, createPersonalChat, error, setError,
+  modal, setModal, users, createPersonalChat, creating, error,
   deleteMessageCandidate, selectedChat, deletingMessage,
   setDeleteMessageCandidate, confirmDeleteMessage,
 }) {
   return <>
-    {modal?.mode === "create-personal" && <Modal onClose={() => setModal(null)} className="create-participant-modal" labelledBy="personal-chat-title">
-      <div className="modal-head"><div><div className="eyebrow">ЛИЧНЫЕ СООБЩЕНИЯ</div><h2 id="personal-chat-title">Создать диалог</h2></div><IconButton onClick={() => setModal(null)} aria-label="Закрыть"><X/></IconButton></div>
+    {modal?.mode === "create-personal" && <Modal onClose={() => setModal(null)} closeOnBackdrop={!creating} className="create-participant-modal" labelledBy="personal-chat-title">
+      <div className="modal-head"><div><div className="eyebrow">ЛИЧНЫЕ СООБЩЕНИЯ</div><h2 id="personal-chat-title">Создать диалог</h2></div><IconButton onClick={() => setModal(null)} disabled={creating} aria-label="Закрыть"><X/></IconButton></div>
       <form className="stack" onSubmit={event => {
         event.preventDefault();
-        const value = event.currentTarget.elements.participant.value.trim().toLocaleLowerCase("ru");
-        const selected = users.find(user => ["teacher", "student"].includes(user.role) && user.full_name.trim().toLocaleLowerCase("ru") === value);
-        if (selected) void createPersonalChat(selected.id);
-        else setError("Выберите участника из списка учителей и учеников");
+        void createPersonalChat(Number(event.currentTarget.elements.participant.value));
       }}>
-        <FormField label="Участник"><input name="participant" list="personal-participant-options" placeholder="Начните вводить имя" autoComplete="off" autoFocus required/></FormField>
-        <datalist id="personal-participant-options">{users.filter(user => ["teacher", "student"].includes(user.role)).map(user => <option value={user.full_name} key={user.id}>{user.role === "teacher" ? "Учитель" : "Ученик"}</option>)}</datalist>
-        <p className="hint">Начните вводить имя и выберите нужного участника. Личный диалог будет доступен только внутри UknowApp.</p>
+        <FormField label="Участник">
+          <select name="participant" defaultValue="" required autoFocus disabled={creating}>
+            <option value="" disabled>Выберите учителя или ученика</option>
+            {users.filter(user => user.role === "teacher" || user.role === "student").map(user =>
+              <option key={user.id} value={user.id}>
+                {user.full_name} · {user.role === "teacher" ? "Учитель" : "Ученик"} · №{user.id}
+              </option>
+            )}
+          </select>
+        </FormField>
         {error && <p className="form-error" role="alert">{error}</p>}
-        <div className="modal-actions"><Button variant="ghost" onClick={() => setModal(null)}>Отмена</Button><Button type="submit" variant="primary">Создать диалог</Button></div>
+        <div className="modal-actions"><Button variant="ghost" disabled={creating} onClick={() => setModal(null)}>Отмена</Button><Button type="submit" variant="primary" disabled={creating}>{creating ? "Открываем…" : "Создать диалог"}</Button></div>
       </form>
     </Modal>}
 

@@ -302,6 +302,18 @@ def personal_conversations(principal: PanelUser, db: Db):
     ]
 
 
+def _personal_summary_with_unread(db: Session, item: PersonalConversation, principal: dict) -> dict:
+    read_column = PersonalMessage.admin_read_at if principal["role"] == "admin" else PersonalMessage.participant_read_at
+    unread_count = db.scalar(
+        select(func.count(PersonalMessage.id)).where(
+            PersonalMessage.conversation_id == item.id,
+            PersonalMessage.sender_role != principal["role"],
+            read_column.is_(None),
+        ),
+    ) or 0
+    return _personal_conversation_dict(item, principal["role"], unread_count)
+
+
 @router.post("/panel/personal-conversations", status_code=201)
 def create_personal_conversation(payload: dict, principal: PanelUser, db: Db):
     payload = personal_conversation_payload(payload)
@@ -314,24 +326,23 @@ def create_personal_conversation(payload: dict, principal: PanelUser, db: Db):
     if not item:
         item = PersonalConversation(participant_id=participant.id)
         db.add(item)
-        db.commit()
-        db.refresh(item)
-    publish_personal_update(db, item)
-    return _personal_conversation_dict(item, principal["role"])
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            item = db.scalar(select(PersonalConversation).where(PersonalConversation.participant_id == participant.id))
+            if item is None:
+                raise
+        else:
+            publish_personal_update(db, item)
+            return _personal_conversation_dict(item, principal["role"])
+    return _personal_summary_with_unread(db, item, principal)
 
 
 @router.get("/panel/personal-conversations/{conversation_id}/summary")
 def personal_conversation_summary(conversation_id: int, principal: PanelUser, db: Db):
     item = _personal_conversation(db, principal, conversation_id)
-    read_column = PersonalMessage.admin_read_at if principal["role"] == "admin" else PersonalMessage.participant_read_at
-    unread_count = db.scalar(
-        select(func.count(PersonalMessage.id)).where(
-            PersonalMessage.conversation_id == item.id,
-            PersonalMessage.sender_role != principal["role"],
-            read_column.is_(None),
-        ),
-    ) or 0
-    return _personal_conversation_dict(item, principal["role"], unread_count)
+    return _personal_summary_with_unread(db, item, principal)
 
 
 @router.get("/panel/conversations/{conversation_id}/summary")

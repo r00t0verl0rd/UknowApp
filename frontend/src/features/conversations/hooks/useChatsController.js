@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useChatActionState } from "./useChatActionState.js";
 import { markConversationMessageDeleted, mergeConversationMessages } from "../services/messageState.js";
 import {
@@ -8,10 +8,11 @@ import {
 } from "../services/conversationsApi.js";
 
 export function useChatsController({
-  auth, page, request, profile, chatState, personalState, setPage, setError, setModal,
+  auth, request, profile, chatState, personalState, setPage, setError, setModal,
   notify,
 }) {
   const { deleteMessageCandidate, deletingMessage, setDeletingMessage, setDeleteMessageCandidate } = useChatActionState();
+  const [creating, setCreating] = useState(false);
   const sendingMessage = useRef(false);
   const pendingClientMessage = useRef(null);
   const activeChatKey = useRef("");
@@ -137,18 +138,23 @@ export function useChatsController({
   }, [setError, setModal]);
 
   const createPersonalChat = useCallback(async userId => {
+    if (creating) return;
+    setCreating(true);
+    setError("");
     try {
-      const chat = await createPersonalConversation(request, userId);
-      setPersonalChats(current => current.some(item => item.id === chat.id)
-        ? current.map(item => item.id === chat.id ? { ...item, ...chat } : item)
-        : [...current, chat]);
-      setChatSection("personal");
+      let chat = personalChats.find(item => item.participant.id === userId);
+      if (!chat) {
+        chat = await createPersonalConversation(request, userId);
+        setPersonalChats(current => current.some(item => item.id === chat.id) ? current : [chat, ...current]);
+      }
       setModal(null);
       await openChat(chat);
     } catch (error) {
       setError(error.message);
+    } finally {
+      setCreating(false);
     }
-  }, [request, setPersonalChats, setChatSection, setModal, openChat, setError]);
+  }, [creating, personalChats, request, setPersonalChats, setModal, openChat, setError]);
 
   const confirmDeleteMessage = useCallback(async () => {
     const message = deleteMessageCandidate;
@@ -258,5 +264,5 @@ export function useChatsController({
     }
   }, [selectedChat, draft, attachment, request, setDraft, setMessages, setAttachment, notify, profile?.role, profile?.full_name, setError]);
 
-  return { visibleChats, visibleMessages, openChat, openCreatePersonalChat, createPersonalChat, confirmDeleteMessage, sendChatMessage, deleteMessageCandidate, deletingMessage, setDeleteMessageCandidate };
+  return { creating, visibleChats, visibleMessages, openChat, openCreatePersonalChat, createPersonalChat, confirmDeleteMessage, sendChatMessage, deleteMessageCandidate, deletingMessage, setDeleteMessageCandidate };
 }

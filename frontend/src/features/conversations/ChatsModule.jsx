@@ -32,8 +32,8 @@ export default function ChatsModule({
       sendChatMessage={state.sendChatMessage}
     />}
     <ChatDialogs
-      modal setModal={setModal} users={users}
-      createPersonalChat={state.createPersonalChat} error={error} setError={setError}
+      modal={modal} setModal={setModal} users={users}
+      createPersonalChat={state.createPersonalChat} creating={state.creating} error={error}
       deleteMessageCandidate={state.deleteMessageCandidate}
       selectedChat={chatState.selectedChat} deletingMessage={state.deletingMessage}
       setDeleteMessageCandidate={state.setDeleteMessageCandidate}
