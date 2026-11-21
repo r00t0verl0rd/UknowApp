@@ -104,6 +104,9 @@
   --button-danger-bg: #fff0f1;
   --button-danger-border: #f2d6da;
   --button-danger-text: #b33f50;
+  --button-danger-hover-bg: #ffe5e8;
+  --button-danger-hover-border: #eebfc6;
+  --button-danger-hover-text: #a92332;
   --ui-shadow-raised: 0 9px 26px rgba(38, 29, 58, .10);
 
   /* Role colors. */
@@ -164,6 +167,9 @@
   --button-danger-bg: #402d37;
   --button-danger-border: #65404b;
   --button-danger-text: #f0aab3;
+  --button-danger-hover-bg: #4a3540;
+  --button-danger-hover-border: #76505c;
+  --button-danger-hover-text: #f5c0c7;
   --ui-shadow-raised: 0 10px 28px rgba(0, 0, 0, .24);
 
   /* Role colors. */
