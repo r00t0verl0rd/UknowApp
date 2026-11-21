@@ -1,4 +1,4 @@
-"""Integration tests for portable full-data backup and staged restore."""
+"""Тесты полного резервного копирования и восстановления."""
 
 import hashlib
 import io
@@ -185,7 +185,7 @@ def test_full_restore_is_staged_then_applied_before_app_start(api, monkeypatch, 
         "id": restore_id, "status": "pending",
     }
 
-    # The live directory is untouched until backend startup applies the prepared archive.
+    # Рабочие данные не меняются до запуска процедуры восстановления.
     assert (data_root / "obsolete.txt").is_file()
     with sqlite3.connect(data_root / "uknowapp.db") as connection:
         assert connection.execute("SELECT role FROM users WHERE id = 1").fetchone()[0] == "changed"

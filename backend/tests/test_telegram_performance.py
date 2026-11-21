@@ -1,4 +1,4 @@
-"""Regression checks for Telegram panel queries and plain-text delivery."""
+"""Тесты запросов панели и текстовых сообщений."""
 
 import asyncio
 import json

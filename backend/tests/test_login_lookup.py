@@ -1,4 +1,4 @@
-"""Unicode-preserving, indexed panel credentials regression tests."""
+"""Тесты поиска логинов с учётом Unicode."""
 
 from fastapi import HTTPException, status
 from sqlalchemy import select

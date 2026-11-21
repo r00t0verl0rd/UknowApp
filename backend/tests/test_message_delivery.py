@@ -1,7 +1,7 @@
 import asyncio
 import json
 
-"""Regression tests for UknowApp-first message delivery and read receipts."""
+"""Тесты доставки и статусов прочтения UknowApp."""
 
 from app.models import Assignment, Conversation, Message, User
 from app.modules.communication.accounts import get_messenger_pair, sync_messenger_account
@@ -56,13 +56,12 @@ def test_chat_delivery_ticks_follow_uknowapp_persistence_and_read_state(api):
     assert sent.json()["delivery_status"] == "delivered"
     assert sent.json()["panel_read_at"] is None
 
-    # The inbox count is based on unread state, not merely message delivery.
+    # Счётчик зависит от прочтения, а не от доставки.
     student_inbox_before_read = student.get("/api/panel/conversations")
     assert student_inbox_before_read.status_code == 200
     assert student_inbox_before_read.json()[0]["unread_count"] == 1
 
-    # The student receives the message through the primary UknowApp inbox;
-    # no Telegram account or external messenger is required.
+    # Ученик получает сообщение без привязки Telegram.
     received = student.get(
         f"/api/panel/conversations/{conversation_id}/messages",
     )
@@ -72,8 +71,7 @@ def test_chat_delivery_ticks_follow_uknowapp_persistence_and_read_state(api):
     assert student_inbox_after_read.status_code == 200
     assert student_inbox_after_read.json()[0]["unread_count"] == 0
 
-    # Reading the message is a separate event and turns the sender's two grey
-    # ticks into two blue ticks on the next authoritative server sync.
+    # Прочтение — отдельное событие, меняющее галочки.
     refreshed = teacher.get(
         f"/api/panel/conversations/{conversation_id}/messages",
     )
@@ -91,7 +89,7 @@ def test_chat_delivery_ticks_follow_uknowapp_persistence_and_read_state(api):
     assert direct.status_code == 200
     assert direct.json()["panel_read_at"] is not None
 
-    # The reverse direction follows the same counter lifecycle.
+    # Обратное направление использует те же счётчики.
     student_reply = student.post(
         f"/api/panel/conversations/{conversation_id}/messages",
         json={"text": "Ответ ученика"},
@@ -319,8 +317,7 @@ def test_teacher_telegram_reply_without_student_telegram_is_delivered_in_uknowap
         db.commit()
         db.refresh(conversation)
 
-        # Only the teacher has Telegram connected; the student receives messages
-        # through the UknowApp inbox and does not need a messenger account.
+        # Telegram подключён только у преподавателя.
         sync_messenger_account(
             db,
             teacher.id,
@@ -363,7 +360,7 @@ def test_teacher_telegram_reply_without_student_telegram_is_delivered_in_uknowap
         assert metadata["telegram_delivery_errors"][0]["reason"] == (
             "Аккаунт получателя не подключён к TELEGRAM"
         )
-        # Incomplete pair: do not use Telegram send/delete APIs at all.
+        # При неполной паре не используем API отправки Telegram.
         assert gateway.sent_texts == []
         assert gateway.deleted_messages == []
 

@@ -1,4 +1,4 @@
-"""Regression checks for Telegram bot routing, teacher panels and media uploads."""
+"""Тесты бота, панели преподавателя и вложений."""
 
 import asyncio
 import json

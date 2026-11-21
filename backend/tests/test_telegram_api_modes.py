@@ -1,4 +1,4 @@
-"""Regression tests for switching between Telegram Bot API transports."""
+"""Тесты облачного и локального Telegram API."""
 
 import asyncio
 

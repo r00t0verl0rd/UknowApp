@@ -1,4 +1,4 @@
-"""Shared isolated database and API client for backend integration tests."""
+"""Изолированная база и API-клиент для тестов."""
 
 import pytest
 from fastapi.testclient import TestClient
