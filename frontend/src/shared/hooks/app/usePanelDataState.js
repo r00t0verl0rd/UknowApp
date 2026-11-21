@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createApiClient } from "../../../services/api.js";
 import { getAdminBootstrap, getCurrentProfile, getInboxData } from "../../services/panelApi.js";
 import { mergeInboxSnapshot } from "../../services/inboxState.js";
@@ -12,6 +12,8 @@ export function usePanelDataState({
   const refreshRevision = useRef(0);
   const refreshTask = useRef(null);
   const inboxRowRevision = useRef(new Map());
+  const [inboxLoading, setInboxLoading] = useState(false);
+  const [adminDataLoading, setAdminDataLoading] = useState(false);
 
   const refresh = useCallback(() => {
     if (!auth) return Promise.resolve();
@@ -24,6 +26,8 @@ export function usePanelDataState({
       who = await getCurrentProfile(request);
       if (revision !== refreshRevision.current) return;
       setProfile(who);
+      setInboxLoading(true);
+      setAdminDataLoading(who.role === "admin");
     } catch (error) {
       if (revision !== refreshRevision.current) return;
       setError(error.message);
@@ -55,6 +59,8 @@ export function usePanelDataState({
         );
         setChats(current => mergeInboxSnapshot(conversations, current, changedConversations));
         setPersonalChats(current => mergeInboxSnapshot(personal, current, changedPersonal));
+      }).finally(() => {
+        if (revision === refreshRevision.current) setInboxLoading(false);
       });
 
       const adminTask = who.role === "admin"
@@ -62,10 +68,13 @@ export function usePanelDataState({
           if (revision !== refreshRevision.current) return;
           setUsers(people);
           setOverview(summary);
+        }).finally(() => {
+          if (revision === refreshRevision.current) setAdminDataLoading(false);
         })
         : Promise.resolve();
 
       if (who.role !== "admin") {
+        setAdminDataLoading(false);
         setUsers([]);
         setOverview(null);
         if (who.role !== "teacher") {
@@ -90,10 +99,12 @@ export function usePanelDataState({
     if (!auth) {
       refreshRevision.current += 1;
       refreshTask.current = null;
+      setInboxLoading(false);
+      setAdminDataLoading(false);
     }
   }, [auth]);
 
   useEffect(() => { void refresh(); }, [refresh]);
 
-  return { request, refresh, inboxRowRevision };
+  return { request, refresh, inboxRowRevision, inboxLoading, adminDataLoading };
 }
