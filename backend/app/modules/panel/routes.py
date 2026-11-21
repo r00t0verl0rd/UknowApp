@@ -20,7 +20,7 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import FileResponse, StreamingResponse
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, selectinload
 
@@ -168,10 +168,7 @@ async def panel_events(request: Request, principal: PanelUser):
     async def event_stream():
         queue = subscribe_chat_updates()
         try:
-            # The initial event makes the client perform one authoritative load
-            # after the stream is established, so no polling timer is necessary.
             yield "retry: 5000\n\n"
-            yield "event: update\ndata: {}\n\n"
             while not await request.is_disconnected():
                 try:
                     payload = await asyncio.wait_for(queue.get(), timeout=20)
@@ -231,12 +228,24 @@ def personal_conversations(principal: PanelUser, db: Db):
     ).order_by(PersonalConversation.created_at.desc(), PersonalConversation.id.desc())
     if principal["role"] != "admin":
         statement = statement.where(PersonalConversation.participant_id == principal["user_id"])
-    result = []
+    items = db.scalars(statement).all()
+    if not items:
+        return []
     read_column = PersonalMessage.admin_read_at if principal["role"] == "admin" else PersonalMessage.participant_read_at
-    for item in db.scalars(statement).all():
-        unread_count = db.scalar(select(func.count(PersonalMessage.id)).where(PersonalMessage.conversation_id == item.id, PersonalMessage.sender_role != principal["role"], read_column.is_(None))) or 0
-        result.append(_personal_conversation_dict(item, principal["role"], unread_count))
-    return result
+    counts = db.execute(
+        select(PersonalMessage.conversation_id, func.count(PersonalMessage.id))
+        .where(
+            PersonalMessage.conversation_id.in_([item.id for item in items]),
+            PersonalMessage.sender_role != principal["role"],
+            read_column.is_(None),
+        )
+        .group_by(PersonalMessage.conversation_id),
+    ).all()
+    unread_by_conversation = dict(counts)
+    return [
+        _personal_conversation_dict(item, principal["role"], unread_by_conversation.get(item.id, 0))
+        for item in items
+    ]
 
 
 @router.post("/panel/personal-conversations", status_code=201)
@@ -253,23 +262,54 @@ def create_personal_conversation(payload: dict, principal: PanelUser, db: Db):
         db.add(item)
         db.commit()
         db.refresh(item)
-    publish_chat_update(0)
+    publish_chat_update(item.id, "personal")
     return _personal_conversation_dict(item, principal["role"])
 
 
-@router.get("/panel/personal-conversations/{conversation_id}/messages")
-def personal_messages(conversation_id: int, principal: PanelUser, db: Db):
+@router.get("/panel/personal-conversations/{conversation_id}/summary")
+def personal_conversation_summary(conversation_id: int, principal: PanelUser, db: Db):
     item = _personal_conversation(db, principal, conversation_id)
     read_column = PersonalMessage.admin_read_at if principal["role"] == "admin" else PersonalMessage.participant_read_at
-    incoming = db.scalars(select(PersonalMessage).where(PersonalMessage.conversation_id == item.id, PersonalMessage.sender_role != principal["role"], read_column.is_(None))).all()
-    if incoming:
-        now = datetime.now(UTC)
-        for message in incoming:
-            setattr(message, "admin_read_at" if principal["role"] == "admin" else "participant_read_at", now)
+    unread_count = db.scalar(
+        select(func.count(PersonalMessage.id)).where(
+            PersonalMessage.conversation_id == item.id,
+            PersonalMessage.sender_role != principal["role"],
+            read_column.is_(None),
+        ),
+    ) or 0
+    return _personal_conversation_dict(item, principal["role"], unread_count)
+
+
+@router.get("/panel/conversations/{conversation_id}/summary")
+def panel_conversation_summary(conversation_id: int, principal: PanelUser, db: Db):
+    conversation = _panel_visible_conversation(db, principal, conversation_id)
+    return conversation_dicts(
+        db, [conversation], include_telegram_ids=(principal["role"] == "admin"),
+        viewer_role=principal["role"],
+    )[0]
+
+
+@router.get("/panel/personal-conversations/{conversation_id}/messages")
+def personal_messages(conversation_id: int, principal: PanelUser, db: Db, after_id: int = 0):
+    item = _personal_conversation(db, principal, conversation_id)
+    read_column = PersonalMessage.admin_read_at if principal["role"] == "admin" else PersonalMessage.participant_read_at
+    read_result = db.execute(
+        update(PersonalMessage)
+        .where(
+            PersonalMessage.conversation_id == item.id,
+            PersonalMessage.sender_role != principal["role"],
+            read_column.is_(None),
+            PersonalMessage.id > after_id,
+        )
+        .values({read_column.key: datetime.now(UTC)}),
+    )
+    if read_result.rowcount:
         db.commit()
-        publish_chat_update(0)
+        publish_chat_update(item.id, "personal", action="read", actor_role=principal["role"])
     rows = db.scalars(
-        select(PersonalMessage).where(PersonalMessage.conversation_id == item.id)
+        select(PersonalMessage)
+        .options(selectinload(PersonalMessage.sender))
+        .where(PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id)
         .order_by(PersonalMessage.created_at, PersonalMessage.id),
     ).all()
     return [{
@@ -324,7 +364,7 @@ def send_personal_message(
         f"/?openConversation={item.id}&type=personal",
         include_admin=principal["role"] != "admin",
     )
-    publish_chat_update(0)
+    publish_chat_update(item.id, "personal", row.id)
     return {
         "id": row.id,
         "sender": row.sender.full_name if row.sender else "Администратор",
@@ -348,35 +388,40 @@ def delete_personal_message(message_id: int, principal: PanelUser, db: Db):
         principal["role"] != "admin" and row.sender_id != principal.get("user_id")
     ):
         raise HTTPException(status_code=403, detail="Можно удалить только собственное сообщение")
+    conversation_id = row.conversation_id
     db.delete(row)
     db.commit()
-    publish_chat_update(0)
+    publish_chat_update(conversation_id, "personal", message_id, "delete")
     return {"ok": True, "deleted_message_id": message_id}
 
 
 @router.get("/panel/conversations/{conversation_id}/messages")
-def panel_messages(conversation_id: int, principal: PanelUser, db: Db):
+def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id: int = 0):
     conversation = _panel_visible_conversation(db, principal, conversation_id)
-    rows = db.scalars(
-        select(Message).where(Message.conversation_id == conversation.id)
-        .order_by(Message.created_at, Message.id),
-    ).all()
     if principal["role"] in {"teacher", "student"}:
         read_key = "teacher_read_at" if principal["role"] == "teacher" else "student_read_at"
-        sender_roles = {"student", "admin"} if principal["role"] == "teacher" else {"teacher", "admin"}
-        now = datetime.now(UTC).isoformat()
-        changed = False
-        for row in rows:
-            if row.sender_role not in sender_roles:
-                continue
-            metadata = json.loads(row.metadata_json or "{}")
-            if metadata.get(read_key) is None:
+        sender_roles = ("student", "admin") if principal["role"] == "teacher" else ("teacher", "admin")
+        unread = db.scalars(
+            select(Message).where(
+                Message.conversation_id == conversation.id,
+                Message.sender_role.in_(sender_roles),
+                func.json_extract(Message.metadata_json, "$." + read_key).is_(None),
+                Message.id > after_id,
+            ),
+        ).all()
+        if unread:
+            now = datetime.now(UTC).isoformat()
+            for row in unread:
+                metadata = json.loads(row.metadata_json or "{}")
                 metadata[read_key] = now
                 row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-                changed = True
-        if changed:
             db.commit()
-            publish_chat_update(conversation.id)
+            publish_chat_update(conversation.id, action="read", actor_role=principal["role"])
+    rows = db.scalars(
+        select(Message)
+        .where(Message.conversation_id == conversation.id, Message.id > after_id)
+        .order_by(Message.created_at, Message.id),
+    ).all()
     return [
         _panel_message_dict(
             item,
@@ -439,7 +484,7 @@ async def delete_panel_message(
     delete_message_media(item.metadata_json)
     db.delete(item)
     db.commit()
-    publish_chat_update(conversation.id)
+    publish_chat_update(conversation.id, message_id=message_id, action="delete")
 
     return {
         "ok": True,
@@ -506,7 +551,7 @@ def _save_panel_delivery_result(db: Session, row: Message, conversation: Convers
         else ("partial" if delivered else "failed")
     )
     db.commit()
-    publish_chat_update(conversation.id)
+    publish_chat_update(conversation.id, message_id=row.id)
 
 
 async def _store_panel_attachment(request: Request, file: UploadFile, conversation_id: int):

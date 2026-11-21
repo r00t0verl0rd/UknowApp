@@ -1,6 +1,6 @@
 import ChatsPage from "./ChatsPage.jsx";
 import ChatDialogs from "./components/ChatDialogs.jsx";
-import { useChatsController } from "../../shared/hooks/conversations/useChatsController.js";
+import { useChatsController } from "./hooks/useChatsController.js";
 
 export default function ChatsModule({
   page, auth, profile, request, chatState, personalState, users, error, modal,

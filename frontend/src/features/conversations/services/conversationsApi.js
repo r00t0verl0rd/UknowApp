@@ -1,8 +1,14 @@
 const API = import.meta.env.VITE_API_BASE_URL || "";
 
-export function getChatMessages(request, chat) {
+export function getChatMessages(request, chat, afterId = 0) {
   const base = chat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
-  return request(base + chat.id + "/messages");
+  const query = afterId > 0 ? "?after_id=" + afterId : "";
+  return request(base + chat.id + "/messages" + query);
+}
+
+export function getChatSummary(request, chat) {
+  const base = chat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
+  return request(base + chat.id + "/summary");
 }
 
 export function getConversations(request) {

@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo } from "react";
 import { useChatActionState } from "./useChatActionState.js";
+import { useConversationSync } from "./useConversationSync.js";
 import {
   createPersonalConversation, deleteChatMessage, getChatMessages,
-  getConversations, getPersonalConversations, sendConversationAttachment,
+  sendConversationAttachment,
   sendConversationText, sendPersonalMessage,
-} from "../../../features/conversations/services/conversationsApi.js";
+} from "../services/conversationsApi.js";
 
 export function useChatsController({
-  auth, request, profile, chatState, personalState, setPage, setError, setModal,
+  auth, page, request, profile, chatState, personalState, setPage, setError, setModal,
   notify,
 }) {
   const { deleteMessageCandidate, deletingMessage, setDeletingMessage, setDeleteMessageCandidate } = useChatActionState();
@@ -17,6 +18,8 @@ export function useChatsController({
     chatSearch, chatFilter, messageFilter, setMessageFilter,
   } = chatState;
   const { personalChats, setPersonalChats, chatSection, setChatSection } = personalState;
+
+  useConversationSync({ auth, page, role: profile?.role, selectedChat, messages, request, setChats, setPersonalChats, setMessages });
 
   useEffect(() => {
     if (!auth || !profile) return;
@@ -31,6 +34,7 @@ export function useChatsController({
     setPage("chats");
     if (personal) setChatSection("personal");
     setSelectedChat(chat);
+    setMessages([]);
     void getChatMessages(request, chat)
       .then(setMessages)
       .catch(error => setError(error.message));
@@ -97,18 +101,17 @@ export function useChatsController({
 
   const openChat = useCallback(async chat => {
     setSelectedChat(chat);
+    setMessages([]);
     setPage("chats");
     setDraft("");
     setAttachment(null);
     setMessageFilter("all");
     try {
       setMessages(await getChatMessages(request, chat));
-      if (chat.type === "personal") setPersonalChats(await getPersonalConversations(request));
-      else if (profile?.role === "teacher") setChats(await getConversations(request));
     } catch (error) {
       setError(error.message);
     }
-  }, [setSelectedChat, setPage, setDraft, setAttachment, setMessageFilter, setMessages, request, setPersonalChats, profile?.role, setChats, setError]);
+  }, [setSelectedChat, setPage, setDraft, setAttachment, setMessageFilter, setMessages, request, setError]);
 
   const openCreatePersonalChat = useCallback(() => {
     setError("");
@@ -118,7 +121,9 @@ export function useChatsController({
   const createPersonalChat = useCallback(async userId => {
     try {
       const chat = await createPersonalConversation(request, userId);
-      setPersonalChats(await getPersonalConversations(request));
+      setPersonalChats(current => current.some(item => item.id === chat.id)
+        ? current.map(item => item.id === chat.id ? { ...item, ...chat } : item)
+        : [...current, chat]);
       setChatSection("personal");
       setModal(null);
       await openChat(chat);
@@ -136,8 +141,6 @@ export function useChatsController({
       const result = await deleteChatMessage(request, message, selectedChat?.type === "personal");
       setMessages(current => current.filter(item => item.id !== message.id));
       setDeleteMessageCandidate(null);
-      if (selectedChat?.type === "personal") setPersonalChats(await getPersonalConversations(request));
-      else if (selectedChat) setChats(await getConversations(request));
       if (result.telegram_failed > 0) {
         notify("Удалено из UknowApp. Не удалось удалить копии в Telegram: " + result.telegram_failed + ". Возможно, Telegram уже не разрешает их удаление.");
       } else {
@@ -148,7 +151,7 @@ export function useChatsController({
     } finally {
       setDeletingMessage(false);
     }
-  }, [deleteMessageCandidate, deletingMessage, setDeletingMessage, setError, request, selectedChat, setMessages, setDeleteMessageCandidate, setPersonalChats, setChats, notify]);
+  }, [deleteMessageCandidate, deletingMessage, setDeletingMessage, setError, request, selectedChat, setMessages, setDeleteMessageCandidate, notify]);
 
   const sendChatMessage = useCallback(async event => {
     event.preventDefault();
@@ -165,9 +168,9 @@ export function useChatsController({
       }
       setDraft("");
       setAttachment(null);
-      setMessages(await getChatMessages(request, selectedChat));
-      if (selectedChat.type === "personal") setPersonalChats(await getPersonalConversations(request));
-      else setChats(await getConversations(request));
+      setMessages(current => current.some(item => item.id === sentMessage.id)
+        ? current.map(item => item.id === sentMessage.id ? sentMessage : item)
+        : [...current, sentMessage]);
       if (selectedChat.type === "personal") notify("Сообщение отправлено внутри UknowApp");
       else if (profile?.role === "admin" && sentMessage?.delivery_status !== "delivered") {
         notify("Сообщение сохранено. Подробности доставки доступны в переписке.");
@@ -177,7 +180,7 @@ export function useChatsController({
     } catch (error) {
       setError(error.message);
     }
-  }, [selectedChat, draft, attachment, request, setDraft, setAttachment, setMessages, setPersonalChats, setChats, notify, profile?.role, setError]);
+  }, [selectedChat, draft, attachment, request, setDraft, setAttachment, setMessages, notify, profile?.role, setError]);
 
   return { visibleChats, visibleMessages, openChat, openCreatePersonalChat, createPersonalChat, confirmDeleteMessage, sendChatMessage, deleteMessageCandidate, deletingMessage, setDeleteMessageCandidate };
 }
