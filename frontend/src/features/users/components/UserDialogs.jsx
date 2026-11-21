@@ -6,6 +6,7 @@ import X from "lucide-react/dist/esm/icons/x.js";
 import Modal from "../../../shared/components/Modal.jsx";
 import Button from "../../../shared/components/Button.jsx";
 import IconButton from "../../../shared/components/IconButton.jsx";
+import FormField from "../../../shared/components/FormField.jsx";
 
 async function copyText(value) {
   try {
@@ -45,15 +46,15 @@ export default function UserDialogs({
     {modal && modal.mode !== "create-personal" && <Modal onClose={() => setModal(null)} className={`${modal.mode === "create" ? "create-participant-modal" : modal.mode === "edit" ? "participant-profile-modal" : ""}`}>
       <div className="modal-head"><div><div className="eyebrow">{modal.mode === "create" ? "НОВЫЙ УЧАСТНИК" : modal.mode === "edit" ? "ПРОФИЛЬ УЧАСТНИКА" : "СВЯЗЬ УЧЕНИКА И УЧИТЕЛЯ"}</div><h2>{modal.mode === "create" ? "Добавить участника" : modal.mode === "edit" ? "Редактировать" : "Назначить ученика"}</h2></div><IconButton onClick={() => setModal(null)}><X/></IconButton></div>
       {modal.mode === "assign" ? <form className="stack" onSubmit={assign}>
-        <label>Учитель<select value={teacherId} onChange={event => setTeacherId(event.target.value)} required>{allTeachers.map(teacher => <option value={teacher.id} key={teacher.id}>{teacher.full_name}</option>)}</select></label>
-        <label>Ученик<select value={studentId} onChange={event => setStudentId(event.target.value)} required>{allStudents.map(student => <option value={student.id} key={student.id}>{student.full_name}</option>)}</select></label>
+        <FormField label="Учитель"><select value={teacherId} onChange={event => setTeacherId(event.target.value)} required>{allTeachers.map(teacher => <option value={teacher.id} key={teacher.id}>{teacher.full_name}</option>)}</select></FormField>
+        <FormField label="Ученик"><select value={studentId} onChange={event => setStudentId(event.target.value)} required>{allStudents.map(student => <option value={student.id} key={student.id}>{student.full_name}</option>)}</select></FormField>
         <p className="hint">Если у ученика уже есть активное назначение, оно будет заменено новым.</p>
         <Button type="submit" variant="primary" disabled={!allStudents.length}>Создать связь</Button>
       </form> : <form className="stack" onSubmit={saveUser}>
-        <label>Имя и фамилия<input value={name} onChange={event => { const nextName = event.target.value; setName(nextName); if (!panelLogin || panelLogin === name) setPanelLogin(nextName); }} minLength="2" maxLength="160" required autoFocus/></label>
-        {role === "student" && <label>Доп. инфо<input value={additionalInfo} onChange={event => setAdditionalInfo(event.target.value)} maxLength="500"/></label>}
-        <label>Роль<select value={role} onChange={event => setRole(event.target.value)}><option value="teacher">Учитель</option><option value="student">Ученик</option></select></label>
-        <label>Telegram ID <input type="text" inputMode="numeric" pattern="[0-9]*" value={telegramId} onChange={event => setTelegramId(event.target.value)} /></label>
+        <FormField label="Имя и фамилия"><input value={name} onChange={event => { const nextName = event.target.value; setName(nextName); if (!panelLogin || panelLogin === name) setPanelLogin(nextName); }} minLength="2" maxLength="160" required autoFocus/></FormField>
+        {role === "student" && <FormField label="Доп. инфо"><input value={additionalInfo} onChange={event => setAdditionalInfo(event.target.value)} maxLength="500"/></FormField>}
+        <FormField label="Роль"><select value={role} onChange={event => setRole(event.target.value)}><option value="teacher">Учитель</option><option value="student">Ученик</option></select></FormField>
+        <FormField label="Telegram ID"><input type="text" inputMode="numeric" pattern="[0-9]*" value={telegramId} onChange={event => setTelegramId(event.target.value)} /></FormField>
         {["teacher", "student"].includes(role) && <div className="panel-credentials-panel">
           <div className="panel-credential-row panel-login-edit-row">
             <label htmlFor="panel-web-login">Логин веб-панели</label>
