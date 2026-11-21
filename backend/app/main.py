@@ -17,6 +17,9 @@ from .core.config import (
     TELEGRAM_BOT_ENABLED,
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_PROXY_URL,
+    TELEGRAM_MODE,
+    TELEGRAM_GATEWAY_URL,
+    TELEGRAM_GATEWAY_TOKEN,
 )
 from .core.database import SessionLocal, create_tables
 from .models import Assignment, Conversation, User
@@ -24,6 +27,8 @@ from .modules.administration.data import apply_pending_data_restore
 from .modules.communication.service import CommunicationService
 from .modules.telegram.adapter import TelegramAdapter
 from .modules.telegram.transport import create_telegram_bot
+from .modules.telegram.remote_transport import create_remote_bot
+from .modules.telegram.internal import process_update_inbox
 
 logger = logging.getLogger(__name__)
 
@@ -109,35 +114,47 @@ async def lifespan(app: FastAPI):
     bot = None
     dispatcher = None
     polling_lock_fd = None
-    if TELEGRAM_BOT_ENABLED and TELEGRAM_BOT_TOKEN:
+    if TELEGRAM_BOT_ENABLED and (TELEGRAM_MODE == "remote" or TELEGRAM_BOT_TOKEN):
         from .modules.telegram.bot import create_dispatcher
 
-        bot = create_telegram_bot(TELEGRAM_BOT_TOKEN, TELEGRAM_PROXY_URL)
-        app.state.telegram_status = "connecting"
-        app.state.telegram_bot = bot
-        app.state.communication = CommunicationService([TelegramAdapter(bot)])
-
-        # A non-blocking OS lock prevents two local Uvicorn processes (including
-        # accidental duplicate launches) from polling the same Telegram bot.
-        token_fingerprint = hashlib.sha256(TELEGRAM_BOT_TOKEN.encode("utf-8")).hexdigest()[:20]
-        lock_path = os.path.join(tempfile.gettempdir(), f"uknowapp-telegram-{token_fingerprint}.lock")
-        polling_lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
-        try:
-            fcntl.flock(polling_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            os.close(polling_lock_fd)
-            polling_lock_fd = None
-            app.state.telegram_status = "another_instance"
-            logger.warning(
-                "TELEGRAM_POLLING_SKIPPED: another local UknowApp process already owns "
-                "the polling lock. This process will keep the web API available without polling.",
+        if TELEGRAM_MODE == "remote":
+            bot = create_remote_bot(TELEGRAM_GATEWAY_URL, TELEGRAM_GATEWAY_TOKEN)
+            dispatcher = create_dispatcher()
+            app.state.telegram_bot = bot
+            app.state.communication = CommunicationService([TelegramAdapter(bot)])
+            app.state.telegram_status = "remote"
+            # Updates are acknowledged and persisted by the private endpoint;
+            # this worker processes them without polling Telegram.
+            bot_task = asyncio.create_task(
+                process_update_inbox(bot, dispatcher, asyncio.Event()),
+                name="uknowapp-telegram-inbox",
             )
         else:
-            dispatcher = create_dispatcher()
-            bot_task = asyncio.create_task(
-                run_telegram_bot(bot, dispatcher, app),
-                name="uknowapp-telegram-polling",
-            )
+            bot = create_telegram_bot(TELEGRAM_BOT_TOKEN, TELEGRAM_PROXY_URL)
+            app.state.telegram_status = "connecting"
+            app.state.telegram_bot = bot
+            app.state.communication = CommunicationService([TelegramAdapter(bot)])
+
+            # Prevent simultaneous local polling for the same bot token.
+            token_fingerprint = hashlib.sha256(TELEGRAM_BOT_TOKEN.encode("utf-8")).hexdigest()[:20]
+            lock_path = os.path.join(tempfile.gettempdir(), f"uknowapp-telegram-{token_fingerprint}.lock")
+            polling_lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
+            try:
+                fcntl.flock(polling_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                os.close(polling_lock_fd)
+                polling_lock_fd = None
+                app.state.telegram_status = "another_instance"
+                logger.warning(
+                    "TELEGRAM_POLLING_SKIPPED: another local UknowApp process already owns "
+                    "the polling lock. The web API remains available.",
+                )
+            else:
+                dispatcher = create_dispatcher()
+                bot_task = asyncio.create_task(
+                    run_telegram_bot(bot, dispatcher, app),
+                    name="uknowapp-telegram-polling",
+                )
     else:
         app.state.telegram_bot = None
         app.state.communication = CommunicationService()
@@ -148,7 +165,7 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
-        if dispatcher:
+        if dispatcher and TELEGRAM_MODE == "local" and bot_task:
             with suppress(Exception):
                 await dispatcher.stop_polling()
         if bot_task:
