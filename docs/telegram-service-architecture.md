@@ -1,28 +1,62 @@
-# Размещение Telegram Bot API
+# Telegram API: облачный и локальный
 
-UknowApp получает обновления через long polling и отправляет сообщения через один адрес `TELEGRAM_API_URL`. Обработчики, SQLite, веб-панель и архив `data/media` находятся на основном сервере. Без токена или при `TELEGRAM_BOT_ENABLED=false` приложение работает без Telegram.
+UknowApp работает с **одним и тем же ботом** из @BotFather в двух режимах. Режим задаёт `TELEGRAM_API_MODE` в рабочем `.env`.
 
-## На одной машине
+| Режим | Для чего подходит | Что требуется |
+| --- | --- | --- |
+| `cloud` | Текст, команды, небольшие вложения | `TELEGRAM_BOT_TOKEN` |
+| `local` | Большие файлы и локальный кеш Telegram | Токен бота, сервер Bot API, `TELEGRAM_API_ID` и `TELEGRAM_API_HASH` |
 
-В основном `.env` задайте `TELEGRAM_BOT_TOKEN`, `COMPOSE_PROFILES=telegram`, `TELEGRAM_API_ID` и `TELEGRAM_API_HASH` (учётные данные приложения с my.telegram.org). Оставьте адрес `http://telegram-bot-api:8081`. Выполните `docker compose up -d --build`. Compose запускает Bot API в локальном режиме. Backend обращается к нему по внутренней сети Docker. Снаружи порт по умолчанию привязан только к loopback.
+## Облачный API — без дополнительных ключей
 
-## На двух машинах
+В `.env` укажите:
 
-1. На сервере Bot API разместите `compose.telegram.yml`. В отдельном `.env` этой машины укажите `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `TELEGRAM_CACHE_HOST_DIR=/srv/uknow-telegram` и `TELEGRAM_LISTEN_IP` с адресом приватного интерфейса, например `10.44.0.2`. Запустите `docker compose -f compose.telegram.yml up -d`. Токен бота и школьная база на этапе настройки этого контейнера не нужны.
-2. Обеспечьте закрытый канал между серверами, например WireGuard. Разрешите порт 8081 по этому каналу только основному серверу. Запросы Bot API содержат токен в URL. Не публикуйте HTTP-порт в интернете.
-3. На основном сервере смонтируйте удалённый каталог кеша только для чтения, например через SSHFS. Используйте отдельную учётную запись с доступом на чтение и включите доступ из контейнера. Пример для уже настроенного SSH-доступа: `sshfs -o ro,allow_other,reconnect telegram-reader@10.44.0.2:/srv/uknow-telegram /mnt/uknow-telegram`. Настройте системное монтирование до запуска Docker и проверьте `mountpoint /mnt/uknow-telegram` после перезагрузки.
-4. В основном `.env` укажите `TELEGRAM_BOT_TOKEN`, `TELEGRAM_API_URL=http://10.44.0.2:8081` и `TELEGRAM_CACHE_HOST_DIR=/mnt/uknow-telegram`. Оставьте `COMPOSE_PROFILES` пустым. Запустите `docker compose up -d --build`. Если ранее работал сервис профиля telegram, остановите его перед переключением.
+```dotenv
+TELEGRAM_BOT_ENABLED=true
+TELEGRAM_API_MODE=cloud
+COMPOSE_PROFILES=
+```
 
-## Файлы и резервное копирование
+Сохраните существующий `TELEGRAM_BOT_TOKEN`. Значение `TELEGRAM_API_URL` в этом режиме не используется: запросы направляются на `https://api.telegram.org`.
 
-Сервис Bot API возвращает абсолютный путь в своём кеше. В обоих вариантах backend видит кеш по пути `/var/lib/telegram-bot-api` только для чтения. Дайте пользователю backend права прохода по каталогам и чтения скачанных файлов (проверьте `docker compose exec backend id`). Для запуска Python вне Docker задайте `TELEGRAM_FILES_DIR` с реальной точкой монтирования и `TELEGRAM_API_URL` с адресом Bot API, доступным из процесса Python. Вложения из Telegram копируются частями в архив приложения. Исходящие файлы передаются Bot API через multipart. Лимит отдельной формы загрузки в веб-панели задаётся независимо.
+```bash
+docker compose --profile telegram stop telegram-bot-api
+docker compose up -d --build --force-recreate backend
+docker compose logs --since=2m --tail=40 backend
+```
 
-Полная резервная копия UknowApp включает успешно архивированные файлы. Состояние самого Bot API и его кеш находятся отдельно. Для переезда действующего экземпляра Bot API сохраните также его рабочий каталог.
+У облачного API лимит скачивания файлов ботом **20 МБ**. Вложения, превышающие лимит, могут остаться без локальной архивной копии.
 
-## Переключение действующего бота
+## Локальный API — на том же VPS
 
-Заранее проверьте новую установку с отдельным тестовым ботом. Перед первым переходом остановите старый polling рабочего бота и вызовите `logOut` на облачном Bot API с его токеном. После подтверждения запустите единственный экземпляр polling в UknowApp. При переносе уже работающего локального сервера следуйте процедуре Telegram для `deleteWebhook`, `close` и переноса каталога бота. Не запускайте двух получателей обновлений с одним токеном.
+Получите `API ID` и `API Hash` на [my.telegram.org](https://my.telegram.org/apps). В `.env` задайте:
 
-Проверьте `/start`, обмен текстом в обе стороны и получение вложения больше 20 МБ. Откройте его из веб-панели и проверьте наличие файла в полной копии. Если текст работает, но вложение недоступно, проверьте монтирование и права backend на файл из `getFile`.
+```dotenv
+TELEGRAM_BOT_ENABLED=true
+TELEGRAM_API_MODE=local
+COMPOSE_PROFILES=telegram
+TELEGRAM_API_ID=
+TELEGRAM_API_HASH=
+TELEGRAM_API_URL=http://telegram-bot-api:8081
+TELEGRAM_CACHE_HOST_DIR=/srv/uknow-telegram
+```
 
-[Официальная документация Telegram](https://github.com/tdlib/telegram-bot-api#moving-a-bot-to-a-local-server)
+Заполните реальные ID и Hash **только в рабочем `.env`**, затем запустите `docker compose up -d --build`. Профиль `telegram` запускает отдельный контейнер. Его кеш монтируется в backend для чтения.
+
+Для Bot API на другом сервере оставьте `COMPOSE_PROFILES` пустым, укажите приватный `TELEGRAM_API_URL` и подключите каталог кеша к основному VPS через `TELEGRAM_CACHE_HOST_DIR`. Не публикуйте незащищённый порт 8081 в интернет.
+
+## Переход с облачного на локальный API
+
+**Нельзя просто запустить оба сервера для одного бота.**
+
+1. Остановите backend: `docker compose stop backend`.
+2. Выполните один раз облачный метод `logOut` с токеном бота (до запуска локального сервера).
+3. Укажите `TELEGRAM_API_MODE=local`, профиль `telegram`, действительные ID/Hash.
+4. Запустите сервисы: `docker compose --profile telegram up -d --build`.
+5. Проверьте логи и отправку `/start`, текста и вложений.
+
+Для обратного переноса на облачный API используйте официальную процедуру Telegram по остановке локального сервера и завершению его работы. После облачного `logOut` повторный вход на облачный сервер может быть недоступен до 10 минут.
+
+**Проверка:** `docker compose logs --tail=40 backend telegram-bot-api`. Успешное подключение бота отмечено сообщениями `TELEGRAM_CONNECTED` и `TELEGRAM_POLLING_STARTED`.
+
+[Официальные правила переноса бота](https://github.com/tdlib/telegram-bot-api#moving-a-bot-to-a-local-server).
