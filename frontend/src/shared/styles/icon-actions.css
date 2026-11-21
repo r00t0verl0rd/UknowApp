@@ -111,3 +111,25 @@
     color: var(--button-danger-text) !important;
   }
 }
+
+/* Жёлтый оттенок кнопки совпадает с карточкой ученика. */
+:root .ui-icon-button.ui-icon-button--student {
+  background: #f4eadb !important;
+  border-color: #e0cda9 !important;
+  color: #90764c !important;
+}
+:root .ui-icon-button.ui-icon-button--student:hover:not(:disabled) {
+  background: #ecdfc6 !important;
+  border-color: #c5aa7e !important;
+  color: #80643c !important;
+}
+:root[data-theme="dark-soft"] .ui-icon-button.ui-icon-button--student {
+  background: #40382d !important;
+  border-color: #746044 !important;
+  color: #e5c995 !important;
+}
+:root[data-theme="dark-soft"] .ui-icon-button.ui-icon-button--student:hover:not(:disabled) {
+  background: #574a38 !important;
+  border-color: #927b55 !important;
+  color: #f3d9a8 !important;
+}

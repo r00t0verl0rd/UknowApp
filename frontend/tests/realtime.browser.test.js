@@ -234,6 +234,45 @@ test("global SSE updates real counters across tabs and replays missed events", {
         }
       }
     }
+    // Стрелка свёрнутого списка смотрит влево, раскрытого — вниз; кнопка цвета ученика.
+    for (const theme of ["light", "dark-soft"]) {
+      const state = await page.evaluate(selectedTheme => {
+        const previous = document.documentElement.dataset.theme;
+        document.documentElement.dataset.theme = selectedTheme;
+        const host = document.createElement("div");
+        host.className = "content";
+        host.innerHTML = `
+          <div class="role_node"></div>
+          <div class="teacher-card"><div class="person-actions">
+            <button class="icon-btn ui-icon-button ui-icon-button--student teacher-collapse-btn">
+              <svg style="transition:none !important" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg>
+            </button>
+            <button class="icon-btn ui-icon-button ui-icon-button--student teacher-collapse-btn is-expanded">
+              <svg style="transition:none !important" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg>
+            </button>
+          </div></div>
+        `;
+        document.body.appendChild(host);
+        const buttons = [...host.querySelectorAll(".teacher-collapse-btn")];
+        const result = buttons.map(button => ({
+          background: getComputedStyle(button).backgroundColor,
+          border: getComputedStyle(button).borderColor,
+          color: getComputedStyle(button).color,
+          rotation: getComputedStyle(button.querySelector("svg")).transform,
+        }));
+        host.remove();
+        document.documentElement.dataset.theme = previous;
+        return result;
+      }, theme);
+      assert.equal(state[0].rotation, "none", `${theme}: свёрнутый список — стрелка влево`);
+      const matrix = new DOMMatrix(state[1].rotation);
+      assert.ok(Math.abs(matrix.a) < .01 && matrix.b < -.99,
+        `${theme}: открытый список — стрелка вниз`);
+      assert.equal(state[0].background, state[1].background);
+      assert.equal(state[0].border, state[1].border);
+      assert.equal(state[0].color, state[1].color);
+      assert.notEqual(state[0].background, "rgba(0, 0, 0, 0)");
+    }
     await page.setViewportSize(originalViewport);
 
     await waitFor(() => pendingPersonalResponses.length === 1);

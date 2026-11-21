@@ -11,6 +11,7 @@ export default function IconButton({
     "icon-btn",
     "ui-icon-button",
     tone === "danger" && "ui-icon-button--danger",
+    tone === "student" && "ui-icon-button--student",
     size !== "default" && `ui-icon-button--${size}`,
     className,
   ].filter(Boolean).join(" ");

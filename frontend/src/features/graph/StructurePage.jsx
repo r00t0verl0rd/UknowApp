@@ -1,5 +1,5 @@
 import { useState } from "react";
-import ChevronRight from "lucide-react/dist/esm/icons/chevron-right.js";
+import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left.js";
 import GraduationCap from "lucide-react/dist/esm/icons/graduation-cap.js";
 import Pencil from "lucide-react/dist/esm/icons/pencil.js";
 import Plus from "lucide-react/dist/esm/icons/plus.js";
@@ -33,12 +33,12 @@ export default function StructurePage({
           <div className="teacher-card">
             <div className="person-main"><div className="avatar teacher-avatar"><GraduationCap /></div><div className="person-info"><b>{teacher.full_name}</b><small>Учитель · {students.length} учен.</small></div></div>
             <div className="person-actions">
-              <IconButton tone="danger" className={`danger-icon teacher-collapse-btn${collapsed ? "" : " is-expanded"}`} title={collapsed ? "Показать учеников" : "Скрыть учеников"} aria-label={collapsed ? "Показать учеников" : "Скрыть учеников"} aria-expanded={!collapsed} onClick={() => setCollapsedTeacherIds(current => {
+              <IconButton tone="student" className={`teacher-collapse-btn${collapsed ? "" : " is-expanded"}`} title={collapsed ? "Показать учеников" : "Скрыть учеников"} aria-label={collapsed ? "Показать учеников" : "Скрыть учеников"} aria-expanded={!collapsed} onClick={() => setCollapsedTeacherIds(current => {
                 const next = new Set(current);
                 if (next.has(teacher.id)) next.delete(teacher.id);
                 else next.add(teacher.id);
                 return next;
-              })}><ChevronRight /></IconButton>
+              })}><ChevronLeft /></IconButton>
               <IconButton title="Редактировать преподавателя" aria-label={`Редактировать преподавателя ${teacher.full_name}`} onClick={() => openEdit(teacher)}><Pencil /></IconButton>
             </div>
           </div>

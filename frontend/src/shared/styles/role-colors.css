@@ -28,4 +28,6 @@ body, .chats-shell, .chats-main{ background: var(--canvas);}.sidebar, .topbar, .
 }/* Кнопка заголовка не должна растягивать карточку. */
 .teacher-card{ min-width: 0; min-height: 64px; align-items: center;}.teacher-card > .person-actions{ flex: 0 0 auto;}/* Единые карточки преподавателей на всех экранах. */
 .teacher-branch > .teacher-card{ display: flex !important; align-items: center !important; gap: 8px !important; min-height: clamp(50px,7vw,76px) !important; padding: clamp(6px,1.2vw,12px) 10px !important; border-radius: 13px !important; }/* Общий вид кнопок-иконок задаёт icon-actions.css. */
-.content:has(.role_node) .teacher-collapse-btn.is-expanded svg{ transform: rotate(90deg); }
+/* При свёрнутом списке стрелка влево, при открытом — вниз. */
+.content:has(.role_node) .teacher-collapse-btn svg{ transition: transform .18s ease; }
+.content:has(.role_node) .teacher-collapse-btn.is-expanded svg{ transform: rotate(-90deg); }
