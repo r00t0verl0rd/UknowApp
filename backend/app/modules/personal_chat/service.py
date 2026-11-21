@@ -1,4 +1,4 @@
-"""Access checks and serialization for private conversations."""
+"""Права доступа и данные личных переписок."""
 
 from datetime import datetime
 
@@ -37,7 +37,7 @@ def _personal_conversation_dict(
 
 
 def personal_event_summaries(db: Session, item: PersonalConversation) -> dict[str, dict]:
-    """Build live unread counters for the administrator and the participant."""
+    """Подсчитать непрочитанные сообщения участников."""
     admin_unread = and_(
         PersonalMessage.sender_role != "admin",
         PersonalMessage.admin_read_at.is_(None),
@@ -73,7 +73,7 @@ def publish_personal_update(
     sender_role: str | None = None,
     read_at: str | None = None,
 ) -> None:
-    """Publish a committed personal-chat change only to its two participants."""
+    """Оповестить участников об изменении личного чата."""
     publish_chat_update(
         item.id,
         conversation_type="personal",

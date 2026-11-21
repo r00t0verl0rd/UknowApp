@@ -1,4 +1,4 @@
-"""HTTP API веб-панели: авторизация, участники, переписки и доставка сообщений."""
+"""HTTP API веб-панели и обмена сообщениями."""
 
 import asyncio
 
@@ -207,14 +207,14 @@ def panel_me(principal: PanelUser, db: Db):
 
 @router.get("/panel/events")
 async def panel_events(request: Request, principal: PanelUser, db: Db):
-    """Stream live updates and replay missed events after automatic reconnection."""
+    """Передавать события и восстанавливать пропущенные."""
     queue = subscribe_chat_updates(principal)
     try:
         cursor = int(request.headers.get("last-event-id", "0") or 0)
     except ValueError:
         cursor = 0
     replay = replay_chat_updates(db, principal, cursor) if cursor else []
-    # Do not keep a database connection checked out for the life of an SSE stream.
+    # Не удерживаем соединение с БД во время SSE-подписки.
     db.rollback()
 
     async def event_stream():
@@ -574,7 +574,7 @@ def sync_conversation_state(
     principal: PanelUser,
     db: Db,
 ):
-    """Recover message deltas and statuses of already loaded rows without history reload."""
+    """Обновить изменения сообщений без полной загрузки истории."""
     after_id, known_ids = _sync_request_fields(payload)
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     if principal["role"] in {"teacher", "student"}:
@@ -649,7 +649,7 @@ def sync_personal_conversation_state(
     principal: PanelUser,
     db: Db,
 ):
-    """Recover private-chat deltas and read markers for known messages."""
+    """Обновить личные сообщения и отметки прочтения."""
     after_id, known_ids = _sync_request_fields(payload)
     item = _personal_conversation(db, principal, conversation_id)
     read_column = PersonalMessage.admin_read_at if principal["role"] == "admin" else PersonalMessage.participant_read_at
@@ -737,7 +737,7 @@ async def delete_panel_message(
     metadata = json.loads(item.metadata_json or "{}")
     deliveries_by_platform = metadata.get("messenger_deliveries") or {}
     if not deliveries_by_platform and metadata.get("telegram_deliveries"):
-        # Backward compatibility for messages written before the shared ledger.
+        # Поддерживаем сообщения без общего журнала внешних доставок.
         deliveries_by_platform = {
             MessengerPlatform.TELEGRAM.value: {
                 "delivered": metadata["telegram_deliveries"],
@@ -750,8 +750,7 @@ async def delete_panel_message(
     telegram_deleted = 0
     telegram_failed = 0
 
-    # Delete external copies through their own adapters; UknowApp remains the
-    # authoritative record and deletion succeeds locally regardless of providers.
+    # Удаляем внешние копии через адаптеры; UknowApp остаётся источником данных.
     for platform_value, result in deliveries_by_platform.items():
         try:
             platform = MessengerPlatform(platform_value)
@@ -832,7 +831,7 @@ def panel_message_media(message_id: int, principal: PanelUser, db: Db):
 
 
 def _panel_sender_and_recipients(db: Session, principal: dict, conversation: Conversation):
-    """Resolve the sender and Telegram recipients for a panel message."""
+    """Определить отправителя и адресатов в Telegram."""
     student = conversation.student
     teacher = conversation.teacher
     if principal["role"] == "teacher":
@@ -870,8 +869,7 @@ def _save_panel_messenger_results(
             errors=result.get("errors", []),
         )
     row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-    # delivery_status describes only UknowApp persistence. Provider outcomes
-    # live in metadata.messenger_deliveries and never overwrite this field.
+    # Статус сообщения отражает хранение в UknowApp, не внешнюю доставку.
     row.delivery_status = "delivered"
     db.commit()
     publish_conversation_update(
@@ -892,7 +890,7 @@ async def _deliver_panel_message(
     content_type: MessageKind,
     media: OutboundMedia | None = None,
 ) -> dict[str, dict[str, list[dict]]]:
-    """Send through a provider only when teacher and student both linked it."""
+    """Отправлять через канал только при привязке обоих участников."""
     results: dict[str, dict[str, list[dict]]] = {}
     if communication is None:
         return results
@@ -901,8 +899,7 @@ async def _deliver_panel_message(
         teacher_account, student_account = get_messenger_pair(
             db, conversation.teacher_id, conversation.student_id, platform,
         )
-        # A one-sided connection is not a delivery route. Skip the adapter
-        # entirely instead of sending to only one participant or probing it.
+        # Отправляем только когда оба участника привязаны к каналу.
         if not teacher_account or not student_account:
             continue
 
@@ -996,7 +993,7 @@ async def _deliver_panel_message(
 
 
 async def _store_panel_attachment(file: UploadFile, conversation_id: int):
-    """Validate and persist an uploaded attachment; return normalized metadata."""
+    """Проверить и сохранить вложение."""
     if file.size is not None and file.size > MAX_ATTACHMENT_BYTES:
         raise HTTPException(status_code=413, detail=ATTACHMENT_SIZE_ERROR)
     original_name = (file.filename or "attachment").replace("\\", "/").rsplit("/", 1)[-1]
@@ -1046,7 +1043,7 @@ async def _store_panel_attachment(file: UploadFile, conversation_id: int):
 
 
 async def _refresh_teacher_panel_after_web_delivery(bot, teacher_id: int, conversation_id: int) -> None:
-    """Refresh the teacher's Telegram panel without holding the web request open."""
+    """Обновить панель преподавателя в фоне."""
     if not bot:
         return
     try:
@@ -1149,7 +1146,7 @@ async def send_panel_message(
                 )
         raise
     db.refresh(row)
-    # Publish immediately after UknowApp persistence; external delivery is independent.
+    # Событие публикуем сразу после сохранения, не ожидая Telegram.
     publish_conversation_update(db, conversation, message_id=row.id, sender_role=principal["role"])
     push_recipients = [student.id, teacher.id] if principal["role"] == "admin" else ([student.id] if principal["role"] == "teacher" else [teacher.id])
     schedule_push(

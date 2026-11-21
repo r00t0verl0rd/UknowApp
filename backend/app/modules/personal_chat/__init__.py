@@ -1,1 +1,1 @@
-"""Private administrator conversations domain."""
+"""Личные переписки администратора."""

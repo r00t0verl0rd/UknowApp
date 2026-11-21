@@ -1,4 +1,4 @@
-"""Telegram adapter for normalized inbound and outbound communication."""
+"""Адаптер Telegram для приёма и отправки сообщений."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 class TelegramAdapter:
-    """Translate Telegram updates and Bot API operations at the provider edge."""
+    """Преобразовать события Telegram в формат UknowApp."""
 
     platform = MessengerPlatform.TELEGRAM
 
@@ -53,7 +53,7 @@ class TelegramAdapter:
         )
 
     def normalize_event(self, payload: Mapping[str, object]) -> Sequence[InboundMessage]:
-        """Convert a plain Telegram event mapping into normalized application data."""
+        """Нормализовать данные входящего события Telegram."""
         chat = payload.get("chat") if isinstance(payload.get("chat"), Mapping) else {}
         sender = payload.get("from_user") if isinstance(payload.get("from_user"), Mapping) else {}
         sender_chat = payload.get("sender_chat") if isinstance(payload.get("sender_chat"), Mapping) else {}
@@ -129,7 +129,7 @@ class TelegramAdapter:
         ),)
 
     def normalize_message(self, message) -> InboundMessage:
-        """Normalize aiogram's message object without leaking it into the app workflow."""
+        """Преобразовать сообщение aiogram во внутренний формат."""
         media_data = {}
         for field in (
             "photo", "document", "audio", "video", "voice",
@@ -229,7 +229,7 @@ class TelegramAdapter:
         return str(copied.message_id)
 
     async def archive_media(self, inbound: InboundMessage, row: Message) -> None:
-        """Download Telegram media and persist an application-owned file copy."""
+        """Скачать вложение в архив UknowApp."""
         item = inbound.media
         if not item or not item.provider_file_id:
             return

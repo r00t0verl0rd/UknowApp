@@ -1,1 +1,1 @@
-"""System-level HTTP routes and services."""
+"""Системные HTTP-маршруты."""
