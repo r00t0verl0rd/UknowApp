@@ -195,7 +195,6 @@ export default function BoardsPage({ setError }) {
     >
       <div className="graph-coordinate-world graph-object-world" ref={worldRef}>
         {roots.map(item => <BoardObject key={item.id} item={item} children={item.children} positionsRef={positionsRef} createObject={addObject} removeObject={removeObject} />)}
-        {loading && !boardObjects.length && <div className="graph-board-empty">Загружаем доску…</div>}
         {!loading && !boardObjects.length && <div className="graph-board-empty">Доска пока пустая. Создайте первый объект.</div>}
       </div>
     </div>

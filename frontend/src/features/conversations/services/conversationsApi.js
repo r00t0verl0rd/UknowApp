@@ -1,9 +1,8 @@
 const API = import.meta.env.VITE_API_BASE_URL || "";
 
-export function getChatMessages(request, chat, afterId = 0) {
+export function getChatMessages(request, chat, signal) {
   const base = chat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
-  const query = afterId > 0 ? "?after_id=" + afterId : "";
-  return request(base + chat.id + "/messages" + query);
+  return request(base + chat.id + "/messages", { signal });
 }
 
 export function syncChatState(request, chat, afterId, knownMessageIds) {

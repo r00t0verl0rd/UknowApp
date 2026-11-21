@@ -67,10 +67,6 @@ function Application({ setError, notify }) {
 
   if (!auth) return <LoginPage theme={theme} toggleTheme={toggleTheme} signIn={signIn}
     login={login} setLogin={setLogin} password={password} setPassword={setPassword} />;
-  if (!profile) return <div className="app-boot-screen" role="status" aria-live="polite">
-    <img src="/logo.png" alt="" />
-    <span>Загружаем UknowApp…</span>
-  </div>;
   if (!workspace) return null;
 
   const workspacePage = workspace.pages.includes(page) ? page : workspace.pages[0];

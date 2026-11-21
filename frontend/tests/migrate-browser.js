@@ -18,6 +18,15 @@ try {
     await page.reload();
   }
   if (process.argv[2] === "export") {
+    // Inspect the actual production HTML before React or its stylesheet can paint.
+    const beforeReact = await browser.newPage();
+    await beforeReact.route("**/assets/**", route => route.abort());
+    await beforeReact.goto(url);
+    assert.equal(await beforeReact.locator("body").evaluate(node => getComputedStyle(node).backgroundColor), "rgb(23, 27, 37)");
+    await beforeReact.addInitScript(() => localStorage.setItem("uknowapp-theme-v2", "light"));
+    await beforeReact.reload();
+    assert.equal(await beforeReact.locator("body").evaluate(node => getComputedStyle(node).backgroundColor), "rgb(247, 246, 251)");
+    await beforeReact.close();
     await page.goto(url);
     await page.getByRole("button", { name: "Войти" }).click();
     const alert = page.getByRole("alert");

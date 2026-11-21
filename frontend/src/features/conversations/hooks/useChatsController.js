@@ -16,7 +16,8 @@ export function useChatsController({
   const sendingMessage = useRef(false);
   const pendingClientMessage = useRef(null);
   const activeChatKey = useRef("");
-  const openingChatRequest = useRef(0);
+  const openingChatRequest = useRef(null);
+  useEffect(() => () => openingChatRequest.current?.controller.abort(), []);
   const openChatRef = useRef(null);
   const {
     chats, setChats, selectedChat, setSelectedChat, messages, setMessages, setMessagesLoading,
@@ -104,8 +105,12 @@ export function useChatsController({
   }, [selectedChat?.id, selectedChat?.type, messageFilter, messagesViewportRef]);
 
   const openChat = useCallback(async chat => {
-    const requestId = ++openingChatRequest.current;
     const chatKey = (chat.type === "personal" ? "personal:" : "conversation:") + chat.id;
+    const previousRequest = openingChatRequest.current;
+    if (activeChatKey.current === chatKey && previousRequest?.key === chatKey) return;
+    previousRequest?.controller.abort();
+    const controller = new AbortController();
+    openingChatRequest.current = { key: chatKey, controller };
     activeChatKey.current = chatKey;
     setSelectedChat(chat);
     setMessages([]);
@@ -115,17 +120,18 @@ export function useChatsController({
     setAttachment(null);
     setMessageFilter("all");
     try {
-      const loadedMessages = await getChatMessages(request, chat);
-      if (requestId !== openingChatRequest.current || activeChatKey.current !== chatKey) return;
+      const loadedMessages = await getChatMessages(request, chat, controller.signal);
+      if (controller.signal.aborted || activeChatKey.current !== chatKey) return;
       // Preserve messages/status updates received over SSE while the initial
       // history request was in flight instead of replacing the live message list.
       setMessages(previous => mergeConversationMessages(previous, loadedMessages, chatKey));
     } catch (error) {
-      if (requestId === openingChatRequest.current && activeChatKey.current === chatKey) {
+      if (!controller.signal.aborted && activeChatKey.current === chatKey) {
+        openingChatRequest.current = null;
         setError(error.message);
       }
     } finally {
-      if (requestId === openingChatRequest.current && activeChatKey.current === chatKey) {
+      if (!controller.signal.aborted && activeChatKey.current === chatKey) {
         setMessagesLoading(false);
       }
     }

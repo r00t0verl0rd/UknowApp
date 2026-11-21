@@ -211,7 +211,7 @@ function MessageBubble({ message, onDelete, onError, viewerRole, personalChat })
     {mediaUrl && ["voice", "audio"].includes(kind) && <ChatAudioPlayer src={mediaUrl} label={label} />}
     {mediaUrl && ["video", "video_note", "animation"].includes(kind) && <video className={"chat-media-video" + (kind === "video_note" ? " chat-media-video-note" : "")} controls playsInline preload="metadata" aria-label={label} src={mediaUrl} />}
     {mediaUrl && ["document", "photo"].includes(kind) && <a className="chat-media-download" href={mediaUrl} download={media?.file_name || label}>Скачать файл: {media?.file_name || label}</a>}
-    {!mediaUrl && media && <small className="chat-media-status">{media.archive_status === "too_large_for_telegram_download" ? "Файл больше 20 МБ: Telegram не позволяет сохранить копию для веб-панели. Оригинал остаётся в исходном чате Telegram." : media.archive_status === "download_failed" ? "Не удалось сохранить копию вложения. Проверьте оригинал в Telegram." : "Загрузка вложения…"}</small>}
+    {!mediaUrl && ["too_large_for_telegram_download", "download_failed"].includes(media?.archive_status) && <small className="chat-media-status">{media.archive_status === "too_large_for_telegram_download" ? "Файл больше 20 МБ: Telegram не позволяет сохранить копию для веб-панели. Оригинал остаётся в исходном чате Telegram." : "Не удалось сохранить копию вложения. Проверьте оригинал в Telegram."}</small>}
     {!media && !message.text && <p>Вложение: {message.content_type}</p>}
     {viewerRole === "admin" && deliveryIssues.length > 0 && <button type="button" className="btn small" onClick={() => onError(
       "В UknowApp доставлено. " + deliveryIssues.map(issue =>

@@ -19,29 +19,34 @@ export function usePanelDataState({
     if (!auth) return Promise.resolve();
     if (refreshTask.current) return refreshTask.current;
     const task = (async () => {
-    const revision = ++refreshRevision.current;
-    let who;
-    try {
-      who = await getCurrentProfile(request);
-      if (revision !== refreshRevision.current) return;
-      setProfile(who);
-      setInboxLoading(true);
-      setAdminDataLoading(who.role === "admin");
-    } catch (error) {
-      if (revision !== refreshRevision.current) return;
-      setError(error.message);
-      const message = String(error.message).toLowerCase();
-      if (["учитель", "ученик", "логин", "сессия", "войдите", "учётная запись"].some(term => message.includes(term)) || message.includes("401")) {
-        localStorage.removeItem("uknowapp-auth");
-        sessionStorage.removeItem("uknowapp-auth");
-        setAuth("");
-        setProfile(null);
-      }
-      return;
-    }
-
+      const revision = ++refreshRevision.current;
       const revisionsAtStart = new Map(inboxRowRevision.current);
-      const inboxTask = getInboxData(request).then(([conversations, personal]) => {
+      const profileTask = getCurrentProfile(request);
+      // Both requests start together. Keep inbox data private until the session is confirmed.
+      const inboxResult = getInboxData(request).catch(() => null);
+      let who;
+      try {
+        who = await profileTask;
+        if (revision !== refreshRevision.current) return;
+        setProfile(who);
+        setInboxLoading(true);
+        setAdminDataLoading(who.role === "admin");
+      } catch (error) {
+        if (revision !== refreshRevision.current) return;
+        setError(error.message);
+        const message = String(error.message).toLowerCase();
+        if (["учитель", "ученик", "логин", "сессия", "войдите", "учётная запись"].some(term => message.includes(term)) || message.includes("401")) {
+          localStorage.removeItem("uknowapp-auth");
+          sessionStorage.removeItem("uknowapp-auth");
+          setAuth("");
+          setProfile(null);
+        }
+        return;
+      }
+
+      const inboxTask = inboxResult.then(data => {
+        if (!data) return;
+        const [conversations, personal] = data;
         if (revision !== refreshRevision.current) return;
         const changedRows = new Set(
           [...inboxRowRevision.current].filter(([key, value]) => (

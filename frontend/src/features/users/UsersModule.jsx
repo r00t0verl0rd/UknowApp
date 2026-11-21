@@ -14,7 +14,7 @@ export default function UsersModule({
 
   return <>
     {page === "users" && <UsersPage
-      visibleUsers={state.visibleUsers} loading={adminDataLoading} search={state.search} setSearch={state.setSearch}
+      visibleUsers={state.visibleUsers} search={state.search} setSearch={state.setSearch}
       userSort={state.userSort} setUserSort={state.setUserSort}
       openCreate={state.openCreate} disconnectTelegram={state.disconnectTelegram}
       makeCode={state.makeCode} userInfo={state.userInfo} setUserInfo={state.setUserInfo}

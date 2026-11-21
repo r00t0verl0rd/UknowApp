@@ -7,7 +7,7 @@ const AdministrationModule = lazy(() => import("../features/administration/index
 
 export default function AdminWorkspace(props) {
   return (
-    <Suspense fallback={<p role="status">Загружаем раздел…</p>}>
+    <Suspense fallback={null}>
       <AdminPage {...props} />
     </Suspense>
   );

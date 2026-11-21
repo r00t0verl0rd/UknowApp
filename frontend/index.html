@@ -1,20 +1,21 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-theme="dark-soft">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark light" />
     <meta name="theme-color" content="#171b25" />
     <style>
       html, body, #root { min-height: 100%; margin: 0; background: #171b25; }
       html[data-theme="light"], html[data-theme="light"] body, html[data-theme="light"] #root { background: #f7f6fb; }
     </style>
     <script>
-      try { document.documentElement.dataset.theme = localStorage.getItem("uknowapp-theme-v2") || "dark-soft"; } catch {}
+      try { if (localStorage.getItem("uknowapp-theme-v2") === "light") document.documentElement.dataset.theme = "light"; } catch {}
     </script>
     <meta name="description" content="UknowApp" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" id="web-fonts" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
@@ -22,7 +23,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="UknowApp" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-    <meta name="color-scheme" content="dark light" />
     <title>UknowApp</title>
   </head>
   <body>

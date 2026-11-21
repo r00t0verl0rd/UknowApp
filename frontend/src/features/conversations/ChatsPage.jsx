@@ -135,11 +135,9 @@ export default function ChatsPage({
               </button>
             );
           })}
-          {!visibleChats.length && (
+          {!inboxLoading && !visibleChats.length && (
             <EmptyState>
-              {inboxLoading
-                ? (profile?.role === "admin" && chatSection === "personal" ? "Загружаем личные диалоги…" : "Загружаем диалоги…")
-                : profile?.role === "admin" && chatSection === "personal"
+              {profile?.role === "admin" && chatSection === "personal"
                 ? "Личных диалогов пока нет"
                 : profile?.role === "student"
                   ? "Пока нет активной переписки с учителем"
@@ -194,7 +192,7 @@ export default function ChatsPage({
                   onDelete={setDeleteMessageCandidate} viewerRole={profile?.role}
                   personalChat={selectedChat.type === "personal"}/>
               ))}
-              {!messages.length && <EmptyState>{messagesLoading ? "Загружаем сообщения…" : "Сообщений пока нет"}</EmptyState>}
+              {!messagesLoading && !messages.length && <EmptyState>Сообщений пока нет</EmptyState>}
               {!!messages.length && !visibleMessages.length
                 && <EmptyState>Нет сообщений этого типа</EmptyState>}
             </div>

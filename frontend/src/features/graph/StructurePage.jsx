@@ -15,8 +15,6 @@ export default function StructurePage({
   allStudents = [], setModal, unassignedStudents = [], unassignStudent,
 }) {
   const [collapsedTeacherIds, setCollapsedTeacherIds] = useState(() => new Set());
-  if (loading) return <EmptyState>Загружаем структуру школы…</EmptyState>;
-
   return <>
     <div className="graph-legend-row">
       <div className="legend graph-legend">
@@ -59,7 +57,7 @@ export default function StructurePage({
         </section>;
       })}
     </div>
-    {!allTeachers.length && <EmptyState><GraduationCap /><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span></EmptyState>}
+    {!loading && !allTeachers.length && <EmptyState><GraduationCap /><b>Пока нет учителей</b><span>Добавьте первого учителя, затем учеников и связи между ними.</span></EmptyState>}
     {!!unassignedStudents.length && <section className="unassigned">
       <h2 className="unassigned-title">Ученики без учителя</h2>
       <div className="unassigned-grid">{unassignedStudents.map(student => <div className="student-card unassigned-student-card" key={student.id}>
