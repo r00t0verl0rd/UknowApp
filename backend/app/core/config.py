@@ -7,6 +7,7 @@ ROOT_DIR = Path(__file__).resolve().parents[3]
 load_dotenv(ROOT_DIR / ".env")
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+TELEGRAM_BOT_ENABLED = os.getenv("TELEGRAM_BOT_ENABLED", "true").strip().lower() in {"1", "true", "yes", "on"}
 TELEGRAM_PROXY_URL = os.getenv("TELEGRAM_PROXY_URL", "").strip()
 VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "").strip()
 VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "").strip()
