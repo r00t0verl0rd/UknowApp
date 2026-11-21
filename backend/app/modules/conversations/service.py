@@ -161,13 +161,16 @@ def conversation_event_summaries(db: Session, conversation: Conversation) -> dic
         .order_by(Message.created_at.desc(), Message.id.desc())
         .limit(1),
     )
+    last_message_preview = _message_preview(last_message)
+    if len(last_message_preview) > 240:
+        last_message_preview = last_message_preview[:237] + "…"
     common = {
         "id": conversation.id,
         "status": conversation.status,
         "created_at": conversation.created_at.isoformat(),
         "teacher": user_dict(conversation.teacher, include_telegram_id=False),
         "student": user_dict(conversation.student, include_telegram_id=False),
-        "last_message": _message_preview(last_message),
+        "last_message": last_message_preview,
         "last_message_at": last_message.created_at.isoformat() if last_message else None,
         "message_count": int(stats[0] or 0),
     }

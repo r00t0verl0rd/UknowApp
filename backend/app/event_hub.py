@@ -66,7 +66,7 @@ def _payload_for_subscriber(payload: dict[str, Any], principal: dict | None) -> 
     return json.dumps(visible, ensure_ascii=False, separators=(",", ":"))
 
 
-def _enqueue(queue: asyncio.Queue[str], payload: str, event_id: int) -> None:
+def _enqueue(queue: asyncio.Queue[str], payload: str, event_id: int | None) -> None:
     if queue.full():
         while not queue.empty():
             try:
@@ -75,7 +75,10 @@ def _enqueue(queue: asyncio.Queue[str], payload: str, event_id: int) -> None:
                 break
         # The authoritative DB event log allows the client to recover without
         # reloading message history after this bounded queue overflows.
-        queue.put_nowait(json.dumps({"event_id": event_id, "resync": True}))
+        resync_payload = {"resync": True}
+        if event_id is not None:
+            resync_payload["event_id"] = event_id
+        queue.put_nowait(json.dumps(resync_payload))
         return
     queue.put_nowait(payload)
 
@@ -100,8 +103,9 @@ def _persist_event(db: Session, conversation_id: int, conversation_type: str, pa
     return event_id
 
 
-def _dispatch(payload: dict, event_id: int) -> None:
-    payload["event_id"] = event_id
+def _dispatch(payload: dict, event_id: int | None) -> None:
+    if event_id is not None:
+        payload["event_id"] = event_id
     with _subscribers_lock:
         subscribers = tuple(_subscribers.items())
 
@@ -153,7 +157,7 @@ def publish_chat_update(
                 conversation_id,
                 action,
             )
-            event_id = next(_fallback_event_ids)
+            event_id = None
             payload["resync"] = True
     else:
         # Kept for isolated event-hub tests and internal non-database signals.

@@ -125,7 +125,7 @@ def persist_message(
     inbound: InboundMessage,
     status: str,
     safe_text: str | None = None,
-) -> Message:
+) -> tuple[Message, bool]:
     body = safe_text if safe_text is not None else (inbound.text or inbound.caption)
     metadata = message_metadata(inbound)
     metadata["source_platform"] = inbound.platform.value
@@ -184,7 +184,7 @@ def persist_message(
         publish_conversation_update(
             db, conversation, message_id=row.id, sender_role=sender.role,
         )
-    return row
+    return row, True
 
 
 def current_student_conversation(db: Session, student_id: int) -> Conversation | None:

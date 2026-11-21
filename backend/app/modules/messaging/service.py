@@ -97,3 +97,45 @@ def _panel_message_dict(
         ),
         "created_at": item.created_at.isoformat(),
     }
+
+
+
+def _panel_message_status_dict(item: Message, principal: dict) -> dict:
+    """Return only mutable status fields for already-loaded rows during recovery."""
+    metadata = json.loads(item.metadata_json or "{}")
+    if item.sender_role == "teacher":
+        read_at = metadata.get("student_read_at")
+    elif item.sender_role == "student":
+        read_at = metadata.get("teacher_read_at")
+    elif item.sender_role == "admin":
+        read_at = metadata.get("teacher_read_at") and metadata.get("student_read_at")
+    else:
+        read_at = None
+    result = {
+        "id": item.id,
+        "delivery_status": (
+            "blocked_contact" if item.delivery_status == "blocked_contact" else "delivered"
+        ),
+        "panel_read_at": read_at,
+    }
+    changed_metadata = {}
+    media = metadata.get("media")
+    if isinstance(media, dict):
+        changed_metadata["media"] = {
+            key: media[key]
+            for key in ("kind", "file_name", "mime_type", "file_size", "archive_status")
+            if key in media
+        }
+    if principal.get("role") == "admin":
+        changed_metadata.update({
+            key: metadata[key]
+            for key in (
+                "messenger_deliveries",
+                "telegram_deliveries",
+                "telegram_delivery_errors",
+            )
+            if key in metadata
+        })
+    if changed_metadata:
+        result["metadata"] = changed_metadata
+    return result

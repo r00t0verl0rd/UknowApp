@@ -64,6 +64,7 @@ from app.modules.dependencies import Db, PanelUser
 from app.modules.messaging.moderation import text_contains_contact_data
 from app.modules.messaging.service import (
     _panel_message_dict,
+    _panel_message_status_dict,
     _panel_visible_conversation,
 )
 from app.modules.notifications.service import schedule_push
@@ -364,6 +365,14 @@ def _personal_message_dict(row: PersonalMessage, principal: dict) -> dict:
     }
 
 
+def _personal_message_status_dict(row: PersonalMessage, principal: dict) -> dict:
+    read_at = (
+        row.admin_read_at if row.sender_role != "admin"
+        else row.participant_read_at
+    )
+    return {"id": row.id, "panel_read_at": read_at.isoformat() if read_at else None}
+
+
 @router.get("/panel/personal-conversations/{conversation_id}/messages")
 def personal_messages(conversation_id: int, principal: PanelUser, db: Db, after_id: int = 0):
     item = _personal_conversation(db, principal, conversation_id)
@@ -596,14 +605,17 @@ def sync_conversation_state(
         .where(Message.conversation_id == conversation.id, Message.id > after_id)
         .order_by(Message.created_at, Message.id),
     ).all()
-    updated_rows = db.scalars(
-        select(Message)
-        .where(
-            Message.conversation_id == conversation.id,
-            Message.id.in_(known_ids or [-1]),
-        )
-        .order_by(Message.created_at, Message.id),
-    ).all()
+    updated_rows = []
+    for start in range(0, len(known_ids), 500):
+        batch_ids = known_ids[start:start + 500]
+        updated_rows.extend(db.scalars(
+            select(Message)
+            .where(
+                Message.conversation_id == conversation.id,
+                Message.id.in_(batch_ids),
+            )
+            .order_by(Message.created_at, Message.id),
+        ).all())
 
     def serialize(rows):
         return [
@@ -614,13 +626,17 @@ def sync_conversation_state(
             )
             for row in rows
         ]
+
+    def serialize_statuses(rows):
+        return [_panel_message_status_dict(row, principal) for row in rows]
+
     summary = conversation_dicts(
         db, [conversation], include_telegram_ids=(principal["role"] == "admin"),
         viewer_role=principal["role"],
     )[0]
     return {
-        "messages": serialized(new_rows),
-        "updated_messages": serialized(updated_rows),
+        "messages": serialize(new_rows),
+        "updated_messages": serialize_statuses(updated_rows),
         "summary": summary,
     }
 
@@ -663,15 +679,17 @@ def sync_personal_conversation_state(
         .where(PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id)
         .order_by(PersonalMessage.created_at, PersonalMessage.id),
     ).all()
-    updated_rows = db.scalars(
-        select(PersonalMessage)
-        .options(selectinload(PersonalMessage.sender))
-        .where(
-            PersonalMessage.conversation_id == item.id,
-            PersonalMessage.id.in_(known_ids or [-1]),
-        )
-        .order_by(PersonalMessage.created_at, PersonalMessage.id),
-    ).all()
+    updated_rows = []
+    for start in range(0, len(known_ids), 500):
+        batch_ids = known_ids[start:start + 500]
+        updated_rows.extend(db.scalars(
+            select(PersonalMessage)
+            .where(
+                PersonalMessage.conversation_id == item.id,
+                PersonalMessage.id.in_(batch_ids),
+            )
+            .order_by(PersonalMessage.created_at, PersonalMessage.id),
+        ).all())
     unread_count = db.scalar(
         select(func.count(PersonalMessage.id)).where(
             PersonalMessage.conversation_id == item.id,
@@ -681,7 +699,7 @@ def sync_personal_conversation_state(
     ) or 0
     return {
         "messages": [_personal_message_dict(row, principal) for row in new_rows],
-        "updated_messages": [_personal_message_dict(row, principal) for row in updated_rows],
+        "updated_messages": [_personal_message_status_dict(row, principal) for row in updated_rows],
         "summary": _personal_conversation_dict(item, principal["role"], unread_count),
     }
 

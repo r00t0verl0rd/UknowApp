@@ -100,7 +100,7 @@ function ChatAudioPlayer({ src, label }) {
   </div>;
 }
 
-function MessageBubble({ message, onDelete, viewerRole }) {
+function MessageBubble({ message, onDelete, viewerRole, personalChat }) {
   const [mediaUrl, setMediaUrl] = useState("");
   const bubbleRef = useRef(null);
   const media = message.metadata?.media;
@@ -189,7 +189,7 @@ function MessageBubble({ message, onDelete, viewerRole }) {
       {!(viewerRole === "teacher" && message.sender_role !== "admin") && <b>{message.sender}</b>}
       <div className="message-tools">
         <time className="message-time">{formatLocalTime(message.created_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</time>
-        {message.sender_role === viewerRole && viewerRole !== "admin" && (() => {
+        {message.sender_role === viewerRole && (viewerRole !== "admin" || personalChat) && (() => {
           const status = message.delivery_status || "unknown";
           const read = Boolean(message.panel_read_at);
           const pending = status === "pending";

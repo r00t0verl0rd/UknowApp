@@ -17,7 +17,12 @@ function mergeMessages(previous, incoming) {
   const incomingById = new Map(incoming.map(item => [Number(item.id), item]));
   const merged = previous
     .filter(item => !clientIds.has(item.metadata?.client_message_id))
-    .map(item => incomingById.has(Number(item.id)) ? incomingById.get(Number(item.id)) : item);
+    .map(item => {
+      const update = incomingById.get(Number(item.id));
+      return update
+        ? { ...item, ...update, metadata: { ...(item.metadata || {}), ...(update.metadata || {}) } }
+        : item;
+    });
   const known = new Set(merged.map(item => Number(item.id)));
   return [
     ...merged,
@@ -35,6 +40,7 @@ export function useConversationSync({
   const pending = useRef(new Map());
   const processing = useRef(false);
   const syncing = useRef(false);
+  const syncQueued = useRef(false);
 
   current.current = {
     selectedChat, messages, role,
@@ -69,32 +75,47 @@ export function useConversationSync({
     };
 
     const syncSelected = async () => {
-      const chat = current.current.selectedChat;
-      if (!chat || syncing.current) return;
-      syncing.current = true;
-      const knownMessages = current.current.messages
-        .filter(item => Number.isSafeInteger(Number(item.id)) && Number(item.id) > 0);
-      const chatKey = chat.type + ":" + chat.id;
-      if (lastMessageCursor.current.chatKey !== chatKey) {
-        lastMessageCursor.current = { chatKey, id: maxMessageId(knownMessages) };
+      if (document.visibilityState !== "visible") return;
+      if (syncing.current) {
+        syncQueued.current = true;
+        return;
       }
-      const afterId = Math.max(lastMessageCursor.current.id, maxMessageId(knownMessages));
+      syncing.current = true;
       try {
-        const result = await syncChatState(
-          request,
-          chat,
-          afterId,
-          knownMessages.map(item => Number(item.id)),
-        );
-        if (!active || !isSameChat(current.current.selectedChat, chat.id, chat.type)) return;
-        const updated = [...(result.updated_messages || []), ...(result.messages || [])];
-        if (updated.length) {
-          lastMessageCursor.current.id = Math.max(afterId, maxMessageId(updated));
-          current.current.setMessages(previous => mergeMessages(previous, updated));
-        }
-        if (result.summary) applySummary(chat.type, chat.id, result.summary);
+        do {
+          syncQueued.current = false;
+          const chat = current.current.selectedChat;
+          if (!chat || document.visibilityState !== "visible") break;
+          const knownMessages = current.current.messages
+            .filter(item => Number.isSafeInteger(Number(item.id)) && Number(item.id) > 0);
+          const chatKey = chat.type + ":" + chat.id;
+          if (lastMessageCursor.current.chatKey !== chatKey) {
+            lastMessageCursor.current = { chatKey, id: maxMessageId(knownMessages) };
+          }
+          const afterId = Math.max(lastMessageCursor.current.id, maxMessageId(knownMessages));
+          const result = await syncChatState(
+            request,
+            chat,
+            afterId,
+            knownMessages.map(item => Number(item.id)),
+          );
+          if (!active) break;
+          if (!isSameChat(current.current.selectedChat, chat.id, chat.type)) {
+            syncQueued.current = true;
+            continue;
+          }
+          const updated = [...(result.updated_messages || []), ...(result.messages || [])];
+          if (updated.length) {
+            lastMessageCursor.current.id = Math.max(afterId, maxMessageId(updated));
+            current.current.setMessages(previous => mergeMessages(previous, updated));
+          }
+          if (result.summary) applySummary(chat.type, chat.id, result.summary);
+        } while (syncQueued.current && active);
       } finally {
         syncing.current = false;
+        if (syncQueued.current && active && document.visibilityState === "visible") {
+          void syncSelected().catch(() => {});
+        }
       }
     };
 
@@ -138,14 +159,10 @@ export function useConversationSync({
 
     const source = createPanelEventSource();
     if (source) {
-      let hasOpened = false;
       source.onopen = () => {
-        if (!hasOpened) {
-          hasOpened = true;
-          // Reconcile the inbox snapshot boundary without reloading existing history.
-          void recover().catch(() => {});
-        }
-        // On reconnect, Last-Event-ID replays missed events from the durable event log.
+        // Replay Last-Event-ID covers committed events; targeted sync also repairs
+        // the rare crash window between message commit and outbox persistence.
+        void recover().catch(() => {});
       };
       source.onerror = () => {
         // EventSource owns reconnect/backoff; avoid periodic polling while offline.
@@ -158,13 +175,16 @@ export function useConversationSync({
           payload = { resync: true };
         }
         const eventId = Number(payload.event_id || event.lastEventId || 0);
+        if (payload.resync) {
+          if (Number.isSafeInteger(eventId) && eventId > lastEventId.current) {
+            lastEventId.current = eventId;
+          }
+          void recover().catch(() => {});
+          return;
+        }
         if (Number.isSafeInteger(eventId) && eventId > 0) {
           if (eventId <= lastEventId.current) return;
           lastEventId.current = eventId;
-        }
-        if (payload.resync) {
-          void recover().catch(() => {});
-          return;
         }
         if (!payload.conversation_id) return;
 

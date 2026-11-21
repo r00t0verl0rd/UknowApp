@@ -188,7 +188,8 @@ export default function ChatsPage({
             <div className="messages" ref={messagesViewportRef}>
               {visibleMessages.map(message => (
                 <MessageBubble message={message} key={message.id}
-                  onDelete={setDeleteMessageCandidate} viewerRole={profile?.role}/>
+                  onDelete={setDeleteMessageCandidate} viewerRole={profile?.role}
+                  personalChat={selectedChat.type === "personal"}/>
               ))}
               {!messages.length && <div className="empty-state">Сообщений пока нет</div>}
               {!!messages.length && !visibleMessages.length

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useChatActionState } from "./useChatActionState.js";
 import { useConversationSync } from "./useConversationSync.js";
 import {
@@ -12,6 +12,8 @@ export function useChatsController({
   notify,
 }) {
   const { deleteMessageCandidate, deletingMessage, setDeletingMessage, setDeleteMessageCandidate } = useChatActionState();
+  const sendingMessage = useRef(false);
+  const pendingClientMessage = useRef(null);
   const {
     chats, setChats, selectedChat, setSelectedChat, messages, setMessages,
     draft, setDraft, attachment, setAttachment, messagesViewportRef,
@@ -161,12 +163,22 @@ export function useChatsController({
     const chat = selectedChat;
     const text = draft.trim();
     const file = attachment;
-    if (!chat || (!text && !file)) return;
+    if (!chat || (!text && !file) || sendingMessage.current) return;
 
+    sendingMessage.current = true;
     const optimistic = chat.type !== "personal" && !file && Boolean(text);
-    const clientMessageId = text || file
-      ? (window.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2))
-      : null;
+    const signature = [
+      chat.type,
+      chat.id,
+      text,
+      file?.name || "",
+      file?.size || 0,
+      file?.lastModified || 0,
+    ].join(":");
+    const pending = pendingClientMessage.current;
+    const clientMessageId = (pending?.signature === signature ? pending.id : null)
+      || (window.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2));
+    pendingClientMessage.current = { signature, id: clientMessageId };
     const optimisticId = clientMessageId ? "local-" + clientMessageId : null;
 
     if (optimistic) {
@@ -196,6 +208,7 @@ export function useChatsController({
         sentMessage = await sendConversationText(request, chat.id, text, clientMessageId);
       }
 
+      pendingClientMessage.current = null;
       if (!optimistic) {
         setDraft("");
         setAttachment(null);
@@ -230,6 +243,8 @@ export function useChatsController({
         setDraft(current => current || text);
       }
       setError(error.message);
+    } finally {
+      sendingMessage.current = false;
     }
   }, [selectedChat, draft, attachment, request, setDraft, setMessages, setAttachment, notify, profile?.role, profile?.full_name, setError]);
 
