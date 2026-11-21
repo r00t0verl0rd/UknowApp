@@ -495,31 +495,62 @@ async def delete_panel_message(
         raise HTTPException(status_code=403, detail="Можно удалить только собственное сообщение")
 
     metadata = json.loads(item.metadata_json or "{}")
-    deliveries = metadata.get("telegram_deliveries") or []
+    deliveries_by_platform = metadata.get("messenger_deliveries") or {}
+    if not deliveries_by_platform and metadata.get("telegram_deliveries"):
+        # Backward compatibility for messages written before the shared ledger.
+        deliveries_by_platform = {
+            MessengerPlatform.TELEGRAM.value: {
+                "delivered": metadata["telegram_deliveries"],
+            },
+        }
+
     communication = getattr(request.app.state, "communication", None)
+    messenger_deleted = 0
+    messenger_failed = 0
     telegram_deleted = 0
     telegram_failed = 0
 
-    # Remove every external copy recorded at delivery time. The provider adapter
-    # owns the platform-specific API call; the panel only tracks the result.
-    if deliveries and communication and communication.has_adapter(MessengerPlatform.TELEGRAM):
-        for delivery in deliveries:
+    # Delete external copies through their own adapters; UknowApp remains the
+    # authoritative record and deletion succeeds locally regardless of providers.
+    for platform_value, result in deliveries_by_platform.items():
+        try:
+            platform = MessengerPlatform(platform_value)
+        except ValueError:
+            continue
+        for delivery in result.get("delivered", []):
+            external_chat_id = (
+                delivery.get("external_chat_id") or delivery.get("chat_id")
+            )
+            external_message_id = (
+                delivery.get("external_message_id")
+                or delivery.get("telegram_message_id")
+            )
+            if not external_chat_id or not external_message_id:
+                messenger_failed += 1
+                if platform == MessengerPlatform.TELEGRAM:
+                    telegram_failed += 1
+                continue
             try:
+                if not communication or not communication.has_adapter(platform):
+                    raise RuntimeError("Messenger adapter is disabled")
                 await communication.delete_message(
-                    platform=MessengerPlatform.TELEGRAM,
-                    external_chat_id=str(delivery["chat_id"]),
-                    external_message_id=str(delivery["telegram_message_id"]),
+                    platform=platform,
+                    external_chat_id=str(external_chat_id),
+                    external_message_id=str(external_message_id),
                 )
-                telegram_deleted += 1
-            except MessengerError as exc:
-                telegram_failed += 1
+                messenger_deleted += 1
+                if platform == MessengerPlatform.TELEGRAM:
+                    telegram_deleted += 1
+            except (MessengerError, RuntimeError, NotImplementedError) as exc:
+                messenger_failed += 1
+                if platform == MessengerPlatform.TELEGRAM:
+                    telegram_failed += 1
                 logger.warning(
-                    "Could not delete Telegram copy (message_id=%s error_type=%s)",
+                    "Could not delete messenger copy (platform=%s message_id=%s error_type=%s)",
+                    platform.value,
                     item.id,
                     type(exc).__name__,
                 )
-    else:
-        telegram_failed = len(deliveries)
 
     delete_message_media(item.metadata_json)
     db.delete(item)
@@ -529,6 +560,8 @@ async def delete_panel_message(
     return {
         "ok": True,
         "deleted_message_id": message_id,
+        "messenger_deleted": messenger_deleted,
+        "messenger_failed": messenger_failed,
         "telegram_deleted": telegram_deleted,
         "telegram_failed": telegram_failed,
     }
