@@ -20,6 +20,7 @@ from .core.config import (
 )
 from .core.database import SessionLocal, create_tables
 from .models import Assignment, Conversation, User
+from .modules.administration.data import apply_pending_data_restore
 from .modules.communication.service import CommunicationService
 from .modules.telegram.adapter import TelegramAdapter
 from .modules.telegram.transport import create_telegram_bot
@@ -98,6 +99,7 @@ async def run_telegram_bot(bot, dispatcher, app) -> None:
 # Подготавливаем БД и запускаем один экземпляр фонового Telegram polling на время жизни API.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    apply_pending_data_restore()
     create_tables()
     if SEED_DEMO_DATA:
         seed_demo_data()
