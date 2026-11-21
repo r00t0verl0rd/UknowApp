@@ -95,6 +95,7 @@ try {
     await message.waitFor();
     const personal = await (await api.get(url + "/api/panel/personal-conversations")).json();
     assert.deepEqual(personal.map(chat => chat.participant.id), [teacher.id]);
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto(url + "/additional");
     const downloading = page.waitForEvent("download");
     await page.getByRole("button", { name: "Скачать полную резервную копию" }).click();
