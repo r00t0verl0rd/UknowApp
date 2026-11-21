@@ -15,7 +15,7 @@ from app.modules.administration import data as admin_data
 def login_admin(client):
     response = client.post(
         "/api/auth/login",
-        json={"username": "test-admin", "password": "a-long-test-password-123"},
+        json={"username": "test-admin", "password": "a-long-test-password-123"},  # pragma: allowlist secret
     )
     assert response.status_code == status.HTTP_200_OK
 
