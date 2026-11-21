@@ -10,10 +10,13 @@ export function usePanelDataState({
 }) {
   const request = useMemo(() => createApiClient(), []);
   const refreshRevision = useRef(0);
+  const refreshTask = useRef(null);
   const inboxRevision = useRef(0);
 
-  const refresh = useCallback(async () => {
-    if (!auth) return;
+  const refresh = useCallback(() => {
+    if (!auth) return Promise.resolve();
+    if (refreshTask.current) return refreshTask.current;
+    const task = (async () => {
     const revision = ++refreshRevision.current;
     setError("");
     let who;
@@ -67,10 +70,20 @@ export function usePanelDataState({
     if (revision !== refreshRevision.current) return;
     const failed = results.find(result => result.status === "rejected");
     if (failed) setError(failed.reason?.message || "Не удалось загрузить часть данных приложения");
+    })();
+    refreshTask.current = task;
+    task.then(
+      () => { if (refreshTask.current === task) refreshTask.current = null; },
+      () => { if (refreshTask.current === task) refreshTask.current = null; },
+    );
+    return task;
   }, [auth, request]);
 
   useEffect(() => {
-    refreshRevision.current += 1;
+    if (!auth) {
+      refreshRevision.current += 1;
+      refreshTask.current = null;
+    }
   }, [auth]);
 
   useEffect(() => { void refresh(); }, [refresh]);
