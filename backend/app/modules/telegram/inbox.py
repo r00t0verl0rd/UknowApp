@@ -17,7 +17,7 @@ class TelegramUpdate(Base):
 
     update_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     payload: Mapped[str] = mapped_column(Text, nullable=False)
-    state: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    state: Mapped[str] = mapped_column(String(20), nullable=False, default="pending", index=True)
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
