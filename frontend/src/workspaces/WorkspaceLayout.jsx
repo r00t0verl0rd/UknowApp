@@ -1,17 +1,15 @@
 import LogOut from "lucide-react/dist/esm/icons/log-out.js";
 import Moon from "lucide-react/dist/esm/icons/moon.js";
 import Sun from "lucide-react/dist/esm/icons/sun.js";
-import X from "lucide-react/dist/esm/icons/x.js";
 import Info from "lucide-react/dist/esm/icons/info.js";
 import { useEffect, useState } from "react";
-import AppToast from "../shared/components/AppToast.jsx";
 import Button from "../shared/components/Button.jsx";
 import Modal from "../shared/components/Modal.jsx";
 import IconButton from "../shared/components/IconButton.jsx";
 
 export default function WorkspaceLayout({
   role, profile, label, navigation, page, setPage, theme, toggleTheme,
-  pushToggle, signOut, error, setError, toast, children,
+  pushToggle, signOut, children,
 }) {
   const additionalItem = role === "admin" ? navigation.find(item => item.page === "additional") : null;
   const [showSchoolLabel, setShowSchoolLabel] = useState(() => window.matchMedia("(min-width: 1025px)").matches);
@@ -75,9 +73,6 @@ export default function WorkspaceLayout({
         <div className="topbar-actions">{pushToggle}{themeToggle}</div>
       </header>
       <div className={"content workspace-content" + (page === "additional" ? " page-additional" : "")}>
-        {error && <div className="alert alert-row" role="alert">{error}
-          <button type="button" onClick={() => setError("")} aria-label="Закрыть"><X/></button>
-        </div>}
         {children}
       </div>
     </main>
@@ -98,6 +93,5 @@ export default function WorkspaceLayout({
         <Button variant="primary" onClick={confirmSignOut} disabled={signingOut}>{signingOut ? "Выходим…" : "Да"}</Button>
       </div>
     </Modal>}
-    <AppToast message={toast}/>
   </div>;
 }

@@ -10,7 +10,7 @@ import EmptyState from "../../shared/components/EmptyState.jsx";
 import CountBadge from "../../shared/components/CountBadge.jsx";
 
 export default function ChatsPage({
-  profile, inboxLoading, chatSection, setChatSection, personalChats, setSelectedChat,
+  setError, profile, inboxLoading, chatSection, setChatSection, personalChats, setSelectedChat,
   setMessages, chatFilter, setChatFilter, openCreatePersonalChat, chatSearch,
   setChatSearch, visibleChats, openChat, selectedChat, draft, setDraft,
   messageFilter, setMessageFilter, messagesViewportRef, visibleMessages, messages, messagesLoading,
@@ -190,7 +190,7 @@ export default function ChatsPage({
 
             <div className="messages" ref={messagesViewportRef}>
               {visibleMessages.map(message => (
-                <MessageBubble message={message} key={message.id}
+                <MessageBubble onError={setError} message={message} key={message.id}
                   onDelete={setDeleteMessageCandidate} viewerRole={profile?.role}
                   personalChat={selectedChat.type === "personal"}/>
               ))}

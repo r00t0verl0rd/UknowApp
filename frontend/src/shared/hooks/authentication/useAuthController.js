@@ -12,7 +12,6 @@ export function useAuthController({
 
   const signIn = useCallback(async event => {
     event.preventDefault();
-    setError("");
     if (!login.trim()) {
       setError("Введите логин");
       return;

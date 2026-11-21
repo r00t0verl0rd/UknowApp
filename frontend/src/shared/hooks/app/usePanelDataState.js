@@ -20,7 +20,6 @@ export function usePanelDataState({
     if (refreshTask.current) return refreshTask.current;
     const task = (async () => {
     const revision = ++refreshRevision.current;
-    setError("");
     let who;
     try {
       who = await getCurrentProfile(request);

@@ -6,7 +6,7 @@ import IconButton from "../../../shared/components/IconButton.jsx";
 import FormField from "../../../shared/components/FormField.jsx";
 
 export default function ChatDialogs({
-  modal, setModal, users, createPersonalChat, creating, error,
+  modal, setModal, users, createPersonalChat, creating,
   deleteMessageCandidate, selectedChat, deletingMessage,
   setDeleteMessageCandidate, confirmDeleteMessage,
 }) {
@@ -27,7 +27,6 @@ export default function ChatDialogs({
             )}
           </select>
         </FormField>
-        {error && <p className="form-error" role="alert">{error}</p>}
         <div className="modal-actions"><Button variant="ghost" disabled={creating} onClick={() => setModal(null)}>Отмена</Button><Button type="submit" variant="primary" disabled={creating}>{creating ? "Открываем…" : "Создать диалог"}</Button></div>
       </form>
     </Modal>}

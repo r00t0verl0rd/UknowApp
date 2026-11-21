@@ -100,7 +100,7 @@ function ChatAudioPlayer({ src, label }) {
   </div>;
 }
 
-function MessageBubble({ message, onDelete, viewerRole, personalChat }) {
+function MessageBubble({ message, onDelete, onError, viewerRole, personalChat }) {
   const [mediaUrl, setMediaUrl] = useState("");
   const bubbleRef = useRef(null);
   const media = message.metadata?.media;
@@ -213,18 +213,11 @@ function MessageBubble({ message, onDelete, viewerRole, personalChat }) {
     {mediaUrl && ["document", "photo"].includes(kind) && <a className="chat-media-download" href={mediaUrl} download={media?.file_name || label}>Скачать файл: {media?.file_name || label}</a>}
     {!mediaUrl && media && <small className="chat-media-status">{media.archive_status === "too_large_for_telegram_download" ? "Файл больше 20 МБ: Telegram не позволяет сохранить копию для веб-панели. Оригинал остаётся в исходном чате Telegram." : media.archive_status === "download_failed" ? "Не удалось сохранить копию вложения. Проверьте оригинал в Telegram." : "Загрузка вложения…"}</small>}
     {!media && !message.text && <p>Вложение: {message.content_type}</p>}
-    {viewerRole === "admin" && deliveryIssues.length > 0 && <div className="message-delivery">
-      <div className="message-delivery-heading">В UknowApp доставлено. Проблемы внешних каналов:</div>
-      {deliveryIssues.map((details, index) => (
-        <div className="message-delivery-error" key={index}>
-          <span className="message-delivery-name">{details.platform}</span>
-          {details.name && <><span className="message-delivery-dash"> · </span><span className="message-delivery-name">{details.name}</span></>}
-          {details.role && <span className="message-delivery-name"> ({details.role})</span>}
-          <span className="message-delivery-dash"> — </span>
-          <span className="message-delivery-reason">{details.reason || "Причина не указана."}</span>
-        </div>
-      ))}
-    </div>}
+    {viewerRole === "admin" && deliveryIssues.length > 0 && <button type="button" className="btn small" onClick={() => onError(
+      "В UknowApp доставлено. " + deliveryIssues.map(issue =>
+        [issue.platform, issue.name, issue.role].filter(Boolean).join(" · ") + " — " + (issue.reason || "Причина не указана.")
+      ).join("\n")
+    )}>Подробности внешней доставки</button>}
   </div>;
 }
 

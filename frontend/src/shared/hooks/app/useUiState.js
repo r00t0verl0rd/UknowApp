@@ -39,8 +39,6 @@ export function useUiState() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  const [error, setError] = useState("");
-  const [toast, setToast] = useState("");
   const [modal, setModal] = useState(null);
-  return { page, setPage, error, setError, toast, setToast, modal, setModal };
+  return { page, setPage, modal, setModal };
 }

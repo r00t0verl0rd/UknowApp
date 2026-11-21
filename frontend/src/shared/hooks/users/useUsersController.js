@@ -72,7 +72,6 @@ export function useUsersController({
     setRole(defaultRole);
     setAdditionalInfo("");
     setTelegramId("");
-    setError("");
   }, [setIssuedCredential, setModal, setName, setPanelLogin, setRole, setAdditionalInfo, setTelegramId, setError]);
 
   const openEdit = useCallback(user => {
@@ -82,13 +81,11 @@ export function useUsersController({
     setRole(user.role);
     setAdditionalInfo(user.additional_info || "");
     setTelegramId(user.telegram_id ? String(user.telegram_id) : "");
-    setError("");
   }, [setModal, setName, setPanelLogin, setRole, setAdditionalInfo, setTelegramId, setError]);
 
   const saveUser = useCallback(async event => {
     event.preventDefault();
     setSavingUser(true);
-    setError("");
     const body = {
       full_name: name.trim(), role,
       telegram_id: telegramId.trim() ? Number(telegramId) : null,
@@ -121,7 +118,6 @@ export function useUsersController({
   const regeneratePanelAccessCode = useCallback(async () => {
     if (!modal || modal.mode !== "edit" || !["teacher", "student"].includes(role)) return;
     setSavingUser(true);
-    setError("");
     try {
       const issued = await issuePanelAccessCode(request, modal.id);
       setIssuedCredential({
@@ -144,7 +140,6 @@ export function useUsersController({
     const user = deleteCandidate;
     if (!user || deletingUser) return;
     setDeletingUser(true);
-    setError("");
     try {
       await deleteUser(request, user.id);
       if (selectedChat?.type !== "personal" && selectedChat
@@ -181,7 +176,6 @@ export function useUsersController({
     const student = unassignCandidate;
     if (!student || unassigningStudent) return;
     setUnassigningStudent(true);
-    setError("");
     try {
       await unassignStudentApi(request, student.id);
       setUnassignCandidate(null);
@@ -200,7 +194,6 @@ export function useUsersController({
     const user = disconnectCandidate;
     if (!user || disconnectingTelegram) return;
     setDisconnectingTelegram(true);
-    setError("");
     try {
       await disconnectUserTelegram(request, user.id);
       setDisconnectCandidate(null);

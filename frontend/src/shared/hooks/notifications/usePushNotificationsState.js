@@ -58,7 +58,6 @@ export function usePushNotificationsState({ auth, selectedChat, notify, setError
       return;
     }
     setPushBusy(true);
-    setError("");
     try {
       if (pushState.enabled) {
         await disablePushNotifications();

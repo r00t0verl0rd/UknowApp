@@ -25,7 +25,7 @@ function AdminPage({ context }) {
         selectedChat={chatState.selectedChat} setSelectedChat={chatState.setSelectedChat}
         setMessages={chatState.setMessages} modal={modal} setModal={setModal}/>;
     case "boards":
-      return <BoardsPage />;
+      return <BoardsPage setError={setError}/>;
     case "additional":
       return <AdministrationModule page={page} auth={auth} profile={profile} request={request}
         refresh={refresh} notify={notify} setError={setError}
@@ -33,7 +33,7 @@ function AdminPage({ context }) {
     case "chats":
       return <ChatsModule key="admin" page={page} auth={auth} profile={profile} request={request}
         chatState={chatState} personalState={personalState} inboxLoading={inboxLoading} users={directory.users}
-        error={context.error} modal={modal} setPage={setPage} setError={setError}
+        modal={modal} setPage={setPage} setError={setError}
         setModal={setModal} notify={notify}/>;
     default:
       return null;

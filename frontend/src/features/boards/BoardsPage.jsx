@@ -41,8 +41,8 @@ const BoardToolbar = memo(function BoardToolbar({ onResetView, onAddObject }) {
   </div>;
 });
 
-export default function BoardsPage() {
-  const { boardObjects, loading, error, clearError, createObject, deleteObject, moveObject: moveBoardObject } = useBoardsState();
+export default function BoardsPage({ setError }) {
+  const { boardObjects, loading, createObject, deleteObject, moveObject: moveBoardObject } = useBoardsState(setError);
   const viewportRef = useRef(null);
   const worldRef = useRef(null);
   const dragRef = useRef(null);
@@ -183,7 +183,6 @@ export default function BoardsPage() {
   }, []);
 
   return <Panel className="graph-object-panel">
-    {error && <div className="alert alert-row" role="alert">{error}<button type="button" onClick={clearError} aria-label="Закрыть">×</button></div>}
     <BoardToolbar onResetView={resetView} onAddObject={addObject} />
     <div
       className="graph-coordinate-viewport graph-object-viewport"

@@ -24,10 +24,9 @@ function removeObjectTree(objects, objectId) {
   return objects.filter(item => !removed.has(item.id));
 }
 
-export function useBoardsState() {
+export function useBoardsState(setError) {
   const [boardObjects, setBoardObjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -36,10 +35,9 @@ export function useBoardsState() {
       .catch(cause => { if (active) setError(cause.message || "Не удалось загрузить доски"); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, []);
+  }, [setError]);
 
   const createObject = useCallback(async payload => {
-    setError("");
     try {
       const created = await createBoardObjectRequest(payload);
       setBoardObjects(current => [...current, created]);
@@ -48,20 +46,18 @@ export function useBoardsState() {
       setError(cause.message || "Не удалось создать объект");
       throw cause;
     }
-  }, []);
+  }, [setError]);
 
   const moveObject = useCallback(async (objectId, x, y) => {
-    setError("");
     try {
       await updateBoardObjectPosition(objectId, x, y);
     } catch (cause) {
       setError(cause.message || "Не удалось переместить объект");
       throw cause;
     }
-  }, []);
+  }, [setError]);
 
   const deleteObject = useCallback(async objectId => {
-    setError("");
     try {
       await deleteBoardObjectRequest(objectId);
       setBoardObjects(current => removeObjectTree(current, objectId));
@@ -69,9 +65,7 @@ export function useBoardsState() {
       setError(cause.message || "Не удалось удалить объект");
       throw cause;
     }
-  }, []);
+  }, [setError]);
 
-  const clearError = useCallback(() => setError(""), []);
-
-  return { boardObjects, loading, error, clearError, createObject, deleteObject, moveObject };
+  return { boardObjects, loading, createObject, deleteObject, moveObject };
 }

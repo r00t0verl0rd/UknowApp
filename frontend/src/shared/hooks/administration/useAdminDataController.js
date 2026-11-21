@@ -85,7 +85,6 @@ export function useAdminDataController({
       : "Заменить текущую базу данных загруженной копией? Все текущие данные будут перезаписаны.";
     if (!window.confirm(warning)) return;
     setDataBusy(true);
-    setError("");
     try {
       const result = await uploadAdminBackup(kind, file);
       if (kind === "full" && result.restart_required) {
@@ -112,7 +111,6 @@ export function useAdminDataController({
     const days = Number(retentionDays);
     if (!window.confirm("Удалить переписки и медиафайлы старше " + days + " дней? Действие необратимо.")) return;
     setDataBusy(true);
-    setError("");
     try {
       const result = await cleanupAdminDialogues(request, days);
       notify("Удалено сообщений: " + result.deleted_messages + ", личных: " + result.deleted_personal_messages + ", медиафайлов: " + result.deleted_media_files);

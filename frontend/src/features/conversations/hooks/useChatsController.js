@@ -133,14 +133,12 @@ export function useChatsController({
   openChatRef.current = openChat;
 
   const openCreatePersonalChat = useCallback(() => {
-    setError("");
     setModal({ mode: "create-personal" });
   }, [setError, setModal]);
 
   const createPersonalChat = useCallback(async userId => {
     if (creating) return;
     setCreating(true);
-    setError("");
     try {
       let chat = personalChats.find(item => item.participant.id === userId);
       if (!chat) {
@@ -160,7 +158,6 @@ export function useChatsController({
     const message = deleteMessageCandidate;
     if (!message || deletingMessage) return;
     setDeletingMessage(true);
-    setError("");
     try {
       const result = await deleteChatMessage(request, message, selectedChat?.type === "personal");
       const chatKey = (selectedChat?.type === "personal" ? "personal:" : "conversation:") + selectedChat?.id;
@@ -169,7 +166,7 @@ export function useChatsController({
       setDeleteMessageCandidate(null);
       const messengerFailed = Number(result.messenger_failed ?? result.telegram_failed ?? 0);
       if (messengerFailed > 0) {
-        notify("Сообщение удалено из UknowApp. Не удалось удалить копии во внешних мессенджерах: " + messengerFailed + ".");
+        setError("Сообщение удалено из UknowApp. Не удалось удалить копии во внешних мессенджерах: " + messengerFailed + ".");
       } else {
         notify("Сообщение удалено у всех участников");
       }
@@ -245,9 +242,8 @@ export function useChatsController({
       } else if (profile?.role === "admin") {
         const hasMessengerIssues = Object.values(sentMessage?.metadata?.messenger_deliveries || {})
           .some(delivery => (delivery?.errors || []).length > 0);
-        notify(hasMessengerIssues
-          ? "Сообщение доставлено в UknowApp. Есть проблемы внешней доставки — подробности в сообщении."
-          : "Сообщение отправлено");
+        if (hasMessengerIssues) setError("Сообщение доставлено в UknowApp. Подробности внешней доставки доступны в переписке.");
+        else notify("Сообщение отправлено");
       } else if (sentMessage?.delivery_status === "delivered" && profile?.role !== "teacher") {
         notify("Сообщение отправлено");
       }

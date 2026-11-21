@@ -170,11 +170,11 @@
 .message-delete-btn{flex:0 0 28px;width:28px;height:28px;padding:0}
 .message p{margin:7px 0 0;color:var(--ink);font-size:12px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
 .message b small{margin-left:6px;color:var(--muted);font-size:10px;font-weight:500}
-.message-delivery{display:grid;gap:3px;margin-top:7px;font-size:9px;line-height:1.4}
-.message-delivery-heading{color:var(--success);font-weight:700}
-.message-delivery-error{min-width:0;overflow-wrap:anywhere}
-.message-delivery-name{font-weight:700;color:var(--muted)}
-.message-delivery-dash,.message-delivery-reason{color:var(--muted)}
+
+
+
+
+
 .chat-media-image{display:block;max-width:min(100%,420px);max-height:420px;margin-top:10px;border-radius:var(--ui-radius-md);object-fit:contain}
 .chat-media-video{display:block;width:min(100%,420px);max-width:100%;max-height:480px;margin-top:10px;border-radius:var(--ui-radius-md);background:#111;object-fit:contain}
 .chat-media-video.chat-media-video-note{width:min(100%,260px);aspect-ratio:1;max-height:none;border-radius:50%;object-fit:cover}

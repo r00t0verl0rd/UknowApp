@@ -3,7 +3,7 @@ import Moon from "lucide-react/dist/esm/icons/moon.js";
 import Sun from "lucide-react/dist/esm/icons/sun.js";
 import Button from "../../shared/components/Button.jsx";
 
-export default function LoginPage({ theme, toggleTheme, signIn, login, setLogin, password, setPassword, error }) {
+export default function LoginPage({ theme, toggleTheme, signIn, login, setLogin, password, setPassword }) {
   return (
     <div className="login-screen">
         <div className="login-card">
@@ -15,7 +15,6 @@ export default function LoginPage({ theme, toggleTheme, signIn, login, setLogin,
           <form onSubmit={signIn} className="stack">
             <label><input value={login} onChange={e => setLogin(e.target.value)} autoComplete="username" placeholder="Логин" aria-label="Логин" /></label>
             <label><input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" placeholder="Пароль" aria-label="Пароль" /></label>
-            {error && <div className="alert">{error}</div>}
             <Button variant="primary" type="submit">Войти <ChevronRight size={17}/></Button>
           </form>
         </div>

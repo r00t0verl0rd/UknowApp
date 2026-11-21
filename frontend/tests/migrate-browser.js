@@ -17,6 +17,14 @@ try {
     await page.evaluate(() => localStorage.setItem("uknowapp-auth", "1"));
     await page.reload();
   }
+  if (process.argv[2] === "export") {
+    await page.goto(url);
+    await page.getByRole("button", { name: "Войти" }).click();
+    const alert = page.getByRole("alert");
+    await alert.getByText("Введите логин").waitFor();
+    await alert.getByRole("button", { name: "Закрыть уведомление об ошибке" }).click();
+    await alert.waitFor({ state: "hidden" });
+  }
   await login();
   if (process.argv[2] === "export") {
     await page.goto(url + "/dialogs");
@@ -29,7 +37,19 @@ try {
       await dialog.getByRole("button", { name: "Создать диалог" }).click();
       await dialog.waitFor({ state: "hidden" });
     }
-    await openPersonal();
+    const createUrl = url + "/api/panel/personal-conversations";
+    await page.route(createUrl, route => route.request().method() === "POST"
+      ? route.fulfill({ status: 503, json: { detail: "Временно недоступно" } })
+      : route.continue());
+    await page.getByRole("button", { name: "Новый диалог" }).click();
+    await dialog.getByLabel("Участник").selectOption(String(teacher.id));
+    await dialog.getByRole("button", { name: "Создать диалог" }).click();
+    const alert = page.getByRole("alert").filter({ hasText: "Временно недоступно" });
+    await alert.getByRole("button", { name: "Закрыть уведомление об ошибке" }).click();
+    assert.equal(await dialog.getByLabel("Участник").inputValue(), String(teacher.id));
+    await page.unroute(createUrl);
+    await dialog.getByRole("button", { name: "Создать диалог" }).click();
+    await dialog.waitFor({ state: "hidden" });
     await page.getByPlaceholder("Личное сообщение…").fill("Проверка личного диалога");
     await page.getByRole("button", { name: "Отправить сообщение" }).click();
     const message = page.locator(".messages").getByText("Проверка личного диалога", { exact: true });
