@@ -38,6 +38,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
   let maxActiveStreams = 0;
   let inboxRequests = 0;
   let personalRequests = 0;
+  let syncRequests = 0;
   let apiServer;
   let vite;
   let browser;
@@ -86,11 +87,27 @@ test("global SSE updates real counters across tabs and replays missed events", {
     } else if (path === "/api/admin/boards/objects") {
       body = [];
     } else if (path === "/api/panel/personal-conversations/5/messages") {
-      body = [];
+      body = [{
+        id: 77,
+        sender: "Администратор",
+        sender_role: "admin",
+        can_delete: false,
+        content_type: "text",
+        text: "Проверка адресной синхронизации",
+        metadata: {},
+        delivery_status: "delivered",
+        panel_read_at: null,
+        created_at: "2026-11-21T10:00:00+00:00",
+      }];
     } else if (path === "/api/panel/personal-conversations/5/sync") {
+      syncRequests += 1;
       body = {
         messages: [],
-        updated_messages: [],
+        updated_messages: [{
+          id: 77,
+          delivery_status: "delivered",
+          panel_read_at: "2026-11-21T11:00:00+00:00",
+        }],
         summary: { ...personalChat, unread_count: 0 },
       };
     }
@@ -170,18 +187,31 @@ test("global SSE updates real counters across tabs and replays missed events", {
       read_at: "2026-11-21T11:00:00+00:00",
       summary: summary(0),
     });
+    await page.getByLabel("Прочитано в UknowApp").waitFor({ state: "visible" });
+    await waitFor(() => syncRequests > 0);
 
-    await waitFor(() => lastEventIds.includes(101), 10000);
+    await page.getByRole("button", { name: "Доски" }).click();
+    await waitFor(() => streams.size === 1);
+    for (const response of [...streams]) response.end();
+    await waitFor(() => streams.size === 0);
+    publish({
+      event_id: 103,
+      conversation_id: 5,
+      conversation_type: "personal",
+      action: "upsert",
+      summary: summary(2),
+    });
+
+    await waitFor(() => lastEventIds.includes(102), 10000);
     await waitFor(() => streams.size === 1, 10000);
     assert.equal(maxActiveStreams, 1, "reconnect must not create parallel SSE connections");
 
     await page.getByRole("button", { name: "Диалоги" }).click();
     await page.getByRole("button", { name: /Личные/ }).click();
-    await waitFor(async () => (
-      await page.getByLabel(/непрочитанных личных сообщений/).count()
-    ) === 0);
+    await page.getByLabel("2 непрочитанных личных сообщений").waitFor({ state: "visible" });
     assert.equal(inboxRequests, 1, "SSE reconnect must not reload inbox lists when replay is sufficient");
     assert.equal(personalRequests, 1, "SSE reconnect must not reload personal lists when replay is sufficient");
+    assert.ok(syncRequests > 0, "opening a dialog and a read event must reconcile only that dialog");
   } finally {
     for (const response of [...streams]) response.end();
     await browser?.close();
