@@ -232,7 +232,7 @@ export function useConversationSync({
         }
         // Read events also request an incremental status reconcile. This heals
         // races with a concurrent send/read and keeps MessageBubble authoritative.
-        if (payload.action === "read" || payload.action !== "delete") {
+        if (payload.action !== "delete") {
           state.refresh_messages = true;
         }
         pending.current.set(key, state);
