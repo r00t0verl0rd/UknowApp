@@ -151,7 +151,15 @@ test("global SSE updates real counters across tabs and replays missed events", {
       throw error;
     }
 
-    await waitFor(() => streams.size === 1 && inboxRequests > 0 && personalRequests > 0);
+    await waitFor(() => pendingPersonalResponses.length === 1);
+    assert.equal(pendingPersonalResponses.length, 1,
+      "the workspace shell must render before the personal inbox request finishes");
+    for (const response of pendingPersonalResponses.splice(0)) {
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(JSON.stringify([personalChat]));
+    }
+
+        await waitFor(() => streams.size === 1 && inboxRequests > 0 && personalRequests > 0);
     await delay(300);
     assert.equal(inboxRequests, 1, "initial conversation list must be requested once");
     assert.equal(personalRequests, 1, "initial personal list must be requested once");
