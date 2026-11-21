@@ -2,6 +2,8 @@ import { memo, useEffect, useRef, useState } from "react";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
 import Check from "lucide-react/dist/esm/icons/check.js";
 import CheckCheck from "lucide-react/dist/esm/icons/check-check.js";
+import CircleAlert from "lucide-react/dist/esm/icons/circle-alert.js";
+import CircleX from "lucide-react/dist/esm/icons/circle-x.js";
 import Play from "lucide-react/dist/esm/icons/play.js";
 import Pause from "lucide-react/dist/esm/icons/pause.js";
 
@@ -99,7 +101,7 @@ function ChatAudioPlayer({ src, label }) {
   </div>;
 }
 
-function MessageBubble({ message, onDelete, viewerRole }) {
+function MessageBubble({ message, onDelete, viewerRole, personal = false }) {
   const [mediaUrl, setMediaUrl] = useState("");
   const bubbleRef = useRef(null);
   const media = message.metadata?.media;
@@ -173,9 +175,25 @@ function MessageBubble({ message, onDelete, viewerRole }) {
       {!(viewerRole === "teacher" && message.sender_role !== "admin") && <b>{message.sender}</b>}
       <div className="message-tools">
         <time className="message-time">{formatLocalTime(message.created_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</time>
-        {message.sender_role === viewerRole && viewerRole !== "admin" && <span className={"message-read-status" + (message.panel_read_at ? " is-read" : "")} title={message.panel_read_at ? "Прочитано" : message.delivery_status === "pending" ? "Отправляется" : "Доставлено"}>
-          {message.delivery_status === "pending" ? <Check size={14}/> : <CheckCheck size={15}/>}
-        </span>}
+        {message.sender_role === viewerRole && viewerRole !== "admin" && (() => {
+          const status = message.delivery_status || "delivered";
+          const read = Boolean(message.panel_read_at);
+          const title = read ? "Прочитано в UknowApp"
+            : personal ? "Доставлено в UknowApp"
+              : status === "pending" ? "Отправляется в Telegram"
+                : status === "partial" ? "Частично доставлено в Telegram"
+                  : status === "failed" ? "Не доставлено в Telegram"
+                    : "Доставлено в Telegram";
+          const statusClass = read ? " is-read"
+            : status === "failed" ? " is-failed"
+              : status === "partial" ? " is-partial" : "";
+          return <span className={"message-read-status" + statusClass} title={title} aria-label={title}>
+            {status === "pending" ? <Check size={14}/>
+              : status === "failed" ? <CircleX size={15}/>
+                : status === "partial" ? <CircleAlert size={15}/>
+                  : <CheckCheck size={15}/>}
+          </span>;
+        })()}
         {message.can_delete && <button type="button" className="icon-btn danger-icon message-delete-btn" onClick={() => onDelete?.(message)} title="Удалить своё сообщение у всех" aria-label="Удалить своё сообщение"><Trash2 size={14}/></button>}
       </div>
     </div>
@@ -187,7 +205,11 @@ function MessageBubble({ message, onDelete, viewerRole }) {
     {!mediaUrl && media && <small className="chat-media-status">{media.archive_status === "too_large_for_telegram_download" ? "Файл больше 20 МБ: Telegram не позволяет сохранить копию для веб-панели. Оригинал остаётся в исходном чате Telegram." : media.archive_status === "download_failed" ? "Не удалось сохранить копию вложения. Проверьте оригинал в Telegram." : "Загрузка вложения…"}</small>}
     {!media && !message.text && <p>Вложение: {message.content_type}</p>}
     {viewerRole === "admin" && (message.delivery_status && message.delivery_status !== "delivered" || message.metadata?.telegram_delivery_errors?.length > 0) && <div className="message-delivery">
-      <div className="message-delivery-heading">{message.delivery_status === "partial" ? "В приложение доставлено. В Telegram не всем" : "Доставлено только в приложение"}</div>
+      <div className="message-delivery-heading">{message.delivery_status === "pending"
+        ? "Сообщение сохранено. Отправка в Telegram…"
+        : message.delivery_status === "partial"
+          ? "В Telegram доставлено не всем адресатам"
+          : "В Telegram не доставлено. Сообщение сохранено в UknowApp"}</div>
       {message.metadata?.telegram_delivery_errors?.length ? message.metadata.telegram_delivery_errors.map((error, index) => {
         const details = typeof error === "string"
           ? (() => { const separator = error.indexOf(":"); return separator < 0 ? { reason: error } : { name: error.slice(0, separator).trim(), reason: error.slice(separator + 1).trim() }; })()

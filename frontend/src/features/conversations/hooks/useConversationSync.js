@@ -54,6 +54,11 @@ export function useConversationSync({
       }
     };
 
+    const recover = async () => {
+      await refreshInbox();
+      await refreshSelected(true);
+    };
+
     const updateSummary = async (type, id) => {
       const chat = { id, type: type === "personal" ? "personal" : "conversation" };
       let summary;
@@ -109,11 +114,11 @@ export function useConversationSync({
     };
 
     const source = createPanelEventSource();
-    source.onopen = () => { void recover(); };
+    source.onopen = () => { void recover().catch(() => {}); };
     source.addEventListener("update", event => {
       let payload;
       try { payload = JSON.parse(event.data || "{}"); } catch { payload = { resync: true }; }
-      if (payload.resync) { void recover(); return; }
+      if (payload.resync) { void recover().catch(() => {}); return; }
       if (!payload.conversation_id) return;
       const type = payload.conversation_type || "conversation";
       const key = type + ":" + payload.conversation_id;
