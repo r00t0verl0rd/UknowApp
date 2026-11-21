@@ -16,6 +16,7 @@ from sqlalchemy import select
 
 from app.core.config import TELEGRAM_GATEWAY_TOKEN
 from app.core.database import SessionLocal
+
 from .inbox import TelegramUpdate
 
 logger = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ async def accept_update(request: Request):
         payload = json.loads(body)
         update_id = payload["update_id"]
         if not isinstance(update_id, int) or isinstance(update_id, bool) or not isinstance(payload, dict):
-            raise ValueError("Invalid Telegram update")
+            raise TypeError("Invalid Telegram update")
     except (ValueError, TypeError, KeyError, UnicodeDecodeError):
         raise HTTPException(400, "Invalid Telegram update") from None
 
@@ -79,7 +80,7 @@ async def process_update_inbox(bot, dispatcher: Dispatcher, stop: asyncio.Event)
         if update_id is None:
             try:
                 await asyncio.wait_for(stop.wait(), timeout=0.4)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 pass
             continue
 
@@ -87,7 +88,7 @@ async def process_update_inbox(bot, dispatcher: Dispatcher, stop: asyncio.Event)
             await dispatcher.feed_raw_update(bot, json.loads(payload))
         except asyncio.CancelledError:
             raise
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - preserve unacknowledged events on any handler crash
             logger.error("Telegram inbound update failed (update_id=%s type=%s)", update_id, type(exc).__name__)
             with SessionLocal() as db:
                 item = db.get(TelegramUpdate, update_id)
