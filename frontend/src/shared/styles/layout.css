@@ -659,32 +659,30 @@ border-color: transparent !important;}.person-actions button:not(.danger-icon):h
 @media (max-width: 900px) {.graph-object-viewport{ height: 72vh; min-height: 500px; }.graph-object-panel .graph-toolbar-actions{ flex-wrap: wrap; }
 }
 
-/* iOS home-screen app: cover the notch/status-bar safe area with an opaque surface. */
-@supports (-webkit-touch-callout: none) {
-  @media (display-mode: standalone) and (max-width: 1024px) {
-    html, body, #root, .chats-shell{
-      background: var(--surface) !important;
-    }
-    body::before{
-      content: "";
-      position: fixed;
-      z-index: 2147483647;
-      top: 0;
-      right: 0;
-      left: 0;
-      height: calc(env(safe-area-inset-top, 0px) + 1px);
-      background: var(--surface);
-      opacity: 1;
-      pointer-events: none;
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
-    }
-    .chats-shell > .sidebar{
-      background: var(--surface) !important;
-      isolation: isolate;
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
-    }
+/* Standalone mobile app: cover the notch/status-bar safe area with an opaque surface. */
+@media (display-mode: standalone) and (max-width: 1024px) {
+  html, body, #root, .chats-shell{
+    background: var(--surface) !important;
+  }
+  body::before{
+    content: "";
+    position: fixed;
+    z-index: 2147483647;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: calc(env(safe-area-inset-top, 0px) + 1px);
+    background: var(--surface);
+    opacity: 1;
+    pointer-events: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .chats-shell > .sidebar{
+    background: var(--surface) !important;
+    isolation: isolate;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
