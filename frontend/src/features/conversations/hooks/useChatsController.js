@@ -225,16 +225,7 @@ export function useChatsController({
         setDraft("");
         setAttachment(null);
       }
-      setMessages(current => {
-        const reconciled = clientMessageId
-          ? current.filter(item => item.id !== optimisticId && item.metadata?.client_message_id !== clientMessageId)
-          : current;
-        const existing = reconciled.findIndex(item => item.id === sentMessage.id);
-        if (existing >= 0) {
-          return reconciled.map(item => item.id === sentMessage.id ? sentMessage : item);
-        }
-        return [...reconciled, sentMessage];
-      });
+      setMessages(current => mergeConversationMessages(current, [sentMessage]));
 
       if (chat.type === "personal") {
         notify("Сообщение отправлено внутри UknowApp");
