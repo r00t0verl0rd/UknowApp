@@ -1,0 +1,28 @@
+/* Standalone mobile app: cover the notch/status-bar safe area with an opaque surface. */
+@media (display-mode: standalone) and (max-width: 1024px) {
+  html, body, #root, .chats-shell{
+    background: var(--surface) !important;
+  }
+  body::before{
+    content: "";
+    position: fixed;
+    z-index: 2147483647;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: calc(env(safe-area-inset-top, 0px) + 1px);
+    background: var(--surface);
+    opacity: 1;
+    pointer-events: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .chats-shell > .sidebar{
+    background: var(--surface) !important;
+    isolation: isolate;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+
