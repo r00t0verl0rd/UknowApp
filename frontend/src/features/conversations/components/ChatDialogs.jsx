@@ -1,5 +1,7 @@
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
 import X from "lucide-react/dist/esm/icons/x.js";
+import Modal from "../../../shared/components/Modal.jsx";
+import Button from "../../../shared/components/Button.jsx";
 
 export default function ChatDialogs({
   modal, setModal, users, createPersonalChat, error, setError,
@@ -7,7 +9,7 @@ export default function ChatDialogs({
   setDeleteMessageCandidate, confirmDeleteMessage,
 }) {
   return <>
-    {modal?.mode === "create-personal" && <div className="overlay" onMouseDown={() => setModal(null)}><section className="modal create-participant-modal" role="dialog" aria-modal="true" aria-labelledby="personal-chat-title" onMouseDown={event => event.stopPropagation()}>
+    {modal?.mode === "create-personal" && <Modal onClose={() => setModal(null)} className="create-participant-modal" labelledBy="personal-chat-title">
       <div className="modal-head"><div><div className="eyebrow">ЛИЧНЫЕ СООБЩЕНИЯ</div><h2 id="personal-chat-title">Создать диалог</h2></div><button type="button" className="icon-btn" onClick={() => setModal(null)} aria-label="Закрыть"><X/></button></div>
       <form className="stack" onSubmit={event => {
         event.preventDefault();
@@ -22,15 +24,13 @@ export default function ChatDialogs({
         {error && <p className="form-error" role="alert">{error}</p>}
         <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setModal(null)}>Отмена</button><button type="submit" className="btn primary">Создать диалог</button></div>
       </form>
-    </section></div>}
+    </Modal>}
 
-    {deleteMessageCandidate && <div className="overlay" onMouseDown={() => !deletingMessage && setDeleteMessageCandidate(null)}>
-      <section className="modal confirm-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-message-title" onMouseDown={event => event.stopPropagation()}>
+    {deleteMessageCandidate && <Modal onClose={() => setDeleteMessageCandidate(null)} closeOnBackdrop={!deletingMessage} className="confirm-delete-modal" role="alertdialog" labelledBy="delete-message-title">
         <div className="modal-head"><div><div className="eyebrow">УДАЛЕНИЕ СООБЩЕНИЯ</div><h2 id="delete-message-title">Удалить у всех?</h2></div><button className="icon-btn" type="button" onClick={() => setDeleteMessageCandidate(null)} disabled={deletingMessage} aria-label="Закрыть"><X/></button></div>
         <p className="hint">{selectedChat?.type === "personal" ? "Сообщение будет удалено из личного диалога UknowApp. Чужие сообщения удалить нельзя." : "Сообщение будет удалено из переписки UknowApp и предпринята попытка удалить его копии в Telegram у всех получателей. Чужие сообщения удалить нельзя."}</p>
         <div className="message-delete-preview">{deleteMessageCandidate.text || deleteMessageCandidate.metadata?.media?.file_name || "Вложение"}</div>
         <div className="modal-actions"><button type="button" className="btn ghost" onClick={() => setDeleteMessageCandidate(null)} disabled={deletingMessage}>Отмена</button><button type="button" className="btn danger" onClick={confirmDeleteMessage} disabled={deletingMessage}>{deletingMessage ? "Удаляем…" : <><Trash2/>Удалить у всех</>}</button></div>
-      </section>
-    </div>}
+      </Modal>}
   </>;
 }
