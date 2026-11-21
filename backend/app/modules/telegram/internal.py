@@ -13,6 +13,7 @@ from datetime import UTC, datetime, timedelta
 from aiogram import Dispatcher
 from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from app.core.config import TELEGRAM_BOT_ENABLED, TELEGRAM_GATEWAY_TOKEN, TELEGRAM_MODE
 from app.core.database import SessionLocal
@@ -52,7 +53,12 @@ async def accept_update(request: Request):
     with SessionLocal() as db:
         if db.get(TelegramUpdate, update_id) is None:
             db.add(TelegramUpdate(update_id=update_id, payload=body.decode("utf-8")))
-            db.commit()
+            try:
+                db.commit()
+            except IntegrityError:
+                # Concurrent identical webhook retries are an accepted duplicate,
+                # not a failed request. The primary key enforces deduplication.
+                db.rollback()
     return {"accepted": True, "update_id": update_id}
 
 
