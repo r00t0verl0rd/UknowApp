@@ -172,6 +172,12 @@ export function useConversationSync({
         }
         const eventId = Number(payload.event_id || event.lastEventId || 0);
         if (payload.resync) {
+          inboxRevision.current += 1;
+          const selectedChat = current.current.selectedChat;
+          if (selectedChat) {
+            const key = conversationKey(selectedChat.id, selectedChat.type);
+            eventRevision.current.set(key, (eventRevision.current.get(key) || 0) + 1);
+          }
           if (Number.isSafeInteger(eventId) && eventId > lastEventId.current) {
             lastEventId.current = eventId;
           }
