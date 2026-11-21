@@ -176,21 +176,23 @@ function MessageBubble({ message, onDelete, viewerRole, personal = false }) {
       <div className="message-tools">
         <time className="message-time">{formatLocalTime(message.created_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</time>
         {message.sender_role === viewerRole && viewerRole !== "admin" && (() => {
-          const status = message.delivery_status || "delivered";
+          const status = message.delivery_status || "unknown";
           const read = Boolean(message.panel_read_at);
           const title = read ? "Прочитано в UknowApp"
             : personal ? "Доставлено в UknowApp"
               : status === "pending" ? "Отправляется в Telegram"
                 : status === "partial" ? "Частично доставлено в Telegram"
                   : status === "failed" ? "Не доставлено в Telegram"
-                    : "Доставлено в Telegram";
+                    : status === "blocked_contact" ? "Сообщение заблокировано: контактные данные не отправлены"
+                      : status === "delivered" ? "Доставлено в Telegram"
+                        : "Статус доставки не подтверждён";
           const statusClass = read ? " is-read"
-            : status === "failed" ? " is-failed"
-              : status === "partial" ? " is-partial" : "";
+            : ["failed", "blocked_contact"].includes(status) ? " is-failed"
+              : ["partial", "unknown"].includes(status) ? " is-partial" : "";
           return <span className={"message-read-status" + statusClass} title={title} aria-label={title}>
             {status === "pending" ? <Check size={14}/>
-              : status === "failed" ? <CircleX size={15}/>
-                : status === "partial" ? <CircleAlert size={15}/>
+              : ["failed", "blocked_contact"].includes(status) ? <CircleX size={15}/>
+                : ["partial", "unknown"].includes(status) ? <CircleAlert size={15}/>
                   : <CheckCheck size={15}/>}
           </span>;
         })()}
@@ -207,7 +209,9 @@ function MessageBubble({ message, onDelete, viewerRole, personal = false }) {
     {viewerRole === "admin" && (message.delivery_status && message.delivery_status !== "delivered" || message.metadata?.telegram_delivery_errors?.length > 0) && <div className="message-delivery">
       <div className="message-delivery-heading">{message.delivery_status === "pending"
         ? "Сообщение сохранено. Отправка в Telegram…"
-        : message.delivery_status === "partial"
+        : message.delivery_status === "blocked_contact"
+          ? "Сообщение заблокировано: контактные данные скрыты и не отправлены"
+          : message.delivery_status === "partial"
           ? "В Telegram доставлено не всем адресатам"
           : "В Telegram не доставлено. Сообщение сохранено в UknowApp"}</div>
       {message.metadata?.telegram_delivery_errors?.length ? message.metadata.telegram_delivery_errors.map((error, index) => {
