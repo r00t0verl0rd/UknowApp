@@ -55,6 +55,7 @@ from app.modules.communication.contracts import (
     OutboundMedia,
     OutboundMessage,
 )
+from app.modules.communication.service import record_messenger_delivery
 from app.modules.conversations.service import conversation_dicts
 from app.modules.dependencies import Db, PanelUser
 from app.modules.messaging.moderation import text_contains_contact_data
@@ -87,7 +88,7 @@ def _panel_student_telegram_target(
         .where(
             Message.conversation_id == conversation.id,
             Message.sender_role == "teacher",
-            Message.delivery_status.in_(("delivered", "partial")),
+            Message.delivery_status != "blocked_contact",
         )
         .order_by(Message.created_at.desc(), Message.id.desc())
         .limit(1),
@@ -98,14 +99,18 @@ def _panel_student_telegram_target(
         .where(
             Message.conversation_id == conversation.id,
             Message.sender_role == "admin",
-            Message.delivery_status.in_(("delivered", "partial")),
+            Message.delivery_status != "blocked_contact",
         )
         .order_by(Message.created_at.desc(), Message.id.desc()),
     ).all()
     admin_reply = None
     for candidate in admin_replies:
         metadata = json.loads(candidate.metadata_json or "{}")
-        deliveries = metadata.get("telegram_deliveries") or []
+        deliveries = (
+            (metadata.get("messenger_deliveries") or {}).get("telegram", {}).get("delivered")
+            or metadata.get("telegram_deliveries")
+            or []
+        )
         if not deliveries or any(delivery.get("user_id") == student.id for delivery in deliveries):
             admin_reply = candidate
             break
@@ -575,18 +580,132 @@ def _panel_sender_and_recipients(db: Session, principal: dict, conversation: Con
     return sender, recipients, student, teacher
 
 
-def _save_panel_delivery_result(db: Session, row: Message, conversation: Conversation, delivered: list[dict], delivery_errors: list[dict]) -> None:
+def _save_panel_messenger_results(
+    db: Session,
+    row: Message,
+    conversation: Conversation,
+    results: dict[str, dict[str, list[dict]]],
+) -> None:
     metadata = json.loads(row.metadata_json or "{}")
-    metadata["telegram_deliveries"] = delivered
-    if delivery_errors:
-        metadata["telegram_delivery_errors"] = delivery_errors
+    for platform, result in results.items():
+        record_messenger_delivery(
+            metadata,
+            platform,
+            delivered=result.get("delivered", []),
+            errors=result.get("errors", []),
+        )
     row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-    row.delivery_status = (
-        "delivered" if delivered and not delivery_errors
-        else ("partial" if delivered else "failed")
-    )
+    # delivery_status describes only UknowApp persistence. Provider outcomes
+    # live in metadata.messenger_deliveries and never overwrite this field.
+    row.delivery_status = "delivered"
     db.commit()
     publish_chat_update(conversation.id, message_id=row.id)
+
+
+async def _deliver_panel_message(
+    db: Session,
+    communication,
+    row: Message,
+    conversation: Conversation,
+    recipients: list[tuple[User, str]],
+    sender_role: str,
+    student: User,
+    body: str,
+    content_type: MessageKind,
+    student_telegram_target: dict | None = None,
+    media: OutboundMedia | None = None,
+) -> dict[str, dict[str, list[dict]]]:
+    """Fan out a saved UknowApp message to every enabled, linked messenger."""
+    results: dict[str, dict[str, list[dict]]] = {}
+    if communication is None:
+        return results
+
+    for platform in communication.platforms:
+        delivered: list[dict] = []
+        errors: list[dict] = []
+        for recipient, recipient_role in recipients:
+            account = get_messenger_account(db, recipient.id, platform)
+            if not account:
+                errors.append({
+                    "name": recipient.full_name,
+                    "role": recipient_role,
+                    "reason": platform.value.upper() + " не подключён",
+                })
+                continue
+
+            target = (
+                student_telegram_target
+                if platform == MessengerPlatform.TELEGRAM and recipient_role == "student"
+                else {
+                    "chat_id": account.external_chat_id or account.external_user_id,
+                }
+            )
+            if not target:
+                errors.append({
+                    "name": recipient.full_name,
+                    "role": recipient_role,
+                    "reason": "Не удалось определить адресата в " + platform.value.upper(),
+                })
+                continue
+
+            if content_type == MessageKind.TEXT:
+                outgoing_text = (
+                    body if sender_role == "teacher"
+                    else "Сообщение от ученика " + student.full_name + ":\n" + body
+                    if sender_role == "student"
+                    else "Сообщение от администратора школы:\n" + body
+                )
+            else:
+                outgoing_text = (
+                    body.strip()[:1024] if sender_role == "teacher"
+                    else (
+                        "Сообщение от ученика " + student.full_name
+                        + ((": " + body) if body else "")
+                        if sender_role == "student"
+                        else "От администратора школы" + ((": " + body) if body else "")
+                    )
+                )
+
+            try:
+                sent = await communication.send(OutboundMessage(
+                    platform=platform,
+                    external_chat_id=str(target["chat_id"]),
+                    external_thread_id=(
+                        str(target["message_thread_id"])
+                        if target.get("message_thread_id") is not None else None
+                    ),
+                    content_type=content_type,
+                    text=outgoing_text,
+                    media=media,
+                    idempotency_key=(
+                        f"panel-message:{row.id}:platform:{platform.value}:"
+                        f"recipient:{recipient.id}"
+                    ),
+                ))
+                delivered.append({
+                    "user_id": recipient.id,
+                    "external_message_id": str(sent.external_message_id),
+                    "external_chat_id": str(target["chat_id"]),
+                    "external_thread_id": (
+                        str(target["message_thread_id"])
+                        if target.get("message_thread_id") is not None else None
+                    ),
+                })
+            except (MessengerError, OSError, ValueError, TypeError, RuntimeError) as exc:
+                error_type = getattr(exc, "provider_error_type", type(exc).__name__)
+                logger.warning(
+                    "Messenger delivery failed (platform=%s conversation_id=%s error_type=%s)",
+                    platform.value, conversation.id, error_type,
+                )
+                errors.append({
+                    "name": recipient.full_name,
+                    "role": recipient_role,
+                    "reason": "ошибка " + platform.value.upper() + " (" + error_type + ")",
+                })
+
+        results[platform.value] = {"delivered": delivered, "errors": errors}
+
+    return results
 
 
 async def _store_panel_attachment(request: Request, file: UploadFile, conversation_id: int):
@@ -690,6 +809,11 @@ async def send_panel_message(
         if any(role == "student" for _, role in recipients) else None
     )
 
+    student_target = (
+        _panel_student_telegram_target(db, conversation)
+        if any(role == "student" for _, role in recipients) else None
+    )
+
     row = Message(
         conversation_id=conversation.id,
         sender_id=sender.id,
@@ -701,7 +825,7 @@ async def send_panel_message(
             "web_sender_role": principal["role"],
             **({"client_message_id": payload["client_message_id"]} if payload.get("client_message_id") else {}),
         }, ensure_ascii=False),
-        delivery_status="pending",
+        delivery_status="delivered",
     )
     db.add(row)
     db.commit()
@@ -715,66 +839,19 @@ async def send_panel_message(
 
     bot = getattr(request.app.state, "telegram_bot", None)
     communication = getattr(request.app.state, "communication", None)
-    delivery_errors = []
-    delivered = []
-    if communication and communication.has_adapter(MessengerPlatform.TELEGRAM):
-        for recipient, recipient_role in recipients:
-            recipient_account = get_messenger_account(
-                db, recipient.id, MessengerPlatform.TELEGRAM,
-            )
-            if not recipient_account:
-                delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
-                continue
-            try:
-                target = student_target if recipient_role == "student" else {
-                    "chat_id": recipient_account.external_chat_id or recipient_account.external_user_id,
-                }
-                if not target:
-                    delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Не удалось определить Telegram-чат ученика"})
-                    continue
-                # The student already knows this is the teacher's private chat.
-                # Deliver teacher text naturally; only label a separate admin role.
-                outgoing_text = (
-                    body if principal["role"] == "teacher"
-                    else "Сообщение от ученика " + student.full_name + ":\n" + body
-                    if principal["role"] == "student"
-                    else "Сообщение от администратора школы:\n" + body
-                )
-                sent = await communication.send(OutboundMessage(
-                    platform=MessengerPlatform.TELEGRAM,
-                    external_chat_id=str(target["chat_id"]),
-                    external_thread_id=(
-                        str(target["message_thread_id"])
-                        if target.get("message_thread_id") is not None else None
-                    ),
-                    content_type=MessageKind.TEXT,
-                    text=outgoing_text,
-                    idempotency_key=f"panel-message:{row.id}:recipient:{recipient.id}",
-                ))
-                delivered.append({
-                    "user_id": recipient.id,
-                    "telegram_message_id": int(sent.external_message_id),
-                    "chat_id": target["chat_id"],
-                    "thread_id": target.get("message_thread_id"),
-                })
-            except (MessengerError, OSError, ValueError, TypeError, RuntimeError) as exc:
-                logger.warning(
-                    "Telegram delivery failed for conversation_id=%s: %s",
-                    conversation.id,
-                    getattr(exc, "provider_error_type", type(exc).__name__),
-                )
-                delivery_errors.append({
-                    "name": recipient.full_name,
-                    "role": recipient_role,
-                    "reason": "ошибка Telegram (" + getattr(exc, "provider_error_type", type(exc).__name__) + ")",
-                })
-    else:
-        delivery_errors.extend(
-            {"name": recipient.full_name, "role": recipient_role, "reason": "Telegram-бот не подключён к веб-приложению"}
-            for recipient, recipient_role in recipients
-        )
-
-    _save_panel_delivery_result(db, row, conversation, delivered, delivery_errors)
+    messenger_results = await _deliver_panel_message(
+        db,
+        communication,
+        row,
+        conversation,
+        recipients,
+        principal["role"],
+        student,
+        body,
+        MessageKind.TEXT,
+        student_telegram_target=student_target,
+    )
+    _save_panel_messenger_results(db, row, conversation, messenger_results)
 
     background_tasks.add_task(
         _refresh_teacher_panel_after_web_delivery,
@@ -816,6 +893,11 @@ async def send_panel_attachment(
         "local_path": relative.as_posix(),
         "archive_status": "stored",
     }
+    student_target = (
+        _panel_student_telegram_target(db, conversation)
+        if any(role == "student" for _, role in recipients) else None
+    )
+
     row = Message(
         conversation_id=conversation.id,
         sender_id=sender.id,
@@ -827,7 +909,7 @@ async def send_panel_attachment(
             "web_sender_role": principal["role"],
             "media": media,
         }, ensure_ascii=False),
-        delivery_status="pending",
+        delivery_status="delivered",
     )
     db.add(row)
     db.commit()
@@ -839,86 +921,26 @@ async def send_panel_attachment(
         f"/?openConversation={conversation.id}", include_admin=principal["role"] != "admin",
     )
 
-    rows = db.scalars(
-        select(Message).where(Message.conversation_id == conversation.id)
-        .order_by(Message.created_at, Message.id),
-    ).all()
-    student_target = (
-        _panel_student_telegram_target(db, conversation, rows[:-1])
-        if any(role == "student" for _, role in recipients) else None
-    )
-
     bot = getattr(request.app.state, "telegram_bot", None)
     communication = getattr(request.app.state, "communication", None)
-    delivery_errors = []
-    delivered = []
-    if communication and communication.has_adapter(MessengerPlatform.TELEGRAM):
-        for recipient, recipient_role in recipients:
-            recipient_account = get_messenger_account(
-                db, recipient.id, MessengerPlatform.TELEGRAM,
-            )
-            if not recipient_account:
-                delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Telegram не подключён"})
-                continue
-            target = student_target if recipient_role == "student" else {
-                "chat_id": recipient_account.external_chat_id or recipient_account.external_user_id,
-            }
-            if not target:
-                delivery_errors.append({"name": recipient.full_name, "role": recipient_role, "reason": "Не удалось определить Telegram-чат ученика"})
-                continue
-            # Teacher and student already share this conversation; avoid repeating
-            # a sender label on every teacher attachment.
-            caption = (
-                (row.text or "").strip()[:1024]
-                if principal["role"] == "teacher"
-                else (
-                    "Сообщение от ученика " + student.full_name
-                    + ((": " + row.text) if row.text else "")
-                    if principal["role"] == "student"
-                    else ("От администратора школы" + ((": " + row.text) if row.text else ""))
-                )
-            )
-            try:
-                sent = await communication.send(OutboundMessage(
-                    platform=MessengerPlatform.TELEGRAM,
-                    external_chat_id=str(target["chat_id"]),
-                    external_thread_id=(
-                        str(target["message_thread_id"])
-                        if target.get("message_thread_id") is not None else None
-                    ),
-                    content_type=MessageKind(kind),
-                    text=caption,
-                    media=OutboundMedia(
-                        storage_key=relative.as_posix(),
-                        file_name=original_name,
-                        mime_type=mime_type,
-                    ),
-                    idempotency_key=f"panel-message:{row.id}:recipient:{recipient.id}",
-                ))
-                delivered.append({
-                    "user_id": recipient.id,
-                    "telegram_message_id": int(sent.external_message_id),
-                    "chat_id": target["chat_id"],
-                    "thread_id": target.get("message_thread_id"),
-                })
-            except (MessengerError, OSError, ValueError, TypeError, RuntimeError) as exc:
-                logger.warning(
-                    "Telegram delivery failed for conversation_id=%s: %s",
-                    conversation.id,
-                    getattr(exc, "provider_error_type", type(exc).__name__),
-                )
-                delivery_errors.append({
-                    "name": recipient.full_name,
-                    "role": recipient_role,
-                    "reason": "ошибка Telegram (" + type(exc).__name__ + ")",
-                })
-    else:
-        delivery_errors.extend(
-            {"name": recipient.full_name, "role": recipient_role, "reason": "Telegram-бот не подключён к веб-приложению"}
-            for recipient, recipient_role in recipients
-        )
-
-    _save_panel_delivery_result(db, row, conversation, delivered, delivery_errors)
+    messenger_results = await _deliver_panel_message(
+        db,
+        communication,
+        row,
+        conversation,
+        recipients,
+        principal["role"],
+        student,
+        row.text,
+        MessageKind(kind),
+        student_telegram_target=student_target,
+        media=OutboundMedia(
+            storage_key=relative.as_posix(),
+            file_name=original_name,
+            mime_type=mime_type,
+        ),
+    )
+    _save_panel_messenger_results(db, row, conversation, messenger_results)
 
     background_tasks.add_task(
         _refresh_teacher_panel_after_web_delivery,
