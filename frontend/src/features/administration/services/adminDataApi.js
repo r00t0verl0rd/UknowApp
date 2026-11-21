@@ -13,13 +13,8 @@ export async function getRestoreStatus(signal) {
   return (await response.json()).restore;
 }
 
-export async function downloadAdminBackup(kind) {
-  const response = await fetch(API + "/api/admin/data/" + kind, { credentials: "include" });
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    throw new Error(data.detail || "Не удалось скачать файл");
-  }
-  return response.blob();
+export function adminBackupUrl(kind) {
+  return API + "/api/admin/data/" + kind;
 }
 
 export async function uploadAdminBackup(kind, file) {

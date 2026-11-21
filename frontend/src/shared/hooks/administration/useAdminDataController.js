@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  cleanupAdminDialogues, downloadAdminBackup, getAdminDataStats, getRestoreStatus, uploadAdminBackup,
+  cleanupAdminDialogues, adminBackupUrl, getAdminDataStats, getRestoreStatus, uploadAdminBackup,
 } from "../../../features/administration/services/adminDataApi.js";
 
 export function useAdminDataController({
@@ -59,8 +59,7 @@ export function useAdminDataController({
 
   const downloadAdminFile = useCallback(async kind => {
     try {
-      const blob = await downloadAdminBackup(kind);
-      const url = URL.createObjectURL(blob);
+      const url = adminBackupUrl(kind);
       const anchor = document.createElement("a");
       anchor.href = url;
       anchor.download = ({
@@ -71,12 +70,10 @@ export function useAdminDataController({
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-      notify("Файл подготовлен к скачиванию");
     } catch (error) {
       setError(error.message);
     }
-  }, [notify, setError]);
+  }, [setError]);
 
   const uploadAdminFile = useCallback(async (kind, file) => {
     if (!file) return;

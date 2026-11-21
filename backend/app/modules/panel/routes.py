@@ -1,6 +1,8 @@
 """HTTP API веб-панели: авторизация, участники, переписки и доставка сообщений."""
 
 import asyncio
+
+from starlette.concurrency import run_in_threadpool
 import json
 import logging
 import mimetypes
@@ -992,22 +994,10 @@ async def _deliver_panel_message(
     return results
 
 
-async def _store_panel_attachment(request: Request, file: UploadFile, conversation_id: int):
+async def _store_panel_attachment(file: UploadFile, conversation_id: int):
     """Validate and persist an uploaded attachment; return normalized metadata."""
-    content_length = request.headers.get("content-length")
-    if content_length:
-        try:
-            if int(content_length) > 22 * 1024 * 1024:
-                raise HTTPException(status_code=413, detail="Максимальный размер файла — 20 МБ")
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Некорректный Content-Length")
-
-    content = await file.read(20 * 1024 * 1024 + 1)
-    if len(content) > 20 * 1024 * 1024:
+    if file.size is not None and file.size > 20 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="Максимальный размер файла — 20 МБ")
-    if not content:
-        raise HTTPException(status_code=400, detail="Файл пустой")
-
     original_name = (file.filename or "attachment").replace("\\", "/").rsplit("/", 1)[-1]
     original_name = "".join(
         char for char in original_name
@@ -1023,7 +1013,21 @@ async def _store_panel_attachment(request: Request, file: UploadFile, conversati
     if root not in target_path.parents:
         raise HTTPException(status_code=400, detail="Недопустимое имя файла")
     target_path.parent.mkdir(parents=True, exist_ok=True)
-    target_path.write_bytes(content)
+    def copy_upload():
+        with target_path.open("xb") as target:
+            while chunk := file.file.read(1024 * 1024):
+                if target.tell() + len(chunk) > 20 * 1024 * 1024:
+                    raise HTTPException(status_code=413, detail="Максимальный размер файла — 20 МБ")
+                target.write(chunk)
+            return target.tell()
+
+    try:
+        size = await run_in_threadpool(copy_upload)
+        if not size:
+            raise HTTPException(status_code=400, detail="Файл пустой")
+    except BaseException:
+        target_path.unlink(missing_ok=True)
+        raise
 
     reported_mime_type = file.content_type or mimetypes.guess_type(original_name)[0]
     mime_type = safe_media_type(reported_mime_type)
@@ -1037,7 +1041,7 @@ async def _store_panel_attachment(request: Request, file: UploadFile, conversati
         kind = "voice" if mime_type in {"audio/ogg", "audio/opus"} else "audio"
     else:
         kind = "document"
-    return content, original_name, relative, mime_type, kind
+    return size, original_name, relative, mime_type, kind
 
 
 async def _refresh_teacher_panel_after_web_delivery(bot, teacher_id: int, conversation_id: int) -> None:
@@ -1216,15 +1220,15 @@ async def send_panel_attachment(
 
     if text_contains_contact_data((text or "").strip()):
         raise HTTPException(status_code=400, detail="Контактные данные нельзя отправлять через чат UknowApp")
-    content, original_name, relative, mime_type, kind = await _store_panel_attachment(
-        request, file, conversation.id,
+    size, original_name, relative, mime_type, kind = await _store_panel_attachment(
+        file, conversation.id,
     )
 
     media = {
         "kind": kind,
         "file_name": original_name,
         "mime_type": mime_type,
-        "file_size": len(content),
+        "file_size": size,
         "local_path": relative.as_posix(),
         "archive_status": "stored",
     }
