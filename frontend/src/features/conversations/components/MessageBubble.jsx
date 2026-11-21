@@ -2,7 +2,6 @@ import { memo, useEffect, useRef, useState } from "react";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
 import Check from "lucide-react/dist/esm/icons/check.js";
 import CheckCheck from "lucide-react/dist/esm/icons/check-check.js";
-import CircleAlert from "lucide-react/dist/esm/icons/circle-alert.js";
 import CircleX from "lucide-react/dist/esm/icons/circle-x.js";
 import Play from "lucide-react/dist/esm/icons/play.js";
 import Pause from "lucide-react/dist/esm/icons/pause.js";
@@ -101,7 +100,7 @@ function ChatAudioPlayer({ src, label }) {
   </div>;
 }
 
-function MessageBubble({ message, onDelete, viewerRole, personal = false }) {
+function MessageBubble({ message, onDelete, viewerRole }) {
   const [mediaUrl, setMediaUrl] = useState("");
   const bubbleRef = useRef(null);
   const media = message.metadata?.media;
@@ -193,17 +192,15 @@ function MessageBubble({ message, onDelete, viewerRole, personal = false }) {
         {message.sender_role === viewerRole && viewerRole !== "admin" && (() => {
           const status = message.delivery_status || "unknown";
           const read = Boolean(message.panel_read_at);
+          const pending = status === "pending";
+          const blocked = status === "blocked_contact";
           const title = read ? "Прочитано в UknowApp"
-            : status === "blocked_contact" ? "Сообщение заблокировано системой"
-              : status === "pending" ? "Сохраняется в UknowApp"
+            : blocked ? "Сообщение заблокировано системой"
+              : pending ? "Отправлено из UknowApp"
                 : "Доставлено в UknowApp";
-          const statusClass = read ? " is-read"
-            : status === "blocked_contact" ? " is-failed"
-              : status === "pending" ? " is-partial" : "";
+          const statusClass = read ? " is-read" : blocked ? " is-failed" : "";
           return <span className={"message-read-status" + statusClass} title={title} aria-label={title}>
-            {status === "pending" ? <Check size={14}/>
-              : status === "blocked_contact" ? <CircleX size={15}/>
-                : <CheckCheck size={15}/>}
+            {blocked ? <CircleX size={15}/> : pending ? <Check size={14}/> : <CheckCheck size={15}/>}
           </span>;
         })()}
         {message.can_delete && <button type="button" className="icon-btn danger-icon message-delete-btn" onClick={() => onDelete?.(message)} title="Удалить своё сообщение у всех" aria-label="Удалить своё сообщение"><Trash2 size={14}/></button>}
@@ -217,7 +214,7 @@ function MessageBubble({ message, onDelete, viewerRole, personal = false }) {
     {!mediaUrl && media && <small className="chat-media-status">{media.archive_status === "too_large_for_telegram_download" ? "Файл больше 20 МБ: Telegram не позволяет сохранить копию для веб-панели. Оригинал остаётся в исходном чате Telegram." : media.archive_status === "download_failed" ? "Не удалось сохранить копию вложения. Проверьте оригинал в Telegram." : "Загрузка вложения…"}</small>}
     {!media && !message.text && <p>Вложение: {message.content_type}</p>}
     {viewerRole === "admin" && deliveryIssues.length > 0 && <div className="message-delivery">
-      <div className="message-delivery-heading">Сообщение доставлено в UknowApp. Проблемы внешних каналов:</div>
+      <div className="message-delivery-heading">В UknowApp доставлено. Проблемы внешних каналов:</div>
       {deliveryIssues.map((details, index) => (
         <div className="message-delivery-error" key={index}>
           <span className="message-delivery-name">{details.platform}</span>
