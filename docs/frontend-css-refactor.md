@@ -50,9 +50,9 @@ The dark theme overrides semantic variables under `:root[data-theme="dark-soft"]
 
 | File group | Lines | Characters |
 |---|---:|---:|
-| Theme tokens | 189 | 5,522 |
-| Ordered style modules | 705 | 149,427 |
-| **Total** | **894** | **154,949** |
+| Theme tokens | 193 | 5,671 |
+| Ordered style modules | 687 | 148,548 |
+| **Total** | **880** | **154,219** |
 
 Current style inventory:
 - 39 media-query blocks.
