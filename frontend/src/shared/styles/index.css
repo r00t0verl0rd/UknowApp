@@ -1,7 +1,6 @@
 @import "./tokens.css";
 
-/* Order follows the original cascade. Split modules are adjacent pieces of
-   their former files, so selectors retain the same source-order semantics. */
+/* Порядок импортов CSS сохраняет приоритеты стилей. */
 @import "./base.css";
 @import "./conversations.css";
 @import "./structure.css";

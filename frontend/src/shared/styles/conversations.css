@@ -1,4 +1,4 @@
-/* Conversations reuse Structure's branch and participant cards. */
+/* В переписках используются карточки из структуры. */
 .chats-main > .workspace-content:has(> .chat-list){
   display:grid;
   flex:1 1 0;
@@ -337,7 +337,7 @@
   .composer-send span{display:none}
 }
 
-/* Conversations: one quiet control row, one clear filter, no competing pills. */
+/* Одна строка действий и один фильтр чатов. */
 .chats-main > .workspace-content > .chat-list{background:var(--surface);border:1px solid var(--ui-border);border-radius:14px;padding:12px}
 .chat-list-actions,.chat-list-filters{display:flex;flex-direction:column;gap:6px;min-width:0}
 .chat-list-actions:empty{display:none}
@@ -345,7 +345,7 @@
 .chat-section-tabs{display:flex;align-items:center;gap:4px;min-width:0;padding:3px;border:1px solid var(--ui-border);border-radius:10px;background:var(--canvas)}
 .chat-section-tabs > .btn:not(.primary):not(.danger):not(.disconnect){flex:1 1 0;min-width:0;min-height:34px;padding:7px 9px;border:0!important;border-radius:7px!important;background:transparent!important;color:var(--muted)!important;box-shadow:none!important;font-size:11px;white-space:nowrap}
 .chat-section-tabs > .btn.primary{background:var(--surface)!important;color:var(--ink)!important;box-shadow:var(--ui-shadow-soft)!important}
-/* Admin participant monitoring: neutral total counter and equal-size role names. */
+/* Нейтральный счётчик и единый размер названий ролей. */
 .chat-item .participant-chat-names{display:grid;gap:3px;align-content:center}
 .chat-item .participant-chat-names .participant-teacher-name,
 .chat-item .participant-chat-names .participant-student-name{display:block;margin:0;font-size:12px;line-height:1.25;font-weight:650}
