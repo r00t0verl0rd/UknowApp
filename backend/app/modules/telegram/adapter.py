@@ -12,7 +12,7 @@ from pathlib import Path
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
-from aiogram.types import BufferedInputFile
+from aiogram.types import FSInputFile
 
 from app.infrastructure.storage.media import MEDIA_DIR, safe_media_type
 from app.models import Message
@@ -315,11 +315,11 @@ class TelegramAdapter:
         return path
 
     async def _send_native_media(
-        self, message: OutboundMessage, content: bytes, kwargs: dict,
+        self, message: OutboundMessage, path: Path, kwargs: dict,
     ):
-        upload = BufferedInputFile(content, filename=message.media.file_name)
+        upload = FSInputFile(path, filename=message.media.file_name)
         kind = message.content_type
-        if kind == MessageKind.PHOTO and len(content) <= 10 * 1024 * 1024:
+        if kind == MessageKind.PHOTO and path.stat().st_size <= 10 * 1024 * 1024:
             return await self._bot.send_photo(photo=upload, **kwargs)
         if kind == MessageKind.ANIMATION:
             return await self._bot.send_animation(animation=upload, **kwargs)
@@ -342,18 +342,17 @@ class TelegramAdapter:
                 raise MessengerError("send_message", exc) from exc
         else:
             path = self._media_path(message)
-            content = path.read_bytes()
             if message.text:
                 kwargs["caption"] = message.text
             try:
-                sent = await self._send_native_media(message, content, kwargs)
+                sent = await self._send_native_media(message, path, kwargs)
             except TelegramAPIError as native_error:
                 logger.info(
                     "Native Telegram media send failed; retrying as document "
                     "(kind=%s error_type=%s)",
                     message.content_type.value, type(native_error).__name__,
                 )
-                upload = BufferedInputFile(content, filename=message.media.file_name)
+                upload = FSInputFile(path, filename=message.media.file_name)
                 try:
                     sent = await self._bot.send_document(document=upload, **kwargs)
                 except TelegramAPIError as exc:
