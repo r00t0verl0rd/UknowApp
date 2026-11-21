@@ -179,6 +179,75 @@ test("global SSE updates real counters across tabs and replays missed events", {
     assert.notEqual(themeStyles.light.teacher, themeStyles["dark-soft"].teacher);
     assert.notEqual(themeStyles.light.student, themeStyles["dark-soft"].student);
 
+    // Меню, нижние пункты и действие создания используют единый шрифт и оформление.
+    for (const width of [390, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        const result = await page.evaluate(currentTheme => {
+          const previous = document.documentElement.dataset.theme;
+          document.documentElement.dataset.theme = currentTheme;
+          const fixture = document.createElement("div");
+          fixture.className = "workspace-shell";
+          fixture.style.cssText = "position:fixed;left:0;top:0;visibility:hidden;pointer-events:none";
+          fixture.innerHTML = `
+            <aside class="sidebar">
+              <nav>
+                <button class="ui-menu-control" type="button">Диалоги</button>
+                <button class="ui-menu-control active" aria-current="page" type="button">Структура</button>
+              </nav>
+              <div class="sidebar-bottom">
+                <button class="logout desktop-admin-extra ui-menu-control" type="button">Дополнительно</button>
+                <button class="logout desktop-sidebar-logout ui-menu-control" type="button">Выход</button>
+              </div>
+            </aside>
+            <div class="content">
+              <button class="btn graph-add-participant ui-menu-control" type="button">Добавить участника</button>
+              <div class="teacher-card"><div class="person-info"><b>Александра Епифанова</b></div></div>
+            </div>
+          `;
+          document.body.append(fixture);
+          const styleOf = selector => {
+            const style = getComputedStyle(fixture.querySelector(selector));
+            return {
+              family: style.fontFamily,
+              size: style.fontSize,
+              weight: style.fontWeight,
+              background: style.backgroundColor,
+              border: style.borderTopColor,
+              borderWidth: style.borderTopWidth,
+              radius: style.borderTopLeftRadius,
+            };
+          };
+          const result = {
+            nav: styleOf(".sidebar nav button:not(.active)"),
+            additional: styleOf(".desktop-admin-extra"),
+            logout: styleOf(".desktop-sidebar-logout"),
+            create: styleOf(".graph-add-participant"),
+            selected: styleOf(".sidebar nav button.active"),
+            teacher: styleOf(".teacher-card .person-info b"),
+          };
+          fixture.remove();
+          document.documentElement.dataset.theme = previous;
+          return result;
+        }, theme);
+        const expected = result.nav;
+        for (const name of ["additional", "logout", "create"]) {
+          const item = result[name];
+          assert.equal(item.family, expected.family, `${theme} ${width}px ${name}: шрифт`);
+          assert.equal(item.background, expected.background, `${theme} ${width}px ${name}: фон`);
+          assert.equal(item.border, expected.border, `${theme} ${width}px ${name}: рамка`);
+          assert.equal(item.borderWidth, "1px", `${theme} ${width}px ${name}: толщина рамки`);
+          assert.equal(item.radius, expected.radius, `${theme} ${width}px ${name}: скругление`);
+          if (width === 1280 || name === "create") {
+            assert.equal(item.size, expected.size, `${theme} ${width}px ${name}: размер текста`);
+          }
+        }
+        assert.equal(result.teacher.family, expected.family, `${theme}: гарнитура карточки`);
+        assert.notEqual(result.selected.background, expected.background, `${theme}: выделение активного раздела`);
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 720 });
+
     // Проверяем общий квадратный контур кнопок во всех кабинетах, модальных окнах и темах.
     const originalViewport = page.viewportSize();
     for (const width of [390, 1280]) {
