@@ -68,6 +68,8 @@
   --danger: #bd4050;
   --success: #299b62;
   --warning: #b7832d;
+  --info: #3398ed;
+  --ui-shadow-message: 0 2px 8px rgba(41, 34, 63, .035);
 
   /* Brand and semantic colors. */
   --purple: #6046a5;
@@ -135,6 +137,8 @@
   --danger: #e58c98;
   --success: #83c69c;
   --warning: #c9aa70;
+  --info: #69b6ff;
+  --ui-shadow-message: 0 3px 12px rgba(0, 0, 0, .14);
   color: var(--app-foreground);
   background: var(--app-background);
 
