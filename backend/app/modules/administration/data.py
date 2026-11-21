@@ -383,6 +383,19 @@ def _extract_v2_archive(
     records = manifest.get("files")
     if not isinstance(records, list) or not records or len(records) > MAX_ARCHIVE_ENTRIES:
         raise HTTPException(status_code=400, detail="В manifest отсутствует список файлов data")
+    declared_file_count = manifest.get("file_count")
+    declared_unpacked_bytes = manifest.get("unpacked_bytes")
+    declared_total = sum(
+        item.get("size", 0) for item in records if isinstance(item, dict)
+    )
+    if (
+        type(declared_file_count) is not int
+        or declared_file_count != len(records)
+        or type(declared_unpacked_bytes) is not int
+        or declared_unpacked_bytes != declared_total
+        or declared_total > MAX_UNPACKED_ARCHIVE_BYTES
+    ):
+        raise HTTPException(status_code=400, detail="Счётчики файлов в manifest не совпадают")
     record_map = {}
     for record in records:
         if not isinstance(record, dict):
@@ -564,6 +577,7 @@ def _cleanup_orphaned_restore_stages(data_dir: Path) -> None:
 def apply_pending_data_restore() -> bool:
     """Apply a verified restore before DB migrations and background workers start."""
     data_dir = DATA_DIR.resolve()
+    data_dir.mkdir(parents=True, exist_ok=True)
     marker_path = data_dir / PENDING_RESTORE_NAME
     if not marker_path.is_file():
         _cleanup_orphaned_restore_stages(data_dir)
@@ -612,7 +626,15 @@ def apply_pending_data_restore() -> bool:
             shutil.rmtree(backup_dir)
         if staged_data.exists():
             shutil.rmtree(staged_data)
-        restore_info = _prepare_restore_archive(archive_path, staged_data)
+        try:
+            restore_info = _prepare_restore_archive(archive_path, staged_data)
+        except Exception:
+            logger.exception(
+                "Подготовленный архив не прошёл повторную проверку; текущие данные не изменены",
+            )
+            shutil.rmtree(stage_dir, ignore_errors=True)
+            marker_path.unlink(missing_ok=True)
+            return False
         original_entries = [
             child.name for child in data_dir.iterdir()
             if child.name not in _control_names(stage_name, backup_name)
