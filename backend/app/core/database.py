@@ -41,6 +41,7 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False
 def create_tables() -> None:
     # Импорт моделей регистрирует все таблицы в Base.metadata.
     from app.models import ConnectionCode, PanelSession
+    from app.modules.telegram.inbox import TelegramUpdate  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
 
