@@ -31,18 +31,6 @@
   width: 100%;
   margin: 0;
 }
-.workspace-shell .sidebar-bottom > :is(.desktop-admin-extra, .desktop-sidebar-logout) {
-  display: none;
-}
-@media (min-width: 1025px) {
-  .workspace-shell .sidebar-bottom > :is(.desktop-admin-extra, .desktop-sidebar-logout) {
-    display: flex;
-  }
-  .workspace-shell .sidebar-bottom > .desktop-sidebar-logout {
-    margin-top: 8px;
-  }
-}
-
 /* Общая кнопка меню и действия создания. */
 :root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control,
 :root .workspace-shell .content .graph-add-participant.ui-menu-control {
@@ -105,6 +93,19 @@
 :root .workspace-shell .content .graph-add-participant.ui-menu-control:focus-visible {
   outline: 2px solid var(--purple);
   outline-offset: 2px;
+}
+
+/* Десктопные пункты меню не показываются в мобильной верхней строке. */
+:root .workspace-shell .sidebar .sidebar-bottom > button.ui-menu-control:is(.desktop-admin-extra, .desktop-sidebar-logout) {
+  display: none !important;
+}
+@media (min-width: 1025px) {
+  :root .workspace-shell .sidebar .sidebar-bottom > button.ui-menu-control:is(.desktop-admin-extra, .desktop-sidebar-logout) {
+    display: flex !important;
+  }
+  :root .workspace-shell .sidebar .sidebar-bottom > button.ui-menu-control.desktop-sidebar-logout {
+    margin-top: 8px;
+  }
 }
 
 /* Для имен и меню используется единая гарнитура. */
