@@ -14,7 +14,7 @@ from aiogram import Dispatcher
 from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy import select
 
-from app.core.config import TELEGRAM_GATEWAY_TOKEN
+from app.core.config import TELEGRAM_BOT_ENABLED, TELEGRAM_GATEWAY_TOKEN, TELEGRAM_MODE
 from app.core.database import SessionLocal
 
 from .inbox import TelegramUpdate
@@ -26,6 +26,10 @@ MAX_UPDATE_SIZE = 2 * 1024 * 1024
 
 @router.post("/updates", status_code=202)
 async def accept_update(request: Request):
+    # A mistakenly left running secondary gateway must never inject updates
+    # into the primary when local polling is active.
+    if TELEGRAM_MODE != "remote" or not TELEGRAM_BOT_ENABLED:
+        raise HTTPException(503, "Remote Telegram mode is disabled")
     if not TELEGRAM_GATEWAY_TOKEN or len(TELEGRAM_GATEWAY_TOKEN) < 32:
         raise HTTPException(503, "Telegram gateway is not configured")
     provided = request.headers.get("x-uknow-gateway-key", "")
