@@ -64,6 +64,8 @@ def test_primary_accepts_durable_updates_once(monkeypatch):
     sessions = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
     key = "gateway-remote-test-" + "x" * 48
     monkeypatch.setattr(internal, "TELEGRAM_GATEWAY_TOKEN", key)
+    monkeypatch.setattr(internal, "TELEGRAM_MODE", "remote")
+    monkeypatch.setattr(internal, "TELEGRAM_BOT_ENABLED", True)
     monkeypatch.setattr(internal, "SessionLocal", sessions)
     primary = FastAPI()
     primary.include_router(internal.router)
@@ -72,6 +74,9 @@ def test_primary_accepts_durable_updates_once(monkeypatch):
     payload = {"update_id": 90, "message": {"message_id": 15, "chat": {"id": 40}}}
     assert client.post(endpoint, json=payload).status_code == 401
     headers = {"X-Uknow-Gateway-Key": key}
+    monkeypatch.setattr(internal, "TELEGRAM_MODE", "local")
+    assert client.post(endpoint, json=payload, headers=headers).status_code == 503
+    monkeypatch.setattr(internal, "TELEGRAM_MODE", "remote")
     assert client.post(endpoint, json=payload, headers=headers).status_code == 202
     assert client.post(endpoint, json=payload, headers=headers).status_code == 202
     with sessions() as db:
