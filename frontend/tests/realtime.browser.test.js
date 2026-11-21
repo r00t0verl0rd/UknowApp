@@ -226,6 +226,10 @@ test("global SSE updates real counters across tabs and replays missed events", {
     assert.equal(personalRequests, 1, "SSE reconnect must not reload personal lists when replay is sufficient");
     assert.ok(syncRequests > 0, "opening a dialog and a read event must reconcile only that dialog");
   } finally {
+    for (const response of pendingPersonalResponses.splice(0)) {
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end("[]");
+    }
     for (const response of [...streams]) response.end();
     await browser?.close();
     vite?.kill("SIGTERM");
