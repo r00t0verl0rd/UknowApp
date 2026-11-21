@@ -151,6 +151,34 @@ test("global SSE updates real counters across tabs and replays missed events", {
       throw error;
     }
 
+    // Проверяем оформление ролей в обеих темах после CSS-рефакторинга.
+    const themeStyles = await page.evaluate(() => {
+      const oldTheme = document.documentElement.dataset.theme;
+      const wrapper = document.createElement("div");
+      wrapper.className = "content";
+      wrapper.innerHTML = [
+        '<div class="role_node"></div>',
+        '<div class="teacher-card"></div>',
+        '<div class="student-card"></div>',
+      ].join("");
+      document.body.append(wrapper);
+      const result = {};
+      for (const theme of ["light", "dark-soft"]) {
+        document.documentElement.dataset.theme = theme;
+        result[theme] = {
+          body: getComputedStyle(document.body).backgroundColor,
+          teacher: getComputedStyle(wrapper.querySelector(".teacher-card")).background,
+          student: getComputedStyle(wrapper.querySelector(".student-card")).background,
+        };
+      }
+      wrapper.remove();
+      document.documentElement.dataset.theme = oldTheme;
+      return result;
+    });
+    assert.equal(themeStyles["dark-soft"].body, "rgb(23, 27, 37)");
+    assert.notEqual(themeStyles.light.teacher, themeStyles["dark-soft"].teacher);
+    assert.notEqual(themeStyles.light.student, themeStyles["dark-soft"].student);
+
     await waitFor(() => pendingPersonalResponses.length === 1);
     assert.equal(pendingPersonalResponses.length, 1,
       "the workspace shell must render before the personal inbox request finishes");
