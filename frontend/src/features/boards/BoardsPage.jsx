@@ -1,6 +1,7 @@
 import { memo, useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import { useBoardsState } from "../../shared/hooks/boards/useBoardsState.js";
 import Panel from "../../shared/components/Panel.jsx";
+import Button from "../../shared/components/Button.jsx";
 import Crosshair from "lucide-react/dist/esm/icons/crosshair.js";
 import Plus from "lucide-react/dist/esm/icons/plus.js";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
@@ -34,8 +35,8 @@ const BoardToolbar = memo(function BoardToolbar({ onResetView, onAddObject }) {
   return <div className="graph-legend-row">
     
     <div className="graph-toolbar-actions">
-      <button type="button" className="btn small outline" onClick={onResetView} title="Сбросить масштаб"><Crosshair />Сбросить масштаб</button>
-      <button type="button" className="btn primary graph-add-participant" onClick={onAddObject}><Plus />Создать объект</button>
+      <Button type="button" size="small" variant="outline" onClick={onResetView} title="Сбросить масштаб"><Crosshair />Сбросить масштаб</Button>
+      <Button type="button" variant="primary" className="graph-add-participant" onClick={onAddObject}><Plus />Создать объект</Button>
     </div>
   </div>;
 });
