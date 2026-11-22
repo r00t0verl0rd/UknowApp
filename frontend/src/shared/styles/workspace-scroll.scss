@@ -233,6 +233,91 @@
     }
   }
 }
+// Действия структуры никогда не перемещаются под имя при сужении карточки.
+// Измеряет только CSS Grid: без ResizeObserver, вычислений JS и reflow при hover.
+.workspace-content:has(.admin-card) {
+  .unassigned-grid > .unassigned-student-card {
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) max-content;
+    align-items:center;
+    column-gap:clamp(4px, 0.7vw, 10px);
+  }
+  .unassigned-student-card > .person-main {
+    flex-wrap:nowrap;
+    width:100%;
+    min-width:0;
+  }
+  .unassigned-student-card > .unassigned-student-actions {
+    display:flex;
+    flex-wrap:nowrap;
+    flex:0 0 auto;
+    align-items:center;
+    justify-content:flex-end;
+    justify-self:end;
+    align-self:center;
+    width:max-content;
+    min-width:max-content;
+    white-space:nowrap;
+    margin:0;
+  }
+  .unassigned-student-actions > button {
+    flex-shrink:0;
+    white-space:nowrap;
+  }
+  .grid .teacher-card {
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) max-content;
+    align-items:center;
+  }
+  .grid .teacher-card > .person-main {
+    width:100%;
+    min-width:0;
+  }
+  .grid .teacher-card > .person-actions {
+    display:flex;
+    flex-wrap:nowrap;
+    align-items:center;
+    justify-self:end;
+    white-space:nowrap;
+  }
+  .student-list > .student-card {
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) max-content max-content;
+    align-items:center;
+    column-gap:clamp(3px, 0.5vw, 7px);
+  }
+  .student-list > .student-card > .person-main {
+    width:100%;
+    min-width:0;
+    flex-wrap:nowrap;
+  }
+  .student-list > .student-card > .graph-person-action {
+    justify-self:end;
+    flex-shrink:0;
+  }
+  :is(.teacher-card, .student-card) .person-info {
+    min-width:0;
+    max-width:100%;
+    container-type:inline-size;
+  }
+  :is(.teacher-card, .student-card) .person-info > b {
+    display:block;
+    max-width:100%;
+    overflow:hidden;
+    white-space:nowrap;
+    overflow-wrap:normal;
+    text-overflow:ellipsis;
+    font-size:clamp(10px, 10cqi, 13px);
+    line-height:1.3;
+  }
+  :is(.teacher-card, .student-card) .person-info > small {
+    display:block;
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+}
 :root[data-theme]:has(.workspace-shell) {
   background:var(--workspace-background);
 }
