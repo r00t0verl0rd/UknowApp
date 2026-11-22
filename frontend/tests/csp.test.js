@@ -16,12 +16,18 @@ test("critical CSS stays external and compatible with production CSP", () => {
   assert.match(builtHtml, /critical\.css/);
   assert.doesNotMatch(builtHtml, /<style(?:\s|>)/i);
   assert.ok(existsSync(path.join(frontend, "dist", "critical.css")));
+  assert.match(html, /<script src="\/theme-init\.js"><\/script>/);
+  assert.doesNotMatch(html, /<script>([\s\S]*?)<\/script>/);
+  assert.ok(existsSync(path.join(frontend, "public", "theme-init.js")));
+  assert.ok(existsSync(path.join(frontend, "dist", "theme-init.js")));
 
   const sitePolicy = caddy.split("\n").find(line => line.trimStart().startsWith("Content-Security-Policy "));
   assert.ok(sitePolicy, "Site CSP must be present");
   assert.match(sitePolicy, /style-src 'self' https:\/\/fonts\.googleapis\.com/);
   assert.doesNotMatch(sitePolicy, /(?:^|;\s*)style-src\s+[^;]*'unsafe-inline'/);
   assert.match(sitePolicy, /style-src-elem 'self' https:\/\/fonts\.googleapis\.com/);
+  assert.match(sitePolicy, /script-src 'self'/);
+  assert.doesNotMatch(sitePolicy, /sha256-/);
   assert.match(sitePolicy, /style-src-attr 'unsafe-inline'/);
   assert.doesNotMatch(sitePolicy, /style-src-elem[^;]*'unsafe-inline'/);
 });

@@ -166,7 +166,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
       for (const theme of ["light", "dark-soft"]) {
         document.documentElement.dataset.theme = theme;
         result[theme] = {
-          body: getComputedStyle(document.body).backgroundColor,
+          root: getComputedStyle(document.documentElement).backgroundColor,
           teacher: getComputedStyle(wrapper.querySelector(".teacher-card")).background,
           student: getComputedStyle(wrapper.querySelector(".student-card")).background,
         };
@@ -175,7 +175,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
       document.documentElement.dataset.theme = oldTheme;
       return result;
     });
-    assert.equal(themeStyles["dark-soft"].body, "rgb(23, 29, 40)");
+    assert.equal(themeStyles["dark-soft"].root, "rgb(32, 41, 56)");
     assert.notEqual(themeStyles.light.teacher, themeStyles["dark-soft"].teacher);
     assert.notEqual(themeStyles.light.student, themeStyles["dark-soft"].student);
 
@@ -198,7 +198,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
           try {
             content.append(tallSection);
             content.scrollTop = 500;
-            const bg = getComputedStyle(root).getPropertyValue("--canvas").trim();
+            const bg = getComputedStyle(root).getPropertyValue("--workspace-background").trim();
             const canvas = document.createElement("div");
             canvas.style.backgroundColor = bg;
             document.body.append(canvas);
@@ -242,18 +242,12 @@ test("global SSE updates real counters across tabs and replays missed events", {
         }
         assert.equal(isolation.sidebarOverscroll, "none", `${width}px ${theme}: sidebar overscroll`);
         if (width < 1025) assert.equal(isolation.sidebarTouchAction, "pan-x", "mobile nav permits only horizontal swipes");
-        if (width < 1025) {
-          // На телефоне один сплошной фон html, а все внутренние обёртки прозрачны.
-          assert.notEqual(isolation.rootBackground, "rgba(0, 0, 0, 0)");
-          for (const layer of ["sidebarBackground", "bodyBackground", "shellBackground", "mainBackground"]) {
-            assert.equal(isolation[layer], "rgba(0, 0, 0, 0)",
-              `${width}px ${theme}: transparent ${layer}, no extra underlay`);
-          }
-        } else {
-          for (const layer of ["rootBackground", "bodyBackground", "shellBackground", "mainBackground"]) {
-            assert.equal(isolation[layer], isolation.expectedBackground,
-              `${width}px ${theme}: desktop keeps a consistent canvas`);
-          }
+        // Mobile, Desktop и PWA используют один фон html без внутренних подложек.
+        assert.equal(isolation.rootBackground, isolation.expectedBackground,
+          `${width}px ${theme}: one themed background for every viewport`);
+        for (const layer of ["sidebarBackground", "bodyBackground", "shellBackground", "mainBackground"]) {
+          assert.equal(isolation[layer], "rgba(0, 0, 0, 0)",
+            `${width}px ${theme}: transparent ${layer}, no extra underlay`);
         }
       }
     }
