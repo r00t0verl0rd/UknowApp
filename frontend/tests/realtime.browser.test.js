@@ -528,10 +528,11 @@ test("global SSE updates real counters across tabs and replays missed events", {
     assert.ok(chatUnderlay.composerBottom <= 572,
       "composer remains inside visible viewport");
 
-    // Чат: форма и «Отправить» прикреплены к видимому низу, сообщения скроллятся.
+    // Чат: одно двухстрочное поле отправки на телефоне, планшете и Desktop.
+    // Поле увеличено по высоте; вложение и текст кнопки всегда доступны.
     for (const { width, height } of [
       { width: 390, height: 720 }, { width: 390, height: 430 },
-      { width: 1280, height: 800 },
+      { width: 768, height: 650 }, { width: 1280, height: 800 },
     ]) {
       await page.setViewportSize({ width, height });
       await page.waitForFunction(() => {
@@ -555,7 +556,13 @@ test("global SSE updates real counters across tabs and replays missed events", {
           <div class="messages">${Array(30).fill('<div class="message">Текст сообщения для проверки прокрутки</div>').join("")}</div>
           <form class="chat-composer">
             <textarea placeholder="Сообщение"></textarea>
-            <div class="composer-footer"><div class="composer-tools"></div>
+            <div class="composer-footer">
+              <div class="composer-tools">
+                <label class="attach-control ui-icon-button" aria-label="Прикрепить файл">
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 12h8"/></svg>
+                  <input type="file">
+                </label>
+              </div>
               <button class="btn primary composer-send" type="submit"><span>Отправить</span></button>
             </div>
           </form>`;
@@ -566,6 +573,10 @@ test("global SSE updates real counters across tabs and replays missed events", {
           const messages = detail.querySelector(".messages");
           const button = detail.querySelector(".composer-send");
           const composer = detail.querySelector(".chat-composer");
+          const composerInput = composer.querySelector("textarea");
+          const composerFooter = composer.querySelector(".composer-footer");
+          const attach = composer.querySelector(".attach-control");
+          const sendLabel = composer.querySelector(".composer-send span");
           const before = messages.scrollTop;
           messages.scrollTop = messages.scrollHeight;
           return {
@@ -577,6 +588,12 @@ test("global SSE updates real counters across tabs and replays missed events", {
             messagesScroll: messages.scrollTop,
             messagesOverflow: getComputedStyle(messages).overflowY,
             contentScroll: content.scrollTop,
+            inputHeight: composerInput.getBoundingClientRect().height,
+            footerTop: composerFooter.getBoundingClientRect().top,
+            textareaBottom: composerInput.getBoundingClientRect().bottom,
+            attachHeight: attach.getBoundingClientRect().height,
+            sendHeight: button.getBoundingClientRect().height,
+            sendLabelVisible: getComputedStyle(sendLabel).display !== "none",
             contentRect: content.getBoundingClientRect().toJSON(),
             shellRect: document.querySelector(".workspace-shell").getBoundingClientRect().toJSON(),
             sidebarRect: document.querySelector(".sidebar").getBoundingClientRect().toJSON(),
@@ -587,6 +604,12 @@ test("global SSE updates real counters across tabs and replays missed events", {
           list.remove();
         }
       });
+      assert.ok(state.inputHeight >= 50, `${width}px: composer text field remains enlarged`);
+      assert.ok(state.footerTop >= state.textareaBottom - 1,
+        `${width}px: actions sit below the message field on every screen`);
+      assert.ok(state.attachHeight >= 40 && state.sendHeight >= 40,
+        `${width}px: attachment and send have comfortable touch targets`);
+      assert.ok(state.sendLabelVisible, `${width}px: send label remains visible`);
       assert.ok(state.detailBottom <= state.viewportBottom + 2,
         `${width}x${height}: chat fits inside visible viewport ${JSON.stringify(state)}`);
       assert.ok(state.composerBottom <= state.viewportBottom + 2,
