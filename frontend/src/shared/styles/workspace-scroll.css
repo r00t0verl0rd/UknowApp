@@ -156,3 +156,26 @@
     scroll-padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* На телефоне список диалогов скроллится тем же полноэкранным .workspace-content,
+   что и структура/пользователи: нет вложенного ограниченного chat-items.
+   Открытый диалог сохраняет отдельную прокрутку сообщений, чтобы поле отправки
+   оставалось доступным над клавиатурой. */
+@media (max-width: 760px) {
+  .workspace-shell .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .workspace-shell .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) > .chat-list {
+    flex: 1 0 auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .workspace-shell .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) > .chat-list > .chat-items {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+}
