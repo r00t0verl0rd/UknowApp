@@ -111,8 +111,8 @@ body {
   box-shadow:none;
 }
 .chat-items > .chat-item.student-card:hover:not(.selected) {
-  background:color-mix(in srgb, var(--button-primary) 9%, var(--button-bg));
-  border-color:color-mix(in srgb, var(--button-primary) 24%, var(--button-border));
+  background:color-mix(in srgb, var(--purple) 9%, var(--button-bg));
+  border-color:color-mix(in srgb, var(--purple) 24%, var(--button-border));
   box-shadow:none;
 }
 :root:not([data-theme="dark-soft"]) {
