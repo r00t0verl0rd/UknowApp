@@ -44,7 +44,7 @@ export default function Modal(options) {
     <Portal mount={document.body}>
       <dialog
         ref={dialogRef}
-        class={["modal", "native-dialog", options.className ?? ""].filter(Boolean).join(" ")}
+        class={["modal", "native-dialog", options.class ?? ""].filter(Boolean).join(" ")}
         role={options.role ?? "dialog"}
         aria-modal={(options.ariaModal ?? true) ? "true" : undefined}
         aria-labelledby={options.labelledBy || fallbackTitleId}

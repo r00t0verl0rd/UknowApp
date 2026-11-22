@@ -3,7 +3,7 @@ function icon(name, paths) {
   return function Icon(props) {
     return (
       <svg
-        {...omit(props, "size", "className", "strokeWidth")}
+        {...omit(props, "size", "class", "strokeWidth")}
         width={props.size ?? 24}
         height={props.size ?? 24}
         viewBox="0 0 24 24"
@@ -12,7 +12,7 @@ function icon(name, paths) {
         stroke-width={props.strokeWidth ?? 2}
         stroke-linecap="round"
         stroke-linejoin="round"
-        class={["lucide", "lucide-" + name, props.className].filter(Boolean).join(" ")}
+        class={["lucide", "lucide-" + name, props.class].filter(Boolean).join(" ")}
       >
         {paths()}
       </svg>
@@ -20,14 +20,10 @@ function icon(name, paths) {
   };
 }
 export const IconChevronRight = icon("chevron-right", () => (
-  <>
-    <path d="m9 18 6-6-6-6" />
-  </>
+  <path d="m9 18 6-6-6-6" />
 ));
 export const IconMoon = icon("moon", () => (
-  <>
-    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-  </>
+  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
 ));
 export const IconSun = icon("sun", () => (
   <>
@@ -43,9 +39,7 @@ export const IconSun = icon("sun", () => (
   </>
 ));
 export const IconActivity = icon("activity", () => (
-  <>
-    <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" />
-  </>
+  <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" />
 ));
 export const IconLayers = icon("layers", () => (
   <>
@@ -55,9 +49,7 @@ export const IconLayers = icon("layers", () => (
   </>
 ));
 export const IconMessageCircle = icon("message-circle", () => (
-  <>
-    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
-  </>
+  <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
 ));
 export const IconUsers = icon("users", () => (
   <>
@@ -109,9 +101,7 @@ export const IconX = icon("x", () => (
   </>
 ));
 export const IconCheck = icon("check", () => (
-  <>
-    <path d="M20 6 9 17l-5-5" />
-  </>
+  <path d="M20 6 9 17l-5-5" />
 ));
 export const IconCopy = icon("copy", () => (
   <>
@@ -200,9 +190,7 @@ export const IconCircleX = icon("circle-x", () => (
   </>
 ));
 export const IconPlay = icon("play", () => (
-  <>
-    <polygon points="6 3 20 12 6 21 6 3" />
-  </>
+  <polygon points="6 3 20 12 6 21 6 3" />
 ));
 export const IconPause = icon("pause", () => (
   <>
@@ -243,7 +231,5 @@ export const IconDatabase = icon("database", () => (
   </>
 ));
 export const IconChevronLeft = icon("chevron-left", () => (
-  <>
-    <path d="m15 18-6-6 6-6" />
-  </>
+  <path d="m15 18-6-6 6-6" />
 ));

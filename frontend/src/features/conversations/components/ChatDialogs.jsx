@@ -11,7 +11,7 @@ export default function ChatDialogs(options) {
         <Modal
           onClose={() => options.setModal(null)}
           closeOnBackdrop={!options.creating}
-          className="create-participant-modal"
+          class="create-participant-modal"
           labelledBy="personal-chat-title"
         >
           <div class="modal-head">
@@ -35,8 +35,8 @@ export default function ChatDialogs(options) {
             }}
           >
             <FormField label="Участник">
-              <select name="participant" defaultValue="" required autoFocus disabled={options.creating}>
-                <option value="" disabled>
+              <select name="participant" required autofocus disabled={options.creating}>
+                <option value="" disabled selected>
                   Выберите учителя или ученика
                 </option>
                 <For
@@ -66,7 +66,7 @@ export default function ChatDialogs(options) {
         <Modal
           onClose={() => options.setDeleteMessageCandidate(null)}
           closeOnBackdrop={!options.deletingMessage}
-          className="confirm-delete-modal"
+          class="confirm-delete-modal"
           role="alertdialog"
           labelledBy="delete-message-title"
         >

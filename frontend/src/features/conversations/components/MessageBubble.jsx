@@ -259,7 +259,7 @@ function MessageBubble(options) {
             <IconButton
               size="compact"
               tone="danger"
-              className="message-delete-btn"
+              class="message-delete-btn"
               onClick={() => options.onDelete?.(options.message)}
               title="Удалить своё сообщение у всех"
               aria-label="Удалить своё сообщение"

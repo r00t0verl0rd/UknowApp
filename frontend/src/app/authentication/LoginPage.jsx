@@ -10,7 +10,7 @@ export default function LoginPage(options) {
     <main class="login-screen">
       <section class="login-card" aria-label="Вход в UknowApp">
         <IconButton
-          className="theme-toggle login-theme-toggle"
+          class="theme-toggle login-theme-toggle"
           onClick={options.toggleTheme}
           title={options.theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"}
           aria-label={options.theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}
@@ -43,7 +43,7 @@ export default function LoginPage(options) {
               aria-label="Пароль"
             />
           </label>
-          <Button variant="primary" className="login-submit" type="submit">
+          <Button variant="primary" class="login-submit" type="submit">
             Войти <ChevronRight size={17} />
           </Button>
         </form>

@@ -28,7 +28,7 @@ test("errors and success notifications use native browser dialogs", () => {
 test("user forms and code dialogs share right aligned equal height actions", () => {
   const users = read("src/features/users/components/UserDialogs.jsx");
   const css = read("src/shared/styles/native-dialogs.scss");
-  assert.match(users, /className="password-code-refresh"/);
+  assert.match(users, /class="password-code-refresh"/);
   assert.match(users, /Выдать новый код\?/);
   assert.match(users, /closeOnBackdrop=\{!options\.savingUser\}/);
   assert.match(users, /<div class="modal-actions">\s*<Button variant="ghost"/);

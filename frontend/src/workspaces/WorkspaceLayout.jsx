@@ -17,7 +17,7 @@ function SidebarControl(options) {
   return (
     <button
       type="button"
-      class={["ui-menu-control", options.className ?? ""].filter(Boolean).join(" ")}
+      class={["ui-menu-control", options.class ?? ""].filter(Boolean).join(" ")}
       aria-current={(options.current ?? false) ? "page" : undefined}
       onClick={options.onClick}
     >
@@ -108,7 +108,7 @@ export default function WorkspaceLayout(options) {
   };
   const themeToggle = () => (
     <IconButton
-      className="theme-toggle"
+      class="theme-toggle"
       onClick={options.toggleTheme}
       title={options.theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"}
       aria-label={options.theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}
@@ -143,7 +143,7 @@ export default function WorkspaceLayout(options) {
           {additionalItem() && (
             <SidebarControl
               icon={Info}
-              className="desktop-admin-extra"
+              class="desktop-admin-extra"
               current={options.page === additionalItem().page}
               onClick={() => options.setPage(additionalItem().page)}
             >
@@ -152,7 +152,7 @@ export default function WorkspaceLayout(options) {
           )}
           <SidebarControl
             icon={LogOut}
-            className="desktop-sidebar-logout"
+            class="desktop-sidebar-logout"
             onClick={() => setShowSignOutConfirm(true)}
           >
             Выход
@@ -186,7 +186,7 @@ export default function WorkspaceLayout(options) {
         <Modal
           onClose={() => setShowSignOutConfirm(false)}
           closeOnBackdrop={!signingOut()}
-          className="confirm-delete-modal"
+          class="confirm-delete-modal"
           role="alertdialog"
           labelledBy="sign-out-title"
           describedBy="sign-out-description"

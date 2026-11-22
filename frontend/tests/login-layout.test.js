@@ -16,7 +16,7 @@ test("login uses the same full-viewport surface as all workspaces", () => {
   assert.match(page, /<main class="login-screen">/);
   assert.match(page, /class="login-brand"/);
   assert.match(page, /src="\/logo-main\.svg"/);
-  assert.match(page, /className="login-submit"/);
+  assert.match(page, /class="login-submit"/);
   assert.match(imports, /@use "\.\/login";/);
   assert.match(css, /:root\[data-theme\]:has\(\.login-screen\)/);
   assert.match(css, /background:\s*var\(--workspace-background\)\s*!important/);

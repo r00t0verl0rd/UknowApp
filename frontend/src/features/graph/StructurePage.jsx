@@ -29,7 +29,7 @@ export default function StructurePage(options) {
         </div>
         <Button
           type="button"
-          className="graph-add-participant ui-menu-control"
+          class="graph-add-participant ui-menu-control"
           onClick={() => options.openCreate()}
         >
           <Plus />
@@ -64,7 +64,7 @@ export default function StructurePage(options) {
                     <div class="person-actions">
                       <IconButton
                         tone="student"
-                        className={`teacher-collapse-btn${collapsed() ? "" : " is-expanded"}`}
+                        class={`teacher-collapse-btn${collapsed() ? "" : " is-expanded"}`}
                         title={collapsed() ? "Показать учеников" : "Скрыть учеников"}
                         aria-label={collapsed() ? "Показать учеников" : "Скрыть учеников"}
                         aria-expanded={!collapsed()}
@@ -91,7 +91,7 @@ export default function StructurePage(options) {
                   {!collapsed() && (
                     <Button
                       type="button"
-                      className="add-student"
+                      class="add-student"
                       onClick={() => {
                         options.setTeacherId(String(teacher.id));
                         options.setStudentId(
@@ -123,7 +123,7 @@ export default function StructurePage(options) {
                               </div>
                             </div>
                             <IconButton
-                              className="graph-person-action"
+                              class="graph-person-action"
                               title="Редактировать ученика"
                               aria-label={`Редактировать ученика ${student.full_name}`}
                               onClick={() => options.openEdit(student)}
@@ -131,7 +131,7 @@ export default function StructurePage(options) {
                               <Pencil />
                             </IconButton>
                             <IconButton
-                              className="graph-person-action"
+                              class="graph-person-action"
                               title="Отвязать от учителя"
                               aria-label={"Отвязать ученика " + student.full_name + " от учителя"}
                               onClick={() => options.unassignStudent(student)}
@@ -176,7 +176,7 @@ export default function StructurePage(options) {
                     </div>
                     <div class="unassigned-student-actions">
                       <IconButton
-                        className="graph-person-action"
+                        class="graph-person-action"
                         title="Редактировать ученика"
                         aria-label={`Редактировать ученика ${student.full_name}`}
                         onClick={() => options.openEdit(student)}

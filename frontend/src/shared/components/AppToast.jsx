@@ -63,7 +63,7 @@ export default function AppToast(options) {
             {isError() && (
               <IconButton
                 size="large"
-                className="toast-close"
+                class="toast-close"
                 aria-label="Закрыть уведомление об ошибке"
                 onClick={options.onDismiss}
               >

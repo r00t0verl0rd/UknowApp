@@ -9,9 +9,9 @@ const SIZE_CLASSES = Object.freeze({
   small: "small",
 });
 export default function Button(options) {
-  const props = omit(options, "variant", "size", "className", "type", "children");
+  const props = omit(options, "variant", "size", "class", "type", "children");
   const classes = () =>
-    ["btn", VARIANT_CLASSES[options.variant], SIZE_CLASSES[options.size], options.className ?? ""]
+    ["btn", VARIANT_CLASSES[options.variant], SIZE_CLASSES[options.size], options.class ?? ""]
       .filter(Boolean)
       .join(" ");
   return (

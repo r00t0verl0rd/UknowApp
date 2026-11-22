@@ -31,7 +31,7 @@ export default function UsersPage(options) {
           />
         </div>
         <ToolbarSelect
-          className="user-sort-field"
+          class="user-sort-field"
           selectClassName="user-sort"
           aria-label="Сортировка пользователей"
           value={options.userSort}
@@ -44,7 +44,7 @@ export default function UsersPage(options) {
         </ToolbarSelect>
         <Button
           variant="primary"
-          className="user-add-btn ui-toolbar-control"
+          class="user-add-btn ui-toolbar-control"
           onClick={() => options.openCreate()}
         >
           <Plus />
@@ -70,7 +70,7 @@ export default function UsersPage(options) {
               <b class="user-person-info">{user.full_name}</b>
               <div class="user-actions">
                 <IconButton
-                  className="user-action-btn edit-btn"
+                  class="user-action-btn edit-btn"
                   onClick={() => options.openEdit(user)}
                   title="Изменить профиль"
                   aria-label={`Изменить профиль ${user.full_name}`}
@@ -96,7 +96,7 @@ export default function UsersPage(options) {
                 )}
                 <div class="user-info-wrap">
                   <IconButton
-                    className={
+                    class={
                       "user-action-btn user-info-btn" + (options.userInfo === user.id ? " is-open" : "")
                     }
                     type="button"
@@ -110,7 +110,7 @@ export default function UsersPage(options) {
                   </IconButton>
                   {options.userInfo === user.id && (
                     <Modal
-                      className="user-details"
+                      class="user-details"
                       labelledBy="user-details-title"
                       onClose={() => options.setUserInfo(null)}
                     >
@@ -138,7 +138,7 @@ export default function UsersPage(options) {
                   )}
                 </div>
                 <IconButton
-                  className="user-action-btn danger-icon user-delete"
+                  class="user-action-btn danger-icon user-delete"
                   tone="danger"
                   onClick={() => options.removeUser(user)}
                   title="Удалить пользователя"

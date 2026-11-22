@@ -101,7 +101,7 @@ export default function ChatsPage(options) {
           )}
           {options.profile?.role === "admin" && options.chatSection === "personal" && (
             <IconButton
-              className="personal-chat-create ui-toolbar-icon"
+              class="personal-chat-create ui-toolbar-icon"
               onClick={options.openCreatePersonalChat}
               aria-label="Новый диалог"
               title="Новый личный диалог"
@@ -135,7 +135,7 @@ export default function ChatsPage(options) {
               <label class="chat-filter">
                 <span>Показать</span>
                 <ToolbarSelect
-                  className="chat-filter-field"
+                  class="chat-filter-field"
                   aria-label="Фильтр диалогов"
                   value={options.chatFilter}
                   onChange={(event) => options.setChatFilter(event.target.value)}

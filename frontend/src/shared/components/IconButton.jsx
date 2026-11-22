@@ -1,7 +1,7 @@
 import { omit } from "solid-js";
 // Единая кнопка-иконка для карточек, списков, диалогов и панелей.
 export default function IconButton(options) {
-  const props = omit(options, "className", "tone", "size", "type", "children");
+  const props = omit(options, "class", "tone", "size", "type", "children");
   const classes = () =>
     [
       "icon-btn",
@@ -9,7 +9,7 @@ export default function IconButton(options) {
       (options.tone ?? "neutral") === "danger" && "ui-icon-button--danger",
       (options.tone ?? "neutral") === "student" && "ui-icon-button--student",
       (options.size ?? "default") !== "default" && `ui-icon-button--${options.size ?? "default"}`,
-      options.className ?? "",
+      options.class ?? "",
     ]
       .filter(Boolean)
       .join(" ");

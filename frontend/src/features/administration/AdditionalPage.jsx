@@ -34,7 +34,7 @@ export default function AdditionalPage(options) {
         " дней? Действие необратимо.";
   return (
     <>
-      <Panel className="additional-panel">
+      <Panel class="additional-panel">
         <div class="additional-heading">
           <div>
             <div class="eyebrow">ОБСЛУЖИВАНИЕ ДАННЫХ</div>
@@ -274,7 +274,7 @@ export default function AdditionalPage(options) {
       </Panel>
       {options.pendingConfirmation && (
         <Modal
-          className="confirm-delete-modal"
+          class="confirm-delete-modal"
           role="alertdialog"
           labelledBy="admin-operation-title"
           onClose={() => options.setPendingConfirmation(null)}

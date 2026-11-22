@@ -53,7 +53,7 @@ export default function UserDialogs(options) {
         <Modal
           onClose={() => options.setModal(null)}
           closeOnBackdrop={!options.savingUser}
-          className={`${options.modal.mode === "create" ? "create-participant-modal" : options.modal.mode === "edit" ? "participant-profile-modal" : ""}`}
+          class={`${options.modal.mode === "create" ? "create-participant-modal" : options.modal.mode === "edit" ? "participant-profile-modal" : ""}`}
         >
           <div class="modal-head">
             <div>
@@ -173,7 +173,7 @@ export default function UserDialogs(options) {
                           <b>XXXX-XXXX</b>
                           <Button
                             variant="outline"
-                            className="password-code-refresh"
+                            class="password-code-refresh"
                             onClick={() => setConfirmNewCode(true)}
                             disabled={options.savingUser}
                             title="Старый код сразу перестанет действовать"
@@ -199,7 +199,7 @@ export default function UserDialogs(options) {
                 {options.modal.mode === "edit" && (
                   <IconButton
                     tone="danger"
-                    className="user-action-btn danger-icon user-delete"
+                    class="user-action-btn danger-icon user-delete"
                     onClick={() =>
                       options.removeUser(options.users.find((user) => user.id === options.modal.id))
                     }
@@ -230,7 +230,7 @@ export default function UserDialogs(options) {
         <Modal
           onClose={() => setConfirmNewCode(false)}
           closeOnBackdrop={!options.savingUser}
-          className="confirm-delete-modal"
+          class="confirm-delete-modal"
           role="alertdialog"
           labelledBy="new-access-code-title"
         >
@@ -273,7 +273,7 @@ export default function UserDialogs(options) {
         <Modal
           onClose={() => options.setDeleteCandidate(null)}
           closeOnBackdrop={!options.deletingUser}
-          className="confirm-delete-modal"
+          class="confirm-delete-modal"
           role="alertdialog"
           labelledBy="delete-user-title"
         >
@@ -320,7 +320,7 @@ export default function UserDialogs(options) {
         <Modal
           onClose={() => options.setUnassignCandidate(null)}
           closeOnBackdrop={!options.unassigningStudent}
-          className="confirm-delete-modal"
+          class="confirm-delete-modal"
           role="alertdialog"
           labelledBy="unassign-student-title"
         >
@@ -372,7 +372,7 @@ export default function UserDialogs(options) {
         <Modal
           onClose={() => options.setDisconnectCandidate(null)}
           closeOnBackdrop={!options.disconnectingTelegram}
-          className="confirm-delete-modal"
+          class="confirm-delete-modal"
           role="alertdialog"
           labelledBy="disconnect-telegram-title"
         >
@@ -414,7 +414,7 @@ export default function UserDialogs(options) {
       )}
 
       {options.issuedCredential && (
-        <Modal onClose={() => options.setIssuedCredential(null)} className="credential-modal">
+        <Modal onClose={() => options.setIssuedCredential(null)} class="credential-modal">
           <div class="modal-head">
             <div>
               <div class="eyebrow">

@@ -159,7 +159,7 @@ function Application(options) {
   };
   const pushToggle = () => (
     <IconButton
-      className={`push-toggle${push.pushState.enabled ? " active" : ""}`}
+      class={`push-toggle${push.pushState.enabled ? " active" : ""}`}
       onClick={push.togglePushNotifications}
       disabled={push.pushBusy}
       title={push.pushBusy ? "Обновляем настройки уведомлений…" : push.pushButtonTitle}
