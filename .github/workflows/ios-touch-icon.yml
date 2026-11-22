@@ -1,0 +1,51 @@
+name: Generate iOS Home Screen icon
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/public/logo-main.svg"
+      - "frontend/scripts/generate_ios_touch_icon.py"
+      - ".github/workflows/ios-touch-icon.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  ios-icon:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install vector renderer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends inkscape
+          python -m pip install "Pillow>=10,<13"
+      - name: Export 180x180 iOS PNG from master SVG
+        run: python frontend/scripts/generate_ios_touch_icon.py
+      - name: Verify native PNG
+        run: |
+          python - <<'PY'
+          from PIL import Image
+          with Image.open("frontend/public/apple-touch-icon.png") as icon:
+              assert icon.format == "PNG"
+              assert icon.size == (180, 180)
+              assert icon.getpixel((0, 0)) == (32, 41, 56)
+          PY
+      - name: Commit generated iOS compatibility icon to main
+        run: |
+          git add -- frontend/public/apple-touch-icon.png
+          if git diff --cached --quiet; then
+            echo "iOS icon is already up to date"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "assets(ios): regenerate Home Screen icon from SVG [skip ci]"
+          git push origin HEAD:main

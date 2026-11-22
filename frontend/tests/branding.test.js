@@ -10,7 +10,9 @@ const read = relative => readFileSync(path.join(frontend, relative), "utf8");
 test("one vector logo is shared by all built-in app branding", () => {
   const brandingFiles = readdirSync(path.join(frontend, "public"))
     .filter(name => /\.(?:svg|png|jpe?g|webp|gif|ico|avif)$/i.test(name));
-  assert.deepEqual(brandingFiles, ["logo-main.svg"]);
+  assert.ok(brandingFiles.includes("logo-main.svg"));
+  assert.ok(brandingFiles.every(name => name === "logo-main.svg" || name === "apple-touch-icon.png"));
+  // iOS fallback is generated from logo-main.svg and committed by the icon workflow.
 
   const svg = read("public/logo-main.svg");
   assert.match(svg, /^<svg\b/);
@@ -19,9 +21,9 @@ test("one vector logo is shared by all built-in app branding", () => {
 
   const html = read("index.html");
   assert.match(html, /rel="icon" href="\/logo-main\.svg" type="image\/svg\+xml"/);
-  assert.match(html, /rel="apple-touch-icon" href="\/logo-main\.svg"/);
+  assert.match(html, /rel="apple-touch-icon" sizes="180x180" href="\/apple-touch-icon\.png\?v=3"/);
   assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
-  assert.doesNotMatch(html, /\.(?:png|jpe?g|webp|ico)\b|safari-pinned-tab|msapplication-TileImage/i);
+  assert.doesNotMatch(html, /\.(?:jpe?g|webp|ico)\b|safari-pinned-tab|msapplication-TileImage/i);
 
   const manifest = JSON.parse(read("public/manifest.webmanifest"));
   assert.deepEqual(manifest.icons, [
@@ -42,6 +44,6 @@ test("one vector logo is shared by all built-in app branding", () => {
     assert.doesNotMatch(source, /src="\/logo\.png"/, file);
   }
 
-  assert.match(read("Caddyfile"), /@appIcons path \/logo-main\.svg \/manifest\.webmanifest/);
+  assert.match(read("Caddyfile"), /@appIcons path \/logo-main\.svg \/apple-touch-icon\.png \/manifest\.webmanifest/);
   assert.doesNotMatch(read("Dockerfile"), /generate_icons|py3-pillow/);
 });
