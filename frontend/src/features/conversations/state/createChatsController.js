@@ -72,6 +72,15 @@ export function createChatsController(options) {
       void openChat(chat);
     },
   );
+  // Обновляем кэш уже показанной переписки при ответе сервера и SSE.
+  // Это важно на телефоне: кнопка «Назад» очищает открытый чат, но
+  // возвращение к нему не должно ждать повторной загрузки истории.
+  createEffect(
+    () => [activeChatKey(), options.chatState.messages, options.chatState.messagesLoading],
+    ([key, messages, loading]) => {
+      if (key && !loading && Array.isArray(messages)) cacheChat(key, messages);
+    },
+  );
   const visibleMessages = createMemo(() => {
     if (options.chatState.messageFilter === "all") return options.chatState.messages;
     return options.chatState.messages.filter((message) => {
@@ -227,6 +236,9 @@ export function createChatsController(options) {
     const cachedById = new Map((cachedMessages || []).map((item) => [String(item.id), item]));
     const controller = new AbortController();
     openingChatRequest = { key: chatKey, controller };
+    // Блокируем запись старой истории под ключом нового чата на время
+    // синхронного переключения сигналов.
+    options.chatState.setMessagesLoading(true);
     options.chatState.setSelectedChat(chat);
     options.chatState.setMessages(cachedMessages || []);
     options.chatState.setMessagesLoading(!cachedMessages);
