@@ -471,6 +471,84 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize({ width: 1280, height: 720 });
 
+    // Единая и более контрастная подсветка выбранного раздела, вкладки и чата,
+    // включая границу перестроения навигации 1024/1025 px.
+    for (const width of [390, 1024, 1025, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        const state = await page.evaluate(nextTheme => {
+          const root = document.documentElement;
+          const previous = root.dataset.theme;
+          root.dataset.theme = nextTheme;
+          const host = document.createElement("div");
+          host.className = "workspace-shell";
+          host.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;visibility:hidden;pointer-events:none";
+          host.innerHTML = `
+            <aside class="sidebar">
+              <nav>
+                <button class="ui-menu-control" aria-current="page">Диалоги</button>
+                <button class="ui-menu-control">Пользователи</button>
+              </nav>
+            </aside>
+            <section class="chat-list">
+              <div class="chat-section-tabs ui-toolbar-control ui-toolbar-segmented">
+                <button class="chat-section-tab ui-toolbar-tab" aria-pressed="true">Личные</button>
+                <button class="chat-section-tab ui-toolbar-tab" aria-pressed="false">Участники</button>
+              </div>
+              <div class="chat-items">
+                <button class="student-card chat-item selected">Активный чат</button>
+                <button class="student-card chat-item">Неактивный чат</button>
+              </div>
+            </section>
+          `;
+          document.body.append(host);
+          const read = selector => {
+            const computed = getComputedStyle(host.querySelector(selector));
+            return { background: computed.backgroundColor,
+              border: computed.borderTopColor, color: computed.color };
+          };
+          try {
+            return {
+              navigation: read(".sidebar nav [aria-current]"),
+              navigationInactive: read(".sidebar nav button:not([aria-current])"),
+              tab: read(".chat-section-tab[aria-pressed=true]"),
+              tabInactive: read(".chat-section-tab[aria-pressed=false]"),
+              chat: read(".chat-item.selected"),
+              chatInactive: read(".chat-item:not(.selected)"),
+              shellRadius: getComputedStyle(host).borderTopLeftRadius,
+              sidebarRadius: getComputedStyle(host.querySelector(".sidebar")).borderTopLeftRadius,
+              tabWrapperRadius: getComputedStyle(host.querySelector(".ui-toolbar-segmented")).borderTopLeftRadius,
+              innerTabRadius: getComputedStyle(host.querySelector(".chat-section-tab")).borderTopLeftRadius,
+              tabWrapperOverflow: getComputedStyle(host.querySelector(".ui-toolbar-segmented")).overflow,
+            };
+          } finally {
+            host.remove();
+            root.dataset.theme = previous;
+          }
+        }, theme);
+        assert.deepEqual(state.navigation, state.tab,
+          `${width}px ${theme}: sidebar and chat tabs share selected color/border/text`);
+        assert.deepEqual(state.navigation, state.chat,
+          `${width}px ${theme}: selected conversations share selected palette`);
+        for (const [active, inactive] of [
+          [state.navigation, state.navigationInactive],
+          [state.tab, state.tabInactive],
+          [state.chat, state.chatInactive],
+        ]) {
+          assert.notEqual(active.background, inactive.background,
+            `${width}px ${theme}: selected background must be visible`);
+          assert.notEqual(active.border, inactive.border,
+            `${width}px ${theme}: selected border must be visible`);
+        }
+        assert.equal(state.shellRadius, "0px", `${width}px ${theme}: no white shell corner slivers`);
+        assert.equal(state.sidebarRadius, "0px", `${width}px ${theme}: no sidebar corner slivers`);
+        assert.equal(state.tabWrapperRadius, "9px");
+        assert.equal(state.innerTabRadius, "5px");
+        assert.equal(state.tabWrapperOverflow, "hidden");
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
+
     // Переключатель диалогов и кнопка создания всегда остаются в одной строке.
     for (const width of [320, 390, 760, 1280]) {
       await page.setViewportSize({ width, height: 800 });
