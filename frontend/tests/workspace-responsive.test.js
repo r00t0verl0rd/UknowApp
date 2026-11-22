@@ -5,11 +5,11 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const frontend = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const css = readFileSync(path.join(frontend, "src/shared/styles/workspace-scroll.css"), "utf8");
-const standalone = readFileSync(path.join(frontend, "src/shared/styles/standalone.css"), "utf8");
+const css = readFileSync(path.join(frontend, "src/shared/styles/workspace-scroll.scss"), "utf8");
+const standalone = readFileSync(path.join(frontend, "src/shared/styles/standalone.scss"), "utf8");
 const layout = readFileSync(path.join(frontend, "src/workspaces/WorkspaceLayout.jsx"), "utf8");
-const roleColors = readFileSync(path.join(frontend, "src/shared/styles/role-colors.css"), "utf8");
-const graphTheme = readFileSync(path.join(frontend, "src/shared/styles/graph-and-theme.css"), "utf8");
+const roleColors = readFileSync(path.join(frontend, "src/shared/styles/role-colors.scss"), "utf8");
+const graphTheme = readFileSync(path.join(frontend, "src/shared/styles/graph-and-theme.scss"), "utf8");
 
 test("mobile and desktop use one theme surface for the workspace", () => {
   assert.match(css, /--workspace-background:\s*var\(--surface\)/);

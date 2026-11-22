@@ -1,30 +1,30 @@
-@import "./tokens.css";
+@use "./tokens";
 
 /* Порядок импортов CSS сохраняет приоритеты стилей. */
-@import "./base.css";
-@import "./conversations.css";
-@import "./structure.css";
-@import "./inbox.css";
-@import "./graph-and-theme.css";
-@import "./workspace-layout.css";
-@import "./shared-controls.css";
-@import "./users.css";
-@import "./workspace-refinements.css";
-@import "./theme.css";
-@import "./role-colors.css";
-@import "./admin-tools.css";
-@import "./standalone.css";
+@use "./base";
+@use "./conversations";
+@use "./structure";
+@use "./inbox";
+@use "./graph-and-theme";
+@use "./workspace-layout";
+@use "./shared-controls";
+@use "./users";
+@use "./workspace-refinements";
+@use "./theme";
+@use "./role-colors";
+@use "./admin-tools";
+@use "./standalone";
 /* Последний слой: общий стиль кнопок-иконок без разрозненных исключений. */
-@import "./icon-actions.css";
+@use "./icon-actions";
 /* Единая типографика и оформление пунктов меню и кнопки добавления. */
-@import "./navigation.css";
+@use "./navigation";
 /* Компактный переключатель разделов переписки и действие создания диалога. */
-@import "./chat-controls.css";
-@import "./workspace-scroll.css";
+@use "./chat-controls";
+@use "./workspace-scroll";
 /* Финальный слой выбора имеет приоритет над старыми стилями карточек и мобильных кнопок. */
-@import "./active-states.css";
+@use "./active-states";
 
 /* Нативные окна и общая геометрия форм; последняя точка оформления. */
-@import "./native-dialogs.css";
+@use "./native-dialogs";
 /* Отдельная геометрия входа не меняет рабочие экраны. */
-@import "./login.css";
+@use "./login";

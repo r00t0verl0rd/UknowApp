@@ -9,15 +9,15 @@ const read = file => readFileSync(path.join(root, file), "utf8");
 
 test("login uses the same full-viewport surface as all workspaces", () => {
   const page = read("src/app/authentication/LoginPage.jsx");
-  const css = read("src/shared/styles/login.css");
-  const imports = read("src/shared/styles/index.css");
+  const css = read("src/shared/styles/login.scss");
+  const imports = read("src/shared/styles/index.scss");
   const critical = read("public/critical.css");
 
   assert.match(page, /<main className="login-screen">/);
   assert.match(page, /className="login-brand"/);
   assert.match(page, /src="\/logo-main\.svg"/);
   assert.match(page, /className="login-submit"/);
-  assert.match(imports, /@import "\.\/login\.css";/);
+  assert.match(imports, /@use "\.\/login";/);
   assert.match(css, /:root\[data-theme\]:has\(\.login-screen\)/);
   assert.match(css, /background:\s*var\(--workspace-background\)\s*!important/);
   assert.match(css, /min-height:\s*100dvh/);
