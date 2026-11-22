@@ -12,6 +12,7 @@ export function useAdminDataController({
   const [restore, setRestore] = useState(null);
   const pendingId = restore?.status === "pending" ? restore.id : null;
   const [retentionDays, setRetentionDays] = useState("30");
+  const [pendingConfirmation, setPendingConfirmation] = useState(null);
 
   const loadDataStats = useCallback(async () => {
     try {
@@ -75,12 +76,7 @@ export function useAdminDataController({
     }
   }, [setError]);
 
-  const uploadAdminFile = useCallback(async (kind, file) => {
-    if (!file) return;
-    const warning = kind === "full"
-      ? "Подготовить перенос UknowApp из этой копии? После перезапуска backend весь текущий каталог data будет заменён содержимым архива."
-      : "Заменить текущую базу данных загруженной копией? Все текущие данные будут перезаписаны.";
-    if (!window.confirm(warning)) return;
+  const performUploadAdminFile = useCallback(async (kind, file) => {
     setDataBusy(true);
     try {
       const result = await uploadAdminBackup(kind, file);
@@ -104,9 +100,7 @@ export function useAdminDataController({
     }
   }, [setError, notify, loadDataStats, setSelectedChat, setMessages, refresh]);
 
-  const cleanupOldDialogues = useCallback(async () => {
-    const days = Number(retentionDays);
-    if (!window.confirm("Удалить переписки и медиафайлы старше " + days + " дней? Действие необратимо.")) return;
+  const performCleanupOldDialogues = useCallback(async days => {
     setDataBusy(true);
     try {
       const result = await cleanupAdminDialogues(request, days);
@@ -118,10 +112,29 @@ export function useAdminDataController({
     } finally {
       setDataBusy(false);
     }
-  }, [retentionDays, setError, request, notify, loadDataStats, refresh]);
+  }, [setError, request, notify, loadDataStats, refresh]);
+
+  // Browser-native <dialog> показывает единое подтверждение для опасных операций.
+  // File остаётся в памяти до согласия; отмена ничего не загружает.
+  const uploadAdminFile = useCallback((kind, file) => {
+    if (file) setPendingConfirmation({ type: "restore", kind, file });
+  }, []);
+
+  const cleanupOldDialogues = useCallback(() => {
+    setPendingConfirmation({ type: "cleanup", days: Number(retentionDays) });
+  }, [retentionDays]);
+
+  const confirmPendingAction = useCallback(async () => {
+    const current = pendingConfirmation;
+    if (!current || dataBusy) return;
+    setPendingConfirmation(null);
+    if (current.type === "restore") await performUploadAdminFile(current.kind, current.file);
+    else await performCleanupOldDialogues(current.days);
+  }, [pendingConfirmation, dataBusy, performUploadAdminFile, performCleanupOldDialogues]);
 
   return {
     dataStats, restore, dataBusy: dataBusy || Boolean(pendingId), retentionDays, setRetentionDays,
     loadDataStats, downloadAdminFile, uploadAdminFile, cleanupOldDialogues,
+    pendingConfirmation, setPendingConfirmation, confirmPendingAction,
   };
 }

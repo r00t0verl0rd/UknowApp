@@ -103,10 +103,11 @@ try {
     assert.ok((await stat(archive)).size > 22 * 1024 * 1024);
   } else {
     assert.deepEqual(await (await api.get(url + "/api/panel/conversations")).json(), []);
-    page.once("dialog", dialog => dialog.accept());
     const uploading = page.waitForResponse(res =>
       res.url().endsWith("/api/admin/data/full") && res.request().method() === "POST");
     await page.locator('input[accept=".zip"]').setInputFiles(archive);
+    const confirmation = page.getByRole("alertdialog", { name: "Восстановить резервную копию?" });
+    await confirmation.getByRole("button", { name: "Восстановить", exact: true }).click();
     assert.equal((await uploading).status(), 202);
     // Восстановление базы заменяет сессию администратора.
     await page.getByRole("button", { name: "Войти" }).waitFor({ timeout: 120000 });

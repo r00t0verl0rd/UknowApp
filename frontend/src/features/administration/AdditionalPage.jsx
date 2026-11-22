@@ -4,6 +4,10 @@ import DatabaseIcon from "lucide-react/dist/esm/icons/database.js";
 import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw.js";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
 import Panel from "../../shared/components/Panel.jsx";
+import Modal from "../../shared/components/Modal.jsx";
+import Button from "../../shared/components/Button.jsx";
+import IconButton from "../../shared/components/IconButton.jsx";
+import X from "lucide-react/dist/esm/icons/x.js";
 
 function formatBytes(bytes) {
   if (!bytes) return "0 Б";
@@ -12,8 +16,19 @@ function formatBytes(bytes) {
   return (bytes / (1024 ** index)).toLocaleString("ru-RU", { maximumFractionDigits: index ? 1 : 0 }) + " " + units[index];
 }
 
-export default function AdditionalPage({ dataStats, restore, dataBusy, loadDataStats, downloadAdminFile, uploadAdminFile, retentionDays, setRetentionDays, cleanupOldDialogues }) {
+export default function AdditionalPage({
+  dataStats, restore, dataBusy, loadDataStats, downloadAdminFile, uploadAdminFile,
+  retentionDays, setRetentionDays, cleanupOldDialogues,
+  pendingConfirmation, setPendingConfirmation, confirmPendingAction,
+}) {
+  const isRestore = pendingConfirmation?.type === "restore";
+  const confirmationText = isRestore
+    ? pendingConfirmation.kind === "full"
+      ? "Восстановление заменит весь текущий каталог data содержимым архива. После операции backend перезапустится."
+      : "Восстановление заменит текущую базу данных загруженной копией. Это действие нельзя отменить."
+    : "Удалить переписки и медиафайлы старше " + (pendingConfirmation?.days || "") + " дней? Действие необратимо.";
   return (
+    <>
     <Panel className="additional-panel">
       <div className="additional-heading"><div><div className="eyebrow">ОБСЛУЖИВАНИЕ ДАННЫХ</div><h2>Дополнительно</h2></div><button type="button" className="btn outline" onClick={loadDataStats} disabled={dataBusy}><RefreshCw size={15}/>Обновить</button></div>
       <div className="data-stats-grid">
@@ -96,5 +111,28 @@ export default function AdditionalPage({ dataStats, restore, dataBusy, loadDataS
         <div className="data-cleanup-actions"><label>Удалять старше<select value={retentionDays} onChange={e => setRetentionDays(e.target.value)} disabled={dataBusy}><option value="30">30 дней</option><option value="60">60 дней</option><option value="180">180 дней</option><option value="360">360 дней</option></select></label><button type="button" className="btn danger" onClick={cleanupOldDialogues} disabled={dataBusy}><Trash2 size={15}/>Удалить старые данные</button></div>
       </article>
     </Panel>
+    {pendingConfirmation && <Modal
+      className="confirm-delete-modal"
+      role="alertdialog"
+      labelledBy="admin-operation-title"
+      onClose={() => setPendingConfirmation(null)}
+      closeOnBackdrop={!dataBusy}
+    >
+      <div className="modal-head">
+        <div>
+          <div className="eyebrow">{isRestore ? "ВОССТАНОВЛЕНИЕ ДАННЫХ" : "ОЧИСТКА ДАННЫХ"}</div>
+          <h2 id="admin-operation-title">{isRestore ? "Восстановить резервную копию?" : "Удалить старые данные?"}</h2>
+        </div>
+        <IconButton onClick={() => setPendingConfirmation(null)} disabled={dataBusy} aria-label="Закрыть"><X/></IconButton>
+      </div>
+      <p className="hint">{confirmationText}</p>
+      <div className="modal-actions">
+        <Button variant="ghost" onClick={() => setPendingConfirmation(null)} disabled={dataBusy}>Отмена</Button>
+        <Button variant={isRestore ? "primary" : "danger"} disabled={dataBusy} onClick={confirmPendingAction}>
+          {isRestore ? "Восстановить" : "Удалить данные"}
+        </Button>
+      </div>
+    </Modal>}
+    </>
   );
 }

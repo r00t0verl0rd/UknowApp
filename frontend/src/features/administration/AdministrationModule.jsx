@@ -17,5 +17,8 @@ export default function AdministrationModule({
     uploadAdminFile={state.uploadAdminFile}
     retentionDays={state.retentionDays} setRetentionDays={state.setRetentionDays}
     cleanupOldDialogues={state.cleanupOldDialogues}
+    pendingConfirmation={state.pendingConfirmation}
+    setPendingConfirmation={state.setPendingConfirmation}
+    confirmPendingAction={state.confirmPendingAction}
   />;
 }
