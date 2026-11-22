@@ -144,6 +144,14 @@ def migrate_legacy_schema() -> None:
             "ON personal_messages (conversation_id, sender_role, client_message_id)",
         ))
 
+    # Вложения личных переписок: без изменения существующих текстовых сообщений.
+    with engine.begin() as connection:
+        columns = {column["name"] for column in inspect(connection).get_columns("personal_messages")}
+        if "metadata_json" not in columns:
+            connection.execute(text(
+                "ALTER TABLE personal_messages ADD COLUMN metadata_json TEXT NOT NULL DEFAULT '{}'",
+            ))
+
     # Метки прочтения личных переписок.
     with engine.begin() as connection:
         columns = {column["name"] for column in inspect(connection).get_columns("personal_messages")}
