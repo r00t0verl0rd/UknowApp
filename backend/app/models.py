@@ -7,7 +7,6 @@ from sqlalchemy import (
     Boolean,
     event,
     DateTime,
-    Float,
     ForeignKey,
     Index,
     Integer,
@@ -278,30 +277,4 @@ class RealtimeEvent(Base):
     conversation_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     conversation_type: Mapped[str] = mapped_column(String(20), nullable=False, default="conversation")
     payload_json: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
-
-
-class GraphObjectDeletion(Base):
-    __tablename__ = "graph_object_deletions"
-
-    object_key: Mapped[str] = mapped_column(String(160), primary_key=True)
-    deleted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
-
-
-class GraphObject(Base):
-    __tablename__ = "graph_objects"
-    __table_args__ = (
-        UniqueConstraint("object_key", name="uq_graph_objects_key"),
-        Index("ix_graph_objects_parent_id", "parent_id"),
-    )
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    parent_id: Mapped[int | None] = mapped_column(
-        ForeignKey("graph_objects.id", ondelete="CASCADE"), nullable=True,
-    )
-    object_key: Mapped[str] = mapped_column(String(160), nullable=False)
-    object_type: Mapped[str] = mapped_column(String(40), nullable=False)
-    title: Mapped[str] = mapped_column(String(160), nullable=False)
-    x: Mapped[float] = mapped_column(Float, nullable=False, default=0)
-    y: Mapped[float] = mapped_column(Float, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)

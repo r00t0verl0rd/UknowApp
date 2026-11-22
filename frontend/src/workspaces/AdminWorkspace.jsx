@@ -1,7 +1,6 @@
 import { lazy, Suspense } from "react";
 import ChatsModule from "../features/conversations/index.js";
 
-const BoardsPage = lazy(() => import("../features/boards/index.js"));
 const UsersModule = lazy(() => import("../features/users/index.js"));
 const AdministrationModule = lazy(() => import("../features/administration/index.js"));
 
@@ -25,7 +24,7 @@ function AdminPage({ context }) {
         selectedChat={chatState.selectedChat} setSelectedChat={chatState.setSelectedChat}
         setMessages={chatState.setMessages} modal={modal} setModal={setModal}/>;
     case "boards":
-      return <BoardsPage setError={setError}/>;
+      return null;
     case "additional":
       return <AdministrationModule page={page} auth={auth} profile={profile} request={request}
         refresh={refresh} notify={notify} setError={setError}
