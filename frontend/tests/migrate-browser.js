@@ -22,10 +22,10 @@ try {
     const beforeApp = await browser.newPage();
     await beforeApp.route("**/assets/**", route => route.abort());
     await beforeApp.goto(url);
-    assert.equal(await beforeApp.locator("body").evaluate(node => getComputedStyle(node).backgroundColor), "rgb(23, 27, 37)");
+    assert.equal(await beforeApp.locator("body").evaluate(node => getComputedStyle(node).backgroundColor), "rgb(32, 41, 56)");
     await beforeApp.addInitScript(() => localStorage.setItem("uknowapp-theme-v2", "light"));
     await beforeApp.reload();
-    assert.equal(await beforeApp.locator("body").evaluate(node => getComputedStyle(node).backgroundColor), "rgb(247, 246, 251)");
+    assert.equal(await beforeApp.locator("body").evaluate(node => getComputedStyle(node).backgroundColor), "rgb(250, 248, 253)");
     await beforeApp.close();
     await page.goto(url);
     await page.getByRole("button", { name: "Войти" }).click();
