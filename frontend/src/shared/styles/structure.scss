@@ -1,76 +1,72 @@
-/* Основной раздел — структура школы. */
 .grid {
-  column-gap: 26px;
+  column-gap:26px;
 }
 .person-main {
-  gap: 12px;
+  gap:12px;
 }
 .avatar {
-  width: 44px;
-  height: 44px;
+  width:44px;
+  height:44px;
 }
 .avatar svg {
-  width: 21px;
-  height: 21px;
+  width:21px;
+  height:21px;
 }
 .person-info b {
-  font-size: 14px;
+  font-size:14px;
 }
 .person-info small {
-  font-size: 11px;
+  font-size:11px;
 }
 .person-actions svg {
-  width: 17px;
-  height: 17px;
+  width:17px;
+  height:17px;
 }
 .toolbar,
 .user-row .person-info b {
-  font-size: 13px;
+  font-size:13px;
 }
 .user-row .person-info small,
 .role-tag {
-  font-size: 11px;
+  font-size:11px;
 }
-/* Подключённые аккаунты Telegram выделены цветом. */
-/* Цвета ролей: ученики и преподаватели. */
 .user-row .avatar.student {
-  background: #e8f7ee;
-  color: #16834a;
+  background:#e8f7ee;
+  color:#16834a;
 }
 .user-row .avatar.teacher {
-  background: #eee8f8;
+  background:#eee8f8;
 }
-/* Фирменные цвета — сиреневый и красный. */
 .login-card {
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid #e7def4;
-  border-radius: 24px;
+  background:rgba(255, 255, 255, 0.94);
+  border:1px solid #e7def4;
+  border-radius:24px;
   box-shadow:
     0 22px 70px rgba(55, 35, 95, 0.12),
     0 0 28px rgba(194, 153, 255, 0.12);
 }
 .brand {
-  color: var(--purple);
+  color:var(--purple);
 }
 .brand span span {
-  color: var(--red);
+  color:var(--red);
 }
 .school-label,
 .eyebrow {
-  color: #8977a8;
+  color:#8977a8;
 }
 .sidebar {
-  background: var(--surface);
-  border-right: 1px solid var(--line);
-  box-shadow: none;
+  background:var(--surface);
+  border-right:1px solid var(--line);
+  box-shadow:none;
 }
 .topbar {
-  background: var(--surface);
-  box-shadow: none;
+  background:var(--surface);
+  box-shadow:none;
 }
 .topbar b,
 .workspace-content {
-  color: var(--ink);
+  color:var(--ink);
 }
 .btn {
   transition:
@@ -78,53 +74,53 @@
     box-shadow 0.16s ease,
     background 0.16s ease,
     border-color 0.16s ease;
-  background: #fff;
-  color: var(--ink);
-  border: 1px solid #e5deef;
-  border-radius: 11px;
+  background:#fff;
+  color:var(--ink);
+  border:1px solid #e5deef;
+  border-radius:11px;
 }
 .btn:hover {
-  transform: translateY(-1px);
-  background: #faf7ff;
-  border-color: #cdb9eb;
-  box-shadow: 0 5px 16px rgba(87, 62, 153, 0.1);
+  transform:translateY(-1px);
+  background:#faf7ff;
+  border-color:#cdb9eb;
+  box-shadow:0 5px 16px rgba(87, 62, 153, 0.1);
 }
 .btn:active {
-  transform: translateY(0);
+  transform:translateY(0);
 }
 .btn.primary:hover {
-  background: linear-gradient(105deg, #493281, #6949aa);
+  background:linear-gradient(105deg, #493281, #6949aa);
   box-shadow:
     0 8px 22px rgba(87, 62, 153, 0.3),
     0 0 20px rgba(194, 153, 255, 0.24);
 }
 .btn.ghost {
-  background: #f7f4fb;
+  background:#f7f4fb;
 }
 .btn.outline {
-  color: var(--purple);
-  border-color: #d8c9ed;
-  background: #faf7ff;
+  color:var(--purple);
+  border-color:#d8c9ed;
+  background:#faf7ff;
 }
 .btn.outline:hover {
-  background: #f0e9fb;
+  background:#f0e9fb;
 }
 .user-list {
-  background: #fff;
+  background:#fff;
 }
 .legend,
 .toolbar {
-  color: var(--muted);
+  color:var(--muted);
 }
 .student-card:hover,
 .teacher-card:hover {
-  transform: translateY(-1px);
+  transform:translateY(-1px);
 }
 .unassigned {
-  border-top-color: #eee2c9;
+  border-top-color:#eee2c9;
 }
 .search {
-  border-radius: 11px;
+  border-radius:11px;
 }
 .search:focus-within {
   box-shadow:
@@ -132,249 +128,240 @@
     0 0 14px rgba(194, 153, 255, 0.14);
 }
 .search input::placeholder {
-  color: #aaa3b4;
+  color:#aaa3b4;
 }
 .user-row .avatar.student-avatar {
-  background: #fff0ce;
-  color: #a76d16;
+  background:#fff0ce;
+  color:#a76d16;
 }
 .role-tag {
-  padding: 6px 10px;
+  padding:6px 10px;
 }
 .user-row .avatar.teacher-avatar,
 .role-tag.teacher {
-  background: #eee6fb;
-  color: #6847a8;
+  background:#eee6fb;
+  color:#6847a8;
 }
 .person-actions .danger-icon:hover {
-  background: #fff0f1;
-  color: var(--red);
-  box-shadow: 0 0 10px var(--red-glow);
+  background:#fff0f1;
+  color:var(--red);
+  box-shadow:0 0 10px var(--red-glow);
 }
 .stack input,
 .stack select {
-  outline: 0;
-  background: #fff;
-  color: var(--ink);
+  outline:0;
+  background:#fff;
+  color:var(--ink);
 }
 .modal {
-  background: #fff;
+  background:#fff;
 }
 .invite-code {
-  letter-spacing: 4px;
-  color: var(--purple);
-  background: #f3edfc;
-  border-color: #cdb9eb;
-  box-shadow: inset 0 0 18px rgba(194, 153, 255, 0.12);
-  text-align: center;
+  letter-spacing:4px;
+  color:var(--purple);
+  background:#f3edfc;
+  border-color:#cdb9eb;
+  box-shadow:inset 0 0 18px rgba(194, 153, 255, 0.12);
+  text-align:center;
 }
 .hint {
-  color: var(--muted);
+  color:var(--muted);
 }
 .empty-state {
-  color: var(--muted);
+  color:var(--muted);
 }
 .empty-state > svg {
-  color: var(--purple2);
+  color:var(--purple2);
 }
 .empty-state b {
-  color: var(--ink);
+  color:var(--ink);
 }
 input:focus-visible,
 select:focus-visible {
-  outline-offset: 2px;
+  outline-offset:2px;
 }
-/* Отключение Telegram менее заметно, чем удаление. */
-/* Лёгкий фон структуры без соединительных линий. */
-/* Чистый интерфейс структуры без лишних элементов. */
-/* Лёгкая текстура сглаживает градиенты. */
 .workspace-content:has(.admin-card) {
   > * {
-    position: relative;
-    z-index: 1;
+    position:relative;
+    z-index:1;
   }
   .legend {
-    padding: 8px 11px;
-    border: 1px solid rgba(226, 218, 239, 0.9);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.76);
+    padding:8px 11px;
+    border:1px solid rgba(226, 218, 239, 0.9);
+    border-radius:999px;
+    background:rgba(255, 255, 255, 0.76);
   }
   .legend span {
-    width: 9px;
-    height: 9px;
+    width:9px;
+    height:9px;
   }
   .admin-card {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: min(100%, 260px);
-    min-height: clamp(48px, 7vw, 76px);
-    margin: 0 auto clamp(8px, 2vw, 24px);
-    padding: clamp(6px, 1vw, 12px) 12px;
-    overflow: hidden;
-    box-sizing: border-box;
-    border: 1px solid #ded2f0;
-    border-radius: 13px;
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    width:min(100%, 260px);
+    min-height:clamp(48px, 7vw, 76px);
+    margin:0 auto clamp(8px, 2vw, 24px);
+    padding:clamp(6px, 1vw, 12px) 12px;
+    overflow:hidden;
+    box-sizing:border-box;
+    border:1px solid #ded2f0;
+    border-radius:13px;
   }
   .admin-card img {
-    flex: 0 0 50px;
-    width: 50px;
-    height: 50px;
-    object-fit: contain;
+    flex:0 0 50px;
+    width:50px;
+    height:50px;
+    object-fit:contain;
   }
   .admin-card > div {
-    display: flex;
-    flex: 1 1 auto;
-    min-width: 0;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    text-align: center;
+    display:flex;
+    flex:1 1 auto;
+    min-width:0;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2px;
+    text-align:center;
   }
   .admin-card b,
   .admin-card small {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
-    text-align: center;
-    white-space: nowrap;
+    display:block;
+    width:100%;
+    max-width:100%;
+    margin:0;
+    text-align:center;
+    white-space:nowrap;
   }
   .admin-card b {
-    letter-spacing: -0.2px;
-    font-size: 15px;
-    line-height: 1.2;
+    letter-spacing:-0.2px;
+    font-size:15px;
+    line-height:1.2;
   }
   .admin-card small {
-    color: #89809b;
-    font-size: 11px;
-    line-height: 1.25;
+    color:#89809b;
+    font-size:11px;
+    line-height:1.25;
   }
   .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
-    grid-auto-flow: row;
-    align-items: start;
-    column-gap: 17px;
-    row-gap: 17px;
-    width: 100%;
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    grid-auto-flow:row;
+    align-items:start;
+    column-gap:17px;
+    row-gap:17px;
+    width:100%;
   }
 }
 .teacher-branch {
-  display: block;
-  margin: 0;
-  padding: 13px;
-  border-radius: 17px;
+  display:block;
+  margin:0;
+  padding:13px;
+  border-radius:17px;
 }
 .teacher-branch:hover {
-  transform: translateY(-1px);
+  transform:translateY(-1px);
 }
 .teacher-card {
-  padding: 12px 13px;
-  border: 1px solid #e3d8f1;
-  border-radius: 13px;
-  background: linear-gradient(110deg, #f0e9fb, #fff 78%);
+  padding:12px 13px;
+  border:1px solid #e3d8f1;
+  border-radius:13px;
+  background:linear-gradient(110deg, #f0e9fb, #fff 78%);
 }
 .teacher-card .avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  background: #e7dcf7;
-  color: #62459b;
+  width:42px;
+  height:42px;
+  border-radius:12px;
+  background:#e7dcf7;
+  color:#62459b;
 }
 .teacher-card .person-info b,
 .student-card .person-info b {
-  font-size: 13px;
+  font-size:13px;
 }
 .teacher-card .person-info small,
 .student-card .person-info small {
-  margin-top: 5px;
-  font-size: 10px;
+  margin-top:5px;
+  font-size:10px;
 }
 .workspace-content:has(.admin-card) .student-list {
-  gap: 8px;
-  border: 0;
+  gap:8px;
+  border:0;
 }
 .student-card {
-  min-height: 61px;
-  padding: 9px 11px;
-  border: 1px solid #f0e5ce;
-  border-radius: 12px;
-  overflow: hidden;
+  min-height:61px;
+  padding:9px 11px;
+  border:1px solid #f0e5ce;
+  border-radius:12px;
+  overflow:hidden;
 }
 .student-card .avatar {
-  border-radius: 11px;
+  border-radius:11px;
 }
 .workspace-content:has(.admin-card) {
   .empty-students {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: clamp(32px, 5vw, 52px);
-    margin-top: 0;
-    padding: 7px 9px;
-    border: 1px dashed #e8dcbf;
-    border-radius: 12px;
-    color: #9b896a;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:clamp(32px, 5vw, 52px);
+    margin-top:0;
+    padding:7px 9px;
+    border:1px dashed #e8dcbf;
+    border-radius:12px;
+    color:#9b896a;
   }
   .add-student {
-    display: flex;
-    width: fit-content;
-    max-width: 100%;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    min-height: 30px;
-    margin: 0 0 8px auto;
-    padding: 5px 9px;
-    border: 1px solid #e5dfeb;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.76);
-    color: #78698d;
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 1;
+    display:flex;
+    width:fit-content;
+    max-width:100%;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    min-height:30px;
+    margin:0 0 8px auto;
+    padding:5px 9px;
+    border:1px solid #e5dfeb;
+    border-radius:8px;
+    background:rgba(255, 255, 255, 0.76);
+    color:#78698d;
+    font-size:11px;
+    font-weight:700;
+    line-height:1;
     transition:
       background 0.18s ease,
       border-color 0.18s ease,
       transform 0.18s ease;
   }
   .add-student:hover {
-    border-color: #d2c6df;
-    background: #f5f1f8;
-    transform: translateY(-1px);
+    border-color:#d2c6df;
+    background:#f5f1f8;
+    transform:translateY(-1px);
   }
   .unassigned {
-    margin-top: 23px;
-    padding-top: 19px;
-    border-top: 1px solid #e9e1f1;
+    margin-top:23px;
+    padding-top:19px;
+    border-top:1px solid #e9e1f1;
   }
   .unassigned-title {
-    margin-bottom: 11px;
+    margin-bottom:11px;
   }
 }
-/* На телефоне действия и диалоги не выходят за экран. */
 html,
 body,
 #root {
-  min-height: 100%;
-  width: 100%;
-  max-width: 100%;
+  min-height:100%;
+  width:100%;
+  max-width:100%;
 }
 .shell,
 .content,
 .workspace-content {
-  min-width: 0;
-  max-width: 100%;
+  min-width:0;
+  max-width:100%;
 }
 img,
 video,
 audio {
-  max-width: 100%;
+  max-width:100%;
 }
-/* Задаём фон кнопок явно для одинакового вида на телефонах. */
-/* Элементы управления на мобильных экранах. */
-/* Сохраняем выделенные состояния кнопок. */
-/* Управление должно быть видно без наведения. */

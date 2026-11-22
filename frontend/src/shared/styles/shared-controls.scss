@@ -1,14 +1,9 @@
 @use "./primitives";
-
-/* --------------------------------------------------------------------------
-   Общий стиль элементов управления для всех размеров экрана и тем.
-   -------------------------------------------------------------------------- */
-/* Единая подсветка фокуса и анимация элементов. */
 button,
 input,
 select,
 textarea {
-  font-family: inherit;
+  font-family:inherit;
 }
 button:not(.chat-item),
 .btn,
@@ -22,40 +17,39 @@ button:not(.chat-item),
     transform var(--ui-transition-fast);
 }
 :where(button, input, select, textarea, [tabindex]):focus-visible {
-  outline: none;
-  box-shadow: var(--ui-focus);
+  outline:none;
+  box-shadow:var(--ui-focus);
 }
-/* Плоские кнопки в списках и карточках. */
 :is(.user-actions, .person-actions, .modal-head) button,
 button.graph-person-action {
-  appearance: none;
+  appearance:none;
   @include primitives.center;
-  border: 1px solid transparent;
-  border-radius: 9px;
-  box-shadow: none;
-  cursor: pointer;
+  border:1px solid transparent;
+  border-radius:9px;
+  box-shadow:none;
+  cursor:pointer;
 }
 .modal-head button {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
-  padding: 0;
-  color: var(--ui-control-text);
-  background: var(--ui-control-bg);
+  width:32px;
+  height:32px;
+  flex:0 0 32px;
+  padding:0;
+  color:var(--ui-control-text);
+  background:var(--ui-control-bg);
 }
 :is(.user-actions, .person-actions, .modal-head) button:focus-visible,
 button.graph-person-action:focus-visible {
-  outline: 2px solid var(--purple);
-  outline-offset: 2px;
+  outline:2px solid var(--purple);
+  outline-offset:2px;
 }
 .btn,
 .modal-head button {
-  border-radius: var(--ui-radius-sm);
+  border-radius:var(--ui-radius-sm);
 }
 .btn,
 .user-action-btn {
-  border-color: var(--ui-border);
-  box-shadow: var(--ui-shadow-soft);
+  border-color:var(--ui-border);
+  box-shadow:var(--ui-shadow-soft);
 }
 .btn:not(.primary):not(.danger),
 .user-action-btn:not(.danger),
@@ -66,27 +60,26 @@ button.graph-person-action:focus-visible {
 .btn:not(.primary):not(.danger):hover,
 .user-action-btn:not(.danger):hover,
 .person-actions button:hover {
-  background: var(--ui-control-hover);
-  border-color: var(--ui-border-strong);
-  color: var(--purple);
-  box-shadow: 0 3px 9px rgba(87, 62, 153, 0.09);
+  background:var(--ui-control-hover);
+  border-color:var(--ui-border-strong);
+  color:var(--purple);
+  box-shadow:0 3px 9px rgba(87, 62, 153, 0.09);
 }
 .btn.primary {
-  border-radius: var(--ui-radius-sm);
-  box-shadow: 0 4px 13px rgba(87, 62, 153, 0.18);
+  border-radius:var(--ui-radius-sm);
+  box-shadow:0 4px 13px rgba(87, 62, 153, 0.18);
 }
 .user-action-btn.danger {
-  border-color: var(--button-danger-border);
-  background: var(--button-danger-bg);
-  color: var(--button-danger-text);
+  border-color:var(--button-danger-border);
+  background:var(--button-danger-bg);
+  color:var(--button-danger-text);
 }
 .btn.danger:hover,
 .user-action-btn.danger:hover {
-  background: var(--button-danger-hover-bg);
-  border-color: var(--button-danger-hover-border);
-  color: var(--button-danger-hover-text);
+  background:var(--button-danger-hover-bg);
+  border-color:var(--button-danger-hover-border);
+  color:var(--button-danger-hover-text);
 }
-/* Общие границы и состояния полей и поиска. */
 .stack input,
 .stack select,
 .stack textarea,
@@ -95,156 +88,147 @@ button.graph-person-action:focus-visible {
 input,
 select,
 textarea {
-  border-radius: var(--ui-radius-sm);
+  border-radius:var(--ui-radius-sm);
 }
 .stack textarea {
-  border-color: var(--ui-border);
-  background-color: var(--surface-input);
+  border-color:var(--ui-border);
+  background-color:var(--surface-input);
 }
 .stack input:focus,
 .stack select:focus,
 .stack textarea:focus,
 .search:focus-within {
   @include primitives.field-focus;
-  outline: none;
+  outline:none;
 }
 input::placeholder,
 textarea::placeholder {
-  color: var(--placeholder);
+  color:var(--placeholder);
 }
 .user-list,
 .student-card,
 .teacher-card {
-  border-radius: var(--ui-radius-lg);
+  border-radius:var(--ui-radius-lg);
 }
 .student-card,
 .teacher-card {
-  box-shadow: 0 1px 4px rgba(47, 31, 84, 0.025);
+  box-shadow:0 1px 4px rgba(47, 31, 84, 0.025);
 }
 .student-card:hover,
 .teacher-card:hover {
-  box-shadow: 0 5px 15px rgba(87, 62, 153, 0.075);
+  box-shadow:0 5px 15px rgba(87, 62, 153, 0.075);
 }
 .user-row {
-  align-items: center;
+  align-items:center;
 }
 .role-tag {
-  border-radius: 7px;
+  border-radius:7px;
 }
 .avatar {
-  border-radius: 11px;
+  border-radius:11px;
 }
-/* Единый стиль диалогов и уведомлений. */
 .modal {
-  border-radius: 18px;
-  border: 1px solid var(--line);
-  box-shadow: 0 22px 70px rgba(33, 22, 49, 0.18);
+  border-radius:18px;
+  border:1px solid var(--line);
+  box-shadow:0 22px 70px rgba(33, 22, 49, 0.18);
 }
 .modal-head {
-  gap: 12px;
+  gap:12px;
 }
 .invite-code {
-  border-radius: var(--ui-radius-md);
+  border-radius:var(--ui-radius-md);
 }
-/* Действия верхней панели удобны для касания. */
-/* Общие компоненты для мягкой тёмной темы. */
 .workspace-search {
-  height: 42px;
-  border-radius: var(--ui-radius-sm);
-  background: var(--surface-input);
-  border-color: var(--ui-border);
+  height:42px;
+  border-radius:var(--ui-radius-sm);
+  background:var(--surface-input);
+  border-color:var(--ui-border);
 }
 .workspace-search input {
-  min-width: 0;
-  background: transparent;
-  color: var(--ink);
-  font-size: 12px;
+  min-width:0;
+  background:transparent;
+  color:var(--ink);
+  font-size:12px;
 }
-/* Общие параметры управления на вкладках пользователей и диалогов. */
 :root .ui-toolbar-control {
-  box-sizing: border-box;
-  height: var(--workspace-control-height);
-  min-height: var(--workspace-control-height);
+  box-sizing:border-box;
+  height:var(--workspace-control-height);
+  min-height:var(--workspace-control-height);
 }
 :root .ui-toolbar-control:is(.workspace-search, select) {
-  border: 1px solid var(--ui-border);
-  padding-inline: var(--workspace-control-padding);
-  background-color: var(--surface-input);
-  color: var(--ink);
+  border:1px solid var(--ui-border);
+  padding-inline:var(--workspace-control-padding);
+  background-color:var(--surface-input);
+  color:var(--ink);
 }
-/* Общее оформление поиска для обеих тем и всех вкладок. */
 :root .ui-toolbar-control.workspace-search {
-  display: flex;
-  align-items: center;
-  gap: var(--workspace-control-gap);
+  display:flex;
+  align-items:center;
+  gap:var(--workspace-control-gap);
 }
 :root .ui-toolbar-control.workspace-search input {
-  min-width: 0;
-  width: 100%;
-  font-size: var(--workspace-control-font-size);
+  min-width:0;
+  width:100%;
+  font-size:var(--workspace-control-font-size);
 }
-/* Составные кнопки диалогов — тот же размер и радиус. */
 :root .ui-toolbar-control.ui-toolbar-segmented {
-  display: grid;
-  align-items: stretch;
-  gap: 3px;
-  padding: 3px;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--workspace-control-radius);
-  overflow: hidden;
-  background: var(--surface-input);
-  background-clip: padding-box;
+  display:grid;
+  align-items:stretch;
+  gap:3px;
+  padding:3px;
+  border:1px solid var(--ui-border);
+  border-radius:var(--workspace-control-radius);
+  overflow:hidden;
+  background:var(--surface-input);
+  background-clip:padding-box;
 }
 :root .ui-toolbar-tab {
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  min-width: 0;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  /* Используем тот же радиус, что у кнопок навигации; обёртка обрезает углы. */
-  line-height: 1.2;
-  text-align: center;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  min-width:0;
+  width:100%;
+  height:100%;
+  min-height:0;
+  line-height:1.2;
+  text-align:center;
 }
 :root .ui-toolbar-icon {
   --icon-action-size: var(--workspace-control-height);
 }
 :root .ui-toolbar-control.user-add-btn {
-  padding-inline: var(--workspace-control-padding);
+  padding-inline:var(--workspace-control-padding);
 }
-/* Счётчики в панелях имеют те же высоту, рамку и радиус, что и поля. */
 :root .ui-toolbar-total {
   @include primitives.center;
-  gap: var(--workspace-control-gap);
-  padding: 0 var(--workspace-control-padding);
-  border: 1px solid var(--ui-border);
-  background: var(--surface-input);
-  color: var(--muted);
-  white-space: nowrap;
+  gap:var(--workspace-control-gap);
+  padding:0 var(--workspace-control-padding);
+  border:1px solid var(--ui-border);
+  background:var(--surface-input);
+  color:var(--muted);
+  white-space:nowrap;
 }
-/* Единая карточка и двухколоночные строки управления на всех вкладках. */
 :root .workspace-shell {
   .workspace-content .workspace-panel {
     @include primitives.stack;
-    align-items: stretch;
-    min-width: 0;
-    gap: var(--workspace-panel-gap);
-    padding: var(--workspace-panel-padding);
-    border-radius: var(--ui-radius-lg);
-    box-shadow: var(--ui-shadow-card);
+    align-items:stretch;
+    min-width:0;
+    gap:var(--workspace-panel-gap);
+    padding:var(--workspace-panel-padding);
+    border-radius:var(--ui-radius-lg);
+    box-shadow:var(--ui-shadow-card);
   }
   .workspace-panel .workspace-control-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    min-width: 0;
-    width: 100%;
-    gap: var(--workspace-control-gap);
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) auto;
+    align-items:center;
+    min-width:0;
+    width:100%;
+    gap:var(--workspace-control-gap);
   }
   .workspace-panel .workspace-control-row > :first-child {
-    min-width: 0;
-    width: 100%;
+    min-width:0;
+    width:100%;
   }
 }
 @media (max-width: 1024px) {
@@ -252,87 +236,86 @@ textarea::placeholder {
     --workspace-panel-padding: 8px;
   }
 }
-/* Одинаковая форма выпадающих списков и кнопок на iOS, Android и десктопе. */
 :root .ui-toolbar-select {
-  position: relative;
-  display: block;
-  min-width: 0;
-  width: 100%;
-  height: var(--workspace-control-height);
-  flex: 1 1 auto;
-  border-radius: var(--workspace-control-radius);
+  position:relative;
+  display:block;
+  min-width:0;
+  width:100%;
+  height:var(--workspace-control-height);
+  flex:1 1 auto;
+  border-radius:var(--workspace-control-radius);
 }
 :root .ui-toolbar-select > select.ui-toolbar-select-native {
-  display: block;
-  margin: 0;
-  padding: 0 calc(var(--workspace-control-padding) + 18px) 0 var(--workspace-control-padding);
-  background: var(--surface-input);
-  color: var(--ink);
-  font-family: var(--font-family-ui);
-  font-size: var(--workspace-control-font-size);
+  display:block;
+  margin:0;
+  padding:0 calc(var(--workspace-control-padding) + 18px) 0 var(--workspace-control-padding);
+  background:var(--surface-input);
+  color:var(--ink);
+  font-family:var(--font-family-ui);
+  font-size:var(--workspace-control-font-size);
 }
 :root .ui-toolbar-select:focus-within > select.ui-toolbar-select-native {
-  outline: none;
+  outline:none;
 }
 :root[data-theme="dark-soft"] {
   & .btn:not(.primary):hover {
-    background: var(--ui-control-hover);
-    border-color: var(--ui-border-strong);
+    background:var(--ui-control-hover);
+    border-color:var(--ui-border-strong);
   }
   & .stack input,
   & .stack select,
   & .stack textarea,
   & .search {
-    background: var(--surface-input);
-    border-color: var(--ui-border);
-    color: var(--ink);
+    background:var(--surface-input);
+    border-color:var(--ui-border);
+    color:var(--ink);
   }
   & .user-action-btn.danger {
     @include primitives.danger;
   }
 }
 :root .ui-toolbar-control {
-  border-radius: var(--workspace-control-radius);
-  font-size: var(--workspace-control-font-size);
+  border-radius:var(--workspace-control-radius);
+  font-size:var(--workspace-control-font-size);
 }
 :root[data-theme] .workspace-shell {
   .ui-toolbar-control:is(.workspace-search, select) {
-    background-color: var(--surface-input);
-    border-color: var(--ui-border);
+    background-color:var(--surface-input);
+    border-color:var(--ui-border);
   }
   .ui-toolbar-control:is(.workspace-search, select):focus-within {
     @include primitives.field-focus;
   }
 }
 :root .ui-toolbar-tab {
-  -webkit-appearance: none;
-  appearance: none;
-  display: inline-flex;
-  padding: 0 6px;
-  border: 1px solid transparent;
-  border-radius: var(--workspace-control-radius);
-  background: transparent;
-  color: var(--muted);
-  box-shadow: none;
-  font-family: var(--font-family-ui);
-  font-size: var(--workspace-control-font-size);
-  font-weight: 600;
-  white-space: nowrap;
+  -webkit-appearance:none;
+  appearance:none;
+  display:inline-flex;
+  padding:0 6px;
+  border:1px solid transparent;
+  border-radius:var(--workspace-control-radius);
+  background:transparent;
+  color:var(--muted);
+  box-shadow:none;
+  font-family:var(--font-family-ui);
+  font-size:var(--workspace-control-font-size);
+  font-weight:600;
+  white-space:nowrap;
 }
 :root .workspace-shell .workspace-content .workspace-panel {
-  border: 1px solid var(--ui-border);
-  background: var(--surface);
+  border:1px solid var(--ui-border);
+  background:var(--surface);
 }
 :root .ui-toolbar-select > select.ui-toolbar-select-native {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  height: var(--workspace-control-height);
-  min-height: var(--workspace-control-height);
-  border: 1px solid var(--ui-border);
-  border-radius: var(--workspace-control-radius);
-  -webkit-appearance: menulist;
-  appearance: auto;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  height:var(--workspace-control-height);
+  min-height:var(--workspace-control-height);
+  border:1px solid var(--ui-border);
+  border-radius:var(--workspace-control-radius);
+  -webkit-appearance:menulist;
+  appearance:auto;
 }
 :root .ui-toolbar-select:focus-within > select.ui-toolbar-select-native {
   @include primitives.field-focus;

@@ -1,8 +1,6 @@
-/* PWA использует ту же фоновую поверхность и те же отступы, что браузер.
-   Safe-area не должна создавать второй окрашенный слой. */
 @media (display-mode: standalone) and (max-width: 1024px) {
   .workspace-shell > .sidebar {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
   }
 }
