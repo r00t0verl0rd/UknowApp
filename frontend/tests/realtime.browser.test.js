@@ -179,6 +179,44 @@ test("global SSE updates real counters across tabs and replays missed events", {
     } finally {
       await loginContext.close();
     }
+    // Личный кабинет учителя: ровно две вкладки, собственные ученики
+    // в «Структуре», возврат к существующему списку диалогов.
+    const teacherContext = await browser.newContext();
+    try {
+      await teacherContext.addInitScript(() => localStorage.setItem("uknowapp-auth", "1"));
+      const teacherPage = await teacherContext.newPage();
+      await teacherPage.route("**/api/panel/me", route => route.fulfill({
+        status: 200, contentType: "application/json",
+        body: JSON.stringify({ role: "teacher", user_id: 7, full_name: "Светлана Ивановна" }),
+      }));
+      await teacherPage.route("**/api/panel/conversations", route => route.fulfill({
+        status: 200, contentType: "application/json",
+        body: JSON.stringify([{
+          id: 15,
+          type: "assignment",
+          student: { id: 27, full_name: "Тестовый ученик" },
+          teacher: { id: 7, full_name: "Светлана Ивановна" },
+          unread_count: 0,
+          created_at: "2026-11-23T10:00:00+00:00",
+        }]),
+      }));
+      await teacherPage.route("**/api/panel/personal-conversations", route => route.fulfill({
+        status: 200, contentType: "application/json", body: "[]",
+      }));
+      await teacherPage.goto(APP_URL + "/structure");
+      await teacherPage.getByRole("button", { name: "Структура", exact: true })
+        .waitFor({ state: "visible" });
+      assert.equal(await teacherPage.getByRole("button", { name: "Диалоги", exact: true }).count(), 1);
+      await teacherPage.getByText("Мои ученики").waitFor({ state: "visible" });
+      await teacherPage.getByText("Тестовый ученик").waitFor({ state: "visible" });
+      assert.equal(await teacherPage.getByRole("button", { name: "Добавить участника" }).count(), 0);
+      await teacherPage.getByRole("button", { name: "Диалоги", exact: true }).click();
+      await teacherPage.locator(".chat-list").waitFor({ state: "visible" });
+      await teacherPage.getByRole("button", { name: "Структура", exact: true }).click();
+      await teacherPage.getByText("Тестовый ученик").waitFor({ state: "visible" });
+    } finally {
+      await teacherContext.close();
+    }
     const context = await browser.newContext();
     await context.addInitScript(() => localStorage.setItem("uknowapp-auth", "1"));
     const page = await context.newPage();
