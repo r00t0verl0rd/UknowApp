@@ -23,12 +23,14 @@
 /* Общая область прокрутки находится внутри неподвижной оболочки. */
 .workspace-shell {
   position: fixed;
-  inset: 0;
+  inset: auto 0 0;
+  top: var(--workspace-viewport-top, 0px);
   width: 100%;
   display: grid;
   grid-template-columns: clamp(250px, 18vw, 280px) minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
-  height: 100dvh;
+  /* 100dvh — запасной вариант для браузеров без Visual Viewport API. */
+  height: var(--workspace-viewport-height, 100dvh);
   min-height: 0;
   overflow: hidden;
 }
@@ -59,7 +61,10 @@
   padding: var(--workspace-gutter);
   overflow: hidden auto;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
+  /* Последняя строка любого раздела доступна над безопасной нижней зоной. */
+  padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
 }
 
 .workspace-content:has(> .user-list, > .structure-scroll) {
@@ -99,7 +104,9 @@
     touch-action: pan-x;
   }
 
+  /* Резервируем safe-area один раз, в общей области контента,
+     вместо дополнительной полосы под всеми страницами. */
   .workspace-shell > .main {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: 0;
   }
 }

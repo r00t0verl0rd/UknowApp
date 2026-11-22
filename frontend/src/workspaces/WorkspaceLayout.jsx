@@ -32,6 +32,41 @@ export default function WorkspaceLayout({
     contentRef.current.scrollTop = 0;
   }, [page]);
 
+  // Safari меняет видимую высоту при появлении нижней панели/клавиатуры.
+  // visualViewport сообщает высоту области, доступной реально, без браузерной панели.
+  // Без API используем стандартный 100dvh из CSS.
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    const viewport = window.visualViewport;
+
+    if (!viewport) return undefined;
+
+    const measureViewport = () => {
+      const height = Math.round(viewport.height);
+      const top = Math.round(viewport.offsetTop);
+      if (!Number.isFinite(height) || height <= 0) return;
+      root.style.setProperty("--workspace-viewport-height", `${height}px`);
+      root.style.setProperty("--workspace-viewport-top", `${top}px`);
+    };
+
+    measureViewport();
+    viewport.addEventListener("resize", measureViewport);
+    viewport.addEventListener("scroll", measureViewport);
+    window.addEventListener("resize", measureViewport);
+    window.addEventListener("orientationchange", measureViewport);
+    window.addEventListener("pageshow", measureViewport);
+
+    return () => {
+      viewport.removeEventListener("resize", measureViewport);
+      viewport.removeEventListener("scroll", measureViewport);
+      window.removeEventListener("resize", measureViewport);
+      window.removeEventListener("orientationchange", measureViewport);
+      window.removeEventListener("pageshow", measureViewport);
+      root.style.removeProperty("--workspace-viewport-height");
+      root.style.removeProperty("--workspace-viewport-top");
+    };
+  }, []);
+
   const confirmSignOut = async () => {
     if (signingOut) return;
     setSigningOut(true);

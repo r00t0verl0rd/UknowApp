@@ -363,3 +363,60 @@ line-height:1;}
     flex: 1 1 auto;
   }
 }
+
+/* Все разделы используют одну видимую нижнюю границу. Для чата прокручиваются
+   сообщения, а поле ввода/кнопка отправки остаются внутри экрана и над клавиатурой. */
+.workspace-shell .workspace-content:has(> .chat-list) {
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.workspace-shell .workspace-content:has(> .chat-list) > .chat-list,
+.workspace-shell .workspace-content:has(> .chat-list) > .chat-detail {
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.workspace-shell .workspace-content:has(> .chat-list) > .chat-list {
+  align-self: stretch;
+}
+
+.workspace-shell .workspace-content:has(> .chat-list) > .chat-list > .chat-items {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.workspace-shell .workspace-content:has(> .chat-list) > .chat-detail {
+  align-self: stretch;
+  height: 100%;
+}
+
+.workspace-shell .workspace-content:has(> .chat-list) > .chat-detail > .messages {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-padding-bottom: var(--workspace-gutter);
+}
+
+.workspace-shell .workspace-content:has(> .chat-list) > .chat-detail > .chat-composer {
+  flex: 0 0 auto;
+  margin-top: var(--workspace-gutter);
+  margin-bottom: 0;
+  max-height: min(240px, 45%);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+
+@media (max-width: 760px) {
+  .workspace-shell .workspace-content:has(> .chat-list) > .chat-detail {
+    grid-row: 1;
+    min-height: 0;
+  }
+}

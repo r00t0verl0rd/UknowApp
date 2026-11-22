@@ -323,6 +323,118 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize({ width: 1280, height: 720 });
 
+    // На любой высоте браузерной панели нижняя часть вкладки остаётся доступной.
+    // Проверяем телефон с открытой/закрытой панелью, планшет и десктоп.
+    for (const { width, height } of [
+      { width: 390, height: 720 }, { width: 390, height: 430 },
+      { width: 768, height: 650 }, { width: 1280, height: 800 },
+    ]) {
+      await page.setViewportSize({ width, height });
+      await page.waitForFunction(() => {
+        const vv = window.visualViewport;
+        const shell = document.querySelector(".workspace-shell");
+        return !!shell && (!vv || Math.abs(shell.getBoundingClientRect().height - vv.height) <= 2);
+      });
+      const state = await page.evaluate(() => {
+        const viewport = window.visualViewport;
+        const shell = document.querySelector(".workspace-shell");
+        const content = shell.querySelector(".workspace-content");
+        const bottom = (viewport?.offsetTop || 0) + (viewport?.height || window.innerHeight);
+        const tall = document.createElement("div");
+        tall.style.height = "1600px";
+        tall.style.flexShrink = "0";
+        content.append(tall);
+        try {
+          content.scrollTop = content.scrollHeight;
+          return {
+            visibleBottom: bottom,
+            shellBottom: shell.getBoundingClientRect().bottom,
+            contentBottom: content.getBoundingClientRect().bottom,
+            finalItemBottom: tall.getBoundingClientRect().bottom,
+            scrollTop: content.scrollTop,
+            shellHeight: shell.getBoundingClientRect().height,
+            viewportHeight: viewport?.height || window.innerHeight,
+          };
+        } finally {
+          tall.remove();
+          content.scrollTop = 0;
+        }
+      });
+      assert.ok(Math.abs(state.shellHeight - state.viewportHeight) <= 2,
+        `${width}x${height}: shell follows visualViewport`);
+      assert.ok(state.shellBottom <= state.visibleBottom + 2,
+        `${width}x${height}: shell does not hide behind browser toolbar`);
+      assert.ok(state.contentBottom <= state.visibleBottom + 2,
+        `${width}x${height}: section bottom stays visible`);
+      assert.ok(state.scrollTop > 100, `${width}x${height}: content can scroll`);
+      assert.ok(state.finalItemBottom <= state.visibleBottom + 2,
+        `${width}x${height}: the last item remains reachable`);
+    }
+
+    // Чат: форма и «Отправить» прикреплены к видимому низу, сообщения скроллятся.
+    for (const { width, height } of [
+      { width: 390, height: 720 }, { width: 390, height: 430 },
+      { width: 1280, height: 800 },
+    ]) {
+      await page.setViewportSize({ width, height });
+      await page.waitForFunction(() => {
+        const vv = window.visualViewport;
+        const shell = document.querySelector(".workspace-shell");
+        return !!shell && (!vv || Math.abs(shell.getBoundingClientRect().height - vv.height) <= 2);
+      });
+      const state = await page.evaluate(() => {
+        const content = document.querySelector(".workspace-content");
+        const list = document.createElement("section");
+        list.className = "teacher-branch chat-list workspace-panel";
+        list.innerHTML = '<div class="chat-list-actions">Диалоги</div><div class="chat-items">Личные</div>';
+        const detail = document.createElement("section");
+        detail.className = "teacher-branch chat-detail";
+        detail.innerHTML = `
+          <header class="chat-head">Чат</header>
+          <div class="messages">${Array(30).fill('<div class="message">Текст сообщения для проверки прокрутки</div>').join("")}</div>
+          <form class="chat-composer">
+            <textarea placeholder="Сообщение"></textarea>
+            <div class="composer-footer"><div class="composer-tools"></div>
+              <button class="btn primary composer-send" type="submit"><span>Отправить</span></button>
+            </div>
+          </form>`;
+        content.append(list, detail);
+        try {
+          const vv = window.visualViewport;
+          const limit = (vv?.offsetTop || 0) + (vv?.height || window.innerHeight);
+          const messages = detail.querySelector(".messages");
+          const button = detail.querySelector(".composer-send");
+          const composer = detail.querySelector(".chat-composer");
+          const before = messages.scrollTop;
+          messages.scrollTop = messages.scrollHeight;
+          return {
+            viewportBottom: limit,
+            detailBottom: detail.getBoundingClientRect().bottom,
+            composerBottom: composer.getBoundingClientRect().bottom,
+            buttonBottom: button.getBoundingClientRect().bottom,
+            buttonTop: button.getBoundingClientRect().top,
+            messagesScroll: messages.scrollTop,
+            messagesOverflow: getComputedStyle(messages).overflowY,
+            contentScroll: content.scrollTop,
+          };
+        } finally {
+          detail.remove();
+          list.remove();
+        }
+      });
+      assert.ok(state.detailBottom <= state.viewportBottom + 2,
+        `${width}x${height}: chat fits inside visible viewport`);
+      assert.ok(state.composerBottom <= state.viewportBottom + 2,
+        `${width}x${height}: composer stays above browser controls`);
+      assert.ok(state.buttonBottom <= state.viewportBottom + 2,
+        `${width}x${height}: send button is visible`);
+      assert.ok(state.buttonTop >= 0, `${width}x${height}: send button is not clipped on top`);
+      assert.equal(state.messagesOverflow, "auto");
+      assert.ok(state.messagesScroll > 0, `${width}x${height}: messages scroll independently`);
+      assert.equal(state.contentScroll, 0, `${width}x${height}: chat does not scroll whole workspace`);
+    }
+    await page.setViewportSize({ width: 1280, height: 720 });
+
     // Пользователи: поиск, сортировка, добавление и счётчик выглядят как единая панель.
     for (const width of [390, 1280]) {
       await page.setViewportSize({ width, height: 800 });
