@@ -5,14 +5,10 @@
 /* Фон не чисто белый, чтобы карточки были заметны. */
 body {
   margin: 0;
-  color: var(--ink);
-  background: var(--canvas);
 }
 .sidebar,
 .topbar,
 .user-list > .user-row,
-.modal,
-.login-card,
 .credential-modal {
   background-color: var(--surface);
 }
@@ -20,11 +16,7 @@ body {
 /* Список пользователей использует те же цвета ролей. */
 /* Элементы управления согласованы со светлой темой. */
 :root:not([data-theme="dark-soft"]) {
-  & .search,
-  & .stack input,
-  & .stack select {
-    background-color: #fdfcff;
-  } /* Смягчаем белые участки фона структуры. */
+  /* Смягчаем белые участки фона структуры. */
   & .workspace-content:has(.admin-card) .graph-legend-row > .graph-legend {
     border: 1px solid #e4deec;
     border-radius: 12px;
@@ -59,15 +51,16 @@ body {
 /* Единые карточки преподавателей на всех экранах. */
 /* Общий вид кнопок-иконок задаёт icon-actions.css. */
 /* При свёрнутом списке стрелка влево, при открытом — вниз. */
-.workspace-content:has(.admin-card) .teacher-collapse-btn svg {
-  transition: transform 0.18s ease;
-}
-.workspace-content:has(.admin-card) .teacher-collapse-btn.is-expanded svg {
-  transform: rotate(-90deg);
+.workspace-content:has(.admin-card) {
+  .teacher-collapse-btn svg {
+    transition: transform 0.18s ease;
+  }
+  .teacher-collapse-btn.is-expanded svg {
+    transform: rotate(-90deg);
+  }
 }
 .teacher-card {
   background: var(--teacher-card-background);
-  border-color: var(--teacher-card-border);
 }
 .teacher-card .avatar,
 .avatar.teacher,
@@ -75,12 +68,10 @@ body {
   background: var(--teacher-avatar-background);
   color: var(--teacher-avatar-text);
 }
-.student-card,
 .unassigned-grid .student-card {
   background: linear-gradient(112deg, #f4eadb, #faf6ee);
   border-color: #e0cda9;
 }
-.student-card .avatar,
 .avatar.student,
 .student-avatar {
   background: #ecdfc6;
@@ -96,12 +87,6 @@ body {
 .add-student:hover {
   background: var(--role-student-soft);
 }
-.teacher-card:hover {
-  border-color: var(--role-teacher);
-}
-.student-card:hover {
-  border-color: var(--role-student);
-}
 .user-row .avatar.teacher,
 .user-row .role-tag.teacher {
   background: var(--role-teacher-soft);
@@ -114,7 +99,6 @@ body {
 }
 .student-card {
   background: linear-gradient(112deg, #f4eadb, #faf6ee);
-  border-color: #e0cda9;
 }
 .student-card .avatar {
   background: #ecdfc6;

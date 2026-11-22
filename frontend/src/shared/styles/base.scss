@@ -1,3 +1,5 @@
+@use "./primitives";
+
 * {
   box-sizing: border-box;
 }
@@ -17,7 +19,6 @@ button:not(.chat-item):disabled {
   cursor: not-allowed;
 }
 .login-screen {
-  display: grid;
   place-items: center;
 }
 .login-logo {
@@ -40,8 +41,7 @@ button:not(.chat-item):disabled {
 .sidebar {
   position: relative;
   inset: auto;
-  display: flex;
-  flex-direction: column;
+  @include primitives.stack;
   width: 280px;
   padding: 28px 20px;
 }
@@ -53,7 +53,6 @@ button:not(.chat-item):disabled {
   padding: 0 9px 38px;
   font-size: 27px;
 }
-.school-label,
 .eyebrow {
   font-weight: 800;
 }
@@ -74,9 +73,7 @@ button:not(.chat-item):disabled {
 .topbar {
   height: 70px;
   border-bottom: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  @include primitives.spread;
   padding: 0 40px;
 }
 .topbar > div {
@@ -89,18 +86,12 @@ button:not(.chat-item):disabled {
 .topbar svg {
   width: 15px;
 }
-.topbar b {
-  color: var(--ink);
-}
 .workspace-content {
   margin: auto;
-  max-width: 1680px;
   padding: 38px 42px;
 }
 .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  @include primitives.center;
   gap: 8px;
   font-weight: 800;
   font-size: 13px;
@@ -144,8 +135,6 @@ button:not(.chat-item):disabled {
 }
 .student-card,
 .teacher-card {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
 }
 .person-main {
@@ -162,18 +151,11 @@ button:not(.chat-item):disabled {
 }
 .teacher-avatar {
   background: #eee8f8;
-  color: var(--purple);
-}
-.student-avatar,
-.avatar.student {
-  color: var(--red);
 }
 .person-info b,
 .person-info small:not(.student-additional-info) {
   display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  @include primitives.truncate;
 }
 .person-info small {
   margin-top: 4px;
@@ -188,18 +170,6 @@ button:not(.chat-item):disabled {
   display: flex;
   flex: none;
 }
-.icon-btn {
-  display: grid;
-  place-items: center;
-}
-.person-actions button:hover,
-.icon-btn:hover {
-  color: var(--purple);
-}
-.person-actions .danger-icon:hover,
-.danger-icon:hover {
-  color: var(--red);
-}
 .empty-students {
   text-align: center;
 }
@@ -212,8 +182,7 @@ button:not(.chat-item):disabled {
   width: 14px;
 }
 .empty-state {
-  display: flex;
-  flex-direction: column;
+  @include primitives.stack;
   align-items: center;
   justify-content: center;
   gap: 9px;
@@ -226,11 +195,8 @@ button:not(.chat-item):disabled {
   height: 30px;
 }
 .toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  @include primitives.spread;
   margin-bottom: 14px;
-  font-size: 11px;
 }
 .search {
   display: flex;
@@ -362,9 +328,6 @@ button:not(.chat-item):disabled {
 /* Читаемость и расположение элементов. */
 .content {
   margin-left: 0;
-}
-.login-card {
-  padding: 42px;
 }
 .btn.small,
 .legend,

@@ -1,3 +1,5 @@
+@use "./primitives";
+
 /* Обслуживание данных администратора. */
 .additional-panel {
   display: grid;
@@ -5,9 +7,7 @@
   align-content: start;
 }
 .additional-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  @include primitives.spread;
   gap: 16px;
   padding-bottom: 2px;
 }
@@ -61,15 +61,15 @@
   color: var(--muted);
   font-size: 11px;
   line-height: 1.45;
-}
-.data-stat-details b {
-  color: var(--ink);
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-}
-.data-stat-details .data-stat-subline {
-  padding-left: 10px;
-  font-size: 10px;
+  b {
+    color: var(--ink);
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+  .data-stat-subline {
+    padding-left: 10px;
+    font-size: 10px;
+  }
 }
 .data-tools-grid {
   display: grid;
@@ -78,8 +78,7 @@
   gap: 12px;
 }
 .data-tool-card {
-  display: flex;
-  flex-direction: column;
+  @include primitives.stack;
   align-items: flex-start;
   gap: 10px;
 }
@@ -87,16 +86,16 @@
   grid-column: 1;
   grid-row: 1 / span 2;
   padding: 18px;
-}
-.data-tool-primary .data-tool-actions {
-  display: grid;
-  width: 100%;
-  grid-template-columns: 1fr;
-}
-.data-tool-primary .data-tool-actions .btn {
-  justify-content: center;
-  width: 100%;
-  min-height: 40px;
+  .data-tool-actions {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 1fr;
+  }
+  .data-tool-actions .btn {
+    justify-content: center;
+    width: 100%;
+    min-height: 40px;
+  }
 }
 .data-tool-copy {
   display: grid;
@@ -214,9 +213,7 @@
   border-top: 1px solid var(--line);
 }
 .data-cleanup-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  @include primitives.spread;
   gap: 20px;
   border-color: #e7d8d8;
 }
@@ -231,22 +228,22 @@
   flex-wrap: wrap;
   gap: 9px;
   flex: none;
-}
-.data-cleanup-actions label {
-  display: grid;
-  gap: 5px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 700;
-}
-.data-cleanup-actions select {
-  min-width: 125px;
-  height: 38px;
-  padding: 0 10px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--surface);
-  color: var(--ink);
+  label {
+    display: grid;
+    gap: 5px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+  }
+  select {
+    min-width: 125px;
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--ink);
+  }
 }
 :root[data-theme="dark-soft"] {
   & .data-stat-card,
@@ -273,12 +270,12 @@
   .data-tool-primary {
     grid-column: 1 / -1;
     grid-row: auto;
-  }
-  .data-tool-primary .data-tool-actions {
-    display: flex;
-  }
-  .data-tool-primary .data-tool-actions .btn {
-    width: auto;
+    .data-tool-actions {
+      display: flex;
+    }
+    .data-tool-actions .btn {
+      width: auto;
+    }
   }
 }
 @media (max-width: 760px) {
@@ -289,12 +286,12 @@
   .data-tool-primary {
     grid-column: auto;
     grid-row: auto;
-  }
-  .data-tool-primary .data-tool-actions {
-    display: grid;
-  }
-  .data-tool-primary .data-tool-actions .btn {
-    width: 100%;
+    .data-tool-actions {
+      display: grid;
+    }
+    .data-tool-actions .btn {
+      width: 100%;
+    }
   }
   .data-cleanup-card {
     align-items: stretch;
@@ -309,9 +306,7 @@
 .push-toggle {
   width: 36px;
   height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  @include primitives.center;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: #faf9fc;
@@ -435,9 +430,7 @@
 }
 :root[data-theme="dark-soft"] .topbar-actions > .theme-toggle,
 :root[data-theme="dark-soft"] .mobile-quick-actions > .theme-toggle {
-  background: var(--ui-control-bg);
-  border-color: var(--ui-border);
-  color: var(--ui-control-text);
+  @include primitives.control;
   box-shadow: none;
 }
 .topbar-actions > .theme-toggle:hover,
@@ -447,20 +440,18 @@
   color: var(--purple);
   box-shadow: var(--ui-shadow-soft);
 }
-:root[data-theme="dark-soft"] .topbar-actions > .push-toggle,
-:root[data-theme="dark-soft"] .mobile-quick-actions > .push-toggle {
-  background: var(--ui-control-bg);
-  border-color: var(--ui-border);
-  color: var(--ui-control-text);
-  box-shadow: none;
-}
-:root[data-theme="dark-soft"] .topbar-actions > .push-toggle.active,
-:root[data-theme="dark-soft"] .mobile-quick-actions > .push-toggle.active {
-  color: #8bd9a9;
-  border-color: #416b54;
-  background: #263b30;
-}
 :root[data-theme="dark-soft"] {
+  .topbar-actions > .push-toggle,
+  .mobile-quick-actions > .push-toggle {
+    @include primitives.control;
+    box-shadow: none;
+  }
+  .topbar-actions > .push-toggle.active,
+  .mobile-quick-actions > .push-toggle.active {
+    color: #8bd9a9;
+    border-color: #416b54;
+    background: #263b30;
+  }
   & .workspace-content:has(.admin-card) > .unassigned {
     border-color: #746044;
     border-top-color: #746044;

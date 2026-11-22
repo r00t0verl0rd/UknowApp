@@ -1,3 +1,5 @@
+@use "./primitives";
+
 /* Мягкая тёмная тема без резких акцентов. */
 :root[data-theme="dark-soft"] {
   & .login-card,
@@ -60,24 +62,14 @@
   overflow: visible;
 }
 .student-card .avatar {
-  color: #a76d16;
   flex: 0 0 34px;
   width: 34px;
   height: 34px;
 }
 .student-card .person-info b {
   display: block;
-  max-width: 100%;
   overflow: visible;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  text-overflow: clip;
   line-height: 1.25;
-}
-.student-card .person-info small {
-  white-space: normal;
-  overflow-wrap: anywhere;
 }
 .student-card > .graph-person-action svg {
   width: 14px;
@@ -185,23 +177,23 @@
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
-}
-.teacher-card .person-info b {
-  display: block;
-  max-width: 100%;
-  overflow: visible;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: normal;
-  text-overflow: clip;
-  line-height: 1.25;
-}
-.teacher-card .person-info small {
-  display: block;
-  max-width: 100%;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  line-height: 1.25;
+  b {
+    display: block;
+    max-width: 100%;
+    overflow: visible;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    text-overflow: clip;
+    line-height: 1.25;
+  }
+  small {
+    display: block;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.25;
+  }
 }
 .teacher-card .person-actions {
   display: flex;
@@ -292,9 +284,7 @@
     background 0.15s ease,
     border-color 0.15s ease,
     color 0.15s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  @include primitives.center;
   gap: 8px;
   width: 42px;
   height: 42px;
@@ -371,15 +361,15 @@
   margin-top: 8px;
   padding-top: 9px;
   border-top: 1px solid #eeeaf2;
-}
-.user-info-login > span {
-  color: #9a93a4;
-  font-size: 10px;
-}
-.user-info-login > b {
-  color: #5c5568;
-  font-size: 12px;
-  overflow-wrap: anywhere;
+  > span {
+    color: #9a93a4;
+    font-size: 10px;
+  }
+  > b {
+    color: #5c5568;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
 }
 :root[data-theme="dark-soft"] {
   & .user-action-btn.user-info-btn {
@@ -488,44 +478,46 @@
   }
 }
 /* Подтверждение удаления в стиле приложения. */
-.confirm-delete-modal .modal-head {
-  align-items: center;
-  margin-bottom: 14px;
-}
-.confirm-delete-modal .modal-head h2 {
-  color: var(--ink);
-}
-.confirm-delete-modal > .hint {
-  margin: 0 0 20px;
-  font-size: 13px;
-  line-height: 1.6;
-}
-.confirm-delete-modal > .hint b {
-  color: var(--ink);
-  font-weight: 800;
-}
-.confirm-delete-modal .modal-actions {
-  justify-content: flex-end;
-  gap: 10px;
-}
-.confirm-delete-modal .btn {
-  min-height: 42px;
-  padding: 10px 15px;
-  border-radius: 11px;
-}
-.confirm-delete-modal .btn.danger {
-  color: #fff;
-  border-color: #c95767;
-  background: linear-gradient(110deg, #bf5263, #d46b78);
-  box-shadow: 0 5px 16px rgba(191, 82, 99, 0.19);
-}
-.confirm-delete-modal .btn.danger:hover:not(:disabled) {
-  background: linear-gradient(110deg, #a94455, #c45b69);
-  box-shadow: 0 7px 19px rgba(191, 82, 99, 0.25);
-}
-.confirm-delete-modal .btn.danger svg {
-  width: 16px;
-  height: 16px;
+.confirm-delete-modal {
+  .modal-head {
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .modal-head h2 {
+    color: var(--ink);
+  }
+  > .hint {
+    margin: 0 0 20px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  > .hint b {
+    color: var(--ink);
+    font-weight: 800;
+  }
+  .modal-actions {
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  .btn {
+    min-height: 42px;
+    padding: 10px 15px;
+    border-radius: 11px;
+  }
+  .btn.danger {
+    color: #fff;
+    border-color: #c95767;
+    background: linear-gradient(110deg, #bf5263, #d46b78);
+    box-shadow: 0 5px 16px rgba(191, 82, 99, 0.19);
+  }
+  .btn.danger:hover:not(:disabled) {
+    background: linear-gradient(110deg, #a94455, #c45b69);
+    box-shadow: 0 7px 19px rgba(191, 82, 99, 0.25);
+  }
+  .btn.danger svg {
+    width: 16px;
+    height: 16px;
+  }
 }
 :root[data-theme="dark-soft"] {
   & .confirm-delete-modal .modal-head h2,
@@ -567,11 +559,6 @@ h3,
     background: #171b25;
     color: #e4e8f0;
   }
-  & .login-screen {
-    background:
-      radial-gradient(circle at 18% 18%, #3b2e46 0, transparent 34%),
-      radial-gradient(circle at 86% 84%, #29374b 0, transparent 38%), #171b25;
-  }
   & .login-card,
   & .user-list,
   & .modal {
@@ -590,11 +577,8 @@ h3,
   & .empty-state b {
     color: #e4e8f0;
   }
-  & .student-card,
   & .teacher-card {
     background: #252d3b;
-    border-color: #3a4659;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
   }
   & .panel-credentials-panel {
     background: #222a37;
@@ -700,10 +684,6 @@ h3,
   & .workspace-content:has(.admin-card) .unassigned {
     border-top: 1px solid #414d60;
   }
-  & .student-card,
-  & .teacher-card {
-    color: #e4e8f0;
-  }
   & .student-card:hover,
   & .teacher-card:hover,
   & .user-row:hover,
@@ -753,10 +733,6 @@ h3,
   & .user-row .role-tag.teacher {
     background: #393650;
     color: #c8c0ef;
-  }
-  & .user-row .role-tag.student {
-    background: #47333c;
-    color: #e8b4bd;
   }
 }
 :root[data-theme="dark-soft"] .workspace-content:has(.admin-card) .graph-legend-item {

@@ -1,0 +1,39 @@
+@mixin spread {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin center {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin stack {
+  display: flex;
+  flex-direction: column;
+}
+
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin danger {
+  background: var(--button-danger-bg);
+  border-color: var(--button-danger-border);
+  color: var(--button-danger-text);
+}
+
+@mixin control {
+  background: var(--ui-control-bg);
+  border-color: var(--ui-border);
+  color: var(--ui-control-text);
+}
+
+@mixin field-focus {
+  border-color: var(--ui-border-strong);
+  box-shadow: var(--ui-focus);
+}

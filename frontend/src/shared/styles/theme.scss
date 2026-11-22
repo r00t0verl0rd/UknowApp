@@ -1,3 +1,5 @@
+@use "./primitives";
+
 /* --------------------------------------------------------------------------
    Общая палитра приложения.
    Цвета состояний не используем для украшений.
@@ -5,7 +7,6 @@
 /* Общие фоны, карточки и разделители. */
 .sidebar,
 .topbar,
-.login-card,
 .user-list,
 .modal,
 .credential-modal {
@@ -17,19 +18,14 @@
 .user-list,
 .student-card,
 .teacher-card,
-.modal,
-.login-card {
+.modal {
   box-shadow: var(--ui-shadow-card);
 }
-.student-card,
-.teacher-card,
 .empty-students {
   border-color: var(--ui-border);
 }
 .btn:not(.primary):not(.danger),
 .user-action-btn:not(.danger-icon):not(.user-delete),
-.icon-btn:not(.danger-icon),
-.theme-toggle,
 .person-actions button:not(.danger-icon),
 .attach-control,
 .selected-file button {
@@ -54,23 +50,18 @@ a:focus-visible {
   box-shadow: var(--ui-focus);
 }
 .search:focus-within {
-  border-color: var(--ui-border-strong);
   box-shadow: var(--ui-focus);
 }
 ::selection {
   background: rgba(120, 95, 192, 0.22);
 }
 /* Единые цвета ролей во всех разделах. */
-.teacher-dot,
-.teacher-card .avatar,
-.avatar.teacher,
-.teacher-avatar {
+.teacher-dot {
   background-color: var(--lavender-soft);
   color: var(--purple);
 }
 .unassigned-grid .student-card {
   background: var(--surface);
-  border-color: var(--ui-border);
 }
 .role-tag {
   background: var(--lavender-soft);
@@ -80,14 +71,9 @@ a:focus-visible {
   background: var(--red-soft);
   color: var(--red);
 }
-.user-row .role-tag.teacher {
-  background: var(--lavender-soft);
-  color: var(--purple);
-}
 /* Цвета ошибок и статусов не используем как декор. */
 :root[data-theme="dark-soft"] {
   & .teacher-card,
-  & .student-card,
   & .empty-students,
   & .unassigned-grid .student-card {
     background: var(--surface);
@@ -106,59 +92,40 @@ a:focus-visible {
   max-width: 100%;
   box-sizing: border-box;
 }
-.user-row > .user-actions > .user-info-wrap {
-  min-width: 0;
-  display: flex;
-}
-.user-row > .user-actions > .user-action-btn,
-.user-row > .user-actions > .user-info-wrap > .user-action-btn {
-  max-width: 100%;
-  box-sizing: border-box;
-  flex: 0 0 auto;
-  width: clamp(30px, 3.2vw, 36px);
-  height: clamp(30px, 3.2vw, 36px);
-  min-width: 0;
-  padding: 0;
+.user-row > .user-actions {
+  > .user-info-wrap {
+    min-width: 0;
+    display: flex;
+  }
+  > .user-action-btn,
+  > .user-info-wrap > .user-action-btn {
+    max-width: 100%;
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    width: clamp(30px, 3.2vw, 36px);
+    height: clamp(30px, 3.2vw, 36px);
+    min-width: 0;
+    padding: 0;
+  }
 }
 @media (min-width: 1025px) and (max-width: 1200px) {
   .user-row {
     grid-template-columns: 44px minmax(0, 1fr);
     grid-template-rows: auto auto;
     column-gap: 12px;
-    row-gap: 10px;
     padding: 13px clamp(10px, 1.5vw, 18px);
   }
   .user-row > .avatar {
-    grid-column: 1;
-    grid-row: 1;
     width: 44px;
     height: 44px;
-    flex: 0 0 44px;
-  }
-  .user-row > .user-person-info {
-    grid-column: 2;
-    grid-row: 1;
-    width: 100%;
-    min-width: 0;
   }
   .user-row > .user-actions {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    width: 100%;
-    padding-top: 10px;
-    border-top: 1px solid var(--line);
     justify-content: flex-start;
   }
 }
 @media (max-width: 1024px) {
   .user-row > .user-actions {
     justify-content: flex-start;
-  }
-}
-@media (max-width: 420px) {
-  .user-row > .user-actions {
-    column-gap: 6px;
-    row-gap: 7px;
   }
 }
 /* Имя и кнопки пользователя находятся в одной строке. */
@@ -179,9 +146,7 @@ a:focus-visible {
   display: block;
   max-width: 100%;
   overflow-wrap: anywhere;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  @include primitives.truncate;
   grid-column: 2;
   grid-row: 1;
   min-width: 0;
@@ -252,19 +217,20 @@ a:focus-visible {
 /* На телефоне история сообщений важнее выбора диалога. */
 /* Разделы используют доступную высоту экрана. */
 @media (min-width: 1025px) {
-  .workspace-shell > .sidebar {
-    width: auto;
-    min-width: 0;
-    box-shadow: none;
-    position: relative;
-    inset: auto;
-    z-index: auto;
-    overflow-y: auto;
-    overscroll-behavior: none;
-  }
-  .workspace-shell > .content {
-    min-width: 0;
-    margin-left: 0;
+  .workspace-shell {
+    > .sidebar {
+      width: auto;
+      min-width: 0;
+      box-shadow: none;
+      position: relative;
+      inset: auto;
+      z-index: auto;
+      overflow-y: auto;
+      overscroll-behavior: none;
+    }
+    > .content {
+      margin-left: 0;
+    }
   }
 }
 .content > .topbar {
@@ -302,7 +268,6 @@ a:focus-visible {
 .btn:not(.primary):not(.danger):hover:not(:disabled),
 .user-action-btn:not(.danger-icon):not(.user-delete):hover:not(:disabled),
 .icon-btn:not(.danger-icon):hover:not(:disabled),
-.theme-toggle:hover,
 .person-actions button:not(.danger-icon):hover,
 .attach-control:hover {
   background: var(--button-bg-hover);
@@ -315,9 +280,7 @@ a:focus-visible {
 .person-actions button.danger-icon,
 .icon-btn.danger-icon,
 .danger-icon {
-  background: var(--button-danger-bg);
-  border-color: var(--button-danger-border);
-  color: var(--button-danger-text);
+  @include primitives.danger;
   box-shadow: none;
 }
 .btn.danger:hover:not(:disabled),
@@ -333,7 +296,6 @@ a:focus-visible {
   box-shadow: none;
 }
 :root[data-theme="dark-soft"] {
-  & .student-card .avatar,
   & .avatar.student,
   & .student-avatar,
   & .user-row .avatar.student,

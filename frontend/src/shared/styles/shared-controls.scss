@@ -1,3 +1,5 @@
+@use "./primitives";
+
 /* --------------------------------------------------------------------------
    Общий стиль элементов управления для всех размеров экрана и тем.
    -------------------------------------------------------------------------- */
@@ -27,9 +29,7 @@ button:not(.chat-item),
 :is(.user-actions, .person-actions, .modal-head) button,
 button.graph-person-action {
   appearance: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  @include primitives.center;
   border: 1px solid transparent;
   border-radius: 9px;
   box-shadow: none;
@@ -61,9 +61,7 @@ button.graph-person-action:focus-visible {
 .user-action-btn:not(.danger),
 .icon-btn,
 .person-actions button {
-  background: var(--ui-control-bg);
-  border-color: var(--ui-border);
-  color: var(--ui-control-text);
+  @include primitives.control;
 }
 .btn:not(.primary):not(.danger):hover,
 .user-action-btn:not(.danger):hover,
@@ -74,7 +72,6 @@ button.graph-person-action:focus-visible {
   box-shadow: 0 3px 9px rgba(87, 62, 153, 0.09);
 }
 .btn.primary {
-  border-color: transparent;
   border-radius: var(--ui-radius-sm);
   box-shadow: 0 4px 13px rgba(87, 62, 153, 0.18);
 }
@@ -100,10 +97,7 @@ select,
 textarea {
   border-radius: var(--ui-radius-sm);
 }
-.stack input,
-.stack select,
-.stack textarea,
-.search {
+.stack textarea {
   border-color: var(--ui-border);
   background-color: var(--surface-input);
 }
@@ -111,8 +105,7 @@ textarea {
 .stack select:focus,
 .stack textarea:focus,
 .search:focus-within {
-  border-color: var(--ui-border-strong);
-  box-shadow: var(--ui-focus);
+  @include primitives.field-focus;
   outline: none;
 }
 input::placeholder,
@@ -133,7 +126,6 @@ textarea::placeholder {
   box-shadow: 0 5px 15px rgba(87, 62, 153, 0.075);
 }
 .user-row {
-  border-bottom-color: #efebf4;
   align-items: center;
 }
 .role-tag {
@@ -223,9 +215,7 @@ textarea::placeholder {
 }
 /* Счётчики в панелях имеют те же высоту, рамку и радиус, что и поля. */
 :root .ui-toolbar-total {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  @include primitives.center;
   gap: var(--workspace-control-gap);
   padding: 0 var(--workspace-control-padding);
   border: 1px solid var(--ui-border);
@@ -234,27 +224,28 @@ textarea::placeholder {
   white-space: nowrap;
 }
 /* Единая карточка и двухколоночные строки управления на всех вкладках. */
-:root .workspace-shell .workspace-content .workspace-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  min-width: 0;
-  gap: var(--workspace-panel-gap);
-  padding: var(--workspace-panel-padding);
-  border-radius: var(--ui-radius-lg);
-  box-shadow: var(--ui-shadow-card);
-}
-:root .workspace-shell .workspace-panel .workspace-control-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  min-width: 0;
-  width: 100%;
-  gap: var(--workspace-control-gap);
-}
-:root .workspace-shell .workspace-panel .workspace-control-row > :first-child {
-  min-width: 0;
-  width: 100%;
+:root .workspace-shell {
+  .workspace-content .workspace-panel {
+    @include primitives.stack;
+    align-items: stretch;
+    min-width: 0;
+    gap: var(--workspace-panel-gap);
+    padding: var(--workspace-panel-padding);
+    border-radius: var(--ui-radius-lg);
+    box-shadow: var(--ui-shadow-card);
+  }
+  .workspace-panel .workspace-control-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    min-width: 0;
+    width: 100%;
+    gap: var(--workspace-control-gap);
+  }
+  .workspace-panel .workspace-control-row > :first-child {
+    min-width: 0;
+    width: 100%;
+  }
 }
 @media (max-width: 1024px) {
   :root {
@@ -297,22 +288,21 @@ textarea::placeholder {
     color: var(--ink);
   }
   & .user-action-btn.danger {
-    background: var(--button-danger-bg);
-    border-color: var(--button-danger-border);
-    color: var(--button-danger-text);
+    @include primitives.danger;
   }
 }
 :root .ui-toolbar-control {
   border-radius: var(--workspace-control-radius);
   font-size: var(--workspace-control-font-size);
 }
-:root[data-theme] .workspace-shell .ui-toolbar-control:is(.workspace-search, select) {
-  background-color: var(--surface-input);
-  border-color: var(--ui-border);
-}
-:root[data-theme] .workspace-shell .ui-toolbar-control:is(.workspace-search, select):focus-within {
-  border-color: var(--ui-border-strong);
-  box-shadow: var(--ui-focus);
+:root[data-theme] .workspace-shell {
+  .ui-toolbar-control:is(.workspace-search, select) {
+    background-color: var(--surface-input);
+    border-color: var(--ui-border);
+  }
+  .ui-toolbar-control:is(.workspace-search, select):focus-within {
+    @include primitives.field-focus;
+  }
 }
 :root .ui-toolbar-tab {
   -webkit-appearance: none;
@@ -345,6 +335,5 @@ textarea::placeholder {
   appearance: auto;
 }
 :root .ui-toolbar-select:focus-within > select.ui-toolbar-select-native {
-  border-color: var(--ui-border-strong);
-  box-shadow: var(--ui-focus);
+  @include primitives.field-focus;
 }

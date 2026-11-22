@@ -6,14 +6,3 @@
     backdrop-filter: none;
   }
 }
-@media (display-mode: standalone) and (max-width: 1024px) {
-  html:has(.workspace-shell) {
-    background: var(--workspace-background);
-  }
-
-  body:has(.workspace-shell),
-  #root:has(.workspace-shell),
-  .workspace-shell > .sidebar {
-    background: transparent;
-  }
-}

@@ -17,11 +17,9 @@
   font-size: 14px;
 }
 .person-info small {
-  color: var(--muted);
   font-size: 11px;
 }
-.person-actions svg,
-.icon-btn svg {
+.person-actions svg {
   width: 17px;
   height: 17px;
 }
@@ -41,15 +39,8 @@
 }
 .user-row .avatar.teacher {
   background: #eee8f8;
-  color: var(--purple);
 }
 /* Фирменные цвета — сиреневый и красный. */
-.login-screen {
-  background:
-    radial-gradient(ellipse at 12% 14%, rgba(194, 153, 255, 0.23), transparent 35%),
-    radial-gradient(ellipse at 88% 82%, rgba(231, 37, 48, 0.1), transparent 32%),
-    linear-gradient(135deg, #f8f6fc 0%, #f2eef9 52%, #faf6f7 100%);
-}
 .login-card {
   background: rgba(255, 255, 255, 0.94);
   border: 1px solid #e7def4;
@@ -75,7 +66,6 @@
 }
 .topbar {
   background: var(--surface);
-  border-bottom-color: var(--line);
   box-shadow: none;
 }
 .topbar b,
@@ -128,25 +118,15 @@
 }
 .student-card:hover,
 .teacher-card:hover {
-  border-color: #cdb9eb;
   transform: translateY(-1px);
-}
-.teacher-card:hover {
-  box-shadow: 0 0 18px rgba(194, 153, 255, 0.23);
-}
-.student-card:hover {
-  box-shadow: 0 0 16px rgba(228, 161, 47, 0.17);
 }
 .unassigned {
   border-top-color: #eee2c9;
 }
 .search {
-  background: #fff;
-  border-color: #e5deef;
   border-radius: 11px;
 }
 .search:focus-within {
-  border-color: #a98bd8;
   box-shadow:
     0 0 0 3px rgba(118, 84, 189, 0.12),
     0 0 14px rgba(194, 153, 255, 0.14);
@@ -208,93 +188,87 @@ select:focus-visible {
 /* Лёгкий фон структуры без соединительных линий. */
 /* Чистый интерфейс структуры без лишних элементов. */
 /* Лёгкая текстура сглаживает градиенты. */
-.workspace-content:has(.admin-card) > * {
-  position: relative;
-  z-index: 1;
-}
-.workspace-content:has(.admin-card) .legend {
-  padding: 8px 11px;
-  border: 1px solid rgba(226, 218, 239, 0.9);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.76);
-}
-.workspace-content:has(.admin-card) .legend span {
-  width: 9px;
-  height: 9px;
-}
-.workspace-content:has(.admin-card) .admin-card {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: min(100%, 260px);
-  min-height: clamp(48px, 7vw, 76px);
-  margin: 0 auto clamp(8px, 2vw, 24px);
-  padding: clamp(6px, 1vw, 12px) 12px;
-  overflow: hidden;
-  box-sizing: border-box;
-  border: 1px solid #ded2f0;
-  border-radius: 13px;
-}
-.workspace-content:has(.admin-card) .admin-card img {
-  flex: 0 0 50px;
-  width: 50px;
-  height: 50px;
-  object-fit: contain;
-}
-.workspace-content:has(.admin-card) .admin-card > div {
-  display: flex;
-  flex: 1 1 auto;
-  min-width: 0;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  text-align: center;
-}
-.workspace-content:has(.admin-card) .admin-card b,
-.workspace-content:has(.admin-card) .admin-card small {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  margin: 0;
-  text-align: center;
-  white-space: nowrap;
-}
-.workspace-content:has(.admin-card) .admin-card b {
-  letter-spacing: -0.2px;
-  font-size: 15px;
-  line-height: 1.2;
-}
-.workspace-content:has(.admin-card) .admin-card small {
-  color: #89809b;
-  font-size: 11px;
-  line-height: 1.25;
-}
-.workspace-content:has(.admin-card) .grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
-  grid-auto-flow: row;
-  align-items: start;
-  column-gap: 17px;
-  row-gap: 17px;
-  width: 100%;
+.workspace-content:has(.admin-card) {
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+  .legend {
+    padding: 8px 11px;
+    border: 1px solid rgba(226, 218, 239, 0.9);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.76);
+  }
+  .legend span {
+    width: 9px;
+    height: 9px;
+  }
+  .admin-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: min(100%, 260px);
+    min-height: clamp(48px, 7vw, 76px);
+    margin: 0 auto clamp(8px, 2vw, 24px);
+    padding: clamp(6px, 1vw, 12px) 12px;
+    overflow: hidden;
+    box-sizing: border-box;
+    border: 1px solid #ded2f0;
+    border-radius: 13px;
+  }
+  .admin-card img {
+    flex: 0 0 50px;
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+  }
+  .admin-card > div {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    text-align: center;
+  }
+  .admin-card b,
+  .admin-card small {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .admin-card b {
+    letter-spacing: -0.2px;
+    font-size: 15px;
+    line-height: 1.2;
+  }
+  .admin-card small {
+    color: #89809b;
+    font-size: 11px;
+    line-height: 1.25;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    grid-auto-flow: row;
+    align-items: start;
+    column-gap: 17px;
+    row-gap: 17px;
+    width: 100%;
+  }
 }
 .teacher-branch {
   display: block;
   margin: 0;
-  min-width: 0;
   padding: 13px;
-  border: 1px solid #e9e2f2;
   border-radius: 17px;
-  background: #f7f4fa;
-  box-shadow:
-    0 5px 18px rgba(67, 47, 105, 0.045),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 .teacher-branch:hover {
-  border-color: #d8c9ed;
-  box-shadow: 0 9px 24px rgba(87, 62, 153, 0.085);
   transform: translateY(-1px);
 }
 .teacher-card {
@@ -302,7 +276,6 @@ select:focus-visible {
   border: 1px solid #e3d8f1;
   border-radius: 13px;
   background: linear-gradient(110deg, #f0e9fb, #fff 78%);
-  box-shadow: 0 3px 10px rgba(87, 62, 153, 0.045);
 }
 .teacher-card .avatar {
   width: 42px;
@@ -329,60 +302,58 @@ select:focus-visible {
   padding: 9px 11px;
   border: 1px solid #f0e5ce;
   border-radius: 12px;
-  background: linear-gradient(105deg, #fff8e9, #fff 78%);
-  box-shadow: 0 2px 8px rgba(155, 113, 43, 0.035);
   overflow: hidden;
 }
 .student-card .avatar {
   border-radius: 11px;
-  background: #fff0ce;
 }
-.workspace-content:has(.admin-card) .empty-students {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: clamp(32px, 5vw, 52px);
-  margin-top: 0;
-  padding: 7px 9px;
-  border: 1px dashed #e8dcbf;
-  border-radius: 12px;
-  background: rgba(255, 251, 241, 0.82);
-  color: #9b896a;
-}
-.workspace-content:has(.admin-card) .add-student {
-  display: flex;
-  width: fit-content;
-  max-width: 100%;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 30px;
-  margin: 0 0 8px auto;
-  padding: 5px 9px;
-  border: 1px solid #e5dfeb;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.76);
-  color: #78698d;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.18s ease;
-}
-.workspace-content:has(.admin-card) .add-student:hover {
-  border-color: #d2c6df;
-  background: #f5f1f8;
-  transform: translateY(-1px);
-}
-.workspace-content:has(.admin-card) .unassigned {
-  margin-top: 23px;
-  padding-top: 19px;
-  border-top: 1px solid #e9e1f1;
-}
-.workspace-content:has(.admin-card) .unassigned-title {
-  margin-bottom: 11px;
+.workspace-content:has(.admin-card) {
+  .empty-students {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: clamp(32px, 5vw, 52px);
+    margin-top: 0;
+    padding: 7px 9px;
+    border: 1px dashed #e8dcbf;
+    border-radius: 12px;
+    color: #9b896a;
+  }
+  .add-student {
+    display: flex;
+    width: fit-content;
+    max-width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 30px;
+    margin: 0 0 8px auto;
+    padding: 5px 9px;
+    border: 1px solid #e5dfeb;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.76);
+    color: #78698d;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    transition:
+      background 0.18s ease,
+      border-color 0.18s ease,
+      transform 0.18s ease;
+  }
+  .add-student:hover {
+    border-color: #d2c6df;
+    background: #f5f1f8;
+    transform: translateY(-1px);
+  }
+  .unassigned {
+    margin-top: 23px;
+    padding-top: 19px;
+    border-top: 1px solid #e9e1f1;
+  }
+  .unassigned-title {
+    margin-bottom: 11px;
+  }
 }
 /* На телефоне действия и диалоги не выходят за экран. */
 html,

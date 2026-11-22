@@ -1,3 +1,5 @@
+@use "./primitives";
+
 /* Нативный HTML <dialog> — единая система окон на всех устройствах.
    Никаких дополнительных overlay/div и раздельных мобильных сеток действий. */
 
@@ -27,36 +29,38 @@
   backdrop-filter: blur(5px);
 }
 
-:root dialog.native-dialog .modal-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-}
+:root dialog.native-dialog {
+  .modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
 
-:root dialog.native-dialog .modal-head > div {
-  flex: 1 1 auto;
-  min-width: 0;
-}
+  .modal-head > div {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
 
-:root dialog.native-dialog .stack {
-  display: grid;
-  gap: 12px;
-  min-width: 0;
-}
+  .stack {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+  }
 
-:root dialog.native-dialog .stack label {
-  min-width: 0;
-}
+  .stack label {
+    min-width: 0;
+  }
 
-:root dialog.native-dialog :is(.stack input, .stack select, .panel-login-edit-row > input) {
-  box-sizing: border-box;
-  min-height: 44px;
-  height: 44px;
-  max-width: 100%;
-  border-radius: var(--ui-radius-sm);
-  font-size: 16px;
+  :is(.stack input, .stack select, .panel-login-edit-row > input) {
+    box-sizing: border-box;
+    min-height: 44px;
+    height: 44px;
+    max-width: 100%;
+    border-radius: var(--ui-radius-sm);
+    font-size: 16px;
+  }
 }
 
 :root dialog.native-dialog .modal-actions,
@@ -69,108 +73,113 @@
   padding: 0;
 }
 
-:root dialog.native-dialog .modal-actions > :is(.btn, .ui-icon-button),
-:root dialog.native-dialog .modal-actions.credential-actions > .btn {
-  box-sizing: border-box;
-  min-width: 0;
-  max-height: 44px;
-  padding: 0 clamp(8px, 2.5vw, 15px);
-  border-radius: 10px;
-  font-size: 12px;
-  line-height: 1.2;
-  white-space: nowrap;
-}
+:root dialog.native-dialog {
+  .modal-actions > :is(.btn, .ui-icon-button),
+  .modal-actions.credential-actions > .btn {
+    box-sizing: border-box;
+    min-width: 0;
+    max-height: 44px;
+    padding: 0 clamp(8px, 2.5vw, 15px);
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
 
-:root dialog.native-dialog .modal-actions > .ui-icon-button {
-  --icon-action-size: 44px;
-}
+  .modal-actions > .ui-icon-button {
+    --icon-action-size: 44px;
+  }
 
-:root dialog.native-dialog .panel-credentials-panel {
-  min-width: 0;
-  padding-inline: 12px;
-  border-radius: var(--ui-radius-md);
-}
+  .panel-credentials-panel {
+    min-width: 0;
+    padding-inline: 12px;
+    border-radius: var(--ui-radius-md);
+  }
 
-:root dialog.native-dialog .panel-access-value {
-  box-sizing: border-box;
-  min-height: 52px;
-  gap: 10px;
-  padding: 4px 5px 4px 12px;
-}
+  .panel-access-value {
+    box-sizing: border-box;
+    min-height: 52px;
+    gap: 10px;
+    padding: 4px 5px 4px 12px;
+  }
 
-:root dialog.native-dialog .panel-access-value > b {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: 13px;
-}
+  .panel-access-value > b {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 13px;
+  }
 
-:root dialog.native-dialog .panel-access-value .password-code-refresh {
-  flex: 0 0 auto;
-  align-self: center;
-  min-height: 44px;
-  height: 44px;
-  margin: 0;
-  padding: 0 12px;
-  font-size: 12px;
-  border-radius: 9px;
-}
+  .panel-access-value .password-code-refresh {
+    flex: 0 0 auto;
+    align-self: center;
+    min-height: 44px;
+    height: 44px;
+    margin: 0;
+    padding: 0 12px;
+    font-size: 12px;
+    border-radius: 9px;
+  }
 
-:root dialog.native-dialog .panel-access-value .password-code-refresh svg {
-  width: 16px;
-  height: 16px;
+  .panel-access-value .password-code-refresh svg {
+    width: 16px;
+    height: 16px;
+  }
 }
 
 :root dialog.native-dialog.credential-modal[open] {
-  display: flex;
-  flex-direction: column;
+  @include primitives.stack;
   gap: 12px;
   width: min(480px, calc(100vw - 28px));
 }
 
-:root dialog.native-dialog .credential-field-value .ui-icon-button {
-  --icon-action-size: 44px;
-}
+:root dialog.native-dialog {
+  .credential-field-value .ui-icon-button {
+    --icon-action-size: 44px;
+  }
 
-:root dialog.native-dialog .credential-field {
-  min-height: 68px;
+  .credential-field {
+    min-height: 68px;
+  }
 }
 
 :root dialog.native-dialog.native-feedback-dialog[open] {
   width: min(450px, calc(100vw - 28px));
 }
 
-:root dialog.native-dialog.native-feedback-dialog .native-feedback-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
+:root dialog.native-dialog.native-feedback-dialog {
+  .native-feedback-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
 
-:root dialog.native-dialog.native-feedback-dialog .native-feedback-content > svg {
-  flex: none;
-  color: var(--button-danger-text);
-}
+  .native-feedback-content > svg {
+    flex: none;
+    color: var(--button-danger-text);
+  }
 
-:root dialog.native-dialog.native-feedback-dialog .native-feedback-copy {
-  flex: 1 1 auto;
-  min-width: 0;
-}
+  .native-feedback-copy {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
 
-:root dialog.native-dialog.native-feedback-dialog .native-feedback-copy h2 {
-  margin: 0 0 5px;
-  color: var(--ink);
-  font-size: 16px;
-}
+  .native-feedback-copy h2 {
+    margin: 0 0 5px;
+    color: var(--ink);
+    font-size: 16px;
+  }
 
-:root dialog.native-dialog.native-feedback-dialog .toast-message {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.5;
-}
+  .toast-message {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
 
-:root dialog.native-dialog.native-feedback-dialog .toast-close {
-  --icon-action-size: 44px;
+  .toast-close {
+    --icon-action-size: 44px;
+  }
 }
 
 :root dialog.native-dialog.native-feedback-success[open] {
@@ -201,16 +210,18 @@
     padding: 16px 12px;
   }
 
-  :root dialog.native-dialog .modal-actions {
-    gap: 6px;
-  }
+  :root dialog.native-dialog {
+    .modal-actions {
+      gap: 6px;
+    }
 
-  :root dialog.native-dialog .panel-access-value {
-    padding-left: 7px;
-  }
+    .panel-access-value {
+      padding-left: 7px;
+    }
 
-  :root dialog.native-dialog .panel-access-value .password-code-refresh {
-    padding-inline: 8px;
+    .panel-access-value .password-code-refresh {
+      padding-inline: 8px;
+    }
   }
 }
 
@@ -248,22 +259,24 @@
   align-items: center;
 }
 
-:root dialog.native-dialog .modal-actions > :is(.btn, .ui-icon-button),
-:root dialog.native-dialog .modal-actions.credential-actions > .btn {
-  flex: 0 1 auto;
-  width: auto;
-  min-height: 44px;
-  height: 44px;
-  margin: 0;
-}
+:root dialog.native-dialog {
+  .modal-actions > :is(.btn, .ui-icon-button),
+  .modal-actions.credential-actions > .btn {
+    flex: 0 1 auto;
+    width: auto;
+    min-height: 44px;
+    height: 44px;
+    margin: 0;
+  }
 
-:root dialog.native-dialog .modal-actions > .ui-icon-button {
-  flex: 0 0 44px;
-  padding: 0;
-}
+  .modal-actions > .ui-icon-button {
+    flex: 0 0 44px;
+    padding: 0;
+  }
 
-:root dialog.native-dialog .modal-actions.credential-actions .btn.primary {
-  flex-basis: auto;
+  .modal-actions.credential-actions .btn.primary {
+    flex-basis: auto;
+  }
 }
 
 :root dialog.native-dialog.native-feedback-dialog .toast-close {

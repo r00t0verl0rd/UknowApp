@@ -1,21 +1,23 @@
 /* Компоновка переключателя; его состояния описаны в active-states.css. */
-:root .workspace-shell .chat-list .chat-list-actions:empty {
-  display: none;
-}
-:root .workspace-shell .chat-list .chat-section-tabs {
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  min-width: 0;
-  width: 100%;
-}
-:root .workspace-shell .chat-list .chat-section-tab > .chat-tab-count {
-  flex: 0 0 auto;
-  min-width: 19px;
-  height: 19px;
-  margin: 0;
-  padding: 0 5px;
-  font-size: 10px;
-}
-:root .workspace-shell .chat-list .chat-list-actions > .personal-chat-create.ui-icon-button {
-  align-self: center;
-  margin: 0;
+:root .workspace-shell .chat-list {
+  .chat-list-actions:empty {
+    display: none;
+  }
+  .chat-section-tabs {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    min-width: 0;
+    width: 100%;
+  }
+  .chat-section-tab > .chat-tab-count {
+    flex: 0 0 auto;
+    min-width: 19px;
+    height: 19px;
+    margin: 0;
+    padding: 0 5px;
+    font-size: 10px;
+  }
+  .chat-list-actions > .personal-chat-create.ui-icon-button {
+    align-self: center;
+    margin: 0;
+  }
 }
