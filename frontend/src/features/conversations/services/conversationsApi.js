@@ -49,16 +49,18 @@ export function sendConversationText(request, chatId, text, clientMessageId) {
   });
 }
 
-export async function sendConversationAttachment(chatId, file, text, clientMessageId) {
+export async function sendConversationAttachment(chatId, file, text, clientMessageId, personal = false) {
   const form = new FormData();
   form.append("file", file);
   form.append("text", text);
   if (clientMessageId) form.append("client_message_id", clientMessageId);
-  return request("/api/panel/conversations/" + chatId + "/attachments", { method: "POST", body: form });
+  const path = personal ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
+  return request(path + chatId + "/attachments", { method: "POST", body: form });
 }
 
-export async function getMessageMedia(messageId, signal) {
-  const response = await fetchApi("/api/panel/messages/" + messageId + "/media", { signal });
+export async function getMessageMedia(messageId, signal, personal = false) {
+  const path = personal ? "/api/panel/personal-messages/" : "/api/panel/messages/";
+  const response = await fetchApi(path + messageId + "/media", { signal });
   if (!response.ok) throw new Error("Не удалось загрузить вложение");
   return response.blob();
 }
