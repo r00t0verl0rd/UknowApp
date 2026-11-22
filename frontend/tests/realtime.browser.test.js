@@ -885,6 +885,65 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize({ width: 1280, height: 800 });
 
+    // Выделение переписки — один CSS для учителя, администратора и ученика.
+    // Используем реальные классы кабинетов и сверяем с панелью преподавателя.
+    for (const width of [390, 760, 1024, 1025, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        const styles = await page.evaluate(currentTheme => {
+          const root = document.documentElement;
+          const oldTheme = root.dataset.theme;
+          root.dataset.theme = currentTheme;
+          const result = {};
+          try {
+            for (const role of ["teacher", "admin", "student"]) {
+              const fixture = document.createElement("div");
+              fixture.className = "workspace-shell workspace-" + role;
+              fixture.style.cssText = "position:fixed;top:0;left:0;visibility:hidden;pointer-events:none;z-index:-1;width:270px";
+              fixture.innerHTML = `
+                <section class="chat-list">
+                  <div class="chat-items">
+                    <button class="student-card chat-item selected" aria-pressed="true">Выбран</button>
+                    <button class="student-card chat-item" aria-pressed="true">Выбран по aria-pressed</button>
+                    <button class="student-card chat-item" aria-pressed="false">Другой</button>
+                  </div>
+                </section>
+              `;
+              document.body.append(fixture);
+              try {
+                const buttons = [...fixture.querySelectorAll(".chat-item")];
+                result[role] = buttons.map(button => {
+                  const style = getComputedStyle(button);
+                  return {
+                    background: style.backgroundColor,
+                    border: style.borderTopColor,
+                    color: style.color,
+                    shadow: style.boxShadow,
+                  };
+                });
+              } finally {
+                fixture.remove();
+              }
+            }
+            return result;
+          } finally {
+            root.dataset.theme = oldTheme;
+          }
+        }, theme);
+        for (const role of ["admin", "student"]) {
+          assert.deepEqual(styles[role], styles.teacher,
+            `${width}px ${theme}: dialog selection matches teacher palette for ${role}`);
+        }
+        assert.deepEqual(styles.teacher[0], styles.teacher[1],
+          `${width}px ${theme}: aria-pressed and selected class have identical highlights`);
+        assert.notEqual(styles.teacher[0].background, styles.teacher[2].background,
+          `${width}px ${theme}: selected dialog has distinguishable background`);
+        assert.notEqual(styles.teacher[0].border, styles.teacher[2].border,
+          `${width}px ${theme}: selected dialog has distinguishable border`);
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
+
     // Переключатель диалогов и кнопка создания всегда остаются в одной строке.
     for (const width of [320, 390, 760, 1280]) {
       await page.setViewportSize({ width, height: 800 });
