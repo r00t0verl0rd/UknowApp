@@ -807,6 +807,8 @@
     font-size:16px;
   }
   .workspace-shell .chat-detail .chat-composer .composer-footer {
+    position:static;
+    bottom:auto;
     min-height:42px;
     gap:6px;
   }
