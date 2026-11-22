@@ -21,6 +21,7 @@ test("errors and success notifications use native browser dialogs", () => {
   assert.match(toast, /<dialog/);
   assert.match(toast, /dialog\.showModal\(\)/);
   assert.match(toast, /dialog\.show\(\)/);
+  assert.match(toast, /activeModal \|\| document\.body/);
   assert.match(toast, /role=\{isError \? "alertdialog" : "dialog"\}/);
 });
 

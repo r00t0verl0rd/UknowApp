@@ -239,3 +239,17 @@
     padding-inline: 8px;
   }
 }
+
+/* Сообщение о копировании видно и поверх открытой карточки доступа.
+   Нативный немодальный dialog здесь участвует в top layer родителя. */
+:root dialog.native-dialog.modal[open] > dialog.native-dialog.native-feedback-success[open] {
+  position: sticky;
+  inset: auto;
+  align-self: stretch;
+  width: 100%;
+  max-width: 100%;
+  margin: 12px 0 0;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: none;
+}

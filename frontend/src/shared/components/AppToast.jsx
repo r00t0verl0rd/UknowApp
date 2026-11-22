@@ -23,6 +23,12 @@ export default function AppToast({ message, onDismiss }) {
 
   if (!message) return null;
 
+  // Неблокирующее подтверждение отображается внутри уже открытого диалога,
+  // иначе браузерная top layer скрыла бы его за затемнением модального окна.
+  const activeModal = !isError
+    ? [...document.querySelectorAll("dialog.native-dialog[open]:not(.native-feedback-dialog)")].at(-1)
+    : null;
+
   return createPortal(
     <dialog
       ref={dialogRef}
@@ -48,6 +54,6 @@ export default function AppToast({ message, onDismiss }) {
         </IconButton>}
       </div>
     </dialog>,
-    document.body,
+    activeModal || document.body,
   );
 }
