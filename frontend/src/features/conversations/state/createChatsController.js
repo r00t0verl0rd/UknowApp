@@ -111,33 +111,37 @@ export function createChatsController(options) {
     ],
     () => {
       const history = options.chatState.messagesViewportRef.current;
-      const viewport = history?.closest(".workspace-content");
-      const detail = history?.closest(".chat-detail");
-      if (!viewport || !detail) return undefined;
-      const distanceToLatest = () => {
-        const bottom = viewport.getBoundingClientRect().top + viewport.clientHeight;
-        return detail.getBoundingClientRect().bottom - bottom;
-      };
+      if (!history) return undefined;
       let stickToBottom = true;
+      let frame = 0;
+      const distanceToLatest = () => history.scrollHeight - history.scrollTop - history.clientHeight;
       const scrollToLatest = () => {
-        if (stickToBottom) viewport.scrollTop += distanceToLatest();
+        frame = 0;
+        if (stickToBottom) history.scrollTop = history.scrollHeight;
+      };
+      const scheduleLatest = () => {
+        if (!frame) frame = window.requestAnimationFrame(scrollToLatest);
       };
       const handleScroll = () => {
         stickToBottom = distanceToLatest() < 80;
       };
-      viewport.addEventListener("scroll", handleScroll, {
-        passive: true,
-      });
-      scrollToLatest();
-      const frame = window.requestAnimationFrame(scrollToLatest);
-      const resizeObserver =
-        typeof ResizeObserver !== "undefined" ? new ResizeObserver(scrollToLatest) : null;
-      resizeObserver?.observe(detail);
-      resizeObserver?.observe(viewport);
+      history.addEventListener("scroll", handleScroll, { passive: true });
+      scheduleLatest();
+      // Ресайз клавиатуры меняет только высоту истории, а не всю страницу.
+      // Сохраняем позицию читателя, если он прокрутил историю вверх.
+      const resizeObserver = typeof ResizeObserver === "function"
+        ? new ResizeObserver(scheduleLatest)
+        : null;
+      resizeObserver?.observe(history);
+      const mutationObserver = typeof MutationObserver === "function"
+        ? new MutationObserver(scheduleLatest)
+        : null;
+      mutationObserver?.observe(history, { childList: true });
       return () => {
-        window.cancelAnimationFrame(frame);
-        viewport.removeEventListener("scroll", handleScroll);
+        if (frame) window.cancelAnimationFrame(frame);
+        history.removeEventListener("scroll", handleScroll);
         resizeObserver?.disconnect();
+        mutationObserver?.disconnect();
       };
     },
   );
