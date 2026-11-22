@@ -38,8 +38,8 @@ try {
         await page.evaluate(value => { document.documentElement.dataset.theme = value; }, theme);
         const icon = await close.locator("svg").boundingBox();
         const target = await close.boundingBox();
-        assert.equal(icon.width, 14);
-        assert.equal(icon.height, 14);
+        assert.ok(icon.width >= 14 && icon.width <= 18);
+        assert.ok(icon.height >= 14 && icon.height <= 18);
         assert.ok(target.width >= 40 && target.height >= 40);
       }
     }

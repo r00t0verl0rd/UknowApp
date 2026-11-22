@@ -30,7 +30,7 @@ function AdminPage({ context }) {
         refresh={refresh} notify={notify} setError={setError}
         setSelectedChat={chatState.setSelectedChat} setMessages={chatState.setMessages}/>;
     case "chats":
-      return <ChatsModule key="admin" page={page} auth={auth} profile={profile} request={request}
+      return <ChatsModule key="admin" auth={auth} profile={profile} request={request}
         chatState={chatState} personalState={personalState} inboxLoading={inboxLoading} users={directory.users}
         modal={modal} setPage={setPage} setError={setError}
         setModal={setModal} notify={notify}/>;

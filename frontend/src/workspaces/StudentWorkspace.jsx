@@ -5,7 +5,7 @@ export default function StudentWorkspace({ context }) {
     setError, modal, setModal, notify, inboxLoading } = context;
 
   if (page !== "chats") return null;
-  return <ChatsModule key="student" page={page} auth={auth} profile={profile} request={request}
+  return <ChatsModule key="student" auth={auth} profile={profile} request={request}
     chatState={chatState} personalState={personalState} inboxLoading={inboxLoading} users={[]} modal={modal}
     setPage={setPage} setError={setError} setModal={setModal} notify={notify}/>;
 }

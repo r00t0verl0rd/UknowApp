@@ -24,7 +24,7 @@ def test_unicode_panel_login_tracks_rename(api):
 
     client = make_client()
     assert client.post("/api/auth/login", json={
-        "username": "ПРЕПОДАВАТЕЛЬ", "password": "unicode-pass",
+        "username": "ПРЕПОДАВАТЕЛЬ", "password": "unicode-pass",  # pragma: allowlist secret
     }).status_code == status.HTTP_200_OK
 
     with session_factory() as db:
