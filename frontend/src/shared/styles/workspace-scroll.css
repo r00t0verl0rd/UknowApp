@@ -136,6 +136,11 @@
        Он совпадает с фоном sidebar, а не образует отдельную полосу canvas. */
     background: var(--surface) !important;
     --workspace-chrome-bottom: env(safe-area-inset-bottom, 0px);
+    height: auto;
+    min-height: 100lvh;
+    overflow-x: clip;
+    overflow-y: visible;
+    overscroll-behavior-y: auto;
   }
 
   :root[data-theme] body:has(.workspace-shell),
