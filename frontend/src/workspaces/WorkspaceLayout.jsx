@@ -27,14 +27,15 @@ export default function WorkspaceLayout({
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const contentRef = useRef(null);
+  const sidebarRef = useRef(null);
+  const shellRef = useRef(null);
 
   useLayoutEffect(() => {
     contentRef.current.scrollTop = 0;
   }, [page]);
 
-  // В браузере мобильная оболочка покрывает 100lvh, но visualViewport сообщает
-  // доступную высоту над прозрачными панелями Safari и над клавиатурой.
-  // На десктопе/PWA оболочка по-прежнему привязана к visualViewport.
+  // Единый fixed viewport для Safari, PWA и Desktop, включая появление клавиатуры.
+  // Страница не прокручивается — только workspace-content.
   useLayoutEffect(() => {
     const root = document.documentElement;
     const viewport = window.visualViewport;
@@ -67,6 +68,30 @@ export default function WorkspaceLayout({
     };
   }, []);
 
+  // Высота мобильной навигации может измениться при переносе/масштабе текста.
+  // ResizeObserver синхронизирует отступ контента с реальным размером меню.
+  useLayoutEffect(() => {
+    const sidebar = sidebarRef.current;
+    const shell = shellRef.current;
+    if (!sidebar || !shell) return undefined;
+
+    const syncSidebarHeight = () => {
+      const height = Math.ceil(sidebar.getBoundingClientRect().height);
+      if (height > 0) shell.style.setProperty("--workspace-sidebar-height", `${height}px`);
+    };
+
+    syncSidebarHeight();
+    const observer = typeof ResizeObserver === "function"
+      ? new ResizeObserver(syncSidebarHeight) : null;
+    observer?.observe(sidebar);
+    window.addEventListener("resize", syncSidebarHeight);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", syncSidebarHeight);
+      shell.style.removeProperty("--workspace-sidebar-height");
+    };
+  }, []);
+
   const confirmSignOut = async () => {
     if (signingOut) return;
     setSigningOut(true);
@@ -81,8 +106,8 @@ export default function WorkspaceLayout({
     </IconButton>
   );
 
-  return <div className={`shell workspace-shell workspace-${role}`}>
-    <aside className="sidebar">
+  return <div ref={shellRef} className={`shell workspace-shell workspace-${role}`}>
+    <aside ref={sidebarRef} className="sidebar">
       <div className="brand"><img src="/logo.png" alt="" /><span>Uknow<span>App</span></span></div>
       <div className="school-label">{label}</div>
       <nav aria-label="Основная навигация">

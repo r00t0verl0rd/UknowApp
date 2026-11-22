@@ -26,8 +26,10 @@ test("responsive layout keeps the same two main blocks and Safari safe areas", (
   assert.match(layout, /<main className="content">/);
   assert.match(layout, /className=\{"workspace-content"/);
   assert.match(css, /@media\s*\(max-width:\s*1024px\)/);
-  assert.match(css, /@media\s*\(max-width:\s*1024px\)\s*and\s*\(display-mode:\s*browser\)/);
-  assert.match(css, /height:\s*calc\(100lvh\s*\+\s*var\(--workspace-chrome-bottom\)\)/);
+  assert.doesNotMatch(css, /position:\s*relative;\s*inset:\s*auto;\s*\/\* Safari/);
+  assert.match(css, /position:\s*absolute;\s*inset:\s*0 0 auto;/);
+  assert.match(css, /padding-top:\s*calc\(var\(--workspace-sidebar-height/);
+  assert.match(layout, /new ResizeObserver\(syncSidebarHeight\)/);
   assert.match(css, /--workspace-viewport-height/);
   assert.match(css, /env\(safe-area-inset-bottom/);
 });

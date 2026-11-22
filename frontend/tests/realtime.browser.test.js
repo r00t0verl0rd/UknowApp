@@ -228,8 +228,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
             root.dataset.theme = previousTheme;
           }
         }, theme);
-        assert.equal(isolation.shellPosition, width < 1025 ? "relative" : "fixed",
-          `${width}px ${theme}: browser document-flow on mobile, fixed on desktop`);
+        assert.equal(isolation.shellPosition, "fixed",
+          `${width}px ${theme}: viewport shell is always fixed`);
         assert.ok(isolation.scrollTop >= 400, `${width}px ${theme}: content scrolls independently`);
         assert.equal(isolation.sidebarTop, isolation.initialTop, `${width}px ${theme}: sidebar stays in place`);
         assert.equal(isolation.windowScroll, 0, `${width}px ${theme}: no document scrolling`);
@@ -237,15 +237,18 @@ test("global SSE updates real counters across tabs and replays missed events", {
           ["html", isolation.docOverflow], ["body", isolation.bodyOverflow],
           ["root", isolation.rootOverflow],
         ]) {
-          assert.equal(value, width < 1025 ? "clip visible" : "hidden",
-            `${width}px ${theme}: ${label} overflow`);
+          assert.equal(value, "hidden",
+            `${width}px ${theme}: ${label} never scrolls the document`);
         }
         assert.equal(isolation.sidebarOverscroll, "none", `${width}px ${theme}: sidebar overscroll`);
         if (width < 1025) assert.equal(isolation.sidebarTouchAction, "pan-x", "mobile nav permits only horizontal swipes");
         // Mobile, Desktop и PWA используют один фон html без внутренних подложек.
         assert.equal(isolation.rootBackground, isolation.expectedBackground,
           `${width}px ${theme}: one themed background for every viewport`);
-        for (const layer of ["sidebarBackground", "bodyBackground", "shellBackground", "mainBackground"]) {
+        assert.equal(isolation.sidebarBackground,
+          width < 1025 ? isolation.expectedBackground : "rgba(0, 0, 0, 0)",
+          `${width}px ${theme}: mobile overlay matches the shared theme surface`);
+        for (const layer of ["bodyBackground", "shellBackground", "mainBackground"]) {
           assert.equal(isolation[layer], "rgba(0, 0, 0, 0)",
             `${width}px ${theme}: transparent ${layer}, no extra underlay`);
         }

@@ -57,7 +57,8 @@
   background-clip: border-box;
 }
 
-/* Sidebar stays in its own viewport row, independently of the active tab's length. */
+/* Sidebar stays in its own viewport row, independently of the active tab's length.
+   На мобильных он становится верхним несдвигаемым слоем поверх scrollport. */
 @media (min-width: 1025px) {
   .workspace-shell > .sidebar {
     min-height: 0;
@@ -105,20 +106,31 @@
   outline-offset: -2px;
 }
 
+/* На всех устройствах .workspace-shell остаётся fixed и занимает visualViewport.
+   У документа отсутствует собственная прокрутка: она не может увести sidebar
+   вверх за системные панели Safari. Sidebar перекрывает единый scrollport content,
+   высота которого не зависит от высоты/содержимого выбранной вкладки. */
 @media (max-width: 1024px) {
   .workspace-shell {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
   }
 
-  .workspace-shell > .sidebar {
-    position: relative;
-    inset: auto;
-    z-index: 30;
+  :root[data-theme] .workspace-shell > .sidebar {
+    position: absolute;
+    inset: 0 0 auto;
+    grid-column: 1;
+    grid-row: 1;
+    z-index: 50;
+    width: 100%;
+    min-height: 0;
+    max-height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
-    /* Вертикальный жест на меню не запускает обновление страницы в Safari. */
     touch-action: pan-x;
+    /* Непрозрачная шапка того же цвета, что общий фон html.
+       Прокручиваемые карточки проходят ПОД меню, а не сквозь текст. */
+    background: var(--workspace-background) !important;
   }
 
   .workspace-shell > .sidebar nav {
@@ -126,82 +138,21 @@
     touch-action: pan-x;
   }
 
-  /* Резервируем safe-area один раз, в общей области контента,
-     вместо дополнительной полосы под всеми страницами. */
   .workspace-shell > .content {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    height: 100%;
     padding-bottom: 0;
-  }
-}
-
-
-/* Safari/Chrome в режиме вкладки рисуют прозрачную панель поверх страницы.
-   Геометрия отличается от PWA/Desktop, но фон остаётся тем же общим слоем. */
-@media (max-width: 1024px) and (display-mode: browser) {
-  :root[data-theme]:has(.workspace-shell) {
-    --workspace-chrome-bottom: env(safe-area-inset-bottom, 0px);
-    height: auto;
-    min-height: 100lvh;
-    overflow-x: clip;
-    overflow-y: visible;
-    overscroll-behavior-y: auto;
-  }
-
-  :root[data-theme] body:has(.workspace-shell),
-  :root[data-theme] #root:has(.workspace-shell) {
-    height: auto;
-    min-height: 100lvh;
-    overflow-x: clip;
-    overflow-y: visible;
-    overscroll-behavior-y: auto;
-    /* Цвет уже задаётся общим правилом вне media query. */
-  }
-
-  .workspace-shell {
-    position: relative;
-    inset: auto;
-    /* Safari на iPhone исключает нижнюю safe-area из 100lvh.
-       Продолжаем саму рабочую область под нижние элементы управления. */
-    height: calc(100lvh + var(--workspace-chrome-bottom));
     min-height: 0;
   }
 
-  /* Пункты списков могут прокручиваться под прозрачную нижнюю панель.
-     При прокрутке до конца резервируем расстояние до видимой границы,
-     чтобы последние строки и кнопка отправки оставались доступны. */
   .workspace-shell > .content > .workspace-content {
-    padding-bottom: max(
-      var(--workspace-gutter),
-      env(safe-area-inset-bottom, 0px),
-      calc(100lvh + var(--workspace-chrome-bottom) - var(--workspace-viewport-top, 0px) - var(--workspace-viewport-height, 100dvh) + var(--workspace-gutter))
-    );
-  }
-
-  /* Клавиатура — не прозрачная панель Safari: компоновка со сфокусированным
-     полем остаётся в visualViewport без лишнего большого отступа внизу. */
-  :root:has(.workspace-shell :is(input, textarea, [contenteditable="true"]):focus) .workspace-shell {
-    height: var(--workspace-viewport-height, 100dvh);
-  }
-
-  :root:has(.workspace-shell :is(input, textarea, [contenteditable="true"]):focus)
-  .workspace-shell > .content > .workspace-content {
-    padding-bottom: var(--workspace-gutter);
-  }
-}
-
-@supports not (height: 100lvh) {
-  @media (max-width: 1024px) and (display-mode: browser) {
-    :root[data-theme]:has(.workspace-shell),
-    :root[data-theme] body:has(.workspace-shell),
-    :root[data-theme] #root:has(.workspace-shell) {
-      min-height: 100vh;
-    }
-
-    .workspace-shell {
-      height: calc(100vh + var(--workspace-chrome-bottom));
-    }
-
-    .workspace-shell > .content > .workspace-content {
-      padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
-    }
+    /* Scrollport идёт от верхней до нижней границы viewport.
+       Только содержимое получает отступ на реальную высоту sidebar. */
+    padding-top: calc(var(--workspace-sidebar-height, 140px) + var(--workspace-gutter));
+    padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
+    scroll-padding-top: calc(var(--workspace-sidebar-height, 140px) + var(--workspace-gutter));
+    scroll-padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
   }
 }
