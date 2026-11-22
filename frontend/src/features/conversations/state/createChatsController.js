@@ -69,32 +69,27 @@ export function createChatsController(options) {
   });
   const visibleChats = createMemo(() => {
     const query = options.chatState.chatSearch.trim().toLocaleLowerCase("ru");
-    const personal = options.personalState.personalChats.filter(
-      (chat) =>
-        (!query || chat.title.toLocaleLowerCase("ru").includes(query)) &&
-        (options.chatState.chatFilter === "all" || Number(chat.unread_count || 0) > 0),
-    );
-    const regular =
-      options.profile?.role === "student"
+    const unreadOnly = options.chatState.chatFilter === "unread";
+    const rows = options.personalState.chatSection === "personal"
+      ? options.personalState.personalChats.filter(
+          (chat) =>
+            (!query || chat.title.toLocaleLowerCase("ru").includes(query)) &&
+            (!unreadOnly || Number(chat.unread_count || 0) > 0),
+        )
+      : options.profile?.role === "student"
         ? options.chatState.chats.slice(0, 1)
         : options.chatState.chats.filter((chat) => {
             const names =
               options.profile?.role === "admin"
                 ? chat.teacher.full_name + " " + chat.student.full_name
                 : chat.student.full_name + " " + chat.teacher.full_name;
-            const matchesSearch = !query || names.toLocaleLowerCase("ru").includes(query);
-            const matchesFilter =
-              options.profile?.role !== "teacher" ||
-              options.chatState.chatFilter === "all" ||
-              Number(chat.unread_count || 0) > 0;
-            return matchesSearch && matchesFilter;
+            return (
+              (!query || names.toLocaleLowerCase("ru").includes(query)) &&
+              (options.profile?.role !== "teacher" ||
+                !unreadOnly ||
+                Number(chat.unread_count || 0) > 0)
+            );
           });
-    const rows =
-      options.profile?.role === "admin"
-        ? options.personalState.chatSection === "personal"
-          ? personal
-          : regular
-        : [...regular, ...personal];
     return rows.sort(
       (a, b) =>
         Number(b.unread_count > 0) - Number(a.unread_count > 0) ||
