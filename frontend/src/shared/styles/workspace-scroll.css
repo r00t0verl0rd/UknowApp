@@ -157,60 +157,93 @@
   }
 }
 
-/* В мобильном Safari кнопки Liquid Glass накладываются на нижнюю часть
-   большого viewport. Продлеваем именно scrollport ПОД панель браузера,
-   но не возвращаем document scrolling: sidebar остаётся fixed.
-   Разница между большим и видимым viewport становится нижним отступом,
-   поэтому последний элемент можно прокрутить ВЫШЕ панели управления. */
+/* В iOS 26 Safari fixed-слои ОТРЕЗАЮТСЯ над Liquid Glass.
+   Увеличение высоты fixed .workspace-shell не помогает: WebKit не рисует его
+   ниже controls. Поэтому в обычной мобильной вкладке скроллится сам документ,
+   который Safari умеет композитить ПОД панелью. Навигация остаётся sticky
+   выше содержимого — один скролл для структуры, пользователей и списка чатов.
+   PWA и Desktop сохраняют прежнюю независимую fixed-геометрию. */
 @media (max-width: 1024px) and (display-mode: browser) {
-  :root[data-theme] {
-    --workspace-chrome-bottom: env(safe-area-inset-bottom, 0px);
+  :root[data-theme]:has(.workspace-shell),
+  :root[data-theme] body:has(.workspace-shell),
+  :root[data-theme] #root:has(.workspace-shell) {
+    height: auto;
+    min-height: 100lvh;
+    overflow-x: clip;
+    overflow-y: visible;
+    overscroll-behavior-y: auto;
   }
 
   :root[data-theme] .workspace-shell {
-    height: max(
-      var(--workspace-viewport-height, 100dvh),
-      calc(100lvh + var(--workspace-chrome-bottom))
-    );
+    position: relative;
+    inset: auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: auto;
+    min-height: 100lvh;
+    overflow: visible;
+  }
+
+  :root[data-theme] .workspace-shell > .sidebar {
+    /* Sticky участвует в нормальном потоке документа, но остаётся
+       закреплённым над содержимым во время прокрутки Safari. */
+    position: sticky;
+    inset: 0 0 auto;
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+    z-index: 50;
+    max-height: none;
+  }
+
+  :root[data-theme] .workspace-shell > .content {
+    grid-column: 1;
+    grid-row: 2;
+    height: auto;
+    min-height: calc(100lvh - var(--workspace-sidebar-height, 140px));
+    overflow: visible;
   }
 
   :root[data-theme] .workspace-shell > .content > .workspace-content {
-    --workspace-browser-bottom-inset: max(
-      var(--workspace-gutter),
-      env(safe-area-inset-bottom, 0px),
-      calc(
-        100lvh + var(--workspace-chrome-bottom)
-        - var(--workspace-viewport-height, 100dvh)
-        + var(--workspace-gutter)
-      )
+    flex: 1 0 auto;
+    min-height: calc(100lvh - var(--workspace-sidebar-height, 140px));
+    overflow: visible;
+    padding-top: var(--workspace-gutter);
+    /* Последняя карточка поднимается над Safari toolbar; само полотно
+       при этом продолжается под полупрозрачными кнопками браузера. */
+    padding-bottom: max(104px, calc(env(safe-area-inset-bottom, 0px) + 78px));
+    scroll-padding-top: calc(var(--workspace-sidebar-height, 140px) + var(--workspace-gutter));
+  }
+
+  /* Внутри открытой переписки сохраняем ограниченную по visualViewport
+     высоту: сообщения прокручиваются, а composer остаётся над клавиатурой. */
+  :root[data-theme] .workspace-shell:has(.mobile-chat-back) > .content {
+    min-height: 0;
+  }
+
+  :root[data-theme] .workspace-shell:has(.mobile-chat-back) > .content > .workspace-content {
+    flex: 0 0 auto;
+    height: max(
+      0px,
+      calc(var(--workspace-viewport-height, 100dvh) - var(--workspace-sidebar-height, 140px))
     );
-    padding-bottom: var(--workspace-browser-bottom-inset);
-    scroll-padding-bottom: var(--workspace-browser-bottom-inset);
-  }
-
-  /* Клавиатура не является прозрачной панелью Safari. Поля ввода и
-     отправки остаются строго внутри уменьшенного visualViewport. */
-  :root[data-theme]:has(.workspace-shell :is(input, textarea, [contenteditable="true"]):focus)
-    .workspace-shell {
-    height: var(--workspace-viewport-height, 100dvh);
-  }
-
-  :root[data-theme]:has(.workspace-shell :is(input, textarea, [contenteditable="true"]):focus)
-    .workspace-shell > .content > .workspace-content {
+    min-height: 0;
+    overflow: hidden;
+    padding-top: var(--workspace-gutter);
     padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
-    scroll-padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
   }
 }
 
 @supports not (height: 100lvh) {
   @media (max-width: 1024px) and (display-mode: browser) {
+    :root[data-theme]:has(.workspace-shell),
+    :root[data-theme] body:has(.workspace-shell),
+    :root[data-theme] #root:has(.workspace-shell),
     :root[data-theme] .workspace-shell {
-      height: var(--workspace-viewport-height, 100dvh);
+      min-height: 100vh;
     }
-
+    :root[data-theme] .workspace-shell > .content,
     :root[data-theme] .workspace-shell > .content > .workspace-content {
-      padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
-      scroll-padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
+      min-height: calc(100vh - var(--workspace-sidebar-height, 140px));
     }
   }
 }

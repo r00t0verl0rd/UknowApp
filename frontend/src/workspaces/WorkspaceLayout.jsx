@@ -32,10 +32,14 @@ export default function WorkspaceLayout({
 
   useLayoutEffect(() => {
     contentRef.current.scrollTop = 0;
+    // В мобильном Safari нативный document — единственный скроллер.
+    if (window.matchMedia("(max-width: 1024px) and (display-mode: browser)").matches) {
+      window.scrollTo(0, 0);
+    }
   }, [page]);
 
-  // Единый fixed viewport для Safari, PWA и Desktop, включая появление клавиатуры.
-  // Страница не прокручивается — только workspace-content.
+  // Размер visualViewport используется для Desktop/PWA и открытого диалога.
+  // В Safari списки прокручиваются документом, чтобы WebKit рисовал их под toolbar.
   useLayoutEffect(() => {
     const root = document.documentElement;
     const viewport = window.visualViewport;

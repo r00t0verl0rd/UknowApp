@@ -22,6 +22,14 @@ export default function ChatsPage({
 }) {
   const [messageNowMs, setMessageNowMs] = useState(Date.now);
 
+  // В обычной вкладке Safari список диалогов прокручивается нативным document.
+  // При открытии переписки возвращаемся наверх, где закреплена навигация.
+  useEffect(() => {
+    if (selectedChat && window.matchMedia("(max-width: 1024px) and (display-mode: browser)").matches) {
+      window.scrollTo(0, 0);
+    }
+  }, [selectedChat?.id, selectedChat?.type]);
+
   // Один таймер обновляет даты сообщений при достижении 24 часов.
   useEffect(() => {
     let nextBoundary = Infinity;
