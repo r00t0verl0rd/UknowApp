@@ -791,3 +791,45 @@
 .chat-item.has-unread:not(.selected) {
   border-left:2px solid var(--purple);
 }
+
+// На телефоне большая зона ввода и компактная отправка без второго ряда.
+// Равные размеры контролов для ролей admin, teacher и student.
+@media (max-width: 1024px) {
+  .workspace-shell .chat-detail .chat-composer {
+    gap:6px;
+    padding:8px;
+  }
+  .workspace-shell .chat-detail .chat-composer textarea {
+    min-height:84px;
+    height:84px;
+    max-height:144px;
+    padding:11px 12px;
+    font-size:16px;
+  }
+  .workspace-shell .chat-detail .chat-composer .composer-footer {
+    min-height:42px;
+    gap:6px;
+  }
+  .workspace-shell .chat-detail .chat-composer .composer-send {
+    width:44px;
+    min-width:44px;
+    max-width:44px;
+    height:42px;
+    min-height:42px;
+    padding:0;
+    flex:0 0 44px;
+    margin-left:auto;
+    border-radius:10px;
+  }
+  .workspace-shell .chat-detail .chat-composer .composer-send > span {
+    display:none;
+  }
+  .workspace-shell .chat-detail .chat-composer:focus-within {
+    box-shadow:none;
+  }
+  :root[data-workspace-keyboard="open"] .workspace-shell .chat-detail .chat-composer textarea {
+    height:clamp(64px, 18dvh, 78px);
+    min-height:64px;
+    max-height:78px;
+  }
+}
