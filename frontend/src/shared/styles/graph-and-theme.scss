@@ -28,16 +28,10 @@
       width: fit-content;
       max-width: 100%;
       box-sizing: border-box;
-      flex: 0 1 auto;
-      flex-wrap: wrap;
     }
     & .graph-legend-item {
       display: inline-flex;
       align-items: center;
-      color: var(--muted);
-      white-space: nowrap;
-      font-size: 12px;
-      font-weight: 750;
     }
     & .graph-legend-item > span {
       flex: 0 0 9px;
@@ -64,6 +58,7 @@
     overflow: visible;
   }
   .student-card .avatar {
+    color: #a76d16;
     flex: 0 0 34px;
     width: 34px;
     height: 34px;
@@ -103,7 +98,6 @@
     max-width: 100%;
     min-width: 0;
     box-sizing: border-box;
-    overflow: hidden;
   }
   .student-card .person-main {
     align-items: center;
@@ -130,9 +124,6 @@
     word-break: normal;
     text-overflow: clip;
   } /* Сужается содержимое карточек, не колонки преподавателей. */
-  .user-row {
-    border-bottom: 1px solid var(--line);
-  }
   .user-row:hover {
     background: #f8f7fb;
   }
@@ -146,20 +137,13 @@
     overflow: hidden;
     color: var(--ink);
     white-space: nowrap;
-    text-overflow: ellipsis;
-    letter-spacing: -0.18px;
   }
   .user-actions {
     display: flex;
     flex: 0 0 auto;
-    margin-left: auto;
   }
   .user-action-btn {
     place-items: center;
-    cursor: pointer;
-    flex: 0 0 42px;
-    color: #777085;
-    background: #faf9fc;
   }
   .user-action-btn:hover {
     border-color: var(--line);
@@ -176,9 +160,7 @@
   .teacher-card {
     display: flex;
     width: 100%;
-    max-width: 100%;
     box-sizing: border-box;
-    overflow: hidden;
     gap: 8px;
   }
   .teacher-card > .person-main {
@@ -230,10 +212,16 @@
   } /* Счётчики заметны, но не отвлекают от структуры. */
   .workspace-content:has(.admin-card) {
     & .graph-legend {
+      flex: 0 1 auto;
+      flex-wrap: wrap;
       justify-content: flex-start;
       gap: 18px;
     }
     & .graph-legend-item {
+      color: var(--muted);
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 750;
       gap: 9px;
     }
   } /* В светлой теме мягкий контраст и чёткие границы. */
@@ -272,6 +260,7 @@
     overflow: visible;
   }
   .user-row {
+    border-bottom: 1px solid var(--line);
     transition: background 0.15s ease;
     min-height: 86px;
     gap: 16px;
@@ -285,9 +274,14 @@
     height: 22px;
   }
   .user-actions {
+    margin-left: auto;
     align-items: center;
   }
   .user-action-btn {
+    cursor: pointer;
+    flex: 0 0 42px;
+    color: #777085;
+    background: #faf9fc;
     transition:
       background 0.15s ease,
       border-color 0.15s ease,
@@ -552,6 +546,8 @@
     font-family: var(--font-family-ui);
   }
   .user-person-info {
+    text-overflow: ellipsis;
+    letter-spacing: -0.18px;
     font-size: 16px;
     font-weight: 600;
     line-height: 1.35;

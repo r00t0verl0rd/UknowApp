@@ -4,8 +4,6 @@
   }
   body {
     min-width: 320px;
-    margin: 0;
-    color: var(--ink);
   }
   button:not(.chat-item),
   input,
@@ -108,11 +106,6 @@
     font-weight: 800;
     font-size: 13px;
     padding: 12px 16px;
-    transition:
-      transform 0.16s ease,
-      box-shadow 0.16s ease,
-      background 0.16s ease,
-      border-color 0.16s ease;
   }
   .btn svg {
     width: 16px;
@@ -145,6 +138,10 @@
   }
   .teacher-branch {
     position: relative;
+    transition:
+      border-color 0.18s ease,
+      box-shadow 0.18s ease,
+      transform 0.18s ease;
   }
   .student-card,
   .teacher-card {
@@ -181,7 +178,6 @@
   }
   .person-info small {
     margin-top: 4px;
-    color: var(--muted);
   }
   .student-additional-info {
     display: block;
@@ -224,6 +220,7 @@
     gap: 9px;
     padding: 40px 15px;
     font-size: 12px;
+    text-align: center;
   }
   .empty-state > svg {
     width: 30px;
@@ -286,7 +283,6 @@
     padding: 0 11px;
     height: 46px;
     font-size: 14px;
-    outline: 0;
   }
   .stack input:focus,
   .stack select:focus {
@@ -302,6 +298,7 @@
     margin: auto;
     width: min(440px, 100%);
     padding: 24px;
+    overscroll-behavior: contain;
   }
   .modal-head {
     display: flex;
@@ -326,7 +323,6 @@
     font:
       800 28px ui-monospace,
       monospace;
-    letter-spacing: 4px;
     border: 1px dashed #cfc0e3;
     padding: 18px;
     border-radius: 12px;

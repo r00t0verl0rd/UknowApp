@@ -1,6 +1,7 @@
 @layer components {
   @media (max-width: 1024px) {
     .modal {
+      overscroll-behavior: contain;
       flex: 0 1 auto;
       min-width: 0;
       overflow-x: hidden;

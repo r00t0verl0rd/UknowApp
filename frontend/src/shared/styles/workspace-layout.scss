@@ -59,6 +59,7 @@
   @media (min-width: 1025px) {
     .sidebar {
       padding: 18px 14px;
+      width: auto;
     }
     .brand {
       gap: 10px;
@@ -80,6 +81,8 @@
     .workspace-content {
       width: 100%;
       padding: 14px 20px 18px;
+      max-width: 1900px;
+      padding-inline: clamp(30px, 2.5vw, 42px);
     }
     .workspace-content:has(.admin-card) .grid {
       column-gap: 12px;
@@ -116,15 +119,8 @@
       gap: 10px;
       padding: 9px 14px;
     } /* Отступы адаптируются к ширине экрана. */
-    .sidebar {
-      width: auto;
-    }
     .content {
       margin-left: 0;
-    }
-    .workspace-content {
-      max-width: 1900px;
-      padding-inline: clamp(30px, 2.5vw, 42px);
     }
   }
   @media (max-width: 1024px) {
@@ -232,6 +228,7 @@
     }
     .user-row {
       min-width: 0;
+      min-height: 80px;
     }
     .user-row > .avatar {
       flex: 0 0 36px;
@@ -264,7 +261,6 @@
     }
     .modal {
       max-height: calc(100dvh - 20px);
-      overscroll-behavior: contain;
     }
     .modal-head {
       gap: 10px;
@@ -415,9 +411,6 @@
         font-size: 10px;
       }
     }
-    .user-row {
-      min-height: 80px;
-    }
     .user-action-btn {
       width: 40px;
       height: 40px;
@@ -446,6 +439,7 @@
       }
       & .unassigned-student-card {
         min-height: 0;
+        padding: clamp(10px, 2vw, 13px);
       }
       & .unassigned-student-actions {
         gap: 7px;
@@ -507,6 +501,7 @@
     .workspace-content {
       padding-right: 8px;
       padding-left: 8px;
+      padding-inline: clamp(8px, 2vw, 15px);
     }
     .user-list {
       padding: 9px;
@@ -568,9 +563,6 @@
     .create-participant-modal .stack > .btn {
       min-height: 42px;
     }
-    .workspace-content {
-      padding-inline: clamp(8px, 2vw, 15px);
-    }
     .teacher-branch {
       padding: clamp(7px, 1.8vw, 10px);
     }
@@ -585,7 +577,6 @@
     }
     .workspace-content:has(.admin-card) {
       & .unassigned-student-card {
-        padding: clamp(10px, 2vw, 13px);
         gap: clamp(9px, 2vw, 12px);
       }
       & .unassigned-student-card > .person-main {

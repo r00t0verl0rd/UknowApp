@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import postcss from "postcss";
+import { compile } from "sass";
 
 const root = path.resolve(import.meta.dirname, "..");
 const cssDir = path.join(root, "src/shared/styles");
@@ -66,9 +67,23 @@ for (const file of fs.readdirSync(cssDir).filter(name => name.endsWith(".scss"))
   });
 }
 
+const compiled = postcss.parse(compile(path.join(cssDir, "index.scss")).css);
+const ruleKeys = new Set();
+let repeatedSelectorBlocks = 0;
+compiled.walkRules(rule => {
+  const scope = [];
+  for (let parent = rule.parent; parent.type === "atrule"; parent = parent.parent) {
+    scope.unshift([parent.name, parent.params]);
+  }
+  const selectors = postcss.list.comma(rule.selector).sort();
+  const key = JSON.stringify([scope, selectors]);
+  if (ruleKeys.has(key)) repeatedSelectorBlocks++;
+  ruleKeys.add(key);
+});
+
 console.log("Сводка CSS:", JSON.stringify({
   files: fs.readdirSync(cssDir).filter(name => name.endsWith(".scss")).length,
-  bytes: totalBytes, rules, declarations, important,
+  bytes: totalBytes, rules, declarations, important, repeatedSelectorBlocks,
   uniqueClasses: selectorUses.size,
   unconfirmedClasses: candidates.size,
 }));

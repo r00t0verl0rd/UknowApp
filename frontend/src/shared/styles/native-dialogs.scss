@@ -189,6 +189,7 @@
 
   /* Прозрачная декоративная стрелка больше не заменяет нативное меню select. */
   :root .ui-toolbar-select > select.ui-toolbar-select-native {
+    cursor: pointer;
     padding-right: var(--workspace-control-padding);
   }
 

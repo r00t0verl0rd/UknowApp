@@ -134,6 +134,7 @@
   }
   .user-row {
     border-bottom-color: #efebf4;
+    align-items: center;
   }
   .role-tag {
     border-radius: 7px;
@@ -150,7 +151,6 @@
     gap: 12px;
   }
   .invite-code {
-    text-align: center;
     border-radius: var(--ui-radius-md);
   } /* Действия верхней панели удобны для касания. */
   /* Общие компоненты для мягкой тёмной темы. */
@@ -292,7 +292,6 @@
     color: var(--ink);
     font-family: var(--font-family-ui);
     font-size: var(--workspace-control-font-size);
-    cursor: pointer;
   }
 
   :root .ui-toolbar-select:focus-within > select.ui-toolbar-select-native {

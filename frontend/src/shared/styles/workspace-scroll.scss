@@ -42,11 +42,6 @@
    На мобильных он становится верхним несдвигаемым слоем поверх scrollport. */
   @media (min-width: 1025px) {
     .workspace-shell > .sidebar {
-      position: relative;
-      inset: auto;
-      z-index: auto;
-      overflow-y: auto;
-      overscroll-behavior: none;
       min-height: 0;
     }
   }

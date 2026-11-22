@@ -19,6 +19,7 @@
     font-size: 14px;
   }
   .person-info small {
+    color: var(--muted);
     font-size: 11px;
   }
   .person-actions svg,
@@ -82,6 +83,11 @@
     color: var(--ink);
   }
   .btn {
+    transition:
+      transform 0.16s ease,
+      box-shadow 0.16s ease,
+      background 0.16s ease,
+      border-color 0.16s ease;
     background: #fff;
     color: var(--ink);
     border: 1px solid #e5deef;
@@ -167,24 +173,25 @@
   }
   .stack input,
   .stack select {
+    outline: 0;
     background: #fff;
     color: var(--ink);
   }
   .modal {
     background: #fff;
-    overscroll-behavior: contain;
   }
   .invite-code {
+    letter-spacing: 4px;
     color: var(--purple);
     background: #f3edfc;
     border-color: #cdb9eb;
     box-shadow: inset 0 0 18px rgba(194, 153, 255, 0.12);
+    text-align: center;
   }
   .hint {
     color: var(--muted);
   }
   .empty-state {
-    text-align: center;
     color: var(--muted);
   }
   .empty-state > svg {
@@ -274,10 +281,6 @@
     width: 100%;
   }
   .teacher-branch {
-    transition:
-      border-color 0.18s ease,
-      box-shadow 0.18s ease,
-      transform 0.18s ease;
     display: block;
     margin: 0;
     min-width: 0;
@@ -328,11 +331,11 @@
     border-radius: 12px;
     background: linear-gradient(105deg, #fff8e9, #fff 78%);
     box-shadow: 0 2px 8px rgba(155, 113, 43, 0.035);
+    overflow: hidden;
   }
   .student-card .avatar {
     border-radius: 11px;
     background: #fff0ce;
-    color: #a76d16;
   }
   .workspace-content:has(.admin-card) .empty-students {
     display: flex;
