@@ -800,6 +800,109 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize({ width: 1280, height: 720 });
 
+    // Эмуляция закрытого/открытого visualViewport на iOS Safari.
+    // Клавиатура не должна перекрывать историю, поле сообщения или модальную форму.
+    for (const width of [375, 390, 760, 1024]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        const result = await page.evaluate(selectedTheme => {
+          const root = document.documentElement;
+          const oldTheme = root.dataset.theme;
+          const oldKeyboard = root.getAttribute("data-workspace-keyboard");
+          const oldHeight = root.style.getPropertyValue("--workspace-viewport-height");
+          const oldTop = root.style.getPropertyValue("--workspace-viewport-top");
+          root.dataset.theme = selectedTheme;
+          root.setAttribute("data-workspace-keyboard", "open");
+          root.style.setProperty("--workspace-viewport-height", "340px");
+          root.style.setProperty("--workspace-viewport-top", "0px");
+          const host = document.createElement("div");
+          host.className = "workspace-shell";
+          host.id = "keyboard-layout-fixture";
+          host.style.zIndex = "100";
+          host.innerHTML = `
+            <aside class="sidebar"><nav>Навигация</nav></aside>
+            <main class="content">
+              <header class="topbar">Верхняя панель</header>
+              <div class="workspace-content">
+                <section class="chat-list workspace-panel">Список диалогов</section>
+                <section class="chat-detail">
+                  <header class="chat-head">
+                    <button class="btn mobile-chat-back">Назад</button>
+                    <div class="chat-head-person">Администратор</div>
+                  </header>
+                  <div class="messages"><div class="message">Сообщение</div></div>
+                  <form class="chat-composer">
+                    <textarea rows="1" placeholder="Сообщение…"></textarea>
+                    <div class="composer-footer">
+                      <div class="composer-tools">
+                        <label class="attach-control ui-icon-button">
+                          <span>+</span><input type="file" aria-label="Выбрать файл">
+                        </label>
+                      </div>
+                      <button class="btn primary composer-send" aria-label="Отправить">
+                        <svg width="16" height="16"></svg><span>Отправить</span>
+                      </button>
+                    </div>
+                  </form>
+                </section>
+              </div>
+            </main>
+          `;
+          document.body.append(host);
+          const rect = selector => {
+            const node = host.querySelector(selector);
+            const box = node.getBoundingClientRect();
+            return { top: box.top, bottom: box.bottom, height: box.height, width: box.width };
+          };
+          try {
+            const layout = {
+              shell: host.getBoundingClientRect().height,
+              sidebar: getComputedStyle(host.querySelector(".sidebar")).display,
+              topbar: getComputedStyle(host.querySelector(".topbar")).display,
+              content: rect(".workspace-content"),
+              detail: rect(".chat-detail"),
+              head: rect(".chat-head"),
+              history: rect(".messages"),
+              composer: rect(".chat-composer"),
+              editor: rect("textarea"),
+              footer: rect(".composer-footer"),
+              send: rect(".composer-send"),
+              attach: rect(".attach-control"),
+              sendLabel: getComputedStyle(host.querySelector(".composer-send span")).display,
+            };
+            return layout;
+          } finally {
+            host.remove();
+            root.dataset.theme = oldTheme;
+            if (oldKeyboard === null) root.removeAttribute("data-workspace-keyboard");
+            else root.setAttribute("data-workspace-keyboard", oldKeyboard);
+            if (oldHeight) root.style.setProperty("--workspace-viewport-height", oldHeight);
+            else root.style.removeProperty("--workspace-viewport-height");
+            if (oldTop) root.style.setProperty("--workspace-viewport-top", oldTop);
+            else root.style.removeProperty("--workspace-viewport-top");
+          }
+        }, theme);
+        assert.ok(Math.abs(result.shell - 340) <= 1,
+          `${width}px ${theme}: workspace tracks visible viewport, not 100lvh`);
+        assert.equal(result.sidebar, "none");
+        assert.equal(result.topbar, "none");
+        assert.ok(result.content.top >= -1 && result.content.bottom <= 341);
+        assert.ok(result.head.bottom <= result.history.top + 1);
+        assert.ok(result.history.bottom <= result.composer.top + 1,
+          `${width}px ${theme}: messages never overlap editor`);
+        assert.ok(result.composer.bottom <= 341,
+          `${width}px ${theme}: editor stays above keyboard`);
+        assert.ok(result.editor.height >= 63,
+          `${width}px ${theme}: message editor has usable touch height`);
+        assert.ok(result.attach.width >= 40 && result.attach.height >= 40);
+        assert.ok(result.send.width <= 48,
+          `${width}px ${theme}: send action is compact`);
+        assert.equal(result.sendLabel, "none",
+          `${width}px ${theme}: send text is hidden only in mobile presentation`);
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 720 });
+
     // На любой высоте браузерной панели нижняя часть вкладки остаётся доступной.
     // Проверяем телефон с открытой/закрытой панелью, планшет и десктоп.
     for (const { width, height } of [
