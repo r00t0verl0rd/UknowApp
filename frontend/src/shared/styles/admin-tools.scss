@@ -314,9 +314,9 @@
     transform 0.18s;
 }
 .push-toggle.active {
-  color:#24845b;
-  border-color:#9bd3b5;
-  background:#effaf3;
+  color:var(--ui-selected-text);
+  border-color:var(--ui-selected-border);
+  background:var(--ui-selected-bg);
 }
 .push-toggle:disabled {
   opacity:0.45;
@@ -367,9 +367,9 @@
 }
 .topbar-actions > .push-toggle.active,
 .mobile-quick-actions > .push-toggle.active {
-  color:#24845b;
-  border-color:#9bd3b5;
-  background:#effaf3;
+  color:var(--ui-selected-text);
+  border-color:var(--ui-selected-border);
+  background:var(--ui-selected-bg);
 }
 .workspace-content:has(.admin-card) {
   & > .unassigned {
@@ -442,9 +442,9 @@
   }
   .topbar-actions > .push-toggle.active,
   .mobile-quick-actions > .push-toggle.active {
-    color:#8bd9a9;
-    border-color:#416b54;
-    background:#263b30;
+    color:var(--ui-selected-text);
+    border-color:var(--ui-selected-border);
+    background:var(--ui-selected-bg);
   }
   & .workspace-content:has(.admin-card) > .unassigned {
     border-color:#746044;
