@@ -74,7 +74,7 @@
     white-space:nowrap;
   }
   .modal-actions > .ui-icon-button {
-    --icon-action-size:44px;
+    --icon-action-size: 44px;
   }
   .panel-credentials-panel {
     min-width:0;
@@ -114,7 +114,7 @@
 }
 :root dialog.native-dialog {
   .credential-field-value .ui-icon-button {
-    --icon-action-size:44px;
+    --icon-action-size: 44px;
   }
   .credential-field {
     min-height:68px;
@@ -150,7 +150,7 @@
     line-height:1.5;
   }
   .toast-close {
-    --icon-action-size:44px;
+    --icon-action-size: 44px;
   }
 }
 :root dialog.native-dialog.native-feedback-success[open] {
