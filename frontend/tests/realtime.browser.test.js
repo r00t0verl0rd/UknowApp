@@ -635,7 +635,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
           fixture.style.cssText = "position:fixed;left:0;top:0;visibility:hidden;pointer-events:none;width:100%";
           fixture.innerHTML = `
             <div class="search workspace-search ui-toolbar-control"><input aria-label="Поиск" /></div>
-            <span class="ui-toolbar-select user-sort-field"><select class="ui-toolbar-control ui-toolbar-select-native user-sort"><option>Сначала ученики</option></select><svg class="ui-toolbar-select-chevron"></svg></span>
+            <span class="ui-toolbar-select user-sort-field"><select class="ui-toolbar-control ui-toolbar-select-native user-sort"><option>Сначала ученики</option></select></span>
             <button class="btn primary user-add-btn ui-toolbar-control">Добавить</button>
             <span class="user-total ui-toolbar-control ui-toolbar-total">Всего <b class="chat-tab-count">11</b></span>
           `;
@@ -815,7 +815,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
             <section class="workspace-panel users-panel">
               <div class="toolbar user-toolbar">
                 <div class="search workspace-search ui-toolbar-control">Поиск</div>
-                <span class="ui-toolbar-select user-sort-field"><select class="ui-toolbar-control ui-toolbar-select-native user-sort"><option>Сначала ученики</option></select><svg class="ui-toolbar-select-chevron"></svg></span>
+                <span class="ui-toolbar-select user-sort-field"><select class="ui-toolbar-control ui-toolbar-select-native user-sort"><option>Сначала ученики</option></select></span>
                 <button class="btn primary user-add-btn ui-toolbar-control">Добавить</button>
                 <span class="user-total ui-toolbar-control ui-toolbar-total">Всего</span>
               </div>
@@ -828,7 +828,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
               </div>
               <div class="chat-list-filters workspace-control-row">
                 <label class="search workspace-search ui-toolbar-control">Поиск</label>
-                <label class="chat-filter"><span class="ui-toolbar-select chat-filter-field"><select class="ui-toolbar-control ui-toolbar-select-native"><option>Все личные</option></select><svg class="ui-toolbar-select-chevron"></svg></span></label>
+                <label class="chat-filter"><span class="ui-toolbar-select chat-filter-field"><select class="ui-toolbar-control ui-toolbar-select-native"><option>Все личные</option></select></span></label>
               </div>
               <div class="chat-items">Диалог</div>
             </section>
@@ -878,7 +878,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
           fixture.innerHTML = `
             <div class="toolbar user-toolbar">
               <div class="search workspace-search ui-toolbar-control"><input placeholder="Поиск по имени"></div>
-              <span class="ui-toolbar-select user-sort-field"><select class="ui-toolbar-control ui-toolbar-select-native user-sort"><option>Сначала ученики</option></select><svg class="ui-toolbar-select-chevron"></svg></span>
+              <span class="ui-toolbar-select user-sort-field"><select class="ui-toolbar-control ui-toolbar-select-native user-sort"><option>Сначала ученики</option></select></span>
               <button class="btn primary user-add-btn ui-toolbar-control">Добавить</button>
               <span class="user-total ui-toolbar-control ui-toolbar-total">Всего <b>11</b></span>
             </div>
@@ -892,7 +892,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
               </div>
               <div class="chat-list-filters workspace-control-row">
                 <label class="search workspace-search ui-toolbar-control"><input placeholder="Поиск по имени"></label>
-                <label class="chat-filter"><span class="ui-toolbar-select chat-filter-field"><select class="ui-toolbar-control ui-toolbar-select-native"><option>Все личные</option></select><svg class="ui-toolbar-select-chevron"></svg></span></label>
+                <label class="chat-filter"><span class="ui-toolbar-select chat-filter-field"><select class="ui-toolbar-control ui-toolbar-select-native"><option>Все личные</option></select></span></label>
               </div>
             </section>
           `;
@@ -941,7 +941,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize({ width: 1280, height: 800 });
 
-    // Выпадающие списки на обеих вкладках идентичны в Safari и Chromium.
+    // Нативные браузерные select выглядят одинаково в обеих вкладках без SVG-стрелок.
     for (const width of [390, 1280]) {
       await page.setViewportSize({ width, height: 800 });
       for (const theme of ["light", "dark-soft"]) {
@@ -951,10 +951,10 @@ test("global SSE updates real counters across tabs and replays missed events", {
           const host = document.createElement("div");
           host.innerHTML = `
             <span class="ui-toolbar-select user-sort-field">
-              <select class="ui-toolbar-control ui-toolbar-select-native user-sort"><option>Сначала ученики</option></select><svg class="ui-toolbar-select-chevron"></svg>
+              <select class="ui-toolbar-control ui-toolbar-select-native user-sort"><option>Сначала ученики</option></select>
             </span>
             <span class="ui-toolbar-select chat-filter-field">
-              <select class="ui-toolbar-control ui-toolbar-select-native"><option>Все личные</option></select><svg class="ui-toolbar-select-chevron"></svg>
+              <select class="ui-toolbar-control ui-toolbar-select-native"><option>Все личные</option></select>
             </span>
           `;
           document.querySelector(".workspace-content").append(host);
@@ -965,7 +965,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
                 height: Math.round(el.getBoundingClientRect().height),
                 radius: s.borderTopLeftRadius,
                 appearance: s.appearance,
-                arrowVisible: getComputedStyle(el.nextElementSibling).display !== "none",
+                arrowVisible: Boolean(el.nextElementSibling) && getComputedStyle(el.nextElementSibling).display !== "none",
               };
             });
           } finally {
@@ -976,8 +976,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
         assert.deepEqual(styles[0], styles[1], `${width}px ${theme}: одинаковое оформление select`);
         assert.equal(styles[0].height, 38);
         assert.equal(styles[0].radius, "9px");
-        assert.equal(styles[0].appearance, "none");
-        assert.ok(styles[0].arrowVisible);
+        assert.notEqual(styles[0].appearance, "none");
+        assert.equal(styles[0].arrowVisible, false);
       }
     }
     await page.setViewportSize({ width: 1280, height: 800 });
