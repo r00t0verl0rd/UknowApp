@@ -87,7 +87,7 @@ try {
     await message.waitFor();
     assert.equal(await page.locator(".toast").filter({ hasText: "Сообщение отправлено" }).count(), 0);
     const trash = message.locator("..").getByRole("button", { name: "Удалить своё сообщение" });
-    assert.equal((await trash.locator("svg").boundingBox()).width, 12);
+    assert.equal((await trash.locator("svg").boundingBox()).width, 16);
     await trash.click();
     await page.getByRole("alertdialog").getByRole("button", { name: "Отмена" }).click();
     await page.getByRole('button', { name: 'Назад к списку диалогов' }).click();
