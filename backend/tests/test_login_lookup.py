@@ -34,10 +34,10 @@ def test_unicode_panel_login_tracks_rename(api):
         assert db.get(User, user_id).web_login_key == "новый логин"
 
     assert client.post("/api/auth/login", json={
-        "username": "Преподаватель", "password": "unicode-pass",
+        "username": "Преподаватель", "password": "unicode-pass",  # pragma: allowlist secret
     }).status_code == status.HTTP_401_UNAUTHORIZED
     assert client.post("/api/auth/login", json={
-        "username": "новый логин", "password": "unicode-pass",
+        "username": "новый логин", "password": "unicode-pass",  # pragma: allowlist secret
     }).status_code == status.HTTP_200_OK
 
 
