@@ -129,7 +129,7 @@ function MessageBubble(options) {
       let cancelled = false;
       const controller = new AbortController();
       const loadMedia = () =>
-        getMessageMedia(options.message.id, controller.signal)
+        getMessageMedia(options.message.id, controller.signal, options.personalChat)
           .then((blob) => {
             if (cancelled) return;
             objectUrl = URL.createObjectURL(blob);
