@@ -25,7 +25,7 @@ def user_dict(user: User, include_telegram_id: bool = True, include_additional_i
 
 
 def generate_panel_access_code() -> str:
-    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # pragma: allowlist secret
     return "".join(secrets.choice(alphabet) for _ in range(4)) + "-" + "".join(
         secrets.choice(alphabet) for _ in range(4)
     )
