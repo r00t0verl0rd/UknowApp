@@ -280,8 +280,9 @@ export function createChatsController(options) {
     try {
       let sentMessage;
       if (chat.type === "personal") {
-        if (file) throw new Error("В личных диалогах доступны только текстовые сообщения");
-        sentMessage = await sendPersonalMessage(options.request, chat.id, text, clientMessageId);
+        sentMessage = file
+          ? await sendConversationAttachment(chat.id, file, text, clientMessageId, true)
+          : await sendPersonalMessage(options.request, chat.id, text, clientMessageId);
       } else if (file) {
         sentMessage = await sendConversationAttachment(chat.id, file, text, clientMessageId);
       } else {
