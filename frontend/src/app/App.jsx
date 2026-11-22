@@ -1,4 +1,4 @@
-import { Dynamic } from "@solidjs/web";
+import { dynamic } from "@solidjs/web";
 import { createMemo, createSignal, createEffect, Show } from "solid-js";
 import {
   createAuthState,
@@ -54,6 +54,7 @@ function Application(options) {
   const navigation = createUiState();
   const directory = createDirectoryState();
   const workspace = createMemo(() => workspaceRegistry[authState.profile?.role] ?? null);
+  const Workspace = dynamic(() => workspace()?.Component);
   const panel = createPanelDataState({
     get auth() {
       return authState.auth;
@@ -196,7 +197,7 @@ function Application(options) {
           pushToggle={pushToggle()}
           signOut={session.signOut}
         >
-          <Dynamic component={workspace().Component} context={context} />
+          <Workspace context={context} />
         </WorkspaceLayout>
       </Show>
     </Show>

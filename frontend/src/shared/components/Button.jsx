@@ -4,11 +4,9 @@ const VARIANT_CLASSES = Object.freeze({
   outline: "outline",
   ghost: "ghost",
   danger: "danger",
-  disconnect: "disconnect",
 });
 const SIZE_CLASSES = Object.freeze({
   small: "small",
-  compact: "compact",
 });
 export default function Button(options) {
   const props = omit(options, "variant", "size", "className", "type", "children");

@@ -23,6 +23,7 @@ const walk = directory => {
 walk(path.join(root, "src"));
 sources.push(fs.readFileSync(path.join(root, "index.html"), "utf8"));
 const sourceText = sources.join("\n");
+const sourceTokens = new Set(sourceText.match(/[\w-]+/g));
 
 // IconButton builds its size class from the size prop. Do not mistake a
 // dynamically constructed, actually used modifier for an orphan CSS selector.
@@ -53,7 +54,7 @@ for (const file of fs.readdirSync(cssDir).filter(name => name.endsWith(".scss"))
     for (const [, className] of rule.selector.matchAll(/\.([A-Za-z_][\w-]*)/g)) {
       selectorUses.set(className, (selectorUses.get(className) ?? 0) + 1);
       // Буквальное отсутствие в JSX/JS ещё не доказывает, что класс не используется.
-      if (sourceText.includes(className) || dynamicClasses.has(className)) continue;
+      if (sourceTokens.has(className) || dynamicClasses.has(className)) continue;
       const found = candidates.get(className) ?? new Set();
       found.add(file);
       candidates.set(className, found);

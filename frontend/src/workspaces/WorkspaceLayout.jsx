@@ -1,5 +1,5 @@
 import { For } from "solid-js";
-import { Dynamic } from "@solidjs/web";
+import { dynamic } from "@solidjs/web";
 import { createSignal, createEffect } from "solid-js";
 import {
   IconLogOut as LogOut,
@@ -13,6 +13,7 @@ import IconButton from "../shared/components/IconButton.jsx";
 
 // Одна разметка и один источник состояния для всех пунктов меню.
 function SidebarControl(options) {
+  const Icon = dynamic(() => options.icon);
   return (
     <button
       type="button"
@@ -20,7 +21,7 @@ function SidebarControl(options) {
       aria-current={(options.current ?? false) ? "page" : undefined}
       onClick={options.onClick}
     >
-      <Dynamic component={options.icon} size={18} aria-hidden="true" />
+      <Icon size={18} aria-hidden="true" />
       {options.children}
     </button>
   );

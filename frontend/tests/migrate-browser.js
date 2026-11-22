@@ -85,7 +85,7 @@ try {
     await page.getByRole("button", { name: "Отправить сообщение" }).click();
     const message = page.locator(".messages").getByText("Проверка личного диалога", { exact: true });
     await message.waitFor();
-    assert.equal(await page.locator(".toast").filter({ hasText: "Сообщение отправлено" }).count(), 0);
+    assert.equal(await page.locator(".native-feedback-dialog").filter({ hasText: "Сообщение отправлено" }).count(), 0);
     const trash = message.locator("..").getByRole("button", { name: "Удалить своё сообщение" });
     assert.equal((await trash.locator("svg").boundingBox()).width, 16);
     await trash.click();

@@ -10,19 +10,7 @@
 }/* Кнопка push использует общий компактный стиль действий. */
 .push-toggle{ width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 10px; background: #faf9fc; color: var(--purple); transition: background .18s, border-color .18s, transform .18s; }.push-toggle.active{ color: #24845b; border-color: #9bd3b5; background: #effaf3; }.push-toggle:disabled{ opacity: .45; cursor: not-allowed; transform: none; }.topbar-actions > .push-toggle, .mobile-quick-actions > .push-toggle{ flex: 0 0 32px; width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 6px; display: grid; place-items: center; border: 1px solid var(--ui-border); border-radius: var(--ui-radius-sm); background: var(--ui-control-bg); color: var(--ui-control-text); box-shadow: var(--ui-shadow-soft); }.topbar-actions > .theme-toggle, .mobile-quick-actions > .theme-toggle{ flex: 0 0 32px; width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 6px; display: grid; place-items: center; border: 1px solid var(--ui-border); border-radius: var(--ui-radius-sm); background: var(--ui-control-bg); color: var(--ui-control-text); box-shadow: var(--ui-shadow-soft); }.topbar-actions > .theme-toggle svg, .mobile-quick-actions > .theme-toggle svg{ width: 15px; height: 15px; }:root[data-theme="dark-soft"] .topbar-actions > .theme-toggle, :root[data-theme="dark-soft"] .mobile-quick-actions > .theme-toggle{ background: var(--ui-control-bg) !important; border-color: var(--ui-border) !important; color: var(--ui-control-text) !important; box-shadow: none !important; }.topbar-actions > .theme-toggle:hover, .mobile-quick-actions > .theme-toggle:hover{ background: var(--button-bg-hover) !important; border-color: var(--button-border-hover) !important; color: var(--purple) !important; box-shadow: var(--ui-shadow-soft) !important; }.topbar-actions > .push-toggle svg, .mobile-quick-actions > .push-toggle svg{ width: 15px; height: 15px; }:root[data-theme="dark-soft"] .topbar-actions > .push-toggle, :root[data-theme="dark-soft"] .mobile-quick-actions > .push-toggle{ background: var(--ui-control-bg) !important; border-color: var(--ui-border) !important; color: var(--ui-control-text) !important; box-shadow: none !important; }/* Включённый push заметен на телефоне и компьютере. */
 .topbar-actions > .push-toggle.active, .mobile-quick-actions > .push-toggle.active{ color: #24845b; border-color: #9bd3b5; background: #effaf3; }:root[data-theme="dark-soft"] .topbar-actions > .push-toggle.active, :root[data-theme="dark-soft"] .mobile-quick-actions > .push-toggle.active{ color: #8bd9a9 !important; border-color: #416b54 !important; background: #263b30 !important; }
-/* На телефонах кнопки сохранения и удаления расположены рядом справа. */
-@media (max-width: 1024px) {.overlay > .modal.participant-profile-modal .modal-actions{
-    display: flex !important;
-    justify-content: flex-end !important;
-    align-items: center;
-    flex-wrap: nowrap !important;
-    gap: 8px;
-  }.overlay > .modal.participant-profile-modal .modal-actions > .btn{
-    flex: 0 0 auto;
-    width: auto;
-    min-width: 0;
-  }
-}/* Unassigned students form their own optional branch between admin and teachers. */
+/* На телефонах кнопки сохранения и удаления расположены рядом справа. *//* Unassigned students form their own optional branch between admin and teachers. */
 .workspace-content:has(.role_node) {
 & > .unassigned{
   position: relative;
