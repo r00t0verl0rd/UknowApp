@@ -1,31 +1,20 @@
-/* В переписках используются карточки из структуры. */
+/* Список и переписка прокручиваются вместе с содержимым раздела. */
 .chats-main > .workspace-content:has(> .chat-list){
   display:grid;
   grid-template-columns:minmax(260px,min(24%,340px)) minmax(0,1fr);
-  grid-template-rows:minmax(0,1fr);
+  grid-template-rows:minmax(min-content,1fr);
   gap:var(--workspace-gutter);
 }
-.chats-main > .workspace-content:has(> .chat-list) > .chat-list,
-.chats-main > .workspace-content:has(> .chat-list) > .chat-detail{
-  box-sizing:border-box;
+.chats-main > .workspace-content > :is(.chat-list,.chat-detail){
+  display:flex;
+  flex-direction:column;
   min-width:0;
-  min-height:0;
-  height:100%;
 }
-.chats-main > .workspace-content:has(> .chat-list) > .chat-list{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  overflow:hidden;
-}
-.chats-main > .workspace-content:has(> .chat-list) > .chat-detail{
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-}
+.chats-main > .workspace-content > .chat-list{gap:10px}
+.chats-main > .workspace-content > .chat-detail{align-self:start}
 .chat-list-filters > .search{flex:0 0 auto;width:100%;max-width:none;min-width:0;box-sizing:border-box}
 .chat-list > .legend{flex:0 0 auto;flex-wrap:wrap;max-width:100%}
-.chat-items-scroll > .chat-item{
+.chat-items > .chat-item{
   display:flex;
   flex:0 0 auto;
   align-items:center;
@@ -53,7 +42,7 @@
   box-shadow:inset 3px 0 0 var(--button-primary)!important;
 }
 
-.chat-items-scroll > .empty-state{padding:18px 8px}
+.chat-items > .empty-state{padding:18px 8px}
 .chat-detail > .chat-head{
   display:flex;
   flex:0 0 auto;
@@ -93,6 +82,7 @@
 .mobile-chat-back{display:none}
 .messages{
   display:flex;
+  flex:1 0 auto;
   flex-direction:column;
   align-items:flex-start;
   gap:6px;
@@ -261,15 +251,14 @@
 @media(max-width:760px){
   .chats-main > .workspace-content:has(> .chat-list){
     grid-template-columns:minmax(0,1fr);
-    grid-template-rows:minmax(0,1fr);
     gap:0;
   }
   .chats-main > .workspace-content:has(> .chat-list) > .chat-list,
   .chats-main > .workspace-content:has(> .chat-list) > .chat-detail{
     grid-column:1;
     grid-row:1;
-    height:100%;
   }
+  .chats-main > .workspace-content > .chat-detail{align-self:stretch}
   .chats-main > .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) > .chat-detail{display:none}
   .chats-main > .workspace-content:has(> .chat-list):has(.mobile-chat-back) > .chat-list{display:none}
   .chat-detail > .chat-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;}
@@ -333,9 +322,9 @@ line-height:1;}
 
 .chat-filter{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:34px;color:var(--muted);font-size:11px}
 .chat-filter select{min-width:0;max-width:65%;height:32px;padding:0 9px;border:1px solid var(--ui-border);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit}
-.chat-items-scroll{display:flex;flex-direction:column;gap:5px;padding:2px}
-.chat-items-scroll > .chat-item{min-height:54px;padding:8px 9px;border:1px solid transparent;border-radius:10px;background:transparent;box-shadow:none;transition:background-color .14s,border-color .14s}
-.chat-items-scroll > .chat-item:hover:not(.selected){background:var(--canvas);border-color:var(--ui-border)}
+.chat-items{display:flex;flex-direction:column;gap:5px;padding:2px}
+.chat-items > .chat-item{min-height:54px;padding:8px 9px;border:1px solid transparent;border-radius:10px;background:transparent;box-shadow:none;transition:background-color .14s,border-color .14s}
+.chat-items > .chat-item:hover:not(.selected){background:var(--canvas);border-color:var(--ui-border)}
 .chat-item > .person-main > .avatar{width:32px;height:32px;flex-basis:32px;border-radius:10px}
 .chat-item > .person-main > .chat-avatar{background:var(--button-bg);color:var(--button-primary)}
 .chat-item .person-info b{font-size:12px;font-weight:650}
@@ -348,7 +337,7 @@ line-height:1;}
 
   .mobile-chat-back span,.chat-filter > span,.composer-send span{display:none}
   .chat-list-filters .chat-filter select{max-width:100%;width:auto}
-  .chat-items-scroll > .chat-item{min-height:44px;padding:5px 8px}
+  .chat-items > .chat-item{min-height:44px;padding:5px 8px}
   .chat-detail > .chat-head{padding:4px;gap:5px}
   .mobile-chat-back{justify-content:center;width:36px;min-height:40px;padding:0}
   .chat-detail .chat-composer{grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:4px;padding:4px;margin-top:2px}

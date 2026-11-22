@@ -77,14 +77,21 @@ export function useChatsController({
   }, [chats, personalChats, chatSection, chatSearch, chatFilter, profile?.role]);
 
   useLayoutEffect(() => {
-    const viewport = messagesViewportRef.current;
-    if (!viewport) return undefined;
+    const history = messagesViewportRef.current;
+    const viewport = history?.closest(".workspace-content");
+    const detail = history?.closest(".chat-detail");
+    if (!viewport || !detail) return undefined;
+
+    const distanceToLatest = () => {
+      const bottom = viewport.getBoundingClientRect().top + viewport.clientHeight;
+      return detail.getBoundingClientRect().bottom - bottom;
+    };
     let stickToBottom = true;
     const scrollToLatest = () => {
-      if (stickToBottom) viewport.scrollTop = viewport.scrollHeight;
+      if (stickToBottom) viewport.scrollTop += distanceToLatest();
     };
     const handleScroll = () => {
-      stickToBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 80;
+      stickToBottom = distanceToLatest() < 80;
     };
     viewport.addEventListener("scroll", handleScroll, { passive: true });
     scrollToLatest();
@@ -92,19 +99,12 @@ export function useChatsController({
     const resizeObserver = typeof ResizeObserver !== "undefined"
       ? new ResizeObserver(scrollToLatest)
       : null;
-    const observeMessages = () => {
-      if (resizeObserver) Array.from(viewport.children).forEach(child => resizeObserver.observe(child));
-    };
-    observeMessages();
-    const mutationObserver = typeof MutationObserver !== "undefined"
-      ? new MutationObserver(() => { observeMessages(); scrollToLatest(); })
-      : null;
-    mutationObserver?.observe(viewport, { childList: true, subtree: true });
+    resizeObserver?.observe(detail);
+    resizeObserver?.observe(viewport);
     return () => {
       window.cancelAnimationFrame(frame);
       viewport.removeEventListener("scroll", handleScroll);
       resizeObserver?.disconnect();
-      mutationObserver?.disconnect();
     };
   }, [selectedChat?.id, selectedChat?.type, messageFilter, messagesViewportRef]);
 

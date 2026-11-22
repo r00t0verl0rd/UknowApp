@@ -106,7 +106,7 @@ export default function ChatsPage({
           </div>
         )}
 
-        <div className="chat-items-scroll workspace-scroll" tabIndex={0} role="region" aria-label="Список диалогов">
+        <div className="chat-items" role="region" aria-label="Список диалогов">
           {visibleChats.map(chat => {
             const personal = chat.type === "personal";
             const showMessageCount = profile?.role === "admin" && chatSection === "participants" && !personal;
@@ -210,7 +210,7 @@ export default function ChatsPage({
               </div>
             </header>
 
-            <div className="messages workspace-scroll" ref={messagesViewportRef}>
+            <div className="messages" ref={messagesViewportRef}>
               {visibleMessages.map(message => (
                 <MessageBubble onError={setError} message={message} key={message.id}
                   onDelete={setDeleteMessageCandidate} viewerRole={profile?.role}

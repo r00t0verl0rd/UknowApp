@@ -24,7 +24,7 @@ export default function StructurePage({
       </div>
       <Button type="button" className="graph-add-participant ui-menu-control" onClick={() => openCreate()}><Plus />Добавить участника</Button>
     </div>
-    <div className="workspace-scroll structure-scroll" tabIndex={0} role="region" aria-label="Структура школы">
+    <div className="structure-scroll" role="region" aria-label="Структура школы">
       <div className="role_node"><img src="/logo.png" alt="" /><div><b>Администратор</b><small>Полное управление</small></div></div>
       <div className="grid">
         {allTeachers.map(teacher => {

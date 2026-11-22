@@ -24,7 +24,7 @@ export default function UsersPage({ visibleUsers, search, setSearch, userSort, s
                 <span>Всего <b className="chat-tab-count">{visibleUsers.length}</b></span>
                 <Button variant="primary" className="user-add-btn" onClick={() => openCreate()}><Plus/>Добавить</Button>
               </div>
-              <div className="user-list workspace-scroll" tabIndex={0} role="region" aria-label="Список пользователей">{visibleUsers.map(user => <div className="user-row" key={user.id}>
+              <div className="user-list" role="region" aria-label="Список пользователей">{visibleUsers.map(user => <div className="user-row" key={user.id}>
                 <div className={"avatar " + user.role}>{user.role === "teacher" ? <GraduationCap/> : user.role === "student" ? <Smile/> : <Users/>}</div>
                 <b className="user-person-info">{user.full_name}</b>
                 <div className="user-actions">

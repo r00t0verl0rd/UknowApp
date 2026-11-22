@@ -2,7 +2,7 @@
   --workspace-gutter: clamp(8px, 1.4vw, 20px);
 }
 
-/* Навигация и панели управления остаются вне области прокрутки. */
+/* Общая область прокрутки находится внутри неподвижной оболочки. */
 .workspace-shell {
   display: grid;
   grid-template-columns: clamp(250px, 18vw, 280px) minmax(0, 1fr);
@@ -27,6 +27,9 @@
   min-height: 0;
   margin-inline: auto;
   padding: var(--workspace-gutter);
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 .workspace-content:has(> .user-list, > .structure-scroll) {
@@ -40,22 +43,9 @@
   flex: none;
 }
 
-.workspace-scroll {
-  flex: 1 1 0;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-}
-
-.workspace-scroll:focus-visible {
+.workspace-content:focus-visible {
   outline: 2px solid var(--purple);
   outline-offset: -2px;
-}
-
-.structure-scroll {
-  padding: 2px;
 }
 
 @media (max-width: 1024px) {

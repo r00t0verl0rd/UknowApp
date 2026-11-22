@@ -2,7 +2,7 @@ import LogOut from "lucide-react/dist/esm/icons/log-out.js";
 import Moon from "lucide-react/dist/esm/icons/moon.js";
 import Sun from "lucide-react/dist/esm/icons/sun.js";
 import Info from "lucide-react/dist/esm/icons/info.js";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import Button from "../shared/components/Button.jsx";
 import Modal from "../shared/components/Modal.jsx";
 import IconButton from "../shared/components/IconButton.jsx";
@@ -26,6 +26,11 @@ export default function WorkspaceLayout({
   const additionalItem = role === "admin" ? navigation.find(item => item.page === "additional") : null;
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const contentRef = useRef(null);
+
+  useLayoutEffect(() => {
+    contentRef.current.scrollTop = 0;
+  }, [page]);
 
   const confirmSignOut = async () => {
     if (signingOut) return;
@@ -70,7 +75,7 @@ export default function WorkspaceLayout({
         <small className="topbar-user">{profile.full_name}</small>
         <div className="topbar-actions">{pushToggle}{themeToggle}</div>
       </header>
-      <div className={"content workspace-content" + (page === "additional" ? " page-additional workspace-scroll" : "")}>
+      <div ref={contentRef} tabIndex={0} className={"content workspace-content" + (page === "additional" ? " page-additional" : "")}>
         {children}
       </div>
     </main>
