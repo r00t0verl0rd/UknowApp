@@ -577,6 +577,10 @@ test("global SSE updates real counters across tabs and replays missed events", {
             messagesScroll: messages.scrollTop,
             messagesOverflow: getComputedStyle(messages).overflowY,
             contentScroll: content.scrollTop,
+            contentRect: content.getBoundingClientRect().toJSON(),
+            shellRect: document.querySelector(".workspace-shell").getBoundingClientRect().toJSON(),
+            sidebarRect: document.querySelector(".sidebar").getBoundingClientRect().toJSON(),
+            declaredSidebarHeight: getComputedStyle(document.querySelector(".workspace-shell")).getPropertyValue("--workspace-sidebar-height"),
           };
         } finally {
           detail.remove();
@@ -584,7 +588,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
         }
       });
       assert.ok(state.detailBottom <= state.viewportBottom + 2,
-        `${width}x${height}: chat fits inside visible viewport`);
+        `${width}x${height}: chat fits inside visible viewport ${JSON.stringify(state)}`);
       assert.ok(state.composerBottom <= state.viewportBottom + 2,
         `${width}x${height}: composer stays above browser controls`);
       assert.ok(state.buttonBottom <= state.viewportBottom + 2,
