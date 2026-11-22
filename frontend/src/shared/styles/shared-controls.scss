@@ -12,9 +12,7 @@ button:not(.chat-item),
   transition:
     background-color var(--ui-transition-fast),
     border-color var(--ui-transition-fast),
-    color var(--ui-transition-fast),
-    box-shadow var(--ui-transition-fast),
-    transform var(--ui-transition-fast);
+    color var(--ui-transition-fast);
 }
 :where(button, input, select, textarea, [tabindex]):focus-visible {
   outline:none;
