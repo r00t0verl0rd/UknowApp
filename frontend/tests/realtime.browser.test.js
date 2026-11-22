@@ -383,95 +383,85 @@ test("global SSE updates real counters across tabs and replays missed events", {
         `${width}x${height}: the last item remains reachable`);
     }
 
-    // iPhone safe-area: верхняя область окрашена самим html в цвет sidebar,
-    // а снизу shell занимает и 100lvh, и дополнительные пиксели home indicator.
+    // На iPhone sidebar рисует ту же поверхность, что и html,
+    // а оболочка не выходит за visualViewport даже с прозрачным Safari chrome.
     await page.setViewportSize({ width: 390, height: 720 });
     for (const theme of ["light", "dark-soft"]) {
       const safeArea = await page.evaluate(currentTheme => {
         const root = document.documentElement;
         const oldTheme = root.dataset.theme;
-        const oldSafe = root.style.getPropertyValue("--workspace-chrome-bottom");
         root.dataset.theme = currentTheme;
-        root.style.setProperty("--workspace-chrome-bottom", "34px");
         try {
           const shell = document.querySelector(".workspace-shell");
           const sidebar = shell.querySelector(".sidebar");
-          const main = shell.querySelector(".content, .main");
+          const main = shell.querySelector(".content");
           const style = el => getComputedStyle(el).backgroundColor;
           return {
             shellHeight: Math.round(shell.getBoundingClientRect().height),
+            shellPosition: getComputedStyle(shell).position,
             rootBackground: style(root),
             sidebarBackground: style(sidebar),
             bodyBackground: style(document.body),
             mainBackground: style(main),
-            contentBackground: style(shell),
+            shellBackground: style(shell),
           };
         } finally {
           root.dataset.theme = oldTheme;
-          if (oldSafe) root.style.setProperty("--workspace-chrome-bottom", oldSafe);
-          else root.style.removeProperty("--workspace-chrome-bottom");
         }
       }, theme);
-      assert.equal(safeArea.shellHeight, 754, `${theme}: fill through bottom home indicator`);
+      assert.equal(safeArea.shellHeight, 720, `${theme}: fixed shell matches viewport`);
+      assert.equal(safeArea.shellPosition, "fixed", `${theme}: no scrolling the shell`);
       assert.notEqual(safeArea.rootBackground, "rgba(0, 0, 0, 0)");
-      for (const layer of ["sidebarBackground", "bodyBackground", "mainBackground", "contentBackground"]) {
+      assert.equal(safeArea.sidebarBackground, safeArea.rootBackground,
+        `${theme}: opaque sidebar matches the shared surface`);
+      for (const layer of ["bodyBackground", "mainBackground", "shellBackground"]) {
         assert.equal(safeArea[layer], "rgba(0, 0, 0, 0)",
-          `${theme}: only html paints behind status bar and Safari controls (${layer})`);
+          `${theme}: only the root paints the workspace background (${layer})`);
       }
     }
 
-    // Safari 26 Liquid Glass: документ занимает большой viewport под
-    // прозрачной панелью, но низ контента остаётся прокручиваемым до видимой части.
-    await page.setViewportSize({ width: 390, height: 720 });
+    // Safari 26 Liquid Glass: visualViewport может уменьшаться из-за toolbar
+    // или клавиатуры; фиксированная оболочка и нижний край контента следуют ему.
     const underlay = await page.evaluate(() => {
       const root = document.documentElement;
       const oldHeight = root.style.getPropertyValue("--workspace-viewport-height");
-      const oldTop = root.style.getPropertyValue("--workspace-viewport-top");
-      const oldSafe = root.style.getPropertyValue("--workspace-chrome-bottom");
-      root.style.setProperty("--workspace-chrome-bottom", "34px");
       root.style.setProperty("--workspace-viewport-height", "570px");
-      root.style.setProperty("--workspace-viewport-top", "0px");
       try {
         const shell = document.querySelector(".workspace-shell");
         const content = shell.querySelector(".workspace-content");
         const row = document.createElement("div");
         row.style.cssText = "height:1400px;flex-shrink:0";
         content.append(row);
-        const dimensions = {
-          shellPosition: getComputedStyle(shell).position,
-          shellHeight: Math.round(shell.getBoundingClientRect().height),
-          bottomReserve: parseFloat(getComputedStyle(content).paddingBottom),
-          viewportVisible: 570,
-        };
-        content.scrollTop = content.scrollHeight;
-        dimensions.finalItemBottom = row.getBoundingClientRect().bottom;
-        row.remove();
-        content.scrollTop = 0;
-        return dimensions;
+        try {
+          content.scrollTop = content.scrollHeight;
+          return {
+            shellPosition: getComputedStyle(shell).position,
+            shellHeight: Math.round(shell.getBoundingClientRect().height),
+            bottomReserve: parseFloat(getComputedStyle(content).paddingBottom),
+            finalItemBottom: row.getBoundingClientRect().bottom,
+          };
+        } finally {
+          row.remove();
+          content.scrollTop = 0;
+        }
       } finally {
         if (oldHeight) root.style.setProperty("--workspace-viewport-height", oldHeight);
         else root.style.removeProperty("--workspace-viewport-height");
-        if (oldTop) root.style.setProperty("--workspace-viewport-top", oldTop);
-        else root.style.removeProperty("--workspace-viewport-top");
-        if (oldSafe) root.style.setProperty("--workspace-chrome-bottom", oldSafe);
-        else root.style.removeProperty("--workspace-chrome-bottom");
       }
     });
-    assert.equal(underlay.shellPosition, "relative");
-    assert.equal(underlay.shellHeight, 754,
-      "mobile web shell extends into the translucent browser toolbar area");
-    assert.ok(underlay.bottomReserve >= 150,
-      "content reserves the obscured toolbar area at maximum scroll");
-    assert.ok(underlay.finalItemBottom <= underlay.viewportVisible,
-      "last item can be scrolled above the browser controls");
+    assert.equal(underlay.shellPosition, "fixed");
+    assert.equal(underlay.shellHeight, 570,
+      "shell follows visible Safari viewport rather than document height");
+    assert.ok(underlay.bottomReserve >= 8,
+      "content keeps a comfortable bottom inset");
+    assert.ok(underlay.finalItemBottom <= 572,
+      "last item can be scrolled above the Safari browser controls");
 
-    // Та же подложка Safari с открытым чатом: кнопка отправки остаётся
-    // выше прозрачной панели при высоте visualViewport меньше 100lvh.
+    // Открытый чат: отдельная прокрутка сообщений, поле отправки внутри
+    // уменьшенного visualViewport и под неподвижным sidebar.
     const chatUnderlay = await page.evaluate(() => {
       const root = document.documentElement;
       const before = root.style.getPropertyValue("--workspace-viewport-height");
-      const oldSafe = root.style.getPropertyValue("--workspace-chrome-bottom");
-      root.style.setProperty("--workspace-chrome-bottom", "34px");
       root.style.setProperty("--workspace-viewport-height", "570px");
       const content = document.querySelector(".workspace-content");
       const list = document.createElement("section");
@@ -495,25 +485,21 @@ test("global SSE updates real counters across tabs and replays missed events", {
           messagesScrollable: detail.querySelector(".messages").scrollHeight > detail.querySelector(".messages").clientHeight,
           sendBottom: detail.querySelector(".composer-send").getBoundingClientRect().bottom,
           composerBottom: detail.querySelector(".chat-composer").getBoundingClientRect().bottom,
-          visibleHeight: 570,
         };
       } finally {
         list.remove();
         detail.remove();
         if (before) root.style.setProperty("--workspace-viewport-height", before);
         else root.style.removeProperty("--workspace-viewport-height");
-        if (oldSafe) root.style.setProperty("--workspace-chrome-bottom", oldSafe);
-        else root.style.removeProperty("--workspace-chrome-bottom");
       }
     });
-    assert.equal(chatUnderlay.shellHeight, 754,
-      "chat page paints through the transparent Safari toolbar");
+    assert.equal(chatUnderlay.shellHeight, 570);
     assert.ok(chatUnderlay.messagesScrollable,
-      "messages scroll inside the chat viewport");
-    assert.ok(chatUnderlay.sendBottom <= chatUnderlay.visibleHeight,
-      "send button remains above the translucent Safari toolbar");
-    assert.ok(chatUnderlay.composerBottom <= chatUnderlay.visibleHeight,
-      "composer is not covered by Safari browser controls");
+      "messages scroll within the available chat viewport");
+    assert.ok(chatUnderlay.sendBottom <= 572,
+      "send button remains above Safari controls");
+    assert.ok(chatUnderlay.composerBottom <= 572,
+      "composer remains inside visible viewport");
 
     // Чат: форма и «Отправить» прикреплены к видимому низу, сообщения скроллятся.
     for (const { width, height } of [
