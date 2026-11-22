@@ -1,79 +1,81 @@
-/* Общая двухрядная компоновка управления на всех размерах экрана:
+@layer components {
+  /* Общая двухрядная компоновка управления на всех размерах экрана:
    поиск + добавление, сортировка + количество. */
-.toolbar.user-toolbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas: "search add" "sort count";
-  align-items: center;
-  gap: var(--workspace-control-gap);
-  width: 100%;
-  margin: 0;
-  flex: none;
-}
-
-.toolbar.user-toolbar > * {
-  min-width: 0;
-  margin: 0;
-}
-
-.user-toolbar > .search {
-  grid-area: search;
-  width: 100%;
-}
-
-.user-toolbar > .user-sort-field {
-  grid-area: sort;
-  width: 100%;
-  min-width: 0;
-}
-
-.user-toolbar > .user-add-btn {
-  grid-area: add;
-  justify-self: stretch;
-}
-
-.user-toolbar > .user-total {
-  grid-area: count;
-  justify-self: stretch;
-}
-
-.toolbar.user-toolbar .search input {
-  min-width: 0;
-  width: 100%;
-}
-
-/* Панель «Пользователи» и панель «Диалоги» используют одну карточку.
-   Внутренний список не рисует вторую рамку и не добавляет второй отступ. */
-.workspace-panel.users-panel > .user-list {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.user-list > .user-row {
-  min-height: 56px;
-  padding: 6px 12px;
-  gap: var(--workspace-control-gap);
-}
-
-.user-list .user-person-info {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-@media (max-width: 1024px) {
-  .user-list > .user-row {
+  .toolbar.user-toolbar {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "search add" "sort count";
+    align-items: center;
+    gap: var(--workspace-control-gap);
+    width: 100%;
+    margin: 0;
+    flex: none;
   }
 
-  .user-list .user-actions {
-    display: flex;
-    gap: 2px;
-    padding: 0;
+  .toolbar.user-toolbar > * {
+    min-width: 0;
     margin: 0;
+  }
+
+  .user-toolbar > .search {
+    grid-area: search;
+    width: 100%;
+  }
+
+  .user-toolbar > .user-sort-field {
+    grid-area: sort;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .user-toolbar > .user-add-btn {
+    grid-area: add;
+    justify-self: stretch;
+  }
+
+  .user-toolbar > .user-total {
+    grid-area: count;
+    justify-self: stretch;
+  }
+
+  .toolbar.user-toolbar .search input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* Панель «Пользователи» и панель «Диалоги» используют одну карточку.
+   Внутренний список не рисует вторую рамку и не добавляет второй отступ. */
+  .workspace-panel.users-panel > .user-list {
+    padding: 0;
     border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .user-list > .user-row {
+    min-height: 56px;
+    padding: 6px 12px;
+    gap: var(--workspace-control-gap);
+  }
+
+  .user-list .user-person-info {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 1024px) {
+    .user-list > .user-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .user-list .user-actions {
+      display: flex;
+      gap: 2px;
+      padding: 0;
+      margin: 0;
+      border: 0;
+    }
   }
 }

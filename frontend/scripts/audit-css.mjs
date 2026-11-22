@@ -38,6 +38,7 @@ let important = 0;
 let totalBytes = 0;
 const candidates = new Map();
 const selectorUses = new Map();
+const repeatedClasses = [];
 
 for (const file of fs.readdirSync(cssDir).filter(name => name.endsWith(".scss"))) {
   const source = fs.readFileSync(path.join(cssDir, file), "utf8");
@@ -45,6 +46,9 @@ for (const file of fs.readdirSync(cssDir).filter(name => name.endsWith(".scss"))
   const ast = postcss.parse(source, { from: file });
   ast.walkRules(rule => {
     rules++;
+    if (/\.([A-Za-z_][\w-]*)\.\1(?![\w-])/.test(rule.selector)) {
+      repeatedClasses.push(`${file}:${rule.source.start.line} ${rule.selector}`);
+    }
     // У вложенных CSS-правил считаем декларации один раз.
     for (const decl of rule.nodes ?? []) {
       if (decl.type !== "decl") continue;

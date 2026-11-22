@@ -1,255 +1,276 @@
-/* Нативный HTML <dialog> — единая система окон на всех устройствах.
+@layer components {
+  /* Нативный HTML <dialog> — единая система окон на всех устройствах.
    Никаких дополнительных overlay/div и раздельных мобильных сеток действий. */
-:root dialog.native-dialog.modal:not([open]) {
-  display: none !important;
-}
 
-:root dialog.native-dialog.modal[open] {
-  box-sizing: border-box;
-  display: block;
-  position: fixed;
-  inset: 0;
-  width: min(520px, calc(100vw - 28px));
-  min-width: 0;
-  max-width: calc(100vw - 28px);
-  max-height: calc(100dvh - max(32px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
-  margin: auto;
-  padding: clamp(16px, 3vw, 24px);
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  border: 1px solid var(--ui-border) !important;
-  border-radius: 18px;
-  background: var(--surface) !important;
-  color: var(--ink) !important;
-  box-shadow: 0 24px 70px rgb(0 0 0 / 24%);
-  text-align: left;
-}
-
-:root dialog.native-dialog::backdrop {
-  background: rgb(16 20 32 / 60%);
-  -webkit-backdrop-filter: blur(5px);
-  backdrop-filter: blur(5px);
-}
-
-:root dialog.native-dialog .modal-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-:root dialog.native-dialog .modal-head > div {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-:root dialog.native-dialog .stack {
-  display: grid;
-  gap: 12px;
-  min-width: 0;
-}
-
-:root dialog.native-dialog .stack label {
-  min-width: 0;
-}
-
-:root dialog.native-dialog :is(.stack input, .stack select, .panel-login-edit-row > input) {
-  box-sizing: border-box;
-  min-height: 44px;
-  height: 44px;
-  max-width: 100%;
-  border-radius: var(--ui-radius-sm);
-  font-size: 16px;
-}
-
-:root dialog.native-dialog .modal-actions,
-:root dialog.native-dialog .modal-actions.credential-actions,
-:root dialog.native-dialog.confirm-delete-modal .modal-actions {
-  display: flex !important;
-  flex-wrap: nowrap !important;
-  justify-content: flex-end !important;
-  align-items: center !important;
-  gap: 8px;
-  width: 100%;
-  min-height: 44px;
-  margin-top: 16px;
-  padding: 0;
-}
-
-:root dialog.native-dialog .modal-actions > :is(.btn, .ui-icon-button),
-:root dialog.native-dialog .modal-actions.credential-actions > .btn {
-  box-sizing: border-box;
-  flex: 0 1 auto !important;
-  width: auto !important;
-  min-width: 0;
-  min-height: 44px !important;
-  height: 44px !important;
-  max-height: 44px;
-  margin: 0 !important;
-  padding: 0 clamp(8px, 2.5vw, 15px);
-  border-radius: 10px;
-  font-size: 12px;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-:root dialog.native-dialog .modal-actions > .ui-icon-button {
-  --icon-action-size: 44px;
-  flex: 0 0 44px !important;
-  padding: 0 !important;
-}
-
-:root dialog.native-dialog .modal-actions.credential-actions .btn.primary {
-  flex-basis: auto !important;
-}
-
-:root dialog.native-dialog .panel-credentials-panel {
-  min-width: 0;
-  padding-inline: 12px;
-  border-radius: var(--ui-radius-md);
-}
-
-:root dialog.native-dialog .panel-access-value {
-  box-sizing: border-box;
-  min-height: 52px;
-  gap: 10px;
-  padding: 4px 5px 4px 12px;
-}
-
-:root dialog.native-dialog .panel-access-value > b {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: 13px;
-}
-
-:root dialog.native-dialog .panel-access-value .password-code-refresh {
-  flex: 0 0 auto;
-  align-self: center;
-  min-height: 44px;
-  height: 44px;
-  margin: 0;
-  padding: 0 12px;
-  font-size: 12px;
-  border-radius: 9px;
-}
-
-:root dialog.native-dialog .panel-access-value .password-code-refresh svg {
-  width: 16px;
-  height: 16px;
-}
-
-:root dialog.native-dialog.credential-modal[open] {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: min(480px, calc(100vw - 28px));
-}
-
-:root dialog.native-dialog .credential-field-value .ui-icon-button {
-  --icon-action-size: 44px;
-}
-
-:root dialog.native-dialog .credential-field {
-  min-height: 68px;
-}
-
-:root dialog.native-dialog.native-feedback-dialog[open] {
-  width: min(450px, calc(100vw - 28px));
-}
-
-:root dialog.native-dialog.native-feedback-dialog .native-feedback-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-:root dialog.native-dialog.native-feedback-dialog .native-feedback-content > svg {
-  flex: none;
-  color: var(--button-danger-text);
-}
-
-:root dialog.native-dialog.native-feedback-dialog .native-feedback-copy {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-:root dialog.native-dialog.native-feedback-dialog .native-feedback-copy h2 {
-  margin: 0 0 5px;
-  color: var(--ink);
-  font-size: 16px;
-}
-
-:root dialog.native-dialog.native-feedback-dialog .toast-message {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-:root dialog.native-dialog.native-feedback-dialog .toast-close {
-  --icon-action-size: 44px;
-  flex: 0 0 44px !important;
-}
-
-:root dialog.native-dialog.native-feedback-error {
-  border-color: var(--red-border) !important;
-}
-
-:root dialog.native-dialog.native-feedback-success[open] {
-  position: fixed;
-  inset: auto 16px max(18px, env(safe-area-inset-bottom, 0px)) auto;
-  z-index: 1400;
-  width: min(390px, calc(100vw - 32px));
-  margin: 0;
-  box-shadow: var(--ui-shadow-raised);
-}
-
-:root dialog.native-dialog.native-feedback-success .native-feedback-content > svg {
-  color: var(--purple);
-}
-
-/* Прозрачная декоративная стрелка больше не заменяет нативное меню select. */
-:root .ui-toolbar-select > select.ui-toolbar-select-native {
-  -webkit-appearance: menulist !important;
-  appearance: auto !important;
-  padding-right: var(--workspace-control-padding);
-}
-
-@media (max-width: 480px) {
   :root dialog.native-dialog.modal[open] {
-    width: calc(100vw - 20px);
-    max-width: calc(100vw - 20px);
-    max-height: calc(100dvh - max(20px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
-    padding: 16px 12px;
+    box-sizing: border-box;
+    display: block;
+    position: fixed;
+    inset: 0;
+    width: min(520px, calc(100vw - 28px));
+    min-width: 0;
+    max-width: calc(100vw - 28px);
+    max-height: calc(100dvh - max(32px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+    margin: auto;
+    padding: clamp(16px, 3vw, 24px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 18px;
+    box-shadow: 0 24px 70px rgb(0 0 0 / 24%);
+    text-align: left;
   }
 
-  :root dialog.native-dialog .modal-actions {
-    gap: 6px;
+  :root dialog.native-dialog::backdrop {
+    background: rgb(16 20 32 / 60%);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+  }
+
+  :root dialog.native-dialog .modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  :root dialog.native-dialog .modal-head > div {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  :root dialog.native-dialog .stack {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  :root dialog.native-dialog .stack label {
+    min-width: 0;
+  }
+
+  :root dialog.native-dialog :is(.stack input, .stack select, .panel-login-edit-row > input) {
+    box-sizing: border-box;
+    min-height: 44px;
+    height: 44px;
+    max-width: 100%;
+    border-radius: var(--ui-radius-sm);
+    font-size: 16px;
+  }
+
+  :root dialog.native-dialog .modal-actions,
+  :root dialog.native-dialog .modal-actions.credential-actions,
+  :root dialog.native-dialog.confirm-delete-modal .modal-actions {
+    gap: 8px;
+    width: 100%;
+    min-height: 44px;
+    margin-top: 16px;
+    padding: 0;
+  }
+
+  :root dialog.native-dialog .modal-actions > :is(.btn, .ui-icon-button),
+  :root dialog.native-dialog .modal-actions.credential-actions > .btn {
+    box-sizing: border-box;
+    min-width: 0;
+    max-height: 44px;
+    padding: 0 clamp(8px, 2.5vw, 15px);
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  :root dialog.native-dialog .modal-actions > .ui-icon-button {
+    --icon-action-size: 44px;
+  }
+
+  :root dialog.native-dialog .panel-credentials-panel {
+    min-width: 0;
+    padding-inline: 12px;
+    border-radius: var(--ui-radius-md);
   }
 
   :root dialog.native-dialog .panel-access-value {
-    padding-left: 7px;
+    box-sizing: border-box;
+    min-height: 52px;
+    gap: 10px;
+    padding: 4px 5px 4px 12px;
+  }
+
+  :root dialog.native-dialog .panel-access-value > b {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 13px;
   }
 
   :root dialog.native-dialog .panel-access-value .password-code-refresh {
-    padding-inline: 8px;
+    flex: 0 0 auto;
+    align-self: center;
+    min-height: 44px;
+    height: 44px;
+    margin: 0;
+    padding: 0 12px;
+    font-size: 12px;
+    border-radius: 9px;
+  }
+
+  :root dialog.native-dialog .panel-access-value .password-code-refresh svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  :root dialog.native-dialog.credential-modal[open] {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: min(480px, calc(100vw - 28px));
+  }
+
+  :root dialog.native-dialog .credential-field-value .ui-icon-button {
+    --icon-action-size: 44px;
+  }
+
+  :root dialog.native-dialog .credential-field {
+    min-height: 68px;
+  }
+
+  :root dialog.native-dialog.native-feedback-dialog[open] {
+    width: min(450px, calc(100vw - 28px));
+  }
+
+  :root dialog.native-dialog.native-feedback-dialog .native-feedback-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  :root dialog.native-dialog.native-feedback-dialog .native-feedback-content > svg {
+    flex: none;
+    color: var(--button-danger-text);
+  }
+
+  :root dialog.native-dialog.native-feedback-dialog .native-feedback-copy {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  :root dialog.native-dialog.native-feedback-dialog .native-feedback-copy h2 {
+    margin: 0 0 5px;
+    color: var(--ink);
+    font-size: 16px;
+  }
+
+  :root dialog.native-dialog.native-feedback-dialog .toast-message {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  :root dialog.native-dialog.native-feedback-dialog .toast-close {
+    --icon-action-size: 44px;
+  }
+
+  :root dialog.native-dialog.native-feedback-success[open] {
+    position: fixed;
+    inset: auto 16px max(18px, env(safe-area-inset-bottom, 0px)) auto;
+    z-index: 1400;
+    width: min(390px, calc(100vw - 32px));
+    margin: 0;
+    box-shadow: var(--ui-shadow-raised);
+  }
+
+  :root dialog.native-dialog.native-feedback-success .native-feedback-content > svg {
+    color: var(--purple);
+  }
+
+  /* Прозрачная декоративная стрелка больше не заменяет нативное меню select. */
+  :root .ui-toolbar-select > select.ui-toolbar-select-native {
+    padding-right: var(--workspace-control-padding);
+  }
+
+  @media (max-width: 480px) {
+    :root dialog.native-dialog.modal[open] {
+      width: calc(100vw - 20px);
+      max-width: calc(100vw - 20px);
+      max-height: calc(100dvh - max(20px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+      padding: 16px 12px;
+    }
+
+    :root dialog.native-dialog .modal-actions {
+      gap: 6px;
+    }
+
+    :root dialog.native-dialog .panel-access-value {
+      padding-left: 7px;
+    }
+
+    :root dialog.native-dialog .panel-access-value .password-code-refresh {
+      padding-inline: 8px;
+    }
+  }
+
+  /* Сообщение о копировании видно и поверх открытой карточки доступа.
+   Нативный немодальный dialog здесь участвует в top layer родителя. */
+  :root dialog.native-dialog.modal[open] > dialog.native-dialog.native-feedback-success[open] {
+    position: sticky;
+    inset: auto;
+    align-self: stretch;
+    width: 100%;
+    max-width: 100%;
+    margin: 12px 0 0;
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: none;
   }
 }
 
-/* Сообщение о копировании видно и поверх открытой карточки доступа.
-   Нативный немодальный dialog здесь участвует в top layer родителя. */
-:root dialog.native-dialog.modal[open] > dialog.native-dialog.native-feedback-success[open] {
-  position: sticky;
-  inset: auto;
-  align-self: stretch;
-  width: 100%;
-  max-width: 100%;
-  margin: 12px 0 0;
-  padding: 12px;
-  border-radius: 12px;
-  box-shadow: none;
+@layer overrides {
+  :root dialog.native-dialog.modal:not([open]) {
+    display: none;
+  }
+
+  :root dialog.native-dialog.modal[open] {
+    border: 1px solid var(--ui-border);
+    background: var(--surface);
+    color: var(--ink);
+  }
+
+  :root dialog.native-dialog .modal-actions,
+  :root dialog.native-dialog .modal-actions.credential-actions,
+  :root dialog.native-dialog.confirm-delete-modal .modal-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  :root dialog.native-dialog .modal-actions > :is(.btn, .ui-icon-button),
+  :root dialog.native-dialog .modal-actions.credential-actions > .btn {
+    flex: 0 1 auto;
+    width: auto;
+    min-height: 44px;
+    height: 44px;
+    margin: 0;
+  }
+
+  :root dialog.native-dialog .modal-actions > .ui-icon-button {
+    flex: 0 0 44px;
+    padding: 0;
+  }
+
+  :root dialog.native-dialog .modal-actions.credential-actions .btn.primary {
+    flex-basis: auto;
+  }
+
+  :root dialog.native-dialog.native-feedback-dialog .toast-close {
+    flex: 0 0 44px;
+  }
+
+  :root dialog.native-dialog.native-feedback-error {
+    border-color: var(--red-border);
+  }
 }

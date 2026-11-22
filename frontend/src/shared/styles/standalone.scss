@@ -1,18 +1,23 @@
-/* PWA использует ту же фоновую поверхность и те же отступы, что браузер.
+@layer components {
+  /* PWA использует ту же фоновую поверхность и те же отступы, что браузер.
    Safe-area не должна создавать второй окрашенный слой. */
-@media (display-mode: standalone) and (max-width: 1024px) {
-  html:has(.workspace-shell) {
-    background: var(--workspace-background) !important;
+  @media (display-mode: standalone) and (max-width: 1024px) {
+    .workspace-shell > .sidebar {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
   }
+}
+@layer overrides {
+  @media (display-mode: standalone) and (max-width: 1024px) {
+    html:has(.workspace-shell) {
+      background: var(--workspace-background);
+    }
 
-  body:has(.workspace-shell),
-  #root:has(.workspace-shell),
-  .workspace-shell > .sidebar {
-    background: transparent !important;
-  }
-
-  .workspace-shell > .sidebar {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
+    body:has(.workspace-shell),
+    #root:has(.workspace-shell),
+    .workspace-shell > .sidebar {
+      background: transparent;
+    }
   }
 }

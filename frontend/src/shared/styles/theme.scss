@@ -1,41 +1,359 @@
-/* --------------------------------------------------------------------------
+@layer components {
+  /* --------------------------------------------------------------------------
    Общая палитра приложения.
    Цвета состояний не используем для украшений.
    -------------------------------------------------------------------------- */
-/* Общие фоны, карточки и разделители. */
-body{ background: var(--canvas); color: var(--ink);}.sidebar, .topbar, .login-card, .user-list, .modal, .credential-modal{ background-color: var(--surface); border-color: var(--ui-border);}.sidebar, .topbar, .user-list, .student-card, .teacher-card, .modal, .login-card{ box-shadow: var(--ui-shadow-card);}.student-card, .teacher-card, .empty-students{ border-color: var(--ui-border);}.btn.primary{ color: #fff !important; background: var(--button-primary) !important; border-color: transparent !important; box-shadow: 0 4px 12px var(--purple-glow) !important;}.btn.primary:hover:not(:disabled){ background: var(--button-primary-hover) !important; box-shadow: 0 6px 16px var(--purple-glow) !important;}.btn:not(.primary):not(.danger), .user-action-btn:not(.danger-icon):not(.user-delete), .icon-btn:not(.danger-icon), .theme-toggle, .person-actions button:not(.danger-icon), .attach-control, .selected-file button{ background: var(--button-bg); border-color: var(--button-border); color: var(--button-text); box-shadow: var(--ui-shadow-soft);}.btn:not(.primary):not(.danger):hover:not(:disabled), .user-action-btn:not(.danger-icon):not(.user-delete):hover:not(:disabled), .icon-btn:not(.danger-icon):hover:not(:disabled), .theme-toggle:hover, .person-actions button:not(.danger-icon):hover, .attach-control:hover{ background: var(--button-bg-hover) !important; border-color: var(--button-border-hover) !important; color: var(--purple) !important; box-shadow: var(--ui-shadow-soft) !important;}.btn.danger, .user-action-btn.user-delete, .person-actions button.danger-icon, .icon-btn.danger-icon, .danger-icon{ background: var(--button-danger-bg) !important; border-color: var(--button-danger-border) !important; color: var(--button-danger-text) !important; box-shadow: none !important;}.btn.danger:hover:not(:disabled), .person-actions button.danger-icon:hover, .danger-icon:hover{ background: var(--red-soft) !important; border-color: var(--red-border) !important; color: var(--red) !important;}/* Единые поля, фокус и состояния выбора. */
-input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea{ border-color: var(--ui-border); color: var(--ink);}input:focus-visible, select:focus-visible, textarea:focus-visible, button:not(.chat-item):focus-visible, a:focus-visible{ outline: none; box-shadow: var(--ui-focus);}.search:focus-within{ border-color: var(--ui-border-strong); box-shadow: var(--ui-focus);}.toolbar.user-toolbar > .search > input:focus, .toolbar.user-toolbar > .search > input:focus-visible{ outline: none !important; box-shadow: none !important;}::selection{ background: rgba(120, 95, 192, .22);}/* Единые цвета ролей во всех разделах. */
-.teacher-dot, .teacher-card .avatar, .avatar.teacher, .teacher-avatar{ background-color: var(--lavender-soft); color: var(--purple);}.unassigned-grid .student-card{ background: var(--surface); border-color: var(--ui-border);}.role-tag{ background: var(--lavender-soft); color: var(--purple);}.role-tag.student{ background: var(--red-soft); color: var(--red);}.user-row .role-tag.teacher{ background: var(--lavender-soft); color: var(--purple);}/* Цвета ошибок и статусов не используем как декор. */:root[data-theme="dark-soft"] {& .teacher-card, & .student-card, & .empty-students, & .unassigned-grid .student-card{ background: var(--surface); border-color: var(--ui-border); box-shadow: var(--ui-shadow-card);}& .student-card .avatar, & .avatar.student, & .student-avatar, & .user-row .avatar.student, & .role-tag.student, & .user-row .role-tag.student{ background: #402d37 !important; color: #e58c98 !important;}& .student-dot{ background: #e58c98; box-shadow: 0 0 7px rgba(229, 140, 152, .20);}
-}
-@media (prefers-reduced-motion: reduce) {*, *::before, *::after{ scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important;}
-}/* Имя и действия остаются в отдельных колонках. */
-.user-list, .user-row{ min-width: 0; max-width: 100%; box-sizing: border-box;}.user-row > .user-person-info{ display: block; max-width: 100%; overflow-wrap: anywhere;}.user-row > .user-actions{ box-sizing: border-box;}.user-row > .user-actions > .user-info-wrap{ min-width: 0;}.user-row > .user-actions > .user-action-btn, .user-row > .user-actions > .user-info-wrap > .user-action-btn{ max-width: 100%; box-sizing: border-box;}
-@media (min-width: 1025px) and (max-width: 1200px) {.user-row{  grid-template-columns: 44px minmax(0, 1fr); grid-template-rows: auto auto;  column-gap: 12px; row-gap: 10px; padding: 13px clamp(10px, 1.5vw, 18px);}.user-row > .avatar{ grid-column: 1; grid-row: 1; width: 44px; height: 44px; flex: 0 0 44px;}.user-row > .user-person-info{ grid-column: 2; grid-row: 1; width: 100%; min-width: 0;}.user-row > .user-actions{ grid-column: 1 / -1; grid-row: 2; width: 100%;  padding-top: 10px; border-top: 1px solid var(--line); justify-content: flex-start;}
-}
-@media (max-width: 1024px) {.user-row > .user-actions{ justify-content: flex-start;}
-}
-@media (max-width: 420px) {.user-row > .user-actions{ column-gap: 6px; row-gap: 7px;}
-}/* Имя и кнопки пользователя находятся в одной строке. */
-.user-row{ display: grid !important; grid-template-columns: clamp(32px, 4vw, 44px) minmax(0, 1fr) auto; align-items: center; column-gap: clamp(6px, 1.2vw, 12px); row-gap: 0; min-width: 0;}.user-row > .avatar{ grid-column: 1; grid-row: 1; width: clamp(32px, 4vw, 44px); height: clamp(32px, 4vw, 44px); flex: 0 0 auto;}.user-row > .user-person-info{ grid-column: 2; grid-row: 1; min-width: 0; width: auto; flex: initial; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}.user-row > .user-actions{ grid-column: 3; grid-row: 1; display: flex; flex: 0 0 auto; flex-wrap: nowrap !important; align-items: center; justify-content: flex-end; gap: clamp(3px, .7vw, 7px); min-width: 0; width: auto; max-width: 100%; margin: 0; padding: 0; border: 0;}.user-row > .user-actions > .user-action-btn, .user-row > .user-actions > .user-info-wrap > .user-action-btn{ flex: 0 0 auto; width: clamp(30px, 3.2vw, 36px); height: clamp(30px, 3.2vw, 36px); min-width: 0; padding: 0;}.user-row > .user-actions > .user-info-wrap{ display: flex; flex: 0 0 auto;}
-@media (max-width: 1024px) {.user-row{ grid-template-columns: 34px minmax(0, 1fr) auto; column-gap: 6px; padding: 10px 8px;}.user-row > .avatar{ width: 34px; height: 34px;}.user-row > .user-actions{ gap: 4px;}.user-row > .user-actions > .user-action-btn, .user-row > .user-actions > .user-info-wrap > .user-action-btn{ width: 32px; height: 32px;}
-}
-@media (max-width: 380px) {.user-row{ grid-template-columns: 30px minmax(0, 1fr) auto; column-gap: 4px; padding-inline: 6px;}.user-row > .avatar{ width: 30px; height: 30px;}.user-row > .user-actions{ gap: 3px;}.user-row > .user-actions > .user-action-btn, .user-row > .user-actions > .user-info-wrap > .user-action-btn{ width: 29px; min-width: 29px; height: 29px; min-height: 29px;}
-}
-/* На телефоне история сообщений важнее выбора диалога. */
+  /* Общие фоны, карточки и разделители. */
+  .sidebar,
+  .topbar,
+  .login-card,
+  .user-list,
+  .modal,
+  .credential-modal {
+    background-color: var(--surface);
+    border-color: var(--ui-border);
+  }
+  .sidebar,
+  .topbar,
+  .user-list,
+  .student-card,
+  .teacher-card,
+  .modal,
+  .login-card {
+    box-shadow: var(--ui-shadow-card);
+  }
+  .student-card,
+  .teacher-card,
+  .empty-students {
+    border-color: var(--ui-border);
+  }
+  .btn:not(.primary):not(.danger),
+  .user-action-btn:not(.danger-icon):not(.user-delete),
+  .icon-btn:not(.danger-icon),
+  .theme-toggle,
+  .person-actions button:not(.danger-icon),
+  .attach-control,
+  .selected-file button {
+    background: var(--button-bg);
+    border-color: var(--button-border);
+    color: var(--button-text);
+    box-shadow: var(--ui-shadow-soft);
+  } /* Единые поля, фокус и состояния выбора. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    border-color: var(--ui-border);
+    color: var(--ink);
+  }
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  button:not(.chat-item):focus-visible,
+  a:focus-visible {
+    outline: none;
+    box-shadow: var(--ui-focus);
+  }
+  .search:focus-within {
+    border-color: var(--ui-border-strong);
+    box-shadow: var(--ui-focus);
+  }
+  ::selection {
+    background: rgba(120, 95, 192, 0.22);
+  } /* Единые цвета ролей во всех разделах. */
+  .teacher-dot,
+  .teacher-card .avatar,
+  .avatar.teacher,
+  .teacher-avatar {
+    background-color: var(--lavender-soft);
+    color: var(--purple);
+  }
+  .unassigned-grid .student-card {
+    background: var(--surface);
+    border-color: var(--ui-border);
+  }
+  .role-tag {
+    background: var(--lavender-soft);
+    color: var(--purple);
+  }
+  .role-tag.student {
+    background: var(--red-soft);
+    color: var(--red);
+  }
+  .user-row .role-tag.teacher {
+    background: var(--lavender-soft);
+    color: var(--purple);
+  } /* Цвета ошибок и статусов не используем как декор. */
+  :root[data-theme="dark-soft"] {
+    & .teacher-card,
+    & .student-card,
+    & .empty-students,
+    & .unassigned-grid .student-card {
+      background: var(--surface);
+      border-color: var(--ui-border);
+      box-shadow: var(--ui-shadow-card);
+    }
+    & .student-dot {
+      background: #e58c98;
+      box-shadow: 0 0 7px rgba(229, 140, 152, 0.2);
+    }
+  } /* Имя и действия остаются в отдельных колонках. */
+  .user-list,
+  .user-row {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .user-row > .user-actions > .user-info-wrap {
+    min-width: 0;
+  }
+  .user-row > .user-actions > .user-action-btn,
+  .user-row > .user-actions > .user-info-wrap > .user-action-btn {
+    max-width: 100%;
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    width: clamp(30px, 3.2vw, 36px);
+    height: clamp(30px, 3.2vw, 36px);
+    min-width: 0;
+    padding: 0;
+  }
+  @media (min-width: 1025px) and (max-width: 1200px) {
+    .user-row {
+      grid-template-columns: 44px minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      column-gap: 12px;
+      row-gap: 10px;
+      padding: 13px clamp(10px, 1.5vw, 18px);
+    }
+    .user-row > .avatar {
+      grid-column: 1;
+      grid-row: 1;
+      width: 44px;
+      height: 44px;
+      flex: 0 0 44px;
+    }
+    .user-row > .user-person-info {
+      grid-column: 2;
+      grid-row: 1;
+      width: 100%;
+      min-width: 0;
+    }
+    .user-row > .user-actions {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      width: 100%;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+      justify-content: flex-start;
+    }
+  }
+  @media (max-width: 1024px) {
+    .user-row > .user-actions {
+      justify-content: flex-start;
+    }
+  }
+  @media (max-width: 420px) {
+    .user-row > .user-actions {
+      column-gap: 6px;
+      row-gap: 7px;
+    }
+  } /* Имя и кнопки пользователя находятся в одной строке. */
+  .user-row {
+    align-items: center;
+    grid-template-columns: clamp(32px, 4vw, 44px) minmax(0, 1fr) auto;
+    column-gap: clamp(6px, 1.2vw, 12px);
+    row-gap: 0;
+    min-width: 0;
+  }
+  .user-row > .avatar {
+    grid-column: 1;
+    grid-row: 1;
+    width: clamp(32px, 4vw, 44px);
+    height: clamp(32px, 4vw, 44px);
+    flex: 0 0 auto;
+  }
+  .user-row > .user-person-info {
+    display: block;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    width: auto;
+    flex: initial;
+  }
+  .user-row > .user-actions {
+    box-sizing: border-box;
+    grid-column: 3;
+    grid-row: 1;
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-end;
+    gap: clamp(3px, 0.7vw, 7px);
+    min-width: 0;
+    width: auto;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .user-row > .user-actions > .user-info-wrap {
+    display: flex;
+    flex: 0 0 auto;
+  }
+  @media (max-width: 1024px) {
+    .user-row {
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      column-gap: 6px;
+      padding: 10px 8px;
+    }
+    .user-row > .avatar {
+      width: 34px;
+      height: 34px;
+    }
+    .user-row > .user-actions {
+      gap: 4px;
+    }
+    .user-row > .user-actions > .user-action-btn,
+    .user-row > .user-actions > .user-info-wrap > .user-action-btn {
+      width: 32px;
+      height: 32px;
+    }
+  }
+  @media (max-width: 380px) {
+    .user-row {
+      grid-template-columns: 30px minmax(0, 1fr) auto;
+      column-gap: 4px;
+      padding-inline: 6px;
+    }
+    .user-row > .avatar {
+      width: 30px;
+      height: 30px;
+    }
+    .user-row > .user-actions {
+      gap: 3px;
+    }
+    .user-row > .user-actions > .user-action-btn,
+    .user-row > .user-actions > .user-info-wrap > .user-action-btn {
+      width: 29px;
+      min-width: 29px;
+      height: 29px;
+      min-height: 29px;
+    }
+  }
+  /* На телефоне история сообщений важнее выбора диалога. */
 
+  /* Поле ввода и отправка выровнены по нижнему краю. */
 
-/* Поле ввода и отправка выровнены по нижнему краю. */
+  /* На телефоне история сообщений важнее выбора диалога. */
+  /* Разделы используют доступную высоту экрана. */
+  @media (min-width: 1025px) {
+    .workspace-shell > .sidebar {
+      width: auto;
+      min-width: 0;
+      box-shadow: none;
+    }
+    .workspace-shell > .content {
+      min-width: 0;
+      margin-left: 0;
+    }
+  }
+  .content > .topbar {
+    flex: 0 0 auto;
+  }
 
-
-/* На телефоне история сообщений важнее выбора диалога. */
-/* Разделы используют доступную высоту экрана. */
-@media (min-width: 1025px) {.workspace-shell > .sidebar{ position: relative; inset: auto; z-index: auto; width: auto; min-width: 0; box-shadow: none; }.workspace-shell > .content{ min-width: 0; margin-left: 0; }
-}.content > .topbar{ flex: 0 0 auto;}
-
-/* На компьютере вложения и отправка в одной строке. */
-/* Ненавязчивые подсказки полей входа. */
-.login-card .stack input::placeholder{ font-family: var(--font-family-ui); font-size: 14px; font-weight: 400; letter-spacing: .1px; opacity: .82;}
-/* Цвета сообщений согласованы с карточками ролей. */
-/* Учитываем верхнюю безопасную область iPhone. */
-@media (max-width: 1024px) {.content > .topbar{ box-sizing: border-box; height: calc(54px + env(safe-area-inset-top, 0px)); min-height: calc(54px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px);}
+  /* На компьютере вложения и отправка в одной строке. */
+  /* Ненавязчивые подсказки полей входа. */
+  .login-card .stack input::placeholder {
+    font-family: var(--font-family-ui);
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.1px;
+    opacity: 0.82;
+  }
+  /* Цвета сообщений согласованы с карточками ролей. */
+  /* Учитываем верхнюю безопасную область iPhone. */
+  @media (max-width: 1024px) {
+    .content > .topbar {
+      box-sizing: border-box;
+      height: calc(54px + env(safe-area-inset-top, 0px));
+      min-height: calc(54px + env(safe-area-inset-top, 0px));
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+  }
+}
+@layer overrides {
+  .btn.primary {
+    color: #fff;
+    background: var(--button-primary);
+    border-color: transparent;
+    box-shadow: 0 4px 12px var(--purple-glow);
+  }
+  .btn.primary:hover:not(:disabled) {
+    background: var(--button-primary-hover);
+    box-shadow: 0 6px 16px var(--purple-glow);
+  }
+  .btn:not(.primary):not(.danger):hover:not(:disabled),
+  .user-action-btn:not(.danger-icon):not(.user-delete):hover:not(:disabled),
+  .icon-btn:not(.danger-icon):hover:not(:disabled),
+  .theme-toggle:hover,
+  .person-actions button:not(.danger-icon):hover,
+  .attach-control:hover {
+    background: var(--button-bg-hover);
+    border-color: var(--button-border-hover);
+    color: var(--purple);
+    box-shadow: var(--ui-shadow-soft);
+  }
+  .btn.danger,
+  .user-action-btn.user-delete,
+  .person-actions button.danger-icon,
+  .icon-btn.danger-icon,
+  .danger-icon {
+    background: var(--button-danger-bg);
+    border-color: var(--button-danger-border);
+    color: var(--button-danger-text);
+    box-shadow: none;
+  }
+  .btn.danger:hover:not(:disabled),
+  .person-actions button.danger-icon:hover,
+  .danger-icon:hover {
+    background: var(--red-soft);
+    border-color: var(--red-border);
+    color: var(--red);
+  }
+  .toolbar.user-toolbar > .search > input:focus,
+  .toolbar.user-toolbar > .search > input:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+  :root[data-theme="dark-soft"] {
+    & .student-card .avatar,
+    & .avatar.student,
+    & .student-avatar,
+    & .user-row .avatar.student,
+    & .role-tag.student,
+    & .user-row .role-tag.student {
+      background: #402d37;
+      color: #e58c98;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto;
+      animation-duration: 0.01ms;
+      animation-iteration-count: 1;
+      transition-duration: 0.01ms;
+    }
+  }
+  .user-row {
+    display: grid;
+  }
+  .user-row > .user-actions {
+    flex-wrap: nowrap;
+  }
 }

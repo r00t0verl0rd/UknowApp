@@ -37,7 +37,7 @@ export default function StructurePage(options) {
         </Button>
       </div>
       <div class="structure-scroll" role="region" aria-label="Структура школы">
-        <div class="role_node">
+        <div class="admin-card">
           <img src="/logo-main.svg" alt="" />
           <div>
             <b>Администратор</b>

@@ -1,6 +1,7 @@
 {
   "rules": {
     "block-no-empty": true,
+    "declaration-no-important": true,
     "color-no-invalid-hex": true,
     "declaration-block-no-duplicate-properties": true,
     "no-duplicate-selectors": true

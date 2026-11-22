@@ -170,7 +170,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
       const wrapper = document.createElement("div");
       wrapper.className = "workspace-content";
       wrapper.innerHTML = [
-        '<div class="role_node"></div>',
+        '<div class="admin-card"></div>',
         '<div class="teacher-card"></div>',
         '<div class="student-card"></div>',
       ].join("");
@@ -302,7 +302,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
               </div>
             </aside>
             <div class="workspace-content">
-              <div class="role_node">Администратор</div>
+              <div class="admin-card">Администратор</div>
               <button class="btn graph-add-participant ui-menu-control" type="button">Добавить участника</button>
               <div class="teacher-card"><div class="person-info"><b>Александра Епифанова</b></div></div>
             </div>
@@ -1063,7 +1063,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
           sample.className = "workspace-content";
           sample.style.cssText = "position:fixed;top:0;left:0;z-index:-1;visibility:hidden";
           sample.innerHTML = `
-            <div class="role_node"></div>
+            <div class="admin-card"></div>
             <div class="teacher-card"><div class="person-actions">
               <button class="icon-btn ui-icon-button danger-icon teacher-collapse-btn"></button>
               <button class="icon-btn ui-icon-button"></button>
@@ -1114,7 +1114,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
         const host = document.createElement("div");
         host.className = "workspace-content";
         host.innerHTML = `
-          <div class="role_node"></div>
+          <div class="admin-card"></div>
           <div class="teacher-card"><div class="person-actions">
             <button class="icon-btn ui-icon-button ui-icon-button--student teacher-collapse-btn">
               <svg style="transition:none !important" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg>
