@@ -51,18 +51,8 @@ def build_safari_pinned_tab(logo: Image.Image) -> None:
         ((size - artwork.width) // 2, (size - artwork.height) // 2),
     )
 
-    # Если фон непрозрачный, отличаем изображение от цвета его углов.
-    corners = [
-        logo.getpixel((0, 0)),
-        logo.getpixel((logo.width - 1, 0)),
-        logo.getpixel((0, logo.height - 1)),
-        logo.getpixel((logo.width - 1, logo.height - 1)),
-    ]
-    transparent = any(pixel[3] < 224 for pixel in corners)
-    background = tuple(
-        sum(pixel[channel] for pixel in corners) // len(corners)
-        for channel in range(3)
-    )
+    # Для закреплённой вкладки берём фиолетово-синие лепестки эмблемы.
+    # Красный внешний круг не включаем: иначе знак превратится в сплошной диск.
     pixels = canvas.load()
     fragments = []
     filled = 0
@@ -70,15 +60,7 @@ def build_safari_pinned_tab(logo: Image.Image) -> None:
     for y in range(size):
         def foreground(column: int) -> bool:
             r, g, b, a = pixels[column, y]
-            return (
-                a > 112
-                if transparent
-                else a > 112 and max(
-                    abs(r - background[0]),
-                    abs(g - background[1]),
-                    abs(b - background[2]),
-                ) > 36
-            )
+            return a > 112 and b >= 90 and b > r + 14 and b > g + 23
 
         x = 0
         while x < size:
@@ -91,8 +73,9 @@ def build_safari_pinned_tab(logo: Image.Image) -> None:
             filled += x - left
             fragments.append(f"M{left} {y}h{x - left}v1h-{x - left}z")
 
-    if not (size * size * 0.01 < filled < size * size * 0.85):
-        raise ValueError("Не удалось выделить силуэт логотипа для Safari")
+    # Сложная эмблема должна содержать несколько отдельных элементов по строкам.
+    if not (size * size * 0.01 < filled < size * size * 0.75) or len(fragments) < 90:
+        raise ValueError("Не удалось выделить лепестки логотипа для Safari")
 
     # Векторная маска без фонового прямоугольника и растровых ссылок.
     svg = (
