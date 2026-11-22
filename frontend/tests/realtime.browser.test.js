@@ -151,6 +151,19 @@ test("global SSE updates real counters across tabs and replays missed events", {
       throw error;
     }
 
+    // Opening a dialog must retain the editor state owned by the active route.
+    await page.getByRole("button", { name: "Структура", exact: true }).click();
+    await page.getByRole("button", { name: "Добавить участника" }).click();
+    const participant = page.getByRole("dialog", { name: "Добавить участника" });
+    assert.equal(await participant.getByRole("combobox", { name: "Роль", exact: true }).inputValue(), "student");
+    await participant.getByLabel("Имя и фамилия").fill("Учебный профиль");
+    await participant.getByRole("combobox", { name: "Роль", exact: true }).selectOption("teacher");
+    assert.equal(await participant.getByLabel("Имя и фамилия").inputValue(), "Учебный профиль");
+    assert.equal(await participant.getByLabel("Доп. инфо").count(), 0);
+    await page.keyboard.press("Escape");
+    await participant.waitFor({ state: "detached" });
+    await page.getByRole("button", { name: "Доски", exact: true }).click();
+
     // Проверяем оформление ролей в обеих темах после CSS-рефакторинга.
     const themeStyles = await page.evaluate(() => {
       const oldTheme = document.documentElement.dataset.theme;
@@ -180,7 +193,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     assert.notEqual(themeStyles.light.student, themeStyles["dark-soft"].student);
 
     // Все вкладки используют один скролл-контейнер и одно оформление фона.
-    // Не заменяем React-узлы: добавляем и затем удаляем только тестовый элемент.
+    // Не заменяем узлы приложения: добавляем и затем удаляем только тестовый элемент.
     for (const width of [390, 1280]) {
       await page.setViewportSize({ width, height: 800 });
       for (const theme of ["light", "dark-soft"]) {

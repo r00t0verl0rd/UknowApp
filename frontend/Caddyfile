@@ -15,7 +15,7 @@ uknowschool.ru, www.uknowschool.ru {
         Permissions-Policy "camera=(), microphone=(), geolocation=()"
         # Критический CSS и инициализация темы вынесены во внешние файлы.
         # WebKit 27.2 ошибочно считает встроенные стили системного <select> CSP-нарушением.
-        # Разрешаем только атрибуты style (в том числе аудиоволны React), но не встроенные <style>.
+        # Разрешаем только атрибуты style (в том числе аудиоволны), но не встроенные <style>.
         # pragma: allowlist nextline secret
         Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; style-src-elem 'self' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'"
         -Server

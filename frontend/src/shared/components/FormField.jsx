@@ -1,16 +1,11 @@
-export default function FormField({
-  label,
-  htmlFor,
-  hint,
-  className = "",
-  children,
-  ...props
-}) {
+import { omit } from "solid-js";
+export default function FormField(options) {
+  const props = omit(options, "label", "htmlFor", "hint", "className", "children");
   return (
-    <label {...props} htmlFor={htmlFor} className={className || undefined}>
-      <span>{label}</span>
-      {children}
-      {hint && <small className="hint">{hint}</small>}
+    <label {...props} for={options.htmlFor} class={(options.className ?? "") || undefined}>
+      <span>{options.label}</span>
+      {options.children}
+      {options.hint && <small class="hint">{options.hint}</small>}
     </label>
   );
 }

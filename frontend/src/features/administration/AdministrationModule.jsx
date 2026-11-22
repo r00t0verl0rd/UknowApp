@@ -1,24 +1,40 @@
 import AdditionalPage from "./AdditionalPage.jsx";
-import { useAdminDataController } from "../../shared/hooks/administration/useAdminDataController.js";
-
-export default function AdministrationModule({
-  page, auth, profile, request, refresh, notify, setError,
-  setSelectedChat, setMessages,
-}) {
-  const state = useAdminDataController({
-    auth, profile, page, request, refresh, notify, setError,
-    setSelectedChat, setMessages,
+import { createAdminDataController } from "../../shared/state/administration/createAdminDataController.js";
+export default function AdministrationModule(options) {
+  const state = createAdminDataController({
+    get auth() {
+      return options.auth;
+    },
+    get profile() {
+      return options.profile;
+    },
+    get page() {
+      return options.page;
+    },
+    request: options.request,
+    refresh: options.refresh,
+    notify: options.notify,
+    setError: options.setError,
+    setSelectedChat: options.setSelectedChat,
+    setMessages: options.setMessages,
   });
-  if (page !== "additional") return null;
-  return <AdditionalPage
-    dataStats={state.dataStats} restore={state.restore} dataBusy={state.dataBusy}
-    loadDataStats={state.loadDataStats}
-    downloadAdminFile={state.downloadAdminFile}
-    uploadAdminFile={state.uploadAdminFile}
-    retentionDays={state.retentionDays} setRetentionDays={state.setRetentionDays}
-    cleanupOldDialogues={state.cleanupOldDialogues}
-    pendingConfirmation={state.pendingConfirmation}
-    setPendingConfirmation={state.setPendingConfirmation}
-    confirmPendingAction={state.confirmPendingAction}
-  />;
+  return () => {
+    if (options.page !== "additional") return null;
+    return (
+      <AdditionalPage
+        dataStats={state.dataStats}
+        restore={state.restore}
+        dataBusy={state.dataBusy}
+        loadDataStats={state.loadDataStats}
+        downloadAdminFile={state.downloadAdminFile}
+        uploadAdminFile={state.uploadAdminFile}
+        retentionDays={state.retentionDays}
+        setRetentionDays={state.setRetentionDays}
+        cleanupOldDialogues={state.cleanupOldDialogues}
+        pendingConfirmation={state.pendingConfirmation}
+        setPendingConfirmation={state.setPendingConfirmation}
+        confirmPendingAction={state.confirmPendingAction}
+      />
+    );
+  };
 }

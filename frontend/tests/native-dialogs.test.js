@@ -9,11 +9,11 @@ const read = p => readFileSync(path.join(frontend, p), "utf8");
 
 test("all application modals use native browser dialog top layer", () => {
   const modal = read("src/shared/components/Modal.jsx");
-  assert.match(modal, /<dialog ref=\{dialogRef\}/);
+  assert.match(modal, /<dialog\s+ref=\{dialogRef\}/);
   assert.match(modal, /dialog\.showModal\(\)/);
   assert.match(modal, /onCancel=\{handleCancel\}/);
   assert.match(modal, /onClick=\{handleBackdropClick\}/);
-  assert.doesNotMatch(modal, /<div className="overlay"/);
+  assert.doesNotMatch(modal, /<div class="overlay"/);
 });
 
 test("errors and success notifications use native browser dialogs", () => {
@@ -21,8 +21,8 @@ test("errors and success notifications use native browser dialogs", () => {
   assert.match(toast, /<dialog/);
   assert.match(toast, /dialog\.showModal\(\)/);
   assert.match(toast, /dialog\.show\(\)/);
-  assert.match(toast, /activeModal \|\| document\.body/);
-  assert.match(toast, /role=\{isError \? "alertdialog" : "dialog"\}/);
+  assert.match(toast, /activeModal\(\) \|\| document\.body/);
+  assert.match(toast, /role=\{isError\(\) \? "alertdialog" : "dialog"\}/);
 });
 
 test("user forms and code dialogs share right aligned equal height actions", () => {
@@ -30,8 +30,8 @@ test("user forms and code dialogs share right aligned equal height actions", () 
   const css = read("src/shared/styles/native-dialogs.scss");
   assert.match(users, /className="password-code-refresh"/);
   assert.match(users, /Выдать новый код\?/);
-  assert.match(users, /closeOnBackdrop=\{!savingUser\}/);
-  assert.match(users, /<div className="modal-actions">\s*<Button variant="ghost"/);
+  assert.match(users, /closeOnBackdrop=\{!options\.savingUser\}/);
+  assert.match(users, /<div class="modal-actions">\s*<Button variant="ghost"/);
   assert.match(css, /justify-content:\s*flex-end\s*!important/);
   assert.match(css, /height:\s*44px\s*!important/);
   assert.match(css, /\.panel-access-value \.password-code-refresh/);

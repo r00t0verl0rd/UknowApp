@@ -222,6 +222,7 @@
 
   :root[data-theme] .workspace-shell:has(.mobile-chat-back) > .content > .workspace-content {
     flex: 0 0 auto;
+    margin-block: 0;
     height: max(
       0px,
       calc(min(var(--workspace-viewport-height, 100dvh), 100dvh) - var(--workspace-sidebar-height, 140px))

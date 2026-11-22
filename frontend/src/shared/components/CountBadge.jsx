@@ -1,27 +1,26 @@
-export default function CountBadge({
-  value,
-  label,
-  title,
-  className = "",
-  unread = false,
-  hideWhenZero = false,
-  max = 99,
-  as = "span",
-}) {
-  const count = Math.max(0, Number(value) || 0);
-  if (hideWhenZero && count === 0) return null;
-
-  const Element = as === "b" ? "b" : "span";
-  const formatted = count > max ? `${max}+` : count;
-  const accessibleLabel = label ? `${formatted} ${label}` : undefined;
-
-  return (
-    <Element
-      className={["chat-tab-count", unread && "chat-tab-count--unread", className].filter(Boolean).join(" ")}
-      title={title}
-      aria-label={accessibleLabel}
-    >
-      {formatted}
-    </Element>
-  );
+import { Dynamic } from "@solidjs/web";
+export default function CountBadge(options) {
+  const count = () => Math.max(0, Number(options.value) || 0);
+  return () => {
+    if ((options.hideWhenZero ?? false) && count() === 0) return null;
+    const Element = () => ((options.as ?? "span") === "b" ? "b" : "span");
+    const formatted = () => (count() > (options.max ?? 99) ? `${options.max ?? 99}+` : count());
+    const accessibleLabel = () => (options.label ? `${formatted()} ${options.label}` : undefined);
+    return (
+      <Dynamic
+        component={Element()}
+        class={[
+          "chat-tab-count",
+          (options.unread ?? false) && "chat-tab-count--unread",
+          options.className ?? "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        title={options.title}
+        aria-label={accessibleLabel()}
+      >
+        {formatted()}
+      </Dynamic>
+    );
+  };
 }

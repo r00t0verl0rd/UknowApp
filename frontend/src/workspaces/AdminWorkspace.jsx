@@ -1,40 +1,62 @@
-import { lazy, Suspense } from "react";
+import { lazy, Loading, Switch, Match } from "solid-js";
 import ChatsModule from "../features/conversations/index.js";
-
 const UsersModule = lazy(() => import("../features/users/index.js"));
 const AdministrationModule = lazy(() => import("../features/administration/index.js"));
-
 export default function AdminWorkspace(props) {
   return (
-    <Suspense fallback={null}>
+    <Loading fallback={null}>
       <AdminPage {...props} />
-    </Suspense>
+    </Loading>
   );
 }
-
-function AdminPage({ context }) {
-  const { page, auth, profile, request, refresh, notify, setError, modal, setModal,
-    setPage, chatState, personalState, directory, inboxLoading, adminDataLoading } = context;
-
-  switch (page) {
-    case "graph":
-    case "users":
-      return <UsersModule page={page} directory={directory} request={request} adminDataLoading={adminDataLoading}
-        refresh={refresh} notify={notify} setError={setError}
-        selectedChat={chatState.selectedChat} setSelectedChat={chatState.setSelectedChat}
-        setMessages={chatState.setMessages} modal={modal} setModal={setModal}/>;
-    case "boards":
-      return null;
-    case "additional":
-      return <AdministrationModule page={page} auth={auth} profile={profile} request={request}
-        refresh={refresh} notify={notify} setError={setError}
-        setSelectedChat={chatState.setSelectedChat} setMessages={chatState.setMessages}/>;
-    case "chats":
-      return <ChatsModule key="admin" auth={auth} profile={profile} request={request}
-        chatState={chatState} personalState={personalState} inboxLoading={inboxLoading} users={directory.users}
-        modal={modal} setPage={setPage} setError={setError}
-        setModal={setModal} notify={notify}/>;
-    default:
-      return null;
-  }
+function AdminPage(options) {
+  return (
+    <Switch>
+      <Match when={["graph", "users"].includes(options.context.page)}>
+        <UsersModule
+          page={options.context.page}
+          directory={options.context.directory}
+          request={options.context.request}
+          adminDataLoading={options.context.adminDataLoading}
+          refresh={options.context.refresh}
+          notify={options.context.notify}
+          setError={options.context.setError}
+          selectedChat={options.context.chatState.selectedChat}
+          setSelectedChat={options.context.chatState.setSelectedChat}
+          setMessages={options.context.chatState.setMessages}
+          modal={options.context.modal}
+          setModal={options.context.setModal}
+        />
+      </Match>
+      <Match when={options.context.page === "additional"}>
+        <AdministrationModule
+          page={options.context.page}
+          auth={options.context.auth}
+          profile={options.context.profile}
+          request={options.context.request}
+          refresh={options.context.refresh}
+          notify={options.context.notify}
+          setError={options.context.setError}
+          setSelectedChat={options.context.chatState.setSelectedChat}
+          setMessages={options.context.chatState.setMessages}
+        />
+      </Match>
+      <Match when={options.context.page === "chats"}>
+        <ChatsModule
+          auth={options.context.auth}
+          profile={options.context.profile}
+          request={options.context.request}
+          chatState={options.context.chatState}
+          personalState={options.context.personalState}
+          inboxLoading={options.context.inboxLoading}
+          users={options.context.directory.users}
+          modal={options.context.modal}
+          setPage={options.context.setPage}
+          setError={options.context.setError}
+          setModal={options.context.setModal}
+          notify={options.context.notify}
+        />
+      </Match>
+    </Switch>
+  );
 }

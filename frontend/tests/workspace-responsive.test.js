@@ -22,9 +22,9 @@ test("mobile and desktop use one theme surface for the workspace", () => {
 });
 
 test("responsive layout keeps the same two main blocks and Safari safe areas", () => {
-  assert.match(layout, /<aside\b[^>]*className="sidebar">/);
-  assert.match(layout, /<main className="content">/);
-  assert.match(layout, /className=\{"workspace-content"/);
+  assert.match(layout, /<aside\b[^>]*class="sidebar">/);
+  assert.match(layout, /<main class="content">/);
+  assert.match(layout, /class=\{"workspace-content"/);
   assert.match(css, /@media\s*\(max-width:\s*1024px\)/);
   assert.match(css, /position:\s*sticky;/);
   assert.match(css, /position:\s*relative;\s*inset:\s*auto;/);

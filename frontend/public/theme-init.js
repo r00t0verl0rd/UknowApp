@@ -1,4 +1,4 @@
-// Применяем тему до старта React: внешний файл разрешён строгим CSP.
+// Применяем тему до запуска приложения: внешний файл разрешён строгим CSP.
 try {
   const theme = localStorage.getItem("uknowapp-theme-v2") === "light" ? "light" : "dark-soft";
   document.documentElement.dataset.theme = theme;

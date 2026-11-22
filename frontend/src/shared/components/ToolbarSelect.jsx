@@ -1,10 +1,17 @@
+import { omit } from "solid-js";
 // Нативный браузерный select: системное меню и управление с клавиатуры.
 // Обёртка нужна только для общего размера полей в панелях.
-export default function ToolbarSelect({ className = "", selectClassName = "", children, ...props }) {
+export default function ToolbarSelect(options) {
+  const props = omit(options, "className", "selectClassName", "children");
   return (
-    <span className={["ui-toolbar-select", className].filter(Boolean).join(" ")}>
-      <select {...props} className={["ui-toolbar-control", "ui-toolbar-select-native", selectClassName].filter(Boolean).join(" ")}>
-        {children}
+    <span class={["ui-toolbar-select", options.className ?? ""].filter(Boolean).join(" ")}>
+      <select
+        {...props}
+        class={["ui-toolbar-control", "ui-toolbar-select-native", options.selectClassName ?? ""]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        {options.children}
       </select>
     </span>
   );

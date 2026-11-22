@@ -13,8 +13,8 @@ test("login uses the same full-viewport surface as all workspaces", () => {
   const imports = read("src/shared/styles/index.scss");
   const critical = read("public/critical.css");
 
-  assert.match(page, /<main className="login-screen">/);
-  assert.match(page, /className="login-brand"/);
+  assert.match(page, /<main class="login-screen">/);
+  assert.match(page, /class="login-brand"/);
   assert.match(page, /src="\/logo-main\.svg"/);
   assert.match(page, /className="login-submit"/);
   assert.match(imports, /@use "\.\/login";/);
