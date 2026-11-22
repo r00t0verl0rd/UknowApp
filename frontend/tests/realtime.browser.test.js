@@ -179,6 +179,40 @@ test("global SSE updates real counters across tabs and replays missed events", {
     assert.notEqual(themeStyles.light.teacher, themeStyles["dark-soft"].teacher);
     assert.notEqual(themeStyles.light.student, themeStyles["dark-soft"].student);
 
+    // Sidebar does not move when any workspace tab scrolls, even if its contents are tall.
+    const scrollIsolation = await page.evaluate(() => {
+      const shell = document.querySelector(".workspace-shell");
+      const sidebar = shell.querySelector(".sidebar");
+      const content = shell.querySelector(".workspace-content");
+      const initialTop = sidebar.getBoundingClientRect().top;
+      const states = [];
+      for (const section of ["chat-list", "user-list", "structure-scroll", "additional-panel"]) {
+        const tallSection = document.createElement("div");
+        tallSection.className = section;
+        tallSection.style.cssText = "height:2200px;min-height:2200px;flex-shrink:0;";
+        content.replaceChildren(tallSection);
+        content.classList.toggle("page-additional", section === "additional-panel");
+        content.scrollTop = 500;
+        states.push({
+          section,
+          scrollTop: content.scrollTop,
+          sidebarTop: sidebar.getBoundingClientRect().top,
+          windowScroll: window.scrollY,
+          shellPosition: getComputedStyle(shell).position,
+        });
+      }
+      content.replaceChildren();
+      content.classList.remove("page-additional");
+      content.scrollTop = 0;
+      return { initialTop, states };
+    });
+    for (const state of scrollIsolation.states) {
+      assert.equal(state.shellPosition, "fixed", `${state.section}: viewport-locked shell`);
+      assert.ok(state.scrollTop >= 400, `${state.section}: content scrolls independently`);
+      assert.equal(state.sidebarTop, scrollIsolation.initialTop, `${state.section}: sidebar remains in place`);
+      assert.equal(state.windowScroll, 0, `${state.section}: window does not scroll`);
+    }
+
     // Меню, нижние пункты и действие создания используют единый шрифт и оформление.
     for (const width of [390, 1280]) {
       await page.setViewportSize({ width, height: 800 });

@@ -4,12 +4,24 @@
 
 /* Общая область прокрутки находится внутри неподвижной оболочки. */
 .workspace-shell {
+  position: fixed;
+  inset: 0;
+  width: 100%;
   display: grid;
   grid-template-columns: clamp(250px, 18vw, 280px) minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   height: 100dvh;
   min-height: 0;
   overflow: hidden;
+}
+
+/* Sidebar stays in its own viewport row, independently of the active tab's length. */
+@media (min-width: 1025px) {
+  .workspace-shell > .sidebar {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 .workspace-shell > .chats-main {
