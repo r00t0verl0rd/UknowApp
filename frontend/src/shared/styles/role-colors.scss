@@ -1,141 +1,123 @@
-/* --------------------------------------------------------------------------
-   Общие цвета текущих ролей для структуры, чатов и пользователей.
-   При добавлении ролей расширяем палитру последовательно.
-   -------------------------------------------------------------------------- */
-/* Фон не чисто белый, чтобы карточки были заметны. */
 body {
-  margin: 0;
+  margin:0;
 }
 .sidebar,
 .topbar,
 .user-list > .user-row,
 .credential-modal {
-  background-color: var(--surface);
+  background-color:var(--surface);
 }
-/* Цвета ролей одинаковы в структуре и сообщениях. */
-/* Список пользователей использует те же цвета ролей. */
-/* Элементы управления согласованы со светлой темой. */
 :root:not([data-theme="dark-soft"]) {
-  /* Смягчаем белые участки фона структуры. */
   & .workspace-content:has(.admin-card) .graph-legend-row > .graph-legend {
-    border: 1px solid #e4deec;
-    border-radius: 12px;
+    border:1px solid #e4deec;
+    border-radius:12px;
   }
   & .teacher-branch {
-    border: 1px solid #e7e1ed;
-    border-radius: 16px;
-    padding: 12px;
+    border:1px solid #e7e1ed;
+    border-radius:16px;
+    padding:12px;
   }
 }
-/* Карточки преподавателей сиреневые, учеников — тёплые. */
-/* Единый мягкий фон во всех разделах. */
 :root:not([data-theme="dark-soft"]) {
   & .user-row {
-    border-color: #e7dfef;
+    border-color:#e7dfef;
   }
 }
-/* Смягчаем акценты тёмной темы, сохраняя различие ролей. */
-/* Сдержанные цвета ролей в тёмной теме. */
-/* Светлые цвета ролей: сиреневый и песочный. */
-/* Кнопка заголовка не должна растягивать карточку. */
 .teacher-card {
-  max-width: 100%;
-  overflow: hidden;
-  min-width: 0;
-  min-height: 64px;
-  align-items: center;
+  max-width:100%;
+  overflow:hidden;
+  min-width:0;
+  min-height:64px;
+  align-items:center;
 }
 .teacher-card > .person-actions {
-  flex: 0 0 auto;
+  flex:0 0 auto;
 }
-/* Единые карточки преподавателей на всех экранах. */
-/* Общий вид кнопок-иконок задаёт icon-actions.css. */
-/* При свёрнутом списке стрелка влево, при открытом — вниз. */
 .workspace-content:has(.admin-card) {
   .teacher-collapse-btn svg {
-    transition: transform 0.18s ease;
+    transition:transform 0.18s ease;
   }
   .teacher-collapse-btn.is-expanded svg {
-    transform: rotate(-90deg);
+    transform:rotate(-90deg);
   }
 }
 .teacher-card {
-  background: var(--teacher-card-background);
+  background:var(--teacher-card-background);
 }
 .teacher-card .avatar,
 .avatar.teacher,
 .teacher-avatar {
-  background: var(--teacher-avatar-background);
-  color: var(--teacher-avatar-text);
+  background:var(--teacher-avatar-background);
+  color:var(--teacher-avatar-text);
 }
 .unassigned-grid .student-card {
-  background: linear-gradient(112deg, #f4eadb, #faf6ee);
-  border-color: #e0cda9;
+  background:linear-gradient(112deg, #f4eadb, #faf6ee);
+  border-color:#e0cda9;
 }
 .avatar.student,
 .student-avatar {
-  background: #ecdfc6;
-  color: #90764c;
+  background:#ecdfc6;
+  color:#90764c;
 }
 .student-dot {
-  background: var(--role-student);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--role-student) 35%, transparent);
+  background:var(--role-student);
+  box-shadow:0 0 8px color-mix(in srgb, var(--role-student) 35%, transparent);
 }
 .add-student {
-  color: var(--role-student);
+  color:var(--role-student);
 }
 .add-student:hover {
-  background: var(--role-student-soft);
+  background:var(--role-student-soft);
 }
 .user-row .avatar.teacher,
 .user-row .role-tag.teacher {
-  background: var(--role-teacher-soft);
-  color: var(--role-teacher);
+  background:var(--role-teacher-soft);
+  color:var(--role-teacher);
 }
 .user-row .avatar.student,
 .user-row .role-tag.student {
-  background: var(--role-student-soft);
-  color: var(--role-student);
+  background:var(--role-student-soft);
+  color:var(--role-student);
 }
 .student-card {
-  background: linear-gradient(112deg, #f4eadb, #faf6ee);
+  background:linear-gradient(112deg, #f4eadb, #faf6ee);
 }
 .student-card .avatar {
-  background: #ecdfc6;
-  color: #90764c;
+  background:#ecdfc6;
+  color:#90764c;
 }
 :root[data-theme="dark-soft"] {
   & .teacher-card {
-    background: var(--teacher-card-background);
-    border-color: var(--teacher-card-border);
-    color: #edf0f5;
+    background:var(--teacher-card-background);
+    border-color:var(--teacher-card-border);
+    color:#edf0f5;
   }
   & .student-card {
-    background: #40382d;
-    border-color: #746044;
+    background:#40382d;
+    border-color:#746044;
   }
   & .teacher-card .avatar {
-    background: var(--teacher-avatar-background);
-    color: var(--teacher-avatar-text);
+    background:var(--teacher-avatar-background);
+    color:var(--teacher-avatar-text);
   }
   & .student-card .avatar {
-    background: #574a38;
-    color: #e5c995;
+    background:#574a38;
+    color:#e5c995;
   }
 }
 .chat-items > .chat-item.student-card {
-  background: var(--button-bg);
-  border-color: var(--button-border);
-  box-shadow: none;
+  background:var(--button-bg);
+  border-color:var(--button-border);
+  box-shadow:none;
 }
 .chat-items > .chat-item.student-card:hover:not(.selected) {
-  background: color-mix(in srgb, var(--button-primary) 9%, var(--button-bg));
-  border-color: color-mix(in srgb, var(--button-primary) 24%, var(--button-border));
-  box-shadow: none;
+  background:color-mix(in srgb, var(--button-primary) 9%, var(--button-bg));
+  border-color:color-mix(in srgb, var(--button-primary) 24%, var(--button-border));
+  box-shadow:none;
 }
 :root:not([data-theme="dark-soft"]) {
   & body {
-    background: #f2eff7;
+    background:#f2eff7;
   }
   & .sidebar,
   & .topbar,
@@ -143,91 +125,91 @@ body {
   & .modal,
   & .login-card,
   & .credential-modal {
-    background-color: #faf8fd;
+    background-color:#faf8fd;
   }
   & .search,
   & .stack input,
   & .stack select {
-    background: #fdfbff;
-    border-color: #e6deed;
+    background:#fdfbff;
+    border-color:#e6deed;
   }
   & .workspace-content:has(.admin-card) .graph-legend-row > .graph-legend {
-    background: #f0eaf7;
-    border-color: #e2d8ed;
+    background:#f0eaf7;
+    border-color:#e2d8ed;
   }
   & .workspace-content:has(.admin-card) .empty-students {
-    background: #f4eff9;
-    border-color: #e4daef;
+    background:#f4eff9;
+    border-color:#e4daef;
   }
 }
 :root[data-theme="dark-soft"] {
   & .student-card {
-    color: #edf0f5;
-    box-shadow: none;
+    color:#edf0f5;
+    box-shadow:none;
   }
   & .user-list .user-row > .avatar.student {
-    background: var(--role-student-soft);
-    color: var(--role-student);
+    background:var(--role-student-soft);
+    color:var(--role-student);
   }
   & .user-list .user-row > .avatar.teacher {
-    background: var(--role-teacher-soft);
-    color: var(--role-teacher);
+    background:var(--role-teacher-soft);
+    color:var(--role-teacher);
   }
 }
 .workspace-content:has(.admin-card) .student-list[hidden] {
-  display: none;
+  display:none;
 }
 :root[data-theme="dark-soft"] {
   & .teacher-branch {
-    background: #242c38;
-    border-color: #374253;
-    box-shadow: none;
+    background:#242c38;
+    border-color:#374253;
+    box-shadow:none;
   }
   & .teacher-branch:hover {
-    background: #262f3c;
-    border-color: #465267;
-    box-shadow: none;
+    background:#262f3c;
+    border-color:#465267;
+    box-shadow:none;
   }
   & .workspace-content:has(.admin-card) .admin-card {
-    color: #edf0f5;
-    background: #2e3933;
-    border-color: #485c4d;
-    box-shadow: none;
+    color:#edf0f5;
+    background:#2e3933;
+    border-color:#485c4d;
+    box-shadow:none;
   }
   & .workspace-content:has(.admin-card) .teacher-dot {
-    background: #a99bc8;
-    box-shadow: none;
+    background:#a99bc8;
+    box-shadow:none;
   }
   & .workspace-content:has(.admin-card) .student-dot {
-    background: #c4a879;
-    box-shadow: none;
+    background:#c4a879;
+    box-shadow:none;
   }
 }
 :root:not([data-theme="dark-soft"]) {
   & .teacher-branch {
-    background: #f7f4fa;
-    border-color: #e7e0ed;
-    box-shadow: 0 2px 8px rgba(56, 43, 77, 0.035);
+    background:#f7f4fa;
+    border-color:#e7e0ed;
+    box-shadow:0 2px 8px rgba(56, 43, 77, 0.035);
   }
   & .workspace-content:has(.admin-card) .admin-card {
-    background: #eaf0e9;
-    border-color: #d2dfd0;
-    box-shadow: none;
+    background:#eaf0e9;
+    border-color:#d2dfd0;
+    box-shadow:none;
   }
   & .workspace-content:has(.admin-card) .teacher-dot {
-    background: #a99ac2;
-    box-shadow: none;
+    background:#a99ac2;
+    box-shadow:none;
   }
   & .workspace-content:has(.admin-card) .student-dot {
-    background: #c5aa7e;
-    box-shadow: none;
+    background:#c5aa7e;
+    box-shadow:none;
   }
 }
 .teacher-branch > .teacher-card {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: clamp(50px, 7vw, 76px);
-  padding: clamp(6px, 1.2vw, 12px) 10px;
-  border-radius: 13px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:clamp(50px, 7vw, 76px);
+  padding:clamp(6px, 1.2vw, 12px) 10px;
+  border-radius:13px;
 }
