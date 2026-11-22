@@ -1,11 +1,12 @@
-/* Единственная сетка для панели поиска, сортировки, создания и счётчика. */
+/* Общая двухрядная компоновка управления на всех размерах экрана:
+   поиск + добавление, сортировка + количество. */
 .toolbar.user-toolbar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas: "search add" "sort count";
-  width: 100%;
   align-items: center;
-  gap: 8px;
+  gap: var(--workspace-control-gap);
+  width: 100%;
   margin: 0;
   flex: none;
 }
@@ -15,9 +16,25 @@
   margin: 0;
 }
 
-.toolbar.user-toolbar > .user-sort {
+.user-toolbar > .search {
+  grid-area: search;
+  width: 100%;
+}
+
+.user-toolbar > .user-sort {
+  grid-area: sort;
   width: 100%;
   max-width: none;
+}
+
+.user-toolbar > .user-add-btn {
+  grid-area: add;
+  justify-self: stretch;
+}
+
+.user-toolbar > .user-total {
+  grid-area: count;
+  justify-self: stretch;
 }
 
 .toolbar.user-toolbar .search input {
@@ -25,14 +42,20 @@
   width: 100%;
 }
 
-.user-list {
+/* Панель «Пользователи» и панель «Диалоги» используют одну карточку.
+   Внутренний список не рисует вторую рамку и не добавляет второй отступ. */
+.workspace-panel.users-panel > .user-list {
   padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .user-list > .user-row {
   min-height: 56px;
   padding: 6px 12px;
-  gap: 8px;
+  gap: var(--workspace-control-gap);
 }
 
 .user-list .user-person-info {
