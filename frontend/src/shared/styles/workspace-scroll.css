@@ -23,13 +23,14 @@
 /* Общая область прокрутки находится внутри неподвижной оболочки. */
 .workspace-shell {
   position: fixed;
-  inset: auto 0 0;
-  top: var(--workspace-viewport-top, 0px);
+  inset: var(--workspace-viewport-top, 0px) 0 auto;
   width: 100%;
   display: grid;
   grid-template-columns: clamp(250px, 18vw, 280px) minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   /* 100dvh — запасной вариант для браузеров без Visual Viewport API. */
+  height: 100vh;
+  height: 100dvh;
   height: var(--workspace-viewport-height, 100dvh);
   min-height: 0;
   overflow: hidden;

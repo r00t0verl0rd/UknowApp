@@ -390,7 +390,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
         const detail = document.createElement("section");
         detail.className = "teacher-branch chat-detail";
         detail.innerHTML = `
-          <header class="chat-head">Чат</header>
+          <header class="chat-head"><button class="mobile-chat-back">Назад</button><span>Чат</span></header>
           <div class="messages">${Array(30).fill('<div class="message">Текст сообщения для проверки прокрутки</div>').join("")}</div>
           <form class="chat-composer">
             <textarea placeholder="Сообщение"></textarea>

@@ -405,6 +405,10 @@ line-height:1;}
   scroll-padding-bottom: var(--workspace-gutter);
 }
 
+.workspace-shell .workspace-content:has(> .chat-list) > .chat-detail > .messages > :is(.message, .empty-state) {
+  flex-shrink: 0;
+}
+
 .workspace-shell .workspace-content:has(> .chat-list) > .chat-detail > .chat-composer {
   flex: 0 0 auto;
   margin-top: var(--workspace-gutter);
