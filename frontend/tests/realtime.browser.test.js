@@ -386,6 +386,12 @@ test("global SSE updates real counters across tabs and replays missed events", {
     // На iPhone sidebar рисует ту же поверхность, что и html,
     // а оболочка не выходит за visualViewport даже с прозрачным Safari chrome.
     await page.setViewportSize({ width: 390, height: 720 });
+    await page.waitForFunction(() => {
+      const shell = document.querySelector(".workspace-shell");
+      const viewport = window.visualViewport;
+      return !!shell && (!viewport
+        || Math.abs(shell.getBoundingClientRect().height - viewport.height) <= 2);
+    });
     for (const theme of ["light", "dark-soft"]) {
       const safeArea = await page.evaluate(currentTheme => {
         const root = document.documentElement;
