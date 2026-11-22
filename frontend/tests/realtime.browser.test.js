@@ -1467,6 +1467,9 @@ test("global SSE updates real counters across tabs and replays missed events", {
     await page.getByRole("button", { name: "Диалоги" }).click();
     await page.getByRole("button", { name: /Личные/ }).click();
     await page.getByLabel("4 непрочитанных личных сообщений").waitFor({ state: "visible" });
+    // В фильтре нет лишней подписи, но native select сохраняет доступное имя.
+    assert.equal(await page.getByText("Показать", { exact: true }).count(), 0);
+    assert.equal(await page.getByRole("combobox", { name: "Фильтр диалогов" }).count(), 1);
 
     publish({
       event_id: 101,
