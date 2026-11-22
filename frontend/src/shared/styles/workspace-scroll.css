@@ -131,7 +131,13 @@
    он продолжается под панелью, а sidebar и внутренний скролл остаются на месте.
    Установленное PWA и десктоп сохраняют прежнюю fixed-геометрию. */
 @media (max-width: 1024px) and (display-mode: browser) {
-  :root[data-theme]:has(.workspace-shell),
+  :root[data-theme]:has(.workspace-shell) {
+    /* Единственный фон системной зоны над шапкой — сама страница.
+       Он совпадает с фоном sidebar, а не образует отдельную полосу canvas. */
+    background: var(--surface) !important;
+    --workspace-chrome-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
   :root[data-theme] body:has(.workspace-shell),
   :root[data-theme] #root:has(.workspace-shell) {
     height: auto;
@@ -139,12 +145,16 @@
     overflow-x: clip;
     overflow-y: visible;
     overscroll-behavior-y: auto;
+    /* Не добавляем вторую окрашенную поверхность поверх html. */
+    background: transparent !important;
   }
 
   .workspace-shell {
     position: relative;
     inset: auto;
-    height: 100lvh;
+    /* Safari на iPhone исключает нижнюю safe-area из 100lvh.
+       Продолжаем саму рабочую область под нижние элементы управления. */
+    height: calc(100lvh + var(--workspace-chrome-bottom));
     min-height: 0;
   }
 
@@ -155,14 +165,19 @@
     padding-bottom: max(
       var(--workspace-gutter),
       env(safe-area-inset-bottom, 0px),
-      calc(100lvh - var(--workspace-viewport-top, 0px) - var(--workspace-viewport-height, 100dvh) + var(--workspace-gutter))
+      calc(100lvh + var(--workspace-chrome-bottom) - var(--workspace-viewport-top, 0px) - var(--workspace-viewport-height, 100dvh) + var(--workspace-gutter))
     );
   }
 
-  /* Клавиатура — не прозрачная панель Safari: поле ввода должно остаться
-     внутри visualViewport, поэтому при фокусе возвращаем высоту видимой зоны. */
+  /* Клавиатура — не прозрачная панель Safari: компоновка со сфокусированным
+     полем остаётся в visualViewport без лишнего большого отступа внизу. */
   :root:has(.workspace-shell :is(input, textarea, [contenteditable="true"]):focus) .workspace-shell {
     height: var(--workspace-viewport-height, 100dvh);
+  }
+
+  :root:has(.workspace-shell :is(input, textarea, [contenteditable="true"]):focus)
+  .workspace-shell > .main > .workspace-content {
+    padding-bottom: var(--workspace-gutter);
   }
 }
 
@@ -175,7 +190,7 @@
     }
 
     .workspace-shell {
-      height: 100vh;
+      height: calc(100vh + var(--workspace-chrome-bottom));
     }
 
     .workspace-shell > .main > .workspace-content {
