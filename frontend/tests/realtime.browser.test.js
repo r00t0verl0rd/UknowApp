@@ -424,6 +424,66 @@ test("global SSE updates real counters across tabs and replays missed events", {
       `mobile sidebar should update only for actual height changes: ${resizeWrites.sidebar}`);
     await page.setViewportSize({ width: 1280, height: 720 });
 
+    // Структура: карточки разной высоты упаковываются без пустых строк,
+    // шапка остаётся компактной при переходе от телефона к десктопу.
+    for (const width of [390, 760, 1024, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      const layout = await page.evaluate(() => {
+        const host = document.createElement("div");
+        host.className = "workspace-content";
+        host.style.cssText = "position:absolute;top:0;left:0;width:calc(100vw - 20px);height:auto;visibility:hidden;pointer-events:none";
+        host.innerHTML = `
+          <div class="graph-legend-row">
+            <div class="legend graph-legend">Учителя 6</div>
+            <button class="graph-add-participant ui-menu-control">Добавить участника</button>
+          </div>
+          <div class="structure-scroll">
+            <div class="admin-card"><img src="/logo-main.svg" alt=""><div><b>Администратор</b></div></div>
+            <div class="grid">
+              ${[180, 80, 240, 140, 90, 120].map(height =>
+                `<section class="teacher-branch" style="min-height:${height}px">
+                  <div class="teacher-card">Учитель</div>
+                </section>`).join("")}
+            </div>
+          </div>
+        `;
+        document.body.append(host);
+        try {
+          const rect = selector => host.querySelector(selector).getBoundingClientRect();
+          const cards = [...host.querySelectorAll(".teacher-branch")].map(node => {
+            const box = node.getBoundingClientRect();
+            return { left: Math.round(box.left), top: box.top, bottom: box.bottom, right: box.right };
+          });
+          const columns = new Map();
+          for (const card of cards) {
+            const items = columns.get(card.left) || [];
+            items.push(card);
+            columns.set(card.left, items);
+          }
+          const gaps = [...columns.values()].flatMap(items => items.slice(1)
+            .map((item, index) => item.top - items[index].bottom));
+          return {
+            columns: columns.size,
+            gapBeforeAdmin: rect(".admin-card").top - rect(".graph-legend-row").bottom,
+            gapAfterAdmin: rect(".grid").top - rect(".admin-card").bottom,
+            maxStackGap: Math.max(0, ...gaps),
+            noOverlap: cards.every(card => card.right <= window.innerWidth + 1),
+            cardCount: cards.length,
+          };
+        } finally {
+          host.remove();
+        }
+      });
+      assert.equal(layout.cardCount, 6);
+      assert.equal(layout.columns === 1, width < 660,
+        `${width}px: structure automatically switches between one and multiple columns`);
+      assert.ok(layout.noOverlap, `${width}px: cards stay within viewport`);
+      assert.ok(layout.gapBeforeAdmin <= 30, `${width}px: compact toolbar-to-admin gap`);
+      assert.ok(layout.gapAfterAdmin <= 11, `${width}px: compact admin-to-teachers gap`);
+      assert.ok(layout.maxStackGap <= 14, `${width}px: teachers pack without empty grid-row gaps`);
+    }
+    await page.setViewportSize({ width: 1280, height: 720 });
+
     // На любой высоте браузерной панели нижняя часть вкладки остаётся доступной.
     // Проверяем телефон с открытой/закрытой панелью, планшет и десктоп.
     for (const { width, height } of [
