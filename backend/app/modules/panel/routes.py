@@ -33,7 +33,8 @@ from app.event_hub import (
     unsubscribe_chat_updates,
 )
 from app.infrastructure.storage.media import (
-    MAX_ATTACHMENT_BYTES, ATTACHMENT_SIZE_ERROR,
+    ATTACHMENT_SIZE_ERROR,
+    MAX_ATTACHMENT_BYTES,
     MEDIA_DIR,
     delete_message_media,
     media_content_disposition,
