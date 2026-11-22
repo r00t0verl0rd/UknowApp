@@ -797,7 +797,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
         }, theme);
         assert.deepEqual(result.styles.map(x => x.radius), ["9px", "9px", "9px", "9px"],
           `${width}px ${theme}: all four toolbar controls share the same radius`);
-        assert.deepEqual(result.styles.map(x => x.height), [38, 38, 38, 38],
+        assert.deepEqual(result.styles.map(x => x.height), [42, 42, 42, 42],
           `${width}px ${theme}: toolbar controls have identical heights`);
         assert.equal(result.rows[0], result.rows[2], `${width}px ${theme}: search and add share a row`);
         assert.equal(result.rows[1], result.rows[3], `${width}px ${theme}: sort and total share a row`);
@@ -940,8 +940,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
             `${theme} ${width}px: надпись вкладки ${i + 1} помещается`);
         }
         assert.equal(controls.tabHeights[0], controls.tabHeights[1]);
-        assert.equal(controls.newWidth, 38);
-        assert.equal(controls.newHeight, 38);
+        assert.equal(controls.newWidth, 42);
+        assert.equal(controls.newHeight, 42);
         assert.ok(controls.verticalGap <= 1);
         assert.notEqual(controls.selectedBackground, controls.inactiveBackground);
       }
@@ -1072,7 +1072,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
         }, theme);
         for (const name of ["userSearch", "userSort", "userAdd", "userTotal",
           "chatSearch", "chatFilter", "chatTabs", "chatAdd"]) {
-          assert.equal(controls[name].height, 38, `${width}px ${theme}: ${name} height`);
+          assert.equal(controls[name].height, 42, `${width}px ${theme}: ${name} height`);
           assert.equal(controls[name].radius, "9px", `${width}px ${theme}: ${name} radius`);
         }
         for (const name of ["userSearch", "userSort", "userAdd", "userTotal",
@@ -1120,7 +1120,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
           }
         }, theme);
         assert.deepEqual(styles[0], styles[1], `${width}px ${theme}: одинаковое оформление select`);
-        assert.equal(styles[0].height, 38);
+        assert.equal(styles[0].height, 42);
         assert.equal(styles[0].radius, "9px");
         assert.notEqual(styles[0].appearance, "none");
         assert.equal(styles[0].arrowVisible, false);
