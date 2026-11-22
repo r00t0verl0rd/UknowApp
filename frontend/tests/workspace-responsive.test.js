@@ -22,7 +22,7 @@ test("mobile and desktop use one theme surface for the workspace", () => {
 });
 
 test("responsive layout keeps the same two main blocks and Safari safe areas", () => {
-  assert.match(layout, /<aside className="sidebar">/);
+  assert.match(layout, /<aside\b[^>]*className="sidebar">/);
   assert.match(layout, /<main className="content">/);
   assert.match(layout, /className=\{"workspace-content"/);
   assert.match(css, /@media\s*\(max-width:\s*1024px\)/);
@@ -30,6 +30,8 @@ test("responsive layout keeps the same two main blocks and Safari safe areas", (
   assert.match(css, /position:\s*absolute;\s*inset:\s*0 0 auto;/);
   assert.match(css, /padding-top:\s*calc\(var\(--workspace-sidebar-height/);
   assert.match(layout, /new ResizeObserver\(syncSidebarHeight\)/);
+  assert.match(css, /\.workspace-content:has\(> \.chat-list\):not\(:has\(\.mobile-chat-back\)\)/);
+  assert.match(css, /\.chat-list > \.chat-items\s*\{\s*flex:\s*0 0 auto;\s*overflow:\s*visible;/);
   assert.match(css, /--workspace-viewport-height/);
   assert.match(css, /env\(safe-area-inset-bottom/);
 });
