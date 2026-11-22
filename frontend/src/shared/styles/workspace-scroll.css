@@ -134,7 +134,10 @@
   :root[data-theme]:has(.workspace-shell) {
     /* Единственный фон системной зоны над шапкой — сама страница.
        Он совпадает с фоном sidebar, а не образует отдельную полосу canvas. */
-    background: var(--surface) !important;
+    /* Safari берёт оттенок прозрачных системных панелей с html.
+       Один мягкий фон продолжается от status bar до нижнего края экрана. */
+    --workspace-browser-background: var(--surface);
+    background: var(--workspace-browser-background) !important;
     --workspace-chrome-bottom: env(safe-area-inset-bottom, 0px);
     height: auto;
     min-height: 100lvh;
@@ -154,10 +157,14 @@
     background: transparent !important;
   }
 
-  /* Шапка и фон status bar используют ровно одну переменную темы;
-     старые правила фоновой заливки sidebar не должны расходиться с html. */
-  :root[data-theme] .workspace-shell > .sidebar {
-    background: var(--surface) !important;
+  /* Только html рисует фоновую поверхность. Оболочка, sidebar и content
+     прозрачны, поэтому под стеклянной панелью Safari нет границы слоёв.
+     Во всех вкладках используется одна и та же схема. */
+  :root[data-theme] .workspace-shell,
+  :root[data-theme] .workspace-shell > .sidebar,
+  :root[data-theme] .workspace-shell > .content,
+  :root[data-theme] .workspace-shell > .content > .workspace-content {
+    background: transparent !important;
   }
 
   .workspace-shell {

@@ -6,6 +6,10 @@ export function useSettingsState() {
   useEffect(() => {
     localStorage.setItem("uknowapp-theme-v2", theme);
     document.documentElement.dataset.theme = theme;
+    // Цвет прозрачных панелей мобильного Safari совпадает с общим фоном.
+    document.querySelector('meta[name="theme-color"]')?.setAttribute(
+      "content", theme === "dark-soft" ? "#202938" : "#faf8fd",
+    );
   }, [theme]);
 
   const toggleTheme = useCallback(() => {
