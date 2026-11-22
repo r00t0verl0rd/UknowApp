@@ -61,9 +61,10 @@
 .chat-list > :is(.chat-list-actions, .chat-list-filters) {
   flex:none;
 }
+// Контент остаётся доступен с клавиатуры, но фокус не обводит весь экран.
 .workspace-content:focus-visible {
-  outline:2px solid var(--purple);
-  outline-offset:-2px;
+  outline:none;
+  box-shadow:inset 3px 0 0 var(--ui-selected-border);
 }
 @media (max-width: 1024px) {
   .workspace-shell {
