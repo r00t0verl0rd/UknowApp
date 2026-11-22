@@ -1002,7 +1002,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
         const previous = document.documentElement.dataset.theme;
         document.documentElement.dataset.theme = selectedTheme;
         const host = document.createElement("div");
-        host.className = "content";
+        host.className = "workspace-content";
         host.innerHTML = `
           <div class="role_node"></div>
           <div class="teacher-card"><div class="person-actions">
