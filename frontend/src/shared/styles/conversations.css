@@ -354,7 +354,7 @@ line-height:1;}
 
 
 @media (min-width: 1025px) {
-  .workspace-panel.chat-list .chat-list-filters.workspace-control-row {
+  :root .workspace-shell .workspace-panel.chat-list .chat-list-filters.workspace-control-row.workspace-control-row {
     grid-template-columns: minmax(0, 1fr);
   }
   .workspace-panel.chat-list .chat-filter { width: 100%; }
