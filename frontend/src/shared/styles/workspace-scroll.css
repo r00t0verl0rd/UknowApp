@@ -157,6 +157,61 @@
   }
 }
 
+/* В мобильном Safari кнопки Liquid Glass накладываются на нижнюю часть
+   большого viewport. Продлеваем именно scrollport ПОД панель браузера,
+   но не возвращаем document scrolling: sidebar остаётся fixed.
+   Разница между большим и видимым viewport становится нижним отступом,
+   поэтому последний элемент можно прокрутить ВЫШЕ панели управления. */
+@media (max-width: 1024px) and (display-mode: browser) {
+  :root[data-theme] .workspace-shell {
+    --workspace-chrome-bottom: env(safe-area-inset-bottom, 0px);
+    height: max(
+      var(--workspace-viewport-height, 100dvh),
+      calc(100lvh + var(--workspace-chrome-bottom))
+    );
+  }
+
+  :root[data-theme] .workspace-shell > .content > .workspace-content {
+    --workspace-browser-bottom-inset: max(
+      var(--workspace-gutter),
+      env(safe-area-inset-bottom, 0px),
+      calc(
+        100lvh + var(--workspace-chrome-bottom)
+        - var(--workspace-viewport-height, 100dvh)
+        + var(--workspace-gutter)
+      )
+    );
+    padding-bottom: var(--workspace-browser-bottom-inset);
+    scroll-padding-bottom: var(--workspace-browser-bottom-inset);
+  }
+
+  /* Клавиатура не является прозрачной панелью Safari. Поля ввода и
+     отправки остаются строго внутри уменьшенного visualViewport. */
+  :root[data-theme]:has(.workspace-shell :is(input, textarea, [contenteditable="true"]):focus)
+    .workspace-shell {
+    height: var(--workspace-viewport-height, 100dvh);
+  }
+
+  :root[data-theme]:has(.workspace-shell :is(input, textarea, [contenteditable="true"]):focus)
+    .workspace-shell > .content > .workspace-content {
+    padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@supports not (height: 100lvh) {
+  @media (max-width: 1024px) and (display-mode: browser) {
+    :root[data-theme] .workspace-shell {
+      height: var(--workspace-viewport-height, 100dvh);
+    }
+
+    :root[data-theme] .workspace-shell > .content > .workspace-content {
+      padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
+      scroll-padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
+    }
+  }
+}
+
 /* На телефоне список диалогов скроллится тем же полноэкранным .workspace-content,
    что и структура/пользователи: нет вложенного ограниченного chat-items.
    Открытый диалог сохраняет отдельную прокрутку сообщений, чтобы поле отправки

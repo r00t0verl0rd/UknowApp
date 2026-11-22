@@ -383,8 +383,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
         `${width}x${height}: the last item remains reachable`);
     }
 
-    // На iPhone sidebar рисует ту же поверхность, что и html,
-    // а оболочка не выходит за visualViewport даже с прозрачным Safari chrome.
+    // На iPhone sidebar рисует ту же поверхность, что и html.
+    // При раскрытой панели shell продолжается под ней, сохраняя fixed position.
     await page.setViewportSize({ width: 390, height: 720 });
     await page.waitForFunction(() => {
       const shell = document.querySelector(".workspace-shell");
@@ -426,12 +426,15 @@ test("global SSE updates real counters across tabs and replays missed events", {
       }
     }
 
-    // Safari 26 Liquid Glass: visualViewport может уменьшаться из-за toolbar
-    // или клавиатуры; фиксированная оболочка и нижний край контента следуют ему.
+    // Safari 26 Liquid Glass: visualViewport меньше 100lvh при видимой toolbar.
+    // Оболочка продолжается под браузерной панелью, а последние строки
+    // можно прокрутить выше её верхней границы.
     const underlay = await page.evaluate(() => {
       const root = document.documentElement;
       const oldHeight = root.style.getPropertyValue("--workspace-viewport-height");
+      const oldChrome = root.style.getPropertyValue("--workspace-chrome-bottom");
       root.style.setProperty("--workspace-viewport-height", "570px");
+      root.style.setProperty("--workspace-chrome-bottom", "34px");
       try {
         const shell = document.querySelector(".workspace-shell");
         const content = shell.querySelector(".workspace-content");
@@ -453,13 +456,15 @@ test("global SSE updates real counters across tabs and replays missed events", {
       } finally {
         if (oldHeight) root.style.setProperty("--workspace-viewport-height", oldHeight);
         else root.style.removeProperty("--workspace-viewport-height");
+        if (oldChrome) root.style.setProperty("--workspace-chrome-bottom", oldChrome);
+        else root.style.removeProperty("--workspace-chrome-bottom");
       }
     });
     assert.equal(underlay.shellPosition, "fixed");
-    assert.equal(underlay.shellHeight, 570,
-      "shell follows visible Safari viewport rather than document height");
-    assert.ok(underlay.bottomReserve >= 8,
-      "content keeps a comfortable bottom inset");
+    assert.equal(underlay.shellHeight, 754,
+      "mobile browser shell extends under Safari controls without scrolling the document");
+    assert.ok(underlay.bottomReserve >= 180,
+      "the covered height is reserved inside the content scrollport");
     assert.ok(underlay.finalItemBottom <= 572,
       "last item can be scrolled above the Safari browser controls");
 
@@ -468,7 +473,9 @@ test("global SSE updates real counters across tabs and replays missed events", {
     const chatUnderlay = await page.evaluate(() => {
       const root = document.documentElement;
       const before = root.style.getPropertyValue("--workspace-viewport-height");
+      const oldChrome = root.style.getPropertyValue("--workspace-chrome-bottom");
       root.style.setProperty("--workspace-viewport-height", "570px");
+      root.style.setProperty("--workspace-chrome-bottom", "34px");
       const content = document.querySelector(".workspace-content");
       const list = document.createElement("section");
       list.className = "teacher-branch chat-list workspace-panel";
@@ -497,9 +504,12 @@ test("global SSE updates real counters across tabs and replays missed events", {
         detail.remove();
         if (before) root.style.setProperty("--workspace-viewport-height", before);
         else root.style.removeProperty("--workspace-viewport-height");
+        if (oldChrome) root.style.setProperty("--workspace-chrome-bottom", oldChrome);
+        else root.style.removeProperty("--workspace-chrome-bottom");
       }
     });
-    assert.equal(chatUnderlay.shellHeight, 570);
+    assert.equal(chatUnderlay.shellHeight, 754,
+      "chat underlay also extends behind Safari toolbar");
     assert.ok(chatUnderlay.messagesScrollable,
       "messages scroll within the available chat viewport");
     assert.ok(chatUnderlay.sendBottom <= 572,

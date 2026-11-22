@@ -30,6 +30,10 @@ test("responsive layout keeps the same two main blocks and Safari safe areas", (
   assert.match(css, /position:\s*absolute;\s*inset:\s*0 0 auto;/);
   assert.match(css, /padding-top:\s*calc\(var\(--workspace-sidebar-height/);
   assert.match(layout, /new ResizeObserver\(syncSidebarHeight\)/);
+  assert.match(css, /@media\s*\(max-width:\s*1024px\)\s*and\s*\(display-mode:\s*browser\)/);
+  assert.match(css, /100lvh\s*\+\s*var\(--workspace-chrome-bottom\)/);
+  assert.match(css, /--workspace-browser-bottom-inset/);
+  assert.match(css, /:has\(\.workspace-shell :is\(input, textarea, \[contenteditable="true"\]\):focus\)/);
   assert.match(css, /\.workspace-content:has\(> \.chat-list\):not\(:has\(\.mobile-chat-back\)\)/);
   assert.match(css, /\.chat-list > \.chat-items\s*\{\s*flex:\s*0 0 auto;\s*overflow:\s*visible;/);
   assert.match(css, /--workspace-viewport-height/);
