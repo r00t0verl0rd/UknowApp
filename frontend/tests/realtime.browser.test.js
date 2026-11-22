@@ -236,7 +236,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
           ["html", isolation.docOverflow], ["body", isolation.bodyOverflow],
           ["root", isolation.rootOverflow],
         ]) {
-          assert.equal(value, width < 1025 ? "visible" : "hidden",
+          assert.equal(value, width < 1025 ? "clip visible" : "hidden",
             `${width}px ${theme}: ${label} overflow`);
         }
         assert.equal(isolation.sidebarOverscroll, "none", `${width}px ${theme}: sidebar overscroll`);
