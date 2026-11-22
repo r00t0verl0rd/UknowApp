@@ -32,6 +32,11 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run build
+      - name: Verify refactored SCSS compiles to the exact same CSS
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags --depth=1 origin ${{ github.event.pull_request.base.sha }}
+          node scripts/verify-scss-equivalence.mjs ${{ github.event.pull_request.base.sha }}
       - run: npm test
       - name: Install browser test runtime
         run: npm install --no-save playwright@1.56.1
