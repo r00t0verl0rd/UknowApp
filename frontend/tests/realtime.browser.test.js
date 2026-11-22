@@ -41,6 +41,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
   let personalRequests = 0;
   let syncRequests = 0;
   let latestUnread = personalChat.unread_count;
+  let syncNewMessages = [];
   let apiServer;
   let vite;
   let browser;
@@ -109,7 +110,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     } else if (path === "/api/panel/personal-conversations/5/sync") {
       syncRequests += 1;
       body = {
-        messages: [],
+        messages: syncNewMessages,
         updated_messages: [{
           id: 77,
           delivery_status: "delivered",
@@ -200,15 +201,21 @@ test("global SSE updates real counters across tabs and replays missed events", {
           created_at: "2026-11-23T10:00:00+00:00",
         }]),
       }));
-      await teacherPage.route("**/api/panel/personal-conversations", route => route.fulfill({
-        status: 200, contentType: "application/json", body: "[]",
-      }));
+      const pendingTeacherPersonalInbox = [];
+      await teacherPage.route("**/api/panel/personal-conversations", route => {
+        pendingTeacherPersonalInbox.push(route);
+      });
       await teacherPage.goto(APP_URL + "/structure");
       await teacherPage.getByRole("button", { name: "Структура", exact: true })
         .waitFor({ state: "visible" });
       assert.equal(await teacherPage.getByRole("button", { name: "Диалоги", exact: true }).count(), 1);
       await teacherPage.getByText("Мои ученики").waitFor({ state: "visible" });
       await teacherPage.getByText("Тестовый ученик").waitFor({ state: "visible" });
+      assert.equal(pendingTeacherPersonalInbox.length, 1,
+        "teacher's assigned students render before the slower personal-inbox response");
+      await pendingTeacherPersonalInbox.shift().fulfill({
+        status: 200, contentType: "application/json", body: "[]",
+      });
       assert.equal(await teacherPage.getByRole("button", { name: "Добавить участника" }).count(), 0);
       await teacherPage.getByRole("button", { name: "Диалоги", exact: true }).click();
       await teacherPage.locator(".chat-list").waitFor({ state: "visible" });
@@ -2081,6 +2088,71 @@ test("global SSE updates real counters across tabs and replays missed events", {
     assert.equal(inboxRequests, 1, "SSE reconnect must not reload inbox lists when replay is sufficient");
     assert.equal(personalRequests, 1, "SSE reconnect must not reload personal lists when replay is sufficient");
     assert.ok(syncRequests > 0, "opening a dialog and a read event must reconcile only that dialog");
+    // SSE: новое сообщение (даже когда читатель прокрутил историю вверх)
+    // должно появиться в зоне видимости без скролла всей страницы.
+    await page.getByRole("button", { name: /Учитель/ }).click();
+    await page.getByText("Проверка адресной синхронизации").waitFor({ state: "visible" });
+    await page.locator(".messages").evaluate(el => {
+      el.style.height = "120px";
+      el.style.maxHeight = "120px";
+      el.style.overflowY = "auto";
+    });
+    syncNewMessages = Array.from({ length: 32 }, (_, index) => ({
+      id: index + 78,
+      sender: "Учитель",
+      sender_role: "teacher",
+      can_delete: false,
+      content_type: "text",
+      text: index === 31 ? "Новое сообщение для автопрокрутки" : "Тестовая строка " + index,
+      metadata: {},
+      delivery_status: "delivered",
+      panel_read_at: null,
+      created_at: new Date(Date.parse("2026-11-21T11:01:00Z") + index * 1000).toISOString(),
+    }));
+    publish({
+      event_id: 104,
+      conversation_id: 5,
+      conversation_type: "personal",
+      action: "upsert",
+      message_id: 109,
+      summary: summary(3),
+    });
+    await page.getByText("Новое сообщение для автопрокрутки").waitFor({ state: "visible" });
+    await page.waitForFunction(() => {
+      const history = document.querySelector(".messages");
+      return history && history.scrollHeight > history.clientHeight &&
+        history.scrollHeight - history.scrollTop - history.clientHeight <= 2;
+    });
+
+    // Мобильное «Назад» не должно выбрасывать уже прочитанную историю.
+    // Сразу показываем сообщения из короткого кэша, параллельно запрашивая сервер.
+    await page.setViewportSize({ width: 390, height: 800 });
+    const delayedMessageResponses = [];
+    await page.route("**/api/panel/personal-conversations/5/messages", route => {
+      delayedMessageResponses.push(route);
+    });
+    await page.getByRole("button", { name: "Назад к списку диалогов" }).click();
+    await page.getByRole("button", { name: /Учитель/ }).click();
+    await page.getByText("Новое сообщение для автопрокрутки").waitFor({ state: "visible" });
+    await waitFor(() => delayedMessageResponses.length === 1);
+    await delayedMessageResponses[0].fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([{
+        id: 77,
+        sender: "Администратор",
+        sender_role: "admin",
+        can_delete: false,
+        content_type: "text",
+        text: "Проверка адресной синхронизации",
+        metadata: {},
+        delivery_status: "delivered",
+        panel_read_at: null,
+        created_at: "2026-11-21T10:00:00+00:00",
+      }, ...syncNewMessages]),
+    });
+    await page.getByText("Новое сообщение для автопрокрутки").waitFor({ state: "visible" });
+
   } finally {
     for (const response of pendingPersonalResponses.splice(0)) {
       response.writeHead(200, { "Content-Type": "application/json" });
