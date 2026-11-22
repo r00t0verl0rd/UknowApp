@@ -670,14 +670,14 @@
   }
   > .chat-avatar {
     background:var(--button-bg);
-    color:var(--button-primary);
+    color:var(--purple);
   }
 }
 .chat-item .person-info b {
   font-weight:650;
 }
 .chat-item.has-unread:not(.selected) {
-  background:color-mix(in srgb, var(--button-primary) 5%, transparent);
+  background:color-mix(in srgb, var(--purple) 7%, transparent);
 }
 @media (max-width: 760px) {
   .chat-list-filters > .search {
@@ -789,5 +789,5 @@
   }
 }
 .chat-item.has-unread:not(.selected) {
-  border-left:2px solid var(--button-primary);
+  border-left:2px solid var(--purple);
 }
