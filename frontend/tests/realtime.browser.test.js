@@ -323,6 +323,44 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize({ width: 1280, height: 720 });
 
+    // Пользователи: поиск, сортировка, добавление и счётчик выглядят как единая панель.
+    for (const width of [390, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        const result = await page.evaluate(currentTheme => {
+          const previous = document.documentElement.dataset.theme;
+          document.documentElement.dataset.theme = currentTheme;
+          const fixture = document.createElement("div");
+          fixture.className = "toolbar user-toolbar";
+          fixture.style.cssText = "position:fixed;left:0;top:0;visibility:hidden;pointer-events:none;width:100%";
+          fixture.innerHTML = `
+            <div class="search workspace-search ui-toolbar-control"><input aria-label="Поиск" /></div>
+            <select class="user-sort ui-toolbar-control"><option>Сначала ученики</option></select>
+            <button class="btn primary user-add-btn ui-toolbar-control">Добавить</button>
+            <span class="user-total ui-toolbar-control ui-toolbar-total">Всего <b class="chat-tab-count">11</b></span>
+          `;
+          document.body.append(fixture);
+          const styles = [...fixture.children].map(element => {
+            const style = getComputedStyle(element);
+            return { radius: style.borderTopLeftRadius, height: Math.round(element.getBoundingClientRect().height) };
+          });
+          const rows = [...fixture.children].map(element => Math.round(element.getBoundingClientRect().top));
+          fixture.remove();
+          document.documentElement.dataset.theme = previous;
+          return { styles, rows };
+        }, theme);
+        assert.deepEqual(result.styles.map(x => x.radius), ["9px", "9px", "9px", "9px"],
+          `${width}px ${theme}: all four toolbar controls share the same radius`);
+        assert.deepEqual(result.styles.map(x => x.height), [42, 42, 42, 42],
+          `${width}px ${theme}: toolbar controls have identical heights`);
+        if (width < 1201) {
+          assert.equal(result.rows[0], result.rows[2], `${width}px ${theme}: search and add share a row`);
+          assert.equal(result.rows[1], result.rows[3], `${width}px ${theme}: sort and total share a row`);
+        }
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 720 });
+
     // Переключатель диалогов и кнопка создания всегда остаются в одной строке.
     for (const width of [320, 390, 760, 1280]) {
       await page.setViewportSize({ width, height: 800 });

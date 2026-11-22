@@ -1,21 +1,66 @@
+/* Единственная сетка для панели поиска, сортировки, создания и счётчика. */
 .toolbar.user-toolbar {
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(145px, 200px) auto auto;
-  align-items: center; gap: 8px; margin: 0; flex: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(145px, 200px) auto auto;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  flex: none;
 }
-.toolbar.user-toolbar > * { min-width: 0; margin: 0; }
-.toolbar.user-toolbar > .user-sort { width: 100%; max-width: none; height: 42px; }
-.toolbar.user-toolbar .search input { min-width: 0; width: 100%; }
-.user-list { padding: 0; }
-.user-list > .user-row { min-height: 56px; padding: 6px 12px; gap: 8px; }
-.user-list .user-person-info { min-width: 0; overflow-wrap: anywhere; }
+
+.toolbar.user-toolbar > * {
+  min-width: 0;
+  margin: 0;
+}
+
+.toolbar.user-toolbar > .user-sort {
+  width: 100%;
+  max-width: none;
+}
+
+.toolbar.user-toolbar .search input {
+  min-width: 0;
+  width: 100%;
+}
+
+.user-list {
+  padding: 0;
+}
+
+.user-list > .user-row {
+  min-height: 56px;
+  padding: 6px 12px;
+  gap: 8px;
+}
+
+.user-list .user-person-info {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 1200px) {
-  .toolbar.user-toolbar { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "search add" "sort count"; }
+  .toolbar.user-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "search add" "sort count";
+  }
+
   .user-toolbar > .search { grid-area: search; }
   .user-toolbar > .user-sort { grid-area: sort; }
-  .user-toolbar > span { grid-area: count; justify-self: end; }
   .user-toolbar > .user-add-btn { grid-area: add; justify-self: end; }
+  .user-toolbar > .user-total { grid-area: count; justify-self: end; }
 }
+
 @media (max-width: 1024px) {
-  .user-list > .user-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; }
-  .user-list .user-actions { display: flex; gap: 2px; padding: 0; margin: 0; border: 0; }
+  .user-list > .user-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .user-list .user-actions {
+    display: flex;
+    gap: 2px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+  }
 }
