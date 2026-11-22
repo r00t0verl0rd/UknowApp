@@ -59,8 +59,7 @@ export default function ChatsPage(options) {
     <>
       <section class="teacher-branch chat-list workspace-panel">
         <div class="chat-list-actions workspace-control-row">
-          {options.profile?.role === "admin" && (
-            <div
+          <div
               class="chat-section-tabs ui-toolbar-control ui-toolbar-segmented"
               role="group"
               aria-label="Тип диалогов"
@@ -72,6 +71,7 @@ export default function ChatsPage(options) {
                 title="Чаты участников"
                 onClick={() => {
                   options.setChatSection("participants");
+                  options.setChatFilter("all");
                   options.setSelectedChat(null);
                   options.setMessages([]);
                 }}
@@ -98,7 +98,6 @@ export default function ChatsPage(options) {
                 />
               </button>
             </div>
-          )}
           {options.profile?.role === "admin" && options.chatSection === "personal" && (
             <IconButton
               class="personal-chat-create ui-toolbar-icon"
