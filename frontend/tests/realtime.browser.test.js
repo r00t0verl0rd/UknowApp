@@ -528,6 +528,53 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize({ width: 1280, height: 720 });
 
+    // Указатель не должен сдвигать интерактивные элементы, провоцируя
+    // повторный mouseenter/mouseleave и визуальное мерцание рамок.
+    for (const width of [390, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        await page.evaluate(currentTheme => {
+          document.documentElement.dataset.theme = currentTheme;
+          const fixture = document.createElement("div");
+          fixture.id = "hover-stability-fixture";
+          fixture.className = "workspace-content";
+          fixture.style.cssText = "position:fixed;top:80px;left:20px;width:300px;height:300px;z-index:99999;padding:14px;background:var(--surface);pointer-events:auto";
+          fixture.innerHTML = `
+            <button class="btn" type="button">Добавить</button>
+            <section class="teacher-branch">
+              <div class="teacher-card">Преподаватель</div>
+            </section>
+            <div class="student-card">Ученик</div>
+          `;
+          document.body.append(fixture);
+        }, theme);
+        try {
+          for (const selector of [".btn", ".teacher-card", ".student-card"]) {
+            const target = page.locator("#hover-stability-fixture " + selector);
+            await page.mouse.move(5, 5);
+            const original = await target.boundingBox();
+            await target.hover();
+            const hovered = await target.boundingBox();
+            const style = await target.evaluate(el => {
+              const css = getComputedStyle(el);
+              return { transform: css.transform, outline: css.outlineStyle };
+            });
+            for (const dimension of ["x", "y", "width", "height"]) {
+              assert.ok(Math.abs(original[dimension] - hovered[dimension]) < 0.5,
+                `${width}px ${theme} ${selector}: hover must not shift ${dimension}`);
+            }
+            assert.equal(style.transform, "none",
+              `${width}px ${theme} ${selector}: no animated hover transform`);
+            assert.equal(style.outline, "none",
+              `${width}px ${theme} ${selector}: pointer hover must not create a focus ring`);
+          }
+        } finally {
+          await page.evaluate(() => document.getElementById("hover-stability-fixture")?.remove());
+        }
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 720 });
+
     // Структура: построчный Grid сохраняет колонки при раскрытии учеников.
     // Запрещаем прежнюю автоматическую перебалансировку CSS columns.
     for (const width of [390, 760, 1024, 1280, 1385, 1600]) {
