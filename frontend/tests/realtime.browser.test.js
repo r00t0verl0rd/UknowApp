@@ -1887,6 +1887,68 @@ test("global SSE updates real counters across tabs and replays missed events", {
         }
       }
     }
+    // Назначение ученика и активный колокольчик используют общую
+    // фиолетовую палитру в обеих темах и при сенсорном viewport.
+    for (const width of [390, 760, 1024, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        const styles = await page.evaluate(nextTheme => {
+          const root = document.documentElement;
+          const oldTheme = root.dataset.theme;
+          root.dataset.theme = nextTheme;
+          const host = document.createElement("div");
+          host.className = "workspace-shell workspace-admin";
+          host.style.cssText = "position:fixed;left:0;top:0;width:600px;height:auto;opacity:0;pointer-events:none;z-index:-1";
+          host.innerHTML = `
+            <header class="topbar"><div class="topbar-actions">
+              <button class="push-toggle active ui-icon-button" aria-pressed="true">Уведомления</button>
+            </div></header>
+            <aside class="sidebar"><div class="mobile-quick-actions">
+              <button class="push-toggle active ui-icon-button" aria-pressed="true">Уведомления</button>
+            </div></aside>
+            <div class="workspace-content"><div class="admin-card"></div>
+              <div class="grid"><section class="teacher-branch">
+                <button class="add-student">Назначить ученика</button>
+              </section></div>
+              <div class="unassigned-grid"><div class="unassigned-student-card">
+                <div class="unassigned-student-actions">
+                  <button class="btn outline">Назначить</button>
+                </div></div></div>
+            </div>
+          `;
+          document.body.append(host);
+          const prop = el => {
+            const css = getComputedStyle(el);
+            return { background: css.backgroundColor, border: css.borderTopColor, color: css.color };
+          };
+          const reference = document.createElement("span");
+          reference.style.cssText = "background:var(--ui-selected-bg);border:1px solid var(--ui-selected-border);color:var(--ui-selected-text)";
+          host.append(reference);
+          try {
+            return {
+              expected: prop(reference),
+              add: prop(host.querySelector(".add-student")),
+              assign: prop(host.querySelector(".btn.outline")),
+              bells: [...host.querySelectorAll(".push-toggle.active")].map(prop),
+            };
+          } finally {
+            host.remove();
+            root.dataset.theme = oldTheme;
+          }
+        }, theme);
+        for (const [name, style] of [
+          ["Добавить ученика", styles.add],
+          ["Назначить", styles.assign],
+          ["Десктопный колокольчик", styles.bells[0]],
+          ["Мобильный колокольчик", styles.bells[1]],
+        ]) {
+          assert.deepEqual(style, styles.expected,
+            `${width}px ${theme}: ${name} uses shared purple selected palette`);
+        }
+      }
+    }
+    await page.setViewportSize(originalViewport);
+
     // Стрелка свёрнутого списка смотрит влево, раскрытого — вниз; кнопка цвета ученика.
     for (const theme of ["light", "dark-soft"]) {
       const state = await page.evaluate(selectedTheme => {
