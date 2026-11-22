@@ -1,38 +1,31 @@
-/* Один визуальный язык выбранных разделов и карточек. Статусы ошибок,
-   опасных действий и push-уведомлений остаются семантически отдельными. */
-
 :root .workspace-shell {
   :is(.ui-menu-control, .ui-toolbar-tab, .chat-item):focus-visible {
-    outline-offset: 2px;
+    outline-offset:2px;
   }
-
   .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control[aria-current="page"],
   .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control[aria-current="page"]:hover,
   .chat-list .chat-section-tabs > button.chat-section-tab[aria-pressed="true"],
   .chat-list .chat-section-tabs > button.chat-section-tab[aria-pressed="true"]:hover,
   .chat-items > button.chat-item.student-card.selected,
   .chat-items > button.chat-item.student-card.selected:hover {
-    background: var(--ui-selected-bg);
-    background-image: none;
-    border-color: var(--ui-selected-border);
-    color: var(--ui-selected-text);
-    box-shadow: 0 0 0 1px var(--ui-selected-outline);
+    background:var(--ui-selected-bg);
+    background-image:none;
+    border-color:var(--ui-selected-border);
+    color:var(--ui-selected-text);
+    box-shadow:0 0 0 1px var(--ui-selected-outline);
   }
-
   .chat-items > button.chat-item.student-card.selected,
   .chat-items > button.chat-item.student-card.selected:hover {
     box-shadow:
       inset 3px 0 0 var(--ui-selected-border),
       0 0 0 1px var(--ui-selected-outline);
   }
-
   .chat-list .chat-section-tabs > button.chat-section-tab[aria-pressed="false"]:hover {
-    background: var(--ui-control-hover);
-    border-color: var(--ui-border-strong);
-    color: var(--ui-control-text);
+    background:var(--ui-control-hover);
+    border-color:var(--ui-border-strong);
+    color:var(--ui-control-text);
   }
-
   :is(.ui-menu-control, .ui-toolbar-tab, .chat-item):focus-visible {
-    outline: 2px solid var(--ui-selected-border);
+    outline:2px solid var(--ui-selected-border);
   }
 }
