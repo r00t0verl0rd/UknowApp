@@ -56,11 +56,27 @@ export default function WorkspaceLayout(options) {
       let frame = 0;
       let previousHeight = -1;
       let previousTop = NaN;
+      let unobstructedHeight = Math.max(window.innerHeight, viewport.height);
+      let keyboardOpen = false;
+      const editorFocused = () =>
+        document.activeElement?.matches?.(
+          "textarea, input:is([type='text'], [type='search'], [type='email'], [type='password'], [type='tel'], [type='url'], [type='number'], :not([type])), [contenteditable='true']",
+        ) ?? false;
       const measureViewport = () => {
         frame = 0;
         const height = Math.round(viewport.height);
         const top = Math.round(viewport.offsetTop);
         if (!Number.isFinite(height) || height <= 0) return;
+        const editing = editorFocused();
+        if (!editing) unobstructedHeight = Math.max(window.innerHeight, viewport.height);
+        const open = window.matchMedia("(max-width: 1024px)").matches &&
+          editing && viewport.scale <= 1.1 &&
+          Math.max(unobstructedHeight, window.innerHeight) - height >= 140;
+        if (open !== keyboardOpen) {
+          keyboardOpen = open;
+          if (open) root.setAttribute("data-workspace-keyboard", "open");
+          else root.removeAttribute("data-workspace-keyboard");
+        }
         if (height !== previousHeight) {
           root.style.setProperty("--workspace-viewport-height", `${height}px`);
           previousHeight = height;
@@ -79,6 +95,8 @@ export default function WorkspaceLayout(options) {
       window.addEventListener("resize", scheduleViewport);
       window.addEventListener("orientationchange", scheduleViewport);
       window.addEventListener("pageshow", scheduleViewport);
+      document.addEventListener("focusin", scheduleViewport);
+      document.addEventListener("focusout", scheduleViewport);
       return () => {
         if (frame) window.cancelAnimationFrame(frame);
         viewport.removeEventListener("resize", scheduleViewport);
@@ -86,6 +104,9 @@ export default function WorkspaceLayout(options) {
         window.removeEventListener("resize", scheduleViewport);
         window.removeEventListener("orientationchange", scheduleViewport);
         window.removeEventListener("pageshow", scheduleViewport);
+        document.removeEventListener("focusin", scheduleViewport);
+        document.removeEventListener("focusout", scheduleViewport);
+        root.removeAttribute("data-workspace-keyboard");
         root.style.removeProperty("--workspace-viewport-height");
         root.style.removeProperty("--workspace-viewport-top");
       };
