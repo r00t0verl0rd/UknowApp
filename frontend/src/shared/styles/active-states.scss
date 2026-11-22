@@ -51,3 +51,31 @@
   outline:none;
   box-shadow:none;
 }
+
+
+// Единая акцентная палитра для назначений и кнопки уведомлений.
+// Убираем светлые mobile/touch-переопределения в dark-soft; элементы
+// остаются фиолетовыми при hover, focus и в обычном состоянии.
+:root[data-theme] .workspace-shell {
+  .workspace-content:has(.admin-card) .teacher-branch > button.add-student,
+  .workspace-content:has(.admin-card) .unassigned-student-actions > button.btn.outline,
+  :is(.topbar-actions, .mobile-quick-actions) > button.push-toggle.active {
+    background:var(--ui-selected-bg);
+    border-color:var(--ui-selected-border);
+    color:var(--ui-selected-text);
+    box-shadow:none;
+  }
+  .workspace-content:has(.admin-card) .teacher-branch > button.add-student:hover:not(:disabled),
+  .workspace-content:has(.admin-card) .unassigned-student-actions > button.btn.outline:hover:not(:disabled),
+  :is(.topbar-actions, .mobile-quick-actions) > button.push-toggle.active:hover:not(:disabled) {
+    background:var(--ui-control-hover);
+    border-color:var(--ui-selected-border);
+    color:var(--ui-selected-text);
+    box-shadow:none;
+  }
+  :is(.topbar-actions, .mobile-quick-actions) > button.push-toggle.active:focus-visible {
+    outline:2px solid var(--ui-selected-border);
+    outline-offset:2px;
+    box-shadow:none;
+  }
+}
