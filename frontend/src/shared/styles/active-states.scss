@@ -68,7 +68,7 @@
   .workspace-content:has(.admin-card) .teacher-branch > button.add-student:hover:not(:disabled),
   .workspace-content:has(.admin-card) .unassigned-student-actions > button.btn.outline:hover:not(:disabled),
   :is(.topbar-actions, .mobile-quick-actions) > button.push-toggle.active:hover:not(:disabled) {
-    background:var(--ui-control-hover);
+    background:color-mix(in srgb, var(--ui-selected-bg) 84%, var(--ui-selected-border));
     border-color:var(--ui-selected-border);
     color:var(--ui-selected-text);
     box-shadow:none;
