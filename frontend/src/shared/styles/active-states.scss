@@ -1,3 +1,5 @@
+// Те же цвета выделения, что в панели преподавателя, для любого кабинета.
+// Чат использует общий aria-pressed/selected, без отдельных цветов по ролям.
 :root .workspace-shell {
   :is(.ui-menu-control, .ui-toolbar-tab, .chat-item):focus-visible {
     outline-offset:2px;
@@ -6,16 +8,16 @@
   .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control[aria-current="page"]:hover,
   .chat-list .chat-section-tabs > button.chat-section-tab[aria-pressed="true"],
   .chat-list .chat-section-tabs > button.chat-section-tab[aria-pressed="true"]:hover,
-  .chat-items > button.chat-item.student-card.selected,
-  .chat-items > button.chat-item.student-card.selected:hover {
+  .chat-items > button.chat-item:is(.selected, [aria-pressed="true"]),
+  .chat-items > button.chat-item:is(.selected, [aria-pressed="true"]):hover {
     background:var(--ui-selected-bg);
     background-image:none;
     border-color:var(--ui-selected-border);
     color:var(--ui-selected-text);
     box-shadow:0 0 0 1px var(--ui-selected-outline);
   }
-  .chat-items > button.chat-item.student-card.selected,
-  .chat-items > button.chat-item.student-card.selected:hover {
+  .chat-items > button.chat-item:is(.selected, [aria-pressed="true"]),
+  .chat-items > button.chat-item:is(.selected, [aria-pressed="true"]):hover {
     box-shadow:
       inset 3px 0 0 var(--ui-selected-border),
       0 0 0 1px var(--ui-selected-outline);
