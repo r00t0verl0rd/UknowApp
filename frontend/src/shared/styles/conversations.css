@@ -290,7 +290,7 @@
 
 /* Одна строка действий и один фильтр чатов. */
 .chats-main > .workspace-content > .chat-list{background:var(--surface);border:1px solid var(--ui-border);border-radius:14px;padding:12px}
-.chat-list-filters{display:flex;flex-direction:column;gap:6px;min-width:0}
+.chat-list-filters{display:flex;flex-direction:column;gap:var(--workspace-control-gap);min-width:0}
 
 
 
@@ -320,8 +320,8 @@ font-weight:700;
 font-variant-numeric:tabular-nums;
 line-height:1;}
 
-.chat-filter{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:34px;color:var(--muted);font-size:11px}
-.chat-filter select{min-width:0;max-width:65%;height:32px;padding:0 9px;border:1px solid var(--ui-border);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit}
+.chat-filter{display:flex;align-items:center;justify-content:space-between;gap:var(--workspace-control-gap);min-height:var(--workspace-control-height);color:var(--muted);font-size:var(--workspace-control-font-size)}
+.chat-filter select{min-width:0;max-width:65%;width:auto;cursor:pointer}
 .chat-items{display:flex;flex-direction:column;gap:5px;padding:2px}
 .chat-items > .chat-item{min-height:54px;padding:8px 9px;border:1px solid transparent;border-radius:10px;background:transparent;box-shadow:none;transition:background-color .14s,border-color .14s}
 .chat-items > .chat-item:hover:not(.selected){background:var(--canvas);border-color:var(--ui-border)}

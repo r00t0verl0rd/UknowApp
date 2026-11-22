@@ -375,11 +375,11 @@ test("global SSE updates real counters across tabs and replays missed events", {
           host.innerHTML = `
             <div class="chat-list" style="box-sizing:border-box;width:${panelWidth}px;padding:12px">
               <div class="chat-list-actions">
-                <div class="chat-section-tabs" role="group">
-                  <button class="chat-section-tab" aria-pressed="true">Участники</button>
-                  <button class="chat-section-tab" aria-pressed="false">Личные<span class="chat-tab-count">12</span></button>
+                <div class="chat-section-tabs ui-toolbar-control ui-toolbar-segmented" role="group">
+                  <button class="chat-section-tab ui-toolbar-tab" aria-pressed="true">Участники</button>
+                  <button class="chat-section-tab ui-toolbar-tab" aria-pressed="false">Личные<span class="chat-tab-count">12</span></button>
                 </div>
-                <button class="icon-btn ui-icon-button personal-chat-create" aria-label="Новый диалог">+</button>
+                <button class="icon-btn ui-icon-button personal-chat-create ui-toolbar-icon" aria-label="Новый диалог">+</button>
               </div>
             </div>
           `;
@@ -416,10 +416,84 @@ test("global SSE updates real counters across tabs and replays missed events", {
             `${theme} ${width}px: надпись вкладки ${i + 1} помещается`);
         }
         assert.equal(controls.tabHeights[0], controls.tabHeights[1]);
-        assert.equal(controls.newWidth, 34);
-        assert.equal(controls.newHeight, 34);
+        assert.equal(controls.newWidth, 42);
+        assert.equal(controls.newHeight, 42);
         assert.ok(controls.verticalGap <= 1);
         assert.notEqual(controls.selectedBackground, controls.inactiveBackground);
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
+
+    // Общие реальные CSS-классы органов управления обеих вкладок.
+    for (const width of [390, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        const controls = await page.evaluate(currentTheme => {
+          const original = document.documentElement.dataset.theme;
+          document.documentElement.dataset.theme = currentTheme;
+          const fixture = document.createElement("div");
+          fixture.innerHTML = `
+            <div class="toolbar user-toolbar">
+              <div class="search workspace-search ui-toolbar-control"><input placeholder="Поиск по имени"></div>
+              <select class="user-sort ui-toolbar-control"><option>Сначала ученики</option></select>
+              <button class="btn primary user-add-btn ui-toolbar-control">Добавить</button>
+              <span class="user-total ui-toolbar-control ui-toolbar-total">Всего <b>11</b></span>
+            </div>
+            <section class="teacher-branch chat-list">
+              <div class="chat-list-actions">
+                <div class="chat-section-tabs ui-toolbar-control ui-toolbar-segmented">
+                  <button class="chat-section-tab ui-toolbar-tab" aria-pressed="true">Участники</button>
+                  <button class="chat-section-tab ui-toolbar-tab" aria-pressed="false">Личные</button>
+                </div>
+                <button class="icon-btn ui-icon-button personal-chat-create ui-toolbar-icon" aria-label="Новый диалог">+</button>
+              </div>
+              <div class="chat-list-filters">
+                <label class="search workspace-search ui-toolbar-control"><input placeholder="Поиск по имени"></label>
+                <label class="chat-filter"><select class="ui-toolbar-control"><option>Все личные</option></select></label>
+              </div>
+            </section>
+          `;
+          document.querySelector(".workspace-content").append(fixture);
+          try {
+            const measure = selector => {
+              const el = fixture.querySelector(selector);
+              const style = getComputedStyle(el);
+              return {
+                height: Math.round(el.getBoundingClientRect().height),
+                radius: style.borderTopLeftRadius,
+                fontSize: style.fontSize,
+                background: style.backgroundColor,
+              };
+            };
+            return {
+              userSearch: measure(".user-toolbar .workspace-search"),
+              userSort: measure(".user-sort"),
+              userAdd: measure(".user-add-btn"),
+              userTotal: measure(".user-total"),
+              chatSearch: measure(".chat-list .workspace-search"),
+              chatFilter: measure(".chat-filter select"),
+              chatTabs: measure(".chat-section-tabs"),
+              chatTab: measure(".chat-section-tab"),
+              chatAdd: measure(".personal-chat-create"),
+            };
+          } finally {
+            fixture.remove();
+            document.documentElement.dataset.theme = original;
+          }
+        }, theme);
+        for (const name of ["userSearch", "userSort", "userAdd", "userTotal",
+          "chatSearch", "chatFilter", "chatTabs", "chatAdd"]) {
+          assert.equal(controls[name].height, 42, `${width}px ${theme}: ${name} height`);
+          assert.equal(controls[name].radius, "9px", `${width}px ${theme}: ${name} radius`);
+        }
+        for (const name of ["userSearch", "userSort", "userAdd", "userTotal",
+          "chatSearch", "chatFilter", "chatTab"]) {
+          assert.equal(controls[name].fontSize, "13px", `${width}px ${theme}: ${name} font size`);
+        }
+        assert.equal(controls.userSearch.background, controls.chatSearch.background,
+          `${width}px ${theme}: search backgrounds match`);
+        assert.equal(controls.userSort.background, controls.chatFilter.background,
+          `${width}px ${theme}: filter backgrounds match`);
       }
     }
     await page.setViewportSize({ width: 1280, height: 800 });

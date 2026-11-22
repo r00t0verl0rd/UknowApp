@@ -49,8 +49,8 @@ export default function ChatsPage({
       <section className="teacher-branch chat-list">
         <div className="chat-list-actions">
           {profile?.role === "admin" && (
-            <div className="chat-section-tabs" role="group" aria-label="Тип диалогов">
-              <button type="button" className="chat-section-tab"
+            <div className="chat-section-tabs ui-toolbar-control ui-toolbar-segmented" role="group" aria-label="Тип диалогов">
+              <button type="button" className="chat-section-tab ui-toolbar-tab"
                 aria-pressed={chatSection === "participants"} title="Чаты участников"
                 onClick={() => {
                   setChatSection("participants");
@@ -59,7 +59,7 @@ export default function ChatsPage({
                 }}>
                 Участники
               </button>
-              <button type="button" className="chat-section-tab"
+              <button type="button" className="chat-section-tab ui-toolbar-tab"
                 aria-pressed={chatSection === "personal"} title="Личные диалоги"
                 onClick={() => {
                   setChatSection("personal");
@@ -74,7 +74,7 @@ export default function ChatsPage({
             </div>
           )}
           {profile?.role === "admin" && chatSection === "personal" && (
-            <IconButton className="personal-chat-create" onClick={openCreatePersonalChat}
+            <IconButton className="personal-chat-create ui-toolbar-icon" onClick={openCreatePersonalChat}
               aria-label="Новый диалог" title="Новый личный диалог">
               <Plus size={17}/>
             </IconButton>
@@ -82,7 +82,7 @@ export default function ChatsPage({
         </div>
         {profile?.role !== "student" && (
           <div className="chat-list-filters">
-            <label className="search workspace-search">
+            <label className="search workspace-search ui-toolbar-control">
               <Search size={16}/>
               <input aria-label="Поиск по имени" placeholder="Поиск по имени"
                 value={chatSearch} onChange={event => setChatSearch(event.target.value)}/>
@@ -96,7 +96,7 @@ export default function ChatsPage({
             {(profile?.role === "teacher" || (profile?.role === "admin" && chatSection === "personal")) && (
               <label className="chat-filter">
                 <span>Показать</span>
-                <select aria-label="Фильтр диалогов" value={chatFilter}
+                <select className="ui-toolbar-control" aria-label="Фильтр диалогов" value={chatFilter}
                   onChange={event => setChatFilter(event.target.value)}>
                   <option value="all">{profile?.role === "admin" ? "Все личные" : "Все диалоги"}</option>
                   <option value="unread">Непрочитанные</option>

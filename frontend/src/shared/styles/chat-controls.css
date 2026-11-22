@@ -1,68 +1,39 @@
-/* Переключатель переписок: одна строка на компьютере и телефоне. */
+/* Только компоновка и активные состояния; общие размеры — в shared-controls.css. */
 :root .workspace-shell .chat-list .chat-list-actions {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
   align-items: center;
-  gap: 6px;
+  gap: var(--workspace-control-gap);
   min-width: 0;
-}
-:root .workspace-shell .chat-list .chat-list-actions:empty { display: none; }
-:root .workspace-shell .chat-list .chat-section-tabs {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  align-items: center;
-  flex: 1 1 auto;
-  gap: 3px;
-  min-width: 0;
-  padding: 3px;
-  border: 1px solid var(--ui-border);
-  border-radius: 10px;
-  background: var(--canvas);
 }
 
-/* Состояние выбора берётся из aria-pressed, без дополнительного класса. */
-:root .workspace-shell .chat-list .chat-section-tabs > button.chat-section-tab {
-  -webkit-appearance: none !important;
-  appearance: none !important;
-  display: inline-flex !important;
-  flex-flow: row nowrap;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
+:root .workspace-shell .chat-list .chat-list-actions:empty { display: none; }
+
+:root .workspace-shell .chat-list .chat-section-tabs {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  flex: 1 1 auto;
   min-width: 0;
-  box-sizing: border-box;
-  height: 34px;
-  min-height: 34px;
-  padding: 6px 5px !important;
-  border: 1px solid transparent !important;
-  border-radius: 7px !important;
-  background: transparent !important;
-  background-image: none !important;
-  color: var(--muted) !important;
-  box-shadow: none !important;
-  font-family: var(--font-family-ui) !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  line-height: 1.2;
-  white-space: nowrap !important;
-  text-align: center;
 }
+
 :root .workspace-shell .chat-list .chat-section-tabs > button.chat-section-tab[aria-pressed="true"],
 :root .workspace-shell .chat-list .chat-section-tabs > button.chat-section-tab[aria-pressed="true"]:hover {
-  background: var(--surface) !important;
+  background: var(--ui-control-bg) !important;
   border-color: var(--ui-border) !important;
   color: var(--ink) !important;
   box-shadow: var(--ui-shadow-soft) !important;
 }
+
 :root .workspace-shell .chat-list .chat-section-tabs > button.chat-section-tab:hover:not([aria-pressed="true"]) {
   background: var(--ui-control-hover) !important;
   color: var(--ink) !important;
 }
+
 :root .workspace-shell .chat-list .chat-section-tabs > button.chat-section-tab:focus-visible {
   outline: 2px solid var(--purple);
-  outline-offset: 1px;
+  outline-offset: -1px;
 }
+
 :root .workspace-shell .chat-list .chat-section-tab > .chat-tab-count {
   flex: 0 0 auto;
   min-width: 19px;
@@ -72,16 +43,7 @@
   font-size: 10px;
 }
 
-/* Кнопка создания не растягивается: используется общий IconButton. */
 :root .workspace-shell .chat-list .chat-list-actions > .personal-chat-create.ui-icon-button {
   align-self: center;
   margin: 0;
-}
-
-@media (max-width: 420px) {
-  :root .workspace-shell .chat-list .chat-list-actions { gap: 4px; }
-  :root .workspace-shell .chat-list .chat-section-tabs { gap: 2px; }
-  :root .workspace-shell .chat-list .chat-section-tabs > button.chat-section-tab {
-    padding-inline: 4px !important;
-  }
 }
