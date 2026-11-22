@@ -509,7 +509,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
           if (name === "chat") {
             assert.match(focus[name].shadow, /inset/,
               `${width}px ${theme}: selected chat keeps its left indicator`);
-            assert.ok(!focus[name].shadow.includes(","),
+            assert.equal((focus[name].shadow.match(/rgba?\(/g) || []).length, 1,
               `${width}px ${theme}: selected chat has no second outer glow`);
           } else {
             assert.equal(focus[name].shadow, "none",
