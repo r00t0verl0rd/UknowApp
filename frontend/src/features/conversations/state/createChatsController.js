@@ -15,6 +15,32 @@ export function createChatsController(options) {
   let sendingMessage = false;
   let pendingClientMessage = null;
   let openingChatRequest = null;
+  // Только память текущей вкладки. Недавние чаты показываем сразу, затем
+  // проверяем сервер; не сохраняем приватные сообщения в localStorage.
+  const recentChats = new Map();
+  const MAX_CACHED_CHATS = 6;
+  const CACHE_TTL_MS = 60000;
+  const cacheChat = (key, messages) => {
+    if (!key || !messages?.length || messages.length > 1200) return;
+    recentChats.delete(key);
+    recentChats.set(key, { messages, at: Date.now() });
+    while (recentChats.size > MAX_CACHED_CHATS) recentChats.delete(recentChats.keys().next().value);
+  };
+  const getCachedChat = (key) => {
+    const cache = recentChats.get(key);
+    if (!cache) return null;
+    if (Date.now() - cache.at > CACHE_TTL_MS) {
+      recentChats.delete(key);
+      return null;
+    }
+    return cache.messages;
+  };
+  createEffect(
+    () => [options.auth],
+    () => {
+      if (!options.auth) recentChats.clear();
+    },
+  );
   createEffect(
     () => [],
     () => () => openingChatRequest?.controller.abort(),
@@ -102,62 +128,108 @@ export function createChatsController(options) {
         b.id - a.id,
     );
   });
+  let requestLatestScroll = () => {};
   createEffect(
     () => [
       options.chatState.selectedChat?.id,
       options.chatState.selectedChat?.type,
       options.chatState.messageFilter,
-      options.chatState.messagesViewportRef,
     ],
     () => {
       const history = options.chatState.messagesViewportRef.current;
       if (!history) return undefined;
-      let stickToBottom = true;
       let frame = 0;
-      const distanceToLatest = () => history.scrollHeight - history.scrollTop - history.clientHeight;
+      let followBottom = true;
+      let forced = false;
+      let lastObserved = null;
+      const distanceToLatest = () =>
+        history.scrollHeight - history.scrollTop - history.clientHeight;
       const scrollToLatest = () => {
         frame = 0;
-        if (stickToBottom) history.scrollTop = history.scrollHeight;
+        if (forced || followBottom) {
+          history.scrollTop = history.scrollHeight;
+          followBottom = true;
+        }
+        forced = false;
       };
-      const scheduleLatest = () => {
+      const scheduleLatest = (force = false) => {
+        if (force) {
+          forced = true;
+          followBottom = true;
+        }
         if (!frame) frame = window.requestAnimationFrame(scrollToLatest);
       };
       const handleScroll = () => {
-        stickToBottom = distanceToLatest() < 80;
+        if (!forced) followBottom = distanceToLatest() < 80;
       };
-      history.addEventListener("scroll", handleScroll, { passive: true });
-      scheduleLatest();
-      // Ресайз клавиатуры меняет только высоту истории, а не всю страницу.
-      // Сохраняем позицию читателя, если он прокрутил историю вверх.
       const resizeObserver = typeof ResizeObserver === "function"
-        ? new ResizeObserver(scheduleLatest)
+        ? new ResizeObserver(() => scheduleLatest())
         : null;
-      resizeObserver?.observe(history);
+      const observeLastMessage = () => {
+        const latest = history.lastElementChild;
+        if (latest === lastObserved) return;
+        if (lastObserved) resizeObserver?.unobserve(lastObserved);
+        lastObserved = latest;
+        if (latest) resizeObserver?.observe(latest);
+      };
       const mutationObserver = typeof MutationObserver === "function"
-        ? new MutationObserver(scheduleLatest)
+        ? new MutationObserver(() => {
+            observeLastMessage();
+            scheduleLatest();
+          })
         : null;
+      history.addEventListener("scroll", handleScroll, { passive: true });
+      resizeObserver?.observe(history);
       mutationObserver?.observe(history, { childList: true });
+      observeLastMessage();
+      requestLatestScroll = () => scheduleLatest(true);
+      scheduleLatest(true);
       return () => {
         if (frame) window.cancelAnimationFrame(frame);
         history.removeEventListener("scroll", handleScroll);
         resizeObserver?.disconnect();
         mutationObserver?.disconnect();
+        if (requestLatestScroll) requestLatestScroll = () => {};
       };
+    },
+  );
+  let previousScrollChat = "";
+  let previousTail = "";
+  createEffect(
+    () => [activeChatKey(), options.chatState.messageFilter, visibleMessages().at(-1)?.id],
+    ([chatKey, , lastId]) => {
+      const tail = lastId == null ? "" : String(lastId);
+      if (chatKey !== previousScrollChat) {
+        previousScrollChat = chatKey;
+        previousTail = tail;
+        if (chatKey) requestLatestScroll();
+      } else if (tail && tail !== previousTail) {
+        previousTail = tail;
+        // Новое полученное или отправленное сообщение: показать его сразу.
+        // Изменение статуса прочтения не вызывает повторную прокрутку.
+        requestLatestScroll();
+      } else if (!tail) {
+        previousTail = "";
+      }
     },
   );
   const openChat = async (chat) => {
     const chatKey = (chat.type === "personal" ? "personal:" : "conversation:") + chat.id;
     const previousRequest = openingChatRequest;
-    if (activeChatKey() === chatKey && previousRequest?.key === chatKey) return;
+    if (activeChatKey() === chatKey && (previousRequest?.key === chatKey ||
+      !options.chatState.messagesLoading)) return;
     previousRequest?.controller.abort();
+    const previousKey = activeChatKey();
+    if (previousKey && previousKey !== chatKey && !options.chatState.messagesLoading) {
+      cacheChat(previousKey, options.chatState.messages);
+    }
+    const cachedMessages = getCachedChat(chatKey);
+    const cachedById = new Map((cachedMessages || []).map((item) => [String(item.id), item]));
     const controller = new AbortController();
-    openingChatRequest = {
-      key: chatKey,
-      controller,
-    };
+    openingChatRequest = { key: chatKey, controller };
     options.chatState.setSelectedChat(chat);
-    options.chatState.setMessages([]);
-    options.chatState.setMessagesLoading(true);
+    options.chatState.setMessages(cachedMessages || []);
+    options.chatState.setMessagesLoading(!cachedMessages);
     options.setPage("chats");
     options.chatState.setDraft("");
     options.chatState.setAttachment(null);
@@ -165,10 +237,16 @@ export function createChatsController(options) {
     try {
       const loadedMessages = await getChatMessages(options.request, chat, controller.signal);
       if (controller.signal.aborted || activeChatKey() !== chatKey) return;
-      // При загрузке истории сохраняем обновления из SSE.
-      options.chatState.setMessages((previous) =>
-        mergeConversationMessages(previous, loadedMessages, chatKey),
-      );
+      // Сервер — источник истины: удалённые в другом окне сообщения не
+      // остаются в кэше. Одновременно сохраняем изменения SSE за время запроса.
+      options.chatState.setMessages((previous) => {
+        const receivedDuringLoad = cachedMessages
+          ? previous.filter((item) => cachedById.get(String(item.id)) !== item)
+          : previous;
+        const merged = mergeConversationMessages(loadedMessages, receivedDuringLoad, chatKey);
+        cacheChat(chatKey, merged);
+        return merged;
+      });
     } catch (error) {
       if (!controller.signal.aborted && activeChatKey() === chatKey) {
         openingChatRequest = null;
@@ -178,6 +256,7 @@ export function createChatsController(options) {
       if (!controller.signal.aborted && activeChatKey() === chatKey) {
         options.chatState.setMessagesLoading(false);
       }
+      if (openingChatRequest?.controller === controller) openingChatRequest = null;
     }
   };
   const openCreatePersonalChat = () => {
