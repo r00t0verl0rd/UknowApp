@@ -1,0 +1,2 @@
+html, body, #root { min-height: 100%; margin: 0; background: #171b25; }
+html[data-theme="light"], html[data-theme="light"] body, html[data-theme="light"] #root { background: #f7f6fb; }
