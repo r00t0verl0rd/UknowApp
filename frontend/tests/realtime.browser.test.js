@@ -335,7 +335,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
           fixture.style.cssText = "position:fixed;left:0;top:0;visibility:hidden;pointer-events:none;width:100%";
           fixture.innerHTML = `
             <div class="search workspace-search ui-toolbar-control"><input aria-label="Поиск" /></div>
-            <select class="user-sort ui-toolbar-control"><option>Сначала ученики</option></select>
+            <span class="ui-toolbar-select user-sort-field"><select class="ui-toolbar-control ui-toolbar-select-native user-sort"><option>Сначала ученики</option></select><svg class="ui-toolbar-select-chevron"></svg></span>
             <button class="btn primary user-add-btn ui-toolbar-control">Добавить</button>
             <span class="user-total ui-toolbar-control ui-toolbar-total">Всего <b class="chat-tab-count">11</b></span>
           `;
@@ -351,7 +351,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
         }, theme);
         assert.deepEqual(result.styles.map(x => x.radius), ["9px", "9px", "9px", "9px"],
           `${width}px ${theme}: all four toolbar controls share the same radius`);
-        assert.deepEqual(result.styles.map(x => x.height), [42, 42, 42, 42],
+        assert.deepEqual(result.styles.map(x => x.height), [38, 38, 38, 38],
           `${width}px ${theme}: toolbar controls have identical heights`);
         assert.equal(result.rows[0], result.rows[2], `${width}px ${theme}: search and add share a row`);
         assert.equal(result.rows[1], result.rows[3], `${width}px ${theme}: sort and total share a row`);
@@ -414,8 +414,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
             `${theme} ${width}px: надпись вкладки ${i + 1} помещается`);
         }
         assert.equal(controls.tabHeights[0], controls.tabHeights[1]);
-        assert.equal(controls.newWidth, 42);
-        assert.equal(controls.newHeight, 42);
+        assert.equal(controls.newWidth, 38);
+        assert.equal(controls.newHeight, 38);
         assert.ok(controls.verticalGap <= 1);
         assert.notEqual(controls.selectedBackground, controls.inactiveBackground);
       }
@@ -435,7 +435,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
             <section class="workspace-panel users-panel">
               <div class="toolbar user-toolbar">
                 <div class="search workspace-search ui-toolbar-control">Поиск</div>
-                <select class="user-sort ui-toolbar-control"><option>Сначала ученики</option></select>
+                <span class="ui-toolbar-select user-sort-field"><select class="ui-toolbar-control ui-toolbar-select-native user-sort"><option>Сначала ученики</option></select><svg class="ui-toolbar-select-chevron"></svg></span>
                 <button class="btn primary user-add-btn ui-toolbar-control">Добавить</button>
                 <span class="user-total ui-toolbar-control ui-toolbar-total">Всего</span>
               </div>
@@ -448,7 +448,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
               </div>
               <div class="chat-list-filters workspace-control-row">
                 <label class="search workspace-search ui-toolbar-control">Поиск</label>
-                <label class="chat-filter"><select class="ui-toolbar-control"><option>Все личные</option></select></label>
+                <label class="chat-filter"><span class="ui-toolbar-select chat-filter-field"><select class="ui-toolbar-control ui-toolbar-select-native"><option>Все личные</option></select><svg class="ui-toolbar-select-chevron"></svg></span></label>
               </div>
               <div class="chat-items">Диалог</div>
             </section>
@@ -498,7 +498,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
           fixture.innerHTML = `
             <div class="toolbar user-toolbar">
               <div class="search workspace-search ui-toolbar-control"><input placeholder="Поиск по имени"></div>
-              <select class="user-sort ui-toolbar-control"><option>Сначала ученики</option></select>
+              <span class="ui-toolbar-select user-sort-field"><select class="ui-toolbar-control ui-toolbar-select-native user-sort"><option>Сначала ученики</option></select><svg class="ui-toolbar-select-chevron"></svg></span>
               <button class="btn primary user-add-btn ui-toolbar-control">Добавить</button>
               <span class="user-total ui-toolbar-control ui-toolbar-total">Всего <b>11</b></span>
             </div>
@@ -512,7 +512,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
               </div>
               <div class="chat-list-filters workspace-control-row">
                 <label class="search workspace-search ui-toolbar-control"><input placeholder="Поиск по имени"></label>
-                <label class="chat-filter"><select class="ui-toolbar-control"><option>Все личные</option></select></label>
+                <label class="chat-filter"><span class="ui-toolbar-select chat-filter-field"><select class="ui-toolbar-control ui-toolbar-select-native"><option>Все личные</option></select><svg class="ui-toolbar-select-chevron"></svg></span></label>
               </div>
             </section>
           `;
@@ -546,7 +546,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
         }, theme);
         for (const name of ["userSearch", "userSort", "userAdd", "userTotal",
           "chatSearch", "chatFilter", "chatTabs", "chatAdd"]) {
-          assert.equal(controls[name].height, 42, `${width}px ${theme}: ${name} height`);
+          assert.equal(controls[name].height, 38, `${width}px ${theme}: ${name} height`);
           assert.equal(controls[name].radius, "9px", `${width}px ${theme}: ${name} radius`);
         }
         for (const name of ["userSearch", "userSort", "userAdd", "userTotal",
@@ -557,6 +557,47 @@ test("global SSE updates real counters across tabs and replays missed events", {
           `${width}px ${theme}: search backgrounds match`);
         assert.equal(controls.userSort.background, controls.chatFilter.background,
           `${width}px ${theme}: filter backgrounds match`);
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
+
+    // Выпадающие списки на обеих вкладках идентичны в Safari и Chromium.
+    for (const width of [390, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        const styles = await page.evaluate(currentTheme => {
+          const old = document.documentElement.dataset.theme;
+          document.documentElement.dataset.theme = currentTheme;
+          const host = document.createElement("div");
+          host.innerHTML = `
+            <span class="ui-toolbar-select user-sort-field">
+              <select class="ui-toolbar-control ui-toolbar-select-native user-sort"><option>Сначала ученики</option></select><svg class="ui-toolbar-select-chevron"></svg>
+            </span>
+            <span class="ui-toolbar-select chat-filter-field">
+              <select class="ui-toolbar-control ui-toolbar-select-native"><option>Все личные</option></select><svg class="ui-toolbar-select-chevron"></svg>
+            </span>
+          `;
+          document.querySelector(".workspace-content").append(host);
+          try {
+            return [...host.querySelectorAll("select")].map(el => {
+              const s = getComputedStyle(el);
+              return {
+                height: Math.round(el.getBoundingClientRect().height),
+                radius: s.borderTopLeftRadius,
+                appearance: s.appearance,
+                arrowVisible: getComputedStyle(el.nextElementSibling).display !== "none",
+              };
+            });
+          } finally {
+            host.remove();
+            document.documentElement.dataset.theme = old;
+          }
+        }, theme);
+        assert.deepEqual(styles[0], styles[1], `${width}px ${theme}: одинаковое оформление select`);
+        assert.equal(styles[0].height, 38);
+        assert.equal(styles[0].radius, "9px");
+        assert.equal(styles[0].appearance, "none");
+        assert.ok(styles[0].arrowVisible);
       }
     }
     await page.setViewportSize({ width: 1280, height: 800 });
