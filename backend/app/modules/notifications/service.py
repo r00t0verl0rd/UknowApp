@@ -1,10 +1,10 @@
 """Web Push для авторизованных пользователей."""
 
 import asyncio
-from collections.abc import Iterable
 import json
 import logging
 import threading
+from collections.abc import Iterable
 from urllib.parse import parse_qs, urlsplit
 
 from pywebpush import WebPushException, webpush

@@ -6,6 +6,7 @@ from app.core.database import SessionLocal, engine
 from app.core.security import normalize_login
 from app.models import User
 
+
 def migrate_login_keys() -> None:
     columns = {column["name"] for column in inspect(engine).get_columns("users")}
     with engine.begin() as connection:

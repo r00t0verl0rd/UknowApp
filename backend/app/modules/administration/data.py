@@ -1,19 +1,19 @@
 """Администрирование данных, резервное копирование и перенос всего каталога data."""
 
-from datetime import UTC, datetime, timedelta
 import hashlib
 import json
 import logging
 import os
-from pathlib import Path, PurePosixPath
 import shutil
 import signal
 import sqlite3
 import stat
 import tempfile
-from typing import Annotated
 import uuid
 import zipfile
+from datetime import UTC, datetime, timedelta
+from pathlib import Path, PurePosixPath
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse

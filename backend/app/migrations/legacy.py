@@ -4,6 +4,7 @@ from sqlalchemy import inspect, text
 
 from app.core.database import engine
 
+
 def migrate_legacy_schema() -> None:
     # Удаляем временную таблицу сортировки структуры.
     with engine.begin() as connection:

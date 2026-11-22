@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
-from datetime import UTC, datetime
 import json
 import logging
 import mimetypes
-from pathlib import Path
 import uuid
+from collections.abc import Mapping, Sequence
+from datetime import UTC, datetime
+from pathlib import Path
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError

@@ -19,6 +19,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .core.database import Base
 from .core.security import normalize_login
 
+
 def utcnow() -> datetime:
     return datetime.now(UTC)
 

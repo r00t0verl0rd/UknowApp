@@ -1,14 +1,14 @@
 """HTTP API веб-панели и обмена сообщениями."""
 
 import asyncio
-from datetime import UTC, datetime
 import json
 import logging
 import mimetypes
-from pathlib import Path
 import re
-from typing import Annotated
 import uuid
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Annotated
 
 from aiogram.exceptions import TelegramAPIError
 from fastapi import (

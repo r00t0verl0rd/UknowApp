@@ -1,8 +1,8 @@
 """Авторизация, защита входа и сессии."""
 
-from datetime import UTC, datetime, timedelta
 import hashlib
 import secrets
+from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, Request, Response, status
 from sqlalchemy import select
