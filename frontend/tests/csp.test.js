@@ -21,4 +21,7 @@ test("critical CSS stays external and compatible with production CSP", () => {
   assert.ok(sitePolicy, "Site CSP must be present");
   assert.match(sitePolicy, /style-src 'self' https:\/\/fonts\.googleapis\.com/);
   assert.doesNotMatch(sitePolicy, /style-src[^;]*'unsafe-inline'/);
+  assert.match(sitePolicy, /style-src-elem 'self' https:\/\/fonts\.googleapis\.com/);
+  assert.match(sitePolicy, /style-src-attr 'unsafe-inline'/);
+  assert.doesNotMatch(sitePolicy, /style-src-elem[^;]*'unsafe-inline'/);
 });
