@@ -8,7 +8,6 @@ import zipfile
 
 from fastapi import status
 
-from app.modules.notifications import vapid
 from app.modules.administration import data as admin_data
 
 
@@ -80,8 +79,6 @@ def setup_data_root(monkeypatch, root):
     monkeypatch.setattr(admin_data, "DATA_DIR", root)
     monkeypatch.setattr(admin_data, "MEDIA_DIR", root / "media")
     monkeypatch.setattr(admin_data, "_database_path", lambda: root / "uknowapp.db")
-    monkeypatch.setattr(config, "VAPID_PUBLIC_KEY", vapid.VAPID_PUBLIC_KEY)
-    monkeypatch.setattr(config, "VAPID_PRIVATE_KEY", vapid.VAPID_PRIVATE_KEY)
 
 
 def test_full_backup_contains_complete_data_directory_and_checksums(api, monkeypatch, tmp_path):

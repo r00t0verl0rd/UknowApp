@@ -828,7 +828,7 @@ async def process_inbound_message(
     try:
         if sender.role == "student":
             await _deliver_student_message_to_teacher(
-                db, inbound, row, conversation, recipient,
+                db, inbound, row, conversation, sender, recipient,
                 recipient_chat_id, gateway,
             )
         else:
