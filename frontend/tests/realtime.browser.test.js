@@ -511,6 +511,13 @@ test("global SSE updates real counters across tabs and replays missed events", {
           sendBottom: detail.querySelector(".composer-send").getBoundingClientRect().bottom,
           composerBottom: detail.querySelector(".chat-composer").getBoundingClientRect().bottom,
           sidebarHeight: document.querySelector(".sidebar").getBoundingClientRect().height,
+          contentTop: content.getBoundingClientRect().top,
+          detailRect: detail.getBoundingClientRect().toJSON(),
+          composerRect: detail.querySelector(".chat-composer").getBoundingClientRect().toJSON(),
+          buttonRect: detail.querySelector(".composer-send").getBoundingClientRect().toJSON(),
+          messagesRect: detail.querySelector(".messages").getBoundingClientRect().toJSON(),
+          visualViewportHeight: window.visualViewport?.height,
+          shellPosition: getComputedStyle(document.querySelector(".workspace-shell")).position,
         };
       } finally {
         list.remove();
@@ -524,7 +531,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     assert.ok(chatUnderlay.messagesScrollable,
       "messages scroll within the available chat viewport");
     assert.ok(chatUnderlay.sendBottom <= 572,
-      "send button remains above Safari controls");
+      `send button remains above Safari controls: ${JSON.stringify(chatUnderlay)}`);
     assert.ok(chatUnderlay.composerBottom <= 572,
       "composer remains inside visible viewport");
 
