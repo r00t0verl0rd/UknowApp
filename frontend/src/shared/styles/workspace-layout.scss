@@ -602,8 +602,9 @@
   }
   .btn.outline,
   .add-student {
-    background-color:#f1edf7;
-    color:var(--purple);
+    background-color:var(--ui-selected-bg);
+    border-color:var(--ui-selected-border);
+    color:var(--ui-selected-text);
   }
   .btn.primary {
     background:var(--button-primary);
@@ -615,8 +616,9 @@
   button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn)).add-student:not(.primary):not(
       .danger-icon
     ) {
-    background-color:#f1edf7;
-    color:var(--purple);
+    background-color:var(--ui-selected-bg);
+    border-color:var(--ui-selected-border);
+    color:var(--ui-selected-text);
   }
   :root[data-theme="dark-soft"] {
     & button:not(.primary):not(.danger-icon):not(:where(.toast-close, .message-delete-btn)),
@@ -676,9 +678,9 @@
   }
   .btn.outline,
   .add-student {
-    background:#f1edf7;
-    border-color:#d8c9ed;
-    color:#573e99;
+    background:var(--ui-selected-bg);
+    border-color:var(--ui-selected-border);
+    color:var(--ui-selected-text);
   }
   .person-actions button.danger-icon,
   .icon-btn.danger-icon {
