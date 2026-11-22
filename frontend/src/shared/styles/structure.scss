@@ -70,23 +70,18 @@
 }
 .btn {
   transition:
-    transform 0.16s ease,
-    box-shadow 0.16s ease,
-    background 0.16s ease,
-    border-color 0.16s ease;
+    background-color var(--ui-transition-fast),
+    border-color var(--ui-transition-fast),
+    color var(--ui-transition-fast);
   background:#fff;
   color:var(--ink);
   border:1px solid #e5deef;
   border-radius:11px;
 }
 .btn:hover {
-  transform:translateY(-1px);
   background:#faf7ff;
   border-color:#cdb9eb;
   box-shadow:0 5px 16px rgba(87, 62, 153, 0.1);
-}
-.btn:active {
-  transform:translateY(0);
 }
 .btn.primary:hover {
   background:linear-gradient(105deg, #493281, #6949aa);
@@ -111,10 +106,6 @@
 .legend,
 .toolbar {
   color:var(--muted);
-}
-.student-card:hover,
-.teacher-card:hover {
-  transform:translateY(-1px);
 }
 .unassigned {
   border-top-color:#eee2c9;
@@ -260,9 +251,6 @@ select:focus-visible {
   padding:13px;
   border-radius:17px;
 }
-.teacher-branch:hover {
-  transform:translateY(-1px);
-}
 .teacher-card {
   padding:12px 13px;
   border:1px solid #e3d8f1;
@@ -329,14 +317,12 @@ select:focus-visible {
     font-weight:700;
     line-height:1;
     transition:
-      background 0.18s ease,
-      border-color 0.18s ease,
-      transform 0.18s ease;
+      background-color var(--ui-transition-fast),
+      border-color var(--ui-transition-fast);
   }
   .add-student:hover {
     border-color:#d2c6df;
     background:#f5f1f8;
-    transform:translateY(-1px);
   }
   .unassigned {
     margin-top:23px;
