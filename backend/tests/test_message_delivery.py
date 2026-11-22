@@ -163,6 +163,56 @@ def test_personal_chat_exposes_admin_read_receipt_to_sender(api):
     assert recovered.json()["summary"]["unread_count"] == 0
 
 
+
+def test_personal_attachments_are_private_downloadable_and_idempotent(api):
+    make_client, users, _ = api
+    admin = make_client()
+    login(admin, "test-admin", "a-long-test-password-123")
+    teacher = make_client()
+    login(teacher, "teacher-one", "teacher-password-1")
+    student = make_client()
+    login(student, "student-one", "student-password-1")
+
+    for member, user_id, name in (
+        (teacher, users["teacher-one"], "teacher"),
+        (student, users["student-one"], "student"),
+    ):
+        created = admin.post("/api/panel/personal-conversations", json={"user_id": user_id})
+        assert created.status_code == 201
+        chat_id = created.json()["id"]
+        path = f"/api/panel/personal-conversations/{chat_id}/attachments"
+        payload = {"text": "Смотрите вложение", "client_message_id": f"test-upload-{name}"}
+        file = {"file": ("notes.txt", b"Hello from private chat", "text/plain")}
+        uploaded = member.post(path, data=payload, files=file)
+        assert uploaded.status_code == 201, uploaded.text
+        message = uploaded.json()
+        assert message["content_type"] == "document"
+        assert message["text"] == "Смотрите вложение"
+        assert message["metadata"]["media"]["file_name"] == "notes.txt"
+        assert message["metadata"]["media"]["archive_status"] == "stored"
+        assert "local_path" not in message["metadata"]["media"]
+        duplicate = member.post(path, data=payload, files=file)
+        assert duplicate.status_code == 201
+        assert duplicate.json()["id"] == message["id"]
+
+        media_url = f"/api/panel/personal-messages/{message['id']}/media"
+        received = admin.get(media_url)
+        assert received.status_code == 200
+        assert received.content == b"Hello from private chat"
+        received_by_sender = member.get(media_url)
+        assert received_by_sender.status_code == 200
+        unrelated = student if name == "teacher" else teacher
+        assert unrelated.get(media_url).status_code == 404
+        summary = admin.get(f"/api/panel/personal-conversations/{chat_id}/messages")
+        assert summary.status_code == 200
+        assert summary.json()[0]["metadata"]["media"]["file_name"] == "notes.txt"
+
+        removed = member.delete(f"/api/panel/personal-messages/{message['id']}")
+        assert removed.status_code == 200
+        assert admin.get(media_url).status_code == 404
+
+
+
 class FakeMessengerAdapter:
     def __init__(self, platform):
         self.platform = platform
