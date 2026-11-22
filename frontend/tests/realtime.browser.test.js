@@ -575,6 +575,127 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize({ width: 1280, height: 720 });
 
+    // В карточках структуры длинные имена не переносят кнопки действий
+    // на вторую строку. Проверяем каждую контрольную ширину и обе темы.
+    for (const width of [320, 340, 375, 390, 430, 480, 600, 760, 761, 900, 1024, 1025, 1280, 1440, 1600]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        const layout = await page.evaluate(currentTheme => {
+          const root = document.documentElement;
+          const previousTheme = root.dataset.theme;
+          root.dataset.theme = currentTheme;
+          const host = document.createElement("div");
+          host.className = "workspace-content";
+          host.style.cssText = "position:absolute;top:0;left:0;width:calc(100vw - 20px);height:auto;visibility:hidden;pointer-events:none";
+          host.innerHTML = `
+            <div class="structure-scroll">
+              <div class="admin-card">Администратор</div>
+              <div class="grid">
+                <section class="teacher-branch">
+                  <div class="teacher-card">
+                    <div class="person-main"><div class="avatar teacher-avatar"></div>
+                      <div class="person-info"><b>Александра Епифанова Очень Длинная Фамилия</b><small>Учитель · 1 учен.</small></div>
+                    </div>
+                    <div class="person-actions">
+                      <button class="ui-icon-button teacher-collapse-btn">▼</button>
+                      <button class="ui-icon-button">✎</button>
+                    </div>
+                  </div>
+                  <div class="student-list">
+                    <div class="student-card">
+                      <div class="person-main"><div class="avatar student-avatar"></div>
+                        <div class="person-info"><b>Наталья Воронова Очень-Очень Длинная Фамилия</b><small>вт 20:00 / чт 14:00</small></div>
+                      </div>
+                      <button class="ui-icon-button graph-person-action">✎</button>
+                      <button class="ui-icon-button graph-person-action">↗</button>
+                    </div>
+                  </div>
+                </section>
+              </div>
+              <section class="unassigned">
+                <h2 class="unassigned-title">Ученики без учителя</h2>
+                <div class="unassigned-grid">
+                  <div class="student-card unassigned-student-card">
+                    <div class="person-main"><div class="avatar student-avatar"></div>
+                      <div class="person-info"><b>agggfasg sfgsf Наталья Воронова Очень Длинное Имя</b><small>вт 20:00 / чт 14:00</small></div>
+                    </div>
+                    <div class="unassigned-student-actions">
+                      <button class="ui-icon-button graph-person-action">✎</button>
+                      <button class="btn outline">Назначить</button>
+                    </div>
+                  </div>
+                  <div class="student-card unassigned-student-card">
+                    <div class="person-main"><div class="avatar student-avatar"></div>
+                      <div class="person-info"><b>123123123</b></div>
+                    </div>
+                    <div class="unassigned-student-actions">
+                      <button class="ui-icon-button graph-person-action">✎</button>
+                      <button class="btn outline">Назначить</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          `;
+          document.body.append(host);
+          const rect = element => {
+            const box = element.getBoundingClientRect();
+            return { x: box.x, y: box.y, right: box.right, bottom: box.bottom, width: box.width, height: box.height };
+          };
+          const result = [];
+          try {
+            for (const [selector, actionsSelector] of [
+              [".teacher-card", ".person-actions > button"],
+              [".student-list > .student-card", ":scope > .graph-person-action"],
+              [".unassigned-grid > .unassigned-student-card:first-child", ".unassigned-student-actions > button"],
+              [".unassigned-grid > .unassigned-student-card:last-child", ".unassigned-student-actions > button"],
+            ]) {
+              const card = host.querySelector(selector);
+              const main = card.querySelector(":scope > .person-main");
+              const title = main.querySelector(".person-info > b");
+              const actionButtons = [...card.querySelectorAll(actionsSelector)];
+              const css = getComputedStyle(title);
+              result.push({
+                card: rect(card), main: rect(main), name: rect(title),
+                actions: actionButtons.map(rect),
+                fontSize: parseFloat(css.fontSize),
+                whiteSpace: css.whiteSpace,
+                overflow: css.overflow,
+                containerType: getComputedStyle(title.parentElement).containerType,
+              });
+            }
+            return result;
+          } finally {
+            host.remove();
+            root.dataset.theme = previousTheme;
+          }
+        }, theme);
+        assert.equal(layout.length, 4);
+        for (const [index, card] of layout.entries()) {
+          assert.equal(card.actions.length, 2,
+            `${width}px ${theme} card ${index}: both action buttons remain visible`);
+          const [first, second] = card.actions;
+          assert.ok(first.right <= second.x + 0.5,
+            `${width}px ${theme} card ${index}: action buttons never stack or overlap`);
+          assert.ok(Math.abs((first.y + first.bottom) - (second.y + second.bottom)) < 2,
+            `${width}px ${theme} card ${index}: action buttons stay on the same line`);
+          assert.ok(first.y >= card.card.y - 1 && second.bottom <= card.card.bottom + 1,
+            `${width}px ${theme} card ${index}: buttons never escape the card`);
+          assert.ok(second.right <= card.card.right + 1,
+            `${width}px ${theme} card ${index}: buttons never overflow the right edge`);
+          assert.ok(card.main.right <= first.x + 1,
+            `${width}px ${theme} card ${index}: long name never overlaps action buttons`);
+          assert.equal(card.whiteSpace, "nowrap");
+          assert.equal(card.overflow, "hidden");
+          assert.equal(card.containerType, "inline-size");
+          assert.ok(card.fontSize >= 9.9 && card.fontSize <= 13.1,
+            `${width}px ${theme} card ${index}: name fits within 10–13px typography range`);
+          assert.ok(card.name.right <= card.main.right + 1);
+        }
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 720 });
+
     // Структура: построчный Grid сохраняет колонки при раскрытии учеников.
     // Запрещаем прежнюю автоматическую перебалансировку CSS columns.
     for (const width of [390, 760, 1024, 1280, 1385, 1600]) {
