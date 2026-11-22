@@ -179,39 +179,70 @@ test("global SSE updates real counters across tabs and replays missed events", {
     assert.notEqual(themeStyles.light.teacher, themeStyles["dark-soft"].teacher);
     assert.notEqual(themeStyles.light.student, themeStyles["dark-soft"].student);
 
-    // Sidebar does not move when any workspace tab scrolls, even if its contents are tall.
-    const scrollIsolation = await page.evaluate(() => {
-      const shell = document.querySelector(".workspace-shell");
-      const sidebar = shell.querySelector(".sidebar");
-      const content = shell.querySelector(".workspace-content");
-      const initialTop = sidebar.getBoundingClientRect().top;
-      const states = [];
-      for (const section of ["chat-list", "user-list", "structure-scroll", "additional-panel"]) {
-        const tallSection = document.createElement("div");
-        tallSection.className = section;
-        tallSection.style.cssText = "height:2200px;min-height:2200px;flex-shrink:0;";
-        content.replaceChildren(tallSection);
-        content.classList.toggle("page-additional", section === "additional-panel");
-        content.scrollTop = 500;
-        states.push({
-          section,
-          scrollTop: content.scrollTop,
-          sidebarTop: sidebar.getBoundingClientRect().top,
-          windowScroll: window.scrollY,
-          shellPosition: getComputedStyle(shell).position,
-        });
+    // Все вкладки используют один скролл-контейнер и одно оформление фона.
+    // Не заменяем React-узлы: добавляем и затем удаляем только тестовый элемент.
+    for (const width of [390, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        const isolation = await page.evaluate(currentTheme => {
+          const root = document.documentElement;
+          const previousTheme = root.dataset.theme;
+          root.dataset.theme = currentTheme;
+          const shell = document.querySelector(".workspace-shell");
+          const sidebar = shell.querySelector(".sidebar");
+          const content = shell.querySelector(".workspace-content");
+          const initialTop = sidebar.getBoundingClientRect().top;
+          const previousScroll = content.scrollTop;
+          const tallSection = document.createElement("div");
+          tallSection.style.cssText = "height:2200px;min-height:2200px;flex-shrink:0;";
+          try {
+            content.append(tallSection);
+            content.scrollTop = 500;
+            const bg = getComputedStyle(root).getPropertyValue("--canvas").trim();
+            const canvas = document.createElement("div");
+            canvas.style.backgroundColor = bg;
+            document.body.append(canvas);
+            const resolvedBackground = getComputedStyle(canvas).backgroundColor;
+            canvas.remove();
+            return {
+              scrollTop: content.scrollTop,
+              shellPosition: getComputedStyle(shell).position,
+              sidebarTop: sidebar.getBoundingClientRect().top,
+              initialTop,
+              windowScroll: window.scrollY,
+              docOverflow: getComputedStyle(root).overflow,
+              bodyOverflow: getComputedStyle(document.body).overflow,
+              rootOverflow: getComputedStyle(document.getElementById("root")).overflow,
+              sidebarOverscroll: getComputedStyle(sidebar).overscrollBehaviorY,
+              sidebarTouchAction: getComputedStyle(sidebar).touchAction,
+              rootBackground: getComputedStyle(root).backgroundColor,
+              bodyBackground: getComputedStyle(document.body).backgroundColor,
+              shellBackground: getComputedStyle(shell).backgroundColor,
+              mainBackground: getComputedStyle(shell.querySelector(".main")).backgroundColor,
+              expectedBackground: resolvedBackground,
+            };
+          } finally {
+            tallSection.remove();
+            content.scrollTop = previousScroll;
+            root.dataset.theme = previousTheme;
+          }
+        }, theme);
+        assert.equal(isolation.shellPosition, "fixed", `${width}px ${theme}: viewport-locked shell`);
+        assert.ok(isolation.scrollTop >= 400, `${width}px ${theme}: content scrolls independently`);
+        assert.equal(isolation.sidebarTop, isolation.initialTop, `${width}px ${theme}: sidebar stays in place`);
+        assert.equal(isolation.windowScroll, 0, `${width}px ${theme}: no document scrolling`);
+        assert.equal(isolation.docOverflow, "hidden", `${width}px ${theme}: html overflow`);
+        assert.equal(isolation.bodyOverflow, "hidden", `${width}px ${theme}: body overflow`);
+        assert.equal(isolation.rootOverflow, "hidden", `${width}px ${theme}: root overflow`);
+        assert.equal(isolation.sidebarOverscroll, "none", `${width}px ${theme}: sidebar overscroll`);
+        if (width < 1025) assert.equal(isolation.sidebarTouchAction, "pan-x", "mobile nav permits only horizontal swipes");
+        for (const layer of ["rootBackground", "bodyBackground", "shellBackground", "mainBackground"]) {
+          assert.equal(isolation[layer], isolation.expectedBackground,
+            `${width}px ${theme}: consistent ${layer}`);
+        }
       }
-      content.replaceChildren();
-      content.classList.remove("page-additional");
-      content.scrollTop = 0;
-      return { initialTop, states };
-    });
-    for (const state of scrollIsolation.states) {
-      assert.equal(state.shellPosition, "fixed", `${state.section}: viewport-locked shell`);
-      assert.ok(state.scrollTop >= 400, `${state.section}: content scrolls independently`);
-      assert.equal(state.sidebarTop, scrollIsolation.initialTop, `${state.section}: sidebar remains in place`);
-      assert.equal(state.windowScroll, 0, `${state.section}: window does not scroll`);
     }
+    await page.setViewportSize({ width: 1280, height: 720 });
 
     // Меню, нижние пункты и действие создания используют единый шрифт и оформление.
     for (const width of [390, 1280]) {

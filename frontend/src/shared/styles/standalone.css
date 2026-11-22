@@ -1,28 +1,16 @@
-/* Безопасные отступы мобильного приложения. */
+/* В установленном мобильном приложении safe-area окрашивается самой
+   панелью навигации, без отдельного слоя поверх интерфейса. */
 @media (display-mode: standalone) and (max-width: 1024px) {
-  html, body, #root{
-    background: var(--surface) !important;
+  html:has(.workspace-shell),
+  body:has(.workspace-shell),
+  #root:has(.workspace-shell) {
+    background: var(--canvas) !important;
   }
-  body::before{
-    content: "";
-    position: fixed;
-    z-index: 2147483647;
-    top: 0;
-    right: 0;
-    left: 0;
-    height: calc(env(safe-area-inset-top, 0px) + 1px);
-    background: var(--surface);
-    opacity: 1;
-    pointer-events: none;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-  .chats-shell > .sidebar{
+
+  .workspace-shell > .sidebar {
     background: var(--surface) !important;
     isolation: isolate;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
 }
-
-
