@@ -1,15 +1,16 @@
 """Авторизация, защита входа и сессии."""
 
+from datetime import UTC, datetime, timedelta
 import hashlib
 import secrets
-from datetime import UTC, datetime, timedelta
+
 from fastapi import HTTPException, Request, Response, status
 from sqlalchemy import select
+
 from app.core import security
 from app.core.database import SessionLocal
 from app.models import PanelSession, User
 from app.rate_limit import SlidingWindowLimiter
-
 
 SESSION_COOKIE = "uknowapp_session"
 SECURE_SESSION_COOKIE = "__Host-uknowapp_session"

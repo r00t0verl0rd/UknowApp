@@ -3,9 +3,10 @@
 import hashlib
 import ipaddress
 import secrets
-from fastapi import HTTPException, Request
-from .config import ADMIN_PASSWORD, ADMIN_USERNAME, ALLOWED_ORIGINS, TRUSTED_PROXY_IPS
 
+from fastapi import HTTPException, Request
+
+from .config import ADMIN_PASSWORD, ADMIN_USERNAME, ALLOWED_ORIGINS, TRUSTED_PROXY_IPS
 
 def verify_admin(username: str, password: str) -> bool:
     # Не разрешаем вход с паролем из шаблона.

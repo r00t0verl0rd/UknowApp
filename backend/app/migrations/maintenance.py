@@ -1,10 +1,11 @@
 """Очистка устаревших данных после миграций."""
 
 from datetime import UTC, datetime, timedelta
+
 from sqlalchemy import text
+
 from app.core.database import SessionLocal, engine, is_sqlite
 from app.models import ConnectionCode, PanelSession
-
 
 def cleanup_expired_records() -> None:
     # Одноразовые коды и истёкшие сессии не нужны для истории — удаляем старые записи.

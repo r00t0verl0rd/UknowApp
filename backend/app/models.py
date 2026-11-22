@@ -5,7 +5,6 @@ from datetime import UTC, datetime
 from sqlalchemy import (
     BigInteger,
     Boolean,
-    event,
     DateTime,
     ForeignKey,
     Index,
@@ -13,12 +12,12 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    event,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .core.database import Base
 from .core.security import normalize_login
-
 
 def utcnow() -> datetime:
     return datetime.now(UTC)

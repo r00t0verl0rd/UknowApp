@@ -2,8 +2,8 @@
 
 import os
 from pathlib import Path
-from app.core.config import ROOT_DIR
 
+from app.core.config import ROOT_DIR
 
 _VAPID_PUBLIC_KEY_OVERRIDE = os.getenv("VAPID_PUBLIC_KEY", "").strip()
 _VAPID_PRIVATE_KEY_OVERRIDE = os.getenv("VAPID_PRIVATE_KEY", "").strip()

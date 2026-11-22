@@ -1,8 +1,8 @@
 """Обновление существующей схемы SQLite."""
 
 from sqlalchemy import inspect, text
-from app.core.database import engine
 
+from app.core.database import engine
 
 def migrate_legacy_schema() -> None:
     # Удаляем временную таблицу сортировки структуры.

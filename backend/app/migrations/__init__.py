@@ -1,8 +1,11 @@
 """Создание схемы и версионированные миграции БД."""
 
 from datetime import UTC, datetime
+
 from sqlalchemy import text
+
 from app.core.database import create_tables, engine, is_sqlite
+
 from .legacy import migrate_legacy_schema
 from .login_keys import migrate_login_keys
 from .maintenance import cleanup_expired_records

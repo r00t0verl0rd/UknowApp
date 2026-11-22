@@ -10,8 +10,8 @@ from aiogram.types import Message as TgMessage
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.database import SessionLocal
-from app.models import TeacherPanel, User
 from app.infrastructure.storage.media import ATTACHMENT_SIZE_ERROR, MAX_ATTACHMENT_BYTES
+from app.models import TeacherPanel, User
 from app.modules.messaging.inbound import (
     bind_student_forum_topic,
     clear_teacher_session,

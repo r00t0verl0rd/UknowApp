@@ -2,19 +2,24 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
+from datetime import UTC, datetime
 import json
 import logging
 import mimetypes
-import uuid
-from collections.abc import Mapping, Sequence
-from datetime import UTC, datetime
 from pathlib import Path
+import uuid
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
 from aiogram.types import FSInputFile
 
-from app.infrastructure.storage.media import ATTACHMENT_SIZE_ERROR, MAX_ATTACHMENT_BYTES, MEDIA_DIR, safe_media_type
+from app.infrastructure.storage.media import (
+    ATTACHMENT_SIZE_ERROR,
+    MAX_ATTACHMENT_BYTES,
+    MEDIA_DIR,
+    safe_media_type,
+)
 from app.models import Message
 from app.modules.communication.contracts import (
     DeliveryResult,

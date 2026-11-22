@@ -1,19 +1,19 @@
 """Администрирование данных, резервное копирование и перенос всего каталога data."""
 
+from datetime import UTC, datetime, timedelta
 import hashlib
 import json
 import logging
 import os
+from pathlib import Path, PurePosixPath
 import shutil
 import signal
 import sqlite3
 import stat
 import tempfile
+from typing import Annotated
 import uuid
 import zipfile
-from datetime import UTC, datetime, timedelta
-from pathlib import Path, PurePosixPath
-from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
@@ -22,7 +22,6 @@ from sqlalchemy.orm import Session
 from starlette.background import BackgroundTask
 
 from app.core.database import SessionLocal, engine
-from app.modules.auth.service import require_admin
 from app.event_hub import publish_chat_update
 from app.infrastructure.storage.media import MEDIA_DIR, delete_message_media
 from app.models import (
@@ -38,6 +37,7 @@ from app.models import (
     TeacherSession,
     User,
 )
+from app.modules.auth.service import require_admin
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin/data", tags=["admin-data"])

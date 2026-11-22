@@ -1,10 +1,10 @@
 """Индексированный поиск логина с учётом Unicode."""
 
 from sqlalchemy import inspect, select, text
+
 from app.core.database import SessionLocal, engine
 from app.core.security import normalize_login
 from app.models import User
-
 
 def migrate_login_keys() -> None:
     columns = {column["name"] for column in inspect(engine).get_columns("users")}

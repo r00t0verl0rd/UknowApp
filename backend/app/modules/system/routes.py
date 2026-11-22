@@ -11,6 +11,8 @@ from fastapi import (
 from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.core.security import verify_request_origin
+from app.models import PushSubscription
 from app.modules.auth.service import (
     authenticate_panel_user,
     check_login_rate_limit,
@@ -20,8 +22,6 @@ from app.modules.auth.service import (
     record_failed_login,
     revoke_panel_session,
 )
-from app.core.security import verify_request_origin
-from app.models import PushSubscription
 from app.modules.dependencies import Db, PanelUser
 from app.modules.notifications import vapid
 from app.modules.notifications.endpoints import is_safe_push_endpoint
