@@ -197,8 +197,8 @@
     }
   }
 }
-// Структура: независимая высота карточек вместо растягивания строк Grid.
-// Многоколоночная раскладка не требует resize-обработчиков или вычислений JS.
+// Структура: стабильная построчная сетка. CSS columns балансировали
+// высоту колонок заново при сворачивании учеников и перемещали преподавателей.
 .workspace-content:has(.admin-card) {
   > .graph-legend-row {
     margin-bottom:8px;
@@ -216,14 +216,17 @@
       height:40px;
     }
     > .grid {
-      display:block;
-      columns:320px;
-      column-gap:12px;
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+      grid-auto-flow:row;
+      align-items:start;
+      gap:12px;
+      column-count:auto;
     }
     > .grid > .teacher-branch {
       width:100%;
-      margin-bottom:12px;
-      break-inside:avoid-column;
+      margin:0;
+      break-inside:auto;
     }
   }
 }
