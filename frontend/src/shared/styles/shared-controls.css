@@ -158,7 +158,7 @@ button.graph-person-action:focus-visible {
   --workspace-panel-padding: 12px;
   --workspace-panel-gap: var(--workspace-control-gap);
 }
-:root .workspace-shell .workspace-content > .workspace-panel.workspace-panel {
+:root .workspace-shell .workspace-content .workspace-panel.workspace-panel {
   display: flex;
   flex-direction: column;
   align-items: stretch;
