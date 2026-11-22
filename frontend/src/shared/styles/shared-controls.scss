@@ -194,7 +194,7 @@ textarea::placeholder {
   text-align:center;
 }
 :root .ui-toolbar-icon {
-  --icon-action-size:var(--workspace-control-height);
+  --icon-action-size: var(--workspace-control-height);
 }
 :root .ui-toolbar-control.user-add-btn {
   padding-inline:var(--workspace-control-padding);
@@ -233,7 +233,7 @@ textarea::placeholder {
 }
 @media (max-width: 1024px) {
   :root {
-    --workspace-panel-padding:8px;
+    --workspace-panel-padding: 8px;
   }
 }
 :root .ui-toolbar-select {
