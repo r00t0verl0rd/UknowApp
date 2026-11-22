@@ -29,11 +29,16 @@
   grid-template-columns: clamp(250px, 18vw, 280px) minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   /* 100dvh — запасной вариант для браузеров без Visual Viewport API. */
-  height: 100vh;
-  height: 100dvh;
   height: var(--workspace-viewport-height, 100dvh);
   min-height: 0;
   overflow: hidden;
+}
+
+/* Запасной вариант для старых браузеров без поддержки динамического vh. */
+@supports not (height: 100dvh) {
+  .workspace-shell {
+    height: var(--workspace-viewport-height, 100vh);
+  }
 }
 
 /* Sidebar stays in its own viewport row, independently of the active tab's length. */
