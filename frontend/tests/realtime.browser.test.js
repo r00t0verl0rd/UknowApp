@@ -216,6 +216,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
               sidebarOverscroll: getComputedStyle(sidebar).overscrollBehaviorY,
               sidebarTouchAction: getComputedStyle(sidebar).touchAction,
               rootBackground: getComputedStyle(root).backgroundColor,
+              sidebarBackground: getComputedStyle(sidebar).backgroundColor,
               bodyBackground: getComputedStyle(document.body).backgroundColor,
               shellBackground: getComputedStyle(shell).backgroundColor,
               mainBackground: getComputedStyle(shell.querySelector(".main")).backgroundColor,
@@ -242,8 +243,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
         assert.equal(isolation.sidebarOverscroll, "none", `${width}px ${theme}: sidebar overscroll`);
         if (width < 1025) assert.equal(isolation.sidebarTouchAction, "pan-x", "mobile nav permits only horizontal swipes");
         if (width < 1025) {
-          assert.equal(isolation.rootBackground,
-            await page.evaluate(() => getComputedStyle(document.querySelector(".sidebar")).backgroundColor),
+          assert.equal(isolation.rootBackground, isolation.sidebarBackground,
             `${width}px ${theme}: status bar matches the sidebar without a second layer`);
           assert.equal(isolation.bodyBackground, "rgba(0, 0, 0, 0)");
         } else {
