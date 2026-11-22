@@ -137,6 +137,48 @@ test("global SSE updates real counters across tabs and replays missed events", {
     });
 
     browser = await chromium.launch({ headless: true });
+    // Логотип входа центрирован над UknowApp, не соприкасается с
+    // переключателем темы и не выходит за экран на узких телефонах.
+    const loginContext = await browser.newContext();
+    try {
+      const loginPage = await loginContext.newPage();
+      await loginPage.goto(APP_URL);
+      await loginPage.locator(".login-card .login-logo").waitFor({ state: "visible" });
+      for (const width of [320, 390, 768, 1280]) {
+        await loginPage.setViewportSize({ width, height: 800 });
+        for (const theme of ["light", "dark-soft"]) {
+          const layout = await loginPage.evaluate(nextTheme => {
+            document.documentElement.dataset.theme = nextTheme;
+            const rect = selector => {
+              const box = document.querySelector(selector).getBoundingClientRect();
+              return { x: box.x, y: box.y, right: box.right, bottom: box.bottom, width: box.width };
+            };
+            return {
+              card: rect(".login-card"),
+              brand: rect(".login-brand"),
+              logo: rect(".login-logo"),
+              heading: rect(".login-brand h1"),
+              theme: rect(".login-theme-toggle"),
+              loaded: document.querySelector(".login-logo").naturalWidth > 0,
+            };
+          }, theme);
+          assert.ok(layout.loaded, "login logo asset loads");
+          assert.ok(layout.logo.width >= 100, `${width}px: large login logo`);
+          assert.ok(Math.abs(layout.logo.x + layout.logo.width / 2 - layout.card.x - layout.card.width / 2) <= 1,
+            `${width}px ${theme}: logo centered in login panel`);
+          assert.ok(Math.abs(layout.heading.x + layout.heading.width / 2 - layout.card.x - layout.card.width / 2) <= 1,
+            `${width}px ${theme}: UknowApp heading centered`);
+          assert.ok(layout.logo.bottom < layout.heading.y,
+            `${width}px ${theme}: logo above heading`);
+          assert.ok(layout.logo.right < layout.theme.x || layout.logo.bottom < layout.theme.y,
+            `${width}px ${theme}: logo does not overlap theme control`);
+          assert.ok(layout.card.x >= -1 && layout.card.right <= width + 1,
+            `${width}px ${theme}: login panel fits viewport`);
+        }
+      }
+    } finally {
+      await loginContext.close();
+    }
     const context = await browser.newContext();
     await context.addInitScript(() => localStorage.setItem("uknowapp-auth", "1"));
     const page = await context.newPage();
