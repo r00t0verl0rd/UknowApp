@@ -80,9 +80,9 @@ button.graph-person-action:focus-visible {
   border-color: var(--ui-border) !important;
 }
 
-:root .ui-toolbar-control.ui-toolbar-control:is(.workspace-search, select):focus-within {
-  border-color: var(--ui-border-strong);
-  box-shadow: var(--ui-focus);
+:root[data-theme] .workspace-shell .ui-toolbar-control.ui-toolbar-control:is(.workspace-search, select):focus-within {
+  border-color: var(--ui-border-strong) !important;
+  box-shadow: var(--ui-focus) !important;
 }
 
 :root .ui-toolbar-control.ui-toolbar-control.workspace-search {
