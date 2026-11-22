@@ -125,9 +125,9 @@ def create_user(payload: dict, _: Admin, db: Db):
             ))
         db.commit()
         db.refresh(user)
-    except (IntegrityError, MessengerAccountConflict):
+    except (IntegrityError, MessengerAccountConflict) as exc:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Этот Telegram ID уже используется")
+        raise HTTPException(status_code=409, detail="Этот Telegram ID уже используется") from exc
     result = user_dict(user)
     if issued_access_code:
         result["issued_access_code"] = issued_access_code
@@ -222,12 +222,9 @@ def update_user(user_id: int, payload: dict, _: Admin, db: Db):
             )
         db.commit()
         db.refresh(user)
-    except MessengerAccountConflict:
+    except (MessengerAccountConflict, IntegrityError) as exc:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Этот Telegram ID уже используется")
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=409, detail="Этот Telegram ID уже используется")
+        raise HTTPException(status_code=409, detail="Этот Telegram ID уже используется") from exc
     result = user_dict(user)
     if issued_access_code:
         result["issued_access_code"] = issued_access_code

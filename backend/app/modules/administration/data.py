@@ -1,5 +1,6 @@
 """Администрирование данных, резервное копирование и перенос всего каталога data."""
 
+import contextlib
 import hashlib
 import json
 import logging
@@ -1028,10 +1029,8 @@ def cleanup_dialogues(days: int, _: Admin, db: Annotated[Session, Depends(_get_d
     if MEDIA_DIR.exists():
         for path in sorted(MEDIA_DIR.rglob("*"), reverse=True):
             if path.is_dir():
-                try:
+                with contextlib.suppress(OSError):
                     path.rmdir()
-                except OSError:
-                    pass
     return {
         "ok": True,
         "days": days,

@@ -1,5 +1,6 @@
 """Безопасное хранение медиафайлов."""
 
+import contextlib
 import json
 import logging
 
@@ -59,9 +60,7 @@ def delete_message_media(metadata_json: str | None) -> None:
             logger.warning("Skipping unsafe media path during cleanup")
             return
         target.unlink(missing_ok=True)
-        try:
+        with contextlib.suppress(OSError):
             target.parent.rmdir()
-        except OSError:
-            pass
     except Exception:
         logger.exception("Could not delete archived message media")
