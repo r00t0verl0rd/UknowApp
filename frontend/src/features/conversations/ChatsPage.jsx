@@ -82,7 +82,7 @@ export default function ChatsPage({
         </div>
         {profile?.role !== "student" && (
           <div className="chat-list-filters">
-            <label className="search">
+            <label className="search workspace-search">
               <Search size={16}/>
               <input aria-label="Поиск по имени" placeholder="Поиск по имени"
                 value={chatSearch} onChange={event => setChatSearch(event.target.value)}/>
@@ -106,7 +106,7 @@ export default function ChatsPage({
           </div>
         )}
 
-        <div className="chat-items-scroll">
+        <div className="chat-items-scroll workspace-scroll" tabIndex={0} role="region" aria-label="Список диалогов">
           {visibleChats.map(chat => {
             const personal = chat.type === "personal";
             const showMessageCount = profile?.role === "admin" && chatSection === "participants" && !personal;
@@ -210,7 +210,7 @@ export default function ChatsPage({
               </div>
             </header>
 
-            <div className="messages" ref={messagesViewportRef}>
+            <div className="messages workspace-scroll" ref={messagesViewportRef}>
               {visibleMessages.map(message => (
                 <MessageBubble onError={setError} message={message} key={message.id}
                   onDelete={setDeleteMessageCandidate} viewerRole={profile?.role}

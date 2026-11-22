@@ -70,7 +70,7 @@ export default function WorkspaceLayout({
         <small className="topbar-user">{profile.full_name}</small>
         <div className="topbar-actions">{pushToggle}{themeToggle}</div>
       </header>
-      <div className={"content workspace-content" + (page === "additional" ? " page-additional" : "")}>
+      <div className={"content workspace-content" + (page === "additional" ? " page-additional workspace-scroll" : "")}>
         {children}
       </div>
     </main>

@@ -1,18 +1,11 @@
-:root { --workspace-gutter: clamp(8px, 1.4vw, 20px); }
-.workspace-shell:has(.user-toolbar) { height: 100dvh; min-height: 0; overflow: hidden; }
-.workspace-shell:has(.user-toolbar) > .chats-main { flex: 1 1 0; min-height: 0; overflow: hidden; }
-.workspace-shell > .chats-main > .workspace-content:has(> .user-toolbar) {
-  display: flex; flex-direction: column; flex: 1 1 0; min-height: 0;
-  overflow: hidden; gap: 8px; padding: var(--workspace-gutter);
-}
 .toolbar.user-toolbar {
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(145px, 200px) auto auto;
   align-items: center; gap: 8px; margin: 0; flex: none;
 }
 .toolbar.user-toolbar > * { min-width: 0; margin: 0; }
-.toolbar.user-toolbar > .search, .toolbar.user-toolbar > .user-sort { width: 100%; max-width: none; height: 42px; }
+.toolbar.user-toolbar > .user-sort { width: 100%; max-width: none; height: 42px; }
 .toolbar.user-toolbar .search input { min-width: 0; width: 100%; }
-.workspace-content > .user-list { display: block; flex: 1 1 0; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 0; }
+.user-list { padding: 0; }
 .user-list > .user-row { min-height: 56px; padding: 6px 12px; gap: 8px; }
 .user-list .user-person-info { min-width: 0; overflow-wrap: anywhere; }
 @media (max-width: 1200px) {
@@ -25,6 +18,4 @@
 @media (max-width: 1024px) {
   .user-list > .user-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; }
   .user-list .user-actions { display: flex; gap: 2px; padding: 0; margin: 0; border: 0; }
-  .user-list .connect-toggle span { display: none; }
-  .user-list .user-actions button { min-width: 32px; width: 32px; height: 38px; padding: 4px; }
 }

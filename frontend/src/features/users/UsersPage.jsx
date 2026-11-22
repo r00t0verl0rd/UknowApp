@@ -17,20 +17,20 @@ export default function UsersPage({ visibleUsers, search, setSearch, userSort, s
   return (
     <>
       <div className="toolbar user-toolbar">
-                <div className="search"><Search/><input placeholder="Поиск по имени" value={search} onChange={e => setSearch(e.target.value)}/></div>
+                <div className="search workspace-search"><Search/><input aria-label="Поиск по имени" placeholder="Поиск по имени" value={search} onChange={e => setSearch(e.target.value)}/></div>
                 <select className="user-sort" aria-label="Сортировка пользователей" value={userSort} onChange={e => setUserSort(e.target.value)}>
                   <option value="name-asc">По имени</option><option value="name-desc">Имя: Я — А</option><option value="teachers">Сначала учителя</option><option value="students">Сначала ученики</option>
                 </select>
                 <span>Всего <b className="chat-tab-count">{visibleUsers.length}</b></span>
                 <Button variant="primary" className="user-add-btn" onClick={() => openCreate()}><Plus/>Добавить</Button>
               </div>
-              <div className="user-list">{visibleUsers.map(user => <div className="user-row" key={user.id}>
+              <div className="user-list workspace-scroll" tabIndex={0} role="region" aria-label="Список пользователей">{visibleUsers.map(user => <div className="user-row" key={user.id}>
                 <div className={"avatar " + user.role}>{user.role === "teacher" ? <GraduationCap/> : user.role === "student" ? <Smile/> : <Users/>}</div>
                 <b className="user-person-info">{user.full_name}</b>
                 <div className="user-actions">
                   {user.telegram_id
-                    ? <button className="user-action-btn connect-toggle disconnect" onClick={() => disconnectTelegram(user)} title="Отключить Telegram" aria-label="Отключить Telegram"><Unlink/><span>Отключить</span></button>
-                    : <button className="user-action-btn connect-toggle connect" onClick={() => makeCode(user)} title="Создать код для подключения" aria-label="Подключить участника"><Link2/><span>Подключить</span></button>}
+                    ? <IconButton onClick={() => disconnectTelegram(user)} title="Отключить Telegram" aria-label="Отключить Telegram"><Unlink/></IconButton>
+                    : <IconButton onClick={() => makeCode(user)} title="Создать код для подключения" aria-label="Подключить участника"><Link2/></IconButton>}
                   <div className="user-info-wrap">
                     <IconButton
                       className={"user-action-btn user-info-btn" + (userInfo === user.id ? " is-open" : "")}

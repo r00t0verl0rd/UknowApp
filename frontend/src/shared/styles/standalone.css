@@ -1,6 +1,6 @@
 /* Безопасные отступы мобильного приложения. */
 @media (display-mode: standalone) and (max-width: 1024px) {
-  html, body, #root, .chats-shell{
+  html, body, #root{
     background: var(--surface) !important;
   }
   body::before{

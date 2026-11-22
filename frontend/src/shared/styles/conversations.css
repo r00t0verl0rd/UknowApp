@@ -1,17 +1,9 @@
 /* В переписках используются карточки из структуры. */
 .chats-main > .workspace-content:has(> .chat-list){
   display:grid;
-  flex:1 1 0;
   grid-template-columns:minmax(260px,min(24%,340px)) minmax(0,1fr);
   grid-template-rows:minmax(0,1fr);
   gap:var(--workspace-gutter);
-  width:100%;
-  max-width:1680px;
-  min-width:0;
-  min-height:0;
-  margin:0 auto;
-  padding:var(--workspace-gutter);
-  overflow:hidden;
 }
 .chats-main > .workspace-content:has(> .chat-list) > .chat-list,
 .chats-main > .workspace-content:has(> .chat-list) > .chat-detail{
@@ -33,19 +25,6 @@
 }
 .chat-list-filters > .search{flex:0 0 auto;width:100%;max-width:none;min-width:0;box-sizing:border-box}
 .chat-list > .legend{flex:0 0 auto;flex-wrap:wrap;max-width:100%}
-.chat-items-scroll{
-  display:flex;
-  flex:1 1 0;
-  flex-direction:column;
-  align-items:stretch;
-  min-width:0;
-  min-height:0;
-  overflow-x:hidden;
-  overflow-y:auto;
-  overscroll-behavior:contain;
-  scrollbar-width:thin;
-  -webkit-overflow-scrolling:touch;
-}
 .chat-items-scroll > .chat-item{
   display:flex;
   flex:0 0 auto;
@@ -114,19 +93,11 @@
 .mobile-chat-back{display:none}
 .messages{
   display:flex;
-  flex:1 1 0;
   flex-direction:column;
   align-items:flex-start;
   gap:6px;
-  min-width:0;
-  min-height:0;
   padding:10px 4px;
-  overflow-x:hidden;
-  overflow-y:auto;
   background:transparent;
-  overscroll-behavior-y:contain;
-  scrollbar-width:thin;
-  -webkit-overflow-scrolling:touch;
 }
 .message{
   width:fit-content;
@@ -276,7 +247,6 @@
   .chats-main > .workspace-content:has(> .chat-list){
     grid-template-columns:minmax(210px,min(30%,280px)) minmax(0,1fr);
     gap:12px;
-    padding:12px;
   }
   .chat-detail > .chat-head{gap:8px;padding:12px}
   .chat-head-tools select{min-width:112px;max-width:145px;padding:6px;font-size:11px}
@@ -289,11 +259,7 @@
   .composer-send{min-height:36px;padding:7px 11px;font-size:11px}
 }
 @media(max-width:760px){
-  .chats-main{min-height:calc(100dvh - 112px)}
   .chats-main > .workspace-content:has(> .chat-list){
-    flex:1 1 auto;
-    height:auto;
-    min-height:0;
     grid-template-columns:minmax(0,1fr);
     grid-template-rows:minmax(0,1fr);
     gap:0;
@@ -318,7 +284,6 @@
   .composer-send{min-height:36px;padding:7px 10px;font-size:11px}
 }
 @media(max-width:420px){
-  .chats-main > .workspace-content:has(> .chat-list){padding:7px}
   .chat-list{gap:8px}
   .chat-detail > .chat-head{grid-template-columns:36px minmax(0,1fr) auto;gap:5px}
   .chat-head-tools{justify-content:flex-end}
@@ -366,11 +331,9 @@ font-weight:700;
 font-variant-numeric:tabular-nums;
 line-height:1;}
 
-.chat-list-filters > .search{height:38px;border-radius:9px;background:var(--canvas)}
-.chat-list-filters > .search input{font-size:12px;background:transparent;color:var(--ink)}
 .chat-filter{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:34px;color:var(--muted);font-size:11px}
 .chat-filter select{min-width:0;max-width:65%;height:32px;padding:0 9px;border:1px solid var(--ui-border);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit}
-.chat-items-scroll{gap:5px;padding:1px}
+.chat-items-scroll{display:flex;flex-direction:column;gap:5px;padding:2px}
 .chat-items-scroll > .chat-item{min-height:54px;padding:8px 9px;border:1px solid transparent;border-radius:10px;background:transparent;box-shadow:none;transition:background-color .14s,border-color .14s}
 .chat-items-scroll > .chat-item:hover:not(.selected){background:var(--canvas);border-color:var(--ui-border)}
 .chat-item > .person-main > .avatar{width:32px;height:32px;flex-basis:32px;border-radius:10px}
@@ -378,11 +341,7 @@ line-height:1;}
 .chat-item .person-info b{font-size:12px;font-weight:650}
 
 .chat-item.has-unread:not(.selected){border-left:2px solid var(--button-primary)!important;background:color-mix(in srgb,var(--button-primary) 5%,transparent)}
-@media(min-width:1025px){
-  .chats-main > .workspace-content:has(.role_node){flex:1 1 auto;align-self:stretch;width:100%;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
-}
 @media(max-width:760px){
-  .chats-main > .workspace-content:has(> .chat-list){padding:4px}
   .chats-main > .workspace-content:has(> .chat-list) > .chat-list{padding:6px;gap:6px}
   .chat-list-filters{flex-direction:row;align-items:center}
   .chat-list-filters > .search{flex:1;min-width:0}

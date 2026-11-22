@@ -22,14 +22,7 @@ button.graph-person-action {
   color: var(--ui-control-text);
   background: var(--ui-control-bg);
 }
-.user-actions .connect-toggle {
-  gap: 6px;
-  padding-inline: 10px;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.2;
-}
+
 :is(.user-actions, .person-actions, .modal-head) button:focus-visible,
 button.graph-person-action:focus-visible {
   outline: 2px solid var(--purple);
@@ -41,4 +34,17 @@ button.graph-person-action:focus-visible {
 /* Общие компоненты для мягкой тёмной темы. */
 :root[data-theme="dark-soft"] {
 & .btn:not(.primary):hover{ background: var(--ui-control-hover) !important; border-color: var(--ui-border-strong) !important;}& .stack input, & .stack select, & .stack textarea, & .search, & .user-sort{ background: var(--surface-input) !important; border-color: var(--ui-border) !important; color: var(--ink) !important;}& .user-action-btn.danger{ background: var(--button-danger-bg) !important; border-color: var(--button-danger-border) !important; color: var(--button-danger-text) !important;}
+}
+.workspace-search {
+  height: 42px;
+  border-radius: var(--ui-radius-sm);
+  background: var(--surface-input);
+  border-color: var(--ui-border);
+}
+
+.workspace-search input {
+  min-width: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
 }

@@ -135,7 +135,7 @@
   }
   .workspace-shell .sidebar-bottom {
     position: absolute;
-    top: 10px;
+    top: calc(10px + env(safe-area-inset-top, 0px));
     right: 12px;
     display: flex;
     margin: 0;

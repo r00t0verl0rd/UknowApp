@@ -1,0 +1,76 @@
+:root {
+  --workspace-gutter: clamp(8px, 1.4vw, 20px);
+}
+
+/* Навигация и панели управления остаются вне области прокрутки. */
+.workspace-shell {
+  display: grid;
+  grid-template-columns: clamp(250px, 18vw, 280px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workspace-shell > .chats-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workspace-shell > .main > .workspace-content {
+  flex: 1 1 0;
+  width: 100%;
+  max-width: 1680px;
+  min-height: 0;
+  margin-inline: auto;
+  padding: var(--workspace-gutter);
+}
+
+.workspace-content:has(> .user-list, > .structure-scroll) {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.workspace-content > .graph-legend-row,
+.chat-list > :is(.chat-list-actions, .chat-list-filters) {
+  flex: none;
+}
+
+.workspace-scroll {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.workspace-scroll:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: -2px;
+}
+
+.structure-scroll {
+  padding: 2px;
+}
+
+@media (max-width: 1024px) {
+  .workspace-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .workspace-shell > .sidebar {
+    position: relative;
+    inset: auto;
+    z-index: 30;
+  }
+
+  .workspace-shell > .main {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}

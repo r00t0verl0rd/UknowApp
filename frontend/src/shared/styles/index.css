@@ -20,3 +20,4 @@
 @import "./navigation.css";
 /* Компактный переключатель разделов переписки и действие создания диалога. */
 @import "./chat-controls.css";
+@import "./workspace-scroll.css";
