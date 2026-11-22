@@ -358,6 +358,72 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize({ width: 1280, height: 720 });
 
+    // Плавно пересекаем desktop/tablet/mobile breakpoints без перерисовки
+    // приложения и без принудительных CSS-инвалидаций на каждом пикселе.
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.evaluate(() => new Promise(resolve =>
+      requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await page.evaluate(() => {
+      const root = document.documentElement;
+      const shell = document.querySelector(".workspace-shell");
+      window.__resizeShell = shell;
+      window.__resizeWrites = { viewport: 0, sidebar: 0 };
+      const viewportObserver = new MutationObserver(records => {
+        window.__resizeWrites.viewport += records.length;
+      });
+      const sidebarObserver = new MutationObserver(records => {
+        window.__resizeWrites.sidebar += records.length;
+      });
+      viewportObserver.observe(root, { attributes: true, attributeFilter: ["style"] });
+      sidebarObserver.observe(shell, { attributes: true, attributeFilter: ["style"] });
+      window.__stopResizeTracking = () => {
+        window.__resizeWrites.viewport += viewportObserver.takeRecords().length;
+        window.__resizeWrites.sidebar += sidebarObserver.takeRecords().length;
+        viewportObserver.disconnect();
+        sidebarObserver.disconnect();
+        const result = {
+          ...window.__resizeWrites,
+          preservedShell: window.__resizeShell === document.querySelector(".workspace-shell"),
+        };
+        delete window.__resizeShell;
+        delete window.__resizeWrites;
+        delete window.__stopResizeTracking;
+        return result;
+      };
+    });
+    for (const width of [1025, 1024, 900, 761, 760, 600, 390, 320, 760, 1024, 1025, 1280, 1600]) {
+      await page.setViewportSize({ width, height: 800 });
+      const state = await page.evaluate(() => new Promise(resolve =>
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          const shell = document.querySelector(".workspace-shell");
+          const sidebar = shell.querySelector(".sidebar");
+          const mobile = matchMedia("(max-width: 1024px)").matches;
+          resolve({
+            screenWidth: window.innerWidth,
+            documentWidth: document.documentElement.scrollWidth,
+            position: getComputedStyle(shell).position,
+            mobile,
+            sidebarHeight: Math.ceil(sidebar.getBoundingClientRect().height),
+            measuredHeight: parseFloat(shell.style.getPropertyValue("--workspace-sidebar-height")),
+          });
+        }))));
+      assert.equal(state.screenWidth, width);
+      assert.ok(state.documentWidth <= width + 1, `${width}px: no horizontal page overflow`);
+      assert.equal(state.position, state.mobile ? "relative" : "fixed",
+        `${width}px: workspace switches scroll strategy without remounting`);
+      if (state.mobile) {
+        assert.ok(Math.abs(state.sidebarHeight - state.measuredHeight) <= 1,
+          `${width}px: mobile content padding tracks real navigation height`);
+      }
+    }
+    const resizeWrites = await page.evaluate(() => window.__stopResizeTracking());
+    assert.equal(resizeWrites.preservedShell, true, "resizing preserves the live workspace DOM");
+    assert.ok(resizeWrites.viewport <= 2,
+      `width-only resizing must not rewrite root viewport CSS on every event: ${resizeWrites.viewport}`);
+    assert.ok(resizeWrites.sidebar < 13,
+      `mobile sidebar should update only for actual height changes: ${resizeWrites.sidebar}`);
+    await page.setViewportSize({ width: 1280, height: 720 });
+
     // На любой высоте браузерной панели нижняя часть вкладки остаётся доступной.
     // Проверяем телефон с открытой/закрытой панелью, планшет и десктоп.
     for (const { width, height } of [
