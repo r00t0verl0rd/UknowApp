@@ -516,7 +516,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
               `${width}px ${theme}: ${name} has no second glow border`);
           }
           if (name === "icon" || name === "button") {
-            assert.ok(!/(^|,)\\s*(transform|box-shadow)/.test(focus[name].transition),
+            assert.ok(!/(^|,)\s*(transform|box-shadow)/.test(focus[name].transition),
               `${width}px ${theme}: no hover displacement or shadow animation for ${name}`);
           }
         }
