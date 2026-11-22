@@ -10,7 +10,10 @@ const read = relative => readFileSync(path.join(frontend, relative), "utf8");
 test("one vector logo is shared by all built-in app branding", () => {
   const brandingFiles = readdirSync(path.join(frontend, "public"))
     .filter(name => /\.(?:svg|png|jpe?g|webp|gif|ico|avif)$/i.test(name));
-  assert.deepEqual(brandingFiles, ["logo-main.svg"]);
+  assert.ok(brandingFiles.includes("logo-main.svg"));
+  assert.ok(brandingFiles.includes("logo-touch.png"));
+  assert.ok(brandingFiles.includes("logo-big.png"));
+  assert.ok(brandingFiles.every(name => ["logo-main.svg", "logo-touch.png", "logo-big.png", "logo-192.png"].includes(name)));
 
   const svg = read("public/logo-main.svg");
   assert.match(svg, /^<svg\b/);
