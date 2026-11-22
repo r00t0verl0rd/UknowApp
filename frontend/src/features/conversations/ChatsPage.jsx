@@ -330,20 +330,19 @@ export default function ChatsPage(options) {
                 />
                 <div class="composer-footer">
                   <div class="composer-tools">
-                    {options.selectedChat.type !== "personal" && (
-                      <label
-                        class="attach-control ui-icon-button"
-                        aria-label="Прикрепить файл"
-                        title="Прикрепить файл"
-                      >
-                        <Paperclip size={17} />
-                        <input
-                          type="file"
-                          accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
-                          onInput={(event) => options.setAttachment(event.target.files?.[0] || null)}
-                        />
-                      </label>
-                    )}
+                    <label
+                      class="attach-control ui-icon-button"
+                      aria-label="Прикрепить файл"
+                      title="Прикрепить файл"
+                    >
+                      <Paperclip size={17} />
+                      <input
+                        type="file"
+                        aria-label="Выбрать файл для сообщения"
+                        accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
+                        onInput={(event) => options.setAttachment(event.target.files?.[0] || null)}
+                      />
+                    </label>
                     {options.attachment && (
                       <span class="selected-file">
                         <span class="selected-file-name">{options.attachment.name}</span>
