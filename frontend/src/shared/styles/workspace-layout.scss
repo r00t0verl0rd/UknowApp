@@ -261,7 +261,7 @@
     appearance:none;
   }
   .btn:not(.primary) {
-    background:#f0eef3;
+    background:var(--ui-control-bg);
   }
   .btn.ghost {
     background:#eae7ef;
@@ -273,7 +273,7 @@
   }
   .person-actions button,
   .icon-btn {
-    background:#f0eef3;
+    background:var(--ui-control-bg);
     border:1px solid #e4deea;
     color:#716981;
   }
@@ -592,9 +592,9 @@
   .modal-head button {
     -webkit-appearance:none;
     appearance:none;
-    background-color:#f0eef3;
-    border:1px solid #e2dce9;
-    color:#393149;
+    background-color:var(--ui-control-bg);
+    border:1px solid var(--ui-border);
+    color:var(--ui-control-text);
     box-shadow:none;
   }
   .btn.ghost {
@@ -606,7 +606,7 @@
     color:var(--purple);
   }
   .btn.primary {
-    background:linear-gradient(105deg, #573e99, #7856bd);
+    background:var(--button-primary);
   }
   .btn.ghost:not(.primary):not(.danger-icon) {
     background-color:#eae7ef;
@@ -625,14 +625,14 @@
     & .icon-btn:not(.danger-icon),
     & .add-student,
     & .modal-head button {
-      background:#2b3443;
-      border-color:#414c60;
-      color:#c6cddd;
+      background:var(--ui-control-bg);
+      border-color:var(--ui-border);
+      color:var(--ui-control-text);
       box-shadow:none;
     }
     & .btn.primary {
-      background:#71679e;
-      border-color:#8b80b8;
+      background:var(--button-primary);
+      border-color:transparent;
       color:#fff;
     }
   }
@@ -662,13 +662,13 @@
   .modal-head button {
     -webkit-appearance:none;
     appearance:none;
-    background:#f0eef3;
-    border:1px solid #e2dce9;
-    color:#393149;
-    box-shadow:0 2px 5px rgba(41, 34, 63, 0.06);
+    background:var(--ui-control-bg);
+    border:1px solid var(--ui-border);
+    color:var(--ui-control-text);
+    box-shadow:var(--ui-shadow-soft);
   }
   .btn.primary {
-    background:linear-gradient(105deg, #573e99, #7856bd);
+    background:var(--button-primary);
   }
   .btn.ghost {
     background:#eae7ef;
@@ -682,9 +682,9 @@
   }
   .person-actions button.danger-icon,
   .icon-btn.danger-icon {
-    background:#fff0f1;
-    border-color:#f2d5d9;
-    color:#b82c3b;
+    background:var(--button-danger-bg);
+    border-color:var(--button-danger-border);
+    color:var(--button-danger-text);
   }
   button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn)):disabled {
     opacity:0.5;
@@ -695,14 +695,14 @@
     & .icon-btn:not(.danger-icon),
     & .add-student,
     & .modal-head button {
-      background:#2b3443;
-      border-color:#414c60;
-      color:#c6cddd;
+      background:var(--ui-control-bg);
+      border-color:var(--ui-border);
+      color:var(--ui-control-text);
       box-shadow:none;
     }
     & .btn.primary {
-      background:#71679e;
-      border-color:#8b80b8;
+      background:var(--button-primary);
+      border-color:transparent;
       color:#fff;
     }
     & .user-row:hover,
