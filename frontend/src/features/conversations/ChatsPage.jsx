@@ -133,7 +133,6 @@ export default function ChatsPage(options) {
             {(options.profile?.role === "teacher" ||
               (options.profile?.role === "admin" && options.chatSection === "personal")) && (
               <label class="chat-filter">
-                <span>Показать</span>
                 <ToolbarSelect
                   class="chat-filter-field"
                   aria-label="Фильтр диалогов"
