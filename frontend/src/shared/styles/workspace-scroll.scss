@@ -377,7 +377,8 @@
       min-height:0;
       overflow:hidden;
     }
-    & .workspace-shell > .content > .workspace-content {
+    & .workspace-shell > .content > .workspace-content,
+    & .workspace-shell:has(.mobile-chat-back) > .content > .workspace-content {
       display:flex;
       flex-direction:column;
       flex:1 1 0;
