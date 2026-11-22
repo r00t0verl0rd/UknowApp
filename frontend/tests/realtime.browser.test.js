@@ -1174,7 +1174,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
         `${width}px: actions sit below the message field on every screen`);
       assert.ok(state.attachHeight >= 40 && state.sendHeight >= 40,
         `${width}px: attachment and send have comfortable touch targets`);
-      assert.ok(state.sendLabelVisible, `${width}px: send label remains visible`);
+      assert.equal(state.sendLabelVisible, width >= 1025,
+        `${width}px: compact mobile send icon and labeled desktop send button`);
       assert.ok(state.detailBottom <= state.viewportBottom + 2,
         `${width}x${height}: chat fits inside visible viewport ${JSON.stringify(state)}`);
       assert.ok(state.composerBottom <= state.viewportBottom + 2,
