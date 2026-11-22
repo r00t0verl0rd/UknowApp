@@ -6,19 +6,21 @@ import IconButton from "../../shared/components/IconButton.jsx";
 
 export default function LoginPage({ theme, toggleTheme, signIn, login, setLogin, password, setPassword }) {
   return (
-    <div className="login-screen">
-        <div className="login-card">
+    <main className="login-screen">
+      <section className="login-card" aria-label="Вход в UknowApp">
           <IconButton className="theme-toggle login-theme-toggle" onClick={toggleTheme} title={theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"} aria-label={theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}>
             {theme === "dark-soft" ? <Sun size={17}/> : <Moon size={17}/>}
           </IconButton>
-          <img src="/logo-main.svg" alt="UknowApp" className="login-logo" />
-          <h1>UknowApp</h1>
+          <div className="login-brand">
+            <img src="/logo-main.svg" alt="" className="login-logo" />
+            <h1>Uknow<span>App</span></h1>
+          </div>
           <form onSubmit={signIn} className="stack">
             <label><input value={login} onChange={e => setLogin(e.target.value)} autoComplete="username" placeholder="Логин" aria-label="Логин" /></label>
             <label><input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" placeholder="Пароль" aria-label="Пароль" /></label>
-            <Button variant="primary" type="submit">Войти <ChevronRight size={17}/></Button>
+            <Button variant="primary" className="login-submit" type="submit">Войти <ChevronRight size={17}/></Button>
           </form>
-        </div>
-      </div>
+      </section>
+    </main>
   );
 }
