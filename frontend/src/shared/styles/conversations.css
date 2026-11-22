@@ -290,7 +290,7 @@
 
 /* Одна строка действий и один фильтр чатов. */
 .chats-main > .workspace-content > .chat-list{background:var(--surface);border:1px solid var(--ui-border);border-radius:14px;padding:12px}
-.chat-list-filters{display:flex;flex-direction:column;gap:var(--workspace-control-gap);min-width:0}
+.chat-list-filters{min-width:0}
 
 
 
@@ -331,8 +331,8 @@ line-height:1;}
 
 .chat-item.has-unread:not(.selected){border-left:2px solid var(--button-primary)!important;background:color-mix(in srgb,var(--button-primary) 5%,transparent)}
 @media(max-width:760px){
-  .chats-main > .workspace-content:has(> .chat-list) > .chat-list{padding:6px;gap:6px}
-  .chat-list-filters{flex-direction:row;align-items:center}
+  /* Отступы контролирует общая карточка .workspace-panel. */
+  /* Компоновка фильтров задана общим workspace-control-row. */
   .chat-list-filters > .search{flex:1;min-width:0}
 
   .mobile-chat-back span,.chat-filter > span,.composer-send span{display:none}
@@ -352,3 +352,14 @@ line-height:1;}
   .chat-list-filters > .search{width:100%}
 }
 
+
+@media (min-width: 1025px) {
+  .workspace-panel.chat-list .chat-list-filters.workspace-control-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .workspace-panel.chat-list .chat-filter { width: 100%; }
+  .workspace-panel.chat-list .chat-filter select {
+    max-width: 100%;
+    flex: 1 1 auto;
+  }
+}

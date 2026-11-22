@@ -1,7 +1,9 @@
 /* Единственная сетка для панели поиска, сортировки, создания и счётчика. */
 .toolbar.user-toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(145px, 200px) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "search add" "sort count";
+  width: 100%;
   align-items: center;
   gap: 8px;
   margin: 0;
@@ -36,18 +38,6 @@
 .user-list .user-person-info {
   min-width: 0;
   overflow-wrap: anywhere;
-}
-
-@media (max-width: 1200px) {
-  .toolbar.user-toolbar {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: "search add" "sort count";
-  }
-
-  .user-toolbar > .search { grid-area: search; }
-  .user-toolbar > .user-sort { grid-area: sort; }
-  .user-toolbar > .user-add-btn { grid-area: add; justify-self: end; }
-  .user-toolbar > .user-total { grid-area: count; justify-self: end; }
 }
 
 @media (max-width: 1024px) {

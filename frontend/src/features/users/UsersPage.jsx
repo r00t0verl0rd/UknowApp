@@ -16,7 +16,7 @@ import IconButton from "../../shared/components/IconButton.jsx";
 
 export default function UsersPage({ visibleUsers, search, setSearch, userSort, setUserSort, openCreate, disconnectTelegram, makeCode, userInfo, setUserInfo, openEdit, removeUser }) {
   return (
-    <>
+    <section className="workspace-panel users-panel">
       <div className="toolbar user-toolbar">
         <div className="search workspace-search ui-toolbar-control">
           <Search/><input aria-label="Поиск по имени" placeholder="Поиск по имени" value={search} onChange={e => setSearch(e.target.value)}/>
@@ -55,6 +55,6 @@ export default function UsersPage({ visibleUsers, search, setSearch, userSort, s
                   <IconButton className="user-action-btn danger-icon user-delete" tone="danger" onClick={() => removeUser(user)} title="Удалить пользователя" aria-label={`Удалить пользователя ${user.full_name}`}><Trash2/></IconButton>
                 </div>
               </div>)}</div>
-            </>
+    </section>
   );
 }

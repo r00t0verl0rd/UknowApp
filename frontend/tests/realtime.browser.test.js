@@ -353,10 +353,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
           `${width}px ${theme}: all four toolbar controls share the same radius`);
         assert.deepEqual(result.styles.map(x => x.height), [42, 42, 42, 42],
           `${width}px ${theme}: toolbar controls have identical heights`);
-        if (width < 1201) {
-          assert.equal(result.rows[0], result.rows[2], `${width}px ${theme}: search and add share a row`);
-          assert.equal(result.rows[1], result.rows[3], `${width}px ${theme}: sort and total share a row`);
-        }
+        assert.equal(result.rows[0], result.rows[2], `${width}px ${theme}: search and add share a row`);
+        assert.equal(result.rows[1], result.rows[3], `${width}px ${theme}: sort and total share a row`);
       }
     }
     await page.setViewportSize({ width: 1280, height: 720 });
@@ -373,8 +371,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
           host.style.cssText = "position:fixed;left:0;top:0;visibility:hidden;pointer-events:none";
           const panelWidth = Math.min(270, window.innerWidth - 20);
           host.innerHTML = `
-            <div class="chat-list" style="box-sizing:border-box;width:${panelWidth}px;padding:12px">
-              <div class="chat-list-actions">
+            <div class="chat-list workspace-panel" style="box-sizing:border-box;width:${panelWidth}px;padding:12px">
+              <div class="chat-list-actions workspace-control-row">
                 <div class="chat-section-tabs ui-toolbar-control ui-toolbar-segmented" role="group">
                   <button class="chat-section-tab ui-toolbar-tab" aria-pressed="true">Участники</button>
                   <button class="chat-section-tab ui-toolbar-tab" aria-pressed="false">Личные<span class="chat-tab-count">12</span></button>
@@ -424,6 +422,71 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize({ width: 1280, height: 800 });
 
+    // Одна геометрия карточек, отступов и рядов на телефоне и десктопе.
+    for (const width of [390, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        const layout = await page.evaluate(currentTheme => {
+          const root = document.documentElement;
+          const old = root.dataset.theme;
+          root.dataset.theme = currentTheme;
+          const fixture = document.createElement("div");
+          fixture.innerHTML = `
+            <section class="workspace-panel users-panel">
+              <div class="toolbar user-toolbar">
+                <div class="search workspace-search ui-toolbar-control">Поиск</div>
+                <select class="user-sort ui-toolbar-control"><option>Сначала ученики</option></select>
+                <button class="btn primary user-add-btn ui-toolbar-control">Добавить</button>
+                <span class="user-total ui-toolbar-control ui-toolbar-total">Всего</span>
+              </div>
+              <div class="user-list">Пользователь</div>
+            </section>
+            <section class="teacher-branch chat-list workspace-panel">
+              <div class="chat-list-actions workspace-control-row">
+                <div class="chat-section-tabs ui-toolbar-control ui-toolbar-segmented">Участники</div>
+                <button class="icon-btn ui-icon-button personal-chat-create ui-toolbar-icon">+</button>
+              </div>
+              <div class="chat-list-filters workspace-control-row">
+                <label class="search workspace-search ui-toolbar-control">Поиск</label>
+                <label class="chat-filter"><select class="ui-toolbar-control"><option>Все личные</option></select></label>
+              </div>
+              <div class="chat-items">Диалог</div>
+            </section>
+          `;
+          document.querySelector(".workspace-content").append(fixture);
+          try {
+            const stats = el => {
+              const st = getComputedStyle(el);
+              return {
+                padding: st.paddingTop, gap: st.rowGap, radius: st.borderTopLeftRadius,
+                border: st.borderTopWidth, background: st.backgroundColor,
+              };
+            };
+            const user = fixture.querySelector(".users-panel");
+            const chat = fixture.querySelector(".chat-list");
+            const toolbar = fixture.querySelector(".user-toolbar");
+            const actions = fixture.querySelector(".chat-list-actions");
+            const filters = fixture.querySelector(".chat-list-filters");
+            return { user: stats(user), chat: stats(chat),
+              userGap: getComputedStyle(toolbar).rowGap,
+              actionsGap: getComputedStyle(actions).columnGap,
+              filtersGap: getComputedStyle(filters).columnGap,
+              actionsDisplay: getComputedStyle(actions).display,
+              filtersDisplay: getComputedStyle(filters).display };
+          } finally {
+            fixture.remove();
+            root.dataset.theme = old;
+          }
+        }, theme);
+        assert.deepEqual(layout.user, layout.chat, `${width}px ${theme}: same panel style`);
+        assert.equal(layout.userGap, layout.actionsGap, `${width}px ${theme}: same control spacing`);
+        assert.equal(layout.userGap, layout.filtersGap, `${width}px ${theme}: same row spacing`);
+        assert.equal(layout.actionsDisplay, "grid");
+        assert.equal(layout.filtersDisplay, "grid");
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
+
     // Общие реальные CSS-классы органов управления обеих вкладок.
     for (const width of [390, 1280]) {
       await page.setViewportSize({ width, height: 800 });
@@ -439,15 +502,15 @@ test("global SSE updates real counters across tabs and replays missed events", {
               <button class="btn primary user-add-btn ui-toolbar-control">Добавить</button>
               <span class="user-total ui-toolbar-control ui-toolbar-total">Всего <b>11</b></span>
             </div>
-            <section class="teacher-branch chat-list">
-              <div class="chat-list-actions">
+            <section class="teacher-branch chat-list workspace-panel">
+              <div class="chat-list-actions workspace-control-row">
                 <div class="chat-section-tabs ui-toolbar-control ui-toolbar-segmented">
                   <button class="chat-section-tab ui-toolbar-tab" aria-pressed="true">Участники</button>
                   <button class="chat-section-tab ui-toolbar-tab" aria-pressed="false">Личные</button>
                 </div>
                 <button class="icon-btn ui-icon-button personal-chat-create ui-toolbar-icon" aria-label="Новый диалог">+</button>
               </div>
-              <div class="chat-list-filters">
+              <div class="chat-list-filters workspace-control-row">
                 <label class="search workspace-search ui-toolbar-control"><input placeholder="Поиск по имени"></label>
                 <label class="chat-filter"><select class="ui-toolbar-control"><option>Все личные</option></select></label>
               </div>

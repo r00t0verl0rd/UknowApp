@@ -1,19 +1,10 @@
 /* Только компоновка и активные состояния; общие размеры — в shared-controls.css. */
-:root .workspace-shell .chat-list .chat-list-actions {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: var(--workspace-control-gap);
-  min-width: 0;
-}
-
 :root .workspace-shell .chat-list .chat-list-actions:empty { display: none; }
 
 :root .workspace-shell .chat-list .chat-section-tabs {
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  flex: 1 1 auto;
   min-width: 0;
+  width: 100%;
 }
 
 :root .workspace-shell .chat-list .chat-section-tabs > button.chat-section-tab[aria-pressed="true"],

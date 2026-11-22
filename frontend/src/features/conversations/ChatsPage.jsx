@@ -46,8 +46,8 @@ export default function ChatsPage({
 
   return (
     <>
-      <section className="teacher-branch chat-list">
-        <div className="chat-list-actions">
+      <section className="teacher-branch chat-list workspace-panel">
+        <div className="chat-list-actions workspace-control-row">
           {profile?.role === "admin" && (
             <div className="chat-section-tabs ui-toolbar-control ui-toolbar-segmented" role="group" aria-label="Тип диалогов">
               <button type="button" className="chat-section-tab ui-toolbar-tab"
@@ -81,7 +81,7 @@ export default function ChatsPage({
           )}
         </div>
         {profile?.role !== "student" && (
-          <div className="chat-list-filters">
+          <div className="chat-list-filters workspace-control-row">
             <label className="search workspace-search ui-toolbar-control">
               <Search size={16}/>
               <input aria-label="Поиск по имени" placeholder="Поиск по имени"

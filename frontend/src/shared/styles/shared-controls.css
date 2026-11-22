@@ -152,3 +152,36 @@ button.graph-person-action:focus-visible {
   color: var(--muted);
   white-space: nowrap;
 }
+
+/* Единая карточка и двухколоночные строки управления на всех вкладках. */
+:root {
+  --workspace-panel-padding: 12px;
+  --workspace-panel-gap: var(--workspace-control-gap);
+}
+:root .workspace-shell .workspace-content > .workspace-panel.workspace-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  gap: var(--workspace-panel-gap);
+  padding: var(--workspace-panel-padding);
+  border: 1px solid var(--ui-border) !important;
+  border-radius: var(--ui-radius-lg);
+  background: var(--surface) !important;
+  box-shadow: var(--ui-shadow-card);
+}
+:root .workspace-shell .workspace-panel .workspace-control-row.workspace-control-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+  gap: var(--workspace-control-gap);
+}
+:root .workspace-shell .workspace-panel .workspace-control-row.workspace-control-row > :first-child {
+  min-width: 0;
+  width: 100%;
+}
+@media (max-width: 1024px) {
+  :root { --workspace-panel-padding: 8px; }
+}
