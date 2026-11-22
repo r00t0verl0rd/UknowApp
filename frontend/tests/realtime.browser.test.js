@@ -155,7 +155,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     const themeStyles = await page.evaluate(() => {
       const oldTheme = document.documentElement.dataset.theme;
       const wrapper = document.createElement("div");
-      wrapper.className = "content";
+      wrapper.className = "workspace-content";
       wrapper.innerHTML = [
         '<div class="role_node"></div>',
         '<div class="teacher-card"></div>',
@@ -950,7 +950,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
           const previousTheme = document.documentElement.dataset.theme;
           document.documentElement.dataset.theme = currentTheme;
           const sample = document.createElement("div");
-          sample.className = "content";
+          sample.className = "workspace-content";
           sample.style.cssText = "position:fixed;top:0;left:0;z-index:-1;visibility:hidden";
           sample.innerHTML = `
             <div class="role_node"></div>
