@@ -254,7 +254,7 @@
     width:100%;
     min-width:0;
   }
-  button:not(.chat-item):not(:where(.toast-close, .message-delete-btn)),
+  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn)),
   .btn,
   .person-actions button {
     -webkit-appearance:none;
@@ -584,7 +584,7 @@
   .topbar > .topbar-actions {
     display:none;
   }
-  button:not(.chat-item):not(:where(.toast-close, .message-delete-btn)):not(.primary):not(.danger-icon),
+  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn)):not(.primary):not(.danger-icon),
   .btn:not(.primary),
   .person-actions button:not(.danger-icon),
   .icon-btn:not(.danger-icon),
@@ -612,7 +612,7 @@
     background-color:#eae7ef;
   }
   .btn.outline:not(.primary):not(.danger-icon),
-  button:not(.chat-item):not(:where(.toast-close, .message-delete-btn)).add-student:not(.primary):not(
+  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn)).add-student:not(.primary):not(
       .danger-icon
     ) {
     background-color:#f1edf7;
@@ -654,8 +654,8 @@
   }
 }
 @media (hover: none), (pointer: coarse) {
-  button:not(.chat-item):not(:where(.toast-close, .message-delete-btn)),
-  button:not(.chat-item):not(:where(.toast-close, .message-delete-btn)).btn,
+  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn)),
+  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn)).btn,
   .person-actions button,
   .icon-btn,
   .add-student,
@@ -686,7 +686,7 @@
     border-color:#f2d5d9;
     color:#b82c3b;
   }
-  button:not(.chat-item):not(:where(.toast-close, .message-delete-btn)):disabled {
+  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn)):disabled {
     opacity:0.5;
   }
   :root[data-theme="dark-soft"] {
