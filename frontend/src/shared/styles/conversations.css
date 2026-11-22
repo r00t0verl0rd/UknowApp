@@ -418,6 +418,15 @@ line-height:1;}
   overscroll-behavior-y: contain;
 }
 
+/* Даже при низком экране с клавиатурой кнопка отправки остаётся внизу
+   собственного контейнера, а не пропадает при его внутренней прокрутке. */
+.workspace-shell .chat-detail .chat-composer .composer-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: var(--surface);
+}
+
 @media (max-width: 760px) {
   .workspace-shell .workspace-content:has(> .chat-list) > .chat-detail {
     grid-row: 1;
