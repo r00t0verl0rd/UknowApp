@@ -163,8 +163,11 @@
    Разница между большим и видимым viewport становится нижним отступом,
    поэтому последний элемент можно прокрутить ВЫШЕ панели управления. */
 @media (max-width: 1024px) and (display-mode: browser) {
-  :root[data-theme] .workspace-shell {
+  :root[data-theme] {
     --workspace-chrome-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  :root[data-theme] .workspace-shell {
     height: max(
       var(--workspace-viewport-height, 100dvh),
       calc(100lvh + var(--workspace-chrome-bottom))
