@@ -227,13 +227,18 @@ test("global SSE updates real counters across tabs and replays missed events", {
             root.dataset.theme = previousTheme;
           }
         }, theme);
-        assert.equal(isolation.shellPosition, "fixed", `${width}px ${theme}: viewport-locked shell`);
+        assert.equal(isolation.shellPosition, width < 1025 ? "relative" : "fixed",
+          `${width}px ${theme}: browser document-flow on mobile, fixed on desktop`);
         assert.ok(isolation.scrollTop >= 400, `${width}px ${theme}: content scrolls independently`);
         assert.equal(isolation.sidebarTop, isolation.initialTop, `${width}px ${theme}: sidebar stays in place`);
         assert.equal(isolation.windowScroll, 0, `${width}px ${theme}: no document scrolling`);
-        assert.equal(isolation.docOverflow, "hidden", `${width}px ${theme}: html overflow`);
-        assert.equal(isolation.bodyOverflow, "hidden", `${width}px ${theme}: body overflow`);
-        assert.equal(isolation.rootOverflow, "hidden", `${width}px ${theme}: root overflow`);
+        for (const [label, value] of [
+          ["html", isolation.docOverflow], ["body", isolation.bodyOverflow],
+          ["root", isolation.rootOverflow],
+        ]) {
+          assert.equal(value, width < 1025 ? "visible" : "hidden",
+            `${width}px ${theme}: ${label} overflow`);
+        }
         assert.equal(isolation.sidebarOverscroll, "none", `${width}px ${theme}: sidebar overscroll`);
         if (width < 1025) assert.equal(isolation.sidebarTouchAction, "pan-x", "mobile nav permits only horizontal swipes");
         for (const layer of ["rootBackground", "bodyBackground", "shellBackground", "mainBackground"]) {
@@ -370,6 +375,47 @@ test("global SSE updates real counters across tabs and replays missed events", {
       assert.ok(state.finalItemBottom <= state.visibleBottom + 2,
         `${width}x${height}: the last item remains reachable`);
     }
+
+    // Safari 26 Liquid Glass: документ занимает большой viewport под
+    // прозрачной панелью, но низ контента остаётся прокручиваемым до видимой части.
+    await page.setViewportSize({ width: 390, height: 720 });
+    const underlay = await page.evaluate(() => {
+      const root = document.documentElement;
+      const oldHeight = root.style.getPropertyValue("--workspace-viewport-height");
+      const oldTop = root.style.getPropertyValue("--workspace-viewport-top");
+      root.style.setProperty("--workspace-viewport-height", "570px");
+      root.style.setProperty("--workspace-viewport-top", "0px");
+      try {
+        const shell = document.querySelector(".workspace-shell");
+        const content = shell.querySelector(".workspace-content");
+        const row = document.createElement("div");
+        row.style.cssText = "height:1400px;flex-shrink:0";
+        content.append(row);
+        const dimensions = {
+          shellPosition: getComputedStyle(shell).position,
+          shellHeight: Math.round(shell.getBoundingClientRect().height),
+          bottomReserve: parseFloat(getComputedStyle(content).paddingBottom),
+          viewportVisible: 570,
+        };
+        content.scrollTop = content.scrollHeight;
+        dimensions.finalItemBottom = row.getBoundingClientRect().bottom;
+        row.remove();
+        content.scrollTop = 0;
+        return dimensions;
+      } finally {
+        if (oldHeight) root.style.setProperty("--workspace-viewport-height", oldHeight);
+        else root.style.removeProperty("--workspace-viewport-height");
+        if (oldTop) root.style.setProperty("--workspace-viewport-top", oldTop);
+        else root.style.removeProperty("--workspace-viewport-top");
+      }
+    });
+    assert.equal(underlay.shellPosition, "relative");
+    assert.equal(underlay.shellHeight, 720,
+      "mobile web shell extends into the translucent browser toolbar area");
+    assert.ok(underlay.bottomReserve >= 150,
+      "content reserves the obscured toolbar area at maximum scroll");
+    assert.ok(underlay.finalItemBottom <= underlay.viewportVisible,
+      "last item can be scrolled above the browser controls");
 
     // Чат: форма и «Отправить» прикреплены к видимому низу, сообщения скроллятся.
     for (const { width, height } of [

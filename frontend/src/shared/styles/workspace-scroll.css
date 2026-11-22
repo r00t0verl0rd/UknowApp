@@ -123,3 +123,55 @@
     padding-bottom: 0;
   }
 }
+
+
+/* Вкладка мобильного браузера: Safari/Chrome рисуют прозрачную панель поверх
+   обычного документа. Fixed-оболочка, ограниченная visualViewport, отрезала
+   содержимое ровно перед этой панелью. Используем in-flow холст 100lvh:
+   он продолжается под панелью, а sidebar и внутренний скролл остаются на месте.
+   Установленное PWA и десктоп сохраняют прежнюю fixed-геометрию. */
+@media (max-width: 1024px) and (display-mode: browser) {
+  :root[data-theme]:has(.workspace-shell),
+  :root[data-theme] body:has(.workspace-shell),
+  :root[data-theme] #root:has(.workspace-shell) {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100lvh;
+    overflow-x: clip;
+    overflow-y: visible;
+    overscroll-behavior-y: auto;
+  }
+
+  .workspace-shell {
+    position: relative;
+    inset: auto;
+    height: 100vh;
+    height: 100lvh;
+    min-height: 0;
+  }
+
+  /* Пункты списков могут прокручиваться под прозрачную нижнюю панель.
+     При прокрутке до конца резервируем расстояние до видимой границы,
+     чтобы последние строки и кнопка отправки оставались доступны. */
+  .workspace-shell > .main > .workspace-content {
+    padding-bottom: max(
+      var(--workspace-gutter),
+      env(safe-area-inset-bottom, 0px),
+      calc(100lvh - var(--workspace-viewport-top, 0px) - var(--workspace-viewport-height, 100dvh) + var(--workspace-gutter))
+    );
+  }
+
+  /* Клавиатура — не прозрачная панель Safari: поле ввода должно остаться
+     внутри visualViewport, поэтому при фокусе возвращаем высоту видимой зоны. */
+  :root:has(.workspace-shell :is(input, textarea, [contenteditable="true"]):focus) .workspace-shell {
+    height: var(--workspace-viewport-height, 100dvh);
+  }
+}
+
+@supports not (height: 100lvh) {
+  @media (max-width: 1024px) and (display-mode: browser) {
+    .workspace-shell > .main > .workspace-content {
+      padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
+    }
+  }
+}

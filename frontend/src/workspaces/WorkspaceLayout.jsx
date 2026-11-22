@@ -32,9 +32,9 @@ export default function WorkspaceLayout({
     contentRef.current.scrollTop = 0;
   }, [page]);
 
-  // Safari меняет видимую высоту при появлении нижней панели/клавиатуры.
-  // visualViewport сообщает высоту области, доступной реально, без браузерной панели.
-  // Без API используем стандартный 100dvh из CSS.
+  // В браузере мобильная оболочка покрывает 100lvh, но visualViewport сообщает
+  // доступную высоту над прозрачными панелями Safari и над клавиатурой.
+  // На десктопе/PWA оболочка по-прежнему привязана к visualViewport.
   useLayoutEffect(() => {
     const root = document.documentElement;
     const viewport = window.visualViewport;
