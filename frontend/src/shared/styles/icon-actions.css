@@ -64,6 +64,7 @@
 }
 /* Compact size is used in dialogs and message actions. */
 :root .ui-icon-button.ui-icon-button--compact { --icon-action-size: 30px; }
+:root .ui-icon-button.ui-icon-button--large { --icon-action-size: 40px; }
 
 /* Карточки преподавателя и ученика: одинаковые стрелки, карандаши и действия. */
 :root .workspace-content:has(.role_node) .person-actions .ui-icon-button,
