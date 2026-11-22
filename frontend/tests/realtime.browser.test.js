@@ -424,6 +424,110 @@ test("global SSE updates real counters across tabs and replays missed events", {
       `mobile sidebar should update only for actual height changes: ${resizeWrites.sidebar}`);
     await page.setViewportSize({ width: 1280, height: 720 });
 
+    // Контур вокруг workspace не должен появляться после закрытия формы
+    // и при переводе фокуса на прокручиваемую область. У кнопок один фокусный
+    // контур без второй box-shadow-рамки; клавиатурный фокус остаётся видимым.
+    for (const width of [390, 1024, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        await page.keyboard.press("Tab");
+        const focus = await page.evaluate(nextTheme => {
+          const root = document.documentElement;
+          const priorTheme = root.dataset.theme;
+          const priorFocused = document.activeElement;
+          root.dataset.theme = nextTheme;
+          const fixture = document.createElement("div");
+          fixture.className = "workspace-shell";
+          fixture.style.cssText = "position:fixed;top:0;left:0;width:650px;height:600px;opacity:0;pointer-events:none;z-index:-1";
+          fixture.innerHTML = `
+            <aside class="sidebar">
+              <nav><button class="ui-menu-control" aria-current="page">Диалоги</button></nav>
+            </aside>
+            <main class="content">
+              <div class="workspace-content" tabindex="0">
+                <div class="search workspace-search"><input aria-label="Поиск"></div>
+                <section class="chat-list">
+                  <div class="chat-section-tabs">
+                    <button class="chat-section-tab ui-toolbar-tab" aria-pressed="true">Участники</button>
+                  </div>
+                  <div class="chat-items">
+                    <button class="chat-item student-card selected" aria-pressed="true">Диалог</button>
+                  </div>
+                </section>
+                <div class="teacher-card">
+                  <div class="person-actions">
+                    <button class="icon-btn ui-icon-button" aria-label="Редактировать">✎</button>
+                  </div>
+                </div>
+                <button class="btn">Добавить участника</button>
+              </div>
+            </main>
+          `;
+          document.body.append(fixture);
+          const inspect = selector => {
+            const node = fixture.querySelector(selector);
+            node.focus({ preventScroll: true });
+            const css = getComputedStyle(node);
+            return {
+              visibleFocus: node.matches(":focus-visible"),
+              outline: css.outlineStyle,
+              outlineWidth: css.outlineWidth,
+              shadow: css.boxShadow,
+              transition: css.transitionProperty,
+            };
+          };
+          try {
+            const main = inspect(".workspace-content");
+            const menu = inspect(".ui-menu-control");
+            const tab = inspect(".chat-section-tab");
+            const chat = inspect(".chat-item");
+            const icon = inspect(".ui-icon-button");
+            const button = inspect(".workspace-content > .btn");
+            const input = inspect(".search input");
+            const searchShadow = getComputedStyle(fixture.querySelector(".search")).boxShadow;
+            return { main, menu, tab, chat, icon, button, input, searchShadow };
+          } finally {
+            fixture.remove();
+            if (priorFocused?.isConnected && typeof priorFocused.focus === "function") {
+              priorFocused.focus({ preventScroll: true });
+            }
+            root.dataset.theme = priorTheme;
+          }
+        }, theme);
+        assert.equal(focus.main.visibleFocus, true,
+          `${width}px ${theme}: scroll region is keyboard-focusable`);
+        assert.equal(focus.main.outline, "none",
+          `${width}px ${theme}: no full-screen white/lavender border`);
+        assert.match(focus.main.shadow, /inset/,
+          `${width}px ${theme}: small keyboard-only indicator replaces large frame`);
+        for (const name of ["menu", "tab", "chat", "icon", "button"]) {
+          assert.equal(focus[name].visibleFocus, true,
+            `${width}px ${theme}: ${name} remains keyboard accessible`);
+          assert.equal(focus[name].outline, "solid",
+            `${width}px ${theme}: ${name} has a single visible focus ring`);
+          assert.equal(focus[name].outlineWidth, "2px");
+          if (name === "chat") {
+            assert.match(focus[name].shadow, /inset/,
+              `${width}px ${theme}: selected chat keeps its left indicator`);
+            assert.ok(!focus[name].shadow.includes(","),
+              `${width}px ${theme}: selected chat has no second outer glow`);
+          } else {
+            assert.equal(focus[name].shadow, "none",
+              `${width}px ${theme}: ${name} has no second glow border`);
+          }
+          if (name === "icon" || name === "button") {
+            assert.ok(!/(^|,)\\s*(transform|box-shadow)/.test(focus[name].transition),
+              `${width}px ${theme}: no hover displacement or shadow animation for ${name}`);
+          }
+        }
+        assert.equal(focus.input.shadow, "none",
+          `${width}px ${theme}: input and search wrapper do not draw two focus glows`);
+        assert.notEqual(focus.searchShadow, "none",
+          `${width}px ${theme}: search still shows a visible keyboard focus state`);
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 720 });
+
     // Структура: построчный Grid сохраняет колонки при раскрытии учеников.
     // Запрещаем прежнюю автоматическую перебалансировку CSS columns.
     for (const width of [390, 760, 1024, 1280, 1385, 1600]) {
