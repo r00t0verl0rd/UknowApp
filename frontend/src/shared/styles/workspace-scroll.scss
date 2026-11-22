@@ -197,6 +197,36 @@
     }
   }
 }
+// Структура: независимая высота карточек вместо растягивания строк Grid.
+// Многоколоночная раскладка не требует resize-обработчиков или вычислений JS.
+.workspace-content:has(.admin-card) {
+  > .graph-legend-row {
+    margin-bottom:8px;
+  }
+  > .structure-scroll {
+    > .admin-card {
+      width:min(100%, 240px);
+      min-height:58px;
+      margin-bottom:10px;
+      padding:6px 10px;
+    }
+    > .admin-card img {
+      flex:0 0 40px;
+      width:40px;
+      height:40px;
+    }
+    > .grid {
+      display:block;
+      columns:320px;
+      column-gap:12px;
+    }
+    > .grid > .teacher-branch {
+      width:100%;
+      margin-bottom:12px;
+      break-inside:avoid-column;
+    }
+  }
+}
 :root[data-theme]:has(.workspace-shell) {
   background:var(--workspace-background);
 }
