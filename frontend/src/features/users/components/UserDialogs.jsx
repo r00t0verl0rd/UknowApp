@@ -45,13 +45,16 @@ export default function UserDialogs({
   unassignCandidate, setUnassignCandidate, unassigningStudent, confirmUnassignStudent,
 }) {
   return <>
-    {modal && modal.mode !== "create-personal" && <Modal onClose={() => setModal(null)} className={`${modal.mode === "create" ? "create-participant-modal" : modal.mode === "edit" ? "participant-profile-modal" : ""}`}>
+    {modal && modal.mode !== "create-personal" && <Modal onClose={() => setModal(null)} closeOnBackdrop={!savingUser} className={`${modal.mode === "create" ? "create-participant-modal" : modal.mode === "edit" ? "participant-profile-modal" : ""}`}>
       <div className="modal-head"><div><div className="eyebrow">{modal.mode === "create" ? "НОВЫЙ УЧАСТНИК" : modal.mode === "edit" ? "ПРОФИЛЬ УЧАСТНИКА" : "СВЯЗЬ УЧЕНИКА И УЧИТЕЛЯ"}</div><h2>{modal.mode === "create" ? "Добавить участника" : modal.mode === "edit" ? "Редактировать" : "Назначить ученика"}</h2></div><IconButton onClick={() => setModal(null)}><X/></IconButton></div>
       {modal.mode === "assign" ? <form className="stack" onSubmit={assign}>
         <FormField label="Учитель"><select value={teacherId} onChange={event => setTeacherId(event.target.value)} required>{allTeachers.map(teacher => <option value={teacher.id} key={teacher.id}>{teacher.full_name}</option>)}</select></FormField>
         <FormField label="Ученик"><select value={studentId} onChange={event => setStudentId(event.target.value)} required>{allStudents.map(student => <option value={student.id} key={student.id}>{student.full_name}</option>)}</select></FormField>
         <p className="hint">Если у ученика уже есть активное назначение, оно будет заменено новым.</p>
-        <Button type="submit" variant="primary" disabled={!allStudents.length}>Создать связь</Button>
+        <div className="modal-actions">
+          <Button variant="ghost" onClick={() => setModal(null)}>Отмена</Button>
+          <Button type="submit" variant="primary" disabled={!allStudents.length}>Создать связь</Button>
+        </div>
       </form> : <form className="stack" onSubmit={saveUser}>
         <FormField label="Имя и фамилия"><input value={name} onChange={event => { const nextName = event.target.value; setName(nextName); if (!panelLogin || panelLogin === name) setPanelLogin(nextName); }} minLength="2" maxLength="160" required autoFocus/></FormField>
         {role === "student" && <FormField label="Доп. инфо"><input value={additionalInfo} onChange={event => setAdditionalInfo(event.target.value)} maxLength="500"/></FormField>}
@@ -64,11 +67,15 @@ export default function UserDialogs({
           </div>
           {modal.mode === "edit" && users.find(user => user.id === modal.id)?.role === role && <div className="panel-credential-row panel-access-row">
             <span>Код доступа</span>
-            <div className="panel-access-value"><b>XXXX-XXXX</b><Button variant="outline" className="password-code-refresh" onClick={regeneratePanelAccessCode} disabled={savingUser} title="Старый код сразу перестанет действовать"><RefreshCw size={12}/>Обновить код</Button></div>
+            <div className="panel-access-value"><b>XXXX-XXXX</b><Button variant="outline" className="password-code-refresh" onClick={regeneratePanelAccessCode} disabled={savingUser} title="Старый код сразу перестанет действовать"><RefreshCw size={16}/>Новый код</Button></div>
           </div>}
         </div>}
         {modal.mode === "edit" && role !== users.find(user => user.id === modal.id)?.role && <p className="hint">При смене роли активные назначения будут закрыты. История переписок сохранится.</p>}
-        <div className="modal-actions"><Button type="submit" variant="primary" disabled={savingUser}>{savingUser ? "Сохраняем…" : <><Check/>Сохранить</>}</Button>{modal.mode === "edit" && <IconButton tone="danger" className="user-action-btn danger-icon user-delete" onClick={() => removeUser(users.find(user => user.id === modal.id))} disabled={savingUser} title="Удалить пользователя" aria-label="Удалить пользователя"><Trash2 size={16}/></IconButton>}</div>
+        <div className="modal-actions">
+          <Button variant="ghost" onClick={() => setModal(null)} disabled={savingUser}>Отмена</Button>
+          {modal.mode === "edit" && <IconButton tone="danger" className="user-action-btn danger-icon user-delete" onClick={() => removeUser(users.find(user => user.id === modal.id))} disabled={savingUser} title="Удалить пользователя" aria-label="Удалить пользователя"><Trash2 size={16}/></IconButton>}
+          <Button type="submit" variant="primary" disabled={savingUser}>{savingUser ? "Сохраняем…" : <><Check/>Сохранить</>}</Button>
+        </div>
       </form>}
     </Modal>}
 

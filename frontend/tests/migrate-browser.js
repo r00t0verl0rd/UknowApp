@@ -29,7 +29,7 @@ try {
     await beforeReact.close();
     await page.goto(url);
     await page.getByRole("button", { name: "Войти" }).click();
-    const alert = page.getByRole("alert");
+    const alert = page.getByRole("alertdialog");
     await alert.getByText("Введите логин").waitFor();
     const close = alert.getByRole("button", { name: "Закрыть уведомление об ошибке" });
     for (const width of [390, 1280]) {
@@ -75,7 +75,7 @@ try {
     await page.getByRole("button", { name: "Новый диалог" }).click();
     await dialog.getByLabel("Участник").selectOption(String(teacher.id));
     await dialog.getByRole("button", { name: "Создать диалог" }).click();
-    const alert = page.getByRole("alert").filter({ hasText: "Временно недоступно" });
+    const alert = page.getByRole("alertdialog").filter({ hasText: "Временно недоступно" });
     await alert.getByRole("button", { name: "Закрыть уведомление об ошибке" }).click();
     assert.equal(await dialog.getByLabel("Участник").inputValue(), String(teacher.id));
     await page.unroute(createUrl);

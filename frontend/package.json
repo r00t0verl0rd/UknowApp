@@ -7,7 +7,7 @@
     "dev": "vite --host 127.0.0.1 --port 22222 --strictPort",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 22222 --strictPort",
-    "test": "node --test src/shared/services/inboxState.test.js src/shared/services/panelEventStream.test.js src/features/conversations/services/messageState.test.js src/features/conversations/services/formatMessageTime.test.js tests/csp.test.js tests/workspace-responsive.test.js",
+    "test": "node --test src/shared/services/inboxState.test.js src/shared/services/panelEventStream.test.js src/features/conversations/services/messageState.test.js src/features/conversations/services/formatMessageTime.test.js tests/csp.test.js tests/workspace-responsive.test.js tests/native-dialogs.test.js",
     "test:browser": "node --test tests/realtime.browser.test.js",
     "audit:css": "node scripts/audit-css.mjs"
   },
