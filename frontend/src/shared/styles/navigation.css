@@ -36,7 +36,7 @@
   padding: 10px 12px !important;
   gap: 10px !important;
   border: 1px solid var(--menu-border) !important;
-  border-radius: 11px !important;
+  border-radius: var(--ui-radius-sm) !important;
   background: var(--menu-bg) !important;
   background-image: none !important;
   color: var(--menu-text) !important;

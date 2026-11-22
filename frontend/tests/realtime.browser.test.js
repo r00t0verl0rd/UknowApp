@@ -517,6 +517,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
               chatInactive: read(".chat-item:not(.selected)"),
               shellRadius: getComputedStyle(host).borderTopLeftRadius,
               sidebarRadius: getComputedStyle(host.querySelector(".sidebar")).borderTopLeftRadius,
+              menuRadius: getComputedStyle(host.querySelector(".ui-menu-control")).borderTopLeftRadius,
               tabWrapperRadius: getComputedStyle(host.querySelector(".ui-toolbar-segmented")).borderTopLeftRadius,
               innerTabRadius: getComputedStyle(host.querySelector(".chat-section-tab")).borderTopLeftRadius,
               tabWrapperOverflow: getComputedStyle(host.querySelector(".ui-toolbar-segmented")).overflow,
@@ -542,8 +543,9 @@ test("global SSE updates real counters across tabs and replays missed events", {
         }
         assert.equal(state.shellRadius, "0px", `${width}px ${theme}: no white shell corner slivers`);
         assert.equal(state.sidebarRadius, "0px", `${width}px ${theme}: no sidebar corner slivers`);
-        assert.equal(state.tabWrapperRadius, "9px");
-        assert.equal(state.innerTabRadius, "5px");
+        assert.equal(state.menuRadius, "9px", `${width}px ${theme}: navigation and tab radii match`);
+        assert.equal(state.tabWrapperRadius, state.menuRadius);
+        assert.equal(state.innerTabRadius, state.menuRadius);
         assert.equal(state.tabWrapperOverflow, "hidden");
       }
     }
