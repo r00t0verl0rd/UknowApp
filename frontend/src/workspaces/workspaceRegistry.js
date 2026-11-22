@@ -34,8 +34,12 @@ export const workspaceRegistry = Object.freeze({
   teacher: {
     Component: TeacherWorkspace,
     label: "Личный кабинет учителя",
-    pages: ["chats"],
+    pages: ["graph", "chats"],
     navigation: [{
+      page: "graph",
+      label: "Структура",
+      icon: Activity
+    }, {
       page: "chats",
       label: "Диалоги",
       icon: MessageCircle
