@@ -53,9 +53,7 @@
 }
 
 
-// Единая акцентная палитра для назначений и кнопки уведомлений.
-// Убираем светлые mobile/touch-переопределения в dark-soft; элементы
-// остаются фиолетовыми при hover, focus и в обычном состоянии.
+/* Назначения и уведомления используют одну тему, включая мобильный hover. */
 :root[data-theme] .workspace-shell {
   .workspace-content:has(.admin-card) .teacher-branch > button.add-student,
   .workspace-content:has(.admin-card) .unassigned-student-actions > button.btn.outline,
