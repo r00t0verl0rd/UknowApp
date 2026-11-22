@@ -1,3 +1,5 @@
+import { apiUrl } from "./api.js";
+
 // Одно SSE-подключение обслуживает все открытые разделы приложения.
 let source = null;
 const subscribers = new Set();
@@ -5,8 +7,7 @@ let closeGeneration = 0;
 
 function openStream() {
   if (source || typeof EventSource === "undefined") return;
-  const API = import.meta.env?.VITE_API_BASE_URL || "";
-  source = new EventSource(API + "/api/panel/events", { withCredentials: true });
+  source = new EventSource(apiUrl("/api/panel/events"), { withCredentials: true });
   source.addEventListener("update", event => {
     for (const subscriber of [...subscribers]) subscriber.onUpdate(event);
   });

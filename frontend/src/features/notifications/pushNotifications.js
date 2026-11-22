@@ -1,4 +1,4 @@
-const API = import.meta.env.VITE_API_BASE_URL || "";
+import { fetchApi } from "../../shared/services/api.js";
 
 function getPushSupport() {
   if (!window.isSecureContext) {
@@ -34,7 +34,7 @@ async function getRegistration() {
 }
 
 async function subscribeToPush(registration) {
-  const keyResponse = await fetch(API + "/api/push/public-key", { credentials: "include" });
+  const keyResponse = await fetchApi("/api/push/public-key", { credentials: "include" });
   const keyData = await keyResponse.json().catch(() => ({}));
   if (!keyResponse.ok || !keyData.enabled || !keyData.public_key) {
     throw new Error(keyData.detail || "Push-уведомления не настроены на сервере");
@@ -47,7 +47,7 @@ async function subscribeToPush(registration) {
       applicationServerKey: decodeApplicationServerKey(keyData.public_key),
     });
   }
-  const response = await fetch(API + "/api/push/subscribe", {
+  const response = await fetchApi("/api/push/subscribe", {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -104,7 +104,7 @@ export async function disablePushNotifications() {
   const subscription = await registration?.pushManager.getSubscription();
   if (!subscription) return;
 
-  const response = await fetch(API + "/api/push/subscribe", {
+  const response = await fetchApi("/api/push/subscribe", {
     method: "DELETE",
     credentials: "include",
     headers: { "Content-Type": "application/json" },

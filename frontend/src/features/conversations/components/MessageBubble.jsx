@@ -8,7 +8,7 @@ import Pause from "lucide-react/dist/esm/icons/pause.js";
 import { formatMessageTime } from "../services/formatMessageTime.js";
 import IconButton from "../../../shared/components/IconButton.jsx";
 
-const API = import.meta.env.VITE_API_BASE_URL || "";
+import { getMessageMedia } from "../services/conversationsApi.js";
 
 // Высоты декоративной звуковой волны общие для всех плееров — не создаём массив при каждом рендере.
 const AUDIO_WAVE_BARS = [4, 7, 10, 6, 13, 8, 15, 10, 6, 12, 17, 9, 5, 13, 8, 16, 11, 6, 14, 9, 17, 7, 12, 5, 15, 9, 13, 6, 11, 16, 8, 12, 5, 14, 9, 7];
@@ -102,13 +102,7 @@ function MessageBubble({ message, onDelete, onError, viewerRole, personalChat, n
     let objectUrl = "";
     let cancelled = false;
     const controller = new AbortController();
-    const loadMedia = () => fetch(API + "/api/panel/messages/" + message.id + "/media", {
-      credentials: "include",
-      signal: controller.signal,
-    }).then(response => {
-      if (!response.ok) throw new Error("media unavailable");
-      return response.blob();
-    }).then(blob => {
+    const loadMedia = () => getMessageMedia(message.id, controller.signal).then(blob => {
       if (cancelled) return;
       objectUrl = URL.createObjectURL(blob);
       setMediaUrl(objectUrl);
