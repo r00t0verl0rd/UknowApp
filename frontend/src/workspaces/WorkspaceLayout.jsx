@@ -113,14 +113,21 @@ export default function WorkspaceLayout(options) {
           previousHeight = height;
         }
       };
-      const onBreakpointChange = () => syncSidebarHeight();
       const observer = typeof ResizeObserver === "function"
         ? new ResizeObserver(([entry]) => syncSidebarHeight(entry))
         : null;
-      observer?.observe(sidebar);
+      const onBreakpointChange = () => {
+        if (mobile.matches) {
+          observer?.observe(sidebar);
+          syncSidebarHeight();
+        } else {
+          // На десктопе наблюдение не нужно: sidebar меняет ширину на каждом пикселе.
+          observer?.unobserve(sidebar);
+        }
+      };
       mobile.addEventListener("change", onBreakpointChange);
       if (!observer) window.addEventListener("resize", onBreakpointChange);
-      syncSidebarHeight();
+      onBreakpointChange();
       return () => {
         observer?.disconnect();
         mobile.removeEventListener("change", onBreakpointChange);
