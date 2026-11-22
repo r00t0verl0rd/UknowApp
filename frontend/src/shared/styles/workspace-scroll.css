@@ -154,6 +154,12 @@
     background: transparent !important;
   }
 
+  /* Шапка и фон status bar используют ровно одну переменную темы;
+     старые правила фоновой заливки sidebar не должны расходиться с html. */
+  :root[data-theme] .workspace-shell > .sidebar {
+    background: var(--surface) !important;
+  }
+
   .workspace-shell {
     position: relative;
     inset: auto;
