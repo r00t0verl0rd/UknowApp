@@ -243,16 +243,17 @@ test("global SSE updates real counters across tabs and replays missed events", {
         assert.equal(isolation.sidebarOverscroll, "none", `${width}px ${theme}: sidebar overscroll`);
         if (width < 1025) assert.equal(isolation.sidebarTouchAction, "pan-x", "mobile nav permits only horizontal swipes");
         if (width < 1025) {
-          assert.equal(isolation.rootBackground, isolation.sidebarBackground,
-            `${width}px ${theme}: status bar matches the sidebar without a second layer`);
-          assert.equal(isolation.bodyBackground, "rgba(0, 0, 0, 0)");
+          // На телефоне один сплошной фон html, а все внутренние обёртки прозрачны.
+          assert.notEqual(isolation.rootBackground, "rgba(0, 0, 0, 0)");
+          for (const layer of ["sidebarBackground", "bodyBackground", "shellBackground", "mainBackground"]) {
+            assert.equal(isolation[layer], "rgba(0, 0, 0, 0)",
+              `${width}px ${theme}: transparent ${layer}, no extra underlay`);
+          }
         } else {
-          assert.equal(isolation.rootBackground, isolation.expectedBackground);
-          assert.equal(isolation.bodyBackground, isolation.expectedBackground);
-        }
-        for (const layer of ["shellBackground", "mainBackground"]) {
-          assert.equal(isolation[layer], isolation.expectedBackground,
-            `${width}px ${theme}: consistent ${layer}`);
+          for (const layer of ["rootBackground", "bodyBackground", "shellBackground", "mainBackground"]) {
+            assert.equal(isolation[layer], isolation.expectedBackground,
+              `${width}px ${theme}: desktop keeps a consistent canvas`);
+          }
         }
       }
     }
@@ -415,12 +416,11 @@ test("global SSE updates real counters across tabs and replays missed events", {
         }
       }, theme);
       assert.equal(safeArea.shellHeight, 754, `${theme}: fill through bottom home indicator`);
-      assert.equal(safeArea.rootBackground, safeArea.sidebarBackground,
-        `${theme}: upper safe area and header are one visual surface`);
-      assert.equal(safeArea.bodyBackground, "rgba(0, 0, 0, 0)",
-        `${theme}: no additional body background layer`);
-      assert.equal(safeArea.mainBackground, safeArea.contentBackground,
-        `${theme}: workspace has a continuous canvas`);
+      assert.notEqual(safeArea.rootBackground, "rgba(0, 0, 0, 0)");
+      for (const layer of ["sidebarBackground", "bodyBackground", "mainBackground", "contentBackground"]) {
+        assert.equal(safeArea[layer], "rgba(0, 0, 0, 0)",
+          `${theme}: only html paints behind status bar and Safari controls (${layer})`);
+      }
     }
 
     // Safari 26 Liquid Glass: документ занимает большой viewport под
