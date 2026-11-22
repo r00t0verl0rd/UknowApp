@@ -3,7 +3,6 @@
 import json
 import logging
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Annotated
 
 from fastapi import (
