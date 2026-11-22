@@ -417,6 +417,52 @@ test("global SSE updates real counters across tabs and replays missed events", {
     assert.ok(underlay.finalItemBottom <= underlay.viewportVisible,
       "last item can be scrolled above the browser controls");
 
+    // Та же подложка Safari с открытым чатом: кнопка отправки остаётся
+    // выше прозрачной панели при высоте visualViewport меньше 100lvh.
+    const chatUnderlay = await page.evaluate(() => {
+      const root = document.documentElement;
+      const before = root.style.getPropertyValue("--workspace-viewport-height");
+      root.style.setProperty("--workspace-viewport-height", "570px");
+      const content = document.querySelector(".workspace-content");
+      const list = document.createElement("section");
+      list.className = "teacher-branch chat-list workspace-panel";
+      list.innerHTML = '<div class="chat-list-actions">Чаты</div><div class="chat-items">Участники</div>';
+      const detail = document.createElement("section");
+      detail.className = "teacher-branch chat-detail";
+      detail.innerHTML = `
+        <header class="chat-head"><button class="mobile-chat-back">Назад</button><span>Чат</span></header>
+        <div class="messages">${Array(24).fill('<div class="message">Длинная переписка</div>').join("")}</div>
+        <form class="chat-composer">
+          <textarea placeholder="Сообщение"></textarea>
+          <div class="composer-footer">
+            <button class="btn primary composer-send" type="submit"><span>Отправить</span></button>
+          </div>
+        </form>`;
+      content.append(list, detail);
+      try {
+        return {
+          shellHeight: Math.round(document.querySelector(".workspace-shell").getBoundingClientRect().height),
+          messagesScrollable: detail.querySelector(".messages").scrollHeight > detail.querySelector(".messages").clientHeight,
+          sendBottom: detail.querySelector(".composer-send").getBoundingClientRect().bottom,
+          composerBottom: detail.querySelector(".chat-composer").getBoundingClientRect().bottom,
+          visibleHeight: 570,
+        };
+      } finally {
+        list.remove();
+        detail.remove();
+        if (before) root.style.setProperty("--workspace-viewport-height", before);
+        else root.style.removeProperty("--workspace-viewport-height");
+      }
+    });
+    assert.equal(chatUnderlay.shellHeight, 720,
+      "chat page paints through the transparent Safari toolbar");
+    assert.ok(chatUnderlay.messagesScrollable,
+      "messages scroll inside the chat viewport");
+    assert.ok(chatUnderlay.sendBottom <= chatUnderlay.visibleHeight,
+      "send button remains above the translucent Safari toolbar");
+    assert.ok(chatUnderlay.composerBottom <= chatUnderlay.visibleHeight,
+      "composer is not covered by Safari browser controls");
+
     // Чат: форма и «Отправить» прикреплены к видимому низу, сообщения скроллятся.
     for (const { width, height } of [
       { width: 390, height: 720 }, { width: 390, height: 430 },
