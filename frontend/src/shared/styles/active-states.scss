@@ -38,6 +38,10 @@
     outline-offset:2px;
     box-shadow:none;
   }
+  .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control[aria-current="page"]:focus-visible,
+  .chat-list .chat-section-tabs > button.chat-section-tab[aria-pressed="true"]:focus-visible {
+    box-shadow:none;
+  }
   .chat-items > button.chat-item:is(.selected, [aria-pressed="true"]):focus-visible {
     box-shadow:inset 3px 0 0 var(--ui-selected-border);
   }
