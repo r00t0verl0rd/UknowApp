@@ -191,13 +191,16 @@ test("global SSE updates real counters across tabs and replays missed events", {
           const shell = document.querySelector(".workspace-shell");
           const sidebar = shell.querySelector(".sidebar");
           const content = shell.querySelector(".workspace-content");
+          const nativeScroll = window.matchMedia("(max-width: 1024px) and (display-mode: browser)").matches;
+          if (nativeScroll) window.scrollTo(0, 0);
           const initialTop = sidebar.getBoundingClientRect().top;
           const previousScroll = content.scrollTop;
           const tallSection = document.createElement("div");
           tallSection.style.cssText = "height:2200px;min-height:2200px;flex-shrink:0;";
           try {
             content.append(tallSection);
-            content.scrollTop = 500;
+            if (nativeScroll) window.scrollTo(0, 500);
+            else content.scrollTop = 500;
             const bg = getComputedStyle(root).getPropertyValue("--workspace-background").trim();
             const canvas = document.createElement("div");
             canvas.style.backgroundColor = bg;
@@ -205,8 +208,9 @@ test("global SSE updates real counters across tabs and replays missed events", {
             const resolvedBackground = getComputedStyle(canvas).backgroundColor;
             canvas.remove();
             return {
-              scrollTop: content.scrollTop,
+              scrollTop: nativeScroll ? window.scrollY : content.scrollTop,
               shellPosition: getComputedStyle(shell).position,
+              sidebarPosition: getComputedStyle(sidebar).position,
               sidebarTop: sidebar.getBoundingClientRect().top,
               initialTop,
               windowScroll: window.scrollY,
@@ -225,20 +229,26 @@ test("global SSE updates real counters across tabs and replays missed events", {
           } finally {
             tallSection.remove();
             content.scrollTop = previousScroll;
+            if (nativeScroll) window.scrollTo(0, 0);
             root.dataset.theme = previousTheme;
           }
         }, theme);
-        assert.equal(isolation.shellPosition, "fixed",
-          `${width}px ${theme}: viewport shell is always fixed`);
-        assert.ok(isolation.scrollTop >= 400, `${width}px ${theme}: content scrolls independently`);
+        assert.equal(isolation.shellPosition, width < 1025 ? "relative" : "fixed",
+          `${width}px ${theme}: Safari browser uses document-flow, desktop uses fixed shell`);
+        if (width < 1025) {
+          assert.equal(isolation.sidebarPosition, "sticky",
+            `${width}px ${theme}: sidebar is sticky above the document`);
+        }
+        assert.ok(isolation.scrollTop >= 400, `${width}px ${theme}: content can scroll`);
         assert.equal(isolation.sidebarTop, isolation.initialTop, `${width}px ${theme}: sidebar stays in place`);
-        assert.equal(isolation.windowScroll, 0, `${width}px ${theme}: no document scrolling`);
+        assert.equal(isolation.windowScroll >= 400, width < 1025,
+          `${width}px ${theme}: only mobile Safari scrolls the document`);
         for (const [label, value] of [
           ["html", isolation.docOverflow], ["body", isolation.bodyOverflow],
           ["root", isolation.rootOverflow],
         ]) {
-          assert.equal(value, "hidden",
-            `${width}px ${theme}: ${label} never scrolls the document`);
+          assert.equal(value, width < 1025 ? "clip visible" : "hidden",
+            `${width}px ${theme}: ${label} uses correct scroll strategy`);
         }
         assert.equal(isolation.sidebarOverscroll, "none", `${width}px ${theme}: sidebar overscroll`);
         if (width < 1025) assert.equal(isolation.sidebarTouchAction, "pan-x", "mobile nav permits only horizontal swipes");
@@ -345,35 +355,45 @@ test("global SSE updates real counters across tabs and replays missed events", {
       await page.waitForFunction(() => {
         const vv = window.visualViewport;
         const shell = document.querySelector(".workspace-shell");
-        return !!shell && (!vv || Math.abs(shell.getBoundingClientRect().height - vv.height) <= 2);
+        if (!shell) return false;
+        if (matchMedia("(max-width: 1024px) and (display-mode: browser)").matches) {
+          return getComputedStyle(shell).position === "relative";
+        }
+        return !vv || Math.abs(shell.getBoundingClientRect().height - vv.height) <= 2;
       });
       const state = await page.evaluate(() => {
         const viewport = window.visualViewport;
         const shell = document.querySelector(".workspace-shell");
         const content = shell.querySelector(".workspace-content");
         const bottom = (viewport?.offsetTop || 0) + (viewport?.height || window.innerHeight);
+        const nativeScroll = matchMedia("(max-width: 1024px) and (display-mode: browser)").matches;
         const tall = document.createElement("div");
         tall.style.height = "1600px";
         tall.style.flexShrink = "0";
         content.append(tall);
         try {
-          content.scrollTop = content.scrollHeight;
+          if (nativeScroll) window.scrollTo(0, document.documentElement.scrollHeight);
+          else content.scrollTop = content.scrollHeight;
           return {
+            nativeScroll,
             visibleBottom: bottom,
             shellBottom: shell.getBoundingClientRect().bottom,
             contentBottom: content.getBoundingClientRect().bottom,
             finalItemBottom: tall.getBoundingClientRect().bottom,
-            scrollTop: content.scrollTop,
+            scrollTop: nativeScroll ? window.scrollY : content.scrollTop,
             shellHeight: shell.getBoundingClientRect().height,
             viewportHeight: viewport?.height || window.innerHeight,
           };
         } finally {
           tall.remove();
           content.scrollTop = 0;
+          if (nativeScroll) window.scrollTo(0, 0);
         }
       });
-      assert.ok(Math.abs(state.shellHeight - state.viewportHeight) <= 2,
-        `${width}x${height}: shell follows visualViewport`);
+      assert.ok(state.nativeScroll
+        ? state.shellHeight >= state.viewportHeight
+        : Math.abs(state.shellHeight - state.viewportHeight) <= 2,
+        `${width}x${height}: mobile document expands; desktop shell follows viewport`);
       assert.ok(state.shellBottom <= state.visibleBottom + 2,
         `${width}x${height}: shell does not hide behind browser toolbar`);
       assert.ok(state.contentBottom <= state.visibleBottom + 2,
@@ -383,14 +403,12 @@ test("global SSE updates real counters across tabs and replays missed events", {
         `${width}x${height}: the last item remains reachable`);
     }
 
-    // На iPhone sidebar рисует ту же поверхность, что и html.
-    // При раскрытой панели shell продолжается под ней, сохраняя fixed position.
+    // На iPhone обычный document рисуется ПОД Safari Liquid Glass.
+    // Sidebar занимает собственную sticky-строку и не перемещается при скролле.
     await page.setViewportSize({ width: 390, height: 720 });
     await page.waitForFunction(() => {
       const shell = document.querySelector(".workspace-shell");
-      const viewport = window.visualViewport;
-      return !!shell && (!viewport
-        || Math.abs(shell.getBoundingClientRect().height - viewport.height) <= 2);
+      return !!shell && getComputedStyle(shell).position === "relative";
     });
     for (const theme of ["light", "dark-soft"]) {
       const safeArea = await page.evaluate(currentTheme => {
@@ -415,8 +433,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
           root.dataset.theme = oldTheme;
         }
       }, theme);
-      assert.equal(safeArea.shellHeight, 720, `${theme}: fixed shell matches viewport`);
-      assert.equal(safeArea.shellPosition, "fixed", `${theme}: no scrolling the shell`);
+      assert.ok(safeArea.shellHeight >= 720, `${theme}: native document reaches full viewport`);
+      assert.equal(safeArea.shellPosition, "relative", `${theme}: no fixed clipping below Safari toolbar`);
       assert.notEqual(safeArea.rootBackground, "rgba(0, 0, 0, 0)");
       assert.equal(safeArea.sidebarBackground, safeArea.rootBackground,
         `${theme}: opaque sidebar matches the shared surface`);
@@ -426,56 +444,50 @@ test("global SSE updates real counters across tabs and replays missed events", {
       }
     }
 
-    // Safari 26 Liquid Glass: visualViewport меньше 100lvh при видимой toolbar.
-    // Оболочка продолжается под браузерной панелью, а последние строки
-    // можно прокрутить выше её верхней границы.
+    // iOS 26: строка в нативном документе должна уходить ПОД панель Safari,
+    // а при прокрутке до конца последний элемент поднимается над кнопками.
     const underlay = await page.evaluate(() => {
       const root = document.documentElement;
-      const oldHeight = root.style.getPropertyValue("--workspace-viewport-height");
-      const oldChrome = root.style.getPropertyValue("--workspace-chrome-bottom");
-      root.style.setProperty("--workspace-viewport-height", "570px");
-      root.style.setProperty("--workspace-chrome-bottom", "34px");
+      const shell = document.querySelector(".workspace-shell");
+      const sidebar = shell.querySelector(".sidebar");
+      const content = shell.querySelector(".workspace-content");
+      const row = document.createElement("div");
+      row.style.cssText = "height:1400px;flex-shrink:0";
+      content.append(row);
       try {
-        const shell = document.querySelector(".workspace-shell");
-        const content = shell.querySelector(".workspace-content");
-        const row = document.createElement("div");
-        row.style.cssText = "height:1400px;flex-shrink:0";
-        content.append(row);
-        try {
-          content.scrollTop = content.scrollHeight;
-          return {
-            shellPosition: getComputedStyle(shell).position,
-            shellHeight: Math.round(shell.getBoundingClientRect().height),
-            bottomReserve: parseFloat(getComputedStyle(content).paddingBottom),
-            finalItemBottom: row.getBoundingClientRect().bottom,
-          };
-        } finally {
-          row.remove();
-          content.scrollTop = 0;
-        }
+        const before = sidebar.getBoundingClientRect().top;
+        window.scrollTo(0, 600);
+        const whileScrolling = sidebar.getBoundingClientRect().top;
+        window.scrollTo(0, root.scrollHeight);
+        return {
+          shellPosition: getComputedStyle(shell).position,
+          sidebarPosition: getComputedStyle(sidebar).position,
+          sidebarTopStable: Math.abs(before - whileScrolling) <= 2,
+          documentScrolled: window.scrollY > 100,
+          bottomReserve: parseFloat(getComputedStyle(content).paddingBottom),
+          finalItemBottom: row.getBoundingClientRect().bottom,
+          visibleBottom: window.visualViewport?.height || window.innerHeight,
+        };
       } finally {
-        if (oldHeight) root.style.setProperty("--workspace-viewport-height", oldHeight);
-        else root.style.removeProperty("--workspace-viewport-height");
-        if (oldChrome) root.style.setProperty("--workspace-chrome-bottom", oldChrome);
-        else root.style.removeProperty("--workspace-chrome-bottom");
+        row.remove();
+        window.scrollTo(0, 0);
       }
     });
-    assert.equal(underlay.shellPosition, "fixed");
-    assert.equal(underlay.shellHeight, 754,
-      "mobile browser shell extends under Safari controls without scrolling the document");
-    assert.ok(underlay.bottomReserve >= 180,
-      "the covered height is reserved inside the content scrollport");
-    assert.ok(underlay.finalItemBottom <= 572,
-      "last item can be scrolled above the Safari browser controls");
+    assert.equal(underlay.shellPosition, "relative",
+      "native document is painted under the Safari toolbar");
+    assert.equal(underlay.sidebarPosition, "sticky");
+    assert.ok(underlay.sidebarTopStable, "sidebar stays pinned during document scroll");
+    assert.ok(underlay.documentScrolled, "the document itself is the scroll container");
+    assert.ok(underlay.bottomReserve >= 104, "last item clears the floating browser controls");
+    assert.ok(underlay.finalItemBottom <= underlay.visibleBottom - 72,
+      "last item is fully reachable above the Safari controls");
 
-    // Открытый чат: отдельная прокрутка сообщений, поле отправки внутри
-    // уменьшенного visualViewport и под неподвижным sidebar.
+    // Открытый диалог не получает большой browser-bottom padding:
+    // composer остаётся над нижней панелью даже при уменьшенном visualViewport.
     const chatUnderlay = await page.evaluate(() => {
       const root = document.documentElement;
       const before = root.style.getPropertyValue("--workspace-viewport-height");
-      const oldChrome = root.style.getPropertyValue("--workspace-chrome-bottom");
       root.style.setProperty("--workspace-viewport-height", "570px");
-      root.style.setProperty("--workspace-chrome-bottom", "34px");
       const content = document.querySelector(".workspace-content");
       const list = document.createElement("section");
       list.className = "teacher-branch chat-list workspace-panel";
@@ -494,22 +506,21 @@ test("global SSE updates real counters across tabs and replays missed events", {
       content.append(list, detail);
       try {
         return {
-          shellHeight: Math.round(document.querySelector(".workspace-shell").getBoundingClientRect().height),
+          layoutHeight: content.getBoundingClientRect().height,
           messagesScrollable: detail.querySelector(".messages").scrollHeight > detail.querySelector(".messages").clientHeight,
           sendBottom: detail.querySelector(".composer-send").getBoundingClientRect().bottom,
           composerBottom: detail.querySelector(".chat-composer").getBoundingClientRect().bottom,
+          sidebarHeight: document.querySelector(".sidebar").getBoundingClientRect().height,
         };
       } finally {
         list.remove();
         detail.remove();
         if (before) root.style.setProperty("--workspace-viewport-height", before);
         else root.style.removeProperty("--workspace-viewport-height");
-        if (oldChrome) root.style.setProperty("--workspace-chrome-bottom", oldChrome);
-        else root.style.removeProperty("--workspace-chrome-bottom");
       }
     });
-    assert.equal(chatUnderlay.shellHeight, 754,
-      "chat underlay also extends behind Safari toolbar");
+    assert.ok(chatUnderlay.layoutHeight <= 570 - chatUnderlay.sidebarHeight + 2,
+      "chat scrollport fits inside visible Safari viewport");
     assert.ok(chatUnderlay.messagesScrollable,
       "messages scroll within the available chat viewport");
     assert.ok(chatUnderlay.sendBottom <= 572,
@@ -526,7 +537,11 @@ test("global SSE updates real counters across tabs and replays missed events", {
       await page.waitForFunction(() => {
         const vv = window.visualViewport;
         const shell = document.querySelector(".workspace-shell");
-        return !!shell && (!vv || Math.abs(shell.getBoundingClientRect().height - vv.height) <= 2);
+        if (!shell) return false;
+        if (matchMedia("(max-width: 1024px) and (display-mode: browser)").matches) {
+          return getComputedStyle(shell).position === "relative";
+        }
+        return !vv || Math.abs(shell.getBoundingClientRect().height - vv.height) <= 2;
       });
       const state = await page.evaluate(() => {
         const content = document.querySelector(".workspace-content");
