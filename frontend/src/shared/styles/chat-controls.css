@@ -7,14 +7,6 @@
   width: 100%;
 }
 
-:root .workspace-shell .chat-list .chat-section-tabs > button.chat-section-tab[aria-pressed="true"],
-:root .workspace-shell .chat-list .chat-section-tabs > button.chat-section-tab[aria-pressed="true"]:hover {
-  background: var(--ui-control-bg) !important;
-  border-color: var(--ui-border) !important;
-  color: var(--ink) !important;
-  box-shadow: var(--ui-shadow-soft) !important;
-}
-
 :root .workspace-shell .chat-list .chat-section-tabs > button.chat-section-tab:hover:not([aria-pressed="true"]) {
   background: var(--ui-control-hover) !important;
   color: var(--ink) !important;

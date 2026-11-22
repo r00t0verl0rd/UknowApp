@@ -22,6 +22,7 @@
 
 /* Общая область прокрутки находится внутри неподвижной оболочки. */
 .workspace-shell {
+  border-radius: 0;
   position: fixed;
   inset: var(--workspace-viewport-top, 0px) 0 auto;
   width: 100%;
@@ -39,6 +40,12 @@
   .workspace-shell {
     height: var(--workspace-viewport-height, 100vh);
   }
+}
+
+/* Края меню прямые и без светлого фона под скруглениями даже на 1025px. */
+.workspace-shell > .sidebar {
+  border-radius: 0;
+  background-clip: border-box;
 }
 
 /* Sidebar stays in its own viewport row, independently of the active tab's length. */

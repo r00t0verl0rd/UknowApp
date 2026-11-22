@@ -5,14 +5,9 @@
   --menu-text: var(--ui-control-text);
   --menu-hover-bg: var(--ui-control-hover);
   --menu-hover-border: var(--ui-border-strong);
-  --menu-active-bg: #e7dff3;
-  --menu-active-border: #d1c1e6;
-  --menu-active-text: #573e99;
-}
-:root[data-theme="dark-soft"] {
-  --menu-active-bg: #353149;
-  --menu-active-border: #49415f;
-  --menu-active-text: #c6bdf0;
+  --menu-active-bg: var(--ui-selected-bg);
+  --menu-active-border: var(--ui-selected-border);
+  --menu-active-text: var(--ui-selected-text);
 }
 
 /* Вертикальная навигация и нижний блок на компьютере. */
@@ -80,13 +75,6 @@
   background: var(--menu-hover-bg) !important;
   border-color: var(--menu-hover-border) !important;
   color: var(--menu-text) !important;
-  box-shadow: none !important;
-}
-:root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control[aria-current="page"],
-:root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control[aria-current="page"]:hover {
-  background: var(--menu-active-bg) !important;
-  border-color: var(--menu-active-border) !important;
-  color: var(--menu-active-text) !important;
   box-shadow: none !important;
 }
 :root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control:focus-visible,

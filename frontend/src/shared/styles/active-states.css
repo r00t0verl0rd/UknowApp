@@ -1,0 +1,33 @@
+/* Один визуальный язык выбранных разделов и карточек. Статусы ошибок,
+   опасных действий и push-уведомлений остаются семантически отдельными. */
+:root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control[aria-current="page"],
+:root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control[aria-current="page"]:hover,
+:root .workspace-shell .chat-list .chat-section-tabs > button.chat-section-tab[aria-pressed="true"],
+:root .workspace-shell .chat-list .chat-section-tabs > button.chat-section-tab[aria-pressed="true"]:hover,
+:root .workspace-shell button[role="tab"][aria-selected="true"],
+:root .workspace-shell button[role="tab"][aria-selected="true"]:hover,
+:root .workspace-shell .chat-items > button.chat-item.student-card.selected,
+:root .workspace-shell .chat-items > button.chat-item.student-card.selected:hover {
+  background: var(--ui-selected-bg) !important;
+  background-image: none !important;
+  border-color: var(--ui-selected-border) !important;
+  color: var(--ui-selected-text) !important;
+  box-shadow: 0 0 0 1px var(--ui-selected-outline) !important;
+}
+
+:root .workspace-shell .chat-items > button.chat-item.student-card.selected,
+:root .workspace-shell .chat-items > button.chat-item.student-card.selected:hover {
+  box-shadow: inset 3px 0 0 var(--ui-selected-border), 0 0 0 1px var(--ui-selected-outline) !important;
+}
+
+:root .workspace-shell .chat-list .chat-section-tabs > button.chat-section-tab[aria-pressed="false"]:hover,
+:root .workspace-shell button[role="tab"][aria-selected="false"]:hover {
+  background: var(--ui-control-hover) !important;
+  border-color: var(--ui-border-strong) !important;
+  color: var(--ui-control-text) !important;
+}
+
+:root .workspace-shell :is(.ui-menu-control, .ui-toolbar-tab, .chat-item):focus-visible {
+  outline: 2px solid var(--ui-selected-border) !important;
+  outline-offset: 2px;
+}

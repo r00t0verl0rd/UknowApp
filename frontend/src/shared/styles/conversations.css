@@ -35,13 +35,6 @@
 
 .chat-item.has-unread:not(.selected) > .person-main > .person-info b{font-weight:800;color:var(--ink)}
 
-.chat-item.selected,
-:root[data-theme="dark-soft"] .chat-item.selected{
-  background:color-mix(in srgb,var(--button-primary) 10%,var(--surface))!important;
-  border-color:color-mix(in srgb,var(--button-primary) 18%,var(--ui-border))!important;
-  box-shadow:inset 3px 0 0 var(--button-primary)!important;
-}
-
 .chat-items > .empty-state{padding:18px 8px}
 .chat-detail > .chat-head{
   display:flex;

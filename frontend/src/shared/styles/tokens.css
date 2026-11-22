@@ -49,6 +49,11 @@
   --ui-control-bg: #f1edf8;
   --ui-control-hover: #eae3f4;
   --ui-control-text: #514b61;
+  /* Выбранный раздел, вкладка и диалог используют одну палитру. */
+  --ui-selected-bg: #e3d7f3;
+  --ui-selected-border: #b39ad9;
+  --ui-selected-text: #4c308a;
+  --ui-selected-outline: rgba(112, 75, 170, .18);
   --ui-shadow-soft: 0 1px 3px rgba(38, 29, 58, .055);
   --ui-shadow-card: 0 5px 18px rgba(38, 29, 58, .045);
   --ui-focus: 0 0 0 3px rgba(120, 95, 192, .17);
@@ -117,6 +122,10 @@
   --ui-control-bg: #293344;
   --ui-control-hover: #343f53;
   --ui-control-text: #d1d7e3;
+  --ui-selected-bg: #473a61;
+  --ui-selected-border: #8972b4;
+  --ui-selected-text: #f1eaff;
+  --ui-selected-outline: rgba(177, 149, 229, .21);
   --ui-shadow-soft: none;
   --ui-shadow-card: 0 5px 18px rgba(0, 0, 0, .12);
   --ui-focus: 0 0 0 3px rgba(155, 144, 196, .14);
