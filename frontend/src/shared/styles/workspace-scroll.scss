@@ -335,3 +335,107 @@
     background:var(--workspace-background);
   }
 }
+
+
+// Когда Safari открывает программную клавиатуру, визуальный viewport становится
+// меньше layout viewport. В этом режиме используем единый фиксированный
+// контейнер: без конкуренции 100lvh, sticky sidebar и прокрутки документа.
+// Работает для поиска, форм, личных/обычных переписок всех ролей.
+@media (max-width: 1024px) {
+  :root[data-workspace-keyboard="open"] {
+    height:100%;
+    min-height:0;
+    overflow:hidden;
+    overscroll-behavior:none;
+
+    & body:has(.workspace-shell),
+    & #root:has(.workspace-shell) {
+      height:100%;
+      min-height:0;
+      overflow:hidden;
+      overscroll-behavior:none;
+    }
+    & .workspace-shell {
+      position:fixed;
+      inset:var(--workspace-viewport-top, 0px) 0 auto;
+      display:grid;
+      grid-template-columns:minmax(0, 1fr);
+      grid-template-rows:minmax(0, 1fr);
+      width:100%;
+      height:var(--workspace-viewport-height, 100dvh);
+      min-height:0;
+      overflow:hidden;
+    }
+    & .workspace-shell > .sidebar,
+    & .workspace-shell > .content > .topbar {
+      display:none;
+    }
+    & .workspace-shell > .content {
+      grid-column:1;
+      grid-row:1;
+      height:100%;
+      min-height:0;
+      overflow:hidden;
+    }
+    & .workspace-shell > .content > .workspace-content {
+      display:flex;
+      flex-direction:column;
+      flex:1 1 0;
+      height:100%;
+      min-height:0;
+      max-height:100%;
+      overflow-y:auto;
+      overscroll-behavior-y:contain;
+      padding:var(--workspace-gutter);
+      scroll-padding:var(--workspace-gutter);
+    }
+    // Список переписок и открытый чат получают всю свободную высоту.
+    & .workspace-shell > .content > .workspace-content:has(> .chat-list) {
+      display:grid;
+      grid-template-columns:minmax(0, 1fr);
+      grid-template-rows:minmax(0, 1fr);
+      gap:0;
+      overflow:hidden;
+    }
+    & .workspace-content:has(> .chat-list) > :is(.chat-list, .chat-detail) {
+      grid-column:1;
+      grid-row:1;
+      height:100%;
+      min-height:0;
+      max-height:100%;
+      overflow:hidden;
+    }
+    & .workspace-content:has(> .chat-list):has(.mobile-chat-back) > .chat-list,
+    & .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) > .chat-detail {
+      display:none;
+    }
+    & .workspace-content:has(> .chat-list):has(.mobile-chat-back) > .chat-detail {
+      display:flex;
+      flex-direction:column;
+    }
+    & .workspace-content:has(> .chat-list) > .chat-detail > .messages {
+      flex:1 1 0;
+      min-height:0;
+      overflow-y:auto;
+      overscroll-behavior-y:contain;
+    }
+    & .workspace-content:has(> .chat-list) > .chat-detail > .chat-composer {
+      flex:0 0 auto;
+      max-height:none;
+      margin-top:6px;
+      margin-bottom:0;
+      overflow:visible;
+    }
+    & .chat-detail .chat-composer .composer-footer {
+      position:static;
+      bottom:auto;
+    }
+    // Нативные dialog размещаются в видимой части экрана, а не за клавиатурой.
+    & dialog.native-dialog.modal[open] {
+      inset:var(--workspace-viewport-top, 0px) 0 auto;
+      max-height:calc(var(--workspace-viewport-height, 100dvh) - 12px);
+      margin:6px auto;
+      overflow-y:auto;
+    }
+  }
+}
