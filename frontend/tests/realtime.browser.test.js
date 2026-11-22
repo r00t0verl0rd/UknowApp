@@ -280,7 +280,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
                 <button class="desktop-sidebar-logout ui-menu-control" type="button">Выход</button>
               </div>
             </aside>
-            <div class="content">
+            <div class="workspace-content">
               <div class="role_node">Администратор</div>
               <button class="btn graph-add-participant ui-menu-control" type="button">Добавить участника</button>
               <div class="teacher-card"><div class="person-info"><b>Александра Епифанова</b></div></div>
