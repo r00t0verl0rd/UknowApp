@@ -93,7 +93,7 @@
       display: flex;
       margin: 0;
     }
-    :root .workspace-shell .sidebar nav > button.ui-menu-control {
+    :root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control {
       flex: 1 0 auto;
       min-width: 0;
       min-height: 38px;
