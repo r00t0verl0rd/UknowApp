@@ -51,7 +51,7 @@ button.graph-person-action:focus-visible {
 
 /* Общие параметры управления на вкладках пользователей и диалогов. */
 :root {
-  --workspace-control-height: 42px;
+  --workspace-control-height: 38px;
   --workspace-control-radius: var(--ui-radius-sm);
   --workspace-control-font-size: 13px;
   --workspace-control-gap: 8px;
@@ -184,4 +184,52 @@ button.graph-person-action:focus-visible {
 }
 @media (max-width: 1024px) {
   :root { --workspace-panel-padding: 8px; }
+}
+
+/* Одинаковая форма выпадающих списков и кнопок на iOS, Android и десктопе. */
+:root .ui-toolbar-select {
+  position: relative;
+  display: block;
+  min-width: 0;
+  width: 100%;
+  height: var(--workspace-control-height);
+  flex: 1 1 auto;
+  border-radius: var(--workspace-control-radius);
+}
+
+:root .ui-toolbar-select > select.ui-toolbar-select-native {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  display: block;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: var(--workspace-control-height) !important;
+  min-height: var(--workspace-control-height) !important;
+  margin: 0;
+  padding: 0 calc(var(--workspace-control-padding) + 18px) 0 var(--workspace-control-padding);
+  border: 1px solid var(--ui-border) !important;
+  border-radius: var(--workspace-control-radius) !important;
+  background: var(--surface-input);
+  color: var(--ink);
+  font-family: var(--font-family-ui);
+  font-size: var(--workspace-control-font-size);
+  cursor: pointer;
+}
+
+:root .ui-toolbar-select .ui-toolbar-select-chevron {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: 14px;
+  height: 14px;
+  transform: translateY(-50%);
+  color: var(--ui-control-text);
+  pointer-events: none;
+}
+
+:root .ui-toolbar-select:focus-within > select.ui-toolbar-select-native {
+  border-color: var(--ui-border-strong) !important;
+  box-shadow: var(--ui-focus) !important;
+  outline: none;
 }

@@ -321,7 +321,7 @@ font-variant-numeric:tabular-nums;
 line-height:1;}
 
 .chat-filter{display:flex;align-items:center;justify-content:space-between;gap:var(--workspace-control-gap);min-height:var(--workspace-control-height);color:var(--muted);font-size:var(--workspace-control-font-size)}
-.chat-filter select{min-width:0;max-width:65%;width:auto;cursor:pointer}
+.chat-filter .ui-toolbar-select{min-width:0;width:100%;flex:1 1 auto}
 .chat-items{display:flex;flex-direction:column;gap:5px;padding:2px}
 .chat-items > .chat-item{min-height:54px;padding:8px 9px;border:1px solid transparent;border-radius:10px;background:transparent;box-shadow:none;transition:background-color .14s,border-color .14s}
 .chat-items > .chat-item:hover:not(.selected){background:var(--canvas);border-color:var(--ui-border)}
@@ -335,8 +335,8 @@ line-height:1;}
   /* Компоновка фильтров задана общим workspace-control-row. */
   .chat-list-filters > .search{flex:1;min-width:0}
 
-  .mobile-chat-back span,.chat-filter > span,.composer-send span{display:none}
-  .chat-list-filters .chat-filter select{max-width:100%;width:auto}
+  .mobile-chat-back span,.chat-filter > span:not(.ui-toolbar-select),.composer-send span{display:none}
+  .chat-list-filters .chat-filter .ui-toolbar-select{width:100%}
   .chat-items > .chat-item{min-height:44px;padding:5px 8px}
   .chat-detail > .chat-head{padding:4px;gap:5px}
   .mobile-chat-back{justify-content:center;width:36px;min-height:40px;padding:0}
@@ -358,8 +358,8 @@ line-height:1;}
     grid-template-columns: minmax(0, 1fr);
   }
   .workspace-panel.chat-list .chat-filter { width: 100%; }
-  .workspace-panel.chat-list .chat-filter select {
-    max-width: 100%;
+  .workspace-panel.chat-list .chat-filter .ui-toolbar-select {
+    width: 100%;
     flex: 1 1 auto;
   }
 }

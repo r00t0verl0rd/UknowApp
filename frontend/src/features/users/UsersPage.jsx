@@ -13,6 +13,7 @@ import Modal from "../../shared/components/Modal.jsx";
 import Button from "../../shared/components/Button.jsx";
 import CountBadge from "../../shared/components/CountBadge.jsx";
 import IconButton from "../../shared/components/IconButton.jsx";
+import ToolbarSelect from "../../shared/components/ToolbarSelect.jsx";
 
 export default function UsersPage({ visibleUsers, search, setSearch, userSort, setUserSort, openCreate, disconnectTelegram, makeCode, userInfo, setUserInfo, openEdit, removeUser }) {
   return (
@@ -21,9 +22,9 @@ export default function UsersPage({ visibleUsers, search, setSearch, userSort, s
         <div className="search workspace-search ui-toolbar-control">
           <Search/><input aria-label="Поиск по имени" placeholder="Поиск по имени" value={search} onChange={e => setSearch(e.target.value)}/>
         </div>
-        <select className="user-sort ui-toolbar-control" aria-label="Сортировка пользователей" value={userSort} onChange={e => setUserSort(e.target.value)}>
+        <ToolbarSelect className="user-sort-field" selectClassName="user-sort" aria-label="Сортировка пользователей" value={userSort} onChange={e => setUserSort(e.target.value)}>
           <option value="name-asc">По имени</option><option value="name-desc">Имя: Я — А</option><option value="teachers">Сначала учителя</option><option value="students">Сначала ученики</option>
-        </select>
+        </ToolbarSelect>
         <Button variant="primary" className="user-add-btn ui-toolbar-control" onClick={() => openCreate()}><Plus/>Добавить</Button>
         <span className="user-total ui-toolbar-control ui-toolbar-total">Всего <CountBadge as="b" value={visibleUsers.length} label="пользователей"/></span>
       </div>

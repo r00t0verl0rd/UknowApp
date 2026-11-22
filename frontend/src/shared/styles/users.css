@@ -21,10 +21,10 @@
   width: 100%;
 }
 
-.user-toolbar > .user-sort {
+.user-toolbar > .user-sort-field {
   grid-area: sort;
   width: 100%;
-  max-width: none;
+  min-width: 0;
 }
 
 .user-toolbar > .user-add-btn {

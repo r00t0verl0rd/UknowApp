@@ -11,6 +11,7 @@ import { MESSAGE_DAY_MS, parseMessageDate } from "./services/formatMessageTime.j
 import EmptyState from "../../shared/components/EmptyState.jsx";
 import CountBadge from "../../shared/components/CountBadge.jsx";
 import IconButton from "../../shared/components/IconButton.jsx";
+import ToolbarSelect from "../../shared/components/ToolbarSelect.jsx";
 
 export default function ChatsPage({
   setError, profile, inboxLoading, chatSection, setChatSection, personalChats, setSelectedChat,
@@ -96,11 +97,11 @@ export default function ChatsPage({
             {(profile?.role === "teacher" || (profile?.role === "admin" && chatSection === "personal")) && (
               <label className="chat-filter">
                 <span>Показать</span>
-                <select className="ui-toolbar-control" aria-label="Фильтр диалогов" value={chatFilter}
+                <ToolbarSelect className="chat-filter-field" aria-label="Фильтр диалогов" value={chatFilter}
                   onChange={event => setChatFilter(event.target.value)}>
                   <option value="all">{profile?.role === "admin" ? "Все личные" : "Все диалоги"}</option>
                   <option value="unread">Непрочитанные</option>
-                </select>
+                </ToolbarSelect>
               </label>
             )}
           </div>
