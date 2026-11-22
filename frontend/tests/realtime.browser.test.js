@@ -498,8 +498,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
           `${width}px ${theme}: scroll region is keyboard-focusable`);
         assert.equal(focus.main.outline, "none",
           `${width}px ${theme}: no full-screen white/lavender border`);
-        assert.match(focus.main.shadow, /inset/,
-          `${width}px ${theme}: small keyboard-only indicator replaces large frame`);
+        assert.equal(focus.main.shadow, "none",
+          `${width}px ${theme}: no purple vertical stripe when workspace receives focus`);
         for (const name of ["menu", "tab", "chat", "icon", "button"]) {
           assert.equal(focus[name].visibleFocus, true,
             `${width}px ${theme}: ${name} remains keyboard accessible`);
