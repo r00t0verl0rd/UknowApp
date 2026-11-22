@@ -112,7 +112,7 @@ export default function WorkspaceLayout({
 
   return <div ref={shellRef} className={`shell workspace-shell workspace-${role}`}>
     <aside ref={sidebarRef} className="sidebar">
-      <div className="brand"><img src="/logo.png" alt="" /><span>Uknow<span>App</span></span></div>
+      <div className="brand"><img src="/logo-main.svg" alt="" /><span>Uknow<span>App</span></span></div>
       <div className="school-label">{label}</div>
       <nav aria-label="Основная навигация">
         {navigation.filter(item => item.page !== "additional").map(item =>

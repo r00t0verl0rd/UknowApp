@@ -25,7 +25,7 @@ export default function StructurePage({
       <Button type="button" className="graph-add-participant ui-menu-control" onClick={() => openCreate()}><Plus />Добавить участника</Button>
     </div>
     <div className="structure-scroll" role="region" aria-label="Структура школы">
-      <div className="role_node"><img src="/logo.png" alt="" /><div><b>Администратор</b><small>Полное управление</small></div></div>
+      <div className="role_node"><img src="/logo-main.svg" alt="" /><div><b>Администратор</b><small>Полное управление</small></div></div>
       <div className="grid">
         {allTeachers.map(teacher => {
           const students = studentsByTeacherId.get(teacher.id) || [];

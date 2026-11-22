@@ -32,8 +32,8 @@ self.addEventListener("push", event => {
     if (await isConversationVisible(payload)) return;
     await self.registration.showNotification(payload.title || "UknowApp", {
       body: payload.body || "Новое сообщение",
-      icon: "/logo.png",
-      badge: "/favicon.svg",
+      icon: "/logo-main.svg",
+      badge: "/logo-main.svg",
       tag: payload.tag || "uknowapp-message",
       data: { url: payload.url || "/" },
       renotify: true,
