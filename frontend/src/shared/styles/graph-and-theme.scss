@@ -1,797 +1,804 @@
-@layer components {
-  /* Мягкая тёмная тема без резких акцентов. */
-  :root[data-theme="dark-soft"] {
-    & .login-card,
-    & .user-list,
-    & .modal {
-      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.16);
-    }
-    & .panel-credentials-panel {
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
-    }
-    & .panel-credential-row + .panel-credential-row {
-      border-top-color: #394456;
-    }
-    & .topbar svg,
-    & .theme-toggle svg {
-      color: inherit;
-    }
-    & .teacher-branch:hover {
-      transform: inherit;
-    }
-  } /* Вариант: :root[data-theme="dark-soft"] .workspace-content:has(.admin-card) *{ -webkit-font-smoothing: antialiased;}.workspace-content:has(.admin-card) .admin-card, .teacher-branch, .teacher-card, .student-card{ border-width: 1px; border-style: solid; transform: none;}.teacher-branch, .student-card, .teacher-card{ transition: border-color .16s ease, background-color .16s ease, box-shadow .16s ease;}.teacher-branch:hover, .student-card:hover, .teacher-card:hover{ transform: none;}/* Поле ввода немного выше; ручное изменение размера отключено. */
-  /* Счётчики ролей показываются в легенде структуры. */
-  .workspace-content:has(.admin-card) {
-    & .graph-legend {
-      display: flex;
-      align-items: center;
-      width: fit-content;
-      max-width: 100%;
-      box-sizing: border-box;
-    }
-    & .graph-legend-item {
-      display: inline-flex;
-      align-items: center;
-    }
-    & .graph-legend-item > span {
-      flex: 0 0 9px;
-      width: 9px;
-      height: 9px;
-      margin: 0;
-    }
-  } /* Легенда структуры расположена сверху слева. */
-  .workspace-content:has(.admin-card) {
-    & .graph-legend-row {
-      margin: 0 0 17px;
-    }
-  } /* Узел администратора — компактная карточка по центру. */
-  /* Длинные имена учеников переносятся внутри колонок. */
-  .teacher-branch {
-    width: 100%;
+/* Мягкая тёмная тема без резких акцентов. */
+:root[data-theme="dark-soft"] {
+  & .login-card,
+  & .user-list,
+  & .modal {
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.16);
   }
-  .workspace-content:has(.admin-card) .student-list {
+  & .panel-credentials-panel {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  }
+  & .panel-credential-row + .panel-credential-row {
+    border-top-color: #394456;
+  }
+  & .topbar svg,
+  & .theme-toggle svg {
+    color: inherit;
+  }
+  & .teacher-branch:hover {
+    transform: inherit;
+  }
+}
+/* Вариант: :root[data-theme="dark-soft"] .workspace-content:has(.admin-card) *{ -webkit-font-smoothing: antialiased;}.workspace-content:has(.admin-card) .admin-card, .teacher-branch, .teacher-card, .student-card{ border-width: 1px; border-style: solid; transform: none;}.teacher-branch, .student-card, .teacher-card{ transition: border-color .16s ease, background-color .16s ease, box-shadow .16s ease;}.teacher-branch:hover, .student-card:hover, .teacher-card:hover{ transform: none;}/* Поле ввода немного выше; ручное изменение размера отключено. */
+/* Счётчики ролей показываются в легенде структуры. */
+.workspace-content:has(.admin-card) {
+  & .graph-legend {
+    display: flex;
+    align-items: center;
+    width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  & .graph-legend-item {
+    display: inline-flex;
+    align-items: center;
+  }
+  & .graph-legend-item > span {
+    flex: 0 0 9px;
+    width: 9px;
+    height: 9px;
+    margin: 0;
+  }
+}
+/* Легенда структуры расположена сверху слева. */
+.workspace-content:has(.admin-card) {
+  & .graph-legend-row {
+    margin: 0 0 17px;
+  }
+}
+/* Узел администратора — компактная карточка по центру. */
+/* Длинные имена учеников переносятся внутри колонок. */
+.teacher-branch {
+  width: 100%;
+}
+.workspace-content:has(.admin-card) .student-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  margin: 12px 0 0;
+  padding: 0;
+  overflow: visible;
+}
+.student-card .avatar {
+  color: #a76d16;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+}
+.student-card .person-info b {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-overflow: clip;
+  line-height: 1.25;
+}
+.student-card .person-info small {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.student-card > .graph-person-action svg {
+  width: 14px;
+  height: 14px;
+}
+/* Основное действие расположено рядом с легендой. */
+/* Компактные карточки помещаются в узких колонках. */
+.workspace-content:has(.admin-card) .grid,
+.teacher-branch,
+.workspace-content:has(.admin-card) .student-list {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.student-card {
+  align-items: center;
+  gap: 7px;
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.student-card .person-main {
+  align-items: center;
+  gap: 8px;
+  display: flex;
+  flex: 1 1 0%;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+.student-card .person-info {
+  flex: 1 1 0%;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+.student-card .person-info b,
+.student-card .person-info small {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  text-overflow: clip;
+}
+/* Сужается содержимое карточек, не колонки преподавателей. */
+.user-row:hover {
+  background: #f8f7fb;
+}
+.user-row:last-child {
+  border-bottom: 0;
+}
+.user-person-info {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.user-actions {
+  display: flex;
+  flex: 0 0 auto;
+}
+.user-action-btn {
+  place-items: center;
+}
+.user-action-btn:hover {
+  border-color: var(--line);
+  color: var(--ink);
+  background: rgba(130, 140, 160, 0.1);
+}
+:root[data-theme="dark-soft"] {
+  & .user-action-btn:hover {
+    background: #303b4d;
+    border-color: #4b5870;
+    color: #f0f2f7;
+  }
+}
+/* Имена в карточках переносятся, кнопки сохраняют размер. */
+.teacher-card {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 8px;
+}
+.teacher-card > .person-main {
+  display: flex;
+  flex: 1 1 0%;
+  width: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  gap: 8px;
+}
+.teacher-card .avatar {
+  flex: 0 0 auto;
+}
+.teacher-card .person-info {
+  flex: 1 1 0%;
+  width: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+.teacher-card .person-info b {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  text-overflow: clip;
+  line-height: 1.25;
+}
+.teacher-card .person-info small {
+  display: block;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+.teacher-card .person-actions {
+  display: flex;
+  flex: 0 0 auto;
+  min-width: 0;
+  gap: 1px;
+}
+.teacher-card .person-actions button {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+}
+/* Счётчики заметны, но не отвлекают от структуры. */
+.workspace-content:has(.admin-card) {
+  & .graph-legend {
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 18px;
+  }
+  & .graph-legend-item {
+    color: var(--muted);
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 750;
+    gap: 9px;
+  }
+}
+/* В светлой теме мягкий контраст и чёткие границы. */
+:root:not([data-theme="dark-soft"]) {
+  & body {
+    color: #514d5a;
+  }
+  & .topbar,
+  & .sidebar,
+  & .user-list {
+    border-color: #ded9e5;
+  }
+  & .student-card,
+  & .teacher-card {
+    border-color: #dcd6e3;
+  }
+  & .person-info b {
+    color: #56515f;
+  }
+  & .person-info small,
+  & .toolbar,
+  & .hint {
+    color: #918b9a;
+  }
+}
+.user-add-btn {
+  white-space: nowrap;
+}
+.user-add-btn svg {
+  width: 18px;
+  height: 18px;
+}
+.user-list {
+  padding: 0;
+  border-radius: 17px;
+  overflow: visible;
+}
+.user-row {
+  border-bottom: 1px solid var(--line);
+  transition: background 0.15s ease;
+  min-height: 86px;
+  gap: 16px;
+  padding: 16px 20px;
+}
+.user-row > .avatar {
+  border-radius: 14px;
+}
+.user-row > .avatar svg {
+  width: 22px;
+  height: 22px;
+}
+.user-actions {
+  margin-left: auto;
+  align-items: center;
+}
+.user-action-btn {
+  cursor: pointer;
+  flex: 0 0 42px;
+  color: #777085;
+  background: #faf9fc;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid #e5dfed;
+}
+.user-action-btn svg {
+  stroke-width: 1.9;
+  width: 18px;
+  height: 18px;
+}
+.user-action-btn.edit-btn {
+  color: #756a91;
+  background: #f8f6fb;
+}
+.user-action-btn.user-delete {
+  margin-left: 3px;
+  color: #c66f7a;
+  border-color: #efd4d8;
+  background: #fff5f6;
+}
+.user-action-btn.user-delete:hover {
+  color: #fff;
+  border-color: #bd5968;
+  background: #bd5968;
+}
+:root[data-theme="dark-soft"] {
+  & .user-action-btn {
+    color: #c0c8d6;
+    border-color: #414e62;
+    background: #252e3d;
+  }
+  & .user-action-btn.user-delete:hover {
+    color: #fff;
+    background: #a94e60;
+  }
+}
+/* Сведения об участнике открываются по значку информации. */
+.user-info-wrap {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+.user-action-btn.user-info-btn {
+  width: 42px;
+  height: 42px;
+  flex-basis: 42px;
+  color: #8a7da4;
+  border-color: #e5dfed;
+  background: #faf9fc;
+}
+.user-action-btn.user-info-btn:hover,
+.user-action-btn.user-info-btn.is-open {
+  color: #62439d;
+  border-color: #cbb9e7;
+  background: #f2ecfa;
+}
+.user-info-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 25px;
+  color: #777183;
+}
+.user-info-line > svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  color: #8d82a4;
+}
+.user-info-login {
+  display: grid;
+  gap: 3px;
+  margin-top: 8px;
+  padding-top: 9px;
+  border-top: 1px solid #eeeaf2;
+}
+.user-info-login > span {
+  color: #9a93a4;
+  font-size: 10px;
+}
+.user-info-login > b {
+  color: #5c5568;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+:root[data-theme="dark-soft"] {
+  & .user-action-btn.user-info-btn {
+    color: #c0b7d7;
+    border-color: #414e62;
+    background: #252e3d;
+  }
+  & .user-action-btn.user-info-btn:hover,
+  & .user-action-btn.user-info-btn.is-open {
+    color: #e4d7ff;
+    border-color: #665980;
+    background: #39334c;
+  }
+  & .user-info-line,
+  & .user-info-login > span {
+    color: #bbc4d3;
+  }
+  & .user-info-login {
+    border-top-color: #414e62;
+  }
+  & .user-info-login > b {
+    color: #edf0f6;
+  }
+}
+/* Ученики без назначения используют общий размер карточек. */
+.workspace-content:has(.admin-card) {
+  & .unassigned {
+    width: 100%;
+    min-width: 0;
+  }
+  & .unassigned-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+    align-items: stretch;
+    gap: 26px;
     width: 100%;
-    margin: 12px 0 0;
-    padding: 0;
-    overflow: visible;
+    min-width: 0;
   }
-  .student-card .avatar {
-    color: #a76d16;
+  & .unassigned-grid .unassigned-student-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 9px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 72px;
+    padding: 10px 12px;
+    box-sizing: border-box;
+    overflow: hidden;
+    background: #f3e8d4;
+    border-color: #ddc69d;
+  }
+  & .unassigned-student-card > .person-main {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    gap: 9px;
+    overflow: hidden;
+  }
+  & .unassigned-student-card > .person-main > .avatar {
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+  }
+  & .unassigned-student-card .person-info {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  & .unassigned-student-card .person-info b {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    text-overflow: ellipsis;
+    line-height: 1.25;
+  }
+  & .unassigned-student-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    width: auto;
+    min-width: 0;
+    margin: 0;
+  }
+  & .unassigned-student-actions .btn {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 8px 13px;
+    white-space: nowrap;
+  }
+  & .unassigned-grid .unassigned-student-card:hover {
+    border-color: #d8c8eb;
+    box-shadow: 0 5px 17px rgba(87, 62, 153, 0.08);
+  }
+}
+/* Подтверждение удаления в стиле приложения. */
+.confirm-delete-modal .modal-head {
+  align-items: center;
+  margin-bottom: 14px;
+}
+.confirm-delete-modal .modal-head h2 {
+  color: var(--ink);
+}
+.confirm-delete-modal > .hint {
+  margin: 0 0 20px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.confirm-delete-modal > .hint b {
+  color: var(--ink);
+  font-weight: 800;
+}
+.confirm-delete-modal .modal-actions {
+  justify-content: flex-end;
+  gap: 10px;
+}
+.confirm-delete-modal .btn {
+  min-height: 42px;
+  padding: 10px 15px;
+  border-radius: 11px;
+}
+.confirm-delete-modal .btn.danger {
+  color: #fff;
+  border-color: #c95767;
+  background: linear-gradient(110deg, #bf5263, #d46b78);
+  box-shadow: 0 5px 16px rgba(191, 82, 99, 0.19);
+}
+.confirm-delete-modal .btn.danger:hover:not(:disabled) {
+  background: linear-gradient(110deg, #a94455, #c45b69);
+  box-shadow: 0 7px 19px rgba(191, 82, 99, 0.25);
+}
+.confirm-delete-modal .btn.danger svg {
+  width: 16px;
+  height: 16px;
+}
+:root[data-theme="dark-soft"] {
+  & .confirm-delete-modal .modal-head h2,
+  & .confirm-delete-modal > .hint b {
+    color: #edf0f6;
+  }
+  & .confirm-delete-modal .btn.danger {
+    color: #fff;
+    border-color: #97505c;
+    background: linear-gradient(110deg, #934656, #aa5967);
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.22);
+  }
+}
+/* Для всего интерфейса используем один шрифт. */
+html,
+body {
+  font-family: var(--font-family-ui);
+  overflow-x: clip;
+}
+h1,
+h2,
+h3,
+.brand,
+.admin-card b,
+.person-info b,
+.modal-head h2,
+.user-person-info {
+  font-family: var(--font-family-ui);
+}
+.user-person-info {
+  text-overflow: ellipsis;
+  letter-spacing: -0.18px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+:root[data-theme="dark-soft"] {
+  & body {
+    background: #171b25;
+    color: #e4e8f0;
+  }
+  & .login-screen {
+    background:
+      radial-gradient(circle at 18% 18%, #3b2e46 0, transparent 34%),
+      radial-gradient(circle at 86% 84%, #29374b 0, transparent 38%), #171b25;
+  }
+  & .login-card,
+  & .user-list,
+  & .modal {
+    background: #202633;
+    color: #e4e8f0;
+    border-color: #343d4d;
+  }
+  & .school-label,
+  & .eyebrow,
+  & .person-info small {
+    color: #9ba6b8;
+  }
+  & .topbar > div,
+  & .topbar b,
+  & .person-info b,
+  & .empty-state b {
+    color: #e4e8f0;
+  }
+  & .student-card,
+  & .teacher-card {
+    background: #252d3b;
+    border-color: #3a4659;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+  }
+  & .panel-credentials-panel {
+    background: #222a37;
+    border-color: #394456;
+  }
+  & .panel-credential-row > span,
+  & .panel-credential-row > label {
+    color: #a4afc0;
+  }
+  & .panel-login-edit-row > input,
+  & .panel-access-value {
+    background: #293140;
+    border-color: #414c60;
+    color: #e0e5ee;
+  }
+  & .panel-login-edit-row > input:focus {
+    background: #30394a;
+    border-color: #69758e;
+    color: #f0f2f7;
+  }
+  & .panel-access-value b {
+    color: #b9afe8;
+  }
+  & .panel-access-value .password-code-refresh {
+    background: #30394a;
+    border-color: #465268;
+    color: #c8c0e4;
+  }
+  & input,
+  & select,
+  & textarea {
+    background: #262f3d;
+    color: #e4e8f0;
+    border-color: #414c60;
+  }
+  & input::placeholder,
+  & textarea::placeholder {
+    color: #8793a7;
+  }
+  & .user-row {
+    border-color: #343d4d;
+  }
+  & .btn.primary {
+    color: #fff;
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.18);
+  }
+  & .btn.primary:hover {
+    background: #8176b0;
+  }
+  & .btn.outline {
+    background: #353149;
+    border-color: #514b6d;
+    color: #c9c0ef;
+  }
+  & .role-tag,
+  & .avatar,
+  & .credential-field-code,
+  & .invite-code {
+    background: #2b2d3e;
+    border-color: #4b4662;
+    color: #c6cddd;
+  }
+  & .credential-field-code .credential-field-value b {
+    color: #c9c0ef;
+  }
+  & .empty-state {
+    color: #9ba6b8;
+  }
+  & .workspace-content:has(.admin-card) .legend {
+    color: #d1d7e3;
+    background: #2a3342;
+    border: 1px solid #46536a;
+    box-shadow: none;
+  }
+  & .workspace-content:has(.admin-card) .admin-card small {
+    color: #aab4c5;
+  }
+  & .teacher-branch {
+    border: 1px solid #3f4d61;
+  }
+  & .teacher-card {
+    border: 1px solid #4c4b69;
+    box-shadow: none;
+  }
+  & .student-card {
+    border: 1px solid #4a5864;
+  }
+  & .workspace-content:has(.admin-card) .empty-students {
+    background: #252e3a;
+    border: 1px dashed #566176;
+    color: #aab4c5;
+  }
+  & .workspace-content:has(.admin-card) .add-student {
+    background: #303448;
+    border: 1px solid #4b4c69;
+    color: #c7bdf0;
+    box-shadow: none;
+  }
+  & .workspace-content:has(.admin-card) .add-student:hover {
+    background: #3b3a55;
+    border-color: #77729d;
+  }
+  & .workspace-content:has(.admin-card) .unassigned {
+    border-top: 1px solid #414d60;
+  }
+  & .student-card,
+  & .teacher-card {
+    color: #e4e8f0;
+  }
+  & .student-card:hover,
+  & .teacher-card:hover,
+  & .user-row:hover,
+  & .unassigned-grid .student-card:hover {
+    background: #30394a;
+    border-color: #66728c;
+    box-shadow: 0 4px 13px rgba(0, 0, 0, 0.2);
+  }
+  & .workspace-content:has(.admin-card) .person-actions button:hover,
+  & .workspace-content:has(.admin-card) .icon-btn:hover {
+    background: #3b4057;
+    border-color: #525b78;
+    color: #d3cafa;
+    box-shadow: none;
+  }
+  & .workspace-content:has(.admin-card) .person-actions .danger-icon:hover,
+  & .workspace-content:has(.admin-card) .danger-icon:hover {
+    background: #482f3b;
+    border-color: #78505f;
+    color: #f0aab4;
+  }
+  & .toolbar .search,
+  & .search {
+    background: #262f3d;
+    border: 1px solid #414e62;
+    box-shadow: none;
+  }
+  & .search:focus-within {
+    background: #2c3747;
+    border-color: #8c82ba;
+    box-shadow: 0 0 0 3px rgba(170, 160, 216, 0.13);
+  }
+  & .search svg {
+    color: #aab4c5;
+  }
+  & .search input {
+    background: transparent;
+    color: #e4e8f0;
+  }
+  & .search input::placeholder {
+    color: #8895a9;
+  }
+  & .user-row {
+    background: transparent;
+    border-bottom: 1px solid #343f52;
+  }
+  & .user-row .role-tag.teacher {
+    background: #393650;
+    color: #c8c0ef;
+  }
+  & .user-row .role-tag.student {
+    background: #47333c;
+    color: #e8b4bd;
+  }
+}
+:root[data-theme="dark-soft"] .workspace-content:has(.admin-card) .graph-legend-item {
+  color: #d1d7e3;
+}
+.student-card > .graph-person-action {
+  flex: 0 0 27px;
+  width: 27px;
+  height: 27px;
+  min-width: 27px;
+  min-height: 27px;
+  padding: 0;
+}
+:root[data-theme="dark-soft"] {
+  & .user-row:hover {
+    background: #262f3d;
+  }
+}
+.workspace-content:has(.admin-card) {
+  & .unassigned-student-actions > .graph-person-action {
     flex: 0 0 34px;
     width: 34px;
     height: 34px;
-  }
-  .student-card .person-info b {
-    display: block;
-    max-width: 100%;
-    overflow: visible;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-    text-overflow: clip;
-    line-height: 1.25;
-  }
-  .student-card .person-info small {
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-  .student-card > .graph-person-action svg {
-    width: 14px;
-    height: 14px;
-  } /* Основное действие расположено рядом с легендой. */
-  /* Компактные карточки помещаются в узких колонках. */
-
-  .workspace-content:has(.admin-card) .grid,
-  .teacher-branch,
-  .workspace-content:has(.admin-card) .student-list {
-    min-width: 0;
-    max-width: 100%;
-    box-sizing: border-box;
-  }
-  .student-card {
-    align-items: center;
-    gap: 7px;
-    display: flex;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
-  }
-  .student-card .person-main {
-    align-items: center;
-    gap: 8px;
-    display: flex;
-    flex: 1 1 0%;
-    width: auto;
-    min-width: 0;
-    max-width: 100%;
-    overflow: hidden;
-  }
-  .student-card .person-info {
-    flex: 1 1 0%;
-    width: auto;
-    min-width: 0;
-    max-width: 100%;
-    overflow: hidden;
-  }
-  .student-card .person-info b,
-  .student-card .person-info small {
-    max-width: 100%;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    word-break: normal;
-    text-overflow: clip;
-  } /* Сужается содержимое карточек, не колонки преподавателей. */
-  .user-row:hover {
-    background: #f8f7fb;
-  }
-  .user-row:last-child {
-    border-bottom: 0;
-  }
-  .user-person-info {
-    display: block;
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow: hidden;
-    color: var(--ink);
-    white-space: nowrap;
-  }
-  .user-actions {
-    display: flex;
-    flex: 0 0 auto;
-  }
-  .user-action-btn {
-    place-items: center;
-  }
-  .user-action-btn:hover {
-    border-color: var(--line);
-    color: var(--ink);
-    background: rgba(130, 140, 160, 0.1);
-  }
-  :root[data-theme="dark-soft"] {
-    & .user-action-btn:hover {
-      background: #303b4d;
-      border-color: #4b5870;
-      color: #f0f2f7;
-    }
-  } /* Имена в карточках переносятся, кнопки сохраняют размер. */
-  .teacher-card {
-    display: flex;
-    width: 100%;
-    box-sizing: border-box;
-    gap: 8px;
-  }
-  .teacher-card > .person-main {
-    display: flex;
-    flex: 1 1 0%;
-    width: 0;
-    min-width: 0;
-    max-width: 100%;
-    overflow: hidden;
-    gap: 8px;
-  }
-  .teacher-card .avatar {
-    flex: 0 0 auto;
-  }
-  .teacher-card .person-info {
-    flex: 1 1 0%;
-    width: 0;
-    min-width: 0;
-    max-width: 100%;
-    overflow: hidden;
-  }
-  .teacher-card .person-info b {
-    display: block;
-    max-width: 100%;
-    overflow: visible;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    word-break: normal;
-    text-overflow: clip;
-    line-height: 1.25;
-  }
-  .teacher-card .person-info small {
-    display: block;
-    max-width: 100%;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    line-height: 1.25;
-  }
-  .teacher-card .person-actions {
-    display: flex;
-    flex: 0 0 auto;
-    min-width: 0;
-    gap: 1px;
-  }
-  .teacher-card .person-actions button {
-    flex: 0 0 28px;
-    width: 28px;
-    height: 28px;
-  } /* Счётчики заметны, но не отвлекают от структуры. */
-  .workspace-content:has(.admin-card) {
-    & .graph-legend {
-      flex: 0 1 auto;
-      flex-wrap: wrap;
-      justify-content: flex-start;
-      gap: 18px;
-    }
-    & .graph-legend-item {
-      color: var(--muted);
-      white-space: nowrap;
-      font-size: 12px;
-      font-weight: 750;
-      gap: 9px;
-    }
-  } /* В светлой теме мягкий контраст и чёткие границы. */
-  :root:not([data-theme="dark-soft"]) {
-    & body {
-      color: #514d5a;
-    }
-    & .topbar,
-    & .sidebar,
-    & .user-list {
-      border-color: #ded9e5;
-    }
-    & .student-card,
-    & .teacher-card {
-      border-color: #dcd6e3;
-    }
-    & .person-info b {
-      color: #56515f;
-    }
-    & .person-info small,
-    & .toolbar,
-    & .hint {
-      color: #918b9a;
-    }
-  }
-  .user-add-btn {
-    white-space: nowrap;
-  }
-  .user-add-btn svg {
-    width: 18px;
-    height: 18px;
-  }
-  .user-list {
+    min-width: 34px;
+    min-height: 34px;
     padding: 0;
-    border-radius: 17px;
-    overflow: visible;
-  }
-  .user-row {
-    border-bottom: 1px solid var(--line);
-    transition: background 0.15s ease;
-    min-height: 86px;
-    gap: 16px;
-    padding: 16px 20px;
-  }
-  .user-row > .avatar {
-    border-radius: 14px;
-  }
-  .user-row > .avatar svg {
-    width: 22px;
-    height: 22px;
-  }
-  .user-actions {
-    margin-left: auto;
-    align-items: center;
-  }
-  .user-action-btn {
-    cursor: pointer;
-    flex: 0 0 42px;
-    color: #777085;
-    background: #faf9fc;
-    transition:
-      background 0.15s ease,
-      border-color 0.15s ease,
-      color 0.15s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 42px;
-    height: 42px;
-    padding: 0;
-    border: 1px solid #e5dfed;
-  }
-  .user-action-btn svg {
-    stroke-width: 1.9;
-    width: 18px;
-    height: 18px;
-  }
-  .user-action-btn.edit-btn {
-    color: #756a91;
-    background: #f8f6fb;
-  }
-  .user-action-btn.user-delete {
-    margin-left: 3px;
-    color: #c66f7a;
-    border-color: #efd4d8;
-    background: #fff5f6;
-  }
-  .user-action-btn.user-delete:hover {
-    color: #fff;
-    border-color: #bd5968;
-    background: #bd5968;
-  }
-  :root[data-theme="dark-soft"] {
-    & .user-action-btn {
-      color: #c0c8d6;
-      border-color: #414e62;
-      background: #252e3d;
-    }
-    & .user-action-btn.user-delete:hover {
-      color: #fff;
-      background: #a94e60;
-    }
-  } /* Сведения об участнике открываются по значку информации. */
-  .user-info-wrap {
-    position: relative;
-    display: inline-flex;
-    flex: 0 0 auto;
-  }
-  .user-action-btn.user-info-btn {
-    width: 42px;
-    height: 42px;
-    flex-basis: 42px;
-    color: #8a7da4;
-    border-color: #e5dfed;
-    background: #faf9fc;
-  }
-  .user-action-btn.user-info-btn:hover,
-  .user-action-btn.user-info-btn.is-open {
-    color: #62439d;
-    border-color: #cbb9e7;
-    background: #f2ecfa;
-  }
-  .user-info-line {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 25px;
-    color: #777183;
-  }
-  .user-info-line > svg {
-    width: 14px;
-    height: 14px;
-    flex: 0 0 14px;
-    color: #8d82a4;
-  }
-  .user-info-login {
-    display: grid;
-    gap: 3px;
-    margin-top: 8px;
-    padding-top: 9px;
-    border-top: 1px solid #eeeaf2;
-  }
-  .user-info-login > span {
-    color: #9a93a4;
-    font-size: 10px;
-  }
-  .user-info-login > b {
-    color: #5c5568;
-    font-size: 12px;
-    overflow-wrap: anywhere;
-  }
-  :root[data-theme="dark-soft"] {
-    & .user-action-btn.user-info-btn {
-      color: #c0b7d7;
-      border-color: #414e62;
-      background: #252e3d;
-    }
-    & .user-action-btn.user-info-btn:hover,
-    & .user-action-btn.user-info-btn.is-open {
-      color: #e4d7ff;
-      border-color: #665980;
-      background: #39334c;
-    }
-    & .user-info-line,
-    & .user-info-login > span {
-      color: #bbc4d3;
-    }
-    & .user-info-login {
-      border-top-color: #414e62;
-    }
-    & .user-info-login > b {
-      color: #edf0f6;
-    }
-  } /* Ученики без назначения используют общий размер карточек. */
-  .workspace-content:has(.admin-card) {
-    & .unassigned {
-      width: 100%;
-      min-width: 0;
-    }
-    & .unassigned-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
-      align-items: stretch;
-      gap: 26px;
-      width: 100%;
-      min-width: 0;
-    }
-    & .unassigned-grid .unassigned-student-card {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
-      gap: 9px;
-      width: 100%;
-      max-width: 100%;
-      min-width: 0;
-      min-height: 72px;
-      padding: 10px 12px;
-      box-sizing: border-box;
-      overflow: hidden;
-      background: #f3e8d4;
-      border-color: #ddc69d;
-    }
-    & .unassigned-student-card > .person-main {
-      display: flex;
-      flex: 1 1 auto;
-      align-items: center;
-      width: auto;
-      min-width: 0;
-      max-width: 100%;
-      gap: 9px;
-      overflow: hidden;
-    }
-    & .unassigned-student-card > .person-main > .avatar {
-      flex: 0 0 38px;
-      width: 38px;
-      height: 38px;
-    }
-    & .unassigned-student-card .person-info {
-      flex: 1 1 auto;
-      width: auto;
-      min-width: 0;
-      max-width: 100%;
-      overflow: hidden;
-    }
-    & .unassigned-student-card .person-info b {
-      display: block;
-      max-width: 100%;
-      overflow: hidden;
-      white-space: normal;
-      overflow-wrap: anywhere;
-      word-break: normal;
-      text-overflow: ellipsis;
-      line-height: 1.25;
-    }
-    & .unassigned-student-actions {
-      display: flex;
-      flex: 0 0 auto;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 6px;
-      width: auto;
-      min-width: 0;
-      margin: 0;
-    }
-    & .unassigned-student-actions .btn {
-      flex: 0 0 auto;
-      min-height: 36px;
-      padding: 8px 13px;
-      white-space: nowrap;
-    }
-    & .unassigned-grid .unassigned-student-card:hover {
-      border-color: #d8c8eb;
-      box-shadow: 0 5px 17px rgba(87, 62, 153, 0.08);
-    }
-  } /* Подтверждение удаления в стиле приложения. */
-  .confirm-delete-modal .modal-head {
-    align-items: center;
-    margin-bottom: 14px;
-  }
-  .confirm-delete-modal .modal-head h2 {
-    color: var(--ink);
-  }
-  .confirm-delete-modal > .hint {
-    margin: 0 0 20px;
-    font-size: 13px;
-    line-height: 1.6;
-  }
-  .confirm-delete-modal > .hint b {
-    color: var(--ink);
-    font-weight: 800;
-  }
-  .confirm-delete-modal .modal-actions {
-    justify-content: flex-end;
-    gap: 10px;
-  }
-  .confirm-delete-modal .btn {
-    min-height: 42px;
-    padding: 10px 15px;
-    border-radius: 11px;
-  }
-  .confirm-delete-modal .btn.danger {
-    color: #fff;
-    border-color: #c95767;
-    background: linear-gradient(110deg, #bf5263, #d46b78);
-    box-shadow: 0 5px 16px rgba(191, 82, 99, 0.19);
-  }
-  .confirm-delete-modal .btn.danger:hover:not(:disabled) {
-    background: linear-gradient(110deg, #a94455, #c45b69);
-    box-shadow: 0 7px 19px rgba(191, 82, 99, 0.25);
-  }
-  .confirm-delete-modal .btn.danger svg {
-    width: 16px;
-    height: 16px;
-  }
-  :root[data-theme="dark-soft"] {
-    & .confirm-delete-modal .modal-head h2,
-    & .confirm-delete-modal > .hint b {
-      color: #edf0f6;
-    }
-    & .confirm-delete-modal .btn.danger {
-      color: #fff;
-      border-color: #97505c;
-      background: linear-gradient(110deg, #934656, #aa5967);
-      box-shadow: 0 5px 16px rgba(0, 0, 0, 0.22);
-    }
-  } /* Для всего интерфейса используем один шрифт. */
-  html,
-  body {
-    font-family: var(--font-family-ui);
-    overflow-x: clip;
-  }
-  h1,
-  h2,
-  h3,
-  .brand,
-  .admin-card b,
-  .person-info b,
-  .modal-head h2,
-  .user-person-info {
-    font-family: var(--font-family-ui);
-  }
-  .user-person-info {
-    text-overflow: ellipsis;
-    letter-spacing: -0.18px;
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 1.35;
   }
 }
-@layer overrides {
-  :root[data-theme="dark-soft"] {
-    & body {
-      background: #171b25;
-      color: #e4e8f0;
-    }
-    & .login-screen {
-      background:
-        radial-gradient(circle at 18% 18%, #3b2e46 0, transparent 34%),
-        radial-gradient(circle at 86% 84%, #29374b 0, transparent 38%), #171b25;
-    }
-    & .login-card,
-    & .user-list,
-    & .modal {
-      background: #202633;
-      color: #e4e8f0;
-      border-color: #343d4d;
-    }
-    & .school-label,
-    & .eyebrow,
-    & .person-info small {
-      color: #9ba6b8;
-    }
-    & .topbar > div,
-    & .topbar b,
-    & .person-info b,
-    & .empty-state b {
-      color: #e4e8f0;
-    }
-    & .student-card,
-    & .teacher-card {
-      background: #252d3b;
-      border-color: #3a4659;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
-    }
-    & .panel-credentials-panel {
-      background: #222a37;
-      border-color: #394456;
-    }
-    & .panel-credential-row > span,
-    & .panel-credential-row > label {
-      color: #a4afc0;
-    }
-    & .panel-login-edit-row > input,
-    & .panel-access-value {
-      background: #293140;
-      border-color: #414c60;
-      color: #e0e5ee;
-    }
-    & .panel-login-edit-row > input:focus {
-      background: #30394a;
-      border-color: #69758e;
-      color: #f0f2f7;
-    }
-    & .panel-access-value b {
-      color: #b9afe8;
-    }
-    & .panel-access-value .password-code-refresh {
-      background: #30394a;
-      border-color: #465268;
-      color: #c8c0e4;
-    }
-    & input,
-    & select,
-    & textarea {
-      background: #262f3d;
-      color: #e4e8f0;
-      border-color: #414c60;
-    }
-    & input::placeholder,
-    & textarea::placeholder {
-      color: #8793a7;
-    }
-    & .user-row {
-      border-color: #343d4d;
-    }
-    & .btn.primary {
-      color: #fff;
-      box-shadow: 0 5px 16px rgba(0, 0, 0, 0.18);
-    }
-    & .btn.primary:hover {
-      background: #8176b0;
-    }
-    & .btn.outline {
-      background: #353149;
-      border-color: #514b6d;
-      color: #c9c0ef;
-    }
-    & .role-tag,
-    & .avatar,
-    & .credential-field-code,
-    & .invite-code {
-      background: #2b2d3e;
-      border-color: #4b4662;
-      color: #c6cddd;
-    }
-    & .credential-field-code .credential-field-value b {
-      color: #c9c0ef;
-    }
-    & .empty-state {
-      color: #9ba6b8;
-    }
-    & .workspace-content:has(.admin-card) .legend {
-      color: #d1d7e3;
-      background: #2a3342;
-      border: 1px solid #46536a;
-      box-shadow: none;
-    }
-    & .workspace-content:has(.admin-card) .admin-card small {
-      color: #aab4c5;
-    }
-    & .teacher-branch {
-      border: 1px solid #3f4d61;
-    }
-    & .teacher-card {
-      border: 1px solid #4c4b69;
-      box-shadow: none;
-    }
-    & .student-card {
-      border: 1px solid #4a5864;
-    }
-    & .workspace-content:has(.admin-card) .empty-students {
-      background: #252e3a;
-      border: 1px dashed #566176;
-      color: #aab4c5;
-    }
-    & .workspace-content:has(.admin-card) .add-student {
-      background: #303448;
-      border: 1px solid #4b4c69;
-      color: #c7bdf0;
-      box-shadow: none;
-    }
-    & .workspace-content:has(.admin-card) .add-student:hover {
-      background: #3b3a55;
-      border-color: #77729d;
-    }
-    & .workspace-content:has(.admin-card) .unassigned {
-      border-top: 1px solid #414d60;
-    }
-    & .student-card,
-    & .teacher-card {
-      color: #e4e8f0;
-    }
-    & .student-card:hover,
-    & .teacher-card:hover,
-    & .user-row:hover,
-    & .unassigned-grid .student-card:hover {
-      background: #30394a;
-      border-color: #66728c;
-      box-shadow: 0 4px 13px rgba(0, 0, 0, 0.2);
-    }
-    & .workspace-content:has(.admin-card) .person-actions button:hover,
-    & .workspace-content:has(.admin-card) .icon-btn:hover {
-      background: #3b4057;
-      border-color: #525b78;
-      color: #d3cafa;
-      box-shadow: none;
-    }
-    & .workspace-content:has(.admin-card) .person-actions .danger-icon:hover,
-    & .workspace-content:has(.admin-card) .danger-icon:hover {
-      background: #482f3b;
-      border-color: #78505f;
-      color: #f0aab4;
-    }
-    & .toolbar .search,
-    & .search {
-      background: #262f3d;
-      border: 1px solid #414e62;
-      box-shadow: none;
-    }
-    & .search:focus-within {
-      background: #2c3747;
-      border-color: #8c82ba;
-      box-shadow: 0 0 0 3px rgba(170, 160, 216, 0.13);
-    }
-    & .search svg {
-      color: #aab4c5;
-    }
-    & .search input {
-      background: transparent;
-      color: #e4e8f0;
-    }
-    & .search input::placeholder {
-      color: #8895a9;
-    }
-    & .user-row {
-      background: transparent;
-      border-bottom: 1px solid #343f52;
-    }
-    & .user-row .role-tag.teacher {
-      background: #393650;
-      color: #c8c0ef;
-    }
-    & .user-row .role-tag.student {
-      background: #47333c;
-      color: #e8b4bd;
-    }
+:root[data-theme="dark-soft"] {
+  & .workspace-content:has(.admin-card) .unassigned-grid .unassigned-student-card {
+    background: #40382d;
+    background-image: none;
+    border-color: #746044;
+    box-shadow: none;
+    color: #e4e8f0;
   }
-  :root[data-theme="dark-soft"] .workspace-content:has(.admin-card) .graph-legend-item {
-    color: #d1d7e3;
+  & .workspace-content:has(.admin-card) .unassigned-grid .unassigned-student-card .avatar {
+    background: #574a38;
+    color: #e5c995;
   }
-  .student-card > .graph-person-action {
-    flex: 0 0 27px;
-    width: 27px;
-    height: 27px;
-    min-width: 27px;
-    min-height: 27px;
-    padding: 0;
-  }
-  :root[data-theme="dark-soft"] {
-    & .user-row:hover {
-      background: #262f3d;
-    }
-  }
-  .workspace-content:has(.admin-card) {
-    & .unassigned-student-actions > .graph-person-action {
-      flex: 0 0 34px;
-      width: 34px;
-      height: 34px;
-      min-width: 34px;
-      min-height: 34px;
-      padding: 0;
-    }
-  }
-  :root[data-theme="dark-soft"] {
-    & .workspace-content:has(.admin-card) .unassigned-grid .unassigned-student-card {
-      background: #40382d;
-      background-image: none;
-      border-color: #746044;
-      box-shadow: none;
-      color: #e4e8f0;
-    }
-    & .workspace-content:has(.admin-card) .unassigned-grid .unassigned-student-card .avatar {
-      background: #574a38;
-      color: #e5c995;
-    }
-    & .workspace-content:has(.admin-card) .unassigned-grid .unassigned-student-card:hover {
-      background: #30394a;
-      border-color: #66728c;
-    }
+  & .workspace-content:has(.admin-card) .unassigned-grid .unassigned-student-card:hover {
+    background: #30394a;
+    border-color: #66728c;
   }
 }

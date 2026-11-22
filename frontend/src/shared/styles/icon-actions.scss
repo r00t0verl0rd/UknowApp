@@ -1,146 +1,139 @@
-@layer components {
-  /* Единый стиль кнопок с одной иконкой для всех кабинетов и диалогов.
+/* Единый стиль кнопок с одной иконкой для всех кабинетов и диалогов.
    Новые кнопки создаём через IconButton; размер и тон задаются его параметрами. */
-
-  /* Стабильный квадрат с видимой рамкой на любых устройствах. */
-  :root .ui-icon-button {
-    margin: 0;
-    font: inherit;
-    cursor: pointer;
-    touch-action: manipulation;
-    transition:
-      background-color 0.16s ease,
-      border-color 0.16s ease,
-      color 0.16s ease;
-  }
-  :root .ui-icon-button svg {
-    display: block;
-    width: 16px;
-    height: 16px;
-    flex: none;
-    stroke-width: 1.8;
-  }
-  :root .ui-icon-button:focus-visible {
-    outline-offset: 2px;
-  }
-  :root .ui-icon-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  /* Цвет опасного действия меняется, форма и размер остаются общими. */
-  /* Compact size is used in dialogs and message actions. */
-  :root .ui-icon-button.ui-icon-button--compact {
-    --icon-action-size: 30px;
-  }
-  :root .ui-icon-button.ui-icon-button--large {
-    --icon-action-size: 40px;
-  }
-
-  /* Карточки преподавателя и ученика: одинаковые стрелки, карандаши и действия. */
-  /* Отдельное оформление для тёмной темы уже задано CSS-переменными. */
-  /* Форма и рамка не зависят от наличия мыши. */
-
-  /* Жёлтый оттенок кнопки совпадает с карточкой ученика. */
+/* Стабильный квадрат с видимой рамкой на любых устройствах. */
+:root .ui-icon-button {
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
 }
-@layer overrides {
+:root .ui-icon-button svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  stroke-width: 1.8;
+}
+:root .ui-icon-button:focus-visible {
+  outline-offset: 2px;
+}
+:root .ui-icon-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* Цвет опасного действия меняется, форма и размер остаются общими. */
+/* Compact size is used in dialogs and message actions. */
+:root .ui-icon-button.ui-icon-button--compact {
+  --icon-action-size: 30px;
+}
+:root .ui-icon-button.ui-icon-button--large {
+  --icon-action-size: 40px;
+}
+/* Карточки преподавателя и ученика: одинаковые стрелки, карандаши и действия. */
+/* Отдельное оформление для тёмной темы уже задано CSS-переменными. */
+/* Форма и рамка не зависят от наличия мыши. */
+/* Жёлтый оттенок кнопки совпадает с карточкой ученика. */
+:root .ui-icon-button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  flex: 0 0 var(--icon-action-size);
+  width: var(--icon-action-size);
+  min-width: var(--icon-action-size);
+  max-width: var(--icon-action-size);
+  height: var(--icon-action-size);
+  min-height: var(--icon-action-size);
+  padding: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--icon-action-radius);
+  background: var(--ui-control-bg);
+  color: var(--ui-control-text);
+  box-shadow: none;
+}
+:root .ui-icon-button:hover:not(:disabled) {
+  background: var(--ui-control-hover);
+  border-color: var(--ui-border-strong);
+  color: var(--purple);
+}
+:root .ui-icon-button:focus-visible {
+  outline: 2px solid var(--purple);
+  box-shadow: var(--ui-focus);
+}
+:root .ui-icon-button.ui-icon-button--danger {
+  background: var(--button-danger-bg);
+  border-color: var(--button-danger-border);
+  color: var(--button-danger-text);
+}
+:root .ui-icon-button.ui-icon-button--danger:hover:not(:disabled) {
+  background: var(--button-danger-hover-bg);
+  border-color: var(--button-danger-hover-border);
+  color: var(--button-danger-hover-text);
+}
+:root .workspace-content:has(.admin-card) .person-actions .ui-icon-button,
+:root .workspace-content:has(.admin-card) .student-card > .ui-icon-button,
+:root .workspace-content:has(.admin-card) .unassigned-student-actions > .ui-icon-button {
+  flex-basis: var(--icon-action-size);
+  width: var(--icon-action-size);
+  min-width: var(--icon-action-size);
+  max-width: var(--icon-action-size);
+  height: var(--icon-action-size);
+  min-height: var(--icon-action-size);
+}
+:root[data-theme="dark-soft"] .ui-icon-button {
+  background: var(--ui-control-bg);
+  border-color: var(--ui-border);
+  color: var(--ui-control-text);
+}
+:root[data-theme="dark-soft"] .ui-icon-button:hover:not(:disabled) {
+  background: var(--ui-control-hover);
+  border-color: var(--ui-border-strong);
+  color: var(--purple);
+}
+:root[data-theme="dark-soft"] .ui-icon-button.ui-icon-button--danger {
+  background: var(--button-danger-bg);
+  border-color: var(--button-danger-border);
+  color: var(--button-danger-text);
+}
+:root[data-theme="dark-soft"] .ui-icon-button.ui-icon-button--danger:hover:not(:disabled) {
+  background: var(--button-danger-hover-bg);
+  border-color: var(--button-danger-hover-border);
+  color: var(--button-danger-hover-text);
+}
+@media (hover: none), (pointer: coarse) {
   :root .ui-icon-button {
-    -webkit-appearance: none;
-    appearance: none;
-    display: inline-grid;
-    place-items: center;
-    box-sizing: border-box;
-    flex: 0 0 var(--icon-action-size);
-    width: var(--icon-action-size);
-    min-width: var(--icon-action-size);
-    max-width: var(--icon-action-size);
-    height: var(--icon-action-size);
-    min-height: var(--icon-action-size);
-    padding: 0;
     border: 1px solid var(--ui-border);
-    border-radius: var(--icon-action-radius);
     background: var(--ui-control-bg);
     color: var(--ui-control-text);
-    box-shadow: none;
-  }
-  :root .ui-icon-button:hover:not(:disabled) {
-    background: var(--ui-control-hover);
-    border-color: var(--ui-border-strong);
-    color: var(--purple);
-  }
-  :root .ui-icon-button:focus-visible {
-    outline: 2px solid var(--purple);
-    box-shadow: var(--ui-focus);
   }
   :root .ui-icon-button.ui-icon-button--danger {
-    background: var(--button-danger-bg);
     border-color: var(--button-danger-border);
+    background: var(--button-danger-bg);
     color: var(--button-danger-text);
   }
-  :root .ui-icon-button.ui-icon-button--danger:hover:not(:disabled) {
-    background: var(--button-danger-hover-bg);
-    border-color: var(--button-danger-hover-border);
-    color: var(--button-danger-hover-text);
-  }
-  :root .workspace-content:has(.admin-card) .person-actions .ui-icon-button,
-  :root .workspace-content:has(.admin-card) .student-card > .ui-icon-button,
-  :root .workspace-content:has(.admin-card) .unassigned-student-actions > .ui-icon-button {
-    flex-basis: var(--icon-action-size);
-    width: var(--icon-action-size);
-    min-width: var(--icon-action-size);
-    max-width: var(--icon-action-size);
-    height: var(--icon-action-size);
-    min-height: var(--icon-action-size);
-  }
-  :root[data-theme="dark-soft"] .ui-icon-button {
-    background: var(--ui-control-bg);
-    border-color: var(--ui-border);
-    color: var(--ui-control-text);
-  }
-  :root[data-theme="dark-soft"] .ui-icon-button:hover:not(:disabled) {
-    background: var(--ui-control-hover);
-    border-color: var(--ui-border-strong);
-    color: var(--purple);
-  }
-  :root[data-theme="dark-soft"] .ui-icon-button.ui-icon-button--danger {
-    background: var(--button-danger-bg);
-    border-color: var(--button-danger-border);
-    color: var(--button-danger-text);
-  }
-  :root[data-theme="dark-soft"] .ui-icon-button.ui-icon-button--danger:hover:not(:disabled) {
-    background: var(--button-danger-hover-bg);
-    border-color: var(--button-danger-hover-border);
-    color: var(--button-danger-hover-text);
-  }
-  @media (hover: none), (pointer: coarse) {
-    :root .ui-icon-button {
-      border: 1px solid var(--ui-border);
-      background: var(--ui-control-bg);
-      color: var(--ui-control-text);
-    }
-    :root .ui-icon-button.ui-icon-button--danger {
-      border-color: var(--button-danger-border);
-      background: var(--button-danger-bg);
-      color: var(--button-danger-text);
-    }
-  }
-  :root .ui-icon-button.ui-icon-button--student {
-    background: #f4eadb;
-    border-color: #e0cda9;
-    color: #90764c;
-  }
-  :root .ui-icon-button.ui-icon-button--student:hover:not(:disabled) {
-    background: #ecdfc6;
-    border-color: #c5aa7e;
-    color: #80643c;
-  }
-  :root[data-theme="dark-soft"] .ui-icon-button.ui-icon-button--student {
-    background: #40382d;
-    border-color: #746044;
-    color: #e5c995;
-  }
-  :root[data-theme="dark-soft"] .ui-icon-button.ui-icon-button--student:hover:not(:disabled) {
-    background: #574a38;
-    border-color: #927b55;
-    color: #f3d9a8;
-  }
+}
+:root .ui-icon-button.ui-icon-button--student {
+  background: #f4eadb;
+  border-color: #e0cda9;
+  color: #90764c;
+}
+:root .ui-icon-button.ui-icon-button--student:hover:not(:disabled) {
+  background: #ecdfc6;
+  border-color: #c5aa7e;
+  color: #80643c;
+}
+:root[data-theme="dark-soft"] .ui-icon-button.ui-icon-button--student {
+  background: #40382d;
+  border-color: #746044;
+  color: #e5c995;
+}
+:root[data-theme="dark-soft"] .ui-icon-button.ui-icon-button--student:hover:not(:disabled) {
+  background: #574a38;
+  border-color: #927b55;
+  color: #f3d9a8;
 }

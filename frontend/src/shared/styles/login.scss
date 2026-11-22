@@ -1,173 +1,170 @@
-@layer components {
-  /* Экран входа использует ту же единственную поверхность, что и workspace.
+/* Экран входа использует ту же единственную поверхность, что и workspace.
    Фон html продолжается под системными панелями Safari, включая Liquid Glass. */
 
+:root[data-theme] body:has(.login-screen),
+:root[data-theme] #root:has(.login-screen) {
+  min-height: 100%;
+}
+
+:root[data-theme] .login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100dvh;
+  padding: max(20px, env(safe-area-inset-top, 0px)) 16px max(24px, env(safe-area-inset-bottom, 0px));
+}
+
+:root[data-theme] .login-card {
+  position: relative;
+  width: min(100%, 420px);
+  max-width: 420px;
+  min-width: 0;
+  padding: 24px;
+  border-radius: var(--ui-radius-lg);
+}
+
+:root[data-theme] .login-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin-bottom: 24px;
+  padding-right: 44px;
+}
+
+:root[data-theme] .login-brand .login-logo {
+  display: block;
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+  margin: 0;
+  object-fit: contain;
+  filter: none;
+}
+
+:root[data-theme] .login-brand h1 {
+  min-width: 0;
+  margin: 0;
+  color: var(--purple);
+  font-size: clamp(23px, 5.6vw, 28px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  text-align: left;
+}
+
+:root[data-theme] .login-brand h1 span {
+  color: var(--red);
+}
+
+:root[data-theme] .login-theme-toggle {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+}
+
+:root[data-theme] .login-card .stack {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+:root[data-theme] .login-card .stack label {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+:root[data-theme] .login-card .stack input {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+  min-height: 46px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  font-size: 16px;
+}
+
+:root[data-theme] .login-card .stack input:focus {
+  border-color: var(--ui-border-strong);
+  box-shadow: var(--ui-focus);
+}
+
+:root[data-theme] .login-card .stack .login-submit {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 4px;
+}
+
+/* iOS Safari рисует фон документа под нижней плавающей панелью.
+   Сам экран остаётся прокручиваемым при клавиатуре и небольшой высоте. */
+
+@media (max-width: 1024px) and (display-mode: browser) {
+  :root[data-theme]:has(.login-screen),
   :root[data-theme] body:has(.login-screen),
   :root[data-theme] #root:has(.login-screen) {
-    min-height: 100%;
+    min-height: 100lvh;
+    overflow-x: clip;
+    overflow-y: auto;
   }
 
   :root[data-theme] .login-screen {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    min-height: 100dvh;
-    padding: max(20px, env(safe-area-inset-top, 0px)) 16px max(24px, env(safe-area-inset-bottom, 0px));
+    min-height: 100lvh;
+    padding-top: max(20px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(104px, calc(env(safe-area-inset-bottom, 0px) + 78px));
   }
+}
 
+@media (max-width: 480px) {
   :root[data-theme] .login-card {
-    position: relative;
-    width: min(100%, 420px);
-    max-width: 420px;
-    min-width: 0;
-    padding: 24px;
-    border-radius: var(--ui-radius-lg);
-  }
-
-  :root[data-theme] .login-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
-    margin-bottom: 24px;
-    padding-right: 44px;
-  }
-
-  :root[data-theme] .login-brand .login-logo {
-    display: block;
-    flex: 0 0 56px;
-    width: 56px;
-    height: 56px;
-    margin: 0;
-    object-fit: contain;
-    filter: none;
-  }
-
-  :root[data-theme] .login-brand h1 {
-    min-width: 0;
-    margin: 0;
-    color: var(--purple);
-    font-size: clamp(23px, 5.6vw, 28px);
-    font-weight: 800;
-    line-height: 1.15;
-    letter-spacing: -0.03em;
-    text-align: left;
-  }
-
-  :root[data-theme] .login-brand h1 span {
-    color: var(--red);
+    padding: 20px 16px;
   }
 
   :root[data-theme] .login-theme-toggle {
-    position: absolute;
-    top: 24px;
-    right: 24px;
+    top: 18px;
+    right: 16px;
   }
+}
 
-  :root[data-theme] .login-card .stack {
-    display: grid;
-    gap: 12px;
-    width: 100%;
-    min-width: 0;
+@supports not (min-height: 100dvh) {
+  :root[data-theme] .login-screen {
+    min-height: 100vh;
   }
+}
 
-  :root[data-theme] .login-card .stack label {
-    display: block;
-    width: 100%;
-    min-width: 0;
-  }
-
-  :root[data-theme] .login-card .stack input {
-    display: block;
-    box-sizing: border-box;
-    width: 100%;
-    min-width: 0;
-    height: 46px;
-    min-height: 46px;
-    border: 1px solid var(--ui-border);
-    border-radius: var(--ui-radius-sm);
-    font-size: 16px;
-  }
-
-  :root[data-theme] .login-card .stack input:focus {
-    border-color: var(--ui-border-strong);
-    box-shadow: var(--ui-focus);
-  }
-
-  :root[data-theme] .login-card .stack .login-submit {
-    width: 100%;
-    min-height: 46px;
-    margin-top: 4px;
-  }
-
-  /* iOS Safari рисует фон документа под нижней плавающей панелью.
-   Сам экран остаётся прокручиваемым при клавиатуре и небольшой высоте. */
+@supports not (min-height: 100lvh) {
   @media (max-width: 1024px) and (display-mode: browser) {
-    :root[data-theme]:has(.login-screen),
-    :root[data-theme] body:has(.login-screen),
-    :root[data-theme] #root:has(.login-screen) {
-      min-height: 100lvh;
-      overflow-x: clip;
-      overflow-y: auto;
-    }
-
-    :root[data-theme] .login-screen {
-      min-height: 100lvh;
-      padding-top: max(20px, env(safe-area-inset-top, 0px));
-      padding-bottom: max(104px, calc(env(safe-area-inset-bottom, 0px) + 78px));
-    }
-  }
-
-  @media (max-width: 480px) {
-    :root[data-theme] .login-card {
-      padding: 20px 16px;
-    }
-
-    :root[data-theme] .login-theme-toggle {
-      top: 18px;
-      right: 16px;
-    }
-  }
-
-  @supports not (min-height: 100dvh) {
     :root[data-theme] .login-screen {
       min-height: 100vh;
     }
   }
-
-  @supports not (min-height: 100lvh) {
-    @media (max-width: 1024px) and (display-mode: browser) {
-      :root[data-theme] .login-screen {
-        min-height: 100vh;
-      }
-    }
-  }
 }
 
-@layer overrides {
-  :root[data-theme]:has(.login-screen) {
-    background: var(--workspace-background);
-  }
+:root[data-theme]:has(.login-screen) {
+  background: var(--workspace-background);
+}
 
-  :root[data-theme] body:has(.login-screen),
-  :root[data-theme] #root:has(.login-screen) {
-    background: transparent;
-  }
+:root[data-theme] body:has(.login-screen),
+:root[data-theme] #root:has(.login-screen) {
+  background: transparent;
+}
 
-  :root[data-theme] .login-screen {
-    background: transparent;
-  }
+:root[data-theme] .login-screen {
+  background: transparent;
+}
 
-  :root[data-theme] .login-card {
-    border: 1px solid var(--ui-border);
-    background: var(--surface);
-    color: var(--ink);
-    box-shadow: var(--ui-shadow-card);
-  }
+:root[data-theme] .login-card {
+  border: 1px solid var(--ui-border);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--ui-shadow-card);
+}
 
-  :root[data-theme] .login-card .stack input {
-    background: var(--surface-input);
-    color: var(--ink);
-  }
+:root[data-theme] .login-card .stack input {
+  background: var(--surface-input);
+  color: var(--ink);
 }

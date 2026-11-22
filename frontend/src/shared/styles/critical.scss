@@ -1,0 +1,12 @@
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+  background: #202938;
+}
+html[data-theme="light"],
+html[data-theme="light"] body,
+html[data-theme="light"] #root {
+  background: #faf8fd;
+}

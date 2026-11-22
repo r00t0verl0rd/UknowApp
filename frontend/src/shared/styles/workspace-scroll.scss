@@ -1,275 +1,257 @@
-@layer components {
-  /* Компоновка и прокрутка одинаковы для каждой роли и каждой вкладки.
+/* Компоновка и прокрутка одинаковы для каждой роли и каждой вкладки.
    Единственный окрашенный слой — html, а не вложенные контейнеры. */
-  :root[data-theme]:has(.workspace-shell),
-  :root[data-theme] body:has(.workspace-shell),
-  :root[data-theme] #root:has(.workspace-shell) {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    overscroll-behavior: none;
-  }
-
-  /* Общая область прокрутки находится внутри неподвижной оболочки. */
+:root[data-theme]:has(.workspace-shell),
+:root[data-theme] body:has(.workspace-shell),
+:root[data-theme] #root:has(.workspace-shell) {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+/* Общая область прокрутки находится внутри неподвижной оболочки. */
+.workspace-shell {
+  border-radius: 0;
+  position: fixed;
+  inset: var(--workspace-viewport-top, 0px) 0 auto;
+  width: 100%;
+  display: grid;
+  grid-template-columns: clamp(250px, 18vw, 280px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  /* 100dvh — запасной вариант для браузеров без Visual Viewport API. */
+  height: var(--workspace-viewport-height, 100dvh);
+  min-height: 0;
+  overflow: hidden;
+}
+/* Запасной вариант для старых браузеров без поддержки динамического vh. */
+@supports not (height: 100dvh) {
   .workspace-shell {
-    border-radius: 0;
-    position: fixed;
-    inset: var(--workspace-viewport-top, 0px) 0 auto;
-    width: 100%;
-    display: grid;
-    grid-template-columns: clamp(250px, 18vw, 280px) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
-    /* 100dvh — запасной вариант для браузеров без Visual Viewport API. */
-    height: var(--workspace-viewport-height, 100dvh);
-    min-height: 0;
-    overflow: hidden;
+    height: var(--workspace-viewport-height, 100vh);
   }
-
-  /* Запасной вариант для старых браузеров без поддержки динамического vh. */
-  @supports not (height: 100dvh) {
-    .workspace-shell {
-      height: var(--workspace-viewport-height, 100vh);
-    }
-  }
-
-  /* Края меню прямые и без светлого фона под скруглениями даже на 1025px. */
-  .workspace-shell > .sidebar {
-    border-radius: 0;
-    background-clip: border-box;
-  }
-
-  /* Sidebar stays in its own viewport row, independently of the active tab's length.
+}
+/* Края меню прямые и без светлого фона под скруглениями даже на 1025px. */
+.workspace-shell > .sidebar {
+  border-radius: 0;
+  background-clip: border-box;
+}
+/* Sidebar stays in its own viewport row, independently of the active tab's length.
    На мобильных он становится верхним несдвигаемым слоем поверх scrollport. */
-  @media (min-width: 1025px) {
-    .workspace-shell > .sidebar {
-      min-height: 0;
-    }
-  }
-
-  .workspace-shell > .content {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
+@media (min-width: 1025px) {
+  .workspace-shell > .sidebar {
     min-height: 0;
-    overflow: hidden;
   }
-
-  .workspace-shell > .content > .workspace-content {
-    flex: 1 1 0;
-    width: 100%;
-    max-width: 1680px;
-    min-height: 0;
-    margin-inline: auto;
-    padding: var(--workspace-gutter);
-    overflow: hidden auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    /* Последняя строка любого раздела доступна над безопасной нижней зоной. */
-    padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
-  }
-
-  .workspace-content:has(> .user-list, > .structure-scroll) {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .workspace-content > .graph-legend-row,
-  .chat-list > :is(.chat-list-actions, .chat-list-filters) {
-    flex: none;
-  }
-
-  .workspace-content:focus-visible {
-    outline: 2px solid var(--purple);
-    outline-offset: -2px;
-  }
-
-  /* На всех устройствах .workspace-shell остаётся fixed и занимает visualViewport.
+}
+.workspace-shell > .content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.workspace-shell > .content > .workspace-content {
+  flex: 1 1 0;
+  width: 100%;
+  max-width: 1680px;
+  min-height: 0;
+  margin-inline: auto;
+  padding: var(--workspace-gutter);
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  /* Последняя строка любого раздела доступна над безопасной нижней зоной. */
+  padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
+}
+.workspace-content:has(> .user-list, > .structure-scroll) {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.workspace-content > .graph-legend-row,
+.chat-list > :is(.chat-list-actions, .chat-list-filters) {
+  flex: none;
+}
+.workspace-content:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: -2px;
+}
+/* На всех устройствах .workspace-shell остаётся fixed и занимает visualViewport.
    У документа отсутствует собственная прокрутка: она не может увести sidebar
    вверх за системные панели Safari. Sidebar перекрывает единый scrollport content,
    высота которого не зависит от высоты/содержимого выбранной вкладки. */
-  @media (max-width: 1024px) {
-    .workspace-shell {
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: minmax(0, 1fr);
-    }
-
-    :root[data-theme] .workspace-shell > .sidebar {
-      position: absolute;
-      inset: 0 0 auto;
-      grid-column: 1;
-      grid-row: 1;
-      z-index: 50;
-      width: 100%;
-      min-height: 0;
-      max-height: 100%;
-      overflow: hidden;
-      overscroll-behavior: none;
-      touch-action: pan-x;
-      /* Непрозрачная шапка того же цвета, что общий фон html.
-       Прокручиваемые карточки проходят ПОД меню, а не сквозь текст. */
-    }
-
-    .workspace-shell > .sidebar nav {
-      overscroll-behavior-x: contain;
-      touch-action: pan-x;
-    }
-
-    .workspace-shell > .content {
-      grid-column: 1;
-      grid-row: 1;
-      width: 100%;
-      height: 100%;
-      padding-bottom: 0;
-      min-height: 0;
-    }
-
-    .workspace-shell > .content > .workspace-content {
-      /* Scrollport идёт от верхней до нижней границы viewport.
-       Только содержимое получает отступ на реальную высоту sidebar. */
-      padding-top: calc(var(--workspace-sidebar-height, 140px) + var(--workspace-gutter));
-      padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
-      scroll-padding-top: calc(var(--workspace-sidebar-height, 140px) + var(--workspace-gutter));
-      scroll-padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
-    }
+@media (max-width: 1024px) {
+  .workspace-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
   }
 
-  /* В iOS 26 Safari fixed-слои ОТРЕЗАЮТСЯ над Liquid Glass.
+  :root[data-theme] .workspace-shell > .sidebar {
+    position: absolute;
+    inset: 0 0 auto;
+    grid-column: 1;
+    grid-row: 1;
+    z-index: 50;
+    width: 100%;
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: pan-x;
+    /* Непрозрачная шапка того же цвета, что общий фон html.
+       Прокручиваемые карточки проходят ПОД меню, а не сквозь текст. */
+  }
+
+  .workspace-shell > .sidebar nav {
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+  }
+
+  .workspace-shell > .content {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    height: 100%;
+    padding-bottom: 0;
+    min-height: 0;
+  }
+
+  .workspace-shell > .content > .workspace-content {
+    /* Scrollport идёт от верхней до нижней границы viewport.
+       Только содержимое получает отступ на реальную высоту sidebar. */
+    padding-top: calc(var(--workspace-sidebar-height, 140px) + var(--workspace-gutter));
+    padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
+    scroll-padding-top: calc(var(--workspace-sidebar-height, 140px) + var(--workspace-gutter));
+    scroll-padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
+  }
+}
+/* В iOS 26 Safari fixed-слои ОТРЕЗАЮТСЯ над Liquid Glass.
    Увеличение высоты fixed .workspace-shell не помогает: WebKit не рисует его
    ниже controls. Поэтому в обычной мобильной вкладке скроллится сам документ,
    который Safari умеет композитить ПОД панелью. Навигация остаётся sticky
    выше содержимого — один скролл для структуры, пользователей и списка чатов.
    PWA и Desktop сохраняют прежнюю независимую fixed-геометрию. */
+@media (max-width: 1024px) and (display-mode: browser) {
+  :root[data-theme]:has(.workspace-shell),
+  :root[data-theme] body:has(.workspace-shell),
+  :root[data-theme] #root:has(.workspace-shell) {
+    height: auto;
+    min-height: 100lvh;
+    overflow-x: clip;
+    overflow-y: visible;
+    overscroll-behavior-y: auto;
+  }
+
+  :root[data-theme] .workspace-shell {
+    position: relative;
+    inset: auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: auto;
+    min-height: 100lvh;
+    overflow: visible;
+  }
+
+  :root[data-theme] .workspace-shell > .sidebar {
+    /* Sticky участвует в нормальном потоке документа, но остаётся
+       закреплённым над содержимым во время прокрутки Safari. */
+    position: sticky;
+    inset: 0 0 auto;
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+    z-index: 50;
+    max-height: none;
+  }
+
+  :root[data-theme] .workspace-shell > .content {
+    grid-column: 1;
+    grid-row: 2;
+    height: auto;
+    min-height: calc(100lvh - var(--workspace-sidebar-height, 140px));
+    overflow: visible;
+  }
+
+  :root[data-theme] .workspace-shell > .content > .workspace-content {
+    flex: 1 0 auto;
+    min-height: calc(100lvh - var(--workspace-sidebar-height, 140px));
+    overflow: visible;
+    padding-top: var(--workspace-gutter);
+    /* Последняя карточка поднимается над Safari toolbar; само полотно
+       при этом продолжается под полупрозрачными кнопками браузера. */
+    padding-bottom: max(104px, calc(env(safe-area-inset-bottom, 0px) + 78px));
+    scroll-padding-top: calc(var(--workspace-sidebar-height, 140px) + var(--workspace-gutter));
+  }
+
+  /* Внутри открытой переписки сохраняем ограниченную по visualViewport
+     высоту: сообщения прокручиваются, а composer остаётся над клавиатурой. */
+  :root[data-theme] .workspace-shell:has(.mobile-chat-back) > .content {
+    min-height: 0;
+  }
+
+  :root[data-theme] .workspace-shell:has(.mobile-chat-back) > .content > .workspace-content {
+    flex: 0 0 auto;
+    margin-block: 0;
+    height: max(
+      0px,
+      calc(min(var(--workspace-viewport-height, 100dvh), 100dvh) - var(--workspace-sidebar-height, 140px))
+    );
+    min-height: 0;
+    overflow: hidden;
+    padding-top: var(--workspace-gutter);
+    padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
+  }
+}
+@supports not (height: 100lvh) {
   @media (max-width: 1024px) and (display-mode: browser) {
     :root[data-theme]:has(.workspace-shell),
     :root[data-theme] body:has(.workspace-shell),
-    :root[data-theme] #root:has(.workspace-shell) {
-      height: auto;
-      min-height: 100lvh;
-      overflow-x: clip;
-      overflow-y: visible;
-      overscroll-behavior-y: auto;
-    }
-
+    :root[data-theme] #root:has(.workspace-shell),
     :root[data-theme] .workspace-shell {
-      position: relative;
-      inset: auto;
-      grid-template-rows: auto minmax(0, 1fr);
-      height: auto;
-      min-height: 100lvh;
-      overflow: visible;
+      min-height: 100vh;
     }
-
-    :root[data-theme] .workspace-shell > .sidebar {
-      /* Sticky участвует в нормальном потоке документа, но остаётся
-       закреплённым над содержимым во время прокрутки Safari. */
-      position: sticky;
-      inset: 0 0 auto;
-      grid-column: 1;
-      grid-row: 1;
-      align-self: start;
-      z-index: 50;
-      max-height: none;
-    }
-
-    :root[data-theme] .workspace-shell > .content {
-      grid-column: 1;
-      grid-row: 2;
-      height: auto;
-      min-height: calc(100lvh - var(--workspace-sidebar-height, 140px));
-      overflow: visible;
-    }
-
+    :root[data-theme] .workspace-shell > .content,
     :root[data-theme] .workspace-shell > .content > .workspace-content {
-      flex: 1 0 auto;
-      min-height: calc(100lvh - var(--workspace-sidebar-height, 140px));
-      overflow: visible;
-      padding-top: var(--workspace-gutter);
-      /* Последняя карточка поднимается над Safari toolbar; само полотно
-       при этом продолжается под полупрозрачными кнопками браузера. */
-      padding-bottom: max(104px, calc(env(safe-area-inset-bottom, 0px) + 78px));
-      scroll-padding-top: calc(var(--workspace-sidebar-height, 140px) + var(--workspace-gutter));
-    }
-
-    /* Внутри открытой переписки сохраняем ограниченную по visualViewport
-     высоту: сообщения прокручиваются, а composer остаётся над клавиатурой. */
-    :root[data-theme] .workspace-shell:has(.mobile-chat-back) > .content {
-      min-height: 0;
-    }
-
-    :root[data-theme] .workspace-shell:has(.mobile-chat-back) > .content > .workspace-content {
-      flex: 0 0 auto;
-      margin-block: 0;
-      height: max(
-        0px,
-        calc(min(var(--workspace-viewport-height, 100dvh), 100dvh) - var(--workspace-sidebar-height, 140px))
-      );
-      min-height: 0;
-      overflow: hidden;
-      padding-top: var(--workspace-gutter);
-      padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
-    }
-  }
-
-  @supports not (height: 100lvh) {
-    @media (max-width: 1024px) and (display-mode: browser) {
-      :root[data-theme]:has(.workspace-shell),
-      :root[data-theme] body:has(.workspace-shell),
-      :root[data-theme] #root:has(.workspace-shell),
-      :root[data-theme] .workspace-shell {
-        min-height: 100vh;
-      }
-      :root[data-theme] .workspace-shell > .content,
-      :root[data-theme] .workspace-shell > .content > .workspace-content {
-        min-height: calc(100vh - var(--workspace-sidebar-height, 140px));
-      }
-    }
-  }
-
-  /* На телефоне список диалогов скроллится тем же полноэкранным .workspace-content,
-   что и структура/пользователи: нет вложенного ограниченного chat-items.
-   Открытый диалог сохраняет отдельную прокрутку сообщений, чтобы поле отправки
-   оставалось доступным над клавиатурой. */
-  @media (max-width: 760px) {
-    .workspace-shell .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) {
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-    }
-
-    .workspace-shell .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) > .chat-list {
-      flex: 1 0 auto;
-      max-height: none;
-      overflow: visible;
-    }
-
-    .workspace-shell
-      .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back))
-      > .chat-list
-      > .chat-items {
-      flex: 0 0 auto;
-      overflow: visible;
+      min-height: calc(100vh - var(--workspace-sidebar-height, 140px));
     }
   }
 }
-@layer overrides {
-  :root[data-theme]:has(.workspace-shell) {
-    background: var(--workspace-background);
+/* На телефоне список диалогов скроллится тем же полноэкранным .workspace-content,
+   что и структура/пользователи: нет вложенного ограниченного chat-items.
+   Открытый диалог сохраняет отдельную прокрутку сообщений, чтобы поле отправки
+   оставалось доступным над клавиатурой. */
+@media (max-width: 760px) {
+  .workspace-shell .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
   }
 
-  :root[data-theme] body:has(.workspace-shell),
-  :root[data-theme] #root:has(.workspace-shell),
-  :root[data-theme] .workspace-shell,
-  :root[data-theme] .workspace-shell > .sidebar,
-  :root[data-theme] .workspace-shell > .content,
-  :root[data-theme] .workspace-shell > .content > .topbar,
-  :root[data-theme] .workspace-shell > .content > .workspace-content {
-    background: transparent;
+  .workspace-shell .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) > .chat-list {
+    flex: 1 0 auto;
+    max-height: none;
+    overflow: visible;
   }
-  @media (max-width: 1024px) {
-    :root[data-theme] .workspace-shell > .sidebar {
-      background: var(--workspace-background);
-    }
+
+  .workspace-shell
+    .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back))
+    > .chat-list
+    > .chat-items {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+}
+:root[data-theme]:has(.workspace-shell) {
+  background: var(--workspace-background);
+}
+:root[data-theme] body:has(.workspace-shell),
+:root[data-theme] #root:has(.workspace-shell),
+:root[data-theme] .workspace-shell,
+:root[data-theme] .workspace-shell > .sidebar,
+:root[data-theme] .workspace-shell > .content,
+:root[data-theme] .workspace-shell > .content > .topbar,
+:root[data-theme] .workspace-shell > .content > .workspace-content {
+  background: transparent;
+}
+@media (max-width: 1024px) {
+  :root[data-theme] .workspace-shell > .sidebar {
+    background: var(--workspace-background);
   }
 }
