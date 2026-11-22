@@ -175,7 +175,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
       document.documentElement.dataset.theme = oldTheme;
       return result;
     });
-    assert.equal(themeStyles["dark-soft"].body, "rgb(23, 27, 37)");
+    assert.equal(themeStyles["dark-soft"].body, "rgb(23, 29, 40)");
     assert.notEqual(themeStyles.light.teacher, themeStyles["dark-soft"].teacher);
     assert.notEqual(themeStyles.light.student, themeStyles["dark-soft"].student);
 
