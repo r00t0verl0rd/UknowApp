@@ -4,6 +4,7 @@ import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw.js";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js";
 import X from "lucide-react/dist/esm/icons/x.js";
 import Unlink from "lucide-react/dist/esm/icons/unlink.js";
+import { useEffect, useState } from "react";
 import Modal from "../../../shared/components/Modal.jsx";
 import Button from "../../../shared/components/Button.jsx";
 import IconButton from "../../../shared/components/IconButton.jsx";
@@ -44,6 +45,10 @@ export default function UserDialogs({
   issuedCredential, setIssuedCredential, notify, code, setCode,
   unassignCandidate, setUnassignCandidate, unassigningStudent, confirmUnassignStudent,
 }) {
+  const [confirmNewCode, setConfirmNewCode] = useState(false);
+
+  useEffect(() => { setConfirmNewCode(false); }, [modal?.id, modal?.mode]);
+
   return <>
     {modal && modal.mode !== "create-personal" && <Modal onClose={() => setModal(null)} closeOnBackdrop={!savingUser} className={`${modal.mode === "create" ? "create-participant-modal" : modal.mode === "edit" ? "participant-profile-modal" : ""}`}>
       <div className="modal-head"><div><div className="eyebrow">{modal.mode === "create" ? "НОВЫЙ УЧАСТНИК" : modal.mode === "edit" ? "ПРОФИЛЬ УЧАСТНИКА" : "СВЯЗЬ УЧЕНИКА И УЧИТЕЛЯ"}</div><h2>{modal.mode === "create" ? "Добавить участника" : modal.mode === "edit" ? "Редактировать" : "Назначить ученика"}</h2></div><IconButton onClick={() => setModal(null)}><X/></IconButton></div>
@@ -67,7 +72,7 @@ export default function UserDialogs({
           </div>
           {modal.mode === "edit" && users.find(user => user.id === modal.id)?.role === role && <div className="panel-credential-row panel-access-row">
             <span>Код доступа</span>
-            <div className="panel-access-value"><b>XXXX-XXXX</b><Button variant="outline" className="password-code-refresh" onClick={regeneratePanelAccessCode} disabled={savingUser} title="Старый код сразу перестанет действовать"><RefreshCw size={16}/>Новый код</Button></div>
+            <div className="panel-access-value"><b>XXXX-XXXX</b><Button variant="outline" className="password-code-refresh" onClick={() => setConfirmNewCode(true)} disabled={savingUser} title="Старый код сразу перестанет действовать"><RefreshCw size={16}/>Новый код</Button></div>
           </div>}
         </div>}
         {modal.mode === "edit" && role !== users.find(user => user.id === modal.id)?.role && <p className="hint">При смене роли активные назначения будут закрыты. История переписок сохранится.</p>}
@@ -77,6 +82,22 @@ export default function UserDialogs({
           <Button type="submit" variant="primary" disabled={savingUser}>{savingUser ? "Сохраняем…" : <><Check/>Сохранить</>}</Button>
         </div>
       </form>}
+    </Modal>}
+
+    {modal?.mode === "edit" && confirmNewCode && <Modal onClose={() => setConfirmNewCode(false)}
+      closeOnBackdrop={!savingUser} className="confirm-delete-modal" role="alertdialog" labelledBy="new-access-code-title">
+      <div className="modal-head">
+        <div><div className="eyebrow">НОВЫЙ КОД ДОСТУПА</div><h2 id="new-access-code-title">Выдать новый код?</h2></div>
+        <IconButton aria-label="Закрыть" disabled={savingUser} onClick={() => setConfirmNewCode(false)}><X/></IconButton>
+      </div>
+      <p className="hint">После выдачи нового кода прежний сразу перестанет действовать. Новый код появится в отдельном окне, откуда его можно скопировать.</p>
+      <div className="modal-actions">
+        <Button variant="ghost" onClick={() => setConfirmNewCode(false)} disabled={savingUser}>Отмена</Button>
+        <Button variant="primary" disabled={savingUser} onClick={async () => {
+          setConfirmNewCode(false);
+          await regeneratePanelAccessCode();
+        }}>Выдать код</Button>
+      </div>
     </Modal>}
 
     {deleteCandidate && <Modal onClose={() => setDeleteCandidate(null)} closeOnBackdrop={!deletingUser} className="confirm-delete-modal" role="alertdialog" labelledBy="delete-user-title">

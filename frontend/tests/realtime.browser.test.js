@@ -989,6 +989,55 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize({ width: 1280, height: 800 });
 
+    // HTML <dialog> находится в нативном top layer и использует одну геометрию
+    // кнопок создания, редактирования и выдачи кода на всех размерах.
+    for (const width of [320, 390, 768, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      const dialogGeometry = await page.evaluate(() => {
+        const dialog = document.createElement("dialog");
+        dialog.className = "modal native-dialog participant-profile-modal";
+        dialog.innerHTML = `
+          <div class="modal-head"><h2>Редактировать участника</h2></div>
+          <div class="stack"><label>Имя<input value="Иван Иванов"></label>
+          <div class="panel-access-value"><b>XXXX-XXXX</b>
+            <button class="btn outline password-code-refresh">Новый код</button></div></div>
+          <div class="modal-actions">
+            <button class="btn ghost">Отмена</button>
+            <button class="icon-btn ui-icon-button ui-icon-button--danger">×</button>
+            <button class="btn primary">Сохранить</button>
+          </div>`;
+        document.body.append(dialog);
+        dialog.showModal();
+        try {
+          const actions = [...dialog.querySelectorAll(".modal-actions > button")];
+          const refresh = dialog.querySelector(".password-code-refresh");
+          const bounds = dialog.getBoundingClientRect();
+          const last = actions.at(-1).getBoundingClientRect();
+          return {
+            modal: dialog.matches(":modal"),
+            tag: dialog.tagName,
+            width: bounds.width,
+            actionHeights: actions.map(button => Math.round(button.getBoundingClientRect().height)),
+            refreshHeight: Math.round(refresh.getBoundingClientRect().height),
+            rightInset: Math.round(bounds.right - last.right),
+          };
+        } finally {
+          dialog.close();
+          dialog.remove();
+        }
+      });
+      assert.equal(dialogGeometry.tag, "DIALOG");
+      assert.ok(dialogGeometry.modal, `${width}px: HTMLDialogElement is in browser top layer`);
+      assert.ok(dialogGeometry.width <= width - 16, `${width}px: dialog fits screen`);
+      assert.deepEqual(dialogGeometry.actionHeights, [44, 44, 44],
+        `${width}px: right-aligned action buttons are equally tall`);
+      assert.equal(dialogGeometry.refreshHeight, 44,
+        `${width}px: new access code button matches action heights`);
+      assert.ok(dialogGeometry.rightInset >= 10 && dialogGeometry.rightInset <= 35,
+        `${width}px: buttons are aligned to the right`);
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
+
     // Проверяем общий квадратный контур кнопок во всех кабинетах, модальных окнах и темах.
     const originalViewport = page.viewportSize();
     for (const width of [390, 1280]) {

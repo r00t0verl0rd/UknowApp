@@ -28,6 +28,8 @@ test("user forms and code dialogs share right aligned equal height actions", () 
   const users = read("src/features/users/components/UserDialogs.jsx");
   const css = read("src/shared/styles/native-dialogs.css");
   assert.match(users, /className="password-code-refresh"/);
+  assert.match(users, /Выдать новый код\?/);
+  assert.match(users, /closeOnBackdrop=\{!savingUser\}/);
   assert.match(users, /<div className="modal-actions">\s*<Button variant="ghost"/);
   assert.match(css, /justify-content:\s*flex-end\s*!important/);
   assert.match(css, /height:\s*44px\s*!important/);
