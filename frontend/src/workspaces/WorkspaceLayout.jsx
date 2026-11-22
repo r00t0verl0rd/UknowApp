@@ -45,58 +45,86 @@ export default function WorkspaceLayout(options) {
     },
   );
 
-  // Размер visualViewport используется для Desktop/PWA и открытого диалога.
-  // В Safari списки прокручиваются документом, чтобы WebKit рисовал их под toolbar.
+  // Меняем CSS-переменные только при реальном изменении размеров, не на каждый
+  // resize ширины: иначе WebKit/Chromium пересчитывают стили всего документа.
   createEffect(
     () => [],
     () => {
       const root = document.documentElement;
       const viewport = window.visualViewport;
       if (!viewport) return undefined;
+      let frame = 0;
+      let previousHeight = -1;
+      let previousTop = NaN;
       const measureViewport = () => {
+        frame = 0;
         const height = Math.round(viewport.height);
         const top = Math.round(viewport.offsetTop);
         if (!Number.isFinite(height) || height <= 0) return;
-        root.style.setProperty("--workspace-viewport-height", `${height}px`);
-        root.style.setProperty("--workspace-viewport-top", `${top}px`);
+        if (height !== previousHeight) {
+          root.style.setProperty("--workspace-viewport-height", `${height}px`);
+          previousHeight = height;
+        }
+        if (top !== previousTop) {
+          root.style.setProperty("--workspace-viewport-top", `${top}px`);
+          previousTop = top;
+        }
+      };
+      const scheduleViewport = () => {
+        if (!frame) frame = window.requestAnimationFrame(measureViewport);
       };
       measureViewport();
-      viewport.addEventListener("resize", measureViewport);
-      viewport.addEventListener("scroll", measureViewport);
-      window.addEventListener("resize", measureViewport);
-      window.addEventListener("orientationchange", measureViewport);
-      window.addEventListener("pageshow", measureViewport);
+      viewport.addEventListener("resize", scheduleViewport);
+      viewport.addEventListener("scroll", scheduleViewport, { passive: true });
+      window.addEventListener("resize", scheduleViewport);
+      window.addEventListener("orientationchange", scheduleViewport);
+      window.addEventListener("pageshow", scheduleViewport);
       return () => {
-        viewport.removeEventListener("resize", measureViewport);
-        viewport.removeEventListener("scroll", measureViewport);
-        window.removeEventListener("resize", measureViewport);
-        window.removeEventListener("orientationchange", measureViewport);
-        window.removeEventListener("pageshow", measureViewport);
+        if (frame) window.cancelAnimationFrame(frame);
+        viewport.removeEventListener("resize", scheduleViewport);
+        viewport.removeEventListener("scroll", scheduleViewport);
+        window.removeEventListener("resize", scheduleViewport);
+        window.removeEventListener("orientationchange", scheduleViewport);
+        window.removeEventListener("pageshow", scheduleViewport);
         root.style.removeProperty("--workspace-viewport-height");
         root.style.removeProperty("--workspace-viewport-top");
       };
     },
   );
 
-  // Высота мобильной навигации может измениться при переносе/масштабе текста.
-  // ResizeObserver синхронизирует отступ контента с реальным размером меню.
+  // ResizeObserver уже сообщает измеренную высоту: не читаем layout на каждом
+  // window.resize и не обновляем отступ, когда ширина меняется без переноса меню.
   createEffect(
     () => [],
     () => {
       const sidebar = sidebarRef;
       const shell = shellRef;
       if (!sidebar || !shell) return undefined;
-      const syncSidebarHeight = () => {
-        const height = Math.ceil(sidebar.getBoundingClientRect().height);
-        if (height > 0) shell.style.setProperty("--workspace-sidebar-height", `${height}px`);
+      const mobile = window.matchMedia("(max-width: 1024px)");
+      let previousHeight = -1;
+      const syncSidebarHeight = (entry) => {
+        if (!mobile.matches) return;
+        const box = entry?.borderBoxSize;
+        const measuredHeight = (Array.isArray(box) ? box[0]?.blockSize : box?.blockSize)
+          ?? sidebar.getBoundingClientRect().height;
+        const height = Math.ceil(measuredHeight);
+        if (height > 0 && height !== previousHeight) {
+          shell.style.setProperty("--workspace-sidebar-height", `${height}px`);
+          previousHeight = height;
+        }
       };
-      syncSidebarHeight();
-      const observer = typeof ResizeObserver === "function" ? new ResizeObserver(syncSidebarHeight) : null;
+      const onBreakpointChange = () => syncSidebarHeight();
+      const observer = typeof ResizeObserver === "function"
+        ? new ResizeObserver(([entry]) => syncSidebarHeight(entry))
+        : null;
       observer?.observe(sidebar);
-      window.addEventListener("resize", syncSidebarHeight);
+      mobile.addEventListener("change", onBreakpointChange);
+      if (!observer) window.addEventListener("resize", onBreakpointChange);
+      syncSidebarHeight();
       return () => {
         observer?.disconnect();
-        window.removeEventListener("resize", syncSidebarHeight);
+        mobile.removeEventListener("change", onBreakpointChange);
+        if (!observer) window.removeEventListener("resize", onBreakpointChange);
         shell.style.removeProperty("--workspace-sidebar-height");
       };
     },
