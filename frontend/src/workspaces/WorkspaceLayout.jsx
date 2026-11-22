@@ -81,7 +81,7 @@ export default function WorkspaceLayout({
     </IconButton>
   );
 
-  return <div className={`shell chats-shell workspace-shell workspace-${role}`}>
+  return <div className={`shell workspace-shell workspace-${role}`}>
     <aside className="sidebar">
       <div className="brand"><img src="/logo.png" alt="" /><span>Uknow<span>App</span></span></div>
       <div className="school-label">{label}</div>
@@ -105,12 +105,12 @@ export default function WorkspaceLayout({
         </div>
       </div>
     </aside>
-    <main className="main chats-main">
+    <main className="content">
       <header className="topbar">
         <small className="topbar-user">{profile.full_name}</small>
         <div className="topbar-actions">{pushToggle}{themeToggle}</div>
       </header>
-      <div ref={contentRef} tabIndex={0} className={"content workspace-content" + (page === "additional" ? " page-additional" : "")}>
+      <div ref={contentRef} tabIndex={0} className={"workspace-content" + (page === "additional" ? " page-additional" : "")}>
         {children}
       </div>
     </main>

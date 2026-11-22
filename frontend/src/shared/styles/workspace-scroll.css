@@ -16,7 +16,7 @@
 
 /* Один и тот же холст для всех ролей, тем и размеров экрана. */
 :root[data-theme] .workspace-shell,
-:root[data-theme] .workspace-shell > .chats-main {
+:root[data-theme] .workspace-shell > .content {
   background: var(--canvas) !important;
 }
 
@@ -57,7 +57,7 @@
   }
 }
 
-.workspace-shell > .chats-main {
+.workspace-shell > .content {
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -65,7 +65,7 @@
   overflow: hidden;
 }
 
-.workspace-shell > .main > .workspace-content {
+.workspace-shell > .content > .workspace-content {
   flex: 1 1 0;
   width: 100%;
   max-width: 1680px;
@@ -119,7 +119,7 @@
 
   /* Резервируем safe-area один раз, в общей области контента,
      вместо дополнительной полосы под всеми страницами. */
-  .workspace-shell > .main {
+  .workspace-shell > .content {
     padding-bottom: 0;
   }
 }
@@ -172,7 +172,7 @@
   /* Пункты списков могут прокручиваться под прозрачную нижнюю панель.
      При прокрутке до конца резервируем расстояние до видимой границы,
      чтобы последние строки и кнопка отправки оставались доступны. */
-  .workspace-shell > .main > .workspace-content {
+  .workspace-shell > .content > .workspace-content {
     padding-bottom: max(
       var(--workspace-gutter),
       env(safe-area-inset-bottom, 0px),
@@ -187,7 +187,7 @@
   }
 
   :root:has(.workspace-shell :is(input, textarea, [contenteditable="true"]):focus)
-  .workspace-shell > .main > .workspace-content {
+  .workspace-shell > .content > .workspace-content {
     padding-bottom: var(--workspace-gutter);
   }
 }
@@ -204,7 +204,7 @@
       height: calc(100vh + var(--workspace-chrome-bottom));
     }
 
-    .workspace-shell > .main > .workspace-content {
+    .workspace-shell > .content > .workspace-content {
       padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
     }
   }

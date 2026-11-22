@@ -1,17 +1,17 @@
 /* Список и переписка прокручиваются вместе с содержимым раздела. */
-.chats-main > .workspace-content:has(> .chat-list){
+.content > .workspace-content:has(> .chat-list){
   display:grid;
   grid-template-columns:minmax(260px,min(24%,340px)) minmax(0,1fr);
   grid-template-rows:minmax(min-content,1fr);
   gap:var(--workspace-gutter);
 }
-.chats-main > .workspace-content > :is(.chat-list,.chat-detail){
+.content > .workspace-content > :is(.chat-list,.chat-detail){
   display:flex;
   flex-direction:column;
   min-width:0;
 }
-.chats-main > .workspace-content > .chat-list{gap:10px}
-.chats-main > .workspace-content > .chat-detail{align-self:start}
+.content > .workspace-content > .chat-list{gap:10px}
+.content > .workspace-content > .chat-detail{align-self:start}
 .chat-list-filters > .search{flex:0 0 auto;width:100%;max-width:none;min-width:0;box-sizing:border-box}
 .chat-list > .legend{flex:0 0 auto;flex-wrap:wrap;max-width:100%}
 .chat-items > .chat-item{
@@ -227,7 +227,7 @@
 .chat-composer .composer-send:disabled{opacity:.45;cursor:not-allowed}
 :root[data-theme="dark-soft"] .chat-audio-player{background:var(--ui-control-bg);border-color:var(--ui-border)}
 @media(min-width:761px) and (max-width:1024px){
-  .chats-main > .workspace-content:has(> .chat-list){
+  .content > .workspace-content:has(> .chat-list){
     grid-template-columns:minmax(210px,min(30%,280px)) minmax(0,1fr);
     gap:12px;
   }
@@ -242,18 +242,18 @@
   .composer-send{min-height:36px;padding:7px 11px;font-size:11px}
 }
 @media(max-width:760px){
-  .chats-main > .workspace-content:has(> .chat-list){
+  .content > .workspace-content:has(> .chat-list){
     grid-template-columns:minmax(0,1fr);
     gap:0;
   }
-  .chats-main > .workspace-content:has(> .chat-list) > .chat-list,
-  .chats-main > .workspace-content:has(> .chat-list) > .chat-detail{
+  .content > .workspace-content:has(> .chat-list) > .chat-list,
+  .content > .workspace-content:has(> .chat-list) > .chat-detail{
     grid-column:1;
     grid-row:1;
   }
-  .chats-main > .workspace-content > .chat-detail{align-self:stretch}
-  .chats-main > .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) > .chat-detail{display:none}
-  .chats-main > .workspace-content:has(> .chat-list):has(.mobile-chat-back) > .chat-list{display:none}
+  .content > .workspace-content > .chat-detail{align-self:stretch}
+  .content > .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) > .chat-detail{display:none}
+  .content > .workspace-content:has(> .chat-list):has(.mobile-chat-back) > .chat-list{display:none}
   .chat-detail > .chat-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;}
   .mobile-chat-back{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
   .chat-head-tools select{min-width:100px;max-width:135px;padding:6px;font-size:11px}
@@ -282,7 +282,7 @@
 }
 
 /* Одна строка действий и один фильтр чатов. */
-.chats-main > .workspace-content > .chat-list{background:var(--surface);border:1px solid var(--ui-border);border-radius:14px;padding:12px}
+.content > .workspace-content > .chat-list{background:var(--surface);border:1px solid var(--ui-border);border-radius:14px;padding:12px}
 .chat-list-filters{min-width:0}
 
 

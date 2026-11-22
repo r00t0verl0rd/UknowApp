@@ -23,7 +23,7 @@
     min-width: 0;
   }
 }/* Unassigned students form their own optional branch between admin and teachers. */
-.content:has(.role_node) {
+.workspace-content:has(.role_node) {
 & > .unassigned{
   position: relative;
   width: min(100%, 1040px);
@@ -45,14 +45,14 @@
   gap: 10px;
 }
 }:root[data-theme="dark-soft"] {
-& .content:has(.role_node) > .unassigned{
+& .workspace-content:has(.role_node) > .unassigned{
   border-color: #746044 !important;
   border-top-color: #746044 !important;
   background: #302f2d !important;
   box-shadow: none !important;
-}& .content:has(.role_node) > .unassigned .unassigned-title{ color: #e5c995;}
+}& .workspace-content:has(.role_node) > .unassigned .unassigned-title{ color: #e5c995;}
 }
-@media (max-width: 640px) {.content:has(.role_node) {
+@media (max-width: 640px) {.workspace-content:has(.role_node) {
 & > .unassigned{ padding: 18px 10px 12px; margin: 28px auto 20px; }& > .unassigned .unassigned-grid{ grid-template-columns: minmax(0, 1fr); }
 }
 }

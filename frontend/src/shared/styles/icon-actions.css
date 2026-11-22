@@ -66,9 +66,9 @@
 :root .ui-icon-button.ui-icon-button--compact { --icon-action-size: 30px; }
 
 /* Карточки преподавателя и ученика: одинаковые стрелки, карандаши и действия. */
-:root .content:has(.role_node) .person-actions .ui-icon-button,
-:root .content:has(.role_node) .student-card > .ui-icon-button,
-:root .content:has(.role_node) .unassigned-student-actions > .ui-icon-button {
+:root .workspace-content:has(.role_node) .person-actions .ui-icon-button,
+:root .workspace-content:has(.role_node) .student-card > .ui-icon-button,
+:root .workspace-content:has(.role_node) .unassigned-student-actions > .ui-icon-button {
   flex-basis: var(--icon-action-size) !important;
   width: var(--icon-action-size) !important;
   min-width: var(--icon-action-size) !important;
