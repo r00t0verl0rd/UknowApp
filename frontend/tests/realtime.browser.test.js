@@ -424,9 +424,9 @@ test("global SSE updates real counters across tabs and replays missed events", {
       `mobile sidebar should update only for actual height changes: ${resizeWrites.sidebar}`);
     await page.setViewportSize({ width: 1280, height: 720 });
 
-    // Структура: карточки разной высоты упаковываются без пустых строк,
-    // шапка остаётся компактной при переходе от телефона к десктопу.
-    for (const width of [390, 760, 1024, 1280]) {
+    // Структура: построчный Grid сохраняет колонки при раскрытии учеников.
+    // Запрещаем прежнюю автоматическую перебалансировку CSS columns.
+    for (const width of [390, 760, 1024, 1280, 1385, 1600]) {
       await page.setViewportSize({ width, height: 800 });
       const layout = await page.evaluate(() => {
         const host = document.createElement("div");
@@ -440,47 +440,91 @@ test("global SSE updates real counters across tabs and replays missed events", {
           <div class="structure-scroll">
             <div class="admin-card"><img src="/logo-main.svg" alt=""><div><b>Администратор</b></div></div>
             <div class="grid">
-              ${[180, 80, 240, 140, 90, 120].map(height =>
-                `<section class="teacher-branch" style="min-height:${height}px">
-                  <div class="teacher-card">Учитель</div>
-                </section>`).join("")}
+              ${[3, 0, 2, 1, 4, 0].map((count, index) => `
+                <section class="teacher-branch" data-index="${index}">
+                  <div class="teacher-card">Учитель ${index + 1}</div>
+                  <button class="add-student">Назначить ученика</button>
+                  <div class="student-list">
+                    ${count ? Array.from({ length: count }, (_, i) =>
+                      `<div class="student-card">Ученик ${i + 1}</div>`).join("")
+                      : '<div class="empty-students">Нет назначенных учеников</div>'}
+                  </div>
+                </section>
+              `).join("")}
             </div>
           </div>
         `;
         document.body.append(host);
         try {
           const rect = selector => host.querySelector(selector).getBoundingClientRect();
-          const cards = [...host.querySelectorAll(".teacher-branch")].map(node => {
+          const grid = host.querySelector(".grid");
+          const styles = getComputedStyle(grid);
+          const measure = () => [...grid.children].map(node => {
             const box = node.getBoundingClientRect();
             return { left: Math.round(box.left), top: box.top, bottom: box.bottom, right: box.right };
           });
-          const columns = new Map();
-          for (const card of cards) {
-            const items = columns.get(card.left) || [];
-            items.push(card);
-            columns.set(card.left, items);
+          const before = measure();
+          const first = grid.children[0];
+          for (const child of first.querySelectorAll(".add-student, .student-list")) {
+            child.style.display = "none";
           }
-          const gaps = [...columns.values()].flatMap(items => items.slice(1)
-            .map((item, index) => item.top - items[index].bottom));
+          first.classList.add("is-collapsed");
+          const collapsed = measure();
+          for (const child of first.querySelectorAll(".add-student, .student-list")) {
+            child.style.removeProperty("display");
+          }
+          first.classList.remove("is-collapsed");
+          const reopened = measure();
           return {
-            columns: columns.size,
+            display: styles.display,
+            flow: styles.gridAutoFlow,
+            columnCount: styles.columnCount,
+            gridWidth: grid.getBoundingClientRect().width,
+            before, collapsed, reopened,
             gapBeforeAdmin: rect(".admin-card").top - rect(".graph-legend-row").bottom,
             gapAfterAdmin: rect(".grid").top - rect(".admin-card").bottom,
-            maxStackGap: Math.max(0, ...gaps),
-            noOverlap: cards.every(card => card.right <= window.innerWidth + 1),
-            cardCount: cards.length,
           };
         } finally {
           host.remove();
         }
       });
-      assert.equal(layout.cardCount, 6);
-      assert.equal(layout.columns === 1, width < 660,
-        `${width}px: structure automatically switches between one and multiple columns`);
-      assert.ok(layout.noOverlap, `${width}px: cards stay within viewport`);
+      const expectedCols = Math.max(1, Math.floor((layout.gridWidth + 12) / 332));
+      const checkRows = (cards, stage) => {
+        assert.equal(cards.length, 6);
+        for (let row = 0; row < Math.ceil(cards.length / expectedCols); row++) {
+          const group = cards.slice(row * expectedCols, (row + 1) * expectedCols);
+          assert.ok(group.every(card => Math.abs(card.top - group[0].top) <= 1),
+            `${width}px ${stage}: cards must align by rows`);
+          assert.ok(group.every((card, i) => i === 0 || card.left > group[i - 1].left),
+            `${width}px ${stage}: teacher order must follow the DOM`);
+          if (row > 0) {
+            const previous = cards.slice((row - 1) * expectedCols, row * expectedCols);
+            const gap = group[0].top - Math.max(...previous.map(card => card.bottom));
+            assert.ok(gap >= 10 && gap <= 14,
+              `${width}px ${stage}: consistent 12px row spacing, got ${gap}`);
+          }
+        }
+      };
+      assert.equal(layout.display, "grid", `${width}px: use Grid, not CSS columns`);
+      assert.equal(layout.flow, "row", `${width}px: keep row-major order`);
+      assert.equal(layout.columnCount, "auto", `${width}px: disable masonry rebalancing`);
+      for (const stage of ["before", "collapsed", "reopened"]) {
+        checkRows(layout[stage], stage);
+        assert.ok(layout[stage].every(card => card.right <= width + 1),
+          `${width}px ${stage}: cards stay within viewport`);
+      }
+      for (let i = 0; i < 6; i++) {
+        assert.equal(layout.before[i].left, layout.collapsed[i].left,
+          `${width}px: collapsing students must never move teacher ${i + 1} to another column`);
+        assert.equal(layout.before[i].left, layout.reopened[i].left,
+          `${width}px: reopening students must preserve teacher ${i + 1} column`);
+        assert.ok(Math.abs(layout.before[i].top - layout.reopened[i].top) <= 1,
+          `${width}px: reopening restores the original card positions`);
+      }
+      assert.ok(layout.collapsed[0].bottom < layout.before[0].bottom,
+        `${width}px: collapsing students changes only content height`);
       assert.ok(layout.gapBeforeAdmin <= 30, `${width}px: compact toolbar-to-admin gap`);
       assert.ok(layout.gapAfterAdmin <= 11, `${width}px: compact admin-to-teachers gap`);
-      assert.ok(layout.maxStackGap <= 14, `${width}px: teachers pack without empty grid-row gaps`);
     }
     await page.setViewportSize({ width: 1280, height: 720 });
 
