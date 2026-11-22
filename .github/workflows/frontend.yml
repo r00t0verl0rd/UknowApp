@@ -38,6 +38,14 @@ jobs:
         run: |
           python -m pip install "Pillow>=10,<13"
           python scripts/generate_icons.py
+          python scripts/generate_icons.py --check
+          python - <<'PY'
+          from pathlib import Path
+          html = Path("index.html").read_text(encoding="utf-8")
+          assert 'rel="mask-icon"' in html
+          assert '/safari-pinned-tab.svg?v=3' in html
+          assert 'rel="apple-touch-icon"' in html
+          PY
       - run: npm run build
       - run: npm test
       - name: Install browser test runtime

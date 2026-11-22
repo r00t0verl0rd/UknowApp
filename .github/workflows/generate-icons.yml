@@ -29,6 +29,7 @@ jobs:
       - name: Сохранить готовые файлы в main
         run: |
           git add -- frontend/public/favicon.ico \
+            frontend/public/safari-pinned-tab.svg \
             frontend/public/favicon-16x16.png \
             frontend/public/favicon-32x32.png \
             frontend/public/icon-192.png \

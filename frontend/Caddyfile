@@ -30,7 +30,7 @@ uknowschool.ru, www.uknowschool.ru {
     header @html Cache-Control "no-cache, must-revalidate"
 
     # Иконки должны отдаваться как файлы, без подмены HTML из SPA.
-    @appIcons path /favicon.ico /favicon-16x16.png /favicon-32x32.png /icon-192.png /icon-512.png /icon-maskable-512.png /mstile-150x150.png /apple-touch-icon.png /manifest.webmanifest
+    @appIcons path /safari-pinned-tab.svg /favicon.svg /favicon.ico /favicon-16x16.png /favicon-32x32.png /icon-192.png /icon-512.png /icon-maskable-512.png /mstile-150x150.png /apple-touch-icon.png /manifest.webmanifest
     header @appIcons Cache-Control "public, max-age=3600"
 
     @chatUpload {

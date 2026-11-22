@@ -40,6 +40,67 @@ def render(logo: Image.Image, size: int, *, background: bool, coverage: float) -
     return icon
 
 
+
+def build_safari_pinned_tab(logo: Image.Image) -> None:
+    """Создаёт монохромную SVG-маску Safari из существующего логотипа."""
+    size = 72
+    artwork = ImageOps.contain(logo, (size - 8, size - 8), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGBA", (size, size))
+    canvas.alpha_composite(
+        artwork,
+        ((size - artwork.width) // 2, (size - artwork.height) // 2),
+    )
+
+    # Если фон непрозрачный, отличаем изображение от цвета его углов.
+    corners = [
+        logo.getpixel((0, 0)),
+        logo.getpixel((logo.width - 1, 0)),
+        logo.getpixel((0, logo.height - 1)),
+        logo.getpixel((logo.width - 1, logo.height - 1)),
+    ]
+    transparent = any(pixel[3] < 224 for pixel in corners)
+    background = tuple(
+        sum(pixel[channel] for pixel in corners) // len(corners)
+        for channel in range(3)
+    )
+    pixels = canvas.load()
+    fragments = []
+    filled = 0
+
+    for y in range(size):
+        def foreground(column: int) -> bool:
+            r, g, b, a = pixels[column, y]
+            return (
+                a > 112
+                if transparent
+                else a > 112 and max(
+                    abs(r - background[0]),
+                    abs(g - background[1]),
+                    abs(b - background[2]),
+                ) > 36
+            )
+
+        x = 0
+        while x < size:
+            if not foreground(x):
+                x += 1
+                continue
+            left = x
+            while x < size and foreground(x):
+                x += 1
+            filled += x - left
+            fragments.append(f"M{left} {y}h{x - left}v1h-{x - left}z")
+
+    if not (size * size * 0.01 < filled < size * size * 0.85):
+        raise ValueError("Не удалось выделить силуэт логотипа для Safari")
+
+    # Векторная маска без фонового прямоугольника и растровых ссылок.
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">'
+        '<path fill="#000" d="' + "".join(fragments) + '"/></svg>\n'
+    )
+    (PUBLIC / "safari-pinned-tab.svg").write_text(svg, encoding="utf-8")
+
 def build() -> None:
     """Готовит favicon, иконки Android/Windows и маскируемый значок."""
     logo = load_logo()
@@ -57,6 +118,7 @@ def build() -> None:
         format="ICO",
         sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)],
     )
+    build_safari_pinned_tab(logo)
     # apple-touch-icon.png остаётся прежним: на iOS он уже отображается верно.
 
 
@@ -66,6 +128,15 @@ def check() -> None:
         with Image.open(PUBLIC / filename) as image:
             if image.format != "PNG" or image.size != (size, size):
                 raise ValueError(f"{filename}: ожидается PNG {size}×{size}")
+
+    # Safari получает монохромную маску, а не PNG внутри SVG.
+    safari_svg = (PUBLIC / "safari-pinned-tab.svg").read_text(encoding="utf-8")
+    if (
+        'viewBox="0 0 72 72"' not in safari_svg
+        or '<path fill="#000"' not in safari_svg
+        or "<image" in safari_svg
+    ):
+        raise ValueError("Некорректная SVG-маска для Safari")
 
     with Image.open(PUBLIC / "favicon.ico") as icon:
         actual = set(icon.ico.sizes())
