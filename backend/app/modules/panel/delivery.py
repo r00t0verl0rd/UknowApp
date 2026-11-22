@@ -320,7 +320,7 @@ async def deliver_panel_message(
     return results
 
 
-async def store_panel_attachment(file: UploadFile, conversation_id: int):
+async def store_panel_attachment(file: UploadFile, conversation_id: int, *, personal: bool = False):
     """Проверить и сохранить вложение."""
     if file.size is not None and file.size > MAX_ATTACHMENT_BYTES:
         raise HTTPException(status_code=413, detail=ATTACHMENT_SIZE_ERROR)
@@ -333,7 +333,7 @@ async def store_panel_attachment(file: UploadFile, conversation_id: int):
     if not suffix:
         suffix = mimetypes.guess_extension(file.content_type or "") or ".bin"
 
-    relative = Path(str(conversation_id)) / (uuid.uuid4().hex + suffix)
+    relative = (Path('personal') if personal else Path()) / str(conversation_id) / (uuid.uuid4().hex + suffix)
     target_path = (MEDIA_DIR / relative).resolve()
     root = MEDIA_DIR.resolve()
     if root not in target_path.parents:
