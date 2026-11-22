@@ -1,15 +1,17 @@
-/* В установленном мобильном приложении safe-area окрашивается самой
-   панелью навигации, без отдельного слоя поверх интерфейса. */
+/* PWA использует ту же фоновую поверхность и те же отступы, что браузер.
+   Safe-area не должна создавать второй окрашенный слой. */
 @media (display-mode: standalone) and (max-width: 1024px) {
-  html:has(.workspace-shell),
+  html:has(.workspace-shell) {
+    background: var(--workspace-background) !important;
+  }
+
   body:has(.workspace-shell),
-  #root:has(.workspace-shell) {
-    background: var(--canvas) !important;
+  #root:has(.workspace-shell),
+  .workspace-shell > .sidebar {
+    background: transparent !important;
   }
 
   .workspace-shell > .sidebar {
-    background: var(--surface) !important;
-    isolation: isolate;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }

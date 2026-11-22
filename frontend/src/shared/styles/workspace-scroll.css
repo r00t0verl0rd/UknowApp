@@ -1,9 +1,11 @@
 :root {
   --workspace-gutter: clamp(8px, 1.4vw, 20px);
+  /* Одна поверхность под всеми вкладками, между Desktop, PWA и Safari. */
+  --workspace-background: var(--surface);
 }
 
-/* Один фон под всеми вкладками и запрет прокрутки документа за пределы панели.
-   Экран входа не затрагиваем: он может прокручиваться на маленьких дисплеях. */
+/* Компоновка и прокрутка одинаковы для каждой роли и каждой вкладки.
+   Единственный окрашенный слой — html, а не вложенные контейнеры. */
 :root[data-theme]:has(.workspace-shell),
 :root[data-theme] body:has(.workspace-shell),
 :root[data-theme] #root:has(.workspace-shell) {
@@ -11,13 +13,20 @@
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
-  background: var(--canvas) !important;
 }
 
-/* Один и тот же холст для всех ролей, тем и размеров экрана. */
+:root[data-theme]:has(.workspace-shell) {
+  background: var(--workspace-background) !important;
+}
+
+:root[data-theme] body:has(.workspace-shell),
+:root[data-theme] #root:has(.workspace-shell),
 :root[data-theme] .workspace-shell,
-:root[data-theme] .workspace-shell > .content {
-  background: var(--canvas) !important;
+:root[data-theme] .workspace-shell > .sidebar,
+:root[data-theme] .workspace-shell > .content,
+:root[data-theme] .workspace-shell > .content > .topbar,
+:root[data-theme] .workspace-shell > .content > .workspace-content {
+  background: transparent !important;
 }
 
 /* Общая область прокрутки находится внутри неподвижной оболочки. */
@@ -125,19 +134,10 @@
 }
 
 
-/* Вкладка мобильного браузера: Safari/Chrome рисуют прозрачную панель поверх
-   обычного документа. Fixed-оболочка, ограниченная visualViewport, отрезала
-   содержимое ровно перед этой панелью. Используем in-flow холст 100lvh:
-   он продолжается под панелью, а sidebar и внутренний скролл остаются на месте.
-   Установленное PWA и десктоп сохраняют прежнюю fixed-геометрию. */
+/* Safari/Chrome в режиме вкладки рисуют прозрачную панель поверх страницы.
+   Геометрия отличается от PWA/Desktop, но фон остаётся тем же общим слоем. */
 @media (max-width: 1024px) and (display-mode: browser) {
   :root[data-theme]:has(.workspace-shell) {
-    /* Единственный фон системной зоны над шапкой — сама страница.
-       Он совпадает с фоном sidebar, а не образует отдельную полосу canvas. */
-    /* Safari берёт оттенок прозрачных системных панелей с html.
-       Один мягкий фон продолжается от status bar до нижнего края экрана. */
-    --workspace-browser-background: var(--surface);
-    background: var(--workspace-browser-background) !important;
     --workspace-chrome-bottom: env(safe-area-inset-bottom, 0px);
     height: auto;
     min-height: 100lvh;
@@ -153,18 +153,7 @@
     overflow-x: clip;
     overflow-y: visible;
     overscroll-behavior-y: auto;
-    /* Не добавляем вторую окрашенную поверхность поверх html. */
-    background: transparent !important;
-  }
-
-  /* Только html рисует фоновую поверхность. Оболочка, sidebar и content
-     прозрачны, поэтому под стеклянной панелью Safari нет границы слоёв.
-     Во всех вкладках используется одна и та же схема. */
-  :root[data-theme] .workspace-shell,
-  :root[data-theme] .workspace-shell > .sidebar,
-  :root[data-theme] .workspace-shell > .content,
-  :root[data-theme] .workspace-shell > .content > .workspace-content {
-    background: transparent !important;
+    /* Цвет уже задаётся общим правилом вне media query. */
   }
 
   .workspace-shell {
