@@ -19,7 +19,7 @@ test("vector UI logo and PNG compatibility icons use the supplied assets", () =>
 
   for (const [name, size] of [["logo-touch.png", 180], ["logo-192.png", 192], ["logo-big.png", 512]]) {
     const png = readFileSync(path.join(frontend, "public", name));
-    assert.equal(png.subarray(0, 8).toString("hex"), "89504e470d0a1a0a", name);
+    assert.deepEqual([...png.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10], name);
     assert.equal(png.readUInt32BE(16), size, name);
     assert.equal(png.readUInt32BE(20), size, name);
   }
