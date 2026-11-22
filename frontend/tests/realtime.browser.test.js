@@ -948,6 +948,102 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize({ width: 1280, height: 800 });
 
+    // Реальный сенсорный viewport: проверяем, что мобильные правила не
+    // превращают активные фиолетовые вкладки в серые. CSS одинаков для ролей.
+    const touchContext = await browser.newContext({
+      viewport: { width: 390, height: 800 },
+      isMobile: true,
+      hasTouch: true,
+      deviceScaleFactor: 2,
+    });
+    try {
+      const touchPage = await touchContext.newPage();
+      await touchPage.goto(APP_URL);
+      await touchPage.waitForFunction(() => !!document.querySelector("#root")?.firstElementChild);
+      for (const width of [320, 390, 760, 1024, 1025, 1280]) {
+        await touchPage.setViewportSize({ width, height: 800 });
+        for (const theme of ["light", "dark-soft"]) {
+          let reference;
+          for (const role of ["admin", "teacher", "student"]) {
+            const state = await touchPage.evaluate(({ role, theme }) => {
+              const root = document.documentElement;
+              const previous = root.dataset.theme;
+              root.dataset.theme = theme;
+              const host = document.createElement("div");
+              host.className = "workspace-shell workspace-" + role;
+              host.style.cssText = "position:fixed;inset:0;width:100vw;height:800px;visibility:hidden;pointer-events:none;z-index:-1";
+              host.innerHTML = [
+                '<aside class="sidebar"><nav><button class="ui-menu-control" aria-current="page">Диалоги</button></nav></aside>',
+                '<section class="chat-list workspace-panel" style="box-sizing:border-box;width:270px;padding:12px">',
+                '<div class="chat-list-actions workspace-control-row">',
+                '<div class="chat-section-tabs ui-toolbar-control ui-toolbar-segmented" role="group">',
+                '<button class="chat-section-tab ui-toolbar-tab" aria-pressed="true">Участники</button>',
+                '<button class="chat-section-tab ui-toolbar-tab" aria-pressed="false">Личные<span class="chat-tab-count">12</span></button>',
+                '</div><button class="icon-btn ui-icon-button personal-chat-create ui-toolbar-icon">+</button>',
+                '</div></section>',
+              ].join("");
+              host.querySelector(".chat-list").style.width = Math.min(270, window.innerWidth - 20) + "px";
+              document.body.append(host);
+              try {
+                const read = selector => {
+                  const el = host.querySelector(selector);
+                  const css = getComputedStyle(el);
+                  const rect = el.getBoundingClientRect();
+                  return {
+                    background: css.backgroundColor,
+                    border: css.borderTopColor,
+                    color: css.color,
+                    height: Math.round(rect.height),
+                    width: Math.round(rect.width),
+                    radius: css.borderTopLeftRadius,
+                    overflow: el.scrollWidth - el.clientWidth,
+                  };
+                };
+                return {
+                  media: matchMedia("(hover: none), (pointer: coarse)").matches,
+                  nav: read(".sidebar [aria-current=page]"),
+                  group: read(".chat-section-tabs"),
+                  active: read(".chat-section-tab[aria-pressed=true]"),
+                  inactive: read(".chat-section-tab[aria-pressed=false]"),
+                  create: read(".personal-chat-create"),
+                  row: read(".chat-list-actions"),
+                };
+              } finally {
+                host.remove();
+                root.dataset.theme = previous;
+              }
+            }, { role, theme });
+            assert.equal(state.media, true, "touch rules must be active");
+            assert.deepEqual(
+              [state.active.background, state.active.border, state.active.color],
+              [state.nav.background, state.nav.border, state.nav.color],
+              `${theme} ${width}px ${role}: active tabs use same purple as sidebar`,
+            );
+            assert.notEqual(state.active.background, state.inactive.background,
+              `${theme} ${width}px ${role}: selected segment is visibly distinct`);
+            assert.equal(state.active.width, state.inactive.width,
+              `${theme} ${width}px ${role}: segments have equal widths`);
+            assert.equal(state.active.height, state.inactive.height,
+              `${theme} ${width}px ${role}: segments have equal heights`);
+            assert.equal(state.group.height, 42);
+            assert.equal(state.create.height, 42);
+            assert.equal(state.create.width, 42);
+            assert.equal(state.group.radius, "9px");
+            assert.ok(state.row.overflow <= 1, `${width}px: chat buttons fit the row`);
+            assert.ok(state.active.overflow <= 1 && state.inactive.overflow <= 1,
+              `${width}px: chat button labels and unread badge fit`);
+            const colors = { nav: state.nav, group: state.group, active: state.active, inactive: state.inactive };
+            if (!reference) reference = colors;
+            else assert.deepEqual(colors, reference,
+              `${theme} ${width}px: shared chat colors independent of role`);
+          }
+        }
+      }
+    } finally {
+      await touchContext.close();
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
+
     // Одна геометрия карточек, отступов и рядов на телефоне и десктопе.
     for (const width of [390, 1280]) {
       await page.setViewportSize({ width, height: 800 });
