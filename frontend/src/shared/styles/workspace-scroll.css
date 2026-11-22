@@ -135,7 +135,6 @@
   :root[data-theme] body:has(.workspace-shell),
   :root[data-theme] #root:has(.workspace-shell) {
     height: auto;
-    min-height: 100vh;
     min-height: 100lvh;
     overflow-x: clip;
     overflow-y: visible;
@@ -145,7 +144,6 @@
   .workspace-shell {
     position: relative;
     inset: auto;
-    height: 100vh;
     height: 100lvh;
     min-height: 0;
   }
@@ -170,6 +168,16 @@
 
 @supports not (height: 100lvh) {
   @media (max-width: 1024px) and (display-mode: browser) {
+    :root[data-theme]:has(.workspace-shell),
+    :root[data-theme] body:has(.workspace-shell),
+    :root[data-theme] #root:has(.workspace-shell) {
+      min-height: 100vh;
+    }
+
+    .workspace-shell {
+      height: 100vh;
+    }
+
     .workspace-shell > .main > .workspace-content {
       padding-bottom: max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
     }
