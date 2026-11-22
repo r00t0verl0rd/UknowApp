@@ -5,9 +5,6 @@
   --menu-text: var(--ui-control-text);
   --menu-hover-bg: var(--ui-control-hover);
   --menu-hover-border: var(--ui-border-strong);
-  --menu-active-bg: var(--ui-selected-bg);
-  --menu-active-border: var(--ui-selected-border);
-  --menu-active-text: var(--ui-selected-text);
 }
 
 /* Вертикальная навигация и нижний блок на компьютере. */

@@ -1,20 +1,10 @@
-/* Только компоновка и активные состояния; общие размеры — в shared-controls.css. */
+/* Компоновка переключателя; его состояния описаны в active-states.css. */
 :root .workspace-shell .chat-list .chat-list-actions:empty { display: none; }
 
 :root .workspace-shell .chat-list .chat-section-tabs {
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   min-width: 0;
   width: 100%;
-}
-
-:root .workspace-shell .chat-list .chat-section-tabs > button.chat-section-tab:hover:not([aria-pressed="true"]) {
-  background: var(--ui-control-hover) !important;
-  color: var(--ink) !important;
-}
-
-:root .workspace-shell .chat-list .chat-section-tabs > button.chat-section-tab:focus-visible {
-  outline: 2px solid var(--purple);
-  outline-offset: -1px;
 }
 
 :root .workspace-shell .chat-list .chat-section-tab > .chat-tab-count {

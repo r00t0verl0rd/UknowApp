@@ -1,6 +1,7 @@
 /**
  * Проверка объёма CSS и кандидатов на удаление.
- * Не удаляет стили: динамические классы нужно проверять вручную.
+ * Учитывает динамические модификаторы размера кнопок IconButton.
+ * Не удаляет классы автоматически: всё остальное требует ручной проверки.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -22,6 +23,13 @@ const walk = directory => {
 walk(path.join(root, "src"));
 sources.push(fs.readFileSync(path.join(root, "index.html"), "utf8"));
 const sourceText = sources.join("\n");
+
+// IconButton builds its size class from the size prop. Do not mistake a
+// dynamically constructed, actually used modifier for an orphan CSS selector.
+const dynamicIconSizes = new Set(
+  [...sourceText.matchAll(/<IconButton\b[^>]*\bsize=["']([\w-]+)["']/g)].map(match => match[1])
+);
+const dynamicClasses = new Set([...dynamicIconSizes].map(size => `ui-icon-button--${size}`));
 
 let rules = 0;
 let declarations = 0;
@@ -45,7 +53,7 @@ for (const file of fs.readdirSync(cssDir).filter(name => name.endsWith(".css")))
     for (const [, className] of rule.selector.matchAll(/\.([A-Za-z_][\w-]*)/g)) {
       selectorUses.set(className, (selectorUses.get(className) ?? 0) + 1);
       // Буквальное отсутствие в JSX/JS ещё не доказывает, что класс не используется.
-      if (sourceText.includes(className)) continue;
+      if (sourceText.includes(className) || dynamicClasses.has(className)) continue;
       const found = candidates.get(className) ?? new Set();
       found.add(file);
       candidates.set(className, found);
