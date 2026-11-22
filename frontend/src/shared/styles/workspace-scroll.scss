@@ -61,10 +61,12 @@
 .chat-list > :is(.chat-list-actions, .chat-list-filters) {
   flex:none;
 }
-// Контент остаётся доступен с клавиатуры, но фокус не обводит весь экран.
+// Контейнер прокрутки остаётся доступным с клавиатуры, но не рисует
+// декоративные полосы по краю экрана при восстановлении фокуса из диалога.
+// Фокус на интерактивных элементах подсвечивается отдельно.
 .workspace-content:focus-visible {
   outline:none;
-  box-shadow:inset 3px 0 0 var(--ui-selected-border);
+  box-shadow:none;
 }
 @media (max-width: 1024px) {
   .workspace-shell {
