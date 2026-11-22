@@ -219,7 +219,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
               sidebarBackground: getComputedStyle(sidebar).backgroundColor,
               bodyBackground: getComputedStyle(document.body).backgroundColor,
               shellBackground: getComputedStyle(shell).backgroundColor,
-              mainBackground: getComputedStyle(shell.querySelector(".main")).backgroundColor,
+              mainBackground: getComputedStyle(shell.querySelector(".content, .main")).backgroundColor,
               expectedBackground: resolvedBackground,
             };
           } finally {
@@ -398,7 +398,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
         try {
           const shell = document.querySelector(".workspace-shell");
           const sidebar = shell.querySelector(".sidebar");
-          const main = shell.querySelector(".main");
+          const main = shell.querySelector(".content, .main");
           const style = el => getComputedStyle(el).backgroundColor;
           return {
             shellHeight: Math.round(shell.getBoundingClientRect().height),
