@@ -100,3 +100,6 @@
 
 :root [data-chat-name-role="teacher"] { color:var(--role-teacher); }
 :root [data-chat-name-role="student"] { color:var(--role-student); }
+
+:root [data-chat-name-role="admin"] { color:#526e25; }
+:root[data-theme="dark-soft"] [data-chat-name-role="admin"] { color:#bfdc94; }
