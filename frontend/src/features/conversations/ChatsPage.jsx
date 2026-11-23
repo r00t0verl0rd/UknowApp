@@ -312,7 +312,7 @@ export default function ChatsPage(options) {
                       : options.selectedChat.student.full_name}
                 </b>
                 {options.selectedChat.type !== "personal" && options.profile?.role === "admin" && (
-                  <small data-chat-name-role="teacher">{options.selectedChat.teacher.full_name}</small>
+                  <b data-chat-name-role="teacher">{options.selectedChat.teacher.full_name}</b>
                 )}
                 {options.selectedChat.type !== "personal" && options.profile?.role === "student" && (
                   <small>Ваш учитель</small>
@@ -395,7 +395,7 @@ export default function ChatsPage(options) {
                     options.selectedChat.type === "personal"
                       ? "Личное сообщение…"
                       : options.profile?.role === "admin"
-                        ? "Сообщение…"
+                        ? "Сообщение будет отправлено обоим участникам — ученику и учителю."
                         : options.profile?.role === "student"
                           ? "Сообщение учителю…"
                           : "Ответить ученику…"
