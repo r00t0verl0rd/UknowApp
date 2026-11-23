@@ -48,6 +48,7 @@
     border-color:var(--ui-selected-border);
     font-weight:700;
     box-shadow:
+      inset 0 -3px 0 var(--ui-selected-border),
       inset 0 0 0 1px var(--ui-selected-border),
       0 0 0 2px var(--ui-selected-outline);
   }
