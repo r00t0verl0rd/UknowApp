@@ -59,16 +59,17 @@
   --button-danger-hover-border: #eebfc6;
   --button-danger-hover-text: #a92332;
   --ui-shadow-raised: 0 9px 26px rgba(38, 29, 58, 0.1);
-  --role-student: #c58c2e;
+  --role-student: #93671E;
   --role-student-soft: #fff0cf;
   --role-student-border: #e9cf98;
-  --role-teacher: #8a65c5;
+  --role-teacher: #795CAC;
   --teacher-avatar-text: #705b88;
   --teacher-avatar-background: #e2d7eb;
   --teacher-card-border: #d1c4da;
   --teacher-card-background: linear-gradient(112deg, #ebe4f0, #f6f3f7);
   --role-teacher-soft: #eee4fb;
   --role-teacher-border: #d3c0ed;
+  --role-admin: #42783D;
   --role-admin-soft: #e2f0df;
   --role-admin-border: #c0d9bb;
   --workspace-control-height: 42px;
@@ -90,7 +91,7 @@
 }
 :root[data-theme="dark-soft"] {
   color-scheme:dark;
-  --app-foreground: #99B8D3;
+  --app-foreground: #C9CDDB;
   --app-background: #171b25;
   --surface-input: #202a38;
   --surface-soft: #293344;
@@ -105,7 +106,7 @@
   --purple: #9b91c2;
   --purple2: #897eaf;
   --red: #e58c98;
-  --ink: #99B8D3;
+  --ink: #C9CDDB;
   --muted: #a4adbd;
   --line: #374254;
   --surface: #202938;
@@ -118,10 +119,10 @@
   --ui-border-strong: #596780;
   --ui-control-bg: #293344;
   --ui-control-hover: #343f53;
-  --ui-control-text: #99B8D3;
+  --ui-control-text: #C9CDDB;
   --ui-selected-bg: #4b385f;
   --ui-selected-border: #a38ace;
-  --ui-selected-text: #99B8D3;
+  --ui-selected-text: #C9CDDB;
   --ui-selected-outline: rgba(177, 149, 229, 0.17);
   --ui-shadow-soft: none;
   --ui-shadow-card: 0 5px 18px rgba(0, 0, 0, 0.12);
@@ -130,7 +131,7 @@
   --button-bg-hover: #343e50;
   --button-border: #3b4658;
   --button-border-hover: #58647a;
-  --button-text: #99B8D3;
+  --button-text: #C9CDDB;
   --button-primary: linear-gradient(110deg, #5e567e, #70678f);
   --button-primary-hover: linear-gradient(110deg, #696087, #7b729a);
   --button-danger-bg: #402d37;
@@ -140,16 +141,17 @@
   --button-danger-hover-border: #76505c;
   --button-danger-hover-text: #f5c0c7;
   --ui-shadow-raised: 0 10px 28px rgba(0, 0, 0, 0.24);
-  --role-student: #c9aa70;
+  --role-student: #E1BF83;
   --role-student-soft: #39342e;
   --role-student-border: #625440;
-  --role-teacher: #aa9bcf;
+  --role-teacher: #BDA9DC;
   --teacher-avatar-text: #d0bce9;
   --teacher-avatar-background: #514465;
   --teacher-card-border: #675879;
   --teacher-card-background: #393247;
   --role-teacher-soft: #35313f;
   --role-teacher-border: #554b68;
+  --role-admin: #A7DE9F;
   --role-admin-soft: #303a32;
   --role-admin-border: #4c6250;
 }
