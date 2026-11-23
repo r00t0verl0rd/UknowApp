@@ -73,9 +73,10 @@ export default function AdditionalPage(options) {
         )}
         <div class="data-stats-grid">
           <article class="data-stat-card">
-            <span>База данных SQLite</span>
+            <span>Размер файла базы SQLite</span>
             <b>{options.dataStats ? formatBytes(options.dataStats.database_bytes) : "—"}</b>
             <small>{options.dataStats?.users ?? "—"} пользователей</small>
+            <small>Размер включает структуру таблиц и индексы SQLite, даже если записей ещё нет.</small>
             <div class="data-stat-details">
               <span>
                 Учителя: <b>{options.dataStats?.teachers ?? "—"}</b>
