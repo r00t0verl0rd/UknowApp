@@ -120,19 +120,21 @@
   flex:1 0 auto;
   flex-direction:column;
   align-items:flex-start;
-  gap:6px;
-  padding:10px 4px;
+  gap:9px;
+  padding:12px 4px;
   background:transparent;
 }
 .message {
   width:fit-content;
-  max-width:min(92%, 720px);
-  min-width:0;
-  padding:6px 9px;
+  max-width:min(92%, 760px);
+  min-width:min(166px, 84%);
+  padding:11px 14px 12px;
   border:1px solid var(--ui-border);
-  border-radius:13px;
+  border-radius:16px;
   background:var(--surface);
   color:var(--ink);
+  font-family:var(--font-family-ui);
+  font-weight:400;
   box-shadow:var(--ui-shadow-message);
   overflow-wrap:anywhere;
 }
@@ -168,13 +170,17 @@
 }
 .message-topline {
   @include primitives.spread;
-  gap:6px;
+  gap:10px;
   min-width:0;
+  align-items:center;
 }
 .message-topline > b {
   min-width:0;
   overflow:hidden;
-  font-size:12px;
+  font-size:11px;
+  font-weight:550;
+  line-height:1.4;
+  letter-spacing:0.005em;
   text-overflow:ellipsis;
   white-space:nowrap;
 }
@@ -182,12 +188,13 @@
   display:inline-flex;
   flex:0 0 auto;
   align-items:center;
-  gap:4px;
+  gap:2px;
 }
 .message-time {
   color:var(--muted);
-  font-size:10px;
-  font-weight:500;
+  font-size:10.5px;
+  font-weight:400;
+  font-variant-numeric:tabular-nums;
   white-space:nowrap;
 }
 .message-read-status {
@@ -202,31 +209,135 @@
 .message-read-status.is-failed {
   color:var(--danger, #ef4444);
 }
-.message-delete-btn {
-  flex:0 0 24px;
-  width:24px;
-  height:24px;
+// Одинаковые спокойные иконки для мобильной и десктопной версии.
+// Селектор перекрывает общие цветные стили IconButton, включая touch-режим.
+:root .message .ui-icon-button:is(.message-delete-btn, .message-detail-btn) {
+  --icon-action-size:27px;
+  flex:0 0 27px;
+  width:27px;
+  min-width:27px;
+  max-width:27px;
+  height:27px;
+  min-height:27px;
+  padding:0;
   border:0;
-  border-radius:6px;
+  border-radius:7px;
   background:transparent;
-  color:#fff;
-  opacity:0.78;
+  box-shadow:none;
+  color:var(--muted);
+  opacity:0.72;
 }
-.message-delete-btn svg {
-  filter:drop-shadow(0 0 1px #51495e);
+:root .message .ui-icon-button:is(.message-delete-btn, .message-detail-btn) svg {
+  width:15px;
+  height:15px;
+  stroke-width:1.65;
+  filter:none;
 }
-.message-delete-btn:hover,
-.message-delete-btn:focus-visible {
-  opacity:1;
-  background:rgba(40, 32, 52, 0.2);
-}
-.message p {
-  margin:2px 0 0;
+:root .message .ui-icon-button:is(.message-delete-btn, .message-detail-btn):hover:not(:disabled),
+:root .message .ui-icon-button:is(.message-delete-btn, .message-detail-btn):focus-visible {
   color:var(--ink);
-  font-size:12px;
-  line-height:1.5;
+  background:color-mix(in srgb, var(--ink) 8%, transparent);
+  opacity:1;
+}
+:root[data-theme="dark-soft"] .message .ui-icon-button:is(.message-delete-btn, .message-detail-btn) {
+  color:#fff;
+  opacity:0.6;
+}
+:root[data-theme="dark-soft"] .message .ui-icon-button:is(.message-delete-btn, .message-detail-btn):hover:not(:disabled),
+:root[data-theme="dark-soft"] .message .ui-icon-button:is(.message-delete-btn, .message-detail-btn):focus-visible {
+  color:#fff;
+  background:rgba(255, 255, 255, 0.09);
+  opacity:1;
+}
+.message > p {
+  margin:6px 0 0;
+  color:var(--ink);
+  font-size:15px;
+  font-weight:400;
+  line-height:1.58;
+  letter-spacing:0.005em;
   white-space:pre-wrap;
   overflow-wrap:anywhere;
+}
+
+// Нативный popover открывается только по запросу и закрывается кликом снаружи или Escape.
+.message-delivery-popover:popover-open {
+  position:fixed;
+  inset:0;
+  width:min(420px, calc(100vw - 32px));
+  max-width:calc(100vw - 32px);
+  max-height:min(70dvh, 500px);
+  margin:auto;
+  padding:17px 19px;
+  overflow-y:auto;
+  border:1px solid var(--ui-border-strong);
+  border-radius:16px;
+  background:var(--surface);
+  color:var(--ink);
+  font-family:var(--font-family-ui);
+  font-size:13px;
+  font-weight:400;
+  line-height:1.6;
+  box-shadow:var(--ui-shadow-raised);
+}
+.message-delivery-popover-heading {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.message-delivery-popover h3 {
+  margin:0;
+  color:var(--ink);
+  font-size:15px;
+  font-weight:600;
+  line-height:1.4;
+}
+.message-delivery-popover p {
+  margin:9px 0 12px;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.6;
+}
+.message-delivery-popover ul {
+  display:grid;
+  gap:9px;
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+.message-delivery-popover li {
+  display:grid;
+  gap:3px;
+  padding:10px 12px;
+  border-radius:9px;
+  background:var(--ui-control-bg);
+  overflow-wrap:anywhere;
+}
+.message-delivery-popover li strong {
+  font-size:12px;
+  font-weight:600;
+}
+.message-delivery-popover li span {
+  font-size:13px;
+  line-height:1.55;
+}
+.message-delivery-popover-close {
+  display:grid;
+  place-items:center;
+  flex:0 0 27px;
+  width:27px;
+  height:27px;
+  padding:0;
+  border:0;
+  border-radius:7px;
+  color:var(--muted);
+  background:transparent;
+}
+.message-delivery-popover-close:hover,
+.message-delivery-popover-close:focus-visible {
+  color:var(--ink);
+  background:var(--ui-control-hover);
 }
 .message b small {
   margin-left:6px;

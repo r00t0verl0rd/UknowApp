@@ -1,6 +1,8 @@
-import { createSignal, createEffect } from "solid-js";
+import { createSignal, createEffect, createUniqueId } from "solid-js";
 import {
   IconTrash2 as Trash2,
+  IconInfo as Info,
+  IconX as X,
   IconCheck as Check,
   IconCheckCheck as CheckCheck,
   IconCircleX as CircleX,
@@ -119,6 +121,7 @@ function ChatAudioPlayer(options) {
 }
 function MessageBubble(options) {
   const [mediaUrl, setMediaUrl] = createSignal("");
+  const deliveryPopoverId = createUniqueId();
   let bubbleRef = null;
   const media = () => options.message.metadata?.media;
   createEffect(
@@ -255,10 +258,22 @@ function MessageBubble(options) {
                 </span>
               );
             })()}
+          {options.viewerRole === "admin" && deliveryIssues().length > 0 && (
+            <IconButton
+              size="compact"
+              class="message-detail-btn"
+              popovertarget={deliveryPopoverId}
+              aria-controls={deliveryPopoverId}
+              aria-haspopup="dialog"
+              title="Подробности внешней доставки"
+              aria-label="Подробности внешней доставки"
+            >
+              <Info aria-hidden="true" />
+            </IconButton>
+          )}
           {options.message.can_delete && (
             <IconButton
               size="compact"
-              tone="danger"
               class="message-delete-btn"
               onClick={() => options.onDelete?.(options.message)}
               title="Удалить своё сообщение у всех"
@@ -299,25 +314,35 @@ function MessageBubble(options) {
         )}
       {!media() && !options.message.text && <p>Вложение: {options.message.content_type}</p>}
       {options.viewerRole === "admin" && deliveryIssues().length > 0 && (
-        <button
-          type="button"
-          class="btn small"
-          onClick={() =>
-            options.onError(
-              "В UknowApp доставлено. " +
-                deliveryIssues()
-                  .map(
-                    (issue) =>
-                      [issue.platform, issue.name, issue.role].filter(Boolean).join(" · ") +
-                      " — " +
-                      (issue.reason || "Причина не указана."),
-                  )
-                  .join("\n"),
-            )
-          }
+        <section
+          id={deliveryPopoverId}
+          popover="auto"
+          class="message-delivery-popover"
+          role="dialog"
+          aria-label="Подробности внешней доставки"
         >
-          Подробности внешней доставки
-        </button>
+          <div class="message-delivery-popover-heading">
+            <h3>Подробности внешней доставки</h3>
+            <button
+              type="button"
+              class="message-delivery-popover-close"
+              popovertarget={deliveryPopoverId}
+              popovertargetaction="hide"
+              aria-label="Закрыть подробности доставки"
+            >
+              <X size={16} aria-hidden="true" />
+            </button>
+          </div>
+          <p>Сообщение сохранено в UknowApp. Информация о доставке через мессенджеры:</p>
+          <ul>
+            {deliveryIssues().map((issue) => (
+              <li>
+                <strong>{[issue.platform, issue.name, issue.role].filter(Boolean).join(" · ")}</strong>
+                <span>{issue.reason || "Причина не указана."}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );
