@@ -1,6 +1,7 @@
 """Metadata for database-independent administration views."""
 
 from sqlalchemy import text
+
 from app.core.database import engine
 
 
