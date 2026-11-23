@@ -51,6 +51,72 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _message_response(row: Message, principal: dict) -> dict:
+    return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"), principal=principal)
+
+
+def _find_sent_message(db, principal, conversation, sender, client_message_id, *, legacy_metadata=False):
+    """Ищет уже сохранённое сообщение с тем же client_message_id (защита от повторной отправки)."""
+    same_id = [Message.client_message_id == client_message_id]
+    if legacy_metadata:
+        same_id.append(func.json_extract(Message.metadata_json, "$.client_message_id") == client_message_id)
+    return db.scalar(
+        select(Message).where(
+            Message.conversation_id == conversation.id,
+            Message.sender_id == sender.id,
+            Message.sender_role == principal["role"],
+            or_(*same_id),
+        ).limit(1),
+    )
+
+
+def _commit_message(db, row, principal, conversation, sender, client_message_id, on_conflict=None):
+    """Сохраняет сообщение. При гонке по client_message_id возвращает уже существующее, иначе None."""
+    db.add(row)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        if on_conflict:
+            on_conflict()
+        existing = client_message_id and _find_sent_message(
+            db, principal, conversation, sender, client_message_id,
+        )
+        if existing:
+            return existing
+        raise
+    db.refresh(row)
+    return None
+
+
+async def _publish_and_deliver(
+    request, background_tasks, db, principal, conversation, parties, row, *, preview, kind, media=None,
+):
+    """Публикует событие и пуш, затем доставляет сообщение в мессенджеры."""
+    sender, recipients, student, teacher = parties
+    role = principal["role"]
+    # Событие публикуем сразу после сохранения, не ожидая Telegram.
+    publish_conversation_update(db, conversation, message_id=row.id, sender_role=role)
+    push_recipients = [student.id, teacher.id] if role == "admin" else ([student.id] if role == "teacher" else [teacher.id])
+    schedule_push(
+        db, push_recipients, "Новое сообщение · UknowApp",
+        (sender.full_name + ": " + preview)[:240],
+        f"/?openConversation={conversation.id}", include_admin=role != "admin",
+    )
+
+    bot = getattr(request.app.state, "telegram_bot", None)
+    communication = getattr(request.app.state, "communication", None)
+    messenger_results = await deliver_panel_message(
+        db, communication, row, conversation, recipients, role, student, row.text, kind, media=media,
+    )
+    save_panel_messenger_results(db, row, conversation, messenger_results)
+
+    if bot and MessengerPlatform.TELEGRAM.value in messenger_results:
+        background_tasks.add_task(
+            refresh_teacher_panel_after_web_delivery, bot, teacher.id, conversation.id,
+        )
+
+
 @router.post("/panel/conversations/{conversation_id}/messages", status_code=201)
 async def send_panel_message(
     conversation_id: int,
@@ -69,27 +135,16 @@ async def send_panel_message(
     if not body:
         raise HTTPException(status_code=400, detail="Введите текст сообщения")
 
-    sender, recipients, student, teacher = panel_sender_and_recipients(db, principal, conversation)
+    parties = panel_sender_and_recipients(db, principal, conversation)
+    sender = parties[0]
 
     client_message_id = payload.get("client_message_id")
     if client_message_id:
-        existing = db.scalar(
-            select(Message).where(
-                Message.conversation_id == conversation.id,
-                Message.sender_id == sender.id,
-                Message.sender_role == principal["role"],
-                or_(
-                    Message.client_message_id == client_message_id,
-                    func.json_extract(Message.metadata_json, "$.client_message_id") == client_message_id,
-                ),
-            ).limit(1),
+        existing = _find_sent_message(
+            db, principal, conversation, sender, client_message_id, legacy_metadata=True,
         )
         if existing:
-            return _panel_message_dict(
-                existing,
-                expose_internal_metadata=(principal["role"] == "admin"),
-                principal=principal,
-            )
+            return _message_response(existing, principal)
 
     row = Message(
         conversation_id=conversation.id,
@@ -105,61 +160,14 @@ async def send_panel_message(
         client_message_id=client_message_id,
         delivery_status="delivered",
     )
-    db.add(row)
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        if client_message_id:
-            existing = db.scalar(
-                select(Message).where(
-                    Message.conversation_id == conversation.id,
-                    Message.sender_id == sender.id,
-                    Message.sender_role == principal["role"],
-                    Message.client_message_id == client_message_id,
-                ).limit(1),
-            )
-            if existing:
-                return _panel_message_dict(
-                    existing,
-                    expose_internal_metadata=(principal["role"] == "admin"),
-                    principal=principal,
-                )
-        raise
-    db.refresh(row)
-    # Событие публикуем сразу после сохранения, не ожидая Telegram.
-    publish_conversation_update(db, conversation, message_id=row.id, sender_role=principal["role"])
-    push_recipients = [student.id, teacher.id] if principal["role"] == "admin" else ([student.id] if principal["role"] == "teacher" else [teacher.id])
-    schedule_push(
-        db, push_recipients, "Новое сообщение · UknowApp",
-        (sender.full_name + ": " + (body or "Новое сообщение"))[:240],
-        f"/?openConversation={conversation.id}", include_admin=principal["role"] != "admin",
+    existing = _commit_message(db, row, principal, conversation, sender, client_message_id)
+    if existing:
+        return _message_response(existing, principal)
+    await _publish_and_deliver(
+        request, background_tasks, db, principal, conversation, parties, row,
+        preview=body, kind=MessageKind.TEXT,
     )
-
-    bot = getattr(request.app.state, "telegram_bot", None)
-    communication = getattr(request.app.state, "communication", None)
-    messenger_results = await deliver_panel_message(
-        db,
-        communication,
-        row,
-        conversation,
-        recipients,
-        principal["role"],
-        student,
-        body,
-        MessageKind.TEXT,
-    )
-    save_panel_messenger_results(db, row, conversation, messenger_results)
-
-    if bot and MessengerPlatform.TELEGRAM.value in messenger_results:
-        background_tasks.add_task(
-            refresh_teacher_panel_after_web_delivery,
-            bot,
-            teacher.id,
-            conversation.id,
-        )
-
-    return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"), principal=principal)
+    return _message_response(row, principal)
 
 
 @router.post("/panel/conversations/{conversation_id}/attachments", status_code=201)
@@ -177,25 +185,15 @@ async def send_panel_attachment(
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     if len(text or "") > 3900:
         raise HTTPException(status_code=400, detail="Текст к вложению слишком длинный")
-    sender, recipients, student, teacher = panel_sender_and_recipients(db, principal, conversation)
+    parties = panel_sender_and_recipients(db, principal, conversation)
+    sender = parties[0]
     client_message_id = (client_message_id or "").strip() or None
     if client_message_id and len(client_message_id) > 64:
         raise HTTPException(status_code=400, detail="Некорректный ID отправки")
     if client_message_id:
-        existing = db.scalar(
-            select(Message).where(
-                Message.conversation_id == conversation.id,
-                Message.sender_id == sender.id,
-                Message.sender_role == principal["role"],
-                Message.client_message_id == client_message_id,
-            ).limit(1),
-        )
+        existing = _find_sent_message(db, principal, conversation, sender, client_message_id)
         if existing:
-            return _panel_message_dict(
-                existing,
-                expose_internal_metadata=(principal["role"] == "admin"),
-                principal=principal,
-            )
+            return _message_response(existing, principal)
 
     if text_contains_contact_data((text or "").strip()):
         raise HTTPException(status_code=400, detail="Контактные данные нельзя отправлять через чат UknowApp")
@@ -226,64 +224,20 @@ async def send_panel_attachment(
         client_message_id=client_message_id,
         delivery_status="delivered",
     )
-    db.add(row)
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        delete_message_media(json.dumps({"media": media}, ensure_ascii=False))
-        if client_message_id:
-            existing = db.scalar(
-                select(Message).where(
-                    Message.conversation_id == conversation.id,
-                    Message.sender_id == sender.id,
-                    Message.sender_role == principal["role"],
-                    Message.client_message_id == client_message_id,
-                ).limit(1),
-            )
-            if existing:
-                return _panel_message_dict(
-                    existing,
-                    expose_internal_metadata=(principal["role"] == "admin"),
-                    principal=principal,
-                )
-        raise
-    db.refresh(row)
-    publish_conversation_update(
-        db, conversation, message_id=row.id, sender_role=principal["role"],
+    existing = _commit_message(
+        db, row, principal, conversation, sender, client_message_id,
+        on_conflict=lambda: delete_message_media(json.dumps({"media": media}, ensure_ascii=False)),
     )
-    push_recipients = [student.id, teacher.id] if principal["role"] == "admin" else ([student.id] if principal["role"] == "teacher" else [teacher.id])
-    schedule_push(
-        db, push_recipients, "Новое сообщение · UknowApp",
-        (sender.full_name + ": " + (row.text or "Отправлено вложение"))[:240],
-        f"/?openConversation={conversation.id}", include_admin=principal["role"] != "admin",
-    )
-
-    bot = getattr(request.app.state, "telegram_bot", None)
-    communication = getattr(request.app.state, "communication", None)
-    messenger_results = await deliver_panel_message(
-        db,
-        communication,
-        row,
-        conversation,
-        recipients,
-        principal["role"],
-        student,
-        row.text,
-        MessageKind(kind),
+    if existing:
+        return _message_response(existing, principal)
+    await _publish_and_deliver(
+        request, background_tasks, db, principal, conversation, parties, row,
+        preview=row.text or "Отправлено вложение",
+        kind=MessageKind(kind),
         media=OutboundMedia(
             storage_key=relative.as_posix(),
             file_name=original_name,
             mime_type=mime_type,
         ),
     )
-    save_panel_messenger_results(db, row, conversation, messenger_results)
-
-    if bot and MessengerPlatform.TELEGRAM.value in messenger_results:
-        background_tasks.add_task(
-            refresh_teacher_panel_after_web_delivery,
-            bot,
-            teacher.id,
-            conversation.id,
-        )
-    return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"), principal=principal)
+    return _message_response(row, principal)
