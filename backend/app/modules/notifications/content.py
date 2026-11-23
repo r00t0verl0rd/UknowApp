@@ -2,8 +2,8 @@
 
 from app.core import config
 
-# Отображаем отправителя вместо отдельного названия приложения.
-PUSH_TITLE = ""
+# Нейтральный заголовок: iOS сама подписывает уведомление «from UknowApp».
+PUSH_TITLE = "Сообщение"
 
 _MEDIA_LABELS = {
     "photo": "Фото",

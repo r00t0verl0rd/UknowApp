@@ -55,35 +55,48 @@ function createWorker({ navigateFails = false } = {}) {
   };
 }
 
-test("push uses sender name, not the app name, as its only visible text", async () => {
+test("push replaces the duplicated app-name title with «Сообщение»", async () => {
   const notification = await createWorker().push({
     title: "UknowApp",
-    body: "Ученик Иван",
+    body: "Падаван",
     conversation_id: 17,
     conversation_type: "conversation",
   });
-  assert.equal(notification.title, "Ученик Иван");
-  assert.equal(Object.hasOwn(notification.options, "body"), false);
+  assert.equal(notification.title, "Сообщение");
+  assert.equal(notification.options.body, "Падаван");
 });
 
-test("admin push keeps direction instead of the app name", async () => {
+test("admin push keeps message direction in the body", async () => {
   const notification = await createWorker().push({
     title: "",
     body: "Ученик Иван → Учитель Анна",
     conversation_id: 17,
     conversation_type: "conversation",
   });
-  assert.equal(notification.title, "Ученик Иван → Учитель Анна");
+  assert.equal(notification.title, "Сообщение");
+  assert.equal(notification.options.body, "Ученик Иван → Учитель Анна");
 });
 
-test("missing push body uses a neutral fallback, never the app name", async () => {
+test("missing push title and body are not duplicated", async () => {
   const notification = await createWorker().push({
-    title: "UknowApp",
-    body: "",
+    title: "",
+    body: " ",
     conversation_id: 17,
     conversation_type: "conversation",
   });
-  assert.equal(notification.title, "Новое сообщение");
+  assert.equal(notification.title, "Сообщение");
+  assert.equal(Object.hasOwn(notification.options, "body"), false);
+});
+
+test("explicit non-app notification titles are preserved", async () => {
+  const notification = await createWorker().push({
+    title: "Домашнее задание",
+    body: "Учитель Анна",
+    conversation_id: 17,
+    conversation_type: "conversation",
+  });
+  assert.equal(notification.title, "Домашнее задание");
+  assert.equal(notification.options.body, "Учитель Анна");
 });
 
 test("push click opens the exact participant conversation", async () => {
