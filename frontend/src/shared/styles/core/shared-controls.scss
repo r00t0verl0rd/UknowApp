@@ -246,7 +246,10 @@ textarea::placeholder {
 :root .ui-toolbar-select > select.ui-toolbar-select-native {
   display:block;
   margin:0;
-  padding:0 calc(var(--workspace-control-padding) + 18px) 0 var(--workspace-control-padding);
+  /* Reserve room for the chevron so long labels never paint underneath it. */
+  padding:0 calc(var(--workspace-control-padding) + 26px) 0 var(--workspace-control-padding);
+  text-overflow:ellipsis;
+  white-space:nowrap;
   background:var(--surface-input);
   color:var(--ink);
   font-family:var(--font-family-ui);
@@ -331,7 +334,7 @@ textarea::placeholder {
   content:"";
   position:absolute;
   top:50%;
-  right:calc(var(--workspace-control-padding) + 2px);
+  right:calc(var(--workspace-control-padding) + 1px);
   width:7px;
   height:7px;
   box-sizing:border-box;
