@@ -87,19 +87,16 @@
 
 :root .workspace-admin .workspace-panel.chat-list {
   .chat-section-tabs > button.chat-section-tab.is-current {
-    background:var(--button-primary);
-    color:white;
+    background:var(--ui-selected-bg);
+    color:var(--ui-selected-text);
     border-color:var(--ui-selected-border);
     font-weight:700;
+    box-shadow:inset 0 -2px 0 var(--ui-selected-border);
   }
   .chat-items > .chat-item .person-info.participant-chat-names {
     > .participant-teacher-name { color:var(--role-teacher); }
     > .participant-student-name { color:var(--role-student); }
   }
-}
-
-:root[data-theme="dark-soft"] .workspace-admin .workspace-panel.chat-list .chat-section-tabs > button.chat-section-tab.is-current {
-  color:var(--app-foreground);
 }
 
 :root [data-chat-name-role="teacher"] { color:var(--role-teacher); }

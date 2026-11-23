@@ -323,6 +323,9 @@ a:focus-visible {
   & .credential-modal {
     background-color:var(--surface);
   }
+  & .sidebar {
+    background-color:var(--surface-soft);
+  }
   & .search,
   & .stack input,
   & .stack select {
