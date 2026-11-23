@@ -404,7 +404,7 @@ export default function ChatsPage(options) {
                     options.selectedChat.type === "personal"
                       ? "Личное сообщение…"
                       : options.profile?.role === "admin"
-                        ? "Напишите сообщение — его увидят ученик и учитель."
+                        ? "Напишите сообщение... его увидят ученик и учитель"
                         : options.profile?.role === "student"
                           ? "Сообщение учителю…"
                           : "Ответить ученику…"
