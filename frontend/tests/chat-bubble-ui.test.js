@@ -15,7 +15,7 @@ test("delivery details use a native popover, not an error modal", () => {
   assert.match(bubble, /aria-label="Подробности внешней доставки"/);
   assert.match(bubble, /message-detail-btn/);
   assert.match(bubble, /Сообщение доставлено в UknowApp/);
-  assert.match(bubble, /getDeliveryDetails\(options\.message\.metadata\)/);
+  assert.match(bubble, /getDeliveryDetails\(options\.message\.metadata,\s*true\)/);
   assert.match(styles, /\.message-delivery-popover h3 \{[^}]*color:var\(--success\)/s);
   assert.doesNotMatch(bubble, /options\.onError\(/);
   assert.doesNotMatch(bubble, /class="btn small"/);
@@ -32,7 +32,7 @@ test("related popups communicate outcomes before caveats", () => {
 });
 
 test("sender name is always visible for all conversation participants", () => {
-  assert.match(bubble, /<div class="message-topline">\s*<b>\{options\.message\.sender\}<\/b>/);
+  assert.match(bubble, /<div class="message-topline">\s*<b data-chat-name-role=\{options\.message\.sender_role\}>\{options\.message\.sender\}<\/b>/);
   assert.doesNotMatch(bubble, /options\.viewerRole === "teacher" && options\.message\.sender_role/);
   assert.doesNotMatch(bubble, /\{[^}]*options\.message\.sender_role[^}]*&&\s*\(\s*<b>/);
 });
