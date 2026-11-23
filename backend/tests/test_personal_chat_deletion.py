@@ -86,7 +86,8 @@ def test_admin_removes_personal_chat_messages_media_and_orphans(api, monkeypatch
         assert db.get(PersonalConversation, other_id) is not None
         assert db.query(PersonalMessage).filter_by(conversation_id=other_id).count() == 1
         event = db.query(RealtimeEvent).one()
-        assert json.loads(event.payload_json).get("resync") is True
+        assert json.loads(event.payload_json)["action"] == "delete_conversation"
+        assert json.loads(event.payload_json)["audience"] == {"participant_id": users["teacher-one"]}
         assert json.loads(visible_payload(
             db, {"role": "teacher", "user_id": users["teacher-one"]},
             json.dumps({"conversation_id": chat_id, "conversation_type": "personal"}),
