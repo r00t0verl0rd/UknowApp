@@ -64,6 +64,12 @@ export function createRestoreFlow(options) {
     () => [flow()?.id, flow()?.phase, options.auth],
     () => {
       const current = flow();
+      // If auth was already cleared (for example after a page reload), do not
+      // cover the login form with a waiting dialog.
+      if (current?.id && !options.auth && ["waiting", "reauth"].includes(current.phase)) {
+        persist({ ...current, phase: "login" });
+        return undefined;
+      }
       if (current?.phase === "login" && options.auth &&
           localStorage.getItem("uknowapp-auth") === "1") {
         persist({ ...current, phase: "waiting", startedAt: Date.now() });
