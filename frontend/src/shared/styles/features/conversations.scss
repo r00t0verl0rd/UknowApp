@@ -919,7 +919,7 @@
 }
 @media (min-width: 1025px) {
   .workspace-shell .workspace-content:has(> .chat-list) {
-    // Достаточная ширина панели для полностью читаемых поиска и фильтра.
+    /* Достаточная ширина панели для полностью читаемых поиска и фильтра. */
     grid-template-columns:minmax(380px, min(34%, 430px)) minmax(0, 1fr);
   }
 }
@@ -935,11 +935,11 @@
     flex:1 1 auto;
   }
 }
-// На Desktop оба фильтра располагаются в одну строку; при отсутствии
-// выпадающего списка поиск по-прежнему занимает всю ширину панели.
+/* На Desktop оба фильтра располагаются в одну строку; при отсутствии
+   выпадающего списка поиск по-прежнему занимает всю ширину панели. */
 @media (min-width: 1025px) {
   :root .workspace-shell .workspace-panel.chat-list .chat-list-filters.workspace-control-row:has(> .chat-filter) {
-    grid-template-columns:minmax(0, 1fr) minmax(158px, 44%);
+    grid-template-columns:repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
     align-items:stretch;
     --workspace-control-padding:9px;
     --workspace-control-font-size:12px;
