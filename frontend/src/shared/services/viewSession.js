@@ -124,7 +124,13 @@ export function installViewRestoration({ root, userId, page }) {
   // Programmatic scroll events are isTrusted in modern browsers too. Only
   // real wheel/touch/keyboard input is allowed to cancel a pending restore.
   const onScrollIntent = event => {
-    if (event.isTrusted) lastUserScrollIntent = Date.now();
+    if (!event.isTrusted) return;
+    // A tap/click to change a tab is not a scroll gesture. In particular it
+    // must not cancel the restored position of the destination page.
+    if (event.type === "keydown" &&
+        !["ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End", " "].includes(event.key)) return;
+    if (event.type === "pointermove" && !event.buttons) return;
+    lastUserScrollIntent = Date.now();
   };
   let flushTimer = 0;
   let queuedScroll = {};
@@ -263,8 +269,8 @@ export function installViewRestoration({ root, userId, page }) {
     scheduleApply();
   };
   doc.addEventListener("wheel", onScrollIntent, { capture: true, passive: true });
-  doc.addEventListener("touchstart", onScrollIntent, { capture: true, passive: true });
-  doc.addEventListener("pointerdown", onScrollIntent, { capture: true, passive: true });
+  doc.addEventListener("touchmove", onScrollIntent, { capture: true, passive: true });
+  doc.addEventListener("pointermove", onScrollIntent, { capture: true, passive: true });
   doc.addEventListener("keydown", onScrollIntent, true);
   doc.addEventListener("scroll", onScroll, true);
   win.addEventListener("scroll", onScroll, { passive: true });
@@ -291,8 +297,8 @@ export function installViewRestoration({ root, userId, page }) {
       observer.disconnect();
       resize?.disconnect();
       doc.removeEventListener("wheel", onScrollIntent, true);
-      doc.removeEventListener("touchstart", onScrollIntent, true);
-      doc.removeEventListener("pointerdown", onScrollIntent, true);
+      doc.removeEventListener("touchmove", onScrollIntent, true);
+      doc.removeEventListener("pointermove", onScrollIntent, true);
       doc.removeEventListener("keydown", onScrollIntent, true);
       doc.removeEventListener("scroll", onScroll, true);
       doc.removeEventListener("toggle", onToggle, true);
