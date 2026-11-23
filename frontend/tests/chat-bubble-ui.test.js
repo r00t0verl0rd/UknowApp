@@ -86,7 +86,7 @@ test("participant list stays stacked while open dialog title has inline names an
   assert.match(chats, /<b><span data-chat-name-role="teacher">\{chat\.teacher\.full_name\}<\/span><\/b>/);
   assert.match(chats, /<b><span data-chat-name-role="student">\{chat\.student\.full_name\}<\/span><\/b>/);
   assert.match(chats, /<ToolbarSelect\s+class="chat-message-filter"/);
-  assert.match(chats, /Напишите сообщение — его увидят ученик и учитель/);
+  assert.match(chats, /Напишите сообщение... его увидят ученик и учитель/);
   assert.match(styles, /\.participant-chat-names \{[^}]*display:grid;/s);
   assert.match(styles, /\.mobile-chat-back \{[^}]*width:48px;[^}]*height:48px;/s);
 });
