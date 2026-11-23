@@ -759,9 +759,11 @@
   align-items:center;
   justify-content:center;
   min-width:22px;
+  width:max-content;
+  max-width:none;
   height:22px;
   margin-left:4px;
-  padding:0 2px;
+  padding:0 6px;
   border:1px solid var(--ui-border);
   border-radius:999px;
   background:var(--ui-control-bg);

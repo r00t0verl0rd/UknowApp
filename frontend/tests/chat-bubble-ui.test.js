@@ -7,6 +7,7 @@ import test from "node:test";
 const frontend = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const bubble = readFileSync(path.join(frontend, "src/features/conversations/components/MessageBubble.jsx"), "utf8");
 const styles = readFileSync(path.join(frontend, "src/shared/styles/features/conversations.scss"), "utf8");
+const countBadge = readFileSync(path.join(frontend, "src/shared/components/CountBadge.jsx"), "utf8");
 
 test("delivery details use a native popover, not an error modal", () => {
   assert.match(bubble, /popover="auto"/);
@@ -52,4 +53,11 @@ test("message text and unobtrusive icon actions share desktop and mobile styles"
   assert.match(styles, /:root\[data-theme="dark-soft"\] \.message \.ui-icon-button:is\(\.message-delete-btn, \.message-detail-btn\)/);
   assert.match(styles, /\.message-delivery-popover:popover-open/);
   assert.doesNotMatch(bubble, /tone="danger"/);
+});
+
+test("conversation count badges show the full number and grow into a pill", () => {
+  assert.match(countBadge, /const formatted = \(\) => count\(\);/);
+  assert.doesNotMatch(countBadge, /99\+/);
+  assert.match(countBadge, /\$\{formatted\(\)\} \$\{props\.label\}/);
+  assert.match(styles, /\.chat-tab-count \{[^}]*min-width:22px;[^}]*width:max-content;[^}]*max-width:none;[^}]*padding:0 6px;[^}]*border-radius:999px;[^}]*white-space:nowrap;/s);
 });

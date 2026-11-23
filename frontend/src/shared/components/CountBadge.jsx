@@ -3,7 +3,7 @@ import { Show } from "solid-js";
 
 export default function CountBadge(props) {
   const count = () => Math.max(0, Number(props.value) || 0);
-  const formatted = () => (count() > 99 ? "99+" : count());
+  const formatted = () => count();
   const Badge = dynamic(() => (props.as === "b" ? "b" : "span"));
 
   return (

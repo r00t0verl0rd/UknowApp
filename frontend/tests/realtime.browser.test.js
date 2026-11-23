@@ -1532,6 +1532,67 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize({ width: 1280, height: 800 });
 
+    // Badges must expand for full counts in both themes and across viewports.
+    for (const width of [320, 390, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        const result = await page.evaluate(selectedTheme => {
+          const root = document.documentElement;
+          const previous = root.dataset.theme;
+          root.dataset.theme = selectedTheme;
+          const host = document.createElement("div");
+          host.className = "workspace-shell";
+          host.style.cssText = "position:fixed;left:0;top:0;visibility:hidden;pointer-events:none";
+          host.innerHTML = `
+            <div class="chat-list workspace-panel" style="width:270px">
+              <div class="chat-items">
+                <button class="chat-item student-card" type="button">
+                  <div class="person-main"><span class="person-info"><b>Профессор</b></span></div>
+                  <span class="chat-tab-count">12345</span>
+                </button>
+              </div>
+              <div class="chat-section-tabs ui-toolbar-control ui-toolbar-segmented">
+                <button class="chat-section-tab ui-toolbar-tab" type="button">Участники</button>
+                <button class="chat-section-tab ui-toolbar-tab" type="button">Личные
+                  <span class="chat-tab-count">12345</span>
+                </button>
+              </div>
+            </div>
+          `;
+          document.body.append(host);
+          try {
+            const badge = host.querySelector(".chat-item .chat-tab-count");
+            const tabBadge = host.querySelector(".chat-section-tab .chat-tab-count");
+            const measure = element => ({
+              text: element.textContent.trim(),
+              width: element.getBoundingClientRect().width,
+              height: element.getBoundingClientRect().height,
+              clipped: element.scrollWidth > element.clientWidth,
+              radius: getComputedStyle(element).borderRadius,
+            });
+            const large = measure(badge);
+            const tab = measure(tabBadge);
+            badge.textContent = "8";
+            const small = measure(badge);
+            return { large, tab, small };
+          } finally {
+            host.remove();
+            root.dataset.theme = previous;
+          }
+        }, theme);
+        assert.equal(result.large.text, "12345");
+        assert.equal(result.tab.text, "12345");
+        for (const value of [result.large, result.tab]) {
+          assert.ok(value.width > value.height, `${width}px ${theme}: long number grows into a pill`);
+          assert.ok(!value.clipped, `${width}px ${theme}: badge content is not clipped`);
+          assert.equal(value.radius, "999px");
+        }
+        assert.ok(result.large.width > result.small.width,
+          `${width}px ${theme}: badge width follows number length`);
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
+
     // Реальный сенсорный viewport: проверяем, что мобильные правила не
     // превращают активные фиолетовые вкладки в серые. CSS одинаков для ролей.
     const touchContext = await browser.newContext({
