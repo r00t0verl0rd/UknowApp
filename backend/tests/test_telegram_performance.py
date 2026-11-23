@@ -144,3 +144,81 @@ def test_student_plain_text_with_both_telegram_accounts_is_delivered(api):
         assert messages[0].delivery_status == "delivered"
         assert gateway.copied == []
         assert gateway.sent == []
+
+
+def test_student_message_refreshes_teacher_panel_without_replacing_it(api):
+    """New messages from a different student must not delete/re-send the Telegram panel."""
+    from app.models import TeacherPanel, TeacherSession
+    from app.modules.messaging.inbound import set_teacher_session
+    from app.modules.telegram.teacher import (
+        TEACHER_KEYBOARD_VERSION,
+        teacher_keyboard_signature,
+        teacher_panel_view,
+        update_teacher_panel,
+    )
+
+    _, users, sessions = api
+    gateway = RecordingGateway()
+    with sessions() as db:
+        teacher = db.get(User, users["teacher-one"])
+        first = db.get(User, users["student-one"])
+        second = db.get(User, users["student-two"])
+        old_conversation = _assignment(db, teacher.id, first.id)
+        new_conversation = _assignment(db, teacher.id, second.id)
+        sync_messenger_account(
+            db, teacher.id, MessengerPlatform.TELEGRAM,
+            external_user_id="teacher-100", external_chat_id="100",
+        )
+        sync_messenger_account(
+            db, second.id, MessengerPlatform.TELEGRAM,
+            external_user_id="student-200", external_chat_id="200",
+        )
+        set_teacher_session(db, teacher, old_conversation)
+        _, markup, _ = teacher_panel_view(db, teacher, selected_student_name=first.full_name)
+        db.add(TeacherPanel(
+            teacher_id=teacher.id, chat_id=100, message_id=321,
+            keyboard_version=TEACHER_KEYBOARD_VERSION,
+            keyboard_signature=teacher_keyboard_signature(markup),
+        ))
+        db.commit()
+
+        inbound = InboundMessage(
+            platform=MessengerPlatform.TELEGRAM,
+            event_id="telegram:200:one-time-1",
+            external_user_id="student-200",
+            external_chat_id="200",
+            external_message_id="456",
+            content_type=MessageKind.TEXT,
+            text="Новое сообщение из другого диалога",
+        )
+        result = asyncio.run(process_inbound_message(db, inbound, gateway))
+        assert result.refresh_teacher_id == teacher.id
+        assert not result.force_teacher_panel_refresh
+        assert db.get(TeacherSession, teacher.id).conversation_id == old_conversation.id
+
+        class RecordingBot:
+            def __init__(self):
+                self.edited = []
+                self.sent = []
+                self.deleted = []
+
+            async def edit_message_text(self, **kwargs):
+                self.edited.append(kwargs)
+
+            async def send_message(self, **kwargs):
+                self.sent.append(kwargs)
+
+            async def delete_message(self, **kwargs):
+                self.deleted.append(kwargs)
+
+        bot = RecordingBot()
+        assert asyncio.run(update_teacher_panel(bot, db, teacher))
+        assert len(bot.edited) == 1
+        assert bot.edited[0]["message_id"] == 321
+        assert bot.sent == []
+        assert bot.deleted == []
+        assert db.get(TeacherPanel, teacher.id).message_id == 321
+
+        duplicate = asyncio.run(process_inbound_message(db, inbound, gateway))
+        assert not duplicate.force_teacher_panel_refresh
+        assert db.get(TeacherSession, teacher.id).conversation_id == old_conversation.id
