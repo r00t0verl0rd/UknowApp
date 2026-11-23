@@ -215,7 +215,7 @@
   }
 }
 /* Non-modal notices are centered and stay clear of Safari's bottom controls. */
-:root dialog.native-dialog:is(.native-feedback-success, .native-feedback-info)[open] {
+:root dialog.native-dialog.modal:is(.native-feedback-success, .native-feedback-info)[open] {
   position:fixed;
   inset:auto auto max(18px, env(safe-area-inset-bottom, 0px)) 50%;
   z-index:1400;
@@ -237,7 +237,7 @@
 }
 /* Mobile Safari's floating URL toolbar overlaps the bottom of a browser tab. */
 @media (max-width: 1024px) and (display-mode: browser) {
-  :root dialog.native-dialog:is(.native-feedback-success, .native-feedback-info)[open] {
+  :root dialog.native-dialog.modal:is(.native-feedback-success, .native-feedback-info)[open] {
     bottom:max(94px, calc(env(safe-area-inset-bottom, 0px) + 24px));
   }
 }
