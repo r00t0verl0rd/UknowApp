@@ -51,9 +51,6 @@ jobs:
     defaults:
       run:
         working-directory: frontend
-    env:
-      # UI browser tests use the Chrome preinstalled on GitHub's Ubuntu runners.
-      CHROMIUM_PATH: /usr/bin/google-chrome
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -66,6 +63,15 @@ jobs:
       - run: npm run build
       - name: Install browser test runtime
         run: npm install --no-save playwright@1.56.1
+      - name: Restore cached Chromium headless shell
+        id: browser-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: chromium-headless-shell-1.56.1-${{ runner.os }}
+      - name: Install Chromium headless shell on cache miss
+        if: steps.browser-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --only-shell chromium
       - name: Run UI and realtime browser integration tests
         run: npm run test:browser
 
