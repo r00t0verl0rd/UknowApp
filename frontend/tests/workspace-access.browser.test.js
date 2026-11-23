@@ -32,7 +32,11 @@ test("workspace stays closed until the server confirms the role and redirects a 
     confirm();
     await page.waitForURL("**/dialogs");
     await page.getByRole("button", { name: "Доски", exact: true }).click();
-    assert.equal(await page.getByText("В разработке").count(), 0);
+    await page.getByRole("heading", { name: "Раздел в разработке." }).waitFor();
+    assert.equal(
+      await page.getByText("Здесь появится удобное пространство для совместной работы, материалов и визуальных задач.").count(),
+      1,
+    );
     assert.equal(await page.getByRole("button", { name: "Структура", exact: true }).count(), 0);
     assert.ok(requests.every(path => !path.startsWith("/api/admin/")));
     await page.route("**/api/panel/me", route => route.fulfill({ status: 503, json: {} }));
