@@ -2,13 +2,13 @@
 .workspace-shell {
   .sidebar nav {
     display:grid;
-    gap:7px;
+    gap:4px;
   }
   .sidebar-bottom {
     margin-top:auto;
     @include primitives.stack;
     align-items:stretch;
-    gap:7px;
+    gap:4px;
   }
   .sidebar-bottom > .ui-menu-control {
     width:100%;
@@ -189,34 +189,5 @@
     background:var(--menu-hover-bg);
     border-color:var(--menu-hover-border);
     color:var(--menu-text);
-  }
-}
-
-// Priority hierarchy on desktop: current section first, utilities last.
-@media (min-width: 1025px) {
-  :root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control {
-    min-height:44px;
-    height:44px;
-    padding:11px 14px;
-    gap:12px;
-    border:1px solid transparent;
-    border-radius:var(--workspace-control-radius);
-    background:transparent;
-    color:var(--ui-control-text);
-    font-weight:550;
-  }
-  :root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control[aria-current="page"],
-  :root .workspace-shell .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control[aria-current="page"]:hover {
-    border-color:var(--ui-selected-border);
-    background:var(--ui-selected-bg);
-    color:var(--ui-selected-text);
-    font-weight:700;
-    box-shadow:inset 3px 0 0 var(--ui-selected-border);
-  }
-  :root .workspace-shell .sidebar .sidebar-bottom > button.ui-menu-control:not([aria-current="page"]) {
-    color:var(--muted);
-  }
-  :root .workspace-shell .workspace-content .graph-add-participant.ui-menu-control {
-    border-radius:var(--workspace-control-radius);
   }
 }

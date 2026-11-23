@@ -384,7 +384,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize({ width: 1280, height: 720 });
 
-    // Навигация и нижние пункты согласованы, а создание участника выделено как действие.
+    // Меню, нижние пункты и действие создания используют единый шрифт и оформление.
     for (const width of [390, 1280]) {
       await page.setViewportSize({ width, height: 800 });
       for (const theme of ["light", "dark-soft"]) {
@@ -442,25 +442,16 @@ test("global SSE updates real counters across tabs and replays missed events", {
         assert.equal(result.schoolLabel.display === "none", width < 1025,
           `${theme} ${width}px: подпись школы видна только на компьютере`);
         const expected = result.nav;
-        for (const name of ["additional", "logout"]) {
+        for (const name of ["additional", "logout", "create"]) {
           const item = result[name];
           assert.equal(item.family, expected.family, `${theme} ${width}px ${name}: шрифт`);
           assert.equal(item.background, expected.background, `${theme} ${width}px ${name}: фон`);
           assert.equal(item.border, expected.border, `${theme} ${width}px ${name}: рамка`);
           assert.equal(item.borderWidth, "1px", `${theme} ${width}px ${name}: толщина рамки`);
           assert.equal(item.radius, expected.radius, `${theme} ${width}px ${name}: скругление`);
-          if (width === 1280) {
+          if (width === 1280 || name === "create") {
             assert.equal(item.size, expected.size, `${theme} ${width}px ${name}: размер текста`);
           }
-        }
-        assert.equal(result.create.family, expected.family, `${theme} ${width}px create: шрифт`);
-        assert.equal(result.create.size, expected.size, `${theme} ${width}px create: размер текста`);
-        assert.equal(result.create.borderWidth, "1px", `${theme} ${width}px create: рамка`);
-        // Создание участника — отдельное действие, а не ещё одна строка навигации.
-        if (width === 1280) {
-          assert.equal(result.create.radius, expected.radius, `${theme} ${width}px create: скругление`);
-          assert.notEqual(result.create.background, expected.background,
-            `${theme} ${width}px create: действие заметнее пунктов меню`);
         }
         assert.equal(result.teacher.family, expected.family, `${theme}: гарнитура карточки`);
         assert.notEqual(result.selected.background, expected.background, `${theme}: выделение активного раздела`);
