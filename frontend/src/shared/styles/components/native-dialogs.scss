@@ -206,8 +206,9 @@
   .toast-message {
     margin:0;
     color:var(--muted);
-    font-size:13px;
-    line-height:1.5;
+    font-size:14px;
+    font-weight:400;
+    line-height:1.6;
   }
   .toast-close {
     --icon-action-size: 44px;
@@ -222,7 +223,10 @@
   box-shadow:var(--ui-shadow-raised);
 }
 :root dialog.native-dialog.native-feedback-success .native-feedback-content > svg {
-  color:var(--purple);
+  color:var(--success);
+}
+:root dialog.native-dialog.native-feedback-success .native-feedback-copy h2 {
+  color:var(--success);
 }
 :root .ui-toolbar-select > select.ui-toolbar-select-native {
   cursor:pointer;

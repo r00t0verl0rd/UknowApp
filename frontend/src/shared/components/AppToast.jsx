@@ -57,7 +57,7 @@ export default function AppToast(options) {
               <Check size={20} aria-hidden="true" />
             )}
             <div class="native-feedback-copy">
-              <h2 id={headingId}>{isError() ? "Ошибка" : "Готово"}</h2>
+              <h2 id={headingId}>{isError() ? "Не получилось" : "Готово"}</h2>
               <p class="toast-message">{options.message}</p>
             </div>
             {isError() && (
