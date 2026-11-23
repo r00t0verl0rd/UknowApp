@@ -282,6 +282,9 @@ export default function ChatsPage(options) {
 
             <div
               class="messages"
+              data-view-scroll-key={options.selectedChat
+                ? (options.selectedChat.type === "personal" ? "personal:" : "conversation:") + options.selectedChat.id
+                : ""}
               ref={(element) => {
                 options.messagesViewportRef.current = element;
               }}

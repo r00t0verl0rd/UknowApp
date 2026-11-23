@@ -99,7 +99,13 @@ function readPosition(element, withAnchor = false) {
 }
 
 function getContainers(root) {
-  return Object.fromEntries(CONTAINERS.map(([selector, name]) => [name, root.querySelector(selector)]).filter(([, el]) => el));
+  return Object.fromEntries(CONTAINERS
+    .map(([selector, name]) => {
+      const element = root.querySelector(selector);
+      const scoped = element?.dataset?.viewScrollKey;
+      return [scoped ? `${name}:${scoped}` : name, element];
+    })
+    .filter(([, el]) => el));
 }
 
 export function installViewRestoration({ root, userId, page }) {
@@ -189,10 +195,13 @@ export function installViewRestoration({ root, userId, page }) {
   const onScroll = event => {
     if (restoring || disposed || !event.isTrusted) return;
     const target = event.target;
-    const name = target === doc || target === win
+    const baseName = target === doc || target === win
       ? "document"
       : CONTAINERS.find(([selector]) => target?.matches?.(selector))?.[1];
-    if (!name) return;
+    if (!baseName) return;
+    const name = target?.dataset?.viewScrollKey
+      ? `${baseName}:${target.dataset.viewScrollKey}`
+      : baseName;
     userInteracted.add(name);
     delete pendingRestore[name];
     queuedScroll[name] = name === "document"
@@ -235,8 +244,12 @@ export function installViewRestoration({ root, userId, page }) {
   const startRestore = () => {
     userInteracted = new Set();
     const saved = readScrollPositions(userId, activePage);
-    pendingRestore = Object.keys(saved).length
-      ? { ...saved }
+    const activeChatKey = viewPreference(userId, "chats.active", null);
+    const relevant = Object.fromEntries(Object.entries(saved).filter(([name]) =>
+      !name.startsWith("messages:") || name === `messages:${activeChatKey}`,
+    ));
+    pendingRestore = Object.keys(relevant).length
+      ? relevant
       : { content: { top: 0, left: 0 }, document: { top: 0, left: 0 } };
     restoreDetails();
     attachObservers();

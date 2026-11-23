@@ -146,7 +146,7 @@ export function createChatsController(options) {
   });
   let requestLatestScroll = () => {};
   const preservingScroll = key => key && restoredChatScrollKey === key &&
-    Object.hasOwn(readScrollPositions(options.profile?.id, "chats"), "messages");
+    Object.hasOwn(readScrollPositions(options.profile?.id, "chats"), `messages:${key}`);
   createEffect(
     () => [
       options.chatState.selectedChat?.id,
