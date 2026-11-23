@@ -3,6 +3,7 @@ import { createSignal, createEffect } from "solid-js";
 import {
   IconArrowLeft as ArrowLeft,
   IconMessageCircle as MessageCircle,
+  IconEye as Eye,
   IconPaperclip as Paperclip,
   IconPlus as Plus,
   IconSearch as Search,
@@ -246,7 +247,7 @@ export default function ChatsPage(options) {
                 >
                   <div class="person-main">
                     <div class="avatar chat-avatar">
-                      <MessageCircle size={17} />
+                      {showMessageCount() ? <Eye size={19} aria-hidden="true" /> : <MessageCircle size={17} aria-hidden="true" />}
                     </div>
                     <div class={"person-info" + (showMessageCount() ? " participant-chat-names" : "")}>
                       {showMessageCount() ? (
