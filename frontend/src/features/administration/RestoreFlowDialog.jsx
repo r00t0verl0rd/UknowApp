@@ -6,7 +6,7 @@ export default function RestoreFlowDialog(options) {
   const phase = () => options.flow.phase;
   const working = () => phase() === "uploading" || phase() === "waiting";
   const title = () => ({
-    uploading: "Проверяем резервную копию",
+    uploading: "Загружаем и проверяем архив",
     waiting: "Восстанавливаем данные",
     delayed: "Проверка занимает больше времени",
     reauth: "Требуется повторный вход",
@@ -66,14 +66,14 @@ export default function RestoreFlowDialog(options) {
         <ol class="restore-flow-steps">
           <li class={phase() !== "uploading" ? "is-complete" : "is-current"}>
             <span aria-hidden="true">{phase() === "uploading" ? "1" : "✓"}</span>
-            Архив проверен и принят
+            {phase() === "uploading" ? "Загрузка и проверка архива" : "Архив проверен и принят"}
           </li>
-          <li class={["uploading"].includes(phase()) ? "" : ["waiting", "delayed", "reauth"].includes(phase()) ? "is-current" : "is-complete"}>
-            <span aria-hidden="true">{["completed", "failed"].includes(phase()) ? "✓" : "2"}</span>
+          <li class={phase() === "uploading" ? "" : phase() === "completed" ? "is-complete" : phase() === "failed" ? "is-error" : "is-current"}>
+            <span aria-hidden="true">{phase() === "completed" ? "✓" : phase() === "failed" ? "!" : "2"}</span>
             Восстановление и перезапуск
           </li>
-          <li class={["completed", "failed"].includes(phase()) ? "is-complete" : phase() === "reauth" ? "is-current" : ""}>
-            <span aria-hidden="true">{["completed", "failed"].includes(phase()) ? "✓" : "3"}</span>
+          <li class={phase() === "completed" ? "is-complete" : phase() === "failed" ? "is-error" : phase() === "reauth" ? "is-current" : ""}>
+            <span aria-hidden="true">{phase() === "completed" ? "✓" : phase() === "failed" ? "!" : "3"}</span>
             Проверка результата
           </li>
         </ol>
