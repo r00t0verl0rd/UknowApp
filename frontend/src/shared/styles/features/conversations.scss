@@ -1,4 +1,4 @@
-@use "./primitives";
+@use "../core/primitives";
 .content > .workspace-content:has(> .chat-list) {
   display:grid;
   grid-template-columns:minmax(260px, min(24%, 340px)) minmax(0, 1fr);

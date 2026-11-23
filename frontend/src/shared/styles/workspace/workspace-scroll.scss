@@ -1,4 +1,4 @@
-@use "./primitives";
+@use "../core/primitives";
 :root[data-theme]:has(.workspace-shell),
 :root[data-theme] body:has(.workspace-shell),
 :root[data-theme] #root:has(.workspace-shell) {

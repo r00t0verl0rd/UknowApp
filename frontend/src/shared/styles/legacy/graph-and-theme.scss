@@ -1,4 +1,4 @@
-@use "./primitives";
+@use "../core/primitives";
 :root[data-theme="dark-soft"] {
   & .login-card,
   & .user-list,

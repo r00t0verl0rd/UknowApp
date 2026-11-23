@@ -1,4 +1,4 @@
-@use "./primitives";
+@use "../core/primitives";
 :root[data-theme] {
   body:has(.login-screen),
   #root:has(.login-screen) {
