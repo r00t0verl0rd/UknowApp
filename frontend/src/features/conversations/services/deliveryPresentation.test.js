@@ -35,3 +35,36 @@ test("legacy Telegram logs still work and duplicate modern results are not shown
   }).length, 1);
   assert.deepEqual(getDeliveryDetails({}), []);
 });
+
+test("successful messenger copy identifies teacher or student by name", () => {
+  assert.deepEqual(getDeliveryDetails({
+    messenger_deliveries: { telegram: {
+      delivered: [{ user_id: 14, name: "Профессор", role: "teacher" }],
+      errors: [{ user_id: 22, name: "Падаван", role: "student", reason: "not_connected" }],
+    } },
+  }, true), [
+    { title: "Telegram · Профессор", namedRecipient: "Профессор", role: "teacher", channel: "Telegram",
+      description: "Копия отправлена.", delivered: true },
+    { title: "Telegram · Падаван", namedRecipient: "Падаван", role: "student", channel: "Telegram",
+      description: "Получатель не подключил телеграм-бота.", delivered: false },
+  ]);
+});
+
+test("historical delivery IDs resolve to actual participants and never falsely credit another", () => {
+  const participants = [
+    { id: 14, full_name: "Профессор", role: "teacher" },
+    { id: 22, full_name: "Падаван", role: "student" },
+  ];
+  const metadata = {
+    messenger_deliveries: { telegram: { delivered: [{ user_id: 14 }] } },
+  };
+  assert.equal(getDeliveryDetails(metadata, true, participants)[0].title, "Telegram · Профессор");
+  assert.equal(getDeliveryDetails(metadata, true, participants)[0].role, "teacher");
+  assert.equal(getDeliveryDetails(metadata, true, [participants[1]])[0].title, "Telegram · Получатель");
+  assert.equal(getDeliveryDetails({ telegram_deliveries: [{ user_id: 22 }] }, true, participants)[0].title,
+    "Telegram · Падаван");
+  const multiple = getDeliveryDetails({
+    messenger_deliveries: { telegram: { delivered: [{ user_id: 14 }, { user_id: 22 }] } },
+  }, true, participants);
+  assert.deepEqual(multiple.map(item => item.title), ["Telegram · Профессор", "Telegram · Падаван"]);
+});
