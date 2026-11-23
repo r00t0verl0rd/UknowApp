@@ -50,7 +50,28 @@ export default function UserDialogs(options) {
   );
   return (
     <>
-      {options.modal && options.modal.mode !== "create-personal" && (
+      {options.modal?.mode === "telegram" && (
+        <Modal onClose={() => options.setModal(null)}>
+          <div class="modal-head">
+            <div><div class="eyebrow">{options.modal.user.full_name}</div><h2>Подключить Telegram</h2></div>
+            <IconButton aria-label="Закрыть" onClick={() => options.setModal(null)}><X /></IconButton>
+          </div>
+          <div class="stack">
+            <section>
+              <h3>Через бота</h3>
+              <p>Участник открывает Telegram-бота школы, нажимает «Старт» и отправляет свой действующий код входа в UknowApp.</p>
+              <Button onClick={async () => options.notify(await copyText("Откройте Telegram-бота школы, нажмите «Старт» и отправьте ему ваш код входа в UknowApp.") ? "Инструкция скопирована" : "Не удалось скопировать инструкцию")}>Скопировать инструкцию</Button>
+            </section>
+            <section>
+              <h3>Вручную по Telegram ID</h3>
+              <p>Если вы знаете числовой ID участника, впишите его в профиль и нажмите «Сохранить».</p>
+              <Button onClick={() => options.openEdit(options.modal.user, true)}>Ввести Telegram ID</Button>
+            </section>
+            <Button variant="ghost" onClick={() => options.makeCode(options.modal.user)}>Код потерян? Перевыпустить</Button>
+          </div>
+        </Modal>
+      )}
+      {options.modal && !["create-personal", "telegram"].includes(options.modal.mode) && (
         <Modal
           onClose={() => options.setModal(null)}
           closeOnBackdrop={!options.savingUser}
@@ -125,7 +146,7 @@ export default function UserDialogs(options) {
                   minLength="2"
                   maxLength="160"
                   required
-                  autoFocus
+                  autoFocus={!options.modal.focusTelegram}
                 />
               </FormField>
               {options.role === "student" && (
@@ -146,6 +167,7 @@ export default function UserDialogs(options) {
               <FormField label="Telegram ID">
                 <input
                   type="text"
+                  autoFocus={Boolean(options.modal.focusTelegram)}
                   inputMode="numeric"
                   pattern="[0-9]*"
                   value={options.telegramId}

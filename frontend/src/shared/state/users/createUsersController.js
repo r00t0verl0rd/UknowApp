@@ -79,9 +79,10 @@ export function createUsersController(options) {
     editor.setAdditionalInfo("");
     editor.setTelegramId("");
   };
-  const openEdit = (user) => {
+  const openEdit = (user, focusTelegram = false) => {
     options.setModal({
       mode: "edit",
+      focusTelegram,
       id: user.id,
     });
     editor.setName(user.full_name);
@@ -223,6 +224,7 @@ export function createUsersController(options) {
     if (!confirmed) return;
     try {
       const result = await createUserConnectionCode(options.request, user.id);
+      options.setModal(null);
       editor.setCode({
         ...result,
         full_name: user.full_name,

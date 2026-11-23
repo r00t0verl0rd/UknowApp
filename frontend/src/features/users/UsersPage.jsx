@@ -87,9 +87,9 @@ export default function UsersPage(options) {
                   </IconButton>
                 ) : (
                   <IconButton
-                    onClick={() => options.makeCode(user)}
-                    title="Подключить Telegram: выдать новый единый код"
-                    aria-label="Подключить участника"
+                    onClick={() => options.openTelegram(user)}
+                    title="Выбрать способ подключения Telegram"
+                    aria-label="Подключить Telegram"
                   >
                     <Link2 />
                   </IconButton>

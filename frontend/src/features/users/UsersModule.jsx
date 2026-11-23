@@ -30,7 +30,7 @@ export default function UsersModule(options) {
           setUserSort={state.setUserSort}
           openCreate={state.openCreate}
           disconnectTelegram={state.disconnectTelegram}
-          makeCode={state.makeCode}
+          openTelegram={user => options.setModal({ mode: "telegram", id: user.id, user })}
           userInfo={state.userInfo}
           setUserInfo={state.setUserInfo}
           openEdit={state.openEdit}
@@ -77,6 +77,8 @@ export default function UsersModule(options) {
         setTelegramId={state.setTelegramId}
         users={state.users}
         savingUser={state.savingUser}
+        openEdit={state.openEdit}
+        makeCode={state.makeCode}
         regeneratePanelAccessCode={state.regeneratePanelAccessCode}
         removeUser={state.removeUser}
         deleteCandidate={state.deleteCandidate}
