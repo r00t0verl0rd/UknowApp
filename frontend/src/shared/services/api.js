@@ -22,7 +22,9 @@ export async function request(path, options = {}) {
           return (field ? field + ": " : "") + (item.msg || "Некорректное значение");
         }).join("; ")
       : (typeof data.detail === "string" ? data.detail : "Ошибка запроса");
-    throw new Error(detail);
+    const error = new Error(detail);
+    error.status = response.status;
+    throw error;
   }
   return data;
 }

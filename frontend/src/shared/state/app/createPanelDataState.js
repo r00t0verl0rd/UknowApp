@@ -6,6 +6,7 @@ import { mergeInboxSnapshot } from "../../services/inboxState.js";
 export function createPanelDataState(options) {
   let refreshRevision = 0;
   let refreshTask = null;
+  let retryTimer = null;
   const inboxRowRevision = new Map();
   const [inboxLoading, setInboxLoading] = createSignal(false);
   const [adminDataLoading, setAdminDataLoading] = createSignal(false);
@@ -27,8 +28,9 @@ export function createPanelDataState(options) {
       if (profile !== options.profile) return;
       if (current.id === profile.id && current.role === profile.role &&
           JSON.stringify(current.permissions) === JSON.stringify(profile.permissions)) return;
-    } catch {
+    } catch (error) {
       if (profile !== options.profile) return;
+      if (error.status !== 401 && error.status !== 403) return;
     }
     closeWorkspace();
   }
@@ -56,6 +58,13 @@ export function createPanelDataState(options) {
       } catch (error) {
         if (revision !== refreshRevision) return;
         if (options.restoreFlow?.suppressUnexpectedLogout()) return;
+        if (error.status !== 401 && error.status !== 403) {
+          retryTimer = window.setTimeout(() => {
+            retryTimer = null;
+            void refresh();
+          }, 2000);
+          return;
+        }
         options.setError(error.message);
         closeWorkspace();
         return;
@@ -127,6 +136,8 @@ export function createPanelDataState(options) {
       if (!options.auth) {
         refreshRevision += 1;
         refreshTask = null;
+        if (retryTimer) window.clearTimeout(retryTimer);
+        retryTimer = null;
         setInboxLoading(false);
         setAdminDataLoading(false);
       }
