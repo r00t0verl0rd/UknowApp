@@ -25,7 +25,7 @@ def exercise_transfer():
 
     def login(client):
         client.post("/api/auth/login", json={
-            "username": "test-admin", "password": "local-restore-test-password",  # pragma: allowlist secret - test fixture
+            "username": os.environ["ADMIN_USERNAME"], "password": os.environ["ADMIN_PASSWORD"],  # pragma: allowlist secret - test fixture
         }).raise_for_status()
 
     with TestClient(app) as client:
