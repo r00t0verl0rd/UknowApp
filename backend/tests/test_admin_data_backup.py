@@ -123,6 +123,70 @@ def test_full_backup_refuses_missing_media_references(api, monkeypatch, tmp_path
     assert "отсутствующие медиафайлы" in response.json()["detail"]
 
 
+
+def test_backup_tolerates_legacy_text_metadata_but_rejects_broken_media(api, monkeypatch, tmp_path):
+    root = tmp_path / "data"
+    setup_data_root(monkeypatch, root)
+    database = root / "uknowapp.db"
+    create_database(database)
+    with sqlite3.connect(database) as connection:
+        connection.execute("ALTER TABLE messages ADD COLUMN content_type TEXT DEFAULT 'text'")
+
+    client = api[0]()
+    login_admin(client)
+    for legacy_json in ("null", "[]", '"old-value"', "not valid JSON"):
+        with sqlite3.connect(database) as connection:
+            connection.execute(
+                "UPDATE messages SET metadata_json = ?, content_type = 'text'",
+                (legacy_json,),
+            )
+        assert client.get("/api/admin/data/full").status_code == 200
+
+    # A missing/invalid metadata object *is* an error for a real attachment.
+    with sqlite3.connect(database) as connection:
+        connection.execute("UPDATE messages SET metadata_json = 'null', content_type = 'voice'")
+    response = client.get("/api/admin/data/full")
+    assert response.status_code == 409
+    assert "медиафайлы" in response.json()["detail"]
+
+
+def test_full_restore_refuses_zip_path_traversal_without_touching_current_data(api, monkeypatch, tmp_path):
+    root = tmp_path / "data"
+    setup_data_root(monkeypatch, root)
+    database = root / "uknowapp.db"
+    create_database(database)
+    client = api[0]()
+    login_admin(client)
+    backup = client.get("/api/admin/data/full")
+    assert backup.status_code == 200
+
+    malicious_name = "data/../outside.txt"
+    malicious_body = b"should-not-extract"
+    modified = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(backup.content)) as source, zipfile.ZipFile(modified, "w") as output:
+        manifest = json.loads(source.read("manifest.json"))
+        for item in manifest["files"]:
+            output.writestr(item["path"], source.read(item["path"]))
+        manifest["files"].append({
+            "path": malicious_name,
+            "size": len(malicious_body),
+            "sha256": hashlib.sha256(malicious_body).hexdigest(),
+        })
+        manifest["file_count"] += 1
+        manifest["unpacked_bytes"] += len(malicious_body)
+        output.writestr(malicious_name, malicious_body)
+        output.writestr("manifest.json", json.dumps(manifest))
+
+    uploaded = client.post(
+        "/api/admin/data/full",
+        files={"file": ("unsafe.zip", modified.getvalue(), "application/zip")},
+    )
+    assert uploaded.status_code == 400
+    assert database.is_file()
+    assert not (tmp_path / "outside.txt").exists()
+    assert not (root / admin_data.PENDING_RESTORE_NAME).exists()
+
+
 def test_full_restore_is_staged_then_applied_before_app_start(api, monkeypatch, tmp_path):
     make_client, _, _ = api
     monkeypatch.delenv("UKNOWAPP_AUTO_RESTART_ON_RESTORE", raising=False)

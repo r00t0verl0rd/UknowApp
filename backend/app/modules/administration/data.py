@@ -214,6 +214,15 @@ def _count_missing_media_references(database: Path, data_root: Path) -> int:
             for raw, content_type in connection.execute(query):
                 try:
                     metadata = json.loads(raw or "{}")
+                except (TypeError, ValueError):
+                    metadata = None
+                # Old text messages can carry JSON null, arrays, strings or
+                # invalid metadata. They do not refer to missing media.
+                if not isinstance(metadata, dict):
+                    if content_type in attachment_types:
+                        missing += 1
+                    continue
+                try:
                     media = metadata.get("media")
                     if media is None and content_type not in attachment_types:
                         continue
