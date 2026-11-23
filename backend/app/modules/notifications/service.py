@@ -27,6 +27,7 @@ def schedule_push(
     body: str,
     url: str = "/",
     include_admin: bool = False,
+    admin_body: str | None = None,
 ) -> None:
     """Отправлять push в фоне, не задерживая сообщения."""
     if not vapid.VAPID_PRIVATE_KEY:
@@ -43,6 +44,7 @@ def schedule_push(
     targets = [
         {
             "id": item.id,
+            "role": item.role,
             "endpoint": item.endpoint,
             "keys": {"p256dh": item.p256dh, "auth": item.auth},
         }
@@ -55,21 +57,26 @@ def schedule_push(
         conversation_id = int(query.get("openConversation", ["0"])[0]) or None
     except (TypeError, ValueError):
         conversation_id = None
-    payload = json.dumps({
-        "title": title[:120],
-        "body": body[:240],
+    data = {
+        "title": title[:80],
+        "body": body[:160],
         "url": url if url.startswith("/") else "/",
         "tag": url if url.startswith("/") else "uknowapp-message",
         "conversation_id": conversation_id,
         "conversation_type": query.get("type", ["conversation"])[0],
-    }, ensure_ascii=False)
+    }
+    payload = json.dumps(data, ensure_ascii=False)
+    admin_payload = (
+        json.dumps({**data, "body": admin_body[:160]}, ensure_ascii=False)
+        if admin_body is not None else None
+    )
     try:
-        asyncio.get_running_loop().create_task(asyncio.to_thread(_deliver, targets, payload))
+        asyncio.get_running_loop().create_task(asyncio.to_thread(_deliver, targets, payload, admin_payload))
     except RuntimeError:
-        threading.Thread(target=_deliver, args=(targets, payload), daemon=True).start()
+        threading.Thread(target=_deliver, args=(targets, payload, admin_payload), daemon=True).start()
 
 
-def _deliver(targets: list[dict], payload: str) -> None:
+def _deliver(targets: list[dict], payload: str, admin_payload: str | None = None) -> None:
     from app.core.database import SessionLocal
 
     expired_ids = []
@@ -83,7 +90,7 @@ def _deliver(targets: list[dict], payload: str) -> None:
                     "endpoint": target["endpoint"],
                     "keys": target["keys"],
                 },
-                data=payload,
+                data=(admin_payload if target["role"] == "admin" and admin_payload is not None else payload),
                 vapid_private_key=vapid.VAPID_PRIVATE_KEY,
                 vapid_claims={"sub": config.VAPID_SUBJECT},
                 ttl=86400,

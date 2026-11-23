@@ -36,6 +36,7 @@ from app.modules.communication.contracts import (
 )
 from app.modules.communication.service import record_messenger_delivery
 from app.modules.conversations.service import publish_conversation_update
+from app.modules.notifications.content import PUSH_TITLE, push_body
 from app.modules.notifications.service import schedule_push
 from app.rate_limit import SlidingWindowLimiter
 
@@ -169,13 +170,18 @@ def persist_message(
             if sender.role == "student"
             else [conversation.student_id]
         )
+        receiver = conversation.teacher if sender.role == "student" else conversation.student
         schedule_push(
             db,
             recipients,
-            "Новое сообщение · UknowApp",
-            (sender.full_name + ": " + (body or "Новое сообщение"))[:240],
+            PUSH_TITLE,
+            push_body(sender.full_name, body, kind=inbound.content_type.value),
             f"/?openConversation={conversation.id}",
             include_admin=True,
+            admin_body=push_body(
+                sender.full_name, body, recipient_name=receiver.full_name,
+                kind=inbound.content_type.value,
+            ),
         )
     if conversation:
         publish_conversation_update(

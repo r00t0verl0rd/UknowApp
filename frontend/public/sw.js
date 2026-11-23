@@ -36,8 +36,8 @@ self.addEventListener("push", event => {
     }).catch(() => null);
     if (!access?.ok || !access.headers.get("content-type")?.includes("application/json")) return;
     if (await isConversationVisible(payload)) return;
-    await self.registration.showNotification(payload.title || "UknowApp", {
-      body: payload.body || "Новое сообщение",
+    await self.registration.showNotification(payload.title || "Новое сообщение", {
+      body: payload.body || "Сообщение",
       icon: "/logo-big.png",
       badge: "/logo-192.png",
       tag: payload.tag || "uknowapp-message",
@@ -49,13 +49,20 @@ self.addEventListener("push", event => {
 
 self.addEventListener("notificationclick", event => {
   event.notification.close();
-  const target = new URL(event.notification.data?.url || "/", self.location.origin).href;
+  const requested = new URL(event.notification.data?.url || "/", self.location.origin);
+  const target = requested.origin === self.location.origin
+    ? requested.href : new URL("/", self.location.origin).href;
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-    for (const client of windows) {
-      if (new URL(client.url).origin === self.location.origin) {
-        await client.navigate(target);
-        return client.focus();
+    const appWindows = windows.filter(client => new URL(client.url).origin === self.location.origin);
+    // Переходим в нужный диалог и при уже открытом PWA, и при холодном запуске.
+    const client = appWindows.find(window => window.focused) || appWindows[0];
+    if (client) {
+      try {
+        const opened = await client.navigate(target);
+        if (opened) return opened.focus();
+      } catch {
+        // Если фоновой вкладкой нельзя управлять, откроем ссылку отдельно.
       }
     }
     return self.clients.openWindow(target);

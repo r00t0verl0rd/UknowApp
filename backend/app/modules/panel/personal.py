@@ -29,6 +29,7 @@ from app.models import (
     User,
 )
 from app.modules.dependencies import Db, PanelUser
+from app.modules.notifications.content import PUSH_TITLE, push_body
 from app.modules.notifications.service import schedule_push
 from app.modules.personal_chat.service import (
     _personal_conversation,
@@ -206,14 +207,15 @@ def _commit_personal_message(db, row, principal, item, client_message_id, on_fai
     return None
 
 
-def _notify_personal(db, item, principal, row, preview):
-    """Отправляет пуш и публикует событие о новом личном сообщении."""
+def _notify_personal(db, item, principal, row, preview, *, kind="text"):
+    """Личные сообщения: только имя отправителя и короткий текст."""
     is_admin = principal["role"] == "admin"
+    sender_name = "Администратор" if is_admin else item.participant.full_name
     schedule_push(
         db,
         [item.participant_id] if is_admin else [],
-        "Новое личное сообщение",
-        (("Администратор: " if is_admin else item.participant.full_name + ": ") + preview)[:240],
+        PUSH_TITLE,
+        push_body(sender_name, preview, kind=kind),
         f"/?openConversation={item.id}&type=personal",
         include_admin=not is_admin,
     )
@@ -320,7 +322,7 @@ async def send_personal_attachment(
     )
     if existing:
         return personal_message_dict(existing, principal)
-    _notify_personal(db, item, principal, row, row.text or "Вложение: " + name)
+    _notify_personal(db, item, principal, row, row.text, kind=kind)
     return personal_message_dict(row, principal)
 
 

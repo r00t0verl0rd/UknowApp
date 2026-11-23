@@ -36,6 +36,7 @@ from app.modules.messaging.service import (
     _panel_message_dict,
     _panel_visible_conversation,
 )
+from app.modules.notifications.content import PUSH_TITLE, push_body
 from app.modules.notifications.service import schedule_push
 from app.request_validation import message_payload
 
@@ -100,10 +101,17 @@ async def _publish_and_deliver(
     # Событие публикуем сразу после сохранения, не ожидая Telegram.
     publish_conversation_update(db, conversation, message_id=row.id, sender_role=role)
     push_recipients = [student.id, teacher.id] if role == "admin" else ([student.id] if role == "teacher" else [teacher.id])
+    admin_receiver = student if role == "teacher" else teacher
     schedule_push(
-        db, push_recipients, "Новое сообщение · UknowApp",
-        (sender.full_name + ": " + preview)[:240],
+        db, push_recipients, PUSH_TITLE,
+        push_body(sender.full_name, preview, kind=kind.value),
         f"/?openConversation={conversation.id}", include_admin=role != "admin",
+        admin_body=(
+            push_body(
+                sender.full_name, preview, recipient_name=admin_receiver.full_name,
+                kind=kind.value,
+            ) if role != "admin" else None
+        ),
     )
 
     bot = getattr(request.app.state, "telegram_bot", None)
@@ -230,7 +238,7 @@ async def send_panel_attachment(
         return _message_response(existing, principal)
     await _publish_and_deliver(
         request, background_tasks, db, principal, conversation, parties, row,
-        preview=row.text or "Отправлено вложение",
+        preview=row.text,
         kind=MessageKind(kind),
         media=OutboundMedia(
             storage_key=relative.as_posix(),
