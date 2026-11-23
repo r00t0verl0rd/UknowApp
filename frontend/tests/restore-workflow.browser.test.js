@@ -125,6 +125,8 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
     await page.getByText("Сервер не смог получить статистику (HTTP 500)", { exact: false }).waitFor();
     assert.ok(await page.getByText("Весь UknowApp в одном архиве").isVisible(),
       "Backup controls remain available when statistics fails");
+    assert.equal(await page.getByText("Часть настроек приложения нужно сохранить отдельно.").count(), 0,
+      "Obsolete backup settings warning is not displayed");
 
     await page.getByRole("button", { name: "Повторить загрузку" }).click();
     await page.getByText("7 пользователей").waitFor({ timeout: 12000 });
