@@ -108,7 +108,10 @@ export function installViewRestoration({ root, userId, page }) {
   const save = () => {
     if (disposed) return;
     const patch = collect();
-    // A content reset on page change should not override its stored position.
+    // Empty placeholders must not overwrite a pending scroll restoration.
+    for (const [name, saved] of Object.entries(pendingRestore)) {
+      if (!userInteracted.has(name)) patch[name] = saved;
+    }
     saveScrollPositions(userId, activePage, patch);
   };
   const apply = () => {
@@ -191,7 +194,10 @@ export function installViewRestoration({ root, userId, page }) {
   };
   const startRestore = () => {
     userInteracted = new Set();
-    pendingRestore = { ...readScrollPositions(userId, activePage) };
+    const saved = readScrollPositions(userId, activePage);
+    pendingRestore = Object.keys(saved).length
+      ? { ...saved }
+      : { content: { top: 0, left: 0 }, document: { top: 0, left: 0 } };
     restoreDetails();
     attachObservers();
     scheduleApply();
@@ -205,10 +211,11 @@ export function installViewRestoration({ root, userId, page }) {
   win.addEventListener("resize", onResize);
   startRestore();
   return {
+    capture: save,
     changePage(nextPage) {
       if (nextPage === activePage) return;
-      // Scroll events capture updates as the user moves; keep stored values
-      // when the outgoing DOM has already unmounted.
+      // Prior UI actions store scroll independently, including when navigation
+      // came from history rather than a sidebar click.
       activePage = nextPage;
       startRestore();
     },
