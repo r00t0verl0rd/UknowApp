@@ -2,6 +2,7 @@
 
 import json
 import logging
+import shutil
 from typing import Annotated
 
 from fastapi import (
@@ -13,7 +14,7 @@ from fastapi import (
     Request,
     UploadFile,
 )
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
@@ -23,6 +24,7 @@ from app.infrastructure.storage.media import (
     delete_message_media,
 )
 from app.infrastructure.storage.message_metadata import encode_message_metadata
+from app.event_hub import publish_chat_update
 from app.models import (
     PersonalConversation,
     PersonalMessage,
@@ -93,6 +95,53 @@ def create_personal_conversation(payload: dict, principal: PanelUser, db: Db):
             publish_personal_update(db, item)
             return _personal_conversation_dict(item, principal["role"])
     return personal_summaries(db, [item], principal["role"])[0]
+
+
+@router.delete("/panel/personal-conversations/{conversation_id}")
+def delete_personal_conversation(conversation_id: int, principal: PanelUser, db: Db):
+    """Навсегда удалить личный чат, его сообщения и локальные вложения."""
+    if principal["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Удалять личные диалоги может только администратор")
+    item = _personal_conversation(db, principal, conversation_id)
+    participant_id = item.participant_id
+
+    # Сначала убираем все дочерние записи в одной транзакции (внешний ключ
+    # personal_messages.conversation_id не настроен на ON DELETE CASCADE).
+    media_metadata = db.scalars(
+        select(PersonalMessage.metadata_json).where(PersonalMessage.conversation_id == conversation_id),
+    ).all()
+    result = db.execute(delete(PersonalMessage).where(PersonalMessage.conversation_id == conversation_id))
+    db.delete(item)
+    db.commit()
+
+    # После успешного коммита удаляем как зарегистрированные вложения, так и
+    # оставшиеся файлы каталога чата (например, после неудачной загрузки).
+    for metadata_json in media_metadata:
+        delete_message_media(metadata_json)
+    media_root = MEDIA_DIR.resolve()
+    chat_media_dir = media_root / "personal" / str(conversation_id)
+    if chat_media_dir.is_symlink():
+        chat_media_dir.unlink()
+    elif chat_media_dir.is_dir():
+        if media_root not in chat_media_dir.resolve().parents:
+            logger.error("Unsafe personal chat media directory: conversation_id=%s", conversation_id)
+            raise HTTPException(status_code=500, detail="Не удалось безопасно очистить медиафайлы")
+        try:
+            shutil.rmtree(chat_media_dir)
+        except OSError:
+            logger.exception("Could not remove personal chat media: conversation_id=%s", conversation_id)
+            raise HTTPException(status_code=500, detail="Диалог удалён, но очистка медиафайлов не завершена") from None
+
+    # Без содержания сообщений; после удаления SSE сообщает участникам
+    # resync, так как запись больше не доступна, и список исчезает у всех.
+    publish_chat_update(
+        conversation_id,
+        conversation_type="personal",
+        action="delete_conversation",
+        audience={"participant_id": participant_id},
+        db=db,
+    )
+    return {"ok": True, "deleted_conversation_id": conversation_id, "deleted_messages": result.rowcount}
 
 
 @router.get("/panel/personal-conversations/{conversation_id}/summary")
