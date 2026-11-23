@@ -20,7 +20,10 @@ from .core.config import (
 from .core.database import Base, SessionLocal, engine
 from .migrations import initialize_database
 from .models import Assignment, Conversation, User
-from .modules.administration.data import apply_pending_data_restore, finish_startup_restore
+from .modules.administration.data import (
+    apply_pending_data_restore,
+    finish_startup_restore,
+)
 from .modules.communication.service import CommunicationService
 from .modules.notifications.vapid import reload_vapid_keys
 from .modules.telegram.adapter import TelegramAdapter
