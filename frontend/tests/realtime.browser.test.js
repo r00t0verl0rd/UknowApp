@@ -997,8 +997,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
           `${width}px ${theme}: messages never overlap editor`);
         assert.ok(result.composer.bottom <= 341,
           `${width}px ${theme}: editor stays above keyboard`);
-        assert.ok(result.editor.height >= 63,
-          `${width}px ${theme}: message editor has usable touch height`);
+        assert.equal(result.editor.height, 84,
+          `${width}px ${theme}: editor height stays 84px with keyboard open`);
         assert.ok(result.attach.width >= 40 && result.attach.height >= 40);
         assert.ok(result.send.width <= 48,
           `${width}px ${theme}: send action is compact`);
@@ -1198,8 +1198,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
     assert.ok(chatUnderlay.composerBottom <= 572,
       "composer remains inside visible viewport");
 
-    // Чат: одно двухстрочное поле отправки на телефоне, планшете и Desktop.
-    // Поле увеличено по высоте; вложение и текст кнопки всегда доступны.
+    // Чат: одинаковая высота поля 84px на телефоне, планшете и Desktop.
+    // Вложение и кнопка отправки остаются доступными.
     for (const { width, height } of [
       { width: 390, height: 720 }, { width: 390, height: 430 },
       { width: 768, height: 650 }, { width: 1280, height: 800 },
@@ -1274,7 +1274,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
           list.remove();
         }
       });
-      assert.ok(state.inputHeight >= 50, `${width}px: composer text field remains enlarged`);
+      assert.equal(state.inputHeight, 84,
+        `${width}px: editor height is the same 84px on all screen sizes`);
       assert.ok(state.footerTop >= state.textareaBottom - 1,
         `${width}px: actions sit below the message field on every screen`);
       assert.ok(state.attachHeight >= 40 && state.sendHeight >= 40,
