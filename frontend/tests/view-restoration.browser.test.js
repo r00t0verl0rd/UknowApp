@@ -93,3 +93,65 @@ test("remembers current page, list filters and scroll after asynchronous reload"
     await new Promise((resolve, reject) => server.httpServer.close(err => err ? reject(err) : resolve()));
   }
 });
+
+test("restores the selected conversation and the same message after loading older history", { timeout: 65000 }, async () => {
+  const server = await preview({
+    preview: { host: "127.0.0.1", port: 22240, strictPort: true }, logLevel: "error",
+  });
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH });
+  const chat = {
+    id: 7, type: "conversation", teacher: { id: 8, full_name: "Преподаватель" },
+    student: { id: 9, full_name: "Ученик" }, status: "active",
+    message_count: 120, unread_count: 0, created_at: "2026-10-01T10:00:00Z",
+  };
+  const messages = Array.from({ length: 120 }, (_, i) => ({
+    id: i + 1, sender_id: 8, sender: "Преподаватель", sender_role: "teacher",
+    created_at: new Date(Date.UTC(2026, 9, 1, 10, i)).toISOString(),
+    content_type: "text", text: `Chat message ${String(i + 1).padStart(3, "0")}`,
+    metadata: {}, can_delete: false, delivery_status: "delivered",
+  }));
+  try {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    await page.route("**/api/**", route => {
+      const url = new URL(route.request().url());
+      const name = url.pathname;
+      if (name === "/api/panel/me") return route.fulfill({ json: {
+        id: 1, full_name: "Администратор", role: "admin",
+        permissions: ["structure.view", "dialogs.own", "users.manage", "dialogs.observe"],
+      } });
+      if (name === "/api/panel/conversations") return route.fulfill({ json: [chat] });
+      if (name === "/api/panel/personal-conversations") return route.fulfill({ json: [] });
+      if (name === "/api/panel/conversations/7/messages") {
+        const before = Number(url.searchParams.get("before_id")) || Infinity;
+        return route.fulfill({ json: messages.filter(row => row.id < before).slice(-50) });
+      }
+      if (name === "/api/admin/overview") return route.fulfill({ json: { teachers: [] } });
+      if (name === "/api/admin/users") return route.fulfill({ json: [] });
+      return route.fulfill({ json: [] });
+    });
+    await page.goto("http://127.0.0.1:22240");
+    await page.evaluate(() => localStorage.setItem("uknowapp-auth", "1"));
+    await page.goto("http://127.0.0.1:22240/dialogs");
+    await page.locator(".chat-item").first().click();
+    await page.getByText("Chat message 120").waitFor({ state: "visible" });
+    await page.getByRole("button", { name: "Показать предыдущие сообщения" }).click();
+    await page.getByText("Chat message 021").waitFor({ state: "visible" });
+
+    const original = await page.locator(".messages").evaluate(element => {
+      element.scrollTop = 280;
+      return element.scrollTop;
+    });
+    assert.ok(original > 100, "Scrolled into older messages");
+    await page.waitForTimeout(160);
+    await page.reload();
+    await page.getByText("Chat message 021").waitFor({ state: "visible", timeout: 14000 });
+    await page.waitForFunction(expected =>
+      Math.abs(document.querySelector(".messages")?.scrollTop - expected) < 14,
+    original, { timeout: 14000 });
+    assert.equal(await page.locator(".chat-item.selected").count(), 1);
+    await page.close();
+  } finally {
+    await browser.close();
+    await new Promise((resolve, reject) => server.httpServer.close(error => error ? reject(error) : resolve()));
+  }
+});
