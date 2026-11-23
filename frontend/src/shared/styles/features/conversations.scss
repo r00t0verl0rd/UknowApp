@@ -1,7 +1,7 @@
 @use "../core/primitives";
 .content > .workspace-content:has(> .chat-list) {
   display:grid;
-  grid-template-columns:minmax(260px, min(24%, 340px)) minmax(0, 1fr);
+  grid-template-columns:minmax(300px, min(30%, 390px)) minmax(0, 1fr);
   grid-template-rows:minmax(min-content, 1fr);
   gap:var(--workspace-gutter);
 }
@@ -19,7 +19,7 @@
   }
 }
 .chat-list-filters > .search {
-  flex:0 0 auto;
+  flex:1 1 auto;
   width:100%;
   max-width:none;
   min-width:0;
@@ -640,7 +640,7 @@
 }
 @media (min-width: 761px) and (max-width: 1024px) {
   .content > .workspace-content:has(> .chat-list) {
-    grid-template-columns:minmax(210px, min(30%, 280px)) minmax(0, 1fr);
+    grid-template-columns:minmax(250px, min(34%, 320px)) minmax(0, 1fr);
     gap:12px;
   }
   .chat-detail > .chat-head {
@@ -873,17 +873,20 @@
   }
 }
 @media (min-width: 1025px) {
-  :root .workspace-shell .workspace-panel.chat-list .chat-list-filters.workspace-control-row {
-    grid-template-columns:minmax(0, 1fr);
+  .workspace-shell .workspace-content:has(> .chat-list) {
+    grid-template-columns:minmax(300px, min(30%, 390px)) minmax(0, 1fr);
   }
-  .workspace-panel.chat-list {
-    .chat-filter {
-      width:100%;
-    }
-    .chat-filter .ui-toolbar-select {
-      width:100%;
-      flex:1 1 auto;
-    }
+}
+.workspace-shell .chat-list-filters.workspace-control-row:has(.chat-filter) {
+  grid-template-columns:minmax(0, 1fr) minmax(112px, 0.85fr);
+}
+.workspace-panel.chat-list {
+  .chat-filter {
+    width:100%;
+  }
+  .chat-filter .ui-toolbar-select {
+    width:100%;
+    flex:1 1 auto;
   }
 }
 .workspace-shell {
