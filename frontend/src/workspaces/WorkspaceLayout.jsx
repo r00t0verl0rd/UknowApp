@@ -57,6 +57,9 @@ export default function WorkspaceLayout(options) {
   );
   const navigate = page => {
     viewMemory?.capture();
+    // Switch persistence scopes before the next click can read the old page.
+    // Reactive page updates may otherwise lag behind two rapid navigation taps.
+    viewMemory?.changePage(page);
     options.setPage(page);
   };
 
