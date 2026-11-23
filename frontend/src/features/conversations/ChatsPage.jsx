@@ -345,18 +345,32 @@ export default function ChatsPage(options) {
                 )}
               </div>
               <div class="chat-head-tools">
-                <ToolbarSelect
-                  class="chat-message-filter"
-                  aria-label="Фильтр сообщений"
-                  value={options.messageFilter}
-                  onChange={(event) => options.setMessageFilter(event.target.value)}
+                <label
+                  class="chat-message-filter-control"
+                  title={{
+                    all: "Все сообщения",
+                    media: "Все вложения",
+                    audio: "Аудио",
+                    photos: "Фото",
+                    files: "Файлы и видео",
+                  }[options.messageFilter] || "Фильтр сообщений"}
                 >
-                  <option value="all">Все сообщения</option>
-                  <option value="media">Все вложения</option>
-                  <option value="audio">Аудио</option>
-                  <option value="photos">Фото</option>
-                  <option value="files">Файлы и видео</option>
-                </ToolbarSelect>
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 7h16M7 12h10M10 17h4" />
+                  </svg>
+                  <ToolbarSelect
+                    class="chat-message-filter"
+                    aria-label="Фильтр сообщений"
+                    value={options.messageFilter}
+                    onChange={(event) => options.setMessageFilter(event.target.value)}
+                  >
+                    <option value="all">Все сообщения</option>
+                    <option value="media">Все вложения</option>
+                    <option value="audio">Аудио</option>
+                    <option value="photos">Фото</option>
+                    <option value="files">Файлы и видео</option>
+                  </ToolbarSelect>
+                </label>
                 {options.profile?.role === "admin" && options.selectedChat.type === "personal" && (
                   <Button
                     variant="danger"
