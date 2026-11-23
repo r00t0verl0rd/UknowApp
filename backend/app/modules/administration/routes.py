@@ -196,10 +196,7 @@ def update_user(user_id: int, payload: dict, _: UserManagement, db: Db):
         setattr(user, field, value)
     if issued_access_code:
         now = datetime.now(UTC)
-        db.query(ConnectionCode).filter(
-            ConnectionCode.user_id == user.id,
-            ConnectionCode.used_at.is_(None),
-        ).update({ConnectionCode.used_at: now}, synchronize_session=False)
+        db.query(ConnectionCode).filter(ConnectionCode.user_id == user.id).delete(synchronize_session=False)
         db.add(ConnectionCode(
             user_id=user.id,
             code_hash=hashlib.sha256(issued_access_code.replace("-", "").encode("utf-8")).hexdigest(),
@@ -207,10 +204,7 @@ def update_user(user_id: int, payload: dict, _: UserManagement, db: Db):
             expires_at=now + timedelta(days=36500),
         ))
     elif not has_web_panel:
-        db.query(ConnectionCode).filter(
-            ConnectionCode.user_id == user.id,
-            ConnectionCode.used_at.is_(None),
-        ).update({ConnectionCode.used_at: datetime.now(UTC)}, synchronize_session=False)
+        db.query(ConnectionCode).filter(ConnectionCode.user_id == user.id).delete(synchronize_session=False)
     try:
         if "telegram_id" in changes:
             sync_messenger_account(
@@ -239,10 +233,7 @@ def regenerate_panel_access_code(user_id: int, _: UserManagement, db: Db):
     issued_access_code = generate_panel_access_code()
     user.web_password_hash = hash_web_password(issued_access_code)
     now = datetime.now(UTC)
-    db.query(ConnectionCode).filter(
-        ConnectionCode.user_id == user.id,
-        ConnectionCode.used_at.is_(None),
-    ).update({ConnectionCode.used_at: now}, synchronize_session=False)
+    db.query(ConnectionCode).filter(ConnectionCode.user_id == user.id).delete(synchronize_session=False)
     db.add(ConnectionCode(
         user_id=user.id,
         code_hash=hashlib.sha256(issued_access_code.replace("-", "").encode("utf-8")).hexdigest(),
@@ -364,10 +355,7 @@ def generate_connection_code(user_id: int, _: UserManagement, db: Db):
     ).delete(synchronize_session=False)
 
     now = datetime.now(UTC)
-    db.query(ConnectionCode).filter(
-        ConnectionCode.user_id == user.id,
-        ConnectionCode.used_at.is_(None),
-    ).update({ConnectionCode.used_at: now}, synchronize_session=False)
+    db.query(ConnectionCode).filter(ConnectionCode.user_id == user.id).delete(synchronize_session=False)
     db.add(ConnectionCode(
         user_id=user.id,
         code_hash=hashlib.sha256(access_code.replace("-", "").encode("utf-8")).hexdigest(),

@@ -5,18 +5,17 @@ import logging
 
 from fastapi import (
     APIRouter,
+    Query,
     HTTPException,
     Request,
 )
-from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.infrastructure.storage.media import (
     MEDIA_DIR,
     delete_message_media,
-    media_content_disposition,
-    safe_media_type,
+    attachment_response,
 )
 from app.models import (
     Assignment,
@@ -86,16 +85,22 @@ def panel_conversation_summary(conversation_id: int, principal: PanelUser, db: D
 
 
 @router.get("/panel/conversations/{conversation_id}/messages")
-def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id: int = 0):
+def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id: int = 0,
+                   limit: int | None = Query(None, ge=1, le=100), before_id: int | None = None):
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     if permits(principal, "dialogs.observe"):
         logger.info("Admin read conversation id=%s", conversation.id)
-    mark_conversation_read(db, conversation, principal, after_id)
-    rows = db.scalars(
-        select(Message)
-        .where(Message.conversation_id == conversation.id, Message.id > after_id)
-        .order_by(Message.created_at, Message.id),
-    ).all()
+    query = select(Message).options(selectinload(Message.sender)).where(
+        Message.conversation_id == conversation.id, Message.id > after_id,
+    )
+    if before_id is not None:
+        query = query.where(Message.id < before_id)
+    if limit is None:
+        mark_conversation_read(db, conversation, principal, after_id)
+        rows = db.scalars(query.order_by(Message.created_at, Message.id)).all()
+    else:
+        rows = list(reversed(db.scalars(query.order_by(Message.id.desc()).limit(limit)).all()))
+        mark_conversation_read(db, conversation, principal, after_id, [row.id for row in rows])
     return [
         _panel_message_dict(
             item,
@@ -120,7 +125,7 @@ def panel_message(message_id: int, principal: PanelUser, db: Db):
 
 
 @router.get("/panel/messages/{message_id}/media")
-def panel_message_media(message_id: int, principal: PanelUser, db: Db):
+def panel_message_media(message_id: int, request: Request, principal: PanelUser, db: Db):
     item = db.get(Message, message_id)
     if not item:
         raise HTTPException(status_code=404, detail="Сообщение не найдено")
@@ -134,13 +139,7 @@ def panel_message_media(message_id: int, principal: PanelUser, db: Db):
     path = (root / relative).resolve()
     if root not in path.parents or not path.is_file():
         raise HTTPException(status_code=404, detail="Файл вложения не найден")
-    return FileResponse(
-        path,
-        media_type=safe_media_type(media.get("mime_type")),
-        filename=media.get("file_name") or path.name,
-        content_disposition_type=media_content_disposition(media.get("kind"), media.get("mime_type")),
-        headers={"X-Content-Type-Options": "nosniff", "Content-Security-Policy": "sandbox"},
-    )
+    return attachment_response(request, path, media)
 
 
 @router.delete("/panel/messages/{message_id}")

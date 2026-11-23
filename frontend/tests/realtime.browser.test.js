@@ -2177,7 +2177,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     // Сразу показываем сообщения из короткого кэша, параллельно запрашивая сервер.
     await page.setViewportSize({ width: 390, height: 800 });
     const delayedMessageResponses = [];
-    await page.route("**/api/panel/personal-conversations/5/messages", route => {
+    await page.route("**/api/panel/personal-conversations/5/messages*", route => {
       delayedMessageResponses.push(route);
     });
     await page.getByRole("button", { name: "Назад к списку диалогов" }).click();

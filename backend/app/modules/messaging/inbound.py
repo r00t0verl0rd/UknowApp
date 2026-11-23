@@ -128,8 +128,6 @@ def persist_message(
 ) -> tuple[Message, bool]:
     body = safe_text if safe_text is not None else (inbound.text or inbound.caption)
     metadata = message_metadata(inbound)
-    metadata["source_platform"] = inbound.platform.value
-    metadata["source_event_id"] = inbound.event_id[:255]
     if sender.role == "student":
         metadata["teacher_read_at"] = None
     try:
@@ -830,7 +828,7 @@ async def process_inbound_message(
             )
         else:
             await _deliver_teacher_reply(
-                db, inbound, row, conversation, sender, recipient,
+                db, inbound, row, conversation, recipient,
                 recipient_chat_id, unanswered_before_reply, gateway,
             )
     except (MessengerError, SQLAlchemyError, ValueError, OSError) as exc:

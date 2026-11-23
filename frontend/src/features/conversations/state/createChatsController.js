@@ -5,6 +5,7 @@ import {
   createPersonalConversation,
   deleteChatMessage,
   getChatMessages,
+  HISTORY_PAGE_SIZE,
   sendConversationAttachment,
   sendConversationText,
   sendPersonalMessage,
@@ -12,6 +13,9 @@ import {
 export function createChatsController(options) {
   const actions = createChatActionState();
   const [creating, setCreating] = createSignal(false);
+  const [olderCursor, setOlderCursor] = createSignal(0);
+  const [loadingOlder, setLoadingOlder] = createSignal(false);
+  let olderRequest;
   let sendingMessage = false;
   let pendingClientMessage = null;
   let openingChatRequest = null;
@@ -228,6 +232,9 @@ export function createChatsController(options) {
     if (activeChatKey() === chatKey && (previousRequest?.key === chatKey ||
       !options.chatState.messagesLoading)) return;
     previousRequest?.controller.abort();
+    olderRequest?.abort();
+    setOlderCursor(0);
+    setLoadingOlder(false);
     const previousKey = activeChatKey();
     if (previousKey && previousKey !== chatKey && !options.chatState.messagesLoading) {
       cacheChat(previousKey, options.chatState.messages);
@@ -249,6 +256,7 @@ export function createChatsController(options) {
     try {
       const loadedMessages = await getChatMessages(options.request, chat, controller.signal);
       if (controller.signal.aborted || activeChatKey() !== chatKey) return;
+      setOlderCursor(loadedMessages.length >= HISTORY_PAGE_SIZE ? loadedMessages[0].id : 0);
       // Сервер — источник истины: удалённые в другом окне сообщения не
       // остаются в кэше. Одновременно сохраняем изменения SSE за время запроса.
       options.chatState.setMessages((previous) => {
@@ -269,6 +277,30 @@ export function createChatsController(options) {
         options.chatState.setMessagesLoading(false);
       }
       if (openingChatRequest?.controller === controller) openingChatRequest = null;
+    }
+  };
+  const loadOlder = async () => {
+    const chat = options.chatState.selectedChat;
+    const key = activeChatKey();
+    if (!chat || !olderCursor() || loadingOlder()) return;
+    const controller = new AbortController();
+    olderRequest = controller;
+    setLoadingOlder(true);
+    try {
+      const page = await getChatMessages(options.request, chat, controller.signal, olderCursor());
+      if (controller.signal.aborted || key !== activeChatKey()) return;
+      const viewport = options.chatState.messagesViewportRef.current;
+      const height = viewport?.scrollHeight;
+      const scrollTop = viewport?.scrollTop;
+      options.chatState.setMessages(rows => mergeConversationMessages(page, rows, key));
+      setOlderCursor(page.length >= HISTORY_PAGE_SIZE ? page[0].id : 0);
+      requestAnimationFrame(() => {
+        if (viewport && key === activeChatKey()) viewport.scrollTop = scrollTop + viewport.scrollHeight - height;
+      });
+    } catch (error) {
+      if (!controller.signal.aborted && key === activeChatKey()) options.setError(error.message);
+    } finally {
+      if (controller === olderRequest) setLoadingOlder(false);
     }
   };
   const openCreatePersonalChat = () => {
@@ -413,6 +445,9 @@ export function createChatsController(options) {
     get visibleMessages() {
       return visibleMessages();
     },
+    get hasOlder() { return olderCursor() > 0; },
+    get loadingOlder() { return loadingOlder(); },
+    loadOlder,
     openChat,
     openCreatePersonalChat,
     createPersonalChat,

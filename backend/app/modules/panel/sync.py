@@ -64,13 +64,24 @@ def sync_conversation_state(
     """Обновить изменения сообщений без полной загрузки истории."""
     after_id, known_ids = _sync_request_fields(payload)
     conversation = _panel_visible_conversation(db, principal, conversation_id)
-    mark_conversation_read(db, conversation, principal, after_id)
-
-    new_rows = db.scalars(
-        select(Message)
-        .where(Message.conversation_id == conversation.id, Message.id > after_id)
-        .order_by(Message.created_at, Message.id),
-    ).all()
+    bounded = payload.get("paged") is True
+    query = select(Message).options(selectinload(Message.sender)).where(
+        Message.conversation_id == conversation.id, Message.id > after_id,
+    )
+    if bounded:
+        if after_id:
+            query = query.order_by(Message.id).limit(101)
+        else:
+            query = query.order_by(Message.id.desc()).limit(100)
+    else:
+        query = query.order_by(Message.created_at, Message.id)
+    new_rows = db.scalars(query).all()
+    has_more = bounded and after_id > 0 and len(new_rows) > 100
+    if has_more:
+        new_rows = new_rows[:100]
+    if bounded and not after_id:
+        new_rows.reverse()
+    mark_conversation_read(db, conversation, principal, after_id, [row.id for row in new_rows] if bounded else None)
     updated_rows = []
     for start in range(0, len(known_ids), 500):
         batch_ids = known_ids[start:start + 500]
@@ -103,6 +114,8 @@ def sync_conversation_state(
     )[0]
     return {
         "messages": serialize(new_rows),
+        "has_more": has_more,
+        "deleted_message_ids": sorted(set(known_ids).difference(row.id for row in updated_rows)),
         "updated_messages": serialize_statuses(updated_rows),
         "summary": summary,
     }
@@ -118,14 +131,24 @@ def sync_personal_conversation_state(
     """Обновить личные сообщения и отметки прочтения."""
     after_id, known_ids = _sync_request_fields(payload)
     item = _personal_conversation(db, principal, conversation_id)
-    mark_personal_read(db, item, principal, after_id)
-
-    new_rows = db.scalars(
-        select(PersonalMessage)
-        .options(selectinload(PersonalMessage.sender))
-        .where(PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id)
-        .order_by(PersonalMessage.created_at, PersonalMessage.id),
-    ).all()
+    bounded = payload.get("paged") is True
+    query = select(PersonalMessage).options(selectinload(PersonalMessage.sender)).where(
+        PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id,
+    )
+    if bounded:
+        if after_id:
+            query = query.order_by(PersonalMessage.id).limit(101)
+        else:
+            query = query.order_by(PersonalMessage.id.desc()).limit(100)
+    else:
+        query = query.order_by(PersonalMessage.created_at, PersonalMessage.id)
+    new_rows = db.scalars(query).all()
+    has_more = bounded and after_id > 0 and len(new_rows) > 100
+    if has_more:
+        new_rows = new_rows[:100]
+    if bounded and not after_id:
+        new_rows.reverse()
+    mark_personal_read(db, item, principal, after_id, [row.id for row in new_rows] if bounded else None)
     updated_rows = []
     for start in range(0, len(known_ids), 500):
         batch_ids = known_ids[start:start + 500]
@@ -140,6 +163,8 @@ def sync_personal_conversation_state(
         ).all())
     return {
         "messages": [personal_message_dict(row, principal) for row in new_rows],
+        "has_more": has_more,
+        "deleted_message_ids": sorted(set(known_ids).difference(row.id for row in updated_rows)),
         "updated_messages": [personal_message_status_dict(row) for row in updated_rows],
         "summary": personal_summaries(db, [item], principal["role"])[0],
     }

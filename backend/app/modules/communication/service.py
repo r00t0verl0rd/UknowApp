@@ -113,18 +113,6 @@ def record_messenger_delivery(
         "delivered": delivered_items,
         "errors": error_items,
     }
-    # Поля Telegram остаются для маршрутизации и удаления копий.
     if platform_value == MessengerPlatform.TELEGRAM.value:
-        metadata["telegram_deliveries"] = [
-            {
-                "user_id": item.get("user_id"),
-                "telegram_message_id": item.get("external_message_id"),
-                "chat_id": item.get("external_chat_id"),
-                "thread_id": item.get("external_thread_id"),
-            }
-            for item in delivered_items
-        ]
-        if error_items:
-            metadata["telegram_delivery_errors"] = error_items
-        else:
-            metadata.pop("telegram_delivery_errors", None)
+        metadata.pop("telegram_deliveries", None)
+        metadata.pop("telegram_delivery_errors", None)

@@ -54,6 +54,10 @@ def _panel_message_dict(
 ) -> dict:
     # Внутренние Telegram ID и file_id не раскрываем учителю в обычном ответе API.
     metadata = json.loads(item.metadata_json or "{}")
+    if item.client_message_id:
+        metadata["client_message_id"] = item.client_message_id
+    if expose_internal_metadata and item.source_platform:
+        metadata.update(source_platform=item.source_platform, source_event_id=item.source_event_id or "")
     if not expose_internal_metadata:
         for key in (
             "source_chat_id", "source_thread_id", "source_platform", "source_event_id",

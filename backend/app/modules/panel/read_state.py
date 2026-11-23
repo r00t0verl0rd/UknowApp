@@ -10,7 +10,7 @@ from app.modules.conversations.service import publish_conversation_update
 from app.modules.personal_chat.service import publish_personal_update
 
 
-def mark_conversation_read(db, conversation, principal, after_id: int) -> None:
+def mark_conversation_read(db, conversation, principal, after_id: int, visible_ids=None) -> None:
     """Учитель и ученик помечают прочитанными новые сообщения собеседников; администратор ничего не помечает."""
     role = principal["role"]
     if role not in {"teacher", "student"}:
@@ -23,6 +23,7 @@ def mark_conversation_read(db, conversation, principal, after_id: int) -> None:
             Message.sender_role.in_(sender_roles),
             func.json_extract(Message.metadata_json, "$." + read_key).is_(None),
             Message.id > after_id,
+            *([Message.id.in_(visible_ids)] if visible_ids is not None else []),
         ),
     ).all()
     if not unread:
@@ -39,7 +40,7 @@ def mark_conversation_read(db, conversation, principal, after_id: int) -> None:
     )
 
 
-def mark_personal_read(db, item, principal, after_id: int) -> None:
+def mark_personal_read(db, item, principal, after_id: int, visible_ids=None) -> None:
     """Помечает прочитанными новые сообщения собеседника в личном диалоге."""
     role = principal["role"]
     read_column = PersonalMessage.admin_read_at if role == "admin" else PersonalMessage.participant_read_at
@@ -49,6 +50,7 @@ def mark_personal_read(db, item, principal, after_id: int) -> None:
             PersonalMessage.sender_role != role,
             read_column.is_(None),
             PersonalMessage.id > after_id,
+            *([PersonalMessage.id.in_(visible_ids)] if visible_ids is not None else []),
         ),
     ).all()
     if not read_ids:

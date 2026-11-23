@@ -34,6 +34,9 @@ export default function ChatsModule(options) {
         chatSearch={options.chatState.chatSearch}
         setChatSearch={options.chatState.setChatSearch}
         visibleChats={state.visibleChats}
+        hasOlder={state.hasOlder}
+        loadingOlder={state.loadingOlder}
+        loadOlder={state.loadOlder}
         openChat={state.openChat}
         selectedChat={options.chatState.selectedChat}
         draft={options.chatState.draft}

@@ -109,11 +109,17 @@ export function createConversationSync(options) {
               syncQueued = true;
               continue;
             }
+            if (result.deleted_message_ids?.length) {
+              const deleted = new Set(result.deleted_message_ids);
+              for (const id of deleted) markConversationMessageDeleted(chatKey, id);
+              options.setMessages(rows => rows.filter(row => !deleted.has(Number(row.id))));
+            }
             const updated = [...(result.updated_messages || []), ...(result.messages || [])];
             if (updated.length) {
               lastMessageCursor.id = Math.max(afterId, maxMessageId(updated));
               options.setMessages((previous) => mergeConversationMessages(previous, updated, chatKey));
             }
+            if (result.has_more) syncQueued = true;
             if (result.summary) applySummary(chat.type, chat.id, result.summary);
           } while (syncQueued && active);
         } finally {

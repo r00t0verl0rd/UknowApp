@@ -3,12 +3,12 @@
 import asyncio
 import json
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from itertools import count
 from threading import Lock
 from typing import Any
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, select, text
 from sqlalchemy.orm import Session
 
 from app.models import RealtimeEvent
@@ -19,8 +19,6 @@ _subscribers: dict[asyncio.Queue[str], tuple[asyncio.AbstractEventLoop, dict | N
 _subscribers_lock = Lock()
 _fallback_event_ids = count(1)
 _QUEUE_SIZE = 128
-_REPLAY_LIMIT = 1000
-_EVENT_RETENTION_DAYS = 14
 
 
 def subscribe_chat_updates(principal: dict | None = None) -> asyncio.Queue[str]:
@@ -85,6 +83,11 @@ def _enqueue(queue: asyncio.Queue[str], payload: str, event_id: int | None) -> N
 
 
 def _persist_event(db: Session, conversation_id: int, conversation_type: str, payload: dict) -> int:
+    # SQLite serializes writers. Serialize replacement on PostgreSQL as well,
+    # before allocating the next event id.
+    if db.get_bind().dialect.name == "postgresql":
+        db.execute(text("LOCK TABLE realtime_events IN SHARE ROW EXCLUSIVE MODE"))
+    db.execute(delete(RealtimeEvent))
     event = RealtimeEvent(
         conversation_id=int(conversation_id),
         conversation_type=conversation_type,
@@ -96,11 +99,6 @@ def _persist_event(db: Session, conversation_id: int, conversation_type: str, pa
     event_id = event.id
     db.commit()
 
-    # Ограничиваем повтор событий и не очищаем журнал при каждой отправке.
-    if event_id % 100 == 0:
-        cutoff = datetime.now(UTC) - timedelta(days=_EVENT_RETENTION_DAYS)
-        db.execute(delete(RealtimeEvent).where(RealtimeEvent.created_at < cutoff))
-        db.commit()
     return event_id
 
 
@@ -176,34 +174,14 @@ def replay_chat_updates(
     if after_event_id <= 0:
         return []
 
-    oldest_id = db.scalar(select(func.min(RealtimeEvent.id)))
-    latest_id = db.scalar(select(func.max(RealtimeEvent.id))) or after_event_id
-    if oldest_id is not None and after_event_id < oldest_id - 1:
-        payload = json.dumps({"event_id": int(latest_id), "resync": True})
-        return [(int(latest_id), payload)]
+    latest = db.scalar(select(RealtimeEvent).order_by(RealtimeEvent.id.desc()).limit(1))
+    if latest is None or after_event_id == latest.id:
+        return []
+    if after_event_id != latest.id - 1:
+        return [(latest.id, json.dumps({"event_id": latest.id, "resync": True}))]
 
-    rows = db.scalars(
-        select(RealtimeEvent)
-        .where(RealtimeEvent.id > after_event_id)
-        .order_by(RealtimeEvent.id)
-        .limit(_REPLAY_LIMIT + 1),
-    ).all()
-    if len(rows) > _REPLAY_LIMIT:
-        latest_id = rows[-1].id
-        payload = json.dumps({"event_id": int(latest_id), "resync": True})
-        return [(int(latest_id), payload)]
-
-    replay: list[tuple[int, str]] = []
-    for row in rows:
-        try:
-            payload = json.loads(row.payload_json)
-        except (TypeError, ValueError):
-            continue
-        if not _can_receive(principal, payload.get("audience")):
-            continue
-        payload["event_id"] = row.id
-        replay.append((
-            row.id,
-            _payload_for_subscriber(payload, principal),
-        ))
-    return replay
+    payload = json.loads(latest.payload_json)
+    if not _can_receive(principal, payload.get("audience")):
+        return []
+    payload["event_id"] = latest.id
+    return [(latest.id, _payload_for_subscriber(payload, principal))]

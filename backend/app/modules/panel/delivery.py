@@ -72,26 +72,26 @@ def panel_student_telegram_target(
         .limit(1),
     ).first()
 
-    admin_replies = db.execute(
+    admin_reply = None
+    with db.execute(
         select(Message.id, Message.created_at, Message.metadata_json)
         .where(
             Message.conversation_id == conversation.id,
             Message.sender_role == "admin",
             Message.delivery_status != "blocked_contact",
         )
-        .order_by(Message.created_at.desc(), Message.id.desc()),
-    ).all()
-    admin_reply = None
-    for candidate in admin_replies:
-        metadata = json.loads(candidate.metadata_json or "{}")
-        deliveries = (
-            (metadata.get("messenger_deliveries") or {}).get("telegram", {}).get("delivered")
-            or metadata.get("telegram_deliveries")
-            or []
-        )
-        if not deliveries or any(delivery.get("user_id") == student.id for delivery in deliveries):
-            admin_reply = candidate
-            break
+        .order_by(Message.created_at.desc(), Message.id.desc()).execution_options(yield_per=64),
+    ) as admin_replies:
+        for candidate in admin_replies:
+            metadata = json.loads(candidate.metadata_json or "{}")
+            deliveries = (
+                (metadata.get("messenger_deliveries") or {}).get("telegram", {}).get("delivered")
+                or metadata.get("telegram_deliveries")
+                or []
+            )
+            if not deliveries or any(delivery.get("user_id") == student.id for delivery in deliveries):
+                admin_reply = candidate
+                break
 
     last_reply = max(
         (item for item in (teacher_reply, admin_reply) if item is not None),
@@ -136,12 +136,16 @@ def panel_student_telegram_target(
 
     if last_reply is not None:
         response_meta = json.loads(last_reply.metadata_json or "{}")
-        for delivery in response_meta.get("telegram_deliveries") or []:
-            if delivery.get("user_id") != student.id or delivery.get("thread_id") is None:
+        deliveries = (response_meta.get("messenger_deliveries") or {}).get("telegram", {}).get("delivered")
+        if deliveries is None:
+            deliveries = response_meta.get("telegram_deliveries") or []
+        for delivery in deliveries:
+            thread = delivery.get("external_thread_id", delivery.get("thread_id"))
+            if delivery.get("user_id") != student.id or thread is None:
                 continue
             try:
-                group_chat_id = int(delivery["chat_id"])
-                thread_id = int(delivery["thread_id"])
+                group_chat_id = int(delivery.get("external_chat_id", delivery.get("chat_id")))
+                thread_id = int(thread)
             except (KeyError, TypeError, ValueError):
                 return target
             linked_topic = db.scalar(select(StudentTelegramGroup).where(

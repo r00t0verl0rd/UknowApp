@@ -52,6 +52,11 @@ def test_durable_events_replay_only_for_conversation_members(api):
         assert teacher_payload["action"] == "read"
         assert teacher_payload["message_ids"] == [1]
         assert teacher_payload["summary"]["unread_count"] == 0
+        publish_conversation_update(db, conversation, action="delivery")
+        latest = db.query(RealtimeEvent).one()
+        assert latest.id > second_id
+        missed = replay_chat_updates(db, {"role": "admin"}, first_id)
+        assert json.loads(missed[0][1]) == {"event_id": latest.id, "resync": True}
 
 
 def test_revoked_assignment_redacts_queued_event(api):

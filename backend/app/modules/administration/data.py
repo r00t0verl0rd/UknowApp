@@ -597,14 +597,19 @@ def finish_startup_restore(success: bool) -> None:
     marker = json.loads(record.read_text(encoding="utf-8"))
     if marker["status"] != "verifying":
         raise RuntimeError("Восстановление не ожидает проверки запуска")
-    if success:
-        marker["status"] = "committed"
-        _write_restore_record(record, marker)
-    else:
+    if not success:
         _rollback_restore(root, marker)
-    _finish_restore(root, marker, "completed" if success else "failed")
-    shutil.rmtree(root / marker["backup"], ignore_errors=True)
-    shutil.rmtree(root / marker["stage"], ignore_errors=True)
+    marker["status"] = "committed" if success else "rolled_back"
+    _write_restore_record(record, marker)
+    _finish_restore_cleanup(root, marker)
+
+
+def _finish_restore_cleanup(root: Path, marker: dict) -> None:
+    for name in ("backup", "stage"):
+        directory = root / marker[name]
+        if directory.exists():
+            shutil.rmtree(directory)
+    _finish_restore(root, marker, "completed" if marker["status"] == "committed" else "failed")
 
 
 def apply_pending_data_restore() -> bool:
@@ -637,10 +642,8 @@ def apply_pending_data_restore() -> bool:
         staged_data = stage_dir / "data"
         status = marker.get("status")
 
-        if status == "committed":
-            shutil.rmtree(backup_dir, ignore_errors=True)
-            shutil.rmtree(stage_dir, ignore_errors=True)
-            _finish_restore(data_dir, marker, "completed")
+        if status in {"committed", "rolled_back"}:
+            _finish_restore_cleanup(data_dir, marker)
             return False
 
         if status in {"applying", "verifying"}:

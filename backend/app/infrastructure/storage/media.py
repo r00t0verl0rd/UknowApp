@@ -1,8 +1,13 @@
 """Безопасное хранение медиафайлов."""
 
 import contextlib
+import hashlib
 import json
 import logging
+from pathlib import Path
+
+from fastapi import Request, Response
+from fastapi.responses import FileResponse
 
 from app.core.config import ROOT_DIR
 
@@ -64,3 +69,18 @@ def delete_message_media(metadata_json: str | None) -> None:
             target.parent.rmdir()
     except Exception:
         logger.exception("Could not delete archived message media")
+
+def attachment_response(request: Request, path: Path, media: dict) -> Response:
+    """Revalidate only after the caller has checked current chat access."""
+    stat = path.stat()
+    version = f"{path.name}:{stat.st_ino}:{stat.st_size}:{stat.st_mtime_ns}:{stat.st_ctime_ns}"
+    etag = '"' + hashlib.sha256(version.encode()).hexdigest() + '"'
+    headers = {"ETag": etag, "Cache-Control": "private, no-cache", "Vary": "Cookie",
+               "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "sandbox"}
+    validators = request.headers.get("if-none-match", "").split(",")
+    if any(value.strip().removeprefix("W/") in {etag, "*"} for value in validators):
+        return Response(status_code=304, headers=headers)
+    return FileResponse(path, stat_result=stat, headers=headers,
+                        media_type=safe_media_type(media.get("mime_type")),
+                        filename=media.get("file_name") or path.name,
+                        content_disposition_type=media_content_disposition(media.get("kind"), media.get("mime_type")))

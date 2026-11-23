@@ -285,6 +285,8 @@ export default function ChatsPage(options) {
                 options.messagesViewportRef.current = element;
               }}
             >
+              {options.hasOlder && <button type="button" class="btn" disabled={options.loadingOlder}
+                onClick={options.loadOlder}>{options.loadingOlder ? "Загружаем…" : "Показать предыдущие сообщения"}</button>}
               <For each={options.visibleMessages} keyed={(message) => message.id}>
                 {(message) => (
                   <MessageBubble

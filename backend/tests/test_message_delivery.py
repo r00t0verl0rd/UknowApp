@@ -203,10 +203,14 @@ def test_personal_attachments_are_private_downloadable_and_idempotent(api):
         received = admin.get(media_url)
         assert received.status_code == 200
         assert received.content == b"Hello from private chat"
+        cached = {"If-None-Match": received.headers["etag"]}
+        assert received.headers["cache-control"] == "private, no-cache"
+        reused = admin.get(media_url, headers=cached)
+        assert reused.status_code == 304 and reused.content == b""
         received_by_sender = member.get(media_url)
         assert received_by_sender.status_code == 200
         unrelated = student if name == "teacher" else teacher
-        assert unrelated.get(media_url).status_code == 404
+        assert unrelated.get(media_url, headers=cached).status_code == 404
         summary = admin.get(f"/api/panel/personal-conversations/{chat_id}/messages")
         assert summary.status_code == 200
         assert summary.json()[0]["metadata"]["media"]["file_name"] == "notes.txt"
@@ -283,8 +287,9 @@ def test_messenger_delivery_ledger_does_not_change_uknowapp_message_state():
     channels = metadata["messenger_deliveries"]
     assert channels["telegram"]["status"] == "not_connected"
     assert channels["max"]["status"] == "delivered"
-    assert metadata["telegram_delivery_errors"][0]["reason"] == "Telegram не подключён"
-    assert metadata["telegram_deliveries"] == []
+    assert metadata["messenger_deliveries"]["telegram"]["errors"][0]["reason"] == "Telegram не подключён"
+    assert "telegram_deliveries" not in metadata
+    assert "telegram_delivery_errors" not in metadata
 
 
 class FakeInboundGateway:
@@ -411,7 +416,7 @@ def test_teacher_telegram_reply_without_student_telegram_is_delivered_in_uknowap
         assert row.delivery_status == "delivered"
         assert row.text == inbound.text
         assert metadata["messenger_deliveries"]["telegram"]["status"] == "not_connected"
-        assert metadata["telegram_delivery_errors"][0]["reason"] == (
+        assert metadata["messenger_deliveries"]["telegram"]["errors"][0]["reason"] == (
             "Аккаунт получателя не подключён к TELEGRAM"
         )
         # Если получатель не подключён, во внешний чат ничего не отправляется.

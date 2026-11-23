@@ -157,7 +157,6 @@ async def send_panel_message(
         metadata_json=json.dumps({
             "source_mode": "web",
             "web_sender_role": principal["role"],
-            **({"client_message_id": client_message_id} if client_message_id else {}),
         }, ensure_ascii=False),
         client_message_id=client_message_id,
         delivery_status="delivered",
@@ -220,7 +219,6 @@ async def send_panel_attachment(
         metadata_json=json.dumps({
             "source_mode": "web",
             "web_sender_role": principal["role"],
-            **({"client_message_id": client_message_id} if client_message_id else {}),
             "media": media,
         }, ensure_ascii=False),
         client_message_id=client_message_id,

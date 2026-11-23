@@ -6,12 +6,13 @@ from typing import Annotated
 
 from fastapi import (
     APIRouter,
+    Query,
     File,
     Form,
+    Request,
     HTTPException,
     UploadFile,
 )
-from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
@@ -19,8 +20,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.infrastructure.storage.media import (
     MEDIA_DIR,
     delete_message_media,
-    media_content_disposition,
-    safe_media_type,
+    attachment_response,
 )
 from app.models import (
     PersonalConversation,
@@ -133,15 +133,20 @@ def personal_message_status_dict(row: PersonalMessage) -> dict:
 
 
 @router.get("/panel/personal-conversations/{conversation_id}/messages")
-def personal_messages(conversation_id: int, principal: PanelUser, db: Db, after_id: int = 0):
+def personal_messages(conversation_id: int, principal: PanelUser, db: Db, after_id: int = 0,
+                   limit: int | None = Query(None, ge=1, le=100), before_id: int | None = None):
     item = _personal_conversation(db, principal, conversation_id)
-    mark_personal_read(db, item, principal, after_id)
-    rows = db.scalars(
-        select(PersonalMessage)
-        .options(selectinload(PersonalMessage.sender))
-        .where(PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id)
-        .order_by(PersonalMessage.created_at, PersonalMessage.id),
-    ).all()
+    query = select(PersonalMessage).options(selectinload(PersonalMessage.sender)).where(
+        PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id,
+    )
+    if before_id is not None:
+        query = query.where(PersonalMessage.id < before_id)
+    if limit is None:
+        mark_personal_read(db, item, principal, after_id)
+        rows = db.scalars(query.order_by(PersonalMessage.created_at, PersonalMessage.id)).all()
+    else:
+        rows = list(reversed(db.scalars(query.order_by(PersonalMessage.id.desc()).limit(limit)).all()))
+        mark_personal_read(db, item, principal, after_id, [row.id for row in rows])
     return [personal_message_dict(row, principal) for row in rows]
 
 
@@ -246,7 +251,7 @@ def send_personal_message(
 
 
 @router.get("/panel/personal-messages/{message_id}/media")
-def personal_message_media(message_id: int, principal: PanelUser, db: Db):
+def personal_message_media(message_id: int, request: Request, principal: PanelUser, db: Db):
     """Только администратор и участник диалога могут получить его вложение."""
     row = db.get(PersonalMessage, message_id)
     if not row:
@@ -259,13 +264,7 @@ def personal_message_media(message_id: int, principal: PanelUser, db: Db):
     path = (root / media["local_path"]).resolve()
     if root not in path.parents or not path.is_file():
         raise HTTPException(status_code=404, detail="Файл не найден")
-    return FileResponse(
-        path,
-        media_type=safe_media_type(media.get("mime_type")),
-        filename=media.get("file_name") or path.name,
-        content_disposition_type=media_content_disposition(media.get("kind"), media.get("mime_type")),
-        headers={"X-Content-Type-Options": "nosniff", "Content-Security-Policy": "sandbox"},
-    )
+    return attachment_response(request, path, media)
 
 
 @router.post("/panel/personal-conversations/{conversation_id}/attachments", status_code=201)

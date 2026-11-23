@@ -12,7 +12,7 @@ import {
 import { formatMessageTime } from "../services/formatMessageTime.js";
 import { getDeliveryDetails } from "../services/deliveryPresentation.js";
 import IconButton from "../../../shared/components/IconButton.jsx";
-import { getMessageMedia } from "../services/conversationsApi.js";
+import { messageMediaUrl } from "../services/conversationsApi.js";
 
 // Высоты декоративной звуковой волны общие для всех плееров — не создаём массив при каждом рендере.
 const AUDIO_WAVE_BARS = [
@@ -60,7 +60,7 @@ function ChatAudioPlayer(options) {
         ref={audioRef}
         class="chat-audio-native"
         src={options.src}
-        preload="metadata"
+        preload="none"
         onLoadedMetadata={(event) =>
           setDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : 0)
         }
@@ -121,52 +121,10 @@ function ChatAudioPlayer(options) {
   );
 }
 function MessageBubble(options) {
-  const [mediaUrl, setMediaUrl] = createSignal("");
   const deliveryPopoverId = createUniqueId();
-  let bubbleRef = null;
   const media = () => options.message.metadata?.media;
-  createEffect(
-    () => [options.message.id, media()?.archive_status],
-    () => {
-      if (!media() || media().archive_status !== "stored") return undefined;
-      let objectUrl = "";
-      let cancelled = false;
-      const controller = new AbortController();
-      const loadMedia = () =>
-        getMessageMedia(options.message.id, controller.signal, options.personalChat)
-          .then((blob) => {
-            if (cancelled) return;
-            objectUrl = URL.createObjectURL(blob);
-            setMediaUrl(objectUrl);
-          })
-          .catch(() => {
-            if (!cancelled) setMediaUrl("");
-          });
-      let observer;
-      if ("IntersectionObserver" in window && bubbleRef) {
-        observer = new IntersectionObserver(
-          (entries) => {
-            if (entries.some((entry) => entry.isIntersecting)) {
-              observer.disconnect();
-              void loadMedia();
-            }
-          },
-          {
-            rootMargin: "250px 0px",
-          },
-        );
-        observer.observe(bubbleRef);
-      } else {
-        void loadMedia();
-      }
-      return () => {
-        cancelled = true;
-        controller.abort();
-        observer?.disconnect();
-        if (objectUrl) URL.revokeObjectURL(objectUrl);
-      };
-    },
-  );
+  const mediaUrl = () => media()?.archive_status === "stored"
+    ? messageMediaUrl(options.message.id, options.personalChat) : "";
   const sourceKind = () => media()?.kind || options.message.content_type;
   const mimeType = () => (media()?.mime_type || "").toLowerCase();
   // Документы Telegram могут содержать воспроизводимое медиа.
@@ -204,7 +162,7 @@ function MessageBubble(options) {
     })[sourceKind()] || "Вложение";
   const deliveryDetails = () => getDeliveryDetails(options.message.metadata);
   return (
-    <div ref={bubbleRef} class={"message " + options.message.sender_role}>
+    <div class={"message " + options.message.sender_role}>
       <div class="message-topline">
         <b>{options.message.sender}</b>
         <div class="message-tools">
@@ -259,7 +217,7 @@ function MessageBubble(options) {
         </div>
       </div>
       {options.message.text && <p>{options.message.text}</p>}
-      {mediaUrl() && kind() === "photo" && <img class="chat-media-image" src={mediaUrl()} alt={label()} />}
+      {mediaUrl() && kind() === "photo" && <img loading="lazy" decoding="async" class="chat-media-image" src={mediaUrl()} alt={label()} />}
       {mediaUrl() && ["voice", "audio"].includes(kind()) && (
         <ChatAudioPlayer src={mediaUrl()} label={label()} />
       )}
@@ -268,7 +226,7 @@ function MessageBubble(options) {
           class={"chat-media-video" + (kind() === "video_note" ? " chat-media-video-note" : "")}
           controls
           playsInline
-          preload="metadata"
+          preload="none"
           aria-label={label()}
           src={mediaUrl()}
         />

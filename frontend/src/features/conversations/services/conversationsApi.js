@@ -1,19 +1,33 @@
-import { fetchApi, request } from "../../../shared/services/api.js";
+import { apiUrl, request } from "../../../shared/services/api.js";
 
-export function getChatMessages(request, chat, signal) {
+export const HISTORY_PAGE_SIZE = 50;
+
+export function getChatMessages(request, chat, signal, beforeId) {
   const base = chat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
-  return request(base + chat.id + "/messages", { signal });
+  return request(base + chat.id + "/messages?limit=" + HISTORY_PAGE_SIZE + (beforeId ? "&before_id=" + beforeId : ""), { signal });
 }
 
-export function syncChatState(request, chat, afterId, knownMessageIds) {
+export async function syncChatState(request, chat, afterId, knownMessageIds) {
   const base = chat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
-  return request(base + chat.id + "/sync", {
-    method: "POST",
-    body: JSON.stringify({
-      after_id: Math.max(0, Number(afterId) || 0),
-      known_message_ids: knownMessageIds.slice(-5000),
-    }),
-  });
+  const result = { messages: [], updated_messages: [], deleted_message_ids: [] };
+  let cursor = Math.max(0, Number(afterId) || 0);
+  let start = 0;
+  do {
+    const batch = await request(base + chat.id + "/sync", {
+      method: "POST",
+      body: JSON.stringify({ paged: true, after_id: cursor, known_message_ids: knownMessageIds.slice(start, start + 5000) }),
+    });
+    for (const message of batch.messages || []) {
+      result.messages.push(message);
+      cursor = Math.max(cursor, message.id);
+    }
+    result.updated_messages.push(...(batch.updated_messages || []));
+    result.deleted_message_ids.push(...(batch.deleted_message_ids || []));
+    result.summary = batch.summary;
+    result.has_more = Boolean(batch.has_more && batch.messages?.length);
+    start += 5000;
+  } while (start < knownMessageIds.length);
+  return result;
 }
 
 
@@ -58,9 +72,6 @@ export async function sendConversationAttachment(chatId, file, text, clientMessa
   return request(path + chatId + "/attachments", { method: "POST", body: form });
 }
 
-export async function getMessageMedia(messageId, signal, personal = false) {
-  const path = personal ? "/api/panel/personal-messages/" : "/api/panel/messages/";
-  const response = await fetchApi(path + messageId + "/media", { signal });
-  if (!response.ok) throw new Error("Не удалось загрузить вложение");
-  return response.blob();
+export function messageMediaUrl(messageId, personal = false) {
+  return apiUrl((personal ? "/api/panel/personal-messages/" : "/api/panel/messages/") + messageId + "/media");
 }
