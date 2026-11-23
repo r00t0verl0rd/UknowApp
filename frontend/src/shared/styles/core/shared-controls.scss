@@ -313,6 +313,8 @@ textarea::placeholder {
   border:1px solid var(--ui-border);
   background:var(--surface);
 }
+/* One consistent chevron for every toolbar select, regardless of Safari,
+   Chromium or native OS arrow rendering. The menu itself remains native. */
 :root .ui-toolbar-select > select.ui-toolbar-select-native {
   width:100%;
   max-width:100%;
@@ -321,8 +323,26 @@ textarea::placeholder {
   min-height:var(--workspace-control-height);
   border:1px solid var(--ui-border);
   border-radius:var(--workspace-control-radius);
-  -webkit-appearance:menulist;
-  appearance:auto;
+  -webkit-appearance:none;
+  appearance:none;
+  cursor:pointer;
+}
+:root .ui-toolbar-select::after {
+  content:"";
+  position:absolute;
+  top:50%;
+  right:calc(var(--workspace-control-padding) + 2px);
+  width:7px;
+  height:7px;
+  box-sizing:border-box;
+  border-right:1.6px solid currentColor;
+  border-bottom:1.6px solid currentColor;
+  color:var(--ui-control-text);
+  transform:translateY(-65%) rotate(45deg);
+  pointer-events:none;
+}
+:root .ui-toolbar-select:has(> select:disabled)::after {
+  opacity:0.5;
 }
 :root .ui-toolbar-select:focus-within > select.ui-toolbar-select-native {
   @include primitives.field-focus;
