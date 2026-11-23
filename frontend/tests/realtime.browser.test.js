@@ -1869,7 +1869,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize({ width: 1280, height: 800 });
 
-    // Нативные браузерные select выглядят одинаково в обеих вкладках без SVG-стрелок.
+    // Выпадающие списки используют единый CSS-шеврон, а меню остаётся нативным.
     for (const width of [390, 1280]) {
       await page.setViewportSize({ width, height: 800 });
       for (const theme of ["light", "dark-soft"]) {
@@ -1893,7 +1893,10 @@ test("global SSE updates real counters across tabs and replays missed events", {
                 height: Math.round(el.getBoundingClientRect().height),
                 radius: s.borderTopLeftRadius,
                 appearance: s.appearance,
-                arrowVisible: Boolean(el.nextElementSibling) && getComputedStyle(el.nextElementSibling).display !== "none",
+                arrowVisible: getComputedStyle(el.parentElement, "::after").content !== "none" &&
+                  getComputedStyle(el.parentElement, "::after").content !== "normal",
+                arrowWidth: getComputedStyle(el.parentElement, "::after").width,
+                arrowColor: getComputedStyle(el.parentElement, "::after").color,
               };
             });
           } finally {
@@ -1904,8 +1907,9 @@ test("global SSE updates real counters across tabs and replays missed events", {
         assert.deepEqual(styles[0], styles[1], `${width}px ${theme}: одинаковое оформление select`);
         assert.equal(styles[0].height, 42);
         assert.equal(styles[0].radius, "9px");
-        assert.notEqual(styles[0].appearance, "none");
-        assert.equal(styles[0].arrowVisible, false);
+        assert.equal(styles[0].appearance, "none");
+        assert.equal(styles[0].arrowVisible, true);
+        assert.equal(styles[0].arrowWidth, "7px");
       }
     }
     await page.setViewportSize({ width: 1280, height: 800 });
