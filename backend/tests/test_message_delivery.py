@@ -1,6 +1,8 @@
 import asyncio
 import json
 
+import pytest
+
 """Тесты доставки и статусов прочтения UknowApp."""
 
 from app.models import Assignment, Conversation, Message, User
@@ -14,6 +16,7 @@ from app.modules.communication.contracts import (
     OutboundMessage,
 )
 from app.modules.messaging.inbound import process_inbound_message, set_teacher_session
+from app.modules.panel.delivery import deliver_panel_message, save_panel_messenger_results
 from app.modules.communication.service import (
     CommunicationService,
     record_messenger_delivery,
@@ -410,10 +413,134 @@ def test_teacher_telegram_reply_without_student_telegram_is_delivered_in_uknowap
         assert metadata["telegram_delivery_errors"][0]["reason"] == (
             "Аккаунт получателя не подключён к TELEGRAM"
         )
-        # При неполной паре не используем API отправки Telegram.
+        # Если получатель не подключён, во внешний чат ничего не отправляется.
         assert gateway.sent_texts == []
         assert gateway.deleted_messages == []
 
+
+
+@pytest.mark.parametrize(
+    ("sender_role", "linked_roles", "expected_chats", "expected_status"),
+    [
+        ("teacher", ("student",), ["student-chat"], "delivered"),
+        ("student", ("teacher",), ["teacher-chat"], "delivered"),
+        ("admin", ("student",), ["student-chat"], "partial"),
+        ("admin", ("teacher",), ["teacher-chat"], "partial"),
+        ("admin", ("student", "teacher"), ["student-chat", "teacher-chat"], "delivered"),
+        ("teacher", ("teacher",), [], "not_connected"),
+        ("student", ("student",), [], "not_connected"),
+        ("admin", (), [], "not_connected"),
+    ],
+)
+def test_panel_delivery_uses_recipient_connection_only(
+    api, sender_role, linked_roles, expected_chats, expected_status,
+):
+    _, users, sessions = api
+    adapter = FakeMessengerAdapter(MessengerPlatform.TELEGRAM)
+    communication = CommunicationService([adapter])
+
+    with sessions() as db:
+        teacher = db.get(User, users["teacher-one"])
+        student = db.get(User, users["student-one"])
+        assignment = Assignment(
+            teacher_id=teacher.id, student_id=student.id, active=True,
+        )
+        db.add(assignment)
+        db.flush()
+        conversation = Conversation(
+            assignment_id=assignment.id,
+            teacher_id=teacher.id,
+            student_id=student.id,
+            status="active",
+        )
+        db.add(conversation)
+        db.flush()
+        for role, user, chat_id in (
+            ("teacher", teacher, "teacher-chat"),
+            ("student", student, "student-chat"),
+        ):
+            if role in linked_roles:
+                sync_messenger_account(
+                    db, user.id, MessengerPlatform.TELEGRAM,
+                    external_user_id=chat_id, external_chat_id=chat_id,
+                )
+
+        recipients = (
+            [(student, "student")] if sender_role == "teacher"
+            else [(teacher, "teacher")] if sender_role == "student"
+            else [(student, "student"), (teacher, "teacher")]
+        )
+        row = Message(
+            conversation_id=conversation.id,
+            sender_id=student.id if sender_role == "student" else teacher.id,
+            sender_role=sender_role,
+            text="Сообщение из приложения",
+            delivery_status="delivered",
+        )
+        db.add(row)
+        db.commit()
+
+        result = asyncio.run(deliver_panel_message(
+            db, communication, row, conversation, recipients,
+            sender_role, student, row.text, MessageKind.TEXT,
+        ))
+        save_panel_messenger_results(db, row, conversation, result)
+
+        assert [message.external_chat_id for message in adapter.sent] == expected_chats
+        assert all(message.text for message in adapter.sent)
+        refreshed = db.get(Message, row.id)
+        ledger = json.loads(refreshed.metadata_json)["messenger_deliveries"]["telegram"]
+        assert ledger["status"] == expected_status
+        assert len(ledger["delivered"]) == len(expected_chats)
+        assert refreshed.delivery_status == "delivered"
+        assert all(entry["external_chat_id"] in expected_chats for entry in ledger["delivered"])
+
+
+def test_independent_routing_across_multiple_messengers(api):
+    _, users, sessions = api
+    telegram = FakeMessengerAdapter(MessengerPlatform.TELEGRAM)
+    max_adapter = FakeMessengerAdapter(MessengerPlatform.MAX)
+    communication = CommunicationService([telegram, max_adapter])
+
+    with sessions() as db:
+        teacher = db.get(User, users["teacher-one"])
+        student = db.get(User, users["student-one"])
+        assignment = Assignment(
+            teacher_id=teacher.id, student_id=student.id, active=True,
+        )
+        db.add(assignment)
+        db.flush()
+        conversation = Conversation(
+            assignment_id=assignment.id, teacher_id=teacher.id,
+            student_id=student.id, status="active",
+        )
+        db.add(conversation)
+        db.flush()
+        sync_messenger_account(
+            db, student.id, MessengerPlatform.TELEGRAM,
+            external_user_id="student-telegram", external_chat_id="student-tg-chat",
+        )
+        sync_messenger_account(
+            db, teacher.id, MessengerPlatform.MAX,
+            external_user_id="teacher-max", external_chat_id="teacher-max-chat",
+        )
+        row = Message(
+            conversation_id=conversation.id, sender_id=teacher.id,
+            sender_role="admin", text="Сообщение всем", delivery_status="delivered",
+        )
+        db.add(row)
+        db.commit()
+        results = asyncio.run(deliver_panel_message(
+            db, communication, row, conversation,
+            [(student, "student"), (teacher, "teacher")],
+            "admin", student, row.text, MessageKind.TEXT,
+        ))
+        save_panel_messenger_results(db, row, conversation, results)
+        assert [m.external_chat_id for m in telegram.sent] == ["student-tg-chat"]
+        assert [m.external_chat_id for m in max_adapter.sent] == ["teacher-max-chat"]
+        metadata = json.loads(db.get(Message, row.id).metadata_json)
+        assert metadata["messenger_deliveries"]["telegram"]["status"] == "partial"
+        assert metadata["messenger_deliveries"]["max"]["status"] == "partial"
 
 def test_panel_message_client_id_prevents_duplicate_persistence(api):
     make_client, users, _ = api

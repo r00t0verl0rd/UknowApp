@@ -195,6 +195,7 @@ def save_panel_messenger_results(
             platform,
             delivered=result.get("delivered", []),
             errors=result.get("errors", []),
+            status=result.get("status"),
         )
     row.metadata_json = json.dumps(metadata, ensure_ascii=False)
     # Статус сообщения отражает хранение в UknowApp, не внешнюю доставку.
@@ -218,7 +219,7 @@ async def deliver_panel_message(
     content_type: MessageKind,
     media: OutboundMedia | None = None,
 ) -> dict[str, dict[str, list[dict]]]:
-    """Отправлять через канал только при привязке обоих участников."""
+    """Доставлять каждому подключённому адресату независимо от отправителя."""
     results: dict[str, dict[str, list[dict]]] = {}
     if communication is None:
         return results
@@ -227,10 +228,6 @@ async def deliver_panel_message(
         teacher_account, student_account = get_messenger_pair(
             db, conversation.teacher_id, conversation.student_id, platform,
         )
-        # Отправляем только когда оба участника привязаны к каналу.
-        if not teacher_account or not student_account:
-            continue
-
         accounts_by_user = {
             conversation.teacher_id: teacher_account,
             conversation.student_id: student_account,
@@ -238,13 +235,24 @@ async def deliver_panel_message(
         student_telegram_target = (
             panel_student_telegram_target(db, conversation, student_account)
             if platform == MessengerPlatform.TELEGRAM
+            and student_account is not None
             and any(role == "student" for _, role in recipients)
             else None
         )
         delivered: list[dict] = []
         errors: list[dict] = []
+        missing_count = 0
         for recipient, recipient_role in recipients:
-            account = accounts_by_user[recipient.id]
+            account = accounts_by_user.get(recipient.id)
+            if account is None:
+                missing_count += 1
+                errors.append({
+                    "user_id": recipient.id,
+                    "name": recipient.full_name,
+                    "role": recipient_role,
+                    "reason": "Аккаунт получателя не подключён к " + platform.value.upper(),
+                })
+                continue
             target = (
                 student_telegram_target
                 if platform == MessengerPlatform.TELEGRAM and recipient_role == "student"
@@ -315,7 +323,12 @@ async def deliver_panel_message(
                     "reason": "ошибка " + platform.value.upper() + " (" + error_type + ")",
                 })
 
-        results[platform.value] = {"delivered": delivered, "errors": errors}
+        results[platform.value] = {
+            "delivered": delivered,
+            "errors": errors,
+            # Отсутствие привязки не является ошибкой Telegram API.
+            "status": "not_connected" if not delivered and len(errors) == missing_count else None,
+        }
 
     return results
 

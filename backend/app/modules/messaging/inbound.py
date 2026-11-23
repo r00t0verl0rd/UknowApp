@@ -25,7 +25,7 @@ from app.models import (
 from app.modules.communication.accounts import (
     CONNECTION_CODE_RE,
     claim_messenger_connection_code,
-    get_messenger_pair,
+    get_messenger_account,
     get_messenger_user,
 )
 from app.modules.communication.contracts import (
@@ -787,15 +787,12 @@ async def process_inbound_message(
             sender_role=sender.role,
         )
 
-    teacher_account, student_account = get_messenger_pair(
-        db, conversation.teacher_id, conversation.student_id, inbound.platform,
-    )
-    recipient_account = (
-        student_account if recipient.role == "student" else teacher_account
-    )
+    # Отправителю достаточно быть авторизованным в исходном мессенджере.
+    # Доставка зависит только от привязки адресата к этому каналу.
+    recipient_account = get_messenger_account(db, recipient.id, inbound.platform)
     recipient_chat_id = (
-        recipient_account.external_chat_id or recipient_account.external_user_id
-        if teacher_account and student_account and recipient_account else None
+        (recipient_account.external_chat_id or recipient_account.external_user_id)
+        if recipient_account else None
     )
     if not recipient_chat_id:
         metadata = json.loads(row.metadata_json or "{}")
@@ -810,7 +807,7 @@ async def process_inbound_message(
             status="not_connected",
         )
         row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-        # При неполной привязке сообщение остаётся в UknowApp.
+        # Если адресат не подключён, сообщение остаётся доступным в UknowApp.
         row.delivery_status = "delivered"
         db.commit()
         publish_conversation_update(
