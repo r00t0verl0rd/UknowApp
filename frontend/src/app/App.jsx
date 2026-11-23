@@ -10,6 +10,7 @@ import { createChatState } from "../features/conversations/state/createChatState
 import { createPersonalChatState } from "../features/conversations/state/createPersonalChatState.js";
 import { createConversationSync } from "../features/conversations/state/createConversationSync.js";
 import AppToast from "../shared/components/AppToast.jsx";
+import { installViewportEnvironment } from "../shared/services/viewportEnvironment.js";
 import IconButton from "../shared/components/IconButton.jsx";
 import LoginPage from "./authentication/LoginPage.jsx";
 import { createPushNotificationsState } from "../shared/state/notifications/createPushNotificationsState.js";
@@ -20,6 +21,7 @@ import WorkspaceLayout from "../workspaces/WorkspaceLayout.jsx";
 import RestoreFlowDialog from "../features/administration/RestoreFlowDialog.jsx";
 import { createRestoreFlow } from "../shared/state/administration/createRestoreFlow.js";
 export default function App() {
+  createEffect(() => [], () => installViewportEnvironment());
   const [errors, setErrors] = createSignal([]);
   const [notice, setNotice] = createSignal(null);
   const setError = (message) => {
