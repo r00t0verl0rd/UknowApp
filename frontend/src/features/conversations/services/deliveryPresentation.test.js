@@ -11,7 +11,7 @@ test("plain Russian description for unlinked Telegram recipient", () => {
   });
   assert.deepEqual(details, [{
     title: "Telegram · Профессор",
-    description: "Получатель пока не подключил Telegram.",
+    description: "Получатель не подключил телеграм-бота.",
     delivered: false,
   }]);
 });
@@ -28,7 +28,7 @@ test("partial delivery leads with successful copies, never raw error codes", () 
 test("legacy Telegram logs still work and duplicate modern results are not shown", () => {
   assert.equal(getDeliveryDetails({
     telegram_delivery_errors: [{ name: "Анна", reason: "Аккаунт получателя не подключён к TELEGRAM" }],
-  })[0].description, "Получатель пока не подключил Telegram.");
+  })[0].description, "Получатель не подключил телеграм-бота.");
   assert.equal(getDeliveryDetails({
     messenger_deliveries: { telegram: { delivered: [{ user_id: 1 }] } },
     telegram_deliveries: [{ user_id: 1 }],
