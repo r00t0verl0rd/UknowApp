@@ -2266,7 +2266,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
       assert.ok(Math.abs(positions.info.x - positions.remove.x) < 1, `${width}px: aligned right column`);
       assert.ok(positions.info.bottom <= positions.remove.top, `${width}px: information above delete`);
       assert.ok(positions.time.right <= positions.info.x, `${width}px: actions clear the timestamp`);
-      assert.ok(positions.info.size === 40 && positions.remove.size === 40, `${width}px: clickable hit area`);
+      assert.ok(positions.info.size === 28 && positions.remove.size === 28, `${width}px: compact square icon actions`);
       assert.ok(Math.abs((positions.info.top + positions.info.bottom - positions.time.top - positions.time.bottom) / 2) <= 1);
       assert.equal(positions.info.bottom - positions.info.top, 28);
       assert.equal(positions.remove.top, positions.info.bottom);
