@@ -128,6 +128,8 @@ def _safe_data_entry(value: str) -> Path:
     relative = _safe_relative(value)
     if len(relative.parts) < 2 or relative.parts[0] != "data":
         raise HTTPException(status_code=400, detail="В архиве обнаружен файл вне каталога data")
+    if relative.parts[1].startswith(INTERNAL_PREFIX) or value != relative.as_posix():
+        raise HTTPException(status_code=400, detail="Недопустимый путь файла данных")
     return Path(*relative.parts[1:])
 
 
@@ -195,31 +197,47 @@ def _hash_file(path: Path) -> tuple[int, str]:
 def _count_missing_media_references(database: Path, data_root: Path) -> int:
     missing = 0
     media_root = (data_root / "media").resolve()
-    with sqlite3.connect(f"file:{database}?mode=ro", uri=True) as connection:
-        columns = {
-            row[1] for row in connection.execute("PRAGMA table_info(messages)").fetchall()
-        }
-        if "metadata_json" not in columns:
-            return 0
-        for (raw_metadata,) in connection.execute("SELECT metadata_json FROM messages"):
-            try:
-                payload = json.loads(raw_metadata or "{}")
-                media = payload.get("media") or {} if isinstance(payload, dict) else {}
-                relative = media.get("local_path") if isinstance(media, dict) else None
-                if not relative:
-                    continue
-                target = (media_root / _safe_relative(relative)).resolve()
-                if media_root not in target.parents or not target.is_file():
+    attachment_types = {"photo", "video", "audio", "voice", "document", "animation", "sticker", "video_note"}
+    with sqlite3.connect(database.as_uri() + "?mode=ro&immutable=1", uri=True) as connection:
+        for table in ("messages", "personal_messages"):
+            columns = {row[1] for row in connection.execute(f"PRAGMA table_info({table})")}
+            if "metadata_json" not in columns:
+                continue
+            kind = "content_type" if "content_type" in columns else "NULL"
+            for raw, content_type in connection.execute(f"SELECT metadata_json, {kind} FROM {table}"):
+                try:
+                    metadata = json.loads(raw or "{}")
+                    media = metadata.get("media")
+                    if media is None and content_type not in attachment_types:
+                        continue
+                    if not isinstance(media, dict) or media.get("archive_status") != "stored":
+                        missing += 1
+                        continue
+                    target = (media_root / _safe_relative(media.get("local_path"))).resolve()
+                    size = media.get("file_size")
+                    if media_root not in target.parents or not target.is_file():
+                        missing += 1
+                    elif size is not None and target.stat().st_size != size:
+                        missing += 1
+                    else:
+                        with target.open("rb") as file:
+                            file.read(1)
+                except (HTTPException, AttributeError, TypeError, ValueError, OSError):
                     missing += 1
-            except (HTTPException, TypeError, ValueError, OSError):
-                missing += 1
     return missing
+
+
+def _require_complete_media(database: Path, root: Path) -> None:
+    missing = _count_missing_media_references(database, root)
+    if missing:
+        raise HTTPException(409, f"Нечитаемые или отсутствующие медиафайлы: {missing}. Проверьте вложения обеих групп переписок.")
 
 
 def _validate_database(path: Path) -> None:
     try:
-        with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as uploaded:
+        with sqlite3.connect(path.as_uri() + "?mode=ro&immutable=1", uri=True) as uploaded:
             integrity = uploaded.execute("PRAGMA integrity_check").fetchone()
+            foreign_key_error = uploaded.execute("PRAGMA foreign_key_check").fetchone()
             tables = {
                 row[0]
                 for row in uploaded.execute(
@@ -234,6 +252,7 @@ def _validate_database(path: Path) -> None:
     if (
         not integrity
         or integrity[0] != "ok"
+        or foreign_key_error is not None
         or not {"users", "messages", "conversations"}.issubset(tables)
     ):
         raise HTTPException(
@@ -277,15 +296,7 @@ def _build_full_backup(archive_path: Path, staging_root: Path) -> dict:
             "sha256": checksum,
         })
 
-    missing_media = _count_missing_media_references(staged_database, staged_data)
-    if missing_media:
-        raise HTTPException(
-            status_code=409,
-            detail=(
-                "Полная копия не создана: база ссылается на отсутствующие медиафайлы "
-                f"({missing_media}). Исправьте или восстановите вложения и повторите экспорт."
-            ),
-        )
+    _require_complete_media(staged_database, staged_data)
     manifest = {
         "format": FULL_BACKUP_FORMAT,
         "format_version": 2,
@@ -295,9 +306,12 @@ def _build_full_backup(archive_path: Path, staging_root: Path) -> dict:
         "files": file_records,
         "file_count": len(file_records),
         "unpacked_bytes": total_unpacked,
-        "missing_media_references": missing_media,
+        "missing_media_references": 0,
     }
-    _require_backup_space(archive_path.parent, total_unpacked)
+    manifest_json = json.dumps(manifest, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    if len(manifest_json) > 64 * 1024 * 1024:
+        raise HTTPException(413, detail="Слишком большой служебный manifest.json")
+    _require_backup_space(archive_path.parent, total_unpacked + len(manifest_json))
     with zipfile.ZipFile(
         archive_path,
         "w",
@@ -318,14 +332,14 @@ def _build_full_backup(archive_path: Path, staging_root: Path) -> dict:
             )
         archive.writestr(
             "manifest.json",
-            json.dumps(manifest, ensure_ascii=False, separators=(",", ":")),
+            manifest_json,
         )
     return manifest
 
 
 def _validate_archive_entries(archive: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
     entries = archive.infolist()
-    if len(entries) > MAX_ARCHIVE_ENTRIES:
+    if len(entries) > MAX_ARCHIVE_ENTRIES + 1:
         raise HTTPException(status_code=413, detail="В архиве слишком много файлов")
     names = [item.filename for item in entries]
     if len(names) != len(set(names)):
@@ -361,11 +375,8 @@ def _extract_v2_archive(
     if manifest.get("format") != FULL_BACKUP_FORMAT or manifest.get("format_version") != 2:
         raise HTTPException(status_code=400, detail="Версия полной резервной копии не поддерживается")
     database_relative = _safe_relative(manifest.get("database_path", ""))
-    if database_relative != expected_database:
-        raise HTTPException(
-            status_code=409,
-            detail="Резервная копия использует другой путь к SQLite. Проверьте DATABASE_URL на новом сервере.",
-        )
+    if any(part.startswith(INTERNAL_PREFIX) for part in database_relative.parts):
+        raise HTTPException(400, "Недопустимый путь к базе данных в архиве")
 
     records = manifest.get("files")
     if not isinstance(records, list) or not records or len(records) > MAX_ARCHIVE_ENTRIES:
@@ -407,6 +418,9 @@ def _extract_v2_archive(
             raise HTTPException(status_code=400, detail="Manifest содержит повторяющиеся файлы")
         record_map[archive_name] = (relative, size, checksum.lower())
 
+    if "data/" + database_relative.as_posix() not in record_map:
+        raise HTTPException(400, "В архиве отсутствует заявленная база SQLite")
+
     archive_names = {
         item.filename for item in entries if item.filename != "manifest.json"
     }
@@ -441,8 +455,22 @@ def _extract_v2_archive(
             )
 
     staged_database = staged_data / database_relative
+    # Старые экспорты могли сохранить пустой WAL и служебный SHM при чтении снимка.
+    for suffix in ("-wal", "-shm", "-journal"):
+        sidecar = Path(str(staged_database) + suffix)
+        if sidecar.exists():
+            if suffix != "-shm" and sidecar.stat().st_size:
+                raise HTTPException(400, "База в архиве не является автономным снимком SQLite")
+            sidecar.unlink()
     _validate_database(staged_database)
-    return _count_missing_media_references(staged_database, staged_data)
+    _require_complete_media(staged_database, staged_data)
+    if expected_database != database_relative:
+        destination = staged_data / expected_database
+        if destination.exists() or any(Path(str(destination) + suffix).exists() for suffix in ("-wal", "-shm", "-journal")):
+            raise HTTPException(409, "Путь базы на новом сервере занят другим файлом из архива")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        staged_database.rename(destination)
+    return 0
 
 
 def _prepare_restore_archive(archive_path: Path, staged_data: Path) -> int:
@@ -467,6 +495,11 @@ def _write_restore_record(marker_path: Path, payload: dict) -> None:
         target.flush()
         os.fsync(target.fileno())
     os.replace(temporary, marker_path)
+    descriptor = os.open(marker_path.parent, os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
 
 
 def _finish_restore(data_dir: Path, marker: dict, status: str) -> None:
@@ -530,6 +563,41 @@ def _cleanup_orphaned_restore_stages(data_dir: Path) -> None:
     (data_dir / RESTORE_UPLOAD_LOCK).unlink(missing_ok=True)
 
 
+def _database_files():
+    database = _database_path()
+    return [Path(str(database) + suffix) for suffix in ("", "-wal", "-shm", "-journal")]
+
+
+def _rollback_restore(data_dir, marker):
+    engine.dispose()
+    backup = data_dir / marker["backup"]
+    if marker.get("kind") == "database":
+        for path in _database_files():
+            saved = backup / path.name
+            if saved.exists():
+                saved.replace(path)
+            elif path.name not in marker["original_entries"]:
+                path.unlink(missing_ok=True)
+    else:
+        _rollback_partial_restore(data_dir, marker["stage"], marker["backup"], marker["original_entries"])
+
+
+def finish_startup_restore(success: bool) -> None:
+    root = DATA_DIR.resolve()
+    record = root / PENDING_RESTORE_NAME
+    marker = json.loads(record.read_text(encoding="utf-8"))
+    if marker["status"] != "verifying":
+        raise RuntimeError("Восстановление не ожидает проверки запуска")
+    if success:
+        marker["status"] = "committed"
+        _write_restore_record(record, marker)
+    else:
+        _rollback_restore(root, marker)
+    _finish_restore(root, marker, "completed" if success else "failed")
+    shutil.rmtree(root / marker["backup"], ignore_errors=True)
+    shutil.rmtree(root / marker["stage"], ignore_errors=True)
+
+
 def apply_pending_data_restore() -> bool:
     """Восстановить данные до миграций и фоновых задач."""
     data_dir = DATA_DIR.resolve()
@@ -564,9 +632,9 @@ def apply_pending_data_restore() -> bool:
             shutil.rmtree(backup_dir, ignore_errors=True)
             shutil.rmtree(stage_dir, ignore_errors=True)
             _finish_restore(data_dir, marker, "completed")
-            return True
+            return False
 
-        if status == "applying":
+        if status in {"applying", "verifying"}:
             if not backup_dir.is_dir() or backup_dir.is_symlink():
                 raise RuntimeError("Не найдена страховочная копия незавершённого восстановления")
             original_entries = marker.get("original_entries")
@@ -574,10 +642,11 @@ def apply_pending_data_restore() -> bool:
                 isinstance(name, str) and Path(name).name == name for name in original_entries
             ):
                 raise RuntimeError("Невозможно безопасно откатить незавершённое восстановление")
-            _rollback_partial_restore(data_dir, stage_name, backup_name, original_entries)
-            marker["status"] = "prepared"
-            marker.pop("original_entries", None)
-            _write_restore_record(marker_path, marker)
+            _rollback_restore(data_dir, marker)
+            _finish_restore(data_dir, marker, "failed")
+            shutil.rmtree(backup_dir, ignore_errors=True)
+            shutil.rmtree(stage_dir, ignore_errors=True)
+            return False
         elif status != "prepared":
             raise RuntimeError("Неизвестное состояние восстановления резервной копии")
 
@@ -586,7 +655,15 @@ def apply_pending_data_restore() -> bool:
         if staged_data.exists():
             shutil.rmtree(staged_data)
         try:
-            missing_media = _prepare_restore_archive(archive_path, staged_data)
+            database_only = marker.get("kind") == "database"
+            if database_only:
+                uploaded = stage_dir / "database.sqlite3"
+                if marker.get("sha256") != _hash_file(uploaded)[1]:
+                    raise ValueError("Контрольная сумма SQLite не совпадает")
+                _validate_database(uploaded)
+                _require_complete_media(uploaded, data_dir)
+            else:
+                _prepare_restore_archive(archive_path, staged_data)
         except Exception:
             logger.exception(
                 "Подготовленный архив не прошёл повторную проверку; текущие данные не изменены",
@@ -594,37 +671,32 @@ def apply_pending_data_restore() -> bool:
             shutil.rmtree(stage_dir, ignore_errors=True)
             _finish_restore(data_dir, marker, "failed")
             return False
-        original_entries = [
-            child.name for child in data_dir.iterdir()
-            if child.name not in _control_names(stage_name, backup_name)
-        ]
+        engine.dispose()
+        if database_only:
+            originals = [path for path in _database_files() if path.exists()]
+        else:
+            protected = _control_names(stage_name, backup_name)
+            originals = [child for child in data_dir.iterdir() if child.name not in protected]
+        original_entries = [child.name for child in originals]
         backup_dir.mkdir()
         marker["status"] = "applying"
         marker["original_entries"] = original_entries
         _write_restore_record(marker_path, marker)
-        engine.dispose()
 
         try:
-            for child in list(data_dir.iterdir()):
-                if child.name in _control_names(stage_name, backup_name):
-                    continue
+            for child in originals:
                 child.rename(backup_dir / child.name)
-            for child in list(staged_data.iterdir()):
-                child.rename(data_dir / child.name)
-
+            if database_only:
+                uploaded.rename(_database_path())
+            else:
+                for child in staged_data.iterdir():
+                    child.rename(data_dir / child.name)
             _validate_database(_database_path())
-            from app.modules.notifications.vapid import reload_vapid_keys
-
-            reload_vapid_keys(data_dir)
-            marker["status"] = "committed"
-            marker["missing_media_references"] = missing_media
+            marker["status"] = "verifying"
             _write_restore_record(marker_path, marker)
         except Exception:
             try:
-                _rollback_partial_restore(data_dir, stage_name, backup_name, original_entries)
-                from app.modules.notifications.vapid import reload_vapid_keys
-
-                reload_vapid_keys(data_dir)
+                _rollback_restore(data_dir, marker)
             except Exception as rollback_error:
                 logger.exception("Полный откат восстановления UknowApp не удался")
                 raise RuntimeError(
@@ -632,14 +704,11 @@ def apply_pending_data_restore() -> bool:
                 ) from rollback_error
             shutil.rmtree(stage_dir, ignore_errors=True)
             _finish_restore(data_dir, marker, "failed")
+            shutil.rmtree(backup_dir, ignore_errors=True)
             engine.dispose()
             logger.exception("Резервная копия UknowApp не применена; исходные данные восстановлены")
             return False
 
-        shutil.rmtree(backup_dir, ignore_errors=True)
-        shutil.rmtree(stage_dir, ignore_errors=True)
-        _finish_restore(data_dir, marker, "completed")
-        logger.info("Полная резервная копия UknowApp восстановлена до запуска приложения")
         return True
     except Exception:
         logger.exception("Не удалось применить подготовленную резервную копию UknowApp")
@@ -817,6 +886,10 @@ async def restore_full_backup(_: Admin, file: Annotated[UploadFile, File()]):
     if not (file.filename or "").lower().endswith(".zip"):
         raise HTTPException(status_code=400, detail="Загрузите ZIP-файл полной резервной копии")
 
+    return await _stage_upload(file, "full")
+
+
+async def _stage_upload(file: UploadFile, kind: str):
     data_dir = DATA_DIR.resolve()
     data_dir.mkdir(parents=True, exist_ok=True)
     marker_path = data_dir / PENDING_RESTORE_NAME
@@ -836,29 +909,36 @@ async def restore_full_backup(_: Admin, file: Annotated[UploadFile, File()]):
     try:
         os.close(lock_descriptor)
         stage_dir = Path(tempfile.mkdtemp(prefix=RESTORE_STAGE_PREFIX, dir=data_dir))
-        archive_path = stage_dir / "backup.zip"
+        if marker_path.exists():
+            raise HTTPException(409, "Восстановление уже подготовлено")
+        archive_path = stage_dir / ("backup.zip" if kind == "full" else "database.sqlite3")
         with archive_path.open("wb") as target:
             while chunk := await file.read(1024 * 1024):
                 _require_backup_space(Path(target.name).parent, len(chunk))
                 target.write(chunk)
 
-        missing_media = _prepare_restore_archive(archive_path, stage_dir / "data")
+        checksum = None
+        if kind == "database":
+            _database_relative_path(data_dir)
+            _validate_database(archive_path)
+            _require_complete_media(archive_path, data_dir)
+            checksum = _hash_file(archive_path)[1]
+        else:
+            _prepare_restore_archive(archive_path, stage_dir / "data")
+            shutil.rmtree(stage_dir / "data")
         backup_name = RESTORE_BACKUP_PREFIX + uuid.uuid4().hex
         _write_restore_record(marker_path, {
             "status": "prepared",
+            "kind": kind,
+            "sha256": checksum,
             "created_at": datetime.now(UTC).isoformat(),
             "stage": stage_dir.name,
             "backup": backup_name,
-            "missing_media_references": missing_media,
+            "missing_media_references": 0,
         })
         marker_created = True
 
         automatic_restart = _automatic_restart_enabled()
-        warnings = []
-        if missing_media:
-            warnings.append(
-                f"В базе обнаружено ссылок на отсутствующие медиафайлы: {missing_media}.",
-            )
         message = (
             "Архив проверен. Backend будет перезапущен и применит все данные до запуска Telegram."
             if automatic_restart
@@ -874,7 +954,7 @@ async def restore_full_backup(_: Admin, file: Annotated[UploadFile, File()]):
                 "restore_id": stage_dir.name.removeprefix(RESTORE_STAGE_PREFIX),
                 "restart_required": True,
                 "automatic_restart": automatic_restart,
-                "warnings": warnings,
+                "warnings": [],
                 "message": message,
             },
             background=BackgroundTask(_restart_backend_after_response) if automatic_restart else None,
@@ -892,23 +972,7 @@ async def restore_full_backup(_: Admin, file: Annotated[UploadFile, File()]):
 async def restore_database(_: Admin, file: Annotated[UploadFile, File()]):
     if not (file.filename or "").lower().endswith((".db", ".sqlite", ".sqlite3")):
         raise HTTPException(status_code=400, detail="Загрузите файл SQLite (.db, .sqlite или .sqlite3)")
-    database = _database_path()
-    temp_path = _temporary_path(".uknowapp-restore-", ".sqlite3", DATA_DIR)
-    try:
-        with temp_path.open("wb") as handle:
-            while chunk := await file.read(1024 * 1024):
-                _require_backup_space(Path(handle.name).parent, len(chunk))
-                handle.write(chunk)
-        _validate_database(temp_path)
-        database.parent.mkdir(parents=True, exist_ok=True)
-        engine.dispose()
-        with sqlite3.connect(temp_path) as source, sqlite3.connect(database) as target:
-            source.backup(target)
-            target.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-        return {"ok": True, "message": "База данных восстановлена. Перезапустите панель."}
-    finally:
-        temp_path.unlink(missing_ok=True)
-        await file.close()
+    return await _stage_upload(file, "database")
 
 
 @router.delete("/dialogues")

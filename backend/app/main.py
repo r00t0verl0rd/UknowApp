@@ -4,7 +4,7 @@ import hashlib
 import logging
 import os
 import tempfile
-from contextlib import asynccontextmanager, suppress
+from contextlib import AsyncExitStack, asynccontextmanager, suppress
 
 from aiogram.exceptions import TelegramAPIError, TelegramConflictError
 from fastapi import FastAPI
@@ -17,10 +17,10 @@ from .core.config import (
     TELEGRAM_BOT_ENABLED,
     TELEGRAM_BOT_TOKEN,
 )
-from .core.database import SessionLocal
+from .core.database import Base, SessionLocal, engine
 from .migrations import initialize_database
 from .models import Assignment, Conversation, User
-from .modules.administration.data import apply_pending_data_restore
+from .modules.administration.data import apply_pending_data_restore, finish_startup_restore
 from .modules.communication.service import CommunicationService
 from .modules.notifications.vapid import reload_vapid_keys
 from .modules.telegram.adapter import TelegramAdapter
@@ -95,9 +95,31 @@ async def run_telegram_bot(bot, dispatcher, app) -> None:
 # Подготавливаем БД и запускаем один экземпляр фонового Telegram polling на время жизни API.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    apply_pending_data_restore()
+    restoring = apply_pending_data_restore()
+    async with AsyncExitStack() as stack:
+        try:
+            await stack.enter_async_context(_start_services(app, restoring))
+        except Exception:
+            if not restoring:
+                raise
+            logger.exception("Ошибка запуска после восстановления; возвращаем исходные данные")
+            finish_startup_restore(False)
+            await stack.enter_async_context(_start_services(app, False))
+        else:
+            if restoring:
+                finish_startup_restore(True)
+        yield
+
+
+@asynccontextmanager
+async def _start_services(app: FastAPI, restoring: bool):
     reload_vapid_keys()
     initialize_database()
+    if restoring:
+        # Compile a real projection for each ORM table after all migrations.
+        with engine.connect() as connection:
+            for table in Base.metadata.sorted_tables:
+                connection.execute(table.select().limit(0)).close()
     if SEED_DEMO_DATA:
         seed_demo_data()
 
@@ -106,42 +128,42 @@ async def lifespan(app: FastAPI):
     bot = None
     dispatcher = None
     polling_lock_fd = None
-    if TELEGRAM_BOT_ENABLED and TELEGRAM_BOT_TOKEN:
-        from .modules.telegram.bot import create_dispatcher
-
-        bot = create_telegram_bot(TELEGRAM_BOT_TOKEN)
-        app.state.telegram_status = "connecting"
-        app.state.telegram_bot = bot
-        app.state.communication = CommunicationService([TelegramAdapter(bot)])
-
-        # Файловая блокировка не допускает второго polling в этом процессе.
-        token_fingerprint = hashlib.sha256(TELEGRAM_BOT_TOKEN.encode("utf-8")).hexdigest()[:20]
-        lock_path = os.path.join(tempfile.gettempdir(), f"uknowapp-telegram-{token_fingerprint}.lock")
-        polling_lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
-        try:
-            fcntl.flock(polling_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            os.close(polling_lock_fd)
-            polling_lock_fd = None
-            app.state.telegram_status = "another_instance"
-            logger.warning(
-                "TELEGRAM_POLLING_SKIPPED: another local UknowApp process already owns "
-                "the polling lock. This process will keep the web API available without polling.",
-            )
-        else:
-            dispatcher = create_dispatcher()
-            bot_task = asyncio.create_task(
-                run_telegram_bot(bot, dispatcher, app),
-                name="uknowapp-telegram-polling",
-            )
-    else:
-        app.state.telegram_bot = None
-        app.state.communication = CommunicationService()
-        if not TELEGRAM_BOT_ENABLED:
-            logger.info("TELEGRAM_MODULE_DISABLED: UknowApp runs without the optional Telegram adapter.")
-        else:
-            logger.info("TELEGRAM_MODULE_DISABLED: no Telegram bot token is configured.")
     try:
+        if TELEGRAM_BOT_ENABLED and TELEGRAM_BOT_TOKEN:
+            from .modules.telegram.bot import create_dispatcher
+
+            bot = create_telegram_bot(TELEGRAM_BOT_TOKEN)
+            app.state.telegram_status = "connecting"
+            app.state.telegram_bot = bot
+            app.state.communication = CommunicationService([TelegramAdapter(bot)])
+
+            # Файловая блокировка не допускает второго polling в этом процессе.
+            token_fingerprint = hashlib.sha256(TELEGRAM_BOT_TOKEN.encode("utf-8")).hexdigest()[:20]
+            lock_path = os.path.join(tempfile.gettempdir(), f"uknowapp-telegram-{token_fingerprint}.lock")
+            polling_lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
+            try:
+                fcntl.flock(polling_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                os.close(polling_lock_fd)
+                polling_lock_fd = None
+                app.state.telegram_status = "another_instance"
+                logger.warning(
+                    "TELEGRAM_POLLING_SKIPPED: another local UknowApp process already owns "
+                    "the polling lock. This process will keep the web API available without polling.",
+                )
+            else:
+                dispatcher = create_dispatcher()
+                bot_task = asyncio.create_task(
+                    run_telegram_bot(bot, dispatcher, app),
+                    name="uknowapp-telegram-polling",
+                )
+        else:
+            app.state.telegram_bot = None
+            app.state.communication = CommunicationService()
+            if not TELEGRAM_BOT_ENABLED:
+                logger.info("TELEGRAM_MODULE_DISABLED: UknowApp runs without the optional Telegram adapter.")
+            else:
+                logger.info("TELEGRAM_MODULE_DISABLED: no Telegram bot token is configured.")
         yield
     finally:
         if dispatcher:

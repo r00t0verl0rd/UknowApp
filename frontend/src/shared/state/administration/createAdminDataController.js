@@ -86,22 +86,8 @@ export function createAdminDataController(options) {
     setDataBusy(true);
     try {
       const result = await uploadAdminBackup(kind, file);
-      if (kind === "full" && result.restart_required) {
-        setRestore({
-          id: result.restore_id,
-          status: "pending",
-        });
-        const notice = [result.message, ...(result.warnings || [])].filter(Boolean).join(" ");
-        options.notify(notice);
-        return;
-      }
-      options.notify("База данных восстановлена. Перезагрузите панель.");
-      await loadDataStats();
-      if (kind === "database") {
-        options.setSelectedChat(null);
-        options.setMessages([]);
-        await options.refresh();
-      }
+      setRestore({ id: result.restore_id, status: "pending" });
+      options.notify(result.message);
     } catch (error) {
       options.setError(error.message);
     } finally {

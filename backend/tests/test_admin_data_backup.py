@@ -35,7 +35,7 @@ def create_database(path, media_path=None):
         connection.execute("INSERT INTO users (id, role) VALUES (1, 'admin')")
         connection.execute("INSERT INTO conversations (id) VALUES (1)")
         metadata = (
-            json.dumps({"media": {"local_path": media_path}}, ensure_ascii=False)
+            json.dumps({"media": {"local_path": media_path, "archive_status": "stored"}}, ensure_ascii=False)
             if media_path else "{}"
         )
         connection.execute(
@@ -173,6 +173,8 @@ def test_full_restore_is_staged_then_applied_before_app_start(api, monkeypatch, 
         assert connection.execute("SELECT role FROM users WHERE id = 1").fetchone()[0] == "changed"
 
     assert admin_data.apply_pending_data_restore() is True
+    assert admin.get("/api/admin/data/restore-status").json()["restore"]["status"] == "pending"
+    admin_data.finish_startup_restore(True)
 
     with sqlite3.connect(data_root / "uknowapp.db") as connection:
         assert connection.execute("SELECT role FROM users WHERE id = 1").fetchone()[0] == "admin"
@@ -184,3 +186,85 @@ def test_full_restore_is_staged_then_applied_before_app_start(api, monkeypatch, 
     assert (data_root / "future-state.json").read_text(encoding="utf-8") == "original-state"
     assert not (data_root / "obsolete.txt").exists()
     assert not (data_root / admin_data.PENDING_RESTORE_NAME).exists()
+
+
+def test_personal_media_checked_on_export_and_import(api, monkeypatch, tmp_path):
+    root = tmp_path / "data"
+    setup_data_root(monkeypatch, root)
+    database = root / "uknowapp.db"
+    create_database(database)
+    media = root / "media" / "private.txt"
+    media.parent.mkdir()
+    media.write_bytes(b"abc")
+    with sqlite3.connect(database) as db:
+        db.execute("CREATE TABLE personal_messages(metadata_json TEXT)")
+        db.execute("INSERT INTO personal_messages VALUES (?)", (json.dumps({
+            "media": {"local_path": "private.txt", "archive_status": "stored", "file_size": 3},
+        }),))
+    admin = api[0]()
+    login_admin(admin)
+    backup = admin.get("/api/admin/data/full")
+    assert backup.status_code == 200
+    media.write_bytes(b"truncated")
+    assert admin.get("/api/admin/data/full").status_code == 409
+    # ZIP and manifest agree, but the referenced attachment itself is missing.
+    out = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(backup.content)) as src, zipfile.ZipFile(out, "w") as dst:
+        manifest = json.loads(src.read("manifest.json"))
+        records = [item for item in manifest["files"] if item["path"] != "data/media/private.txt"]
+        manifest.update(files=records, file_count=len(records), unpacked_bytes=sum(item["size"] for item in records))
+        for item in records:
+            dst.writestr(item["path"], src.read(item["path"]))
+        dst.writestr("manifest.json", json.dumps(manifest))
+    response = admin.post("/api/admin/data/full", files={"file": ("partial.zip", out.getvalue())})
+    assert response.status_code == 409
+    assert not (root / admin_data.PENDING_RESTORE_NAME).exists()
+
+
+def test_interrupted_full_restore_returns_original_directory(api, monkeypatch, tmp_path):
+    monkeypatch.delenv("UKNOWAPP_AUTO_RESTART_ON_RESTORE", raising=False)
+    root = tmp_path / "data"
+    setup_data_root(monkeypatch, root)
+    create_database(root / "uknowapp.db")
+    admin = api[0]()
+    login_admin(admin)
+    # Exactly the maximum number of data entries plus the manifest.
+    monkeypatch.setattr(admin_data, "MAX_ARCHIVE_ENTRIES", 1)
+    backup = admin.get("/api/admin/data/full")
+    assert backup.status_code == 200
+    (root / "original-only").write_text("before")
+    assert admin.post("/api/admin/data/full", files={"file": ("full.zip", backup.content)}).status_code == 202
+    assert admin_data.apply_pending_data_restore()
+    assert not (root / "original-only").exists()
+    # Simulate a new process before startup confirmed the replacement.
+    assert not admin_data.apply_pending_data_restore()
+    assert (root / "original-only").read_text() == "before"
+    assert admin.get("/api/admin/data/restore-status").json()["restore"]["status"] == "failed"
+
+
+def test_transfer_to_new_sqlite_path_and_checksum_failure(api, monkeypatch, tmp_path):
+    monkeypatch.delenv("UKNOWAPP_AUTO_RESTART_ON_RESTORE", raising=False)
+    root = tmp_path / "data"
+    setup_data_root(monkeypatch, root)
+    create_database(root / "uknowapp.db")
+    admin = api[0]()
+    login_admin(admin)
+    archive = admin.get("/api/admin/data/full")
+    assert archive.status_code == 200
+    damaged = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(archive.content)) as src, zipfile.ZipFile(damaged, "w") as dst:
+        for name in src.namelist():
+            body = src.read(name)
+            if name == "data/uknowapp.db":
+                body = body[:-1] + bytes([body[-1] ^ 1])
+            dst.writestr(name, body)
+    assert admin.post("/api/admin/data/full", files={"file": ("bad.zip", damaged.getvalue())}).status_code == 400
+    assert not (root / admin_data.PENDING_RESTORE_NAME).exists()
+
+    destination = root / "new" / "school.sqlite3"
+    monkeypatch.setattr(admin_data, "_database_path", lambda: destination)
+    assert admin.post("/api/admin/data/full", files={"file": ("copy.zip", archive.content)}).status_code == 202
+    assert admin_data.apply_pending_data_restore()
+    with sqlite3.connect(destination) as db:
+        assert db.execute("SELECT role FROM users").fetchone() == ("admin",)
+    admin_data.finish_startup_restore(True)

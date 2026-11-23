@@ -27,7 +27,7 @@ export default function AdditionalPage(options) {
     isRestore()
       ? options.pendingConfirmation.kind === "full"
         ? "Восстановление заменит весь текущий каталог data содержимым архива. После операции backend перезапустится."
-        : "Восстановление заменит текущую базу данных загруженной копией. Это действие нельзя отменить."
+        : "Восстановление заменит текущую базу данных загруженной копией. Сервер применит её при перезапуске и проверит доступность вложений. Если запуск завершится ошибкой, вернётся прежняя база."
       : "Удалить переписки и медиафайлы старше " +
         (options.pendingConfirmation?.days || "") +
         " дней? Действие необратимо.";
@@ -152,10 +152,10 @@ export default function AdditionalPage(options) {
             {options.restore && (
               <p role="status" class="data-warning">
                 {options.restore.status === "completed"
-                  ? "Полная копия восстановлена."
+                  ? "Резервная копия восстановлена."
                   : options.restore.status === "failed"
                     ? "Восстановление не выполнено. Сохранены исходные данные."
-                    : "Архив принят. Ожидаем результат после перезапуска сервера."}
+                    : "Копия принята. Ожидаем результат после перезапуска сервера."}
                 {options.restore.finished_at &&
                   " " + new Date(options.restore.finished_at).toLocaleString("ru-RU")}
               </p>
