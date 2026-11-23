@@ -29,7 +29,7 @@ jobs:
           PYTHONPATH: backend
           DATABASE_URL: sqlite:///./ci-test.sqlite3
           TELEGRAM_BOT_ENABLED: "false"
-          ADMIN_PASSWORD: ci-only-admin-password-123
+          ADMIN_PASSWORD: ci-only-admin-password-123 # pragma: allowlist secret
         run: |
           alembic -c alembic.ini upgrade head
           python -c 'from app.migrations import initialize_database; initialize_database()'
@@ -43,7 +43,7 @@ jobs:
         env:
           POSTGRES_DB: uknowapp_ci
           POSTGRES_USER: uknowapp_ci
-          POSTGRES_PASSWORD: ci-only-db-password
+          POSTGRES_PASSWORD: ci-only-db-password # pragma: allowlist secret
         ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U uknowapp_ci -d uknowapp_ci"
@@ -59,9 +59,9 @@ jobs:
       - name: Reviewable baseline on temporary PostgreSQL
         env:
           PYTHONPATH: backend
-          DATABASE_URL: postgresql+psycopg://uknowapp_ci:ci-only-db-password@127.0.0.1:5432/uknowapp_ci
+          DATABASE_URL: postgresql+psycopg://uknowapp_ci:ci-only-db-password@127.0.0.1:5432/uknowapp_ci # pragma: allowlist secret
           TELEGRAM_BOT_ENABLED: "false"
-          ADMIN_PASSWORD: ci-only-admin-password-123
+          ADMIN_PASSWORD: ci-only-admin-password-123 # pragma: allowlist secret
         run: |
           alembic -c alembic.ini upgrade head
           python -c 'from app.migrations import initialize_database; initialize_database()'
