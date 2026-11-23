@@ -41,6 +41,7 @@ function AdminPage(options) {
           setError={options.context.setError}
           setSelectedChat={options.context.chatState.setSelectedChat}
           setMessages={options.context.chatState.setMessages}
+          restoreFlow={options.context.restoreFlow}
         />
       </Match>
       <Match when={options.context.page === "chats"}>

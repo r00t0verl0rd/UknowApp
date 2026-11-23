@@ -1,0 +1,138 @@
+:root dialog.native-dialog.restore-flow-dialog[open] {
+  width:min(510px, calc(100vw - 24px));
+  padding:clamp(20px, 4vw, 28px);
+}
+
+.restore-flow-dialog {
+  .restore-flow-heading {
+    display:grid;
+    gap:10px;
+  }
+  .restore-flow-eyebrow {
+    color:var(--purple);
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:0.08em;
+  }
+  h2 {
+    margin:0;
+    color:var(--ink);
+    font-size:clamp(20px, 4vw, 25px);
+    line-height:1.25;
+  }
+  .restore-flow-heading p {
+    margin:0;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.6;
+  }
+  .restore-flow-progress {
+    overflow:hidden;
+    position:relative;
+    height:9px;
+    margin-top:22px;
+    border-radius:999px;
+    background:var(--ui-control-bg, var(--line));
+    border:1px solid var(--line);
+  }
+  .restore-flow-progress-bar {
+    display:block;
+    position:absolute;
+    top:0;
+    bottom:0;
+    left:0;
+    width:42%;
+    border-radius:inherit;
+    background:linear-gradient(90deg, var(--purple), #bea0e9);
+    animation:restore-flow-indeterminate 1.5s ease-in-out infinite alternate;
+  }
+  .restore-flow-progress-note {
+    margin:8px 0 0;
+    color:var(--muted);
+    font-size:12px;
+  }
+  .restore-flow-steps {
+    display:grid;
+    gap:13px;
+    margin:22px 0 0;
+    padding:15px 0 0;
+    border-top:1px solid var(--line);
+    list-style:none;
+  }
+  .restore-flow-steps li {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.4;
+  }
+  .restore-flow-steps li > span {
+    display:grid;
+    flex:none;
+    place-items:center;
+    width:24px;
+    height:24px;
+    border:1px solid var(--line);
+    border-radius:50%;
+    font-size:11px;
+    font-weight:750;
+  }
+  .restore-flow-steps .is-current {
+    color:var(--ink);
+    font-weight:700;
+  }
+  .restore-flow-steps .is-current > span {
+    border-color:var(--purple);
+    color:var(--purple);
+  }
+  .restore-flow-steps .is-complete > span {
+    border-color:var(--success, #27845c);
+    background:var(--success, #27845c);
+    color:#fff;
+  }
+  .restore-flow-actions {
+    display:grid;
+    gap:9px;
+    margin-top:22px;
+  }
+  .restore-flow-actions .btn {
+    width:100%;
+    min-height:44px;
+    justify-content:center;
+    white-space:normal;
+    text-align:center;
+  }
+}
+
+.restore-login-notice {
+  display:grid;
+  gap:5px;
+  padding:12px;
+  margin:0 0 16px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--surface-soft, var(--panel));
+  color:var(--ink);
+  font-size:12px;
+  line-height:1.5;
+}
+.restore-login-notice span {
+  color:var(--muted);
+}
+
+@keyframes restore-flow-indeterminate {
+  from {
+    transform:translateX(-45%);
+  }
+  to {
+    transform:translateX(180%);
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  .restore-flow-dialog .restore-flow-progress-bar {
+    animation:none;
+    width:100%;
+    opacity:0.7;
+  }
+}

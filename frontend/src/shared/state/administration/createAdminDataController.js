@@ -3,23 +3,21 @@ import {
   cleanupAdminDialogues,
   adminBackupUrl,
   getAdminDataStats,
-  getRestoreStatus,
   uploadAdminBackup,
 } from "../../../features/administration/services/adminDataApi.js";
 export function createAdminDataController(options) {
   const [dataStats, setDataStats] = createSignal(null);
   const [dataBusy, setDataBusy] = createSignal(false);
   const [restore, setRestore] = createSignal(null);
-  const pendingId = () => (restore()?.status === "pending" ? restore().id : null);
   const [retentionDays, setRetentionDays] = createSignal("30");
   const [pendingConfirmation, setPendingConfirmation] = createSignal(null);
   const loadDataStats = async () => {
     try {
       const stats = await getAdminDataStats(options.request);
       setDataStats(stats);
-      setRestore((current) => (current?.status === "pending" ? current : stats.restore));
+      setRestore(stats.restore);
     } catch (error) {
-      options.setError(error.message);
+      if (!options.restoreFlow.isInProgress) options.setError(error.message);
     }
   };
   createEffect(
@@ -29,39 +27,13 @@ export function createAdminDataController(options) {
         void loadDataStats();
     },
   );
+  // The restore tracker lives above the page, survives role changes and requires
+  // an explicit user action before sending them to the login screen.
   createEffect(
-    () => [pendingId(), loadDataStats],
+    () => [options.restoreFlow.phase, options.auth, options.page],
     () => {
-      if (!pendingId()) return;
-      const controller = new AbortController();
-      let timer;
-      let delay = 1000;
-      const check = async () => {
-        try {
-          const result = await getRestoreStatus(controller.signal);
-          if (controller.signal.aborted) return;
-          if (result?.status === "login") {
-            window.location.reload();
-            return;
-          }
-          if (result?.id === pendingId() && result.status !== "pending") {
-            setRestore(result);
-            await loadDataStats();
-            return;
-          }
-        } catch {
-          // Во время перезапуска Docker backend может быть недоступен.
-        }
-        if (!controller.signal.aborted) {
-          delay = Math.min(delay * 2, 10000);
-          timer = window.setTimeout(check, delay);
-        }
-      };
-      timer = window.setTimeout(check, delay);
-      return () => {
-        controller.abort();
-        window.clearTimeout(timer);
-      };
+      if (["completed", "failed"].includes(options.restoreFlow.phase) &&
+          options.auth && options.page === "additional") void loadDataStats();
     },
   );
   const downloadAdminFile = async (kind) => {
@@ -84,11 +56,13 @@ export function createAdminDataController(options) {
   };
   const performUploadAdminFile = async (kind, file) => {
     setDataBusy(true);
+    options.restoreFlow.startUpload();
     try {
       const result = await uploadAdminBackup(kind, file);
       setRestore({ id: result.restore_id, status: "pending" });
-      options.notify(result.message);
+      options.restoreFlow.beginRestore(result);
     } catch (error) {
+      options.restoreFlow.uploadFailed();
       options.setError(error.message);
     } finally {
       setDataBusy(false);
@@ -143,10 +117,17 @@ export function createAdminDataController(options) {
       return dataStats();
     },
     get restore() {
+      const current = options.restoreFlow.current;
+      if (current?.id) {
+        return {
+          id: current.id,
+          status: ["completed", "failed"].includes(current.phase) ? current.phase : "pending",
+        };
+      }
       return restore();
     },
     get dataBusy() {
-      return dataBusy() || Boolean(pendingId());
+      return dataBusy() || options.restoreFlow.isBlocking;
     },
     get retentionDays() {
       return retentionDays();

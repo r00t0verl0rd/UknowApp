@@ -17,6 +17,8 @@ import { createAuthController } from "../shared/state/authentication/createAuthC
 import { createPanelDataState } from "../shared/state/app/createPanelDataState.js";
 import { workspaceFor, workspaceIcons } from "../workspaces/workspaceRegistry.js";
 import WorkspaceLayout from "../workspaces/WorkspaceLayout.jsx";
+import RestoreFlowDialog from "../features/administration/RestoreFlowDialog.jsx";
+import { createRestoreFlow } from "../shared/state/administration/createRestoreFlow.js";
 export default function App() {
   const [errors, setErrors] = createSignal([]);
   const [notice, setNotice] = createSignal(null);
@@ -48,9 +50,13 @@ export default function App() {
 }
 function Application(options) {
   const authState = createAuthState();
+  const restoreFlow = createRestoreFlow({
+    get auth() { return authState.auth; },
+  });
   createEffect(() => [], () => {
     const onStorage = (event) => {
       if (event.key === "uknowapp-session-change" || event.key === "uknowapp-auth" || event.key === null) {
+        if (restoreFlow.suppressUnexpectedLogout()) return;
         authState.setProfile(null);
         window.location.reload();
       }
@@ -79,6 +85,7 @@ function Application(options) {
     setOverview: directory.setOverview,
     setSelectedChat: chatState.setSelectedChat,
     setMessages: chatState.setMessages,
+    restoreFlow,
   });
   createConversationSync({
     get auth() {
@@ -162,6 +169,7 @@ function Application(options) {
     chatState,
     personalState,
     directory,
+    restoreFlow,
     get inboxLoading() {
       return panel.inboxLoading;
     },
@@ -182,6 +190,7 @@ function Application(options) {
     </IconButton>
   );
   return (
+    <>
     <Show
       when={authState.auth}
       fallback={
@@ -189,6 +198,7 @@ function Application(options) {
           theme={settings.theme}
           toggleTheme={settings.toggleTheme}
           signIn={session.signIn}
+          restoreRelogin={restoreFlow.needsLogin}
           login={authState.login}
           setLogin={authState.setLogin}
           password={authState.password}
@@ -213,5 +223,7 @@ function Application(options) {
         </WorkspaceLayout>
       </Show>
     </Show>
+    <RestoreFlowDialog flow={restoreFlow} />
+    </>
   );
 }

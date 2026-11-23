@@ -10,6 +10,9 @@ export function createPanelDataState(options) {
   const [inboxLoading, setInboxLoading] = createSignal(false);
   const [adminDataLoading, setAdminDataLoading] = createSignal(false);
   function closeWorkspace() {
+    // The restored database may invalidate the old session. Keep the
+    // confirmation dialog visible instead of silently reloading to login.
+    if (options.restoreFlow?.suppressUnexpectedLogout()) return;
     localStorage.removeItem("uknowapp-auth");
     sessionStorage.removeItem("uknowapp-auth");
     options.setProfile(null);
@@ -42,6 +45,7 @@ export function createPanelDataState(options) {
         if (revision !== refreshRevision) return;
         if (!workspaceFor(who)) throw new Error("Не удалось подтвердить права доступа");
         if (options.profile && (options.profile.id !== who.id || options.profile.role !== who.role)) {
+          if (options.restoreFlow?.suppressUnexpectedLogout()) return;
           options.setProfile(null);
           window.location.reload();
           return;
@@ -51,6 +55,7 @@ export function createPanelDataState(options) {
         setAdminDataLoading(who.permissions.includes("users.manage"));
       } catch (error) {
         if (revision !== refreshRevision) return;
+        if (options.restoreFlow?.suppressUnexpectedLogout()) return;
         options.setError(error.message);
         closeWorkspace();
         return;

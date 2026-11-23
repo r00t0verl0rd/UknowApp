@@ -17,6 +17,7 @@ export default function AdministrationModule(options) {
     setError: options.setError,
     setSelectedChat: options.setSelectedChat,
     setMessages: options.setMessages,
+    restoreFlow: options.restoreFlow,
   });
   return () => {
     if (options.page !== "additional") return null;

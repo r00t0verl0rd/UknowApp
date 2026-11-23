@@ -23,6 +23,12 @@ export default function LoginPage(options) {
             Uknow<span>App</span>
           </h1>
         </div>
+        {options.restoreRelogin && (
+          <div class="restore-login-notice" role="status">
+            <b>Сессия завершена после восстановления</b>
+            <span>Войдите с учётными данными из восстановленной копии. После входа приложение проверит результат восстановления.</span>
+          </div>
+        )}
         <form onSubmit={options.signIn} class="stack">
           <label>
             <input
