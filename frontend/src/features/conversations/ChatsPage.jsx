@@ -184,6 +184,7 @@ export default function ChatsPage(options) {
                     (unreadCount() > 0 && !showMessageCount() ? " has-unread" : "")
                   }
                   aria-pressed={isSelected()}
+                  data-view-anchor={"chat:" + (personal() ? "personal:" : "conversation:") + chat.id}
                   onClick={() => options.openChat(chat)}
                 >
                   <div class="person-main">

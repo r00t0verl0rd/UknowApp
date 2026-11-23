@@ -87,7 +87,7 @@ export default function StructurePage(options) {
               const students = () => (options.studentsByTeacherId ?? new Map()).get(teacher.id) || [];
               const collapsed = () => collapsedTeacherIds().has(teacher.id);
               return (
-                <section class={`teacher-branch${collapsed() ? " is-collapsed" : ""}`}>
+                <section data-view-anchor={"teacher:" + teacher.id} class={`teacher-branch${collapsed() ? " is-collapsed" : ""}`}>
                   <div class="teacher-card">
                     <div class="person-main">
                       <div class="avatar teacher-avatar">

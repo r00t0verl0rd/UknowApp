@@ -162,7 +162,7 @@ function MessageBubble(options) {
     })[sourceKind()] || "Вложение";
   const deliveryDetails = () => getDeliveryDetails(options.message.metadata);
   return (
-    <div class={"message " + options.message.sender_role}>
+    <div class={"message " + options.message.sender_role} data-view-anchor={"message:" + options.message.id}>
       <div class="message-topline">
         <b>{options.message.sender}</b>
         <div class="message-tools">

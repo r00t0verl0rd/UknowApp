@@ -57,7 +57,7 @@ export default function UsersPage(options) {
       <div class="user-list" role="region" aria-label="Список пользователей">
         <For each={options.visibleUsers}>
           {(user) => (
-            <div class="user-row">
+            <div class="user-row" data-view-anchor={"user:" + user.id}>
               <div class={"avatar " + user.role}>
                 {user.role === "teacher" ? (
                   <GraduationCap />
