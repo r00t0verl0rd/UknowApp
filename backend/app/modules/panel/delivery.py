@@ -31,7 +31,10 @@ from app.models import (
     TeacherSession,
     User,
 )
-from app.modules.communication.accounts import get_messenger_account, get_messenger_accounts
+from app.modules.communication.accounts import (
+    get_messenger_account,
+    get_messenger_accounts,
+)
 from app.modules.communication.contracts import (
     MessageKind,
     MessengerError,
