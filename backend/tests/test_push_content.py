@@ -7,7 +7,7 @@ from app.modules.notifications.content import PUSH_TITLE, push_body
 
 def test_default_push_shows_sender_only(monkeypatch):
     monkeypatch.setattr(config, "PUSH_MESSAGE_PREVIEW_ENABLED", False)
-    assert PUSH_TITLE == "Новое сообщение"
+    assert PUSH_TITLE == "UknowApp"
     assert push_body("Падаван", "Привет! Как дела?") == "Падаван"
     assert push_body("Администратор", "Личное сообщение") == "Администратор"
     assert push_body("Падаван", "", kind="voice") == "Падаван"

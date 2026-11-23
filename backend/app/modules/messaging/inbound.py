@@ -514,7 +514,7 @@ async def _deliver_student_message_to_teacher(
 ) -> None:
     metadata = json.loads(row.metadata_json or "{}")
     if metadata.get("media"):
-        caption = "📎 От ученика: " + sender.full_name
+        caption = sender.full_name
         if inbound.caption.strip():
             caption += "\n" + inbound.caption.strip()
         try:
@@ -531,7 +531,7 @@ async def _deliver_student_message_to_teacher(
                 conversation.id, copy_error.provider_error_type,
             )
             notice_id = await gateway.send_text(
-                teacher_chat_id, "📎 Вложение от ученика: " + sender.full_name,
+                teacher_chat_id, sender.full_name,
             )
             copied_id = await gateway.copy_message(
                 inbound.external_chat_id,

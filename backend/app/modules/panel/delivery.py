@@ -273,23 +273,17 @@ async def deliver_panel_message(
                 })
                 continue
 
+            # Одинаковое короткое имя отправителя для всех ролей и
+            # мессенджеров: без "Сообщение от..." и других вводных.
+            sender_name = (
+                student.full_name if sender_role == "student"
+                else conversation.teacher.full_name if sender_role == "teacher"
+                else "Администратор"
+            )
             if content_type == MessageKind.TEXT:
-                outgoing_text = (
-                    body if sender_role == "teacher"
-                    else "Сообщение от ученика " + student.full_name + ":\n" + body
-                    if sender_role == "student"
-                    else "Сообщение от администратора школы:\n" + body
-                )
+                outgoing_text = sender_name + "\n" + body
             else:
-                outgoing_text = (
-                    body.strip()[:1024] if sender_role == "teacher"
-                    else (
-                        "Сообщение от ученика " + student.full_name
-                        + ((": " + body) if body else "")
-                        if sender_role == "student"
-                        else "От администратора школы" + ((": " + body) if body else "")
-                    )
-                )
+                outgoing_text = (sender_name + (": " + body.strip() if body.strip() else ""))[:1024]
 
             try:
                 sent = await communication.send(OutboundMessage(

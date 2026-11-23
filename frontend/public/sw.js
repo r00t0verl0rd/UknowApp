@@ -36,8 +36,8 @@ self.addEventListener("push", event => {
     }).catch(() => null);
     if (!access?.ok || !access.headers.get("content-type")?.includes("application/json")) return;
     if (await isConversationVisible(payload)) return;
-    await self.registration.showNotification(payload.title || "Новое сообщение", {
-      body: payload.body || "Сообщение",
+    await self.registration.showNotification(payload.title || "UknowApp", {
+      body: payload.body || "UknowApp",
       icon: "/logo-big.png",
       badge: "/logo-192.png",
       tag: payload.tag || "uknowapp-message",

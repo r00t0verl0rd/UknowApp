@@ -2,7 +2,7 @@
 
 from app.core import config
 
-PUSH_TITLE = "Новое сообщение"
+PUSH_TITLE = "UknowApp"
 
 _MEDIA_LABELS = {
     "photo": "Фото",

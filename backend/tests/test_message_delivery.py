@@ -542,6 +542,14 @@ def test_panel_delivery_uses_recipient_connection_only(
 
         assert [message.external_chat_id for message in adapter.sent] == expected_chats
         assert all(message.text for message in adapter.sent)
+        sender_name = (
+            student.full_name if sender_role == "student"
+            else teacher.full_name if sender_role == "teacher"
+            else "Администратор"
+        )
+        assert [message.text for message in adapter.sent] == [
+            sender_name + "\nСообщение из приложения"
+        ] * len(expected_chats)
         refreshed = db.get(Message, row.id)
         ledger = json.loads(refreshed.metadata_json)["messenger_deliveries"]["telegram"]
         assert ledger["status"] == expected_status
@@ -594,6 +602,7 @@ def test_single_connected_student_receives_attachment_without_teacher_connection
         assert len(adapter.sent) == 1
         assert adapter.sent[0].media == media
         assert adapter.sent[0].external_chat_id == "student-chat"
+        assert adapter.sent[0].text == teacher.full_name + ": Файл для ученика"
 
 
 def test_independent_routing_across_multiple_messengers(api):

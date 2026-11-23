@@ -318,8 +318,12 @@ def teacher_chat_view(
         lines.append("История пока пуста.")
     else:
         for row in visible_rows:
-            sender_label = "Ученик" if row.sender_role == "student" else "Администратор" if row.sender_role == "admin" else "Вы"
-            lines.append(sender_label + ": " + escape(message_preview(row)))
+            sender_label = (
+                student.full_name if row.sender_role == "student"
+                else "Администратор" if row.sender_role == "admin"
+                else "Вы"
+            )
+            lines.append(escape(sender_label) + ": " + escape(message_preview(row)))
     if len(rows) > len(visible_rows):
         total_messages = db.scalar(
             select(func.count(Message.id))

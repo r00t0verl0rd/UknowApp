@@ -184,6 +184,8 @@ def test_teacher_panel_preserves_unread_state_and_bounded_history(api):
         assert "1 новых" in panel_text
         assert "Telegram history 16" in panel_text
         assert "Администратор: Telegram history 19" in panel_text
+        assert db.get(User, student_id).full_name + ": Telegram history 16" in chat_text
+        assert "Ученик: Telegram history 16" not in chat_text
 
 
 def test_ordinary_teacher_reply_does_not_build_keyboard_previews(api, monkeypatch):
