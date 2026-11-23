@@ -121,7 +121,7 @@
   min-width:0;
   .chat-message-filter {
     flex:0 1 auto;
-    width:clamp(145px, 16vw, 190px);
+    width:clamp(158px, 16vw, 190px);
     min-width:0;
     height:var(--workspace-control-height);
   }
@@ -707,7 +707,7 @@
     padding:12px;
   }
   .chat-head-tools .chat-message-filter {
-    width:clamp(130px, 20vw, 170px);
+    width:clamp(158px, 20vw, 170px);
   }
   .messages {
     padding:12px 2px;
@@ -760,7 +760,7 @@
     padding-left:7px;
   }
   .chat-head-tools .chat-message-filter {
-    width:clamp(128px, 30vw, 160px);
+    width:clamp(158px, 30vw, 170px);
   }
   .chat-head-tools .personal-chat-delete {
     width:36px;
@@ -789,7 +789,7 @@
     justify-content:flex-end;
   }
   .chat-head-tools .chat-message-filter {
-    width:clamp(122px, 34vw, 145px);
+    width:clamp(158px, 34vw, 175px);
     max-width:100%;
     min-width:0;
   }
