@@ -214,6 +214,13 @@ export function createUsersController(options) {
     }
   };
   const makeCode = async (user) => {
+    const confirmed = window.confirm(
+      `Выдать новый единый код для «${user.full_name}»?\n\n` +
+      "Код используется для входа в веб-панель и подключения Telegram. " +
+      "Старый код сразу перестанет работать, а участнику потребуется войти заново. " +
+      "Передайте ему новый код после выдачи.",
+    );
+    if (!confirmed) return;
     try {
       const result = await createUserConnectionCode(options.request, user.id);
       editor.setCode({

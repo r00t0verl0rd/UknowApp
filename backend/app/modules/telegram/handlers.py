@@ -50,7 +50,7 @@ async def start(message: TgMessage, bot: Bot):
         if not user:
             await message.answer(
                 "Добро пожаловать в Uknow! 🙂\n\n"
-                "Для подключения попросите администратора выдать вам одноразовый код для Telegram",
+                "Для подключения попросите администратора выдать вам код доступа",
             )
             return
         if user.role == "teacher":
