@@ -1606,6 +1606,32 @@ test("global SSE updates real counters across tabs and replays missed events", {
       const touchPage = await touchContext.newPage();
       await touchPage.goto(APP_URL);
       await touchPage.waitForFunction(() => !!document.querySelector("#root")?.firstElementChild);
+      // The browser-only prepositioning is ready on focus, without waiting
+      // for a late visualViewport resize. Standalone PWA does not use this path.
+      const supportsTouchBrowser = await touchPage.evaluate(() =>
+        matchMedia("(display-mode: browser) and (pointer: coarse)").matches
+      );
+      if (supportsTouchBrowser) {
+        await touchPage.evaluate(() => {
+          const probe = document.createElement("form");
+          probe.className = "chat-composer";
+          probe.id = "chat-keyboard-position-probe";
+          probe.innerHTML = '<textarea aria-label="Test keyboard layout"></textarea>';
+          document.body.append(probe);
+          probe.querySelector("textarea").focus();
+        });
+        await touchPage.waitForFunction(() =>
+          document.documentElement.getAttribute("data-workspace-keyboard") === "open"
+        );
+        await touchPage.evaluate(() => {
+          const probe = document.getElementById("chat-keyboard-position-probe");
+          probe.querySelector("textarea").blur();
+          probe.remove();
+        });
+        await touchPage.waitForFunction(() =>
+          !document.documentElement.hasAttribute("data-workspace-keyboard")
+        );
+      }
       for (const width of [320, 390, 760, 1024, 1025, 1280]) {
         await touchPage.setViewportSize({ width, height: 800 });
         for (const theme of ["light", "dark-soft"]) {

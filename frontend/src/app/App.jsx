@@ -37,7 +37,7 @@ export default function App() {
     () => [notice()],
     () => {
       if (!notice()) return;
-      const timer = window.setTimeout(() => setNotice(null), 2600);
+      const timer = window.setTimeout(() => setNotice(null), 6000);
       return () => window.clearTimeout(timer);
     },
   );

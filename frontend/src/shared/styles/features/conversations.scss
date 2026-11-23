@@ -508,7 +508,7 @@
 .chat-composer:focus-within {
   @include primitives.field-focus;
 }
-// One fixed, comfortable editor height for desktop, tablet and mobile.
+/* One comfortable 84px input height across desktop, tablet and mobile. */
 .chat-composer textarea {
   display:block;
   width:100%;
@@ -527,6 +527,7 @@
   font-size:16px;
   line-height:1.45;
   resize:none;
+  transition:border-color var(--ui-transition-fast);
   overflow-x:hidden;
   overflow-y:auto;
 }
@@ -570,9 +571,9 @@
   color:var(--button-text);
   cursor:pointer;
   transition:
-    background-color 0.15s,
-    color 0.15s,
-    border-color 0.15s;
+    background-color var(--ui-transition-fast),
+    color var(--ui-transition-fast),
+    border-color var(--ui-transition-fast);
 }
 .chat-composer .attach-control:hover {
   background:var(--button-bg-hover);
@@ -814,8 +815,8 @@
   border-radius:10px;
   background:transparent;
   transition:
-    background-color 0.14s,
-    border-color 0.14s;
+    background-color var(--ui-transition-fast),
+    border-color var(--ui-transition-fast);
 }
 .chat-items > .chat-item:hover:not(.selected) {
   background:var(--canvas);
@@ -955,8 +956,8 @@
   border-left:2px solid var(--purple);
 }
 
-// Input height stays 84px everywhere; only the send button is compact on mobile.
-// Равные размеры контролов для ролей admin, teacher и student.
+/* 84px input on all devices; the send control is compact on mobile.
+   Consistent touch targets for admin, teacher and student. */
 @media (max-width: 1024px) {
   .workspace-shell .chat-detail .chat-composer {
     gap:6px;

@@ -61,3 +61,15 @@ test("conversation count badges show the full number and grow into a pill", () =
   assert.match(countBadge, /\$\{formatted\(\)\} \$\{props\.label\}/);
   assert.match(styles, /\.chat-tab-count \{[^}]*min-width:22px;[^}]*width:max-content;[^}]*max-width:none;[^}]*padding:0 6px;[^}]*border-radius:999px;[^}]*white-space:nowrap;/s);
 });
+
+test("toast duration and viewport motion keep feedback readable and Safari scrolling steady", () => {
+  const app = readFileSync(path.join(frontend, "src/app/App.jsx"), "utf8");
+  const viewport = readFileSync(path.join(frontend, "src/shared/services/viewportEnvironment.js"), "utf8");
+  const tabs = readFileSync(path.join(frontend, "src/shared/styles/components/chat-controls.scss"), "utf8");
+  assert.match(app, /setTimeout\(\(\) => setNotice\(null\), 6000\)/);
+  assert.match(viewport, /const workspaceOpen = open \|\| prepareChat;/);
+  assert.match(viewport, /const onViewportScroll = \(\) => \{/);
+  assert.match(styles, /\.chat-composer textarea \{[^}]*height:84px;[^}]*min-height:84px;[^}]*max-height:84px;/s);
+  assert.match(styles, /background-color var\(--ui-transition-fast\)/);
+  assert.match(tabs, /font-weight:700;/);
+});

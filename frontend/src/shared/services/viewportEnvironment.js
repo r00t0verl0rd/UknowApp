@@ -8,6 +8,7 @@ export function installViewportEnvironment(win = window, doc = document) {
   let previousTop = NaN;
   let baselineHeight = Math.max(win.innerHeight, viewport?.height || 0);
   let keyboardOpen = false;
+  let workspaceKeyboardOpen = false;
 
   const isEditorFocused = () => doc.activeElement?.matches?.(
     "textarea, input:not([type]), input:is([type='text'], [type='search'], [type='email'], " +
@@ -21,17 +22,28 @@ export function installViewportEnvironment(win = window, doc = document) {
     if (!Number.isFinite(height) || height <= 0) return;
     const focused = isEditorFocused();
     const mobile = win.matchMedia("(max-width: 1024px)").matches;
+    const inBrowser = mobile && win.matchMedia("(display-mode: browser)").matches;
     if (!focused || !mobile) baselineHeight = Math.max(win.innerHeight, height);
     else baselineHeight = Math.max(baselineHeight, height);
-    const open = mobile && focused && (!viewport || viewport.scale <= 1.1) &&
-      baselineHeight - height >= 120;
+    const heightLoss = baselineHeight - height;
+    // Hysteresis keeps the viewport stable as Safari animates the keyboard closed.
+    const open = mobile && (!viewport || viewport.scale <= 1.1) &&
+      (keyboardOpen ? heightLoss >= 80 : focused && heightLoss >= 120);
+    // On touch Safari, prepare the chat layout on focus, before the keyboard
+    // starts resizing visualViewport. Standalone iOS keeps its existing flow.
+    const prepareChat = inBrowser && focused &&
+      win.matchMedia("(pointer: coarse)").matches &&
+      Boolean(doc.activeElement?.closest?.(".chat-composer"));
+    const workspaceOpen = open || prepareChat;
 
     if (open !== keyboardOpen) {
       keyboardOpen = open;
       if (open) root.setAttribute("data-app-keyboard", "open");
       else root.removeAttribute("data-app-keyboard");
-      // Existing chat/layout styles continue to use this shared state.
-      if (open) root.setAttribute("data-workspace-keyboard", "open");
+    }
+    if (workspaceOpen !== workspaceKeyboardOpen) {
+      workspaceKeyboardOpen = workspaceOpen;
+      if (workspaceOpen) root.setAttribute("data-workspace-keyboard", "open");
       else root.removeAttribute("data-workspace-keyboard");
     }
     if (height !== previousHeight) {
@@ -64,10 +76,17 @@ export function installViewportEnvironment(win = window, doc = document) {
     baselineHeight = Math.max(win.innerHeight, viewport?.height || 0);
     schedule();
   };
+  const onViewportScroll = () => {
+    // Safari's address bar sends frequent visualViewport scroll notifications.
+    // When nothing is focused, resize is enough to update the document layout.
+    if (win.matchMedia("(max-width: 1024px) and (display-mode: browser)").matches &&
+        !keyboardOpen && !isEditorFocused()) return;
+    schedule();
+  };
 
   measure();
   viewport?.addEventListener("resize", schedule);
-  viewport?.addEventListener("scroll", schedule, { passive: true });
+  viewport?.addEventListener("scroll", onViewportScroll, { passive: true });
   win.addEventListener("resize", schedule);
   win.addEventListener("orientationchange", onOrientationChange);
   win.addEventListener("pageshow", schedule);
@@ -77,7 +96,7 @@ export function installViewportEnvironment(win = window, doc = document) {
   return () => {
     if (animationFrame) win.cancelAnimationFrame(animationFrame);
     viewport?.removeEventListener("resize", schedule);
-    viewport?.removeEventListener("scroll", schedule);
+    viewport?.removeEventListener("scroll", onViewportScroll);
     win.removeEventListener("resize", schedule);
     win.removeEventListener("orientationchange", onOrientationChange);
     win.removeEventListener("pageshow", schedule);
