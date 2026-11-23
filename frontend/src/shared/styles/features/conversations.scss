@@ -788,40 +788,21 @@
   min-width:0;
 }
 .chat-item .participant-chat-names {
-  display:flex;
+  display:grid;
   min-width:0;
-  align-items:center;
+  gap:3px;
+  align-content:center;
   > b {
+    display:block;
+    min-width:0;
     margin:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
     font-size:12px;
     line-height:1.25;
     font-weight:650;
   }
-}
-/* A conversation is two people, not two stacked labels. Long names
-   truncate independently; the complete pair remains available as a title. */
-.participant-pair {
-  display:flex;
-  min-width:0;
-  width:100%;
-  max-width:100%;
-  align-items:center;
-  gap:5px;
-  white-space:nowrap;
-}
-.participant-pair > [data-chat-name-role] {
-  min-width:0;
-  flex:0 1 auto;
-  overflow:hidden;
-  white-space:nowrap;
-  text-overflow:ellipsis;
-}
-.participant-pair-arrow {
-  flex:0 0 auto;
-  color:var(--muted);
-  font-size:1em;
-  font-weight:650;
-  line-height:1;
 }
 .chat-tab-count {
   display:inline-flex;

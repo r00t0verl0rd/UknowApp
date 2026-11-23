@@ -250,11 +250,8 @@ export default function ChatsPage(options) {
                     <div class={"person-info" + (showMessageCount() ? " participant-chat-names" : "")}>
                       {showMessageCount() ? (
                         <>
-                          <b class="participant-pair" title={chat.teacher.full_name + " ↔ " + chat.student.full_name}>
-                            <span data-chat-name-role="teacher">{chat.teacher.full_name}</span>
-                            <span class="participant-pair-arrow" aria-hidden="true">↔</span>
-                            <span data-chat-name-role="student">{chat.student.full_name}</span>
-                          </b>
+                          <b><span data-chat-name-role="teacher">{chat.teacher.full_name}</span></b>
+                          <b><span data-chat-name-role="student">{chat.student.full_name}</span></b>
                         </>
                       ) : (
                         <>
@@ -308,11 +305,10 @@ export default function ChatsPage(options) {
               </button>
               <div class="chat-head-person">
                 {options.selectedChat.type !== "personal" && options.profile?.role === "admin" ? (
-                  <b class="participant-pair" title={options.selectedChat.teacher.full_name + " ↔ " + options.selectedChat.student.full_name}>
-                    <span data-chat-name-role="teacher">{options.selectedChat.teacher.full_name}</span>
-                    <span class="participant-pair-arrow" aria-hidden="true">↔</span>
-                    <span data-chat-name-role="student">{options.selectedChat.student.full_name}</span>
-                  </b>
+                  <>
+                    <b data-chat-name-role="student">{options.selectedChat.student.full_name}</b>
+                    <b data-chat-name-role="teacher">{options.selectedChat.teacher.full_name}</b>
+                  </>
                 ) : (
                   <b data-chat-name-role={titleRole(options.selectedChat)}>
                     {options.selectedChat.type === "personal"

@@ -76,14 +76,13 @@ test("toast duration and viewport motion keep feedback readable and Safari scrol
 });
 
 
-test("admin participant conversations use one-line linked names and shared message filter", () => {
+test("admin participant names stay stacked without arrows; message filter uses shared control", () => {
   const chats = readFileSync(path.join(frontend, "src/features/conversations/ChatsPage.jsx"), "utf8");
-  assert.match(chats, /class="participant-pair"/);
-  assert.match(chats, /class="participant-pair-arrow" aria-hidden="true">↔<\/span>/);
+  assert.doesNotMatch(chats, /participant-pair-arrow/);
+  assert.match(chats, /<b><span data-chat-name-role="teacher">\{chat\.teacher\.full_name\}<\/span><\/b>/);
+  assert.match(chats, /<b><span data-chat-name-role="student">\{chat\.student\.full_name\}<\/span><\/b>/);
   assert.match(chats, /<ToolbarSelect\s+class="chat-message-filter"/);
-  assert.doesNotMatch(chats, /Сообщение будет отправлено обоим участникам/);
   assert.match(chats, /Напишите сообщение — его увидят ученик и учитель/);
-  assert.match(styles, /\.participant-pair \{[^}]*white-space:nowrap;/s);
-  assert.match(styles, /\.participant-pair > \[data-chat-name-role\] \{[^}]*text-overflow:ellipsis;/s);
+  assert.match(styles, /\.participant-chat-names \{[^}]*display:grid;/s);
   assert.match(styles, /\.mobile-chat-back \{[^}]*width:48px;[^}]*height:48px;/s);
 });
