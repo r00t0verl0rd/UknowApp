@@ -46,6 +46,45 @@ docker compose up -d --build
 
 **Важно:** обновление `.env.example` не меняет действующий `.env`. Новые параметры при необходимости добавляйте в него вручную. Не заменяйте `.env` шаблоном и не выполняйте `docker compose down -v` при обычном обновлении.
 
+## SQLite, PostgreSQL и миграции
+
+По умолчанию UknowApp использует SQLite. В Docker том `app_data` сохраняется при пересборке.
+Подключение выбирается через `DATABASE_URL`; бизнес-модели используют SQLAlchemy.
+Существует опциональный сервис `postgres` (PostgreSQL 17), не открывающий внешний порт.
+
+Для **нового пустого** развёртывания PostgreSQL задайте в `.env`:
+
+```ini
+COMPOSE_PROFILES=postgres
+POSTGRES_DB=uknowapp
+POSTGRES_USER=uknowapp
+POSTGRES_PASSWORD=замените-на-надежный-пароль
+DATABASE_URL=postgresql+psycopg://uknowapp:замените-на-надежный-пароль@postgres:5432/uknowapp
+```
+
+Пароль в URL должен быть URL-кодирован, если содержит специальные символы (`@`, `:`, `/`, `%` и др.).
+Перед запуском приложения и **после проверки миграций** выполните:
+
+```bash
+docker compose --profile postgres up -d postgres
+docker compose build backend
+docker compose --profile postgres run --rm --no-deps backend alembic -c /app/alembic.ini upgrade head
+docker compose up -d --build
+```
+
+Для существующей SQLite-инсталляции **не меняйте DATABASE_URL** без плана переноса данных.
+Само изменение URL **не переносит** пользователей, переписки, медиа и другие записи.
+Перед работой со схемой скачайте полную резервную копию, проверьте миграцию и её эффект на копии данных.
+
+В проект добавлен Alembic для **ручного управления будущими миграциями**. `revision --autogenerate`
+создаёт только черновик; запуск `upgrade head` требует отдельного решения.
+Чтобы не ломать существующие установки, прежняя стартовая инициализация схемы пока сохранена
+как переходная совместимость. Подробности и ограничения: [миграции и СУБД](docs/database-migrations.md).
+
+Встроенные **полный ZIP** и **экспорт/импорт базы** предназначены только для SQLite.
+Для PostgreSQL используйте `pg_dump` и `pg_restore`, а файлы медиа и ключ Web Push сохраняйте отдельно.
+В админ-панели операции SQLite-бэкапа автоматически недоступны при подключении PostgreSQL.
+
 ## Локальная разработка
 
 Нужны Python 3.11+ и Node.js 22+.
