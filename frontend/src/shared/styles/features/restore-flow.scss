@@ -91,6 +91,14 @@
     background:var(--success, #27845c);
     color:#fff;
   }
+  .restore-flow-steps .is-error {
+    color:var(--button-danger-text, #c95767);
+    font-weight:700;
+  }
+  .restore-flow-steps .is-error > span {
+    border-color:var(--button-danger-text, #c95767);
+    color:var(--button-danger-text, #c95767);
+  }
   .restore-flow-actions {
     display:grid;
     gap:9px;
