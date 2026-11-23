@@ -93,13 +93,12 @@
     font-weight:700;
     box-shadow:inset 0 -2px 0 var(--ui-selected-border);
   }
-  .chat-items > .chat-item .person-info.participant-chat-names {
-    > .participant-teacher-name { color:var(--role-teacher); }
-    > .participant-student-name { color:var(--role-student); }
-  }
+
 }
 
-:root [data-chat-name-role="teacher"] { color:var(--role-teacher); }
-:root [data-chat-name-role="student"] { color:var(--role-student); }
-
-:root [data-chat-name-role="admin"] { color:var(--role-admin); }
+// The sender role selects the palette in every workspace and dialog.
+@each $role in teacher, student, admin {
+  :root[data-theme] [data-chat-name-role="#{$role}"] {
+    color:var(--role-#{$role});
+  }
+}

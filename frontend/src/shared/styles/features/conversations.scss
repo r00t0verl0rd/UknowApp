@@ -765,20 +765,14 @@
   display:grid;
   gap:3px;
   align-content:center;
-  .participant-teacher-name,
-  .participant-student-name {
+  > b {
     display:block;
     margin:0;
     font-size:12px;
     line-height:1.25;
     font-weight:650;
   }
-  .participant-teacher-name {
-    color:var(--role-teacher, #8065b5);
-  }
-  .participant-student-name {
-    color:var(--role-student, #b28a35);
-  }
+
 }
 .chat-tab-count {
   display:inline-flex;

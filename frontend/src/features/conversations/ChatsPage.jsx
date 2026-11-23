@@ -250,8 +250,8 @@ export default function ChatsPage(options) {
                     <div class={"person-info" + (showMessageCount() ? " participant-chat-names" : "")}>
                       {showMessageCount() ? (
                         <>
-                          <b class="participant-teacher-name">{chat.teacher.full_name}</b>
-                          <small class="participant-student-name">{chat.student.full_name}</small>
+                          <b><span data-chat-name-role="teacher">{chat.teacher.full_name}</span></b>
+                          <b><span data-chat-name-role="student">{chat.student.full_name}</span></b>
                         </>
                       ) : (
                         <>
