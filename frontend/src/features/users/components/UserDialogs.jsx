@@ -94,7 +94,12 @@ export default function UserDialogs(options) {
                     : "Назначить ученика"}
               </h2>
             </div>
-            <IconButton onClick={() => options.setModal(null)}>
+            <IconButton
+              aria-label="Закрыть окно"
+              title="Закрыть"
+              disabled={options.savingUser}
+              onClick={() => options.setModal(null)}
+            >
               <X />
             </IconButton>
           </div>
@@ -215,24 +220,7 @@ export default function UserDialogs(options) {
                     При смене роли активные назначения будут закрыты. История переписок сохранится.
                   </p>
                 )}
-              <div class="modal-actions">
-                <Button variant="ghost" onClick={() => options.setModal(null)} disabled={options.savingUser}>
-                  Отмена
-                </Button>
-                {options.modal.mode === "edit" && (
-                  <IconButton
-                    tone="danger"
-                    class="user-action-btn danger-icon user-delete"
-                    onClick={() =>
-                      options.removeUser(options.users.find((user) => user.id === options.modal.id))
-                    }
-                    disabled={options.savingUser}
-                    title="Удалить пользователя"
-                    aria-label="Удалить пользователя"
-                  >
-                    <Trash2 size={16} />
-                  </IconButton>
-                )}
+              <div class="modal-actions participant-form-actions">
                 <Button type="submit" variant="primary" disabled={options.savingUser}>
                   {options.savingUser ? (
                     "Сохраняем…"
@@ -243,6 +231,20 @@ export default function UserDialogs(options) {
                     </>
                   )}
                 </Button>
+                {options.modal.mode === "edit" && (
+                  <IconButton
+                    tone="danger"
+                    class="user-action-btn danger-icon user-delete"
+                    onClick={() =>
+                      options.removeUser(options.users.find((user) => user.id === options.modal.id))
+                    }
+                    disabled={options.savingUser}
+                    title="Удалить участника"
+                    aria-label="Удалить участника"
+                  >
+                    <Trash2 size={16} />
+                  </IconButton>
+                )}
               </div>
             </form>
           )}
