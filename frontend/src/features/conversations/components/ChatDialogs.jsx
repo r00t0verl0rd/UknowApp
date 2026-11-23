@@ -44,7 +44,7 @@ export default function ChatDialogs(options) {
                   each={options.users.filter((user) => user.role === "teacher" || user.role === "student")}
                 >
                   {(user) => (
-                    <option value={user.id}>
+                    <option value={user.id} data-chat-name-role={user.role}>
                       {user.full_name} · {user.role === "teacher" ? "Учитель" : "Ученик"} · №{user.id}
                     </option>
                   )}

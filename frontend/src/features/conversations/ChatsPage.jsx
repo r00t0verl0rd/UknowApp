@@ -103,6 +103,10 @@ export default function ChatsPage(options) {
       return () => window.clearTimeout(timeout);
     },
   );
+  function titleRole(chat) {
+    if (chat.type === "personal") return options.profile?.role === "admin" ? chat.participant?.role : "admin";
+    return options.profile?.role === "student" ? "teacher" : "student";
+  }
   const unreadPersonalCount = () =>
     options.personalChats.reduce((total, chat) => total + (Number(chat.unread_count) || 0), 0);
   return (
@@ -249,7 +253,7 @@ export default function ChatsPage(options) {
                         </>
                       ) : (
                         <>
-                          <b>{title()}</b>
+                          <b><span data-chat-name-role={titleRole(chat)}>{title()}</span></b>
                           {secondary() && <small>{secondary()}</small>}
                         </>
                       )}
@@ -298,7 +302,7 @@ export default function ChatsPage(options) {
                 <span>Диалоги</span>
               </button>
               <div class="chat-head-person">
-                <b>
+                <b data-chat-name-role={titleRole(options.selectedChat)}>
                   {options.selectedChat.type === "personal"
                     ? options.selectedChat.title
                     : options.profile?.role === "student"
@@ -306,7 +310,7 @@ export default function ChatsPage(options) {
                       : options.selectedChat.student.full_name}
                 </b>
                 {options.selectedChat.type !== "personal" && options.profile?.role === "admin" && (
-                  <small>{options.selectedChat.teacher.full_name}</small>
+                  <small data-chat-name-role="teacher">{options.selectedChat.teacher.full_name}</small>
                 )}
                 {options.selectedChat.type !== "personal" && options.profile?.role === "student" && (
                   <small>Ваш учитель</small>

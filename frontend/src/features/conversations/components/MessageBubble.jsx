@@ -160,11 +160,11 @@ function MessageBubble(options) {
       video_sticker: "Видео-стикер",
       animation: "Анимация",
     })[sourceKind()] || "Вложение";
-  const deliveryDetails = () => getDeliveryDetails(options.message.metadata);
+  const deliveryDetails = () => getDeliveryDetails(options.message.metadata, true);
   return (
     <div class={"message " + options.message.sender_role} data-view-anchor={"message:" + options.message.id}>
       <div class="message-topline">
-        <b>{options.message.sender}</b>
+        <b data-chat-name-role={options.message.sender_role}>{options.message.sender}</b>
         <div class="message-tools">
           <time class="message-time">{formatMessageTime(options.message.created_at, options.nowMs)}</time>
           {options.message.sender_role === options.viewerRole &&
@@ -269,7 +269,7 @@ function MessageBubble(options) {
           <ul>
             {deliveryDetails().map((detail) => (
               <li class={detail.delivered ? "is-delivered" : ""}>
-                <strong>{detail.title}</strong>
+                <strong>{detail.namedRecipient ? <>{detail.channel} · <b data-chat-name-role={detail.role}>{detail.namedRecipient}</b></> : detail.title}</strong>
                 <span>{detail.description}</span>
               </li>
             ))}

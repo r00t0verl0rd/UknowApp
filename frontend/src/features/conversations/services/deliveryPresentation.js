@@ -22,7 +22,7 @@ function friendlyReason(error, channel) {
   }
   return `Копию в ${channel} пока не удалось отправить.`;
 }
-export function getDeliveryDetails(metadata) {
+export function getDeliveryDetails(metadata, includeRecipient = false) {
   if (!metadata || typeof metadata !== "object") return [];
   const details = [];
   const deliveries = metadata.messenger_deliveries || {};
@@ -41,6 +41,7 @@ export function getDeliveryDetails(metadata) {
     for (const error of errors) {
       details.push({
         title: `${channel} · ${recipient(error)}`,
+        ...(includeRecipient && error?.name ? { namedRecipient: recipient(error), role: error.role, channel: channel } : {}),
         description: friendlyReason(error, channel),
         delivered: false,
       });
@@ -66,6 +67,7 @@ export function getDeliveryDetails(metadata) {
     for (const error of errors) {
       details.push({
         title: `Telegram · ${recipient(error)}`,
+        ...(includeRecipient && error?.name ? { namedRecipient: recipient(error), role: error.role, channel: "Telegram" } : {}),
         description: friendlyReason(error, "Telegram"),
         delivered: false,
       });
