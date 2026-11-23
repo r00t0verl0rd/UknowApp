@@ -1,7 +1,7 @@
 @use "../core/primitives";
 .content > .workspace-content:has(> .chat-list) {
   display:grid;
-  grid-template-columns:minmax(300px, min(30%, 390px)) minmax(0, 1fr);
+  grid-template-columns:minmax(290px, min(29%, 370px)) minmax(0, 1fr);
   grid-template-rows:minmax(min-content, 1fr);
   gap:var(--workspace-gutter);
 }
@@ -11,8 +11,8 @@
     min-width:0;
   }
   > .chat-list {
-    gap:10px;
-    padding:12px;
+    gap:12px;
+    padding:16px;
   }
   > .chat-detail {
     align-self:start;
@@ -63,7 +63,7 @@
   justify-content:space-between;
   gap:12px;
   min-width:0;
-  padding:2px 2px 10px;
+  padding:6px 4px 15px;
   border:0;
   border-bottom:1px solid var(--ui-border);
   border-radius:0;
@@ -74,14 +74,14 @@
   display:flex;
   flex:1 1 auto;
   flex-direction:column;
-  gap:4px;
+  gap:3px;
   min-width:0;
   b,
   small {
     @include primitives.truncate;
   }
   b {
-    font-size:14px;
+    font-size:15px;
   }
   small {
     margin:0;
@@ -99,8 +99,9 @@
     width:auto;
     min-width:145px;
     max-width:190px;
-    min-height:36px;
-    padding:7px 10px;
+    height:38px;
+    min-height:38px;
+    padding:7px 12px;
     border:1px solid var(--ui-border);
     border-radius:8px;
     background:var(--canvas);
@@ -120,14 +121,14 @@
   flex:1 0 auto;
   flex-direction:column;
   align-items:flex-start;
-  gap:9px;
-  padding:12px 4px;
+  gap:12px;
+  padding:16px 6px;
   background:transparent;
 }
 .message {
   width:fit-content;
-  max-width:min(92%, 760px);
-  min-width:min(204px, 88%);
+  max-width:min(86%, 720px);
+  min-width:min(182px, 88%);
   padding:11px 14px 12px;
   border:1px solid var(--ui-border);
   border-radius:16px;
@@ -275,7 +276,7 @@
   opacity:1;
 }
 .message > p {
-  margin:6px 0 0;
+  margin:4px 0 0;
   color:var(--ink);
   font-size:15px;
   font-weight:400;
@@ -496,12 +497,12 @@
   display:grid;
   flex:0 0 auto;
   grid-template-columns:minmax(0, 1fr);
-  gap:8px;
+  gap:10px;
   min-width:0;
   margin-top:10px;
-  padding:10px;
+  padding:12px;
   border:1px solid var(--ui-border);
-  border-radius:14px;
+  border-radius:16px;
   background:var(--surface);
   box-shadow:var(--ui-shadow-soft);
 }
@@ -540,7 +541,7 @@
   @include primitives.spread;
   gap:8px;
   min-width:0;
-  min-height:42px;
+  min-height:44px;
   flex-wrap:nowrap;
 }
 .composer-tools {
@@ -555,12 +556,12 @@
 .chat-composer .attach-control {
   position:relative;
   display:inline-grid;
-  --icon-action-size: 42px;
-  flex:0 0 42px;
+  --icon-action-size: 44px;
+  flex:0 0 44px;
   place-items:center;
-  width:42px;
-  height:42px;
-  min-height:42px;
+  width:44px;
+  height:44px;
+  min-height:44px;
   padding:0;
   border:1px solid var(--button-border);
   border-radius:10px;
@@ -617,10 +618,10 @@
   align-items:center;
   justify-content:center;
   gap:7px;
-  min-width:110px;
-  min-height:42px;
-  padding:9px 13px;
-  border-radius:10px;
+  min-width:128px;
+  min-height:44px;
+  padding:10px 16px;
+  border-radius:11px;
   white-space:nowrap;
   font-size:13px;
 }
@@ -804,10 +805,10 @@
 }
 .chat-items > .chat-item {
   text-align:left;
-  min-height:54px;
-  padding:8px 9px;
+  min-height:62px;
+  padding:10px 12px;
   border:1px solid transparent;
-  border-radius:10px;
+  border-radius:12px;
   background:transparent;
   transition:
     background-color 0.14s,
@@ -849,8 +850,8 @@
     width:100%;
   }
   .chat-items > .chat-item {
-    min-height:44px;
-    padding:5px 8px;
+    min-height:54px;
+    padding:8px 10px;
   }
   .chat-detail > .chat-head {
     padding:4px;
@@ -874,7 +875,7 @@
 }
 @media (min-width: 1025px) {
   .workspace-shell .workspace-content:has(> .chat-list) {
-    grid-template-columns:minmax(300px, min(30%, 390px)) minmax(0, 1fr);
+    grid-template-columns:minmax(290px, min(29%, 370px)) minmax(0, 1fr);
   }
 }
 .workspace-shell .chat-list-filters.workspace-control-row:has(.chat-filter) {
@@ -992,5 +993,40 @@
     height:clamp(64px, 18dvh, 78px);
     min-height:64px;
     max-height:78px;
+  }
+}
+
+// The chat screen uses one spacing rhythm and a single composer outline.
+:root .workspace-shell .workspace-content > .chat-list.workspace-panel {
+  gap:12px;
+  padding:16px;
+}
+:root .workspace-shell .chat-detail .chat-composer textarea {
+  border:1px solid transparent;
+  background:transparent;
+  padding:9px 8px 4px;
+}
+:root .workspace-shell .chat-detail .chat-composer textarea:focus {
+  border-color:transparent;
+  outline:none;
+  box-shadow:none;
+}
+:root .workspace-shell .chat-detail .chat-composer .composer-footer {
+  padding-top:8px;
+  border-top:1px solid var(--ui-border);
+}
+:root .workspace-shell .chat-list.teacher-branch:hover,
+:root .workspace-shell .chat-detail.teacher-branch:hover {
+  transform:none;
+  background:var(--surface);
+  border-color:var(--ui-border);
+  box-shadow:none;
+}
+@media (max-width: 1024px) {
+  :root .workspace-shell .workspace-content > .chat-list.workspace-panel {
+    padding:12px;
+  }
+  :root .workspace-shell .chat-detail .chat-composer .composer-footer {
+    padding-top:6px;
   }
 }
