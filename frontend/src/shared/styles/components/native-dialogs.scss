@@ -214,13 +214,36 @@
     --icon-action-size: 44px;
   }
 }
-:root dialog.native-dialog.native-feedback-success[open] {
+/* Non-modal notices are centered and stay clear of Safari's bottom controls. */
+:root dialog.native-dialog:is(.native-feedback-success, .native-feedback-info)[open] {
   position:fixed;
-  inset:auto 16px max(18px, env(safe-area-inset-bottom, 0px)) auto;
+  inset:auto auto max(18px, env(safe-area-inset-bottom, 0px)) 50%;
   z-index:1400;
-  width:min(390px, calc(100vw - 32px));
+  box-sizing:border-box;
+  width:min(410px, calc(100vw - 32px));
+  max-width:calc(100vw - 32px);
   margin:0;
+  padding:14px 16px;
+  transform:translateX(-50%);
+  border:1px solid var(--ui-border);
+  border-radius:var(--ui-radius-lg);
+  background:var(--surface);
+  color:var(--ink);
   box-shadow:var(--ui-shadow-raised);
+}
+:root dialog.native-dialog.native-feedback-dialog[open]:focus,
+:root dialog.native-dialog.native-feedback-dialog[open]:focus-visible {
+  outline:none;
+}
+/* Mobile Safari's floating URL toolbar overlaps the bottom of a browser tab. */
+@media (max-width: 1024px) and (display-mode: browser) {
+  :root dialog.native-dialog:is(.native-feedback-success, .native-feedback-info)[open] {
+    bottom:max(94px, calc(env(safe-area-inset-bottom, 0px) + 24px));
+  }
+}
+:root dialog.native-dialog.native-feedback-info .native-feedback-content > svg,
+:root dialog.native-dialog.native-feedback-info .native-feedback-copy h2 {
+  color:var(--purple);
 }
 :root dialog.native-dialog.native-feedback-success .native-feedback-content > svg {
   color:var(--success);
@@ -251,9 +274,10 @@
     }
   }
 }
-:root dialog.native-dialog.modal[open] > dialog.native-dialog.native-feedback-success[open] {
+:root dialog.native-dialog.modal[open] > dialog.native-dialog:is(.native-feedback-success, .native-feedback-info)[open] {
   position:sticky;
   inset:auto;
+  transform:none;
   align-self:stretch;
   width:100%;
   max-width:100%;

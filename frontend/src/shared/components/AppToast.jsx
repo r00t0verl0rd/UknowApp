@@ -1,6 +1,6 @@
 import { Portal } from "@solidjs/web";
 import { createUniqueId, createEffect } from "solid-js";
-import { IconCircleAlert as CircleAlert, IconX as X, IconCheck as Check } from "./Icons.jsx";
+import { IconCircleAlert as CircleAlert, IconInfo as Info, IconX as X, IconCheck as Check } from "./Icons.jsx";
 import IconButton from "./IconButton.jsx";
 
 // Ошибки открываются через showModal(), подтверждения — через show() без
@@ -9,8 +9,9 @@ export default function AppToast(options) {
   let dialogRef = null;
   const headingId = createUniqueId();
   const isError = () => Boolean(options.onDismiss);
+  const isInfo = () => !isError() && options.kind === "info";
   createEffect(
-    () => [options.message, isError()],
+    () => [options.message, isError(), isInfo()],
     () => {
       const dialog = dialogRef;
       if (!options.message || !dialog) return undefined;
@@ -39,10 +40,11 @@ export default function AppToast(options) {
             "modal",
             "native-dialog",
             "native-feedback-dialog",
-            isError() ? "native-feedback-error" : "native-feedback-success",
+            isError() ? "native-feedback-error" : isInfo() ? "native-feedback-info" : "native-feedback-success",
           ].join(" ")}
-          role={isError() ? "alertdialog" : "dialog"}
+          role={isError() ? "alertdialog" : "status"}
           aria-modal={isError() ? "true" : undefined}
+          tabIndex={-1}
           aria-labelledby={headingId}
           aria-live={isError() ? "assertive" : "polite"}
           onCancel={(event) => {
@@ -53,11 +55,13 @@ export default function AppToast(options) {
           <div class="native-feedback-content">
             {isError() ? (
               <CircleAlert size={21} aria-hidden="true" />
+            ) : isInfo() ? (
+              <Info size={20} aria-hidden="true" />
             ) : (
               <Check size={20} aria-hidden="true" />
             )}
             <div class="native-feedback-copy">
-              <h2 id={headingId}>{isError() ? "Не получилось" : "Готово"}</h2>
+              <h2 id={headingId}>{isError() ? "Не получилось" : isInfo() ? "Уведомления" : "Готово"}</h2>
               <p class="toast-message">{options.message}</p>
             </div>
             {isError() && (

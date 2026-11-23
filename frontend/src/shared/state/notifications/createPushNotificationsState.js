@@ -65,11 +65,11 @@ export function createPushNotificationsState(options) {
   const togglePushNotifications = async () => {
     if (pushBusy()) return;
     if (!pushState().supported) {
-      options.notify(pushState().reason);
+      options.notify(pushState().reason, { kind: "info" });
       return;
     }
     if (pushState().permission === "denied") {
-      options.notify("Разрешите уведомления для UknowApp в настройках браузера");
+      options.notify("Уведомления запрещены в настройках устройства. Разрешите их для UknowApp и попробуйте снова.", { kind: "info" });
       return;
     }
     setPushBusy(true);
@@ -95,7 +95,7 @@ export function createPushNotificationsState(options) {
   };
   const pushButtonTitle = () =>
     !pushState().supported
-      ? pushState().reason
+      ? "Как включить уведомления"
       : pushState().permission === "denied"
         ? "Уведомления запрещены в настройках браузера"
         : pushState().enabled

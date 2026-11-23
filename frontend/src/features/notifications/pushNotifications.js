@@ -1,22 +1,23 @@
 import { fetchApi } from "../../shared/services/api.js";
 
 function getPushSupport() {
-  if (!window.isSecureContext) {
-    return { supported: false, reason: "Push-уведомления работают только через HTTPS" };
-  }
-  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
-    return { supported: false, reason: "Этот браузер не поддерживает push-уведомления" };
-  }
-
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const standalone = window.matchMedia("(display-mode: standalone)").matches ||
     navigator.standalone === true;
+  // iOS Safari tabs do not expose the PWA's Web Push capabilities.
+  // Explain the installation requirement before checking absent APIs.
   if (isIOS && !standalone) {
     return {
       supported: false,
-      reason: "На iPhone и iPad добавьте UknowApp на экран «Домой», затем откройте приложение оттуда",
+      reason: "На iPhone уведомления работают в UknowApp, открытом с экрана «Домой». Если значка ещё нет, в Safari нажмите «Поделиться» → «На экран Домой». Затем откройте приложение с иконки и включите уведомления.",
     };
+  }
+  if (!window.isSecureContext) {
+    return { supported: false, reason: "Для уведомлений нужно открыть UknowApp по защищённому адресу HTTPS." };
+  }
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    return { supported: false, reason: "Этот браузер не поддерживает push. Попробуйте открыть UknowApp в другом браузере." };
   }
   return { supported: true, reason: "" };
 }

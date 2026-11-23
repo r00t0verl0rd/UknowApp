@@ -2000,6 +2000,51 @@ test("global SSE updates real counters across tabs and replays missed events", {
         }
       }
     }
+    // Nonmodal feedback is centered and uses the active theme without a blue focus ring.
+    for (const width of [390, 760, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ["light", "dark-soft"]) {
+        const notice = await page.evaluate(currentTheme => {
+          const root = document.documentElement;
+          const previous = root.dataset.theme;
+          root.dataset.theme = currentTheme;
+          const dialog = document.createElement("dialog");
+          dialog.className = "modal native-dialog native-feedback-dialog native-feedback-info";
+          dialog.tabIndex = -1;
+          dialog.innerHTML = '<div class="native-feedback-content"><div class="native-feedback-copy"><h2>Уведомления</h2><p class="toast-message">Откройте приложение с экрана «Домой»</p></div></div>';
+          document.body.append(dialog);
+          try {
+            dialog.show();
+            dialog.focus();
+            const bounds = dialog.getBoundingClientRect();
+            const style = getComputedStyle(dialog);
+            return {
+              centerX: bounds.left + bounds.width / 2,
+              viewCenterX: window.innerWidth / 2,
+              width: bounds.width,
+              border: style.borderTopWidth,
+              radius: style.borderTopLeftRadius,
+              outline: style.outlineStyle,
+              background: style.backgroundColor,
+              text: dialog.querySelector(".toast-message").textContent,
+            };
+          } finally {
+            dialog.close();
+            dialog.remove();
+            root.dataset.theme = previous;
+          }
+        }, theme);
+        assert.ok(Math.abs(notice.centerX - notice.viewCenterX) < 2,
+          `${width}px ${theme}: informational toast horizontally centered`);
+        assert.ok(notice.width <= width - 24, `${width}px: toast fits screen`);
+        assert.equal(notice.border, "1px", `${width}px: toast has subtle border`);
+        assert.equal(notice.outline, "none", `${width}px: no native blue focus ring`);
+        assert.ok(notice.background !== "rgba(0, 0, 0, 0)");
+        assert.match(notice.text, /экрана «Домой»/);
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
+
     // Назначение ученика — обычное действие, включённые уведомления имеют цвет выбора.
     for (const width of [390, 760, 1024, 1280]) {
       await page.setViewportSize({ width, height: 800 });

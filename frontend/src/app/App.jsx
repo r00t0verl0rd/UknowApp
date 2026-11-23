@@ -29,9 +29,10 @@ export default function App() {
     if (message) setErrors((current) => (current.includes(message) ? current : [...current, message]));
   };
   const dismissError = () => setErrors((current) => current.slice(1));
-  const notify = (message) =>
+  const notify = (message, settings = {}) =>
     setNotice({
       message,
+      kind: settings.kind === "info" ? "info" : "success",
     });
   createEffect(
     () => [notice()],
@@ -46,6 +47,7 @@ export default function App() {
       <Application setError={setError} notify={notify} />
       <AppToast
         message={errors()[0] || notice()?.message}
+        kind={errors().length ? "error" : notice()?.kind}
         onDismiss={errors().length ? dismissError : undefined}
       />
     </>

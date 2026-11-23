@@ -62,3 +62,35 @@ test("push click never opens a different origin", async () => {
   const actions = await createWorker().click("//other.example/phishing");
   assert.deepEqual(actions[1], ["navigate", "https://uknowschool.ru/"]);
 });
+
+test("iPhone Safari explains Home Screen installation before missing push APIs", () => {
+  const source = readFileSync(new URL("../src/features/notifications/pushNotifications.js", import.meta.url), "utf8");
+  const supportSource = source.slice(source.indexOf("function getPushSupport()"), source.indexOf("function decodeApplicationServerKey"));
+  const mobile = {
+    isSecureContext: true,
+    matchMedia: () => ({ matches: false }),
+  };
+  const ios = {
+    userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)",
+    standalone: false,
+    platform: "iPhone",
+    maxTouchPoints: 5,
+  };
+  const safari = runInNewContext(supportSource + "\ngetPushSupport()", { window: mobile, navigator: ios });
+  assert.equal(safari.supported, false);
+  assert.match(safari.reason, /«На экран Домой»/);
+  assert.doesNotMatch(safari.reason, /не поддерживает push/);
+
+  const installed = runInNewContext(supportSource + "\ngetPushSupport()", {
+    window: { isSecureContext: true, matchMedia: () => ({ matches: true }), PushManager: function () {}, Notification: function () {} },
+    navigator: { ...ios, standalone: true, serviceWorker: {} },
+  });
+  assert.equal(installed.supported, true);
+});
+test("unsupported push uses informational feedback, not a success toast", () => {
+  const state = readFileSync(new URL("../src/shared/state/notifications/createPushNotificationsState.js", import.meta.url), "utf8");
+  const toast = readFileSync(new URL("../src/shared/components/AppToast.jsx", import.meta.url), "utf8");
+  assert.match(state, /options\.notify\(pushState\(\)\.reason, \{ kind: "info" \}\)/);
+  assert.match(toast, /native-feedback-info/);
+  assert.match(toast, /isInfo\(\) \? "Уведомления" : "Готово"/);
+});
