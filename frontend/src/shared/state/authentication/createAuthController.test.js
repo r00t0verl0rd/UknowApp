@@ -48,7 +48,7 @@ test("login opens workspace immediately even if push permission is slow", async 
   let busy = false;
   const authState = {
     login: "school-admin",
-    password: "correct-password",
+    password: "correct-password", // pragma: allowlist secret - fake test-only credential
     get auth() { return auth; },
     setAuth: value => { auth = value; },
     setProfile: () => {},
