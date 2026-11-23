@@ -265,12 +265,12 @@
   pointer-events:none;
 }
 :root[data-theme="dark-soft"] .message .ui-icon-button:is(.message-delete-btn, .message-detail-btn) {
-  color:#fff;
+  color:var(--app-foreground);
   opacity:0.6;
 }
 :root[data-theme="dark-soft"] .message .ui-icon-button:is(.message-delete-btn, .message-detail-btn):hover:not(:disabled),
 :root[data-theme="dark-soft"] .message .ui-icon-button:is(.message-delete-btn, .message-detail-btn):focus-visible {
-  color:#fff;
+  color:var(--app-foreground);
   background:rgba(255, 255, 255, 0.09);
   opacity:1;
 }
