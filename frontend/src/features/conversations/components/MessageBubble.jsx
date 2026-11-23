@@ -160,7 +160,7 @@ function MessageBubble(options) {
       video_sticker: "Видео-стикер",
       animation: "Анимация",
     })[sourceKind()] || "Вложение";
-  const deliveryDetails = () => getDeliveryDetails(options.message.metadata, true);
+  const deliveryDetails = () => getDeliveryDetails(options.message.metadata, true, options.deliveryRecipients || []);
   return (
     <div class={"message " + options.message.sender_role} data-view-anchor={"message:" + options.message.id}>
       <div class="message-content">
