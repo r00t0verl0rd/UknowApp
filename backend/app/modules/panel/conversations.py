@@ -24,6 +24,7 @@ from app.models import (
     Message,
     User,
 )
+from app.modules.auth.permissions import permits
 from app.modules.communication.contracts import (
     MessengerError,
     MessengerPlatform,
@@ -32,7 +33,6 @@ from app.modules.conversations.service import (
     conversation_dicts,
     publish_conversation_update,
 )
-from app.modules.auth.permissions import permits
 from app.modules.dependencies import Db, PanelUser
 from app.modules.messaging.service import (
     _panel_message_dict,
