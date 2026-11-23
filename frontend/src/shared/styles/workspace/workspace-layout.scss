@@ -45,8 +45,9 @@
   }
 }
 @media (min-width: 1025px) {
-  .sidebar {
-    padding:18px 14px;
+  .workspace-shell > .sidebar {
+    box-sizing:border-box;
+    padding:18px 14px var(--workspace-gutter);
     width:auto;
   }
   .brand {
