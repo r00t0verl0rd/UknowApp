@@ -927,7 +927,6 @@
 :root .workspace-shell .workspace-panel .chat-list-filters.workspace-control-row {
   container-type:inline-size;
   grid-template-columns:minmax(0, 1fr) minmax(0, 1.12fr);
-  gap:6px;
   align-items:center;
 }
 :root .workspace-shell .workspace-panel .chat-list-filters.workspace-control-row:not(:has(> .chat-filter)) {
