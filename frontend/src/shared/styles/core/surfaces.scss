@@ -92,19 +92,19 @@
 }
 :root:not([data-theme="dark-soft"]) {
   & body {
-    color:#514d5a;
+    color:var(--ink);
   }
   & .topbar,
   & .sidebar,
   & .user-list {
-    border-color:#ded9e5;
+    border-color:var(--line);
   }
   & .person-info b {
-    color:#56515f;
+    color:var(--ink);
   }
   & .person-info small,
   & .toolbar,
   & .hint {
-    color:#918b9a;
+    color:var(--muted);
   }
 }

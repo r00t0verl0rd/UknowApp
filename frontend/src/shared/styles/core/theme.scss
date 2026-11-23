@@ -313,7 +313,7 @@ a:focus-visible {
 }
 :root:not([data-theme="dark-soft"]) {
   & body {
-    background:#f2eff7;
+    background:var(--app-background);
   }
   & .sidebar,
   & .topbar,
@@ -321,21 +321,21 @@ a:focus-visible {
   & .modal,
   & .login-card,
   & .credential-modal {
-    background-color:#faf8fd;
+    background-color:var(--surface);
   }
   & .search,
   & .stack input,
   & .stack select {
-    background:#fdfbff;
-    border-color:#e6deed;
+    background:var(--surface-input);
+    border-color:var(--ui-border);
   }
   & .workspace-content:has(.admin-card) .graph-legend-row > .graph-legend {
-    background:#f0eaf7;
-    border-color:#e2d8ed;
+    background:var(--lavender-soft);
+    border-color:var(--ui-border);
   }
   & .workspace-content:has(.admin-card) .empty-students {
-    background:#f4eff9;
-    border-color:#e4daef;
+    background:var(--surface-soft);
+    border-color:var(--ui-border);
   }
 }
 :root[data-theme="dark-soft"] {
