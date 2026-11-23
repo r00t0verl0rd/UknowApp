@@ -43,6 +43,14 @@ export function createChatsController(options) {
     }
     return cache.messages;
   };
+  // Отзыв доступа к личному чату удаляет и локально закэшированную историю.
+  // В SQLite ID диалога может быть переиспользован после удаления.
+  createEffect(() => {
+    const existing = new Set(options.personalState.personalChats.map(chat => "personal:" + chat.id));
+    for (const key of recentChats.keys()) {
+      if (key.startsWith("personal:") && !existing.has(key)) recentChats.delete(key);
+    }
+  });
   createEffect(
     () => [options.auth],
     () => {
