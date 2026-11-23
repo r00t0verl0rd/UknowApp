@@ -216,6 +216,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
       const teacherDialog = {
         id: 15,
         type: "assignment",
+        status: "active",
         student: { id: 27, full_name: "Тестовый ученик" },
         teacher: { id: 7, full_name: "Светлана Ивановна" },
         unread_count: 0,
