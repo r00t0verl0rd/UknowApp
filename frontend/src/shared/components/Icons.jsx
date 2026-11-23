@@ -216,6 +216,29 @@ export const IconSend = icon("send", () => (
     <path d="m21.854 2.147-10.94 10.939" />
   </>
 ));
+export const IconDownload = icon("download", () => (
+  <>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <path d="m7 10 5 5 5-5" />
+    <path d="M12 15V3" />
+  </>
+));
+export const IconUpload = icon("upload", () => (
+  <>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <path d="m17 8-5-5-5 5" />
+    <path d="M12 3v12" />
+  </>
+));
+export const IconClock3 = icon("clock-3", () => (
+  <>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 6v6h6" />
+  </>
+));
+export const IconChevronDown = icon("chevron-down", () => (
+  <path d="m6 9 6 6 6-6" />
+));
 export const IconArchive = icon("archive", () => (
   <>
     <rect width="20" height="5" x="2" y="3" rx="1" />
