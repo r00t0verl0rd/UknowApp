@@ -59,6 +59,14 @@ test("remembers current page, list filters and scroll after asynchronous reload"
       await page.waitForTimeout(140);
       await page.reload();
       await page.getByText("Ученик 090", { exact: true }).waitFor();
+      console.log("view-restore-diagnostics", JSON.stringify(await page.evaluate(expected => ({
+        viewport: expected,
+        actualContent: document.querySelector(".workspace-content")?.scrollTop,
+        actualDocument: window.scrollY,
+        availableContent: document.querySelector(".workspace-content")?.scrollHeight -
+          document.querySelector(".workspace-content")?.clientHeight,
+        stored: sessionStorage.getItem("uknowapp-view-v1:1"),
+      }), savedPosition)));
       assert.equal(await page.getByLabel("Сортировка пользователей").inputValue(), "name-desc");
       assert.equal(await page.getByLabel("Поиск по имени").inputValue(), "Ученик");
       await page.waitForFunction(
