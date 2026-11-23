@@ -1805,7 +1805,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
                 <button class="icon-btn ui-icon-button personal-chat-create ui-toolbar-icon" aria-label="Новый диалог">+</button>
               </div>
               <div class="chat-list-filters workspace-control-row">
-                <label class="search workspace-search ui-toolbar-control"><input placeholder="Поиск по имени"></label>
+                <label class="search workspace-search ui-toolbar-control"><svg width="16" height="16"></svg><input placeholder="Поиск по имени"></label>
                 <label class="chat-filter"><span class="ui-toolbar-select chat-filter-field"><select class="ui-toolbar-control ui-toolbar-select-native"><option>Все личные</option></select></span></label>
               </div>
             </section>
@@ -1822,6 +1822,19 @@ test("global SSE updates real counters across tabs and replays missed events", {
                 background: style.backgroundColor,
               };
             };
+            const filterRow = fixture.querySelector(".chat-list-filters");
+            const input = filterRow.querySelector("input");
+            const select = filterRow.querySelector("select");
+            const ctx = document.createElement("canvas").getContext("2d");
+            for (const panelWidth of [250, 300, 385, 440]) {
+              filterRow.style.width = panelWidth + "px";
+              ctx.font = getComputedStyle(input).font;
+              if (ctx.measureText(input.placeholder).width > input.clientWidth) throw Error("Clipped search placeholder");
+              ctx.font = getComputedStyle(select).font;
+              if (ctx.measureText("Непрочитанные").width + 32 > select.clientWidth) throw Error("Clipped filter");
+            }
+            if (getComputedStyle(input, "::placeholder").color !== getComputedStyle(select).color)
+              throw Error("Search and filter text colors differ");
             return {
               userSearch: measure(".user-toolbar .workspace-search"),
               userSort: measure(".user-sort"),
@@ -1847,6 +1860,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
           "chatSearch", "chatFilter", "chatTab"]) {
           assert.equal(controls[name].fontSize, "13px", `${width}px ${theme}: ${name} font size`);
         }
+        assert.equal(controls.chatSearch.background, controls.chatFilter.background);
         assert.equal(controls.userSearch.background, controls.chatSearch.background,
           `${width}px ${theme}: search backgrounds match`);
         assert.equal(controls.userSort.background, controls.chatFilter.background,

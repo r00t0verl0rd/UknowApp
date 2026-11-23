@@ -281,6 +281,15 @@ textarea::placeholder {
     background-color:var(--surface-input);
     border-color:var(--ui-border);
   }
+  .ui-toolbar-control.workspace-search > input {
+    background:transparent;
+    color:inherit;
+    padding-inline:0;
+  }
+  .ui-toolbar-control.workspace-search > input::placeholder {
+    color:var(--ink);
+    opacity:1;
+  }
   .ui-toolbar-control:is(.workspace-search, select):focus-within {
     @include primitives.field-focus;
   }

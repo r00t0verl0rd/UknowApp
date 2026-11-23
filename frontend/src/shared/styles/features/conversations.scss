@@ -103,7 +103,7 @@
     padding:7px 10px;
     border:1px solid var(--ui-border);
     border-radius:8px;
-    background:var(--canvas);
+    background:var(--surface-input);
     color:var(--ink);
     font-size:12px;
   }
@@ -915,8 +915,8 @@
     grid-template-columns:minmax(300px, min(30%, 390px)) minmax(0, 1fr);
   }
 }
-.workspace-shell .chat-list-filters.workspace-control-row:has(.chat-filter) {
-  grid-template-columns:minmax(0, 1fr) minmax(112px, 0.85fr);
+:root .workspace-shell .workspace-panel .chat-list-filters.workspace-control-row {
+  grid-template-columns:repeat(auto-fit, minmax(min(100%, 11.5rem), 1fr));
 }
 .workspace-panel.chat-list {
   .chat-filter {

@@ -105,6 +105,10 @@
     border-radius:var(--ui-radius-sm);
     font-size:16px;
   }
+  .stack select {
+    width:100%;
+    min-width:0;
+  }
   .modal-actions > :is(.btn, .ui-icon-button),
   .modal-actions.credential-actions > .btn {
     box-sizing:border-box;
