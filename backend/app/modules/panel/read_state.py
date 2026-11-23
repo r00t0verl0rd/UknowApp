@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import func, select, update
 
+from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.models import Message, PersonalMessage
 from app.modules.conversations.service import publish_conversation_update
 from app.modules.personal_chat.service import publish_personal_update
@@ -32,7 +33,7 @@ def mark_conversation_read(db, conversation, principal, after_id: int, visible_i
     for row in unread:
         metadata = json.loads(row.metadata_json or "{}")
         metadata[read_key] = read_at
-        row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+        row.metadata_json = encode_message_metadata(metadata)
     db.commit()
     publish_conversation_update(
         db, conversation, action="read", actor_role=role,

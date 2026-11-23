@@ -17,6 +17,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
+from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.infrastructure.storage.media import (
     MEDIA_DIR,
     delete_message_media,
@@ -301,7 +302,7 @@ async def send_personal_attachment(
         "local_path": relative.as_posix(),
         "archive_status": "stored",
     }
-    metadata_json = json.dumps({"media": media}, ensure_ascii=False)
+    metadata_json = encode_message_metadata({"media": media})
     row = PersonalMessage(
         conversation_id=item.id,
         sender_id=sender_id,

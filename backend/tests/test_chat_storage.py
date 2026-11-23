@@ -72,3 +72,35 @@ def test_repeated_one_character_sends(api, monkeypatch, source):
         assert db.query(model).count() == 60
         assert db.query(RealtimeEvent).count() == 1
         assert sizes[-1] - sizes[0] < 59 * 4096
+
+
+@pytest.mark.parametrize("collection", ["conversations", "personal-conversations"])
+def test_reopening_read_messages_does_not_grow_database(api, collection):
+    make_client, users, sessions = api
+    admin = make_client()
+    teacher = make_client()
+    login(admin, "test-admin", "a-long-test-password-123")
+    login(teacher, "teacher-one", "teacher-password-1")
+    if collection == "personal-conversations":
+        response = admin.post("/api/panel/personal-conversations", json={"user_id": users["teacher-one"]})
+        response.raise_for_status()
+        chat_id = response.json()["id"]
+    else:
+        with sessions() as db:
+            chat_id = create_conversation(db, users["teacher-one"], users["student-one"]).id
+    url = f"/api/panel/{collection}/{chat_id}"
+    message = admin.post(url + "/messages", json={"text": "я"})
+    message.raise_for_status()
+    message_id = message.json()["id"]
+    teacher.get(url + "/messages?limit=50").raise_for_status()
+
+    def snapshot():
+        with sessions() as db:
+            return db.scalar(text("PRAGMA page_count")), db.query(RealtimeEvent).one().id
+
+    original = snapshot()
+    for _ in range(20):
+        teacher.get(url + "/messages?limit=50").raise_for_status()
+        teacher.post(url + "/sync", json={"paged": True, "after_id": message_id,
+                                         "known_message_ids": [message_id]}).raise_for_status()
+    assert snapshot() == original

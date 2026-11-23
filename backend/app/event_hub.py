@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 _subscribers: dict[asyncio.Queue[str], tuple[asyncio.AbstractEventLoop, dict | None]] = {}
 _subscribers_lock = Lock()
 _fallback_event_ids = count(1)
+_MAX_REPLAY_PAYLOAD_BYTES = 4096
 _QUEUE_SIZE = 128
 
 
@@ -88,10 +89,17 @@ def _persist_event(db: Session, conversation_id: int, conversation_type: str, pa
     if db.get_bind().dialect.name == "postgresql":
         db.execute(text("LOCK TABLE realtime_events IN SHARE ROW EXCLUSIVE MODE"))
     db.execute(delete(RealtimeEvent))
+    # Live subscribers still receive the precise delta. A reconnect can
+    # reload current state without persisting an arbitrarily large ID list.
+    recovery = {"audience": payload.get("audience"), "resync": True}
+    stored = recovery if len(payload.get("message_ids") or []) > 512 else payload
+    encoded = json.dumps(stored, ensure_ascii=False, separators=(",", ":"))
+    if len(encoded.encode("utf-8")) > _MAX_REPLAY_PAYLOAD_BYTES:
+        encoded = json.dumps(recovery, separators=(",", ":"))
     event = RealtimeEvent(
         conversation_id=int(conversation_id),
         conversation_type=conversation_type,
-        payload_json=json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+        payload_json=encoded,
         created_at=datetime.now(UTC),
     )
     db.add(event)

@@ -1,6 +1,5 @@
 """Отправка сообщений и вложений из веб-панели."""
 
-import json
 import logging
 from typing import Annotated
 
@@ -16,6 +15,7 @@ from fastapi import (
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 
+from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.infrastructure.storage.media import (
     delete_message_media,
 )
@@ -154,10 +154,9 @@ async def send_panel_message(
         sender_role=principal["role"],
         content_type="text",
         text=body,
-        metadata_json=json.dumps({
+        metadata_json=encode_message_metadata({
             "source_mode": "web",
-            "web_sender_role": principal["role"],
-        }, ensure_ascii=False),
+        }),
         client_message_id=client_message_id,
         delivery_status="delivered",
     )
@@ -216,17 +215,16 @@ async def send_panel_attachment(
         sender_role=principal["role"],
         content_type=kind,
         text=(text or "").strip(),
-        metadata_json=json.dumps({
+        metadata_json=encode_message_metadata({
             "source_mode": "web",
-            "web_sender_role": principal["role"],
             "media": media,
-        }, ensure_ascii=False),
+        }),
         client_message_id=client_message_id,
         delivery_status="delivered",
     )
     existing = _commit_message(
         db, row, principal, conversation, sender, client_message_id,
-        on_conflict=lambda: delete_message_media(json.dumps({"media": media}, ensure_ascii=False)),
+        on_conflict=lambda: delete_message_media(encode_message_metadata({"media": media})),
     )
     if existing:
         return _message_response(existing, principal)

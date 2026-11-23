@@ -14,6 +14,7 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
 from aiogram.types import FSInputFile
 
+from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.infrastructure.storage.media import (
     ATTACHMENT_SIZE_ERROR,
     MAX_ATTACHMENT_BYTES,
@@ -310,7 +311,7 @@ class TelegramAdapter:
                 row.id, type(exc).__name__,
             )
             media["archive_status"] = "download_failed"
-        row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+        row.metadata_json = encode_message_metadata(metadata)
 
     def _media_path(self, message: OutboundMessage) -> Path:
         if message.media is None:

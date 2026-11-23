@@ -14,6 +14,7 @@ from sqlalchemy import select, tuple_
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.models import (
     Assignment,
     Conversation,
@@ -128,8 +129,6 @@ def persist_message(
 ) -> tuple[Message, bool]:
     body = safe_text if safe_text is not None else (inbound.text or inbound.caption)
     metadata = message_metadata(inbound)
-    if sender.role == "student":
-        metadata["teacher_read_at"] = None
     try:
         source_message_id = int(inbound.external_message_id)
     except (TypeError, ValueError):
@@ -140,7 +139,7 @@ def persist_message(
         sender_role=sender.role,
         content_type=inbound.content_type.value,
         text=body[:12000],
-        metadata_json=json.dumps(metadata, ensure_ascii=False),
+        metadata_json=encode_message_metadata(metadata),
         delivery_status=status,
         source_message_id=source_message_id,
         source_platform=inbound.platform.value,
@@ -248,7 +247,7 @@ def mark_messages_read_by_teacher(db: Session, messages: list[Message]) -> None:
         metadata = json.loads(row.metadata_json or "{}")
         if metadata.get("teacher_read_at") is None:
             metadata["teacher_read_at"] = now
-            row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+            row.metadata_json = encode_message_metadata(metadata)
             changed_by_conversation.setdefault(row.conversation_id, []).append(row.id)
     if not changed_by_conversation:
         return
@@ -544,7 +543,7 @@ async def _deliver_student_message_to_teacher(
                 "external_chat_id": teacher_chat_id,
             }],
         )
-        row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+        row.metadata_json = encode_message_metadata(metadata)
 
     # Текст обновляется в панели, отдельно копируем только вложения.
     row.delivery_status = "delivered"
@@ -606,7 +605,7 @@ async def _deliver_teacher_reply(
             "external_thread_id": destination_thread_id,
         }],
     )
-    row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+    row.metadata_json = encode_message_metadata(metadata)
     row.delivery_status = "delivered"
     db.commit()
     publish_conversation_update(
@@ -776,7 +775,7 @@ async def process_inbound_message(
     except ValueError:
         metadata["source_chat_id"] = inbound.external_chat_id
         metadata["source_thread_id"] = inbound.external_thread_id if group_binding else None
-    row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+    row.metadata_json = encode_message_metadata(metadata)
     db.commit()
     await gateway.archive_media(inbound, row)
     if inbound.media:
@@ -804,7 +803,7 @@ async def process_inbound_message(
             }],
             status="not_connected",
         )
-        row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+        row.metadata_json = encode_message_metadata(metadata)
         # Если адресат не подключён, сообщение остаётся доступным в UknowApp.
         row.delivery_status = "delivered"
         db.commit()
@@ -843,7 +842,7 @@ async def process_inbound_message(
             }],
             status="failed",
         )
-        row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+        row.metadata_json = encode_message_metadata(metadata)
         # Ошибка внешней отправки не отменяет запись сообщения.
         row.delivery_status = "delivered"
         db.commit()

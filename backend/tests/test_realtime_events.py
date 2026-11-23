@@ -73,3 +73,19 @@ def test_revoked_assignment_redacts_queued_event(api):
         assert visible_payload(db, teacher, payload) == payload
         unassign_student(student_id, db)
         assert json.loads(visible_payload(db, teacher, payload)) == {"resync": True}
+
+
+def test_bulk_read_stores_only_a_scoped_recovery_signal(api):
+    from app.event_hub import publish_chat_update
+
+    _, users, sessions = api
+    audience = {"teacher_id": users["teacher-one"]}
+    teacher = {"role": "teacher", "user_id": users["teacher-one"]}
+    with sessions() as db:
+        publish_chat_update(1, audience=audience, db=db)
+        cursor = db.query(RealtimeEvent).one().id
+        publish_chat_update(1, audience=audience, db=db, action="read", message_ids=list(range(1, 10001)))
+        event = db.query(RealtimeEvent).one()
+        assert len(event.payload_json.encode()) < 100
+        assert json.loads(replay_chat_updates(db, teacher, cursor)[0][1]) == {"event_id": event.id, "resync": True}
+        assert replay_chat_updates(db, {"role": "teacher", "user_id": users["teacher-two"]}, cursor) == []

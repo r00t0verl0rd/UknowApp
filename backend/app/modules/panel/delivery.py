@@ -17,6 +17,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
+from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.core.database import SessionLocal
 from app.infrastructure.storage.media import (
     ATTACHMENT_SIZE_ERROR,
@@ -204,7 +205,7 @@ def save_panel_messenger_results(
             errors=result.get("errors", []),
             status=result.get("status"),
         )
-    row.metadata_json = json.dumps(metadata, ensure_ascii=False)
+    row.metadata_json = encode_message_metadata(metadata)
     # Статус сообщения отражает хранение в UknowApp, не внешнюю доставку.
     row.delivery_status = "delivered"
     db.commit()

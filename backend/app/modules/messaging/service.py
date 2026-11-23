@@ -54,6 +54,10 @@ def _panel_message_dict(
 ) -> dict:
     # Внутренние Telegram ID и file_id не раскрываем учителю в обычном ответе API.
     metadata = json.loads(item.metadata_json or "{}")
+    if metadata.get("source_mode") == "web":
+        metadata.setdefault("web_sender_role", item.sender_role)
+    if item.source_platform and item.sender_role == "student":
+        metadata.setdefault("teacher_read_at", None)
     if item.client_message_id:
         metadata["client_message_id"] = item.client_message_id
     if expose_internal_metadata and item.source_platform:
