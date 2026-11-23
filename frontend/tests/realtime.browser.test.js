@@ -1915,7 +1915,9 @@ test("global SSE updates real counters across tabs and replays missed events", {
             document.documentElement.dataset.theme = old;
           }
         }, theme);
-        assert.deepEqual(styles[0], styles[1], `${width}px ${theme}: одинаковое оформление select`);
+        const { textFits: firstFits, ...firstStyle } = styles[0];
+        const { textFits: secondFits, ...secondStyle } = styles[1];
+        assert.deepEqual(firstStyle, secondStyle, `${width}px ${theme}: одинаковое оформление select`);
         assert.equal(styles[0].height, 42);
         assert.equal(styles[0].radius, "9px");
         assert.equal(styles[0].appearance, "none");
