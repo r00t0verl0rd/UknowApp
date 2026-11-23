@@ -97,8 +97,11 @@
 }
 
 // The sender role selects the palette in every workspace and dialog.
-@each $role in teacher, student, admin {
+@each $role in teacher, student {
   :root[data-theme] [data-chat-name-role="#{$role}"] {
     color:var(--role-#{$role});
   }
+}
+:root[data-theme] [data-chat-name-role="admin"] {
+  color:var(--role-admin);
 }

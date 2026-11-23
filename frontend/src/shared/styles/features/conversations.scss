@@ -942,7 +942,6 @@
     grid-template-columns:repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
     align-items:stretch;
     --workspace-control-padding:9px;
-    --workspace-control-font-size:12px;
   }
   :root .workspace-shell .workspace-panel.chat-list .chat-list-filters > :is(.search, .chat-filter) {
     min-width:0;
