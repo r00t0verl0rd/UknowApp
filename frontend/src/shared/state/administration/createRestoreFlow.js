@@ -64,7 +64,8 @@ export function createRestoreFlow(options) {
     () => [flow()?.id, flow()?.phase, options.auth],
     () => {
       const current = flow();
-      if (current?.phase === "login" && options.auth) {
+      if (current?.phase === "login" && options.auth &&
+          localStorage.getItem("uknowapp-auth") === "1") {
         persist({ ...current, phase: "waiting", startedAt: Date.now() });
         return undefined;
       }
@@ -105,11 +106,11 @@ export function createRestoreFlow(options) {
   const confirmRelogin = () => {
     const current = flow();
     if (current?.phase !== "reauth") return;
-    persist({ ...current, phase: "login" });
-    // This session is already invalid server-side. Only end the browser session
-    // after the user explicitly agrees, and keep the restore marker for re-login.
+    // Clear browser auth before entering the login phase: the in-memory auth
+    // signal is still true until navigation, but must not restart polling.
     localStorage.removeItem("uknowapp-auth");
     sessionStorage.removeItem("uknowapp-auth");
+    persist({ ...current, phase: "login" });
     window.location.assign("/");
   };
   const retry = () => {
