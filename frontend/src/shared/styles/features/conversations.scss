@@ -262,15 +262,16 @@
 // Одинаковые спокойные иконки для мобильной и десктопной версии.
 // Селектор перекрывает общие цветные стили IconButton, включая touch-режим.
 :root .message .ui-icon-button:is(.message-delete-btn, .message-detail-btn) {
-  --icon-action-size:40px;
+  --icon-action-size:var(--message-action-height, 28px);
   display:inline-grid;
   place-items:center;
   flex:none;
   width:var(--icon-action-size);
   min-width:var(--icon-action-size);
   max-width:var(--icon-action-size);
-  height:var(--message-action-height);
-  min-height:var(--message-action-height);
+  height:var(--icon-action-size);
+  min-height:var(--icon-action-size);
+  aspect-ratio:1;
   padding:0;
   margin:0;
   border:0;

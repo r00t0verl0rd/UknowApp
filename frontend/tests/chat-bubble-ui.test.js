@@ -40,7 +40,8 @@ test("sender name is always visible for all conversation participants", () => {
 test("chat header actions align and remain clickable on touch and desktop", () => {
   assert.match(styles, /\.message-topline \{[^}]*display:grid;[^}]*grid-template-columns:minmax\(0, 1fr\) auto;/s);
   assert.match(styles, /\.message-tools \{[^}]*align-items:center;/s);
-  assert.match(styles, /--icon-action-size:40px/);
+  assert.match(styles, /--icon-action-size:var\(--message-action-height, 28px\)/);
+  assert.match(styles, /height:var\(--icon-action-size\);\s*min-height:var\(--icon-action-size\);\s*aspect-ratio:1;/);
   assert.match(styles, /touch-action:manipulation/);
   assert.match(bubble, /class="message-detail-btn"[\s\S]*?popovertarget=\{deliveryPopoverId\}/);
   assert.match(bubble, /class="message-delete-btn"[\s\S]*?onClick=\{\(\) => options\.onDelete\?\.\(options\.message\)\}/);
