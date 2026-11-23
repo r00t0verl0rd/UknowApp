@@ -9,10 +9,23 @@ try {
   const page = await browser.newPage();
   const api = page.context().request;
   async function login() {
-    const result = await api.post(url + "/api/auth/login", {
-      data: { username: "migration-admin", password: process.env.ADMIN_PASSWORD },
-    });
-    assert.equal(result.status(), 200);
+    // После восстановления backend перезапускается: прокси может временно отвечать 502.
+    let result;
+    for (let attempt = 0; attempt < 60; attempt++) {
+      try {
+        result = await api.post(url + "/api/auth/login", {
+          data: { username: "migration-admin", password: process.env.ADMIN_PASSWORD },
+        });
+        if (result.status() === 200) break;
+        if (![502, 503, 504].includes(result.status())) {
+          assert.equal(result.status(), 200);
+        }
+      } catch (error) {
+        if (attempt === 59) throw error;
+      }
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    assert.equal(result?.status(), 200);
     await page.goto(url + "/additional");
     await page.evaluate(() => localStorage.setItem("uknowapp-auth", "1"));
     await page.reload();
