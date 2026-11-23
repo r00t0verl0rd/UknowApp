@@ -1939,6 +1939,11 @@ test("global SSE updates real counters across tabs and replays missed events", {
             width: bounds.width,
             actionHeights: actions.map(button => Math.round(button.getBoundingClientRect().height)),
             refreshHeight: Math.round(refresh.getBoundingClientRect().height),
+            refreshOffset: Math.abs(
+              refresh.getBoundingClientRect().top + refresh.getBoundingClientRect().height / 2 -
+              refresh.parentElement.getBoundingClientRect().top -
+              refresh.parentElement.getBoundingClientRect().height / 2
+            ),
             rightInset: Math.round(bounds.right - last.right),
           };
         } finally {
@@ -1951,8 +1956,10 @@ test("global SSE updates real counters across tabs and replays missed events", {
       assert.ok(dialogGeometry.width <= width - 16, `${width}px: dialog fits screen`);
       assert.deepEqual(dialogGeometry.actionHeights, [44, 44],
         `${width}px: save and delete stay compact and equally tall`);
-      assert.equal(dialogGeometry.refreshHeight, 44,
-        `${width}px: new access code button matches action heights`);
+      assert.equal(dialogGeometry.refreshHeight, 36,
+        `${width}px: new access code button fits inside its 44px row`);
+      assert.ok(dialogGeometry.refreshOffset < 2,
+        `${width}px: new access code button is vertically centered`);
       assert.ok(dialogGeometry.rightInset >= 10 && dialogGeometry.rightInset <= 35,
         `${width}px: buttons are aligned to the right`);
     }
