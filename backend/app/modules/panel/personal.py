@@ -116,31 +116,32 @@ def delete_personal_conversation(conversation_id: int, principal: PanelUser, db:
 
     # После успешного коммита удаляем как зарегистрированные вложения, так и
     # оставшиеся файлы каталога чата (например, после неудачной загрузки).
-    for metadata_json in media_metadata:
-        delete_message_media(metadata_json)
-    media_root = MEDIA_DIR.resolve()
-    chat_media_dir = media_root / "personal" / str(conversation_id)
-    if chat_media_dir.is_symlink():
-        chat_media_dir.unlink()
-    elif chat_media_dir.is_dir():
-        if media_root not in chat_media_dir.resolve().parents:
-            logger.error("Unsafe personal chat media directory: conversation_id=%s", conversation_id)
-            raise HTTPException(status_code=500, detail="Не удалось безопасно очистить медиафайлы")
-        try:
+    # Даже если диск недоступен, все участники должны узнать об удалённом чате.
+    try:
+        for metadata_json in media_metadata:
+            delete_message_media(metadata_json)
+        media_root = MEDIA_DIR.resolve()
+        chat_media_dir = media_root / "personal" / str(conversation_id)
+        if chat_media_dir.is_symlink():
+            chat_media_dir.unlink()
+        elif chat_media_dir.is_dir():
+            if media_root not in chat_media_dir.resolve().parents:
+                logger.error("Unsafe personal chat media directory: conversation_id=%s", conversation_id)
+                raise HTTPException(status_code=500, detail="Не удалось безопасно очистить медиафайлы")
             shutil.rmtree(chat_media_dir)
-        except OSError:
-            logger.exception("Could not remove personal chat media: conversation_id=%s", conversation_id)
-            raise HTTPException(status_code=500, detail="Диалог удалён, но очистка медиафайлов не завершена") from None
-
-    # Без содержания сообщений; после удаления SSE сообщает участникам
-    # resync, так как запись больше не доступна, и список исчезает у всех.
-    publish_chat_update(
-        conversation_id,
-        conversation_type="personal",
-        action="delete_conversation",
-        audience={"participant_id": participant_id},
-        db=db,
-    )
+    except OSError:
+        logger.exception("Could not remove personal chat media: conversation_id=%s", conversation_id)
+        raise HTTPException(status_code=500, detail="Диалог удалён, но очистка медиафайлов не завершена") from None
+    finally:
+        # После удаления запись недоступна: SSE отправит адресный resync,
+        # чтобы чат исчез у администратора и участника.
+        publish_chat_update(
+            conversation_id,
+            conversation_type="personal",
+            action="delete_conversation",
+            audience={"participant_id": participant_id},
+            db=db,
+        )
     return {"ok": True, "deleted_conversation_id": conversation_id, "deleted_messages": result.rowcount}
 
 
