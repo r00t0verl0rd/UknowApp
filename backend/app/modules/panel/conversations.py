@@ -10,7 +10,7 @@ from fastapi import (
     Request,
 )
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.infrastructure.storage.media import (
     MEDIA_DIR,
@@ -21,7 +21,6 @@ from app.models import (
     Assignment,
     Conversation,
     Message,
-    User,
 )
 from app.modules.auth.permissions import permits
 from app.modules.communication.contracts import (
@@ -49,11 +48,10 @@ def panel_conversations(principal: PanelUser, db: Db):
     statement = (
         select(Conversation)
         .options(
-            selectinload(Conversation.teacher),
-            selectinload(Conversation.student),
+            joinedload(Conversation.teacher),
+            joinedload(Conversation.student),
         )
         .join(Assignment, Conversation.assignment_id == Assignment.id)
-        .join(User, Assignment.student_id == User.id)
         .where(
             Assignment.active.is_(True),
             Conversation.status == "active",

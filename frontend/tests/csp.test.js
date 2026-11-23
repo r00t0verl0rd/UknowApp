@@ -11,11 +11,14 @@ test("critical CSS stays external and compatible with production CSP", () => {
   const builtHtml = readFileSync(path.join(frontend, "dist", "index.html"), "utf8");
   const caddy = readFileSync(path.join(frontend, "Caddyfile"), "utf8");
 
-  assert.match(html, /<link rel="stylesheet" href="\/critical\.css"/);
+  assert.match(html, /<link rel="stylesheet" href="\/src\/shared\/styles\/critical\.css"/);
   assert.doesNotMatch(html, /<style(?:\s|>)/i);
-  assert.match(builtHtml, /critical\.css/);
+  const stylesheet = builtHtml.match(/<link rel="stylesheet"[^>]+href="(\/assets\/[^"]+\.css)"/);
+  assert.ok(stylesheet, "First paint uses a fingerprinted external stylesheet");
+  const css = readFileSync(path.join(frontend, "dist", stylesheet[1]), "utf8");
+  assert.match(css, /#root/);
+  assert.match(css, /min-height:100%/);
   assert.doesNotMatch(builtHtml, /<style(?:\s|>)/i);
-  assert.ok(existsSync(path.join(frontend, "dist", "critical.css")));
   assert.match(html, /<script src="\/theme-init\.js"><\/script>/);
   assert.doesNotMatch(html, /<script>([\s\S]*?)<\/script>/);
   assert.ok(existsSync(path.join(frontend, "public", "theme-init.js")));

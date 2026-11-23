@@ -12,13 +12,16 @@ from fastapi import (
     Request,
     UploadFile,
 )
-from sqlalchemy import func, or_, select
+from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 
 from app.infrastructure.storage.media import (
     delete_message_media,
 )
-from app.infrastructure.storage.message_metadata import encode_message_metadata
+from app.infrastructure.storage.message_metadata import (
+    encode_message_metadata,
+    metadata_value,
+)
 from app.models import (
     Message,
 )
@@ -60,7 +63,7 @@ def _find_sent_message(db, principal, conversation, sender, client_message_id, *
     """Ищет уже сохранённое сообщение с тем же client_message_id (защита от повторной отправки)."""
     same_id = [Message.client_message_id == client_message_id]
     if legacy_metadata:
-        same_id.append(func.json_extract(Message.metadata_json, "$.client_message_id") == client_message_id)
+        same_id.append(metadata_value(db, Message.metadata_json, "client_message_id") == client_message_id)
     return db.scalar(
         select(Message).where(
             Message.conversation_id == conversation.id,

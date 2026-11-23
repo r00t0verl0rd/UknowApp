@@ -6,6 +6,7 @@ from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.event_hub import publish_chat_update
+from app.infrastructure.storage.message_metadata import metadata_value
 from app.models import Conversation, Message
 from app.modules.users.service import user_dict
 
@@ -36,7 +37,7 @@ def conversation_dicts(
     ).all()
     latest_by_conversation = {item.conversation_id: item for item in latest_messages}
 
-    unread_condition = _unread_condition(viewer_role)
+    unread_condition = _unread_condition(db, viewer_role)
     statistics = db.execute(
         select(
             Message.conversation_id,
@@ -96,14 +97,14 @@ def _message_preview(item: Message | None) -> str:
     return (media_name or label) + ((": " + item.text) if item.text else "")
 
 
-def _unread_condition(role: str):
+def _unread_condition(db, role: str):
     teacher_unread = and_(
         Message.sender_role.in_(("student", "admin")),
-        func.json_extract(Message.metadata_json, "$.teacher_read_at").is_(None),
+        metadata_value(db, Message.metadata_json, "teacher_read_at").is_(None),
     )
     student_unread = and_(
         Message.sender_role.in_(("teacher", "admin")),
-        func.json_extract(Message.metadata_json, "$.student_read_at").is_(None),
+        metadata_value(db, Message.metadata_json, "student_read_at").is_(None),
     )
     if role == "admin":
         return and_(Message.sender_role.in_(("teacher", "student")), or_(teacher_unread, student_unread))
@@ -115,9 +116,9 @@ def conversation_event_summaries(db: Session, conversation: Conversation) -> dic
     stats = db.execute(
         select(
             func.count(Message.id),
-            func.coalesce(func.sum(case((_unread_condition("teacher"), 1), else_=0)), 0),
-            func.coalesce(func.sum(case((_unread_condition("student"), 1), else_=0)), 0),
-            func.coalesce(func.sum(case((_unread_condition("admin"), 1), else_=0)), 0),
+            func.coalesce(func.sum(case((_unread_condition(db, "teacher"), 1), else_=0)), 0),
+            func.coalesce(func.sum(case((_unread_condition(db, "student"), 1), else_=0)), 0),
+            func.coalesce(func.sum(case((_unread_condition(db, "admin"), 1), else_=0)), 0),
         ).where(Message.conversation_id == conversation.id),
     ).one()
     last_message = db.scalar(

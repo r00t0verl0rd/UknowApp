@@ -3,9 +3,12 @@
 import json
 from datetime import UTC, datetime
 
-from sqlalchemy import func, select, update
+from sqlalchemy import select, update
 
-from app.infrastructure.storage.message_metadata import encode_message_metadata
+from app.infrastructure.storage.message_metadata import (
+    encode_message_metadata,
+    metadata_value,
+)
 from app.models import Message, PersonalMessage
 from app.modules.conversations.service import publish_conversation_update
 from app.modules.personal_chat.service import publish_personal_update
@@ -22,7 +25,7 @@ def mark_conversation_read(db, conversation, principal, after_id: int, visible_i
         select(Message).where(
             Message.conversation_id == conversation.id,
             Message.sender_role.in_(sender_roles),
-            func.json_extract(Message.metadata_json, "$." + read_key).is_(None),
+            metadata_value(db, Message.metadata_json, read_key).is_(None),
             Message.id > after_id,
             *([Message.id.in_(visible_ids)] if visible_ids is not None else []),
         ),

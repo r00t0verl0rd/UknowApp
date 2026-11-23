@@ -1,5 +1,5 @@
 import { dynamic } from "@solidjs/web";
-import { createMemo, createSignal, createEffect, Show } from "solid-js";
+import { createMemo, createSignal, createEffect, lazy, Show } from "solid-js";
 import {
   createAuthState,
   createDirectoryState,
@@ -19,8 +19,10 @@ import { createAuthController } from "../shared/state/authentication/createAuthC
 import { createPanelDataState } from "../shared/state/app/createPanelDataState.js";
 import { workspaceFor, workspaceIcons } from "../workspaces/workspaceRegistry.js";
 import WorkspaceLayout from "../workspaces/WorkspaceLayout.jsx";
-import RestoreFlowDialog from "../features/administration/RestoreFlowDialog.jsx";
+
 import { createRestoreFlow } from "../shared/state/administration/createRestoreFlow.js";
+const RestoreFlowDialog = lazy(() => import("../features/administration/RestoreFlowDialog.jsx"));
+
 export default function App() {
   createEffect(() => [], () => installViewportEnvironment());
   const [errors, setErrors] = createSignal([]);
@@ -273,7 +275,9 @@ function Application(options) {
         </WorkspaceLayout>
       </Show>
     </Show>
-    <RestoreFlowDialog flow={restoreFlow} />
+    <Show when={restoreFlow.phase && restoreFlow.phase !== "login"}>
+      <RestoreFlowDialog flow={restoreFlow} />
+    </Show>
     </>
   );
 }

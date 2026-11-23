@@ -30,3 +30,16 @@ def test_user_round_trip_with_rollback():
         session.flush()
         assert session.scalar(select(User).where(User.id == user.id)).full_name == "Database CI Test"
         session.rollback()
+
+
+def test_text_metadata_reads_match_on_both_dialects():
+    from sqlalchemy import literal
+
+    from app.infrastructure.storage.message_metadata import metadata_value
+
+    with SessionLocal() as db:
+        value = literal('{"client_message_id":"legacy-id","teacher_read_at":null}')
+        fields = ["client_message_id", "teacher_read_at", "student_read_at"]
+        assert db.execute(select(*(metadata_value(db, value, key) for key in fields))).one() == (
+            "legacy-id", None, None,
+        )

@@ -16,7 +16,7 @@ from fastapi import (
 )
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.core.database import SessionLocal
 from app.event_hub import publish_chat_update
@@ -52,7 +52,7 @@ router = APIRouter()
 @router.get("/panel/personal-conversations")
 def personal_conversations(principal: PanelUser, db: Db):
     statement = select(PersonalConversation).options(
-        selectinload(PersonalConversation.participant),
+        joinedload(PersonalConversation.participant),
     ).order_by(PersonalConversation.created_at.desc(), PersonalConversation.id.desc())
     if principal["role"] != "admin":
         statement = statement.where(PersonalConversation.participant_id == principal["user_id"])

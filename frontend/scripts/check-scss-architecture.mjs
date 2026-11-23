@@ -19,7 +19,7 @@ const walk = directory => {
 };
 walk(styles);
 
-const entrypoints = new Set(["index.scss", "critical.scss", "core/_primitives.scss"]);
+const entrypoints = new Set(["index.scss", "core/_primitives.scss"]);
 const owners = new Set(["core", "components", "features", "workspace"]);
 const sourceFiles = new Set(files.map(file => path.relative(styles, file).replaceAll(path.sep, "/")));
 const resolveUse = (file, relative) => {
