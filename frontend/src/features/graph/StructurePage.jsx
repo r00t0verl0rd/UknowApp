@@ -12,6 +12,35 @@ import EmptyState from "../../shared/components/EmptyState.jsx";
 import CountBadge from "../../shared/components/CountBadge.jsx";
 import Button from "../../shared/components/Button.jsx";
 import IconButton from "../../shared/components/IconButton.jsx";
+function StudentPerson(options) {
+  return (
+    <div class="person-main">
+      <div class="avatar student-avatar">
+        <Smile />
+      </div>
+      <div class="person-info">
+        <b>{options.student.full_name}</b>
+        {options.student.additional_info && (
+          <small class="student-additional-info">{options.student.additional_info}</small>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EditStudentButton(options) {
+  return (
+    <IconButton
+      class="graph-person-action"
+      title="Редактировать ученика"
+      aria-label={`Редактировать ученика ${options.student.full_name}`}
+      onClick={() => options.onEdit(options.student)}
+    >
+      <Pencil />
+    </IconButton>
+  );
+}
+
 export default function StructurePage(options) {
   const [collapsedTeacherIds, setCollapsedTeacherIds] = createSignal(new Set());
   return (
@@ -111,25 +140,8 @@ export default function StructurePage(options) {
                       <For each={students()}>
                         {(student) => (
                           <div class="student-card">
-                            <div class="person-main">
-                              <div class="avatar student-avatar">
-                                <Smile />
-                              </div>
-                              <div class="person-info">
-                                <b>{student.full_name}</b>
-                                {student.additional_info && (
-                                  <small class="student-additional-info">{student.additional_info}</small>
-                                )}
-                              </div>
-                            </div>
-                            <IconButton
-                              class="graph-person-action"
-                              title="Редактировать ученика"
-                              aria-label={`Редактировать ученика ${student.full_name}`}
-                              onClick={() => options.openEdit(student)}
-                            >
-                              <Pencil />
-                            </IconButton>
+                            <StudentPerson student={student} />
+                            <EditStudentButton student={student} onEdit={options.openEdit} />
                             <IconButton
                               class="graph-person-action"
                               title="Отвязать от учителя"
@@ -163,26 +175,9 @@ export default function StructurePage(options) {
               <For each={options.unassignedStudents ?? []}>
                 {(student) => (
                   <div class="student-card unassigned-student-card">
-                    <div class="person-main">
-                      <div class="avatar student-avatar">
-                        <Smile />
-                      </div>
-                      <div class="person-info">
-                        <b>{student.full_name}</b>
-                        {student.additional_info && (
-                          <small class="student-additional-info">{student.additional_info}</small>
-                        )}
-                      </div>
-                    </div>
+                    <StudentPerson student={student} />
                     <div class="unassigned-student-actions">
-                      <IconButton
-                        class="graph-person-action"
-                        title="Редактировать ученика"
-                        aria-label={`Редактировать ученика ${student.full_name}`}
-                        onClick={() => options.openEdit(student)}
-                      >
-                        <Pencil />
-                      </IconButton>
+                      <EditStudentButton student={student} onEdit={options.openEdit} />
                       <Button
                         type="button"
                         size="small"

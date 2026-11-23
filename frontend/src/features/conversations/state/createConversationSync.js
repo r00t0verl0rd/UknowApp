@@ -27,33 +27,12 @@ export function createConversationSync(options) {
         if (!summary || !active) return;
         const rowKey = conversationKey(id, type);
         options.inboxRowRevision.set(rowKey, (options.inboxRowRevision.get(rowKey) || 0) + 1);
-        if (type === "personal") {
-          options.setPersonalChats((items) =>
-            items.some((item) => Number(item.id) === Number(id))
-              ? items.map((item) =>
-                  Number(item.id) === Number(id)
-                    ? {
-                        ...item,
-                        ...summary,
-                      }
-                    : item,
-                )
-              : [summary, ...items],
-          );
-        } else {
-          options.setChats((items) =>
-            items.some((item) => Number(item.id) === Number(id))
-              ? items.map((item) =>
-                  Number(item.id) === Number(id)
-                    ? {
-                        ...item,
-                        ...summary,
-                      }
-                    : item,
-                )
-              : [summary, ...items],
-          );
-        }
+        const setList = type === "personal" ? options.setPersonalChats : options.setChats;
+        setList((items) =>
+          items.some((item) => Number(item.id) === Number(id))
+            ? items.map((item) => (Number(item.id) === Number(id) ? { ...item, ...summary } : item))
+            : [summary, ...items],
+        );
         options.setSelectedChat((previous) =>
           isSameChat(previous, id, type)
             ? {
@@ -149,6 +128,10 @@ export function createConversationSync(options) {
           throw error;
         }
       };
+      const requestRecovery = () => {
+        recoveryPending = true;
+        void recover({ refreshInbox: true }).catch(() => {});
+      };
       const flush = async () => {
         if (processing || !active) return;
         processing = true;
@@ -178,10 +161,7 @@ export function createConversationSync(options) {
           }
         } catch {
           // Курсор сдвинулся: запрашиваем сверку с сервером.
-          recoveryPending = true;
-          void recover({
-            refreshInbox: true,
-          }).catch(() => {});
+          requestRecovery();
         } finally {
           processing = false;
           if (pending.size && active) void flush();
@@ -202,22 +182,16 @@ export function createConversationSync(options) {
           lastEventId = eventId;
         }
         if (payload.resync) {
-          recoveryPending = true;
           const selectedChat = options.selectedChat;
           if (selectedChat) {
             const key = conversationKey(selectedChat.id, selectedChat.type);
             eventRevision.set(key, (eventRevision.get(key) || 0) + 1);
           }
-          void recover({
-            refreshInbox: true,
-          }).catch(() => {});
+          requestRecovery();
           return;
         }
         if (!payload.conversation_id) {
-          recoveryPending = true;
-          void recover({
-            refreshInbox: true,
-          }).catch(() => {});
+          requestRecovery();
           return;
         }
         const id = Number(payload.conversation_id);
@@ -226,10 +200,7 @@ export function createConversationSync(options) {
         eventRevision.set(key, (eventRevision.get(key) || 0) + 1);
         if (payload.summary) applySummary(type, id, payload.summary);
         else {
-          recoveryPending = true;
-          void recover({
-            refreshInbox: true,
-          }).catch(() => {});
+          requestRecovery();
         }
         const selected = options.selectedChat;
         const viewerRole = options.role;
