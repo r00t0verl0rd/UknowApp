@@ -1,6 +1,6 @@
 import { lazy, Loading, Switch, Match } from "solid-js";
 import BoardsPlaceholder from "./BoardsPlaceholder.jsx";
-import ChatsView from "./ChatsView.jsx";
+const ChatsView = lazy(() => import("./ChatsView.jsx"));
 const UsersModule = lazy(() => import("../features/users/index.js"));
 const AdministrationModule = lazy(() => import("../features/administration/index.js"));
 export default function AdminWorkspace(props) {

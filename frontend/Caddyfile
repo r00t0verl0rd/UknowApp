@@ -31,6 +31,10 @@ uknowschool.ru, www.uknowschool.ru {
     @html path / /index.html
     header @html Cache-Control "no-cache, must-revalidate"
 
+    # Production Vite assets have fingerprinted filenames and are safe to cache for one year.
+    @hashedAssets path /assets/*
+    header @hashedAssets Cache-Control "public, max-age=31536000, immutable"
+
     # Иконки должны отдаваться как файлы, без подмены HTML из SPA.
     @appIcons path /logo-main.svg /logo-touch.png /logo-192.png /logo-big.png /manifest.webmanifest
     header @appIcons Cache-Control "public, max-age=3600"
@@ -62,6 +66,12 @@ uknowschool.ru, www.uknowschool.ru {
     }
 
     handle @appIcons {
+        root * /srv
+        file_server
+    }
+
+    # Do not send SPA HTML as a substitute for a missing fingerprinted asset.
+    handle @hashedAssets {
         root * /srv
         file_server
     }

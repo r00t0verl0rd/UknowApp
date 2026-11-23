@@ -1,6 +1,6 @@
-import { For, Match, Switch } from "solid-js";
+import { For, Match, Switch, lazy } from "solid-js";
 import BoardsPlaceholder from "./BoardsPlaceholder.jsx";
-import ChatsView from "./ChatsView.jsx";
+const ChatsView = lazy(() => import("./ChatsView.jsx"));
 import CountBadge from "../shared/components/CountBadge.jsx";
 import EmptyState from "../shared/components/EmptyState.jsx";
 import { IconGraduationCap as GraduationCap, IconSmile as Smile } from "../shared/components/Icons.jsx";

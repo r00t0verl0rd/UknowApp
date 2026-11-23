@@ -26,7 +26,7 @@ export function createPushNotificationsState(options) {
       let active = true;
       getPushNotificationState()
         .then(async (state) => {
-          if (state.supported && state.permission === "granted" && !state.enabled) {
+          if (state.supported && state.permission === "granted" && !state.enabled && !pushBusy()) {
             await enablePushNotifications();
             state = await getPushNotificationState();
           }

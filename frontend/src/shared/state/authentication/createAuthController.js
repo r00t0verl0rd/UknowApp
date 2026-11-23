@@ -18,24 +18,29 @@ export function createAuthController(options) {
     try {
       await signInRequest(options.authState.login.trim(), options.authState.password);
       localStorage.setItem("uknowapp-session-change", String(Date.now()));
+      // Authentication is complete: show the workspace before the optional
+      // push permission/subscription flow, which can take several seconds.
       options.setPushBusy(true);
-      try {
-        await enablePushNotifications();
-        options.setPushState(await getPushNotificationState());
-      } catch {
-        const state = await getPushNotificationState().catch(() => null);
-        if (state) options.setPushState(state);
-        if (state?.supported && state.permission !== "denied") {
-          options.notify("Чтобы включить уведомления, нажмите на значок колокольчика");
-        }
-      } finally {
-        options.setPushBusy(false);
-      }
       localStorage.setItem("uknowapp-auth", "1");
       sessionStorage.removeItem("uknowapp-auth");
       options.authState.setProfile(null);
       options.authState.setAuth("1");
       options.authState.setPassword("");
+      void (async () => {
+        try {
+          await enablePushNotifications();
+          const state = await getPushNotificationState();
+          if (options.authState.auth) options.setPushState(state);
+        } catch {
+          const state = await getPushNotificationState().catch(() => null);
+          if (options.authState.auth && state) options.setPushState(state);
+          if (options.authState.auth && state?.supported && state.permission !== "denied") {
+            options.notify("Чтобы включить уведомления, нажмите на значок колокольчика");
+          }
+        } finally {
+          options.setPushBusy(false);
+        }
+      })();
     } catch (error) {
       options.setError(error.message || "Не удалось войти");
     }
