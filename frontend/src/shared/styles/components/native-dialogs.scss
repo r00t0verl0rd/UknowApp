@@ -2,10 +2,10 @@
 :root[data-theme="dark-soft"] {
   & .confirm-delete-modal .modal-head h2,
   & .confirm-delete-modal > .hint b {
-    color:#edf0f6;
+    color:var(--app-foreground);
   }
   & .confirm-delete-modal .btn.danger {
-    color:#fff;
+    color:var(--app-foreground);
     border-color:#97505c;
     background:linear-gradient(110deg, #934656, #aa5967);
     box-shadow:0 5px 16px rgba(0, 0, 0, 0.22);
