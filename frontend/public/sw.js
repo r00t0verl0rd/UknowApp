@@ -36,8 +36,12 @@ self.addEventListener("push", event => {
     }).catch(() => null);
     if (!access?.ok || !access.headers.get("content-type")?.includes("application/json")) return;
     if (await isConversationVisible(payload)) return;
-    await self.registration.showNotification(payload.title || "UknowApp", {
-      body: payload.body || "UknowApp",
+    // Имя отправителя или направление сообщения — единственный заголовок push.
+    // Не выводим UknowApp и не дублируем имя отдельной строкой.
+    const notificationTitle = typeof payload.body === "string" && payload.body.trim()
+      ? payload.body.trim()
+      : "Новое сообщение";
+    await self.registration.showNotification(notificationTitle, {
       icon: "/logo-big.png",
       badge: "/logo-192.png",
       tag: payload.tag || "uknowapp-message",
