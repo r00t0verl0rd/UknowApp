@@ -586,7 +586,7 @@ def apply_pending_data_restore() -> bool:
         if staged_data.exists():
             shutil.rmtree(staged_data)
         try:
-            restore_info = _prepare_restore_archive(archive_path, staged_data)
+            missing_media = _prepare_restore_archive(archive_path, staged_data)
         except Exception:
             logger.exception(
                 "Подготовленный архив не прошёл повторную проверку; текущие данные не изменены",
@@ -617,7 +617,7 @@ def apply_pending_data_restore() -> bool:
 
             reload_vapid_keys(data_dir)
             marker["status"] = "committed"
-            marker["missing_media_references"] = restore_info["missing_media"]
+            marker["missing_media_references"] = missing_media
             _write_restore_record(marker_path, marker)
         except Exception:
             try:
