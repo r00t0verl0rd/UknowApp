@@ -1,7 +1,38 @@
 import { apiUrl, fetchApi, request } from "../../../shared/services/api.js";
 
-export function getAdminDataStats(request) {
-  return request("/api/admin/data/stats");
+// Unlike a generic request, statistics must distinguish an expired session,
+// an unavailable backend and a malformed response. The admin page can then
+// explain what happened and offer an explicit retry instead of a generic modal.
+export async function getAdminDataStats() {
+  let response;
+  try {
+    response = await fetchApi("/api/admin/data/stats");
+  } catch {
+    throw Object.assign(new Error("Нет связи с сервером. Проверьте подключение и повторите запрос."), {
+      status: 0,
+    });
+  }
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    let message;
+    if (response.status === 401 || response.status === 403) {
+      message = "Сессия администратора недействительна. Для просмотра статистики войдите повторно.";
+    } else if (response.status >= 500) {
+      message = "Сервер не смог получить статистику (HTTP " + response.status +
+        "). Повторите запрос. Если ошибка сохраняется, проверьте журнал backend.";
+    } else {
+      message = typeof data?.detail === "string"
+        ? data.detail
+        : "Не удалось получить статистику (HTTP " + response.status + ").";
+    }
+    throw Object.assign(new Error(message), { status: response.status });
+  }
+  if (!data || typeof data.users !== "number" || typeof data.database_bytes !== "number") {
+    throw Object.assign(new Error("Сервер вернул неполную статистику. Повторите запрос."), {
+      status: 502,
+    });
+  }
+  return data;
 }
 
 export async function getRestoreStatus(signal) {

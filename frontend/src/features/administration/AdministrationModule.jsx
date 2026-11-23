@@ -24,6 +24,9 @@ export default function AdministrationModule(options) {
     return (
       <AdditionalPage
         dataStats={state.dataStats}
+        statsError={state.statsError}
+        statsLoading={state.statsLoading}
+        loginForStats={state.loginForStats}
         restore={state.restore}
         dataBusy={state.dataBusy}
         loadDataStats={state.loadDataStats}

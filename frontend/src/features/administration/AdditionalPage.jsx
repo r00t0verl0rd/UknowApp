@@ -43,12 +43,34 @@ export default function AdditionalPage(options) {
             type="button"
             class="btn outline"
             onClick={options.loadDataStats}
-            disabled={options.dataBusy}
+            disabled={options.dataBusy || options.statsLoading}
           >
             <RefreshCw size={15} />
             Обновить
           </button>
         </div>
+        {options.statsLoading && !options.dataStats && (
+          <p class="data-stats-loading" role="status">Загружаем статистику сервера…</p>
+        )}
+        {options.statsError && (
+          <div class="data-stats-feedback" role="alert">
+            <div class="data-stats-feedback-copy">
+              <strong>Не удалось загрузить статистику</strong>
+              <p>{options.statsError.message}</p>
+              <small>Резервные копии и данные пользователей не изменялись этим запросом.</small>
+            </div>
+            <div class="data-stats-feedback-actions">
+              <Button variant="outline" onClick={options.loadDataStats} disabled={options.statsLoading}>
+                Повторить загрузку
+              </Button>
+              {options.statsError.needsLogin && (
+                <Button variant="primary" onClick={options.loginForStats}>
+                  Войти повторно
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
         <div class="data-stats-grid">
           <article class="data-stat-card">
             <span>База данных SQLite</span>

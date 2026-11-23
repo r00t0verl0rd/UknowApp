@@ -769,15 +769,24 @@ def data_stats(_: Admin):
         media_counts = {"images": 0, "audio": 0, "videos": 0, "other": 0}
         for row in db.query(Message.metadata_json).all():
             try:
-                media = (json.loads(row[0] or "{}").get("media") or {})
+                # Older backups can contain legacy JSON metadata: null, arrays,
+                # strings and malformed media objects are not fatal to stats.
+                metadata = json.loads(row[0] or "{}")
+                if not isinstance(metadata, dict):
+                    continue
+                media = metadata.get("media")
+                if not isinstance(media, dict):
+                    continue
                 relative = media.get("local_path")
                 if not relative:
                     continue
                 path = (MEDIA_DIR / _safe_relative(relative)).resolve()
                 if MEDIA_DIR.resolve() not in path.parents or not path.is_file():
                     continue
-                mime = (media.get("mime_type") or "").lower()
-                kind = (media.get("kind") or "").lower()
+                mime_value = media.get("mime_type")
+                kind_value = media.get("kind")
+                mime = mime_value.lower() if isinstance(mime_value, str) else ""
+                kind = kind_value.lower() if isinstance(kind_value, str) else ""
                 if mime.startswith("image/") or kind in {"photo", "sticker"}:
                     media_counts["images"] += 1
                 elif mime.startswith("audio/") or kind in {"audio", "voice"}:

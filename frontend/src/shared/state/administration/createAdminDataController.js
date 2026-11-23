@@ -7,18 +7,38 @@ import {
 } from "../../../features/administration/services/adminDataApi.js";
 export function createAdminDataController(options) {
   const [dataStats, setDataStats] = createSignal(null);
+  const [statsLoading, setStatsLoading] = createSignal(false);
+  const [statsError, setStatsError] = createSignal(null);
   const [dataBusy, setDataBusy] = createSignal(false);
   const [restore, setRestore] = createSignal(null);
   const [retentionDays, setRetentionDays] = createSignal("30");
   const [pendingConfirmation, setPendingConfirmation] = createSignal(null);
+  let statsRequestRevision = 0;
   const loadDataStats = async () => {
+    const revision = ++statsRequestRevision;
+    setStatsLoading(true);
+    setStatsError(null);
     try {
-      const stats = await getAdminDataStats(options.request);
+      const stats = await getAdminDataStats();
+      if (revision !== statsRequestRevision) return;
       setDataStats(stats);
       setRestore(stats.restore);
     } catch (error) {
-      if (!options.restoreFlow.isInProgress) options.setError(error.message);
+      if (revision !== statsRequestRevision) return;
+      setDataStats(null);
+      setStatsError({
+        message: error.message || "Не удалось получить статистику.",
+        needsLogin: error.status === 401 || error.status === 403,
+      });
+    } finally {
+      if (revision === statsRequestRevision) setStatsLoading(false);
     }
+  };
+  const loginForStats = () => {
+    // Navigation is initiated only by the user's explicit click.
+    localStorage.removeItem("uknowapp-auth");
+    sessionStorage.removeItem("uknowapp-auth");
+    window.location.assign("/");
   };
   createEffect(
     () => [options.auth, options.profile?.role, options.page, loadDataStats],
@@ -116,6 +136,13 @@ export function createAdminDataController(options) {
     get dataStats() {
       return dataStats();
     },
+    get statsError() {
+      return statsError();
+    },
+    get statsLoading() {
+      return statsLoading();
+    },
+    loginForStats,
     get restore() {
       const current = options.restoreFlow.current;
       if (current?.id) {

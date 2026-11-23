@@ -46,7 +46,7 @@ test("backup restore explains the restart, asks before re-login and shows verifi
           : null } });
       }
       if (path === "/api/admin/data/stats") {
-        return route.fulfill({ json: { restore: null, users: 0, teachers: 0, students: 0 } });
+        return route.fulfill({ json: { restore: null, database_bytes: 4096, media_bytes: 0, users: 0, teachers: 0, students: 0 } });
       }
       if (path === "/api/admin/overview") return route.fulfill({ json: { teachers: [] } });
       return route.fulfill({ json: [] });
@@ -77,6 +77,57 @@ test("backup restore explains the restart, asks before re-login and shows verifi
     await page.getByRole("alertdialog", { name: "Восстановление завершено" }).waitFor({ timeout: 12000 });
     await page.getByRole("button", { name: "Понятно" }).click();
     assert.equal(await page.getByRole("alertdialog", { name: "Восстановление завершено" }).count(), 0);
+  } finally {
+    await browser.close();
+    await new Promise((resolve, reject) => server.httpServer.close(error => error ? reject(error) : resolve()));
+  }
+});
+
+test("administration explains statistics HTTP 500 and retries without hiding backup controls", { timeout: 40000 }, async () => {
+  const server = await preview({
+    preview: { host: "127.0.0.1", port: 22225, strictPort: true },
+    logLevel: "error",
+  });
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH });
+  try {
+    const page = await browser.newPage();
+    let statsRequests = 0;
+    await page.route("**/api/**", route => {
+      const path = new URL(route.request().url()).pathname;
+      if (path === "/api/panel/me") {
+        return route.fulfill({ json: {
+          id: 1, full_name: "Администратор", role: "admin",
+          permissions: ["structure.view", "dialogs.own", "users.manage", "boards.view", "school.manage", "dialogs.observe"],
+        } });
+      }
+      if (path === "/api/admin/data/stats") {
+        statsRequests += 1;
+        return statsRequests === 1
+          ? route.fulfill({ status: 500, json: { detail: "Internal Server Error" } })
+          : route.fulfill({ json: {
+              restore: null, database_bytes: 8192, media_bytes: 0,
+              users: 7, teachers: 3, students: 4, assignments: 0,
+              conversations: 0, personal_conversations: 0, messages: 0,
+              personal_messages: 0, total_messages: 0, telegram_groups: 0,
+              connection_codes: 0, media_files: 0, media_images: 0,
+              media_audio: 0, media_videos: 0, media_other: 0,
+            } });
+      }
+      if (path === "/api/admin/overview") return route.fulfill({ json: { teachers: [] } });
+      return route.fulfill({ json: [] });
+    });
+    await page.goto(HOST);
+    await page.evaluate(() => localStorage.setItem("uknowapp-auth", "1"));
+    await page.goto(HOST + "/additional");
+    await page.getByText("Не удалось загрузить статистику").waitFor({ timeout: 12000 });
+    await page.getByText("Сервер не смог получить статистику (HTTP 500)", { exact: false }).waitFor();
+    assert.ok(await page.getByText("Полная резервная копия UknowApp").isVisible(),
+      "Backup controls remain available when statistics fails");
+
+    await page.getByRole("button", { name: "Повторить загрузку" }).click();
+    await page.getByText("7 пользователей").waitFor({ timeout: 12000 });
+    assert.ok(statsRequests >= 2);
+    assert.equal(await page.getByText("Не удалось загрузить статистику").count(), 0);
   } finally {
     await browser.close();
     await new Promise((resolve, reject) => server.httpServer.close(error => error ? reject(error) : resolve()));
