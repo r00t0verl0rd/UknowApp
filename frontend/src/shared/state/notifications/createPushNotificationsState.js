@@ -46,15 +46,15 @@ export function createPushNotificationsState(options) {
     },
   );
   createEffect(
-    () => [options.selectedChat?.id, options.selectedChat?.type],
+    () => [],
     () => {
       const respondToPush = (event) => {
         if (event.data?.type !== "UKNOW_CHECK_ACTIVE_CHAT" || !event.ports?.[0]) return;
+        const chat = options.activeChat;
         event.ports[0].postMessage({
           active:
-            document.visibilityState === "visible" &&
-            Number(options.selectedChat?.id) === Number(event.data.conversationId) &&
-            (options.selectedChat?.type === "personal" ? "personal" : "conversation") ===
+            Number(chat?.id) === Number(event.data.conversationId) &&
+            (chat?.type === "personal" ? "personal" : "conversation") ===
               event.data.conversationType,
         });
       };

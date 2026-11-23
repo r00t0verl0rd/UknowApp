@@ -168,6 +168,54 @@ def test_personal_chat_exposes_admin_read_receipt_to_sender(api):
 
 
 
+@pytest.mark.parametrize("personal", [False, True])
+def test_background_fetch_preserves_unread_until_explicit_receipt(api, personal):
+    make_client, users, _ = api
+    admin = make_client()
+    login(admin, "test-admin", "a-long-test-password-123")
+    teacher = make_client()
+    login(teacher, "teacher-one", "teacher-password-1")
+    if personal:
+        collection = "/api/panel/personal-conversations"
+        created = admin.post(collection, json={"user_id": users["teacher-one"]})
+        reader = admin
+    else:
+        collection = "/api/panel/conversations"
+        created = admin.post("/api/admin/assignments", json={
+            "teacher_id": users["teacher-one"], "student_id": users["student-one"],
+        })
+        reader = make_client()
+        login(reader, "student-one", "student-password-1")
+    assert created.status_code == 201
+    path = f"{collection}/{created.json()['id']}"
+
+    first = teacher.post(f"{path}/messages", json={"text": "Первое"})
+    first_id = first.json()["id"]
+    fetched = reader.get(f"{path}/messages", params={"limit": 50, "mark_read": "false"})
+    assert [row["id"] for row in fetched.json()] == [first_id]
+    sync = reader.post(f"{path}/sync", json={"mark_read": False, "paged": True})
+    assert sync.json()["summary"]["unread_count"] == 1
+    assert sync.json()["messages"][0]["panel_read_at"] is None
+
+    second = teacher.post(f"{path}/messages", json={"text": "Пришло после загрузки"})
+    second_id = second.json()["id"]
+    receipt = reader.post(f"{path}/read", json={"message_ids": [first_id]})
+    assert receipt.status_code == 200
+    assert receipt.json()["unread_count"] == 1
+    repeated = reader.post(f"{path}/read", json={"message_ids": [first_id]})
+    assert repeated.json()["unread_count"] == 1
+    statuses = teacher.get(f"{path}/messages", params={"mark_read": "false"}).json()
+    assert statuses[0]["panel_read_at"]
+    assert statuses[1]["panel_read_at"] is None
+
+    if not personal:
+        # Наблюдатель видит, что одно сообщение уже прочитал получатель.
+        assert admin.get(collection).json()[0]["unread_count"] == 1
+        assert admin.post(f"{path}/read", json={"message_ids": [second_id]}).json()["unread_count"] == 1
+    assert reader.post(f"{path}/read", json={"message_ids": [second_id]}).json()["unread_count"] == 0
+    assert admin.get(collection).json()[0]["unread_count"] == 0
+
+
 def test_personal_attachments_are_private_downloadable_and_idempotent(api):
     make_client, users, _ = api
     admin = make_client()

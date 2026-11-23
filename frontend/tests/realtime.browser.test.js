@@ -2214,3 +2214,143 @@ test("global SSE updates real counters across tabs and replays missed events", {
     if (apiServer?.listening) await new Promise(resolve => apiServer.close(resolve));
   }
 });
+
+test("read receipts and push suppression follow the visible dialog", { timeout: 30000 }, async () => {
+  const vite = spawn(process.execPath, [
+    "node_modules/vite/bin/vite.js", "preview",
+    "--host", "127.0.0.1", "--port", String(APP_PORT), "--strictPort",
+  ], { env: { ...process.env, VITE_API_BASE_URL: "" }, stdio: "ignore" });
+  let browser;
+  try {
+    await waitFor(async () => (await fetch(APP_URL)).ok);
+    browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_PATH });
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const history = [];
+    const unread = new Set();
+    const receipts = [];
+    let syncRequests = 0;
+    let eventId = 0;
+    const summary = () => ({ ...personalChat, unread_count: unread.size });
+    const openPath = "/api/panel/personal-conversations/5";
+    const publish = () => page.evaluate(({ id, chat }) => {
+      window.testEventStream.dispatchEvent(new MessageEvent("update", {
+        data: JSON.stringify({
+          event_id: id,
+          action: "upsert",
+          conversation_id: chat.id,
+          conversation_type: "personal",
+          summary: chat,
+        }),
+      }));
+    }, { id: ++eventId, chat: summary() });
+    const addMessage = (id, text) => {
+      history.push({
+        id, text, sender: personalChat.title, sender_role: "teacher", content_type: "text",
+        created_at: new Date(Date.UTC(2026, 10, 21, 10, 0, id)).toISOString(),
+        panel_read_at: null, metadata: {},
+      });
+      unread.add(id);
+    };
+    const checkPush = () => page.evaluate(async () => {
+      const { port1, port2 } = new MessageChannel();
+      return await new Promise(resolve => {
+        port1.onmessage = event => {
+          port1.close();
+          port2.close();
+          resolve(event.data.active);
+        };
+        navigator.serviceWorker.dispatchEvent(new MessageEvent("message", {
+          data: { type: "UKNOW_CHECK_ACTIVE_CHAT", conversationId: 5, conversationType: "personal" },
+          ports: [port2],
+        }));
+      });
+    });
+    await page.addInitScript(() => {
+      localStorage.setItem("uknowapp-auth", "1");
+      window.EventSource = class extends EventTarget {
+        constructor() {
+          super();
+          window.testEventStream = this;
+        }
+        close() {}
+      };
+    });
+    await page.route("**/api/**", async route => {
+      const request = route.request();
+      const { pathname, searchParams } = new URL(request.url());
+      let json = [];
+      if (pathname === "/api/panel/me") {
+        json = {
+          id: 1, role: "admin", full_name: "Администратор",
+          permissions: ["structure.view", "dialogs.own", "dialogs.observe", "boards.view"],
+        };
+      } else if (pathname === "/api/panel/personal-conversations") {
+        json = [summary()];
+      } else if (pathname === openPath + "/messages") {
+        assert.equal(searchParams.get("mark_read"), "false");
+        json = history;
+      } else if (pathname === openPath + "/sync") {
+        syncRequests++;
+        const { after_id, mark_read } = request.postDataJSON();
+        assert.equal(mark_read, false);
+        json = { messages: history.filter(message => message.id > after_id), summary: summary() };
+      } else if (pathname === openPath + "/read") {
+        const { message_ids } = request.postDataJSON();
+        receipts.push(...message_ids);
+        for (const id of message_ids) unread.delete(id);
+        json = summary();
+      }
+      await route.fulfill({ json });
+    });
+
+    // Ссылка из уже отправленного push ведёт в нужный диалог даже с корневого URL.
+    addMessage(1, "Первое уведомление");
+    await page.goto(APP_URL + "/?openConversation=5&type=personal");
+    await page.getByText("Первое уведомление", { exact: true }).waitFor();
+    await waitFor(() => receipts.includes(1));
+    assert.equal(new URL(page.url()).pathname, "/dialogs");
+    assert.equal(await checkPush(), true);
+
+    await page.getByRole("button", { name: "Доски", exact: true }).click();
+    assert.equal(await checkPush(), false);
+    const requestsBeforeLeaving = syncRequests;
+    addMessage(2, "Получено в другом разделе");
+    await publish();
+    // Отправка SSE происходит синхронно в странице, а следующий вызов даёт
+    // начавшимся сетевым запросам время дойти до обработчика.
+    await delay(150);
+    assert.equal(syncRequests, requestsBeforeLeaving);
+    assert.deepEqual(receipts, [1]);
+    assert.equal(unread.size, 1);
+
+    await page.getByRole("button", { name: "Диалоги", exact: true }).click();
+    await page.getByText("Получено в другом разделе", { exact: true }).waitFor();
+    await waitFor(() => receipts.includes(2));
+    assert.equal(unread.size, 0);
+    await page.getByLabel("1 непрочитанных личных сообщений").waitFor({ state: "hidden" });
+
+    // Headless Chromium keeps the page focused under automation.
+    await page.evaluate(() => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    assert.equal(await checkPush(), false);
+    addMessage(3, "Получено в другой вкладке");
+    await publish();
+    await page.getByLabel("1 непрочитанных личных сообщений").waitFor({ state: "visible" });
+    assert.deepEqual(receipts, [1, 2]);
+
+    await page.evaluate(() => {
+      delete document.visibilityState;
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await page.getByText("Получено в другой вкладке", { exact: true }).waitFor();
+    await waitFor(() => receipts.includes(3));
+    assert.deepEqual(receipts, [1, 2, 3]);
+    await page.getByLabel("1 непрочитанных личных сообщений").waitFor({ state: "hidden" });
+  } finally {
+    await browser?.close();
+    vite.kill();
+  }
+});

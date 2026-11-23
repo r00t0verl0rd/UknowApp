@@ -135,7 +135,8 @@ def personal_message_status_dict(row: PersonalMessage) -> dict:
 
 @router.get("/panel/personal-conversations/{conversation_id}/messages")
 def personal_messages(conversation_id: int, principal: PanelUser, db: Db, after_id: int = 0,
-                   limit: int | None = Query(None, ge=1, le=100), before_id: int | None = None):
+                   limit: int | None = Query(None, ge=1, le=100), before_id: int | None = None,
+                   mark_read: bool = True):
     item = _personal_conversation(db, principal, conversation_id)
     query = select(PersonalMessage).options(selectinload(PersonalMessage.sender)).where(
         PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id,
@@ -143,11 +144,13 @@ def personal_messages(conversation_id: int, principal: PanelUser, db: Db, after_
     if before_id is not None:
         query = query.where(PersonalMessage.id < before_id)
     if limit is None:
-        mark_personal_read(db, item, principal, after_id)
+        if mark_read:
+            mark_personal_read(db, item, principal, after_id)
         rows = db.scalars(query.order_by(PersonalMessage.created_at, PersonalMessage.id)).all()
     else:
         rows = list(reversed(db.scalars(query.order_by(PersonalMessage.id.desc()).limit(limit)).all()))
-        mark_personal_read(db, item, principal, after_id, [row.id for row in rows])
+        if mark_read:
+            mark_personal_read(db, item, principal, after_id, [row.id for row in rows])
     return [personal_message_dict(row, principal) for row in rows]
 
 

@@ -51,6 +51,7 @@ export default function ChatsModule(options) {
         setMessageFilter={options.chatState.setMessageFilter}
         messagesViewportRef={options.chatState.messagesViewportRef}
         visibleMessages={state.visibleMessages}
+        acknowledgeVisible={options.acknowledgeVisible}
         messages={options.chatState.messages}
         messagesLoading={options.chatState.messagesLoading}
         setDeleteMessageCandidate={state.setDeleteMessageCandidate}

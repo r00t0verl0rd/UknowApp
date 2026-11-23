@@ -1,7 +1,7 @@
 import { createEffect } from "solid-js";
 import { getInboxData } from "../../../shared/services/panelApi.js";
 import { subscribePanelEvents } from "../../../shared/services/panelEventStream.js";
-import { syncChatState } from "../services/conversationsApi.js";
+import { acknowledgeChatMessages, syncChatState } from "../services/conversationsApi.js";
 import { markConversationMessageDeleted, mergeConversationMessages } from "../services/messageState.js";
 import { mergeInboxSnapshot } from "../../../shared/services/inboxState.js";
 const maxMessageId = (rows) => rows.reduce((max, row) => Math.max(max, Number(row.id) || 0), 0);
@@ -9,20 +9,22 @@ const isSameChat = (chat, id, type) =>
   Number(chat?.id) === Number(id) && (chat?.type === "personal") === (type === "personal");
 const conversationKey = (id, type) => (type === "personal" ? "personal:" : "conversation:") + id;
 export function createConversationSync(options) {
-  let lastMessageCursor = { chatKey: "", id: 0 };
-  let lastEventId = 0;
-  const pending = new Map();
-  let processing = false;
-  let syncing = false;
-  let syncQueued = false;
-  const eventRevision = new Map();
-  let inboxRequestRevision = 0;
-  let recoveryPending = false;
+  let resumeSelected = () => {};
+  let acknowledgeVisible = () => {};
   createEffect(
     () => [options.auth, options.request],
     () => {
       if (!options.auth) return undefined;
       let active = true;
+      let lastMessageCursor = { chatKey: "", id: 0 };
+      let lastEventId = 0;
+      const pending = new Map();
+      let processing = false;
+      let syncing = false;
+      let syncQueued = false;
+      const eventRevision = new Map();
+      let inboxRequestRevision = 0;
+      let recoveryPending = false;
       const applySummary = (type, id, summary) => {
         if (!summary || !active) return;
         const rowKey = conversationKey(id, type);
@@ -41,6 +43,30 @@ export function createConversationSync(options) {
               }
             : previous,
         );
+      };
+      let receiptChatKey = "";
+      let receipts = new Set();
+      acknowledgeVisible = async (chat, visibleIds) => {
+        if (!options.activeChat || !isSameChat(options.activeChat, chat.id, chat.type)) return;
+        const key = conversationKey(chat.id, chat.type);
+        if (receiptChatKey !== key) {
+          receiptChatKey = key;
+          receipts = new Set();
+        }
+        const requested = receipts;
+        const ids = visibleIds.filter(id => !requested.has(id)).slice(0, 500);
+        if (!ids.length) return;
+        for (const id of ids) requested.add(id);
+        const revision = options.inboxRowRevision.get(key) || 0;
+        try {
+          const summary = await acknowledgeChatMessages(options.request, chat, ids);
+          if (revision === (options.inboxRowRevision.get(key) || 0) && summary?.id === chat.id) {
+            applySummary(chat.type, chat.id, summary);
+          }
+        } catch (error) {
+          for (const id of ids) requested.delete(id);
+          throw error;
+        }
       };
       const refreshInbox = async () => {
         const requestRevision = ++inboxRequestRevision;
@@ -71,7 +97,7 @@ export function createConversationSync(options) {
         options.setPersonalChats((items) => mergeInboxSnapshot(personal, items, changedPersonal));
       };
       const syncSelected = async () => {
-        if (document.visibilityState !== "visible") return;
+        if (!options.foregroundChat) return;
         if (syncing) {
           syncQueued = true;
           return;
@@ -80,8 +106,8 @@ export function createConversationSync(options) {
         try {
           do {
             syncQueued = false;
-            const chat = options.selectedChat;
-            if (!chat || document.visibilityState !== "visible") break;
+            const chat = options.foregroundChat;
+            if (!chat) break;
             const chatKey = conversationKey(chat.id, chat.type);
             const knownIds = [];
             let afterId = lastMessageCursor.chatKey === chatKey ? lastMessageCursor.id : 0;
@@ -97,9 +123,10 @@ export function createConversationSync(options) {
               id: afterId,
             };
             const revisionAtStart = eventRevision.get(chatKey) || 0;
+            const summaryRevision = options.inboxRowRevision.get(chatKey) || 0;
             const result = await syncChatState(options.request, chat, afterId, knownIds);
             if (!active) break;
-            if (!isSameChat(options.selectedChat, chat.id, chat.type)) {
+            if (!isSameChat(options.foregroundChat, chat.id, chat.type)) {
               syncQueued = true;
               continue;
             }
@@ -120,11 +147,13 @@ export function createConversationSync(options) {
               options.setMessages((previous) => mergeConversationMessages(previous, updated, chatKey));
             }
             if (result.has_more) syncQueued = true;
-            if (result.summary) applySummary(chat.type, chat.id, result.summary);
+            if (summaryRevision === (options.inboxRowRevision.get(chatKey) || 0)) {
+              applySummary(chat.type, chat.id, result.summary);
+            }
           } while (syncQueued && active);
         } finally {
           syncing = false;
-          if (syncQueued && active && document.visibilityState === "visible") {
+          if (syncQueued && active && options.foregroundChat) {
             void syncSelected().catch(() => {});
           }
         }
@@ -279,21 +308,33 @@ export function createConversationSync(options) {
         // Единичная сверка безопаснее постоянного polling.
         void recover().catch(() => {});
       }
-      const onVisibilityChange = () => {
-        if (document.visibilityState !== "visible") return;
+      resumeSelected = () => {
+        if (document.visibilityState !== "visible" || !document.hasFocus()) return;
         if (recoveryPending)
           void recover({
             refreshInbox: true,
           }).catch(() => {});
         else void syncSelected().catch(() => {});
       };
-      document.addEventListener("visibilitychange", onVisibilityChange);
+      const onForeground = () => resumeSelected();
+      document.addEventListener("visibilitychange", onForeground);
+      window.addEventListener("focus", onForeground);
       return () => {
         active = false;
         pending.clear();
         unsubscribe?.();
-        document.removeEventListener("visibilitychange", onVisibilityChange);
+        document.removeEventListener("visibilitychange", onForeground);
+        window.removeEventListener("focus", onForeground);
+        resumeSelected = () => {};
+        acknowledgeVisible = () => {};
       };
     },
   );
+  createEffect(
+    () => [options.inDialogs],
+    ([inDialogs]) => {
+      if (inDialogs) resumeSelected();
+    },
+  );
+  return (chat, ids) => acknowledgeVisible(chat, ids);
 }

@@ -4,7 +4,7 @@ export const HISTORY_PAGE_SIZE = 50;
 
 export function getChatMessages(request, chat, signal, beforeId) {
   const base = chat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
-  return request(base + chat.id + "/messages?limit=" + HISTORY_PAGE_SIZE + (beforeId ? "&before_id=" + beforeId : ""), { signal });
+  return request(base + chat.id + "/messages?mark_read=false&limit=" + HISTORY_PAGE_SIZE + (beforeId ? "&before_id=" + beforeId : ""), { signal });
 }
 
 export async function syncChatState(request, chat, afterId, knownMessageIds) {
@@ -15,7 +15,7 @@ export async function syncChatState(request, chat, afterId, knownMessageIds) {
   do {
     const batch = await request(base + chat.id + "/sync", {
       method: "POST",
-      body: JSON.stringify({ paged: true, after_id: cursor, known_message_ids: knownMessageIds.slice(start, start + 5000) }),
+      body: JSON.stringify({ paged: true, mark_read: false, after_id: cursor, known_message_ids: knownMessageIds.slice(start, start + 5000) }),
     });
     for (const message of batch.messages || []) {
       result.messages.push(message);
@@ -30,6 +30,14 @@ export async function syncChatState(request, chat, afterId, knownMessageIds) {
   return result;
 }
 
+
+export function acknowledgeChatMessages(request, chat, ids) {
+  const base = chat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
+  return request(base + chat.id + "/read", {
+    method: "POST",
+    body: JSON.stringify({ message_ids: ids }),
+  });
+}
 
 export function createPersonalConversation(request, userId) {
   return request("/api/panel/personal-conversations", {

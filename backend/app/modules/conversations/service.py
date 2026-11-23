@@ -36,24 +36,7 @@ def conversation_dicts(
     ).all()
     latest_by_conversation = {item.conversation_id: item for item in latest_messages}
 
-    if viewer_role == "student":
-        unread_condition = and_(
-            Message.sender_role.in_(("teacher", "admin")),
-            func.json_extract(Message.metadata_json, "$.student_read_at").is_(None),
-        )
-    elif viewer_role == "admin":
-        unread_condition = and_(
-            Message.sender_role.in_(("teacher", "student")),
-            or_(
-                func.json_extract(Message.metadata_json, "$.teacher_read_at").is_(None),
-                func.json_extract(Message.metadata_json, "$.student_read_at").is_(None),
-            ),
-        )
-    else:
-        unread_condition = and_(
-            Message.sender_role.in_(("student", "admin")),
-            func.json_extract(Message.metadata_json, "$.teacher_read_at").is_(None),
-        )
+    unread_condition = _unread_condition(viewer_role)
     statistics = db.execute(
         select(
             Message.conversation_id,
@@ -113,8 +96,7 @@ def _message_preview(item: Message | None) -> str:
     return (media_name or label) + ((": " + item.text) if item.text else "")
 
 
-def conversation_event_summaries(db: Session, conversation: Conversation) -> dict[str, dict]:
-    """Сформировать счётчики и превью для роли."""
+def _unread_condition(role: str):
     teacher_unread = and_(
         Message.sender_role.in_(("student", "admin")),
         func.json_extract(Message.metadata_json, "$.teacher_read_at").is_(None),
@@ -123,19 +105,19 @@ def conversation_event_summaries(db: Session, conversation: Conversation) -> dic
         Message.sender_role.in_(("teacher", "admin")),
         func.json_extract(Message.metadata_json, "$.student_read_at").is_(None),
     )
-    admin_unread = and_(
-        Message.sender_role.in_(("teacher", "student")),
-        or_(
-            func.json_extract(Message.metadata_json, "$.teacher_read_at").is_(None),
-            func.json_extract(Message.metadata_json, "$.student_read_at").is_(None),
-        ),
-    )
+    if role == "admin":
+        return and_(Message.sender_role.in_(("teacher", "student")), or_(teacher_unread, student_unread))
+    return student_unread if role == "student" else teacher_unread
+
+
+def conversation_event_summaries(db: Session, conversation: Conversation) -> dict[str, dict]:
+    """Сформировать счётчики и превью для роли."""
     stats = db.execute(
         select(
             func.count(Message.id),
-            func.coalesce(func.sum(case((teacher_unread, 1), else_=0)), 0),
-            func.coalesce(func.sum(case((student_unread, 1), else_=0)), 0),
-            func.coalesce(func.sum(case((admin_unread, 1), else_=0)), 0),
+            func.coalesce(func.sum(case((_unread_condition("teacher"), 1), else_=0)), 0),
+            func.coalesce(func.sum(case((_unread_condition("student"), 1), else_=0)), 0),
+            func.coalesce(func.sum(case((_unread_condition("admin"), 1), else_=0)), 0),
         ).where(Message.conversation_id == conversation.id),
     ).one()
     last_message = db.scalar(

@@ -32,6 +32,56 @@ export default function ChatsPage(options) {
     },
   );
 
+  createEffect(
+    () => [options.selectedChat?.id, options.selectedChat?.type, options.profile?.role, options.visibleMessages],
+    () => {
+      const chat = options.selectedChat;
+      const viewport = options.messagesViewportRef.current;
+      const role = options.profile?.role;
+      if (!chat || !viewport || !role || (role === "admin" && chat.type !== "personal")) return;
+      const unread = new Set(options.visibleMessages
+        .filter(message => message.sender_role !== role
+          && (chat.type === "personal" || message.sender_role !== "admin"
+            ? !message.panel_read_at
+            : !message.metadata?.[role + "_read_at"]))
+        .map(message => Number(message.id))
+        .filter(id => Number.isSafeInteger(id) && id > 0));
+      if (!unread.size) return;
+
+      const messageId = element => Number(element.dataset.viewAnchor.slice("message:".length));
+      const visible = new Set();
+      let retry;
+      let disposed = false;
+      const report = () => {
+        if (!visible.size || document.visibilityState !== "visible" || !document.hasFocus()) return;
+        clearTimeout(retry);
+        Promise.resolve(options.acknowledgeVisible(chat, [...visible])).catch(() => {
+          if (!disposed) retry = setTimeout(report, 2000);
+        });
+      };
+      const observer = new IntersectionObserver(entries => {
+        for (const entry of entries) {
+          const id = messageId(entry.target);
+          if (entry.isIntersecting && entry.intersectionRect.height > 0) visible.add(id);
+          else visible.delete(id);
+        }
+        report();
+      });
+      for (const element of viewport.querySelectorAll('[data-view-anchor^="message:"]')) {
+        if (unread.has(messageId(element))) observer.observe(element);
+      }
+      window.addEventListener("focus", report);
+      document.addEventListener("visibilitychange", report);
+      return () => {
+        disposed = true;
+        clearTimeout(retry);
+        observer.disconnect();
+        window.removeEventListener("focus", report);
+        document.removeEventListener("visibilitychange", report);
+      };
+    },
+  );
+
   // Один таймер обновляет даты сообщений при достижении 24 часов.
   createEffect(
     () => [options.visibleMessages, messageNowMs()],

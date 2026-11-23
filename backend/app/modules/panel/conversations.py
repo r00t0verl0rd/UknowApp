@@ -86,7 +86,8 @@ def panel_conversation_summary(conversation_id: int, principal: PanelUser, db: D
 
 @router.get("/panel/conversations/{conversation_id}/messages")
 def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id: int = 0,
-                   limit: int | None = Query(None, ge=1, le=100), before_id: int | None = None):
+                   limit: int | None = Query(None, ge=1, le=100), before_id: int | None = None,
+                   mark_read: bool = True):
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     if permits(principal, "dialogs.observe"):
         logger.info("Admin read conversation id=%s", conversation.id)
@@ -96,11 +97,13 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
     if before_id is not None:
         query = query.where(Message.id < before_id)
     if limit is None:
-        mark_conversation_read(db, conversation, principal, after_id)
+        if mark_read:
+            mark_conversation_read(db, conversation, principal, after_id)
         rows = db.scalars(query.order_by(Message.created_at, Message.id)).all()
     else:
         rows = list(reversed(db.scalars(query.order_by(Message.id.desc()).limit(limit)).all()))
-        mark_conversation_read(db, conversation, principal, after_id, [row.id for row in rows])
+        if mark_read:
+            mark_conversation_read(db, conversation, principal, after_id, [row.id for row in rows])
     return [
         _panel_message_dict(
             item,

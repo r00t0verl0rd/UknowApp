@@ -122,10 +122,22 @@ function Application(options) {
     setMessages: chatState.setMessages,
     restoreFlow,
   });
-  createConversationSync({
+  const workspacePage = () =>
+    workspace()?.pages.includes(navigation.page) ? navigation.page : workspace()?.pages[0];
+  const inDialogs = () => authState.auth && workspacePage() === "chats";
+  const foregroundChat = () =>
+    inDialogs() && document.visibilityState === "visible" && document.hasFocus()
+      ? chatState.selectedChat
+      : null;
+  const activeChat = () =>
+    chatState.messagesViewportRef.current?.isConnected ? foregroundChat() : null;
+  const acknowledgeVisible = createConversationSync({
     get auth() {
       return workspace() && authState.auth;
     },
+    get inDialogs() { return inDialogs(); },
+    get foregroundChat() { return foregroundChat(); },
+    get activeChat() { return activeChat(); },
     get role() {
       return authState.profile?.role;
     },
@@ -143,25 +155,27 @@ function Application(options) {
     setSelectedChat: chatState.setSelectedChat,
     setMessages: chatState.setMessages,
   });
+  let handledInitialLink = false;
   createEffect(
-    () => [authState.auth, authState.profile?.role, navigation.page, navigation.setPage, workspace()],
-    () => {
-      if (!authState.auth || !authState.profile?.role || !workspace()) return;
-      const accessiblePage = workspace().pages.includes(navigation.page)
-        ? navigation.page
-        : workspace().pages[0];
-      navigation.setPage(accessiblePage, {
-        replace: true,
-      });
+    () => [authState.auth, navigation.page, workspace()],
+    ([auth, , currentWorkspace]) => {
+      if (!auth || !currentWorkspace) return;
+      let page = workspacePage();
+      if (!handledInitialLink) {
+        handledInitialLink = true;
+        const id = Number(new URLSearchParams(window.location.search).get("openConversation"));
+        if (Number.isSafeInteger(id) && id > 0 && currentWorkspace.pages.includes("chats")) {
+          page = "chats";
+        }
+      }
+      navigation.setPage(page, { replace: true });
     },
   );
   const push = createPushNotificationsState({
     get auth() {
       return authState.auth;
     },
-    get selectedChat() {
-      return chatState.selectedChat;
-    },
+    get activeChat() { return activeChat(); },
     notify: options.notify,
     setError: options.setError,
   });
@@ -180,8 +194,6 @@ function Application(options) {
     setAttachment: chatState.setAttachment,
     notify: options.notify,
   });
-  const workspacePage = () =>
-    workspace().pages.includes(navigation.page) ? navigation.page : workspace().pages[0];
   const context = {
     get auth() {
       return authState.auth;
@@ -194,6 +206,7 @@ function Application(options) {
     },
     setPage: navigation.setPage,
     request: panel.request,
+    acknowledgeVisible,
     refresh: panel.refresh,
     notify: options.notify,
     setError: options.setError,

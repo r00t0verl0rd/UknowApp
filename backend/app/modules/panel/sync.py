@@ -6,6 +6,7 @@ from fastapi import (
     APIRouter,
     HTTPException,
 )
+from pydantic import BaseModel, Field, PositiveInt
 from sqlalchemy import select
 from sqlalchemy.orm import load_only, selectinload
 
@@ -81,7 +82,8 @@ def sync_conversation_state(
         new_rows = new_rows[:100]
     if bounded and not after_id:
         new_rows.reverse()
-    mark_conversation_read(db, conversation, principal, after_id, [row.id for row in new_rows] if bounded else None)
+    if payload.get("mark_read") is not False:
+        mark_conversation_read(db, conversation, principal, after_id, [row.id for row in new_rows] if bounded else None)
     updated_rows = []
     for start in range(0, len(known_ids), 500):
         batch_ids = known_ids[start:start + 500]
@@ -148,7 +150,8 @@ def sync_personal_conversation_state(
         new_rows = new_rows[:100]
     if bounded and not after_id:
         new_rows.reverse()
-    mark_personal_read(db, item, principal, after_id, [row.id for row in new_rows] if bounded else None)
+    if payload.get("mark_read") is not False:
+        mark_personal_read(db, item, principal, after_id, [row.id for row in new_rows] if bounded else None)
     updated_rows = []
     for start in range(0, len(known_ids), 500):
         batch_ids = known_ids[start:start + 500]
@@ -168,3 +171,24 @@ def sync_personal_conversation_state(
         "updated_messages": [personal_message_status_dict(row) for row in updated_rows],
         "summary": personal_summaries(db, [item], principal["role"])[0],
     }
+
+
+class ReadReceipt(BaseModel):
+    message_ids: list[PositiveInt] = Field(min_length=1, max_length=500)
+
+
+@router.post("/panel/conversations/{conversation_id}/read")
+def read_conversation(conversation_id: int, payload: ReadReceipt, principal: PanelUser, db: Db):
+    conversation = _panel_visible_conversation(db, principal, conversation_id)
+    mark_conversation_read(db, conversation, principal, 0, payload.message_ids)
+    return conversation_dicts(
+        db, [conversation], include_telegram_ids=(principal["role"] == "admin"),
+        viewer_role=principal["role"],
+    )[0]
+
+
+@router.post("/panel/personal-conversations/{conversation_id}/read")
+def read_personal_conversation(conversation_id: int, payload: ReadReceipt, principal: PanelUser, db: Db):
+    item = _personal_conversation(db, principal, conversation_id)
+    mark_personal_read(db, item, principal, 0, payload.message_ids)
+    return personal_summaries(db, [item], principal["role"])[0]

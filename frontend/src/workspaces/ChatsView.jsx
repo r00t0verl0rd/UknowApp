@@ -7,6 +7,7 @@ export default function ChatsView(options) {
       auth={options.context.auth}
       profile={options.context.profile}
       request={options.context.request}
+      acknowledgeVisible={options.context.acknowledgeVisible}
       chatState={options.context.chatState}
       personalState={options.context.personalState}
       inboxLoading={options.context.inboxLoading}

@@ -316,7 +316,11 @@ export function createChatsController(options) {
     ([userId, loading, conversations, personals]) => {
       if (userId == null || loading || attemptedRestoreForUser === userId) return;
       attemptedRestoreForUser = userId;
-      if (options.chatState.selectedChat) return;
+      const selected = options.chatState.selectedChat;
+      if (selected) {
+        if (options.chatState.messagesLoading) void openChat(selected, { restoring: true });
+        return;
+      }
       const key = viewPreference(userId, "chats.active", "");
       if (!/^(conversation|personal):\d+$/.test(key)) return;
       const [type, idText] = key.split(":");
