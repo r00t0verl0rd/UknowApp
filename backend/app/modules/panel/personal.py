@@ -2,7 +2,6 @@
 
 import json
 import logging
-from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import (
@@ -13,7 +12,7 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import FileResponse
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
@@ -38,6 +37,7 @@ from app.modules.personal_chat.service import (
 from app.request_validation import message_payload, personal_conversation_payload
 
 from .delivery import store_panel_attachment
+from .read_state import mark_personal_read
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -135,27 +135,7 @@ def personal_message_status_dict(row: PersonalMessage) -> dict:
 @router.get("/panel/personal-conversations/{conversation_id}/messages")
 def personal_messages(conversation_id: int, principal: PanelUser, db: Db, after_id: int = 0):
     item = _personal_conversation(db, principal, conversation_id)
-    read_column = PersonalMessage.admin_read_at if principal["role"] == "admin" else PersonalMessage.participant_read_at
-    read_ids = db.scalars(
-        select(PersonalMessage.id).where(
-            PersonalMessage.conversation_id == item.id,
-            PersonalMessage.sender_role != principal["role"],
-            read_column.is_(None),
-            PersonalMessage.id > after_id,
-        ),
-    ).all()
-    if read_ids:
-        read_at = datetime.now(UTC)
-        db.execute(
-            update(PersonalMessage)
-            .where(PersonalMessage.id.in_(read_ids))
-            .values({read_column.key: read_at}),
-        )
-        db.commit()
-        publish_personal_update(
-            db, item, action="read", actor_role=principal["role"],
-            message_ids=read_ids, read_at=read_at.isoformat(),
-        )
+    mark_personal_read(db, item, principal, after_id)
     rows = db.scalars(
         select(PersonalMessage)
         .options(selectinload(PersonalMessage.sender))
@@ -174,6 +154,63 @@ def personal_message(message_id: int, principal: PanelUser, db: Db):
     return personal_message_dict(row, principal)
 
 
+def _personal_sender_id(db, principal, item):
+    """Автор сообщения: администратор — без пользователя, остальные — только владелец диалога."""
+    if principal["role"] == "admin":
+        return None
+    sender = db.get(User, principal["user_id"])
+    if not sender or sender.id != item.participant_id:
+        raise HTTPException(status_code=403, detail="Нет доступа к личному диалогу")
+    return sender.id
+
+
+def _find_personal_message(db, principal, conversation_id, client_message_id):
+    """Ищет уже сохранённое сообщение с тем же client_message_id (защита от повторной отправки)."""
+    return db.scalar(
+        select(PersonalMessage).where(
+            PersonalMessage.conversation_id == conversation_id,
+            PersonalMessage.sender_role == principal["role"],
+            PersonalMessage.client_message_id == client_message_id,
+        ).limit(1),
+    )
+
+
+def _commit_personal_message(db, row, principal, item, client_message_id, on_failure=None):
+    """Сохраняет сообщение. При гонке по client_message_id возвращает существующее, иначе None."""
+    db.add(row)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        if on_failure:
+            on_failure()
+        existing = client_message_id and _find_personal_message(db, principal, item.id, client_message_id)
+        if existing:
+            return existing
+        raise
+    except Exception:
+        db.rollback()
+        if on_failure:
+            on_failure()
+        raise
+    db.refresh(row)
+    return None
+
+
+def _notify_personal(db, item, principal, row, preview):
+    """Отправляет пуш и публикует событие о новом личном сообщении."""
+    is_admin = principal["role"] == "admin"
+    schedule_push(
+        db,
+        [item.participant_id] if is_admin else [],
+        "Новое личное сообщение",
+        (("Администратор: " if is_admin else item.participant.full_name + ": ") + preview)[:240],
+        f"/?openConversation={item.id}&type=personal",
+        include_admin=not is_admin,
+    )
+    publish_personal_update(db, item, message_id=row.id, sender_role=principal["role"])
+
+
 @router.post("/panel/personal-conversations/{conversation_id}/messages", status_code=201)
 def send_personal_message(
     conversation_id: int,
@@ -185,22 +222,10 @@ def send_personal_message(
     item = _personal_conversation(db, principal, conversation_id)
     if principal["role"] not in {"admin", "teacher", "student"}:
         raise HTTPException(status_code=403, detail="Недостаточно прав")
-    if principal["role"] == "admin":
-        sender_id = None
-    else:
-        sender = db.get(User, principal["user_id"])
-        if not sender or sender.id != item.participant_id:
-            raise HTTPException(status_code=403, detail="Нет доступа к личному диалогу")
-        sender_id = sender.id
+    sender_id = _personal_sender_id(db, principal, item)
     client_message_id = payload.get("client_message_id")
     if client_message_id:
-        existing = db.scalar(
-            select(PersonalMessage).where(
-                PersonalMessage.conversation_id == item.id,
-                PersonalMessage.sender_role == principal["role"],
-                PersonalMessage.client_message_id == client_message_id,
-            ).limit(1),
-        )
+        existing = _find_personal_message(db, principal, item.id, client_message_id)
         if existing:
             return personal_message_dict(existing, principal)
 
@@ -213,32 +238,10 @@ def send_personal_message(
     )
     if not row.text:
         raise HTTPException(status_code=400, detail="Введите сообщение")
-    db.add(row)
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        if client_message_id:
-            existing = db.scalar(
-                select(PersonalMessage).where(
-                    PersonalMessage.conversation_id == item.id,
-                    PersonalMessage.sender_role == principal["role"],
-                    PersonalMessage.client_message_id == client_message_id,
-                ).limit(1),
-            )
-            if existing:
-                return personal_message_dict(existing, principal)
-        raise
-    db.refresh(row)
-    schedule_push(
-        db,
-        [item.participant_id] if principal["role"] == "admin" else [],
-        "Новое личное сообщение",
-        (("Администратор: " if principal["role"] == "admin" else item.participant.full_name + ": ") + row.text)[:240],
-        f"/?openConversation={item.id}&type=personal",
-        include_admin=principal["role"] != "admin",
-    )
-    publish_personal_update(db, item, message_id=row.id, sender_role=principal["role"])
+    existing = _commit_personal_message(db, row, principal, item, client_message_id)
+    if existing:
+        return personal_message_dict(existing, principal)
+    _notify_personal(db, item, principal, row, row.text)
     return personal_message_dict(row, principal)
 
 
@@ -279,22 +282,12 @@ async def send_personal_attachment(
         raise HTTPException(status_code=403, detail="Недостаточно прав")
     if len(text or "") > 3900:
         raise HTTPException(status_code=400, detail="Текст к вложению слишком длинный")
-    if principal["role"] == "admin":
-        sender_id = None
-    else:
-        sender = db.get(User, principal["user_id"])
-        if not sender or sender.id != item.participant_id:
-            raise HTTPException(status_code=403, detail="Нет доступа к личному диалогу")
-        sender_id = sender.id
+    sender_id = _personal_sender_id(db, principal, item)
     client_message_id = (client_message_id or "").strip() or None
     if client_message_id and len(client_message_id) > 64:
         raise HTTPException(status_code=400, detail="Некорректный ID отправки")
     if client_message_id:
-        existing = db.scalar(select(PersonalMessage).where(
-            PersonalMessage.conversation_id == conversation_id,
-            PersonalMessage.sender_role == principal["role"],
-            PersonalMessage.client_message_id == client_message_id,
-        ).limit(1))
+        existing = _find_personal_message(db, principal, conversation_id, client_message_id)
         if existing:
             return personal_message_dict(existing, principal)
 
@@ -318,36 +311,13 @@ async def send_personal_attachment(
         metadata_json=metadata_json,
         client_message_id=client_message_id,
     )
-    db.add(row)
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        delete_message_media(metadata_json)
-        if client_message_id:
-            existing = db.scalar(select(PersonalMessage).where(
-                PersonalMessage.conversation_id == conversation_id,
-                PersonalMessage.sender_role == principal["role"],
-                PersonalMessage.client_message_id == client_message_id,
-            ).limit(1))
-            if existing:
-                return personal_message_dict(existing, principal)
-        raise
-    except Exception:
-        db.rollback()
-        delete_message_media(metadata_json)
-        raise
-    db.refresh(row)
-    schedule_push(
-        db,
-        [item.participant_id] if principal["role"] == "admin" else [],
-        "Новое личное сообщение",
-        (("Администратор: " if principal["role"] == "admin" else item.participant.full_name + ": ") +
-         (row.text or "Вложение: " + name))[:240],
-        f"/?openConversation={item.id}&type=personal",
-        include_admin=principal["role"] != "admin",
+    existing = _commit_personal_message(
+        db, row, principal, item, client_message_id,
+        on_failure=lambda: delete_message_media(metadata_json),
     )
-    publish_personal_update(db, item, message_id=row.id, sender_role=principal["role"])
+    if existing:
+        return personal_message_dict(existing, principal)
+    _notify_personal(db, item, principal, row, row.text or "Вложение: " + name)
     return personal_message_dict(row, principal)
 
 

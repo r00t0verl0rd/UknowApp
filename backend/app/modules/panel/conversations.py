@@ -2,7 +2,6 @@
 
 import json
 import logging
-from datetime import UTC, datetime
 
 from fastapi import (
     APIRouter,
@@ -10,7 +9,7 @@ from fastapi import (
     Request,
 )
 from fastapi.responses import FileResponse
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.infrastructure.storage.media import (
@@ -38,6 +37,8 @@ from app.modules.messaging.service import (
     _panel_message_dict,
     _panel_visible_conversation,
 )
+
+from .read_state import mark_conversation_read
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -84,28 +85,7 @@ def panel_conversation_summary(conversation_id: int, principal: PanelUser, db: D
 @router.get("/panel/conversations/{conversation_id}/messages")
 def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id: int = 0):
     conversation = _panel_visible_conversation(db, principal, conversation_id)
-    if principal["role"] in {"teacher", "student"}:
-        read_key = "teacher_read_at" if principal["role"] == "teacher" else "student_read_at"
-        sender_roles = ("student", "admin") if principal["role"] == "teacher" else ("teacher", "admin")
-        unread = db.scalars(
-            select(Message).where(
-                Message.conversation_id == conversation.id,
-                Message.sender_role.in_(sender_roles),
-                func.json_extract(Message.metadata_json, "$." + read_key).is_(None),
-                Message.id > after_id,
-            ),
-        ).all()
-        if unread:
-            now = datetime.now(UTC).isoformat()
-            for row in unread:
-                metadata = json.loads(row.metadata_json or "{}")
-                metadata[read_key] = now
-                row.metadata_json = json.dumps(metadata, ensure_ascii=False)
-            db.commit()
-            publish_conversation_update(
-                db, conversation, action="read", actor_role=principal["role"],
-                message_ids=[row.id for row in unread], read_at=now,
-            )
+    mark_conversation_read(db, conversation, principal, after_id)
     rows = db.scalars(
         select(Message)
         .where(Message.conversation_id == conversation.id, Message.id > after_id)
