@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import delete, select
@@ -34,23 +35,35 @@ def get_messenger_account(
     )
 
 
+def get_messenger_accounts(
+    db: Session,
+    user_ids: Iterable[int],
+    platform: MessengerPlatform | str,
+) -> dict[int, MessengerAccount]:
+    """Вернуть привязки адресатов; другие пользователи не требуются."""
+    ids = tuple(dict.fromkeys(user_ids))
+    if not ids:
+        return {}
+    platform_value = platform.value if isinstance(platform, MessengerPlatform) else platform
+    accounts = db.scalars(
+        select(MessengerAccount).where(
+            MessengerAccount.user_id.in_(ids),
+            MessengerAccount.platform == platform_value,
+            MessengerAccount.status == "linked",
+        ),
+    ).all()
+    return {account.user_id: account for account in accounts}
+
+
 def get_messenger_pair(
     db: Session,
     teacher_id: int,
     student_id: int,
     platform: MessengerPlatform | str,
 ) -> tuple[MessengerAccount | None, MessengerAccount | None]:
-    """Получить связанные аккаунты участников одним запросом."""
-    platform_value = platform.value if isinstance(platform, MessengerPlatform) else platform
-    accounts = db.scalars(
-        select(MessengerAccount).where(
-            MessengerAccount.user_id.in_((teacher_id, student_id)),
-            MessengerAccount.platform == platform_value,
-            MessengerAccount.status == "linked",
-        ),
-    ).all()
-    by_user_id = {account.user_id: account for account in accounts}
-    return by_user_id.get(teacher_id), by_user_id.get(student_id)
+    """Совместимость для кода, которому нужна пара привязок."""
+    accounts = get_messenger_accounts(db, (teacher_id, student_id), platform)
+    return accounts.get(teacher_id), accounts.get(student_id)
 
 
 def get_messenger_user(

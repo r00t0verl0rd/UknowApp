@@ -13,6 +13,7 @@ from app.modules.communication.contracts import (
     MessageKind,
     MessengerCapabilities,
     MessengerPlatform,
+    OutboundMedia,
     OutboundMessage,
 )
 from app.modules.messaging.inbound import process_inbound_message, set_teacher_session
@@ -219,7 +220,7 @@ def test_personal_attachments_are_private_downloadable_and_idempotent(api):
 class FakeMessengerAdapter:
     def __init__(self, platform):
         self.platform = platform
-        self.capabilities = MessengerCapabilities(text=True)
+        self.capabilities = MessengerCapabilities(text=True, attachments=True)
         self.sent = []
 
     async def send(self, message: OutboundMessage) -> DeliveryResult:
@@ -494,6 +495,52 @@ def test_panel_delivery_uses_recipient_connection_only(
         assert len(ledger["delivered"]) == len(expected_chats)
         assert refreshed.delivery_status == "delivered"
         assert all(entry["external_chat_id"] in expected_chats for entry in ledger["delivered"])
+
+
+def test_single_connected_student_receives_attachment_without_teacher_connection(api):
+    _, users, sessions = api
+    adapter = FakeMessengerAdapter(MessengerPlatform.TELEGRAM)
+    with sessions() as db:
+        teacher = db.get(User, users["teacher-one"])
+        student = db.get(User, users["student-one"])
+        assignment = Assignment(
+            teacher_id=teacher.id, student_id=student.id, active=True,
+        )
+        db.add(assignment)
+        db.flush()
+        conversation = Conversation(
+            assignment_id=assignment.id,
+            teacher_id=teacher.id,
+            student_id=student.id,
+            status="active",
+        )
+        db.add(conversation)
+        db.flush()
+        sync_messenger_account(
+            db, student.id, MessengerPlatform.TELEGRAM,
+            external_user_id="student-id", external_chat_id="student-chat",
+        )
+        row = Message(
+            conversation_id=conversation.id, sender_id=teacher.id,
+            sender_role="teacher", content_type="document",
+            text="Файл для ученика", delivery_status="delivered",
+        )
+        db.add(row)
+        db.commit()
+        media = OutboundMedia(
+            storage_key="documents/lesson.pdf",
+            file_name="lesson.pdf",
+            mime_type="application/pdf",
+        )
+        result = asyncio.run(deliver_panel_message(
+            db, CommunicationService([adapter]), row, conversation,
+            [(student, "student")], "teacher", student,
+            row.text, MessageKind.DOCUMENT, media=media,
+        ))
+        assert result["telegram"]["delivered"][0]["user_id"] == student.id
+        assert len(adapter.sent) == 1
+        assert adapter.sent[0].media == media
+        assert adapter.sent[0].external_chat_id == "student-chat"
 
 
 def test_independent_routing_across_multiple_messengers(api):

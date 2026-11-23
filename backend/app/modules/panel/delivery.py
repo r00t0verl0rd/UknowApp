@@ -31,7 +31,7 @@ from app.models import (
     TeacherSession,
     User,
 )
-from app.modules.communication.accounts import get_messenger_account, get_messenger_pair
+from app.modules.communication.accounts import get_messenger_account, get_messenger_accounts
 from app.modules.communication.contracts import (
     MessageKind,
     MessengerError,
@@ -184,7 +184,7 @@ def save_panel_messenger_results(
     db: Session,
     row: Message,
     conversation: Conversation,
-    results: dict[str, dict[str, list[dict]]],
+    results: dict[str, dict],
 ) -> None:
     if not results:
         return
@@ -218,20 +218,17 @@ async def deliver_panel_message(
     body: str,
     content_type: MessageKind,
     media: OutboundMedia | None = None,
-) -> dict[str, dict[str, list[dict]]]:
+) -> dict[str, dict]:
     """Доставлять каждому подключённому адресату независимо от отправителя."""
-    results: dict[str, dict[str, list[dict]]] = {}
+    results: dict[str, dict] = {}
     if communication is None:
         return results
 
     for platform in communication.platforms:
-        teacher_account, student_account = get_messenger_pair(
-            db, conversation.teacher_id, conversation.student_id, platform,
+        accounts_by_user = get_messenger_accounts(
+            db, (user.id for user, _ in recipients), platform,
         )
-        accounts_by_user = {
-            conversation.teacher_id: teacher_account,
-            conversation.student_id: student_account,
-        }
+        student_account = accounts_by_user.get(conversation.student_id)
         student_telegram_target = (
             panel_student_telegram_target(db, conversation, student_account)
             if platform == MessengerPlatform.TELEGRAM
