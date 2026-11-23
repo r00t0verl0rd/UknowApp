@@ -65,7 +65,7 @@ export default function ChatDialogs(options) {
 
       {options.deleteMessageCandidate && (
         <ConfirmDialog
-          eyebrow="УДАЛЕНИЕ СООБЩЕНИЯ"
+          eyebrow="Сообщение"
           title="Удалить у всех?"
           titleId="delete-message-title"
           busy={options.deletingMessage}
@@ -83,8 +83,8 @@ export default function ChatDialogs(options) {
           }
         >
           {options.selectedChat?.type === "personal"
-            ? "Сообщение будет удалено из личного диалога UknowApp. Чужие сообщения удалить нельзя."
-            : "Сообщение будет удалено из переписки UknowApp и предпринята попытка удалить его копии в Telegram у всех получателей. Чужие сообщения удалить нельзя."}
+            ? "Сообщение исчезнет из личного диалога UknowApp."
+            : "Сообщение исчезнет из UknowApp. Копии в мессенджерах тоже попробуем удалить."}
         </ConfirmDialog>
       )}
     </>

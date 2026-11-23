@@ -60,10 +60,10 @@ export default function UserDialogs(options) {
             <div>
               <div class="eyebrow">
                 {options.modal.mode === "create"
-                  ? "НОВЫЙ УЧАСТНИК"
+                  ? "Новый участник"
                   : options.modal.mode === "edit"
-                    ? "ПРОФИЛЬ УЧАСТНИКА"
-                    : "СВЯЗЬ УЧЕНИКА И УЧИТЕЛЯ"}
+                    ? "Профиль участника"
+                    : "Назначение учителя"}
               </div>
               <h2>
                 {options.modal.mode === "create"
@@ -101,7 +101,7 @@ export default function UserDialogs(options) {
                   </For>
                 </select>
               </FormField>
-              <p class="hint">Если у ученика уже есть активное назначение, оно будет заменено новым.</p>
+              <p class="hint">Если ученик уже занимается с другим учителем, новое назначение заменит прежнее.</p>
               <div class="modal-actions">
                 <Button variant="ghost" onClick={() => options.setModal(null)}>
                   Отмена
@@ -229,7 +229,7 @@ export default function UserDialogs(options) {
 
       {options.modal?.mode === "edit" && confirmNewCode() && (
         <ConfirmDialog
-          eyebrow="НОВЫЙ КОД ДОСТУПА"
+          eyebrow="Код доступа"
           title="Выдать новый код?"
           titleId="new-access-code-title"
           busy={options.savingUser}
@@ -241,14 +241,13 @@ export default function UserDialogs(options) {
             await options.regeneratePanelAccessCode();
           }}
         >
-          После выдачи нового кода прежний сразу перестанет действовать. Новый код появится в отдельном
-          окне, откуда его можно скопировать.
+          Новый код можно будет скопировать сразу после создания. Старый код перестанет работать.
         </ConfirmDialog>
       )}
 
       {options.deleteCandidate && (
         <ConfirmDialog
-          eyebrow="УДАЛЕНИЕ УЧАСТНИКА"
+          eyebrow="Участник"
           title="Удалить участника?"
           titleId="delete-user-title"
           busy={options.deletingUser}
@@ -258,14 +257,14 @@ export default function UserDialogs(options) {
           onClose={() => options.setDeleteCandidate(null)}
           onConfirm={options.confirmRemoveUser}
         >
-          Профиль «<b>{options.deleteCandidate.full_name}</b>», связанные переписки и сообщения будут
-          удалены. Это действие нельзя отменить.
+          Профиль «<b>{options.deleteCandidate.full_name}</b>» и связанные переписки будут удалены.
+          Вернуть их после удаления не получится.
         </ConfirmDialog>
       )}
 
       {options.unassignCandidate && (
         <ConfirmDialog
-          eyebrow="ОТВЯЗКА УЧЕНИКА"
+          eyebrow="Назначение"
           title="Отвязать ученика?"
           titleId="unassign-student-title"
           busy={options.unassigningStudent}
@@ -275,15 +274,14 @@ export default function UserDialogs(options) {
           onClose={() => options.setUnassignCandidate(null)}
           onConfirm={options.confirmUnassignStudent}
         >
-          Ученик «<b>{options.unassignCandidate.full_name}</b>» будет отвязан от учителя и появится в
-          разделе «Ученики без учителя». Активная переписка с учителем закроется, история сообщений
-          сохранится.
+          Ученик «<b>{options.unassignCandidate.full_name}</b>» перейдёт в список «Без учителя».
+          История переписки сохранится, но старый диалог закроется.
         </ConfirmDialog>
       )}
 
       {options.disconnectCandidate && (
         <ConfirmDialog
-          eyebrow="ОТКЛЮЧЕНИЕ TELEGRAM"
+          eyebrow="Telegram"
           title="Отключить Telegram?"
           titleId="disconnect-telegram-title"
           busy={options.disconnectingTelegram}
@@ -292,9 +290,8 @@ export default function UserDialogs(options) {
           onClose={() => options.setDisconnectCandidate(null)}
           onConfirm={options.confirmDisconnectTelegram}
         >
-          Отключить Telegram у пользователя «<b>{options.disconnectCandidate.full_name}</b>»? Профиль и
-          история переписки останутся в системе. Отправлять и получать сообщения через бота он не сможет до
-          повторного подключения.
+          Профиль и переписка «<b>{options.disconnectCandidate.full_name}</b>» сохранятся в UknowApp.
+          Сообщения через Telegram будут доступны после повторного подключения.
         </ConfirmDialog>
       )}
 
@@ -304,8 +301,8 @@ export default function UserDialogs(options) {
             <div>
               <div class="eyebrow">
                 {options.issuedCredential.role === "student"
-                  ? "ЕДИНЫЙ КОД ДОСТУПА УЧЕНИКА"
-                  : "ЕДИНЫЙ КОД ДОСТУПА УЧИТЕЛЯ"}
+                  ? "Доступ ученика"
+                  : "Доступ преподавателя"}
               </div>
               <h2>{options.issuedCredential.full_name}</h2>
             </div>
@@ -376,7 +373,7 @@ export default function UserDialogs(options) {
         <Modal onClose={() => options.setCode(null)}>
           <div class="modal-head">
             <div>
-              <div class="eyebrow">ПОДКЛЮЧЕНИЕ TELEGRAM</div>
+              <div class="eyebrow">Подключение Telegram</div>
               <h2>{options.code.full_name}</h2>
             </div>
             <IconButton onClick={() => options.setCode(null)}>
@@ -386,8 +383,8 @@ export default function UserDialogs(options) {
           <div class="invite-code">{options.code.code}</div>
           <p class="hint">
             {options.code.shared_access
-              ? `Это единый код ${options.code.role === "student" ? "ученика" : "учителя"}: он подходит для входа в веб-панель вместе с логином и для подключения Telegram. Он действует, пока администратор не заменит его новым.`
-              : "Передайте этот код ученику для подключения Telegram. Он действует до первого успешного подключения и используется один раз."}
+              ? "Код подходит для входа в UknowApp (вместе с логином) и подключения Telegram. Он действует до выдачи нового кода."
+              : "Передайте код ученику для подключения Telegram. Использовать его можно только один раз."}
           </p>
           <div class="modal-actions">
             <Button variant="ghost" onClick={() => options.setCode(null)}>
