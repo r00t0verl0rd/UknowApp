@@ -15,7 +15,7 @@ import LoginPage from "./authentication/LoginPage.jsx";
 import { createPushNotificationsState } from "../shared/state/notifications/createPushNotificationsState.js";
 import { createAuthController } from "../shared/state/authentication/createAuthController.js";
 import { createPanelDataState } from "../shared/state/app/createPanelDataState.js";
-import { workspaceRegistry, workspaceIcons } from "../workspaces/workspaceRegistry.js";
+import { workspaceFor, workspaceIcons } from "../workspaces/workspaceRegistry.js";
 import WorkspaceLayout from "../workspaces/WorkspaceLayout.jsx";
 export default function App() {
   const [errors, setErrors] = createSignal([]);
@@ -48,17 +48,28 @@ export default function App() {
 }
 function Application(options) {
   const authState = createAuthState();
+  createEffect(() => [], () => {
+    const onStorage = (event) => {
+      if (event.key === "uknowapp-session-change" || event.key === "uknowapp-auth" || event.key === null) {
+        authState.setProfile(null);
+        window.location.reload();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  });
   const settings = createSettingsState();
   const chatState = createChatState();
   const personalState = createPersonalChatState();
   const navigation = createUiState();
   const directory = createDirectoryState();
-  const workspace = createMemo(() => workspaceRegistry[authState.profile?.role] ?? null);
+  const workspace = createMemo(() => workspaceFor(authState.profile));
   const Workspace = dynamic(() => workspace()?.Component);
   const panel = createPanelDataState({
     get auth() {
       return authState.auth;
     },
+    get profile() { return authState.profile; },
     setAuth: authState.setAuth,
     setProfile: authState.setProfile,
     setError: options.setError,
@@ -71,7 +82,7 @@ function Application(options) {
   });
   createConversationSync({
     get auth() {
-      return authState.auth;
+      return workspace() && authState.auth;
     },
     get role() {
       return authState.profile?.role;
@@ -83,6 +94,7 @@ function Application(options) {
       return chatState.messages;
     },
     request: panel.request,
+    verifySession: panel.verifySession,
     inboxRowRevision: panel.inboxRowRevision,
     setChats: chatState.setChats,
     setPersonalChats: personalState.setPersonalChats,

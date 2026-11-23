@@ -32,6 +32,7 @@ from app.modules.conversations.service import (
     conversation_dicts,
     publish_conversation_update,
 )
+from app.modules.auth.permissions import permits
 from app.modules.dependencies import Db, PanelUser
 from app.modules.messaging.service import (
     _panel_message_dict,
@@ -64,6 +65,8 @@ def panel_conversations(principal: PanelUser, db: Db):
         statement = statement.where(Assignment.teacher_id == principal["user_id"])
     elif principal["role"] == "student":
         statement = statement.where(Assignment.student_id == principal["user_id"]).limit(1)
+    elif not permits(principal, "dialogs.observe"):
+        raise HTTPException(status_code=403, detail="Недостаточно прав")
     conversations = db.scalars(statement).all()
     return conversation_dicts(
         db,
@@ -85,6 +88,8 @@ def panel_conversation_summary(conversation_id: int, principal: PanelUser, db: D
 @router.get("/panel/conversations/{conversation_id}/messages")
 def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id: int = 0):
     conversation = _panel_visible_conversation(db, principal, conversation_id)
+    if permits(principal, "dialogs.observe"):
+        logger.info("Admin read conversation id=%s", conversation.id)
     mark_conversation_read(db, conversation, principal, after_id)
     rows = db.scalars(
         select(Message)

@@ -34,7 +34,7 @@ export const workspaceRegistry = Object.freeze({
   teacher: {
     Component: TeacherWorkspace,
     label: "Личный кабинет учителя",
-    pages: ["graph", "chats"],
+    pages: ["graph", "chats", "boards"],
     navigation: [{
       page: "graph",
       label: "Структура",
@@ -43,20 +43,32 @@ export const workspaceRegistry = Object.freeze({
       page: "chats",
       label: "Диалоги",
       icon: MessageCircle
-    }]
+    }, { page: "boards", label: "Доски", icon: Layers }]
   },
   student: {
     Component: StudentWorkspace,
     label: "Личный кабинет ученика",
-    pages: ["chats"],
+    pages: ["chats", "boards"],
     navigation: [{
       page: "chats",
       label: "Диалоги",
       icon: MessageCircle
-    }]
+    }, { page: "boards", label: "Доски", icon: Layers }]
   }
 });
 export const workspaceIcons = Object.freeze({
   PushOn: Bell,
   PushOff: BellOff
 });
+
+const pagePermission = Object.freeze({
+  graph: "structure.view", chats: "dialogs.own", users: "users.manage",
+  boards: "boards.view", additional: "school.manage",
+});
+
+export function workspaceFor(profile) {
+  if (!profile || !Object.hasOwn(workspaceRegistry, profile.role) || !Array.isArray(profile.permissions)) return null;
+  const config = workspaceRegistry[profile.role];
+  const navigation = config.navigation.filter(({ page }) => profile.permissions.includes(pagePermission[page]));
+  return navigation.length ? { ...config, navigation, pages: navigation.map(({ page }) => page) } : null;
+}

@@ -52,3 +52,19 @@ def test_durable_events_replay_only_for_conversation_members(api):
         assert teacher_payload["action"] == "read"
         assert teacher_payload["message_ids"] == [1]
         assert teacher_payload["summary"]["unread_count"] == 0
+
+
+def test_revoked_assignment_redacts_queued_event(api):
+    from app.modules.panel.session import visible_payload
+    from app.modules.assignments.service import assign_student, unassign_student
+
+    _, users, sessions = api
+    teacher_id = users["teacher-one"]
+    student_id = users["student-one"]
+    teacher = {"role": "teacher", "user_id": teacher_id}
+    with sessions() as db:
+        chat = assign_student({"teacher_id": teacher_id, "student_id": student_id}, db)
+        payload = json.dumps({"conversation_id": chat["id"], "conversation_type": "conversation", "summary": {"text": "private"}})
+        assert visible_payload(db, teacher, payload) == payload
+        unassign_student(student_id, db)
+        assert json.loads(visible_payload(db, teacher, payload)) == {"resync": True}

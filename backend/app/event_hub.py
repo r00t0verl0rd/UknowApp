@@ -37,7 +37,9 @@ def unsubscribe_chat_updates(queue: asyncio.Queue[str]) -> None:
 
 
 def _can_receive(principal: dict | None, audience: dict | None) -> bool:
-    if principal is None or principal.get("role") == "admin":
+    if principal is None:
+        return False
+    if principal.get("role") == "admin":
         return True
     if audience is None:
         return False

@@ -5,7 +5,7 @@ export function apiUrl(path) {
 }
 
 export function fetchApi(path, options = {}) {
-  return fetch(apiUrl(path), { ...options, credentials: "include" });
+  return fetch(apiUrl(path), { ...options, cache: "no-store", credentials: "include" });
 }
 
 export async function request(path, options = {}) {

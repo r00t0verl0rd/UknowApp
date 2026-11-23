@@ -95,6 +95,8 @@ async def _publish_and_deliver(
     """Публикует событие и пуш, затем доставляет сообщение в мессенджеры."""
     sender, recipients, student, teacher = parties
     role = principal["role"]
+    if role == "admin":
+        logger.info("Admin posted message id=%s in conversation id=%s", row.id, conversation.id)
     # Событие публикуем сразу после сохранения, не ожидая Telegram.
     publish_conversation_update(db, conversation, message_id=row.id, sender_role=role)
     push_recipients = [student.id, teacher.id] if role == "admin" else ([student.id] if role == "teacher" else [teacher.id])

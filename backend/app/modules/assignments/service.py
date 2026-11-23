@@ -46,7 +46,7 @@ def assign_student(payload, db: Session) -> dict:
         if conversation:
             conversation.status = "closed"
             conversation.assignment_id = None
-            closed_conversation_ids.append(conversation.id)
+            closed_conversation_ids.append((conversation.id, conversation.teacher_id))
             db.query(TeacherSession).filter(
                 TeacherSession.conversation_id == conversation.id,
             ).delete(synchronize_session=False)
@@ -85,10 +85,10 @@ def assign_student(payload, db: Session) -> dict:
     db.commit()
     db.refresh(conversation)
 
-    for closed_id in closed_conversation_ids:
+    for closed_id, old_teacher_id in closed_conversation_ids:
         if closed_id != conversation.id:
-            publish_chat_update(closed_id)
-    publish_chat_update(conversation.id)
+            publish_chat_update(closed_id, audience={"teacher_id": old_teacher_id, "student_id": student.id}, db=db)
+    publish_chat_update(conversation.id, audience={"teacher_id": teacher.id, "student_id": student.id}, db=db)
     return conversation_dict(db, conversation)
 
 
@@ -115,12 +115,12 @@ def unassign_student(student_id: int, db: Session) -> dict:
             conversation = assignment.conversation
             conversation.status = "closed"
             conversation.assignment_id = None
-            conversation_ids.append(conversation.id)
+            conversation_ids.append((conversation.id, conversation.teacher_id))
             db.query(TeacherSession).filter(
                 TeacherSession.conversation_id == conversation.id,
             ).delete(synchronize_session=False)
 
     db.commit()
-    for conversation_id in conversation_ids:
-        publish_chat_update(conversation_id)
+    for conversation_id, teacher_id in conversation_ids:
+        publish_chat_update(conversation_id, audience={"teacher_id": teacher_id, "student_id": student.id}, db=db)
     return {"ok": True, "student_id": student.id}

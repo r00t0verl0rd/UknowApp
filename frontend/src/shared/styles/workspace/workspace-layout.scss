@@ -713,3 +713,15 @@
     }
   }
 }
+
+.boards-placeholder {
+  min-height: 55vh;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+
+  img {
+    width: 6rem;
+    opacity: 0.15;
+  }
+}

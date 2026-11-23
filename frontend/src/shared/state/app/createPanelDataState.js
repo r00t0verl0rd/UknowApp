@@ -1,4 +1,5 @@
 import { createSignal, createEffect } from "solid-js";
+import { workspaceFor } from "../../../workspaces/workspaceRegistry.js";
 import { request } from "../../services/api.js";
 import { getAdminBootstrap, getCurrentProfile } from "../../services/panelApi.js";
 import { mergeInboxSnapshot } from "../../services/inboxState.js";
@@ -8,6 +9,26 @@ export function createPanelDataState(options) {
   const inboxRowRevision = new Map();
   const [inboxLoading, setInboxLoading] = createSignal(false);
   const [adminDataLoading, setAdminDataLoading] = createSignal(false);
+  function closeWorkspace() {
+    localStorage.removeItem("uknowapp-auth");
+    sessionStorage.removeItem("uknowapp-auth");
+    options.setProfile(null);
+    options.setAuth("");
+    window.location.reload();
+  }
+  async function verifySession() {
+    const profile = options.profile;
+    if (!profile) return;
+    try {
+      const current = await getCurrentProfile(request);
+      if (profile !== options.profile) return;
+      if (current.id === profile.id && current.role === profile.role &&
+          JSON.stringify(current.permissions) === JSON.stringify(profile.permissions)) return;
+    } catch {
+      if (profile !== options.profile) return;
+    }
+    closeWorkspace();
+  }
   const refresh = () => {
     if (!options.auth) return Promise.resolve();
     if (refreshTask) return refreshTask;
@@ -15,35 +36,27 @@ export function createPanelDataState(options) {
       const revision = ++refreshRevision;
       const revisionsAtStart = new Map(inboxRowRevision);
       const profileTask = getCurrentProfile(request);
-      // Запускаем запросы вместе; показываем сообщения только после проверки сессии.
-      // Разные источники переписок рисуем независимо: медленный ответ
-      // личных диалогов не задерживает появление обычных, и наоборот.
-      const conversationsResult = request("/api/panel/conversations").catch(() => null);
-      const personalResult = request("/api/panel/personal-conversations").catch(() => null);
       let who;
       try {
         who = await profileTask;
         if (revision !== refreshRevision) return;
+        if (!workspaceFor(who)) throw new Error("Не удалось подтвердить права доступа");
+        if (options.profile && (options.profile.id !== who.id || options.profile.role !== who.role)) {
+          options.setProfile(null);
+          window.location.reload();
+          return;
+        }
         options.setProfile(who);
         setInboxLoading(true);
-        setAdminDataLoading(who.role === "admin");
+        setAdminDataLoading(who.permissions.includes("users.manage"));
       } catch (error) {
         if (revision !== refreshRevision) return;
         options.setError(error.message);
-        const message = String(error.message).toLowerCase();
-        if (
-          ["учитель", "ученик", "логин", "сессия", "войдите", "учётная запись"].some((term) =>
-            message.includes(term),
-          ) ||
-          message.includes("401")
-        ) {
-          localStorage.removeItem("uknowapp-auth");
-          sessionStorage.removeItem("uknowapp-auth");
-          options.setAuth("");
-          options.setProfile(null);
-        }
+        closeWorkspace();
         return;
       }
+      const conversationsResult = request("/api/panel/conversations").catch(() => null);
+      const personalResult = request("/api/panel/personal-conversations").catch(() => null);
       let inboxPending = 2;
       const applyInbox = (task, setter, kind) =>
         task
@@ -67,7 +80,7 @@ export function createPanelDataState(options) {
         applyInbox(personalResult, options.setPersonalChats, "personal"),
       ]);
       const adminTask =
-        who.role === "admin"
+        who.permissions.includes("users.manage")
           ? getAdminBootstrap(request)
               .then(([people, summary]) => {
                 if (revision !== refreshRevision) return;
@@ -78,7 +91,7 @@ export function createPanelDataState(options) {
                 if (revision === refreshRevision) setAdminDataLoading(false);
               })
           : Promise.resolve();
-      if (who.role !== "admin") {
+      if (!who.permissions.includes("users.manage")) {
         setAdminDataLoading(false);
         options.setUsers([]);
         options.setOverview(null);
@@ -124,6 +137,7 @@ export function createPanelDataState(options) {
     request,
     refresh,
     inboxRowRevision,
+    verifySession,
     get inboxLoading() {
       return inboxLoading();
     },

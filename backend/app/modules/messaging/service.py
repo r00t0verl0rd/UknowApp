@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.modules.auth.permissions import permits
 from app.models import Assignment, Conversation, Message, User
 
 
@@ -14,12 +15,17 @@ def _panel_visible_conversation(db: Session, principal: dict, conversation_id: i
     conversation = db.get(Conversation, conversation_id)
     if not conversation:
         raise HTTPException(status_code=404, detail="Переписка не найдена")
-    if principal["role"] in {"teacher", "student"}:
+    if not permits(principal, "dialogs.observe"):
+        if principal.get("role") not in {"teacher", "student"}:
+            raise HTTPException(status_code=404, detail="Переписка не найдена")
+        assignment = db.get(Assignment, conversation.assignment_id) if conversation.assignment_id else None
         participant_id = (
             conversation.teacher_id if principal["role"] == "teacher" else conversation.student_id
         )
         if (
-            participant_id != principal["user_id"]
+            not assignment or not assignment.active
+            or (assignment.teacher_id, assignment.student_id) != (conversation.teacher_id, conversation.student_id)
+            or participant_id != principal["user_id"]
             or conversation.status != "active"
         ):
             raise HTTPException(status_code=404, detail="Переписка не найдена")

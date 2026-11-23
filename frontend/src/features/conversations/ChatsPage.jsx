@@ -59,7 +59,7 @@ export default function ChatsPage(options) {
     <>
       <section class="teacher-branch chat-list workspace-panel">
         <div class="chat-list-actions workspace-control-row">
-          {options.profile?.role === "admin" && (
+          {options.profile?.permissions?.includes("dialogs.observe") && (
             <div
               class="chat-section-tabs ui-toolbar-control ui-toolbar-segmented"
               role="group"

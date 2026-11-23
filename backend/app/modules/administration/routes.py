@@ -31,7 +31,7 @@ from app.modules.communication.accounts import (
     sync_messenger_account,
 )
 from app.modules.communication.contracts import MessengerPlatform
-from app.modules.dependencies import Admin, Db
+from app.modules.dependencies import Db, SchoolStructure, UserManagement
 from app.modules.users.service import (
     generate_panel_access_code,
     user_dict,
@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
 
 @router.get("/admin/overview")
-def overview(_: Admin, db: Db):
+def overview(_: SchoolStructure, db: Db):
     users = db.scalars(select(User).order_by(User.full_name)).all()
     assignments = db.scalars(
         select(Assignment)
@@ -85,13 +85,13 @@ def overview(_: Admin, db: Db):
 
 
 @router.get("/admin/users")
-def list_users(_: Admin, db: Db):
+def list_users(_: UserManagement, db: Db):
     users = db.scalars(select(User).where(User.role.in_(["teacher", "student"])).order_by(User.role, User.full_name)).all()
     return [user_dict(user, include_additional_info=True) for user in users]
 
 
 @router.post("/admin/users", status_code=201)
-def create_user(payload: dict, _: Admin, db: Db):
+def create_user(payload: dict, _: UserManagement, db: Db):
     payload = user_create_payload(payload)
     full_name = payload["full_name"].strip()
     if len(full_name) < 2:
@@ -135,7 +135,7 @@ def create_user(payload: dict, _: Admin, db: Db):
 
 
 @router.patch("/admin/users/{user_id}")
-def update_user(user_id: int, payload: dict, _: Admin, db: Db):
+def update_user(user_id: int, payload: dict, _: UserManagement, db: Db):
     payload = user_update_payload(payload)
     user = db.get(User, user_id)
     if not user:
@@ -232,7 +232,7 @@ def update_user(user_id: int, payload: dict, _: Admin, db: Db):
 
 
 @router.post("/admin/users/{user_id}/access-code")
-def regenerate_panel_access_code(user_id: int, _: Admin, db: Db):
+def regenerate_panel_access_code(user_id: int, _: UserManagement, db: Db):
     user = db.get(User, user_id)
     if not user or user.role not in {"teacher", "student"}:
         raise HTTPException(status_code=404, detail="Участник не найден")
@@ -262,7 +262,7 @@ def regenerate_panel_access_code(user_id: int, _: Admin, db: Db):
 
 
 @router.post("/admin/users/{user_id}/disconnect-telegram")
-def disconnect_telegram(user_id: int, _: Admin, db: Db):
+def disconnect_telegram(user_id: int, _: UserManagement, db: Db):
     user = db.get(User, user_id)
     if not user or user.role not in {"teacher", "student"}:
         raise HTTPException(status_code=404, detail="Учитель или ученик не найден")
@@ -293,7 +293,7 @@ def disconnect_telegram(user_id: int, _: Admin, db: Db):
 
 
 @router.delete("/admin/users/{user_id}")
-def delete_user(user_id: int, _: Admin, db: Db):
+def delete_user(user_id: int, _: UserManagement, db: Db):
     user = db.get(User, user_id)
     if not user or user.role not in {"teacher", "student"}:
         raise HTTPException(status_code=404, detail="Учитель или ученик не найден")
@@ -351,7 +351,7 @@ def delete_user(user_id: int, _: Admin, db: Db):
 
 
 @router.post("/admin/users/{user_id}/connection-code")
-def generate_connection_code(user_id: int, _: Admin, db: Db):
+def generate_connection_code(user_id: int, _: UserManagement, db: Db):
     user = db.get(User, user_id)
     if not user or user.role not in {"teacher", "student"}:
         raise HTTPException(status_code=404, detail="Учитель или ученик не найден")
@@ -386,12 +386,12 @@ def generate_connection_code(user_id: int, _: Admin, db: Db):
     }
 
 @router.post("/admin/assignments", status_code=201)
-def assign_student_route(payload: dict, _: Admin, db: Db):
+def assign_student_route(payload: dict, _: SchoolStructure, db: Db):
     return assign_student(assignment_payload(payload), db)
 
 
 @router.delete("/admin/assignments/{student_id}")
-def unassign_student_route(student_id: int, _: Admin, db: Db):
+def unassign_student_route(student_id: int, _: SchoolStructure, db: Db):
     return unassign_student(student_id, db)
 
 

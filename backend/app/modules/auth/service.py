@@ -9,6 +9,7 @@ from sqlalchemy import select
 
 from app.core import security
 from app.core.database import SessionLocal
+from app.modules.auth.permissions import permits
 from app.models import PanelSession, User
 from app.rate_limit import SlidingWindowLimiter
 
@@ -244,7 +245,7 @@ def require_panel_user(request: Request) -> dict:
 def require_admin(request: Request) -> str:
     security.verify_request_origin(request)
     identity = _load_panel_identity(request)
-    if not identity or identity.get("role") != "admin":
+    if not permits(identity, "school.manage"):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Требуются права администратора",

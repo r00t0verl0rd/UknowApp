@@ -1,4 +1,5 @@
 import { lazy, Loading, Switch, Match } from "solid-js";
+import BoardsPlaceholder from "./BoardsPlaceholder.jsx";
 import ChatsView from "./ChatsView.jsx";
 const UsersModule = lazy(() => import("../features/users/index.js"));
 const AdministrationModule = lazy(() => import("../features/administration/index.js"));
@@ -12,6 +13,7 @@ export default function AdminWorkspace(props) {
 function AdminPage(options) {
   return (
     <Switch>
+      <Match when={options.context.page === "boards"}><BoardsPlaceholder /></Match>
       <Match when={["graph", "users"].includes(options.context.page)}>
         <UsersModule
           page={options.context.page}

@@ -289,3 +289,42 @@ def test_reassigning_student_to_different_teacher_creates_separate_conversation(
     assert teacher_two.get(
         f"/api/panel/conversations/{old_conversation_id}/messages",
     ).status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_workspace_permissions_are_server_derived(api):
+    make_client, _, _ = api
+    client = make_client()
+    login(client, "teacher-one", "teacher-password-1")
+    profile = client.get("/api/panel/me", params={"role": "admin"}).json()
+    assert set(profile["permissions"]) == {"structure.view", "dialogs.own", "boards.view"}
+    assert client.get("/api/admin/users").status_code == 401
+    login(client, "student-one", "student-password-1")
+    assert set(client.get("/api/panel/me").json()["permissions"]) == {"dialogs.own", "boards.view"}
+
+
+def test_expired_session_loses_profile_and_admin_access(api):
+    from datetime import UTC, datetime, timedelta
+    from app.models import PanelSession
+
+    make_client, _, sessions = api
+    admin = make_client()
+    login(admin, "test-admin", "a-long-test-password-123")
+    with sessions() as db:
+        db.query(PanelSession).one().expires_at = datetime.now(UTC) - timedelta(seconds=1)
+        db.commit()
+    assert admin.get("/api/panel/me").status_code == 401
+    assert admin.get("/api/admin/users").status_code == 401
+
+
+def test_admin_posts_as_admin_in_observed_dialog(api):
+    make_client, users, _ = api
+    admin = make_client()
+    login(admin, "test-admin", "a-long-test-password-123")
+    chat = admin.post("/api/admin/assignments", json={
+        "teacher_id": users["teacher-one"], "student_id": users["student-one"],
+    }).json()
+    path = f"/api/panel/conversations/{chat['id']}/messages"
+    assert admin.post(path, json={"text": "Сообщение администрации"}).status_code == 201
+    student = make_client()
+    login(student, "student-one", "student-password-1")
+    assert student.get(path).json()[0]["sender_role"] == "admin"

@@ -11,15 +11,18 @@ function openStream() {
   source.addEventListener("update", event => {
     for (const subscriber of [...subscribers]) subscriber.onUpdate(event);
   });
+  source.onerror = () => {
+    for (const subscriber of [...subscribers]) subscriber.onError?.();
+  };
   source.onopen = () => {
     for (const subscriber of [...subscribers]) subscriber.onOpen?.();
   };
 }
 
-export function subscribePanelEvents(onUpdate, onOpen) {
+export function subscribePanelEvents(onUpdate, onOpen, onError) {
   if (typeof EventSource === "undefined") return null;
   closeGeneration += 1;
-  const subscriber = { onUpdate, onOpen };
+  const subscriber = { onUpdate, onOpen, onError };
   subscribers.add(subscriber);
   openStream();
   return () => {

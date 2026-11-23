@@ -1,4 +1,5 @@
 import { For, Match, Switch } from "solid-js";
+import BoardsPlaceholder from "./BoardsPlaceholder.jsx";
 import ChatsView from "./ChatsView.jsx";
 import CountBadge from "../shared/components/CountBadge.jsx";
 import EmptyState from "../shared/components/EmptyState.jsx";
@@ -52,6 +53,7 @@ function TeacherStructurePage(options) {
 export default function TeacherWorkspace(options) {
   return (
     <Switch>
+      <Match when={options.context.page === "boards"}><BoardsPlaceholder /></Match>
       <Match when={options.context.page === "graph"}>
         <TeacherStructurePage context={options.context} />
       </Match>

@@ -29,6 +29,12 @@ self.addEventListener("push", event => {
     payload = { body: event.data ? event.data.text() : "" };
   }
   event.waitUntil((async () => {
+    const collection = { personal: "personal-conversations", conversation: "conversations" }[payload.conversation_type];
+    if (!collection || !Number.isSafeInteger(payload.conversation_id)) return;
+    const access = await fetch(`/api/panel/${collection}/${payload.conversation_id}/summary`, {
+      credentials: "same-origin", cache: "no-store",
+    }).catch(() => null);
+    if (!access?.ok || !access.headers.get("content-type")?.includes("application/json")) return;
     if (await isConversationVisible(payload)) return;
     await self.registration.showNotification(payload.title || "UknowApp", {
       body: payload.body || "Новое сообщение",

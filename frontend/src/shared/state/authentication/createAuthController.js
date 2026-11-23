@@ -16,7 +16,8 @@ export function createAuthController(options) {
       return;
     }
     try {
-      const result = await signInRequest(options.authState.login.trim(), options.authState.password);
+      await signInRequest(options.authState.login.trim(), options.authState.password);
+      localStorage.setItem("uknowapp-session-change", String(Date.now()));
       options.setPushBusy(true);
       try {
         await enablePushNotifications();
@@ -32,7 +33,7 @@ export function createAuthController(options) {
       }
       localStorage.setItem("uknowapp-auth", "1");
       sessionStorage.removeItem("uknowapp-auth");
-      options.authState.setProfile(result);
+      options.authState.setProfile(null);
       options.authState.setAuth("1");
       options.authState.setPassword("");
     } catch (error) {
@@ -40,8 +41,9 @@ export function createAuthController(options) {
     }
   };
   const signOut = async () => {
+    options.authState.setProfile(null);
     try {
-      await detachPushSubscription();
+      await detachPushSubscription().catch(() => {});
       await signOutRequest();
     } catch {
       // Очищаем данные экрана, даже если сервер временно недоступен.
@@ -58,6 +60,7 @@ export function createAuthController(options) {
     options.setSelectedChat(null);
     options.setDraft("");
     options.setAttachment(null);
+    window.location.reload();
   };
   return {
     signIn,

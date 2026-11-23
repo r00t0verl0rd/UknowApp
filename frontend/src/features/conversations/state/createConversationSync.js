@@ -47,6 +47,11 @@ export function createConversationSync(options) {
         const revisionsAtStart = new Map(options.inboxRowRevision);
         const [conversations, personal] = await getInboxData(options.request);
         if (!active || requestRevision !== inboxRequestRevision) return;
+        const selected = options.selectedChat;
+        if (selected && !(selected.type === "personal" ? personal : conversations).some(row => row.id === selected.id)) {
+          options.setSelectedChat(null);
+          options.setMessages([]);
+        }
         const changedRows = new Set(
           [...options.inboxRowRevision]
             .filter(([key, revision]) => revision > (revisionsAtStart.get(key) || 0))
@@ -263,7 +268,7 @@ export function createConversationSync(options) {
         } else {
           void syncSelected().catch(() => {});
         }
-      });
+      }, options.verifySession);
       if (!unsubscribe) {
         // Единичная сверка безопаснее постоянного polling.
         void recover().catch(() => {});

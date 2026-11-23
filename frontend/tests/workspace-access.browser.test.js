@@ -1,0 +1,47 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { chromium } from "playwright";
+import { createServer } from "vite";
+
+test("workspace stays closed until the server confirms the role and redirects a student from /users", async () => {
+  const server = await createServer({ server: { port: 22223 }, logLevel: "error" });
+  await server.listen();
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH });
+  try {
+    const page = await browser.newPage();
+    await page.goto("http://127.0.0.1:22223");
+    await page.evaluate(() => localStorage.setItem("uknowapp-auth", "1"));
+    let started;
+    const pending = new Promise(resolve => { started = resolve; });
+    let confirm;
+    const profile = new Promise(resolve => { confirm = resolve; });
+    const requests = [];
+    await page.route("**/api/**", async route => {
+      const path = new URL(route.request().url()).pathname;
+      requests.push(path);
+      if (path === "/api/panel/me") {
+        started();
+        await profile;
+        return route.fulfill({ json: { id: 12, role: "student", full_name: "Ученик", permissions: ["dialogs.own", "boards.view"] } });
+      }
+      return route.fulfill({ json: [] });
+    });
+    await page.goto("http://127.0.0.1:22223/users", { waitUntil: "domcontentloaded" });
+    await pending;
+    assert.deepEqual(requests, ["/api/panel/me"]);
+    assert.equal(await page.getByRole("button", { name: "Пользователи" }).count(), 0);
+    confirm();
+    await page.waitForURL("**/dialogs");
+    await page.getByRole("button", { name: "Доски", exact: true }).click();
+    assert.equal(await page.getByText("В разработке").count(), 0);
+    assert.equal(await page.getByRole("button", { name: "Структура", exact: true }).count(), 0);
+    assert.ok(requests.every(path => !path.startsWith("/api/admin/")));
+    await page.route("**/api/panel/me", route => route.fulfill({ status: 503, json: {} }));
+    await page.reload();
+    await page.getByRole("button", { name: "Войти", exact: true }).waitFor();
+    assert.equal(await page.getByRole("button", { name: "Доски", exact: true }).count(), 0);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});

@@ -80,7 +80,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
 
     let body = {};
     if (path === "/api/panel/me") {
-      body = { role: "admin", full_name: "Администратор" };
+      body = { role: "admin", permissions: ["structure.view", "dialogs.own", "users.manage", "boards.view", "school.manage", "dialogs.observe"], full_name: "Администратор" };
     } else if (path === "/api/panel/conversations") {
       inboxRequests += 1;
       body = [];
@@ -137,7 +137,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
       return response.ok;
     });
 
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_PATH });
     // Логотип входа центрирован над UknowApp, не соприкасается с
     // переключателем темы и не выходит за экран на узких телефонах.
     const loginContext = await browser.newContext();
@@ -180,7 +180,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     } finally {
       await loginContext.close();
     }
-    // Личный кабинет учителя: ровно две вкладки, собственные ученики
+    // Личный кабинет учителя: три вкладки, собственные ученики
     // в «Структуре», возврат к существующему списку диалогов.
     const teacherContext = await browser.newContext();
     try {
@@ -188,7 +188,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
       const teacherPage = await teacherContext.newPage();
       await teacherPage.route("**/api/panel/me", route => route.fulfill({
         status: 200, contentType: "application/json",
-        body: JSON.stringify({ role: "teacher", user_id: 7, full_name: "Светлана Ивановна" }),
+        body: JSON.stringify({ role: "teacher", permissions: ["structure.view", "dialogs.own", "boards.view"], id: 7, full_name: "Светлана Ивановна" }),
       }));
       await teacherPage.route("**/api/panel/conversations", route => route.fulfill({
         status: 200, contentType: "application/json",
@@ -217,6 +217,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
         status: 200, contentType: "application/json", body: "[]",
       });
       assert.equal(await teacherPage.getByRole("button", { name: "Добавить участника" }).count(), 0);
+      await teacherPage.getByRole("button", { name: "Доски", exact: true }).click();
+      await teacherPage.getByText("В разработке").waitFor({ state: "visible" });
       await teacherPage.getByRole("button", { name: "Диалоги", exact: true }).click();
       await teacherPage.locator(".chat-list").waitFor({ state: "visible" });
       await teacherPage.getByRole("button", { name: "Структура", exact: true }).click();
@@ -250,6 +252,9 @@ test("global SSE updates real counters across tabs and replays missed events", {
     await page.keyboard.press("Escape");
     await participant.waitFor({ state: "detached" });
     await page.getByRole("button", { name: "Доски", exact: true }).click();
+    await page.getByText("В разработке").waitFor({ state: "visible" });
+    // Layout fixtures below supply their own workspace content.
+    await page.addStyleTag({ content: ".boards-placeholder { display: none !important; }" });
 
     // Проверяем оформление ролей в обеих темах после CSS-рефакторинга.
     const themeStyles = await page.evaluate(() => {
