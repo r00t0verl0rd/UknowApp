@@ -5,6 +5,7 @@ import { markConversationMessageDeleted, mergeConversationMessages } from "../se
 import {
   createPersonalConversation,
   deleteChatMessage,
+  deletePersonalConversation,
   getChatMessages,
   HISTORY_PAGE_SIZE,
   sendConversationAttachment,
@@ -382,6 +383,37 @@ export function createChatsController(options) {
       setCreating(false);
     }
   };
+  const confirmDeletePersonalChat = async () => {
+    const chat = actions.deletePersonalChatCandidate;
+    if (!chat || chat.type !== "personal" || options.profile?.role !== "admin" || actions.deletingPersonalChat) return;
+    actions.setDeletingPersonalChat(true);
+    const key = "personal:" + chat.id;
+    try {
+      await deletePersonalConversation(options.request, chat.id);
+      recentChats.delete(key);
+      options.personalState.setPersonalChats((current) => current.filter((row) => row.id !== chat.id));
+      if (viewPreference(options.profile?.id, "chats.active", "") === key) {
+        saveViewPreference(options.profile?.id, "chats.active", null);
+      }
+      if (activeChatKey() === key) {
+        openingChatRequest?.controller.abort();
+        olderRequest?.abort();
+        setOlderCursor(0);
+        setLoadingOlder(false);
+        options.chatState.setSelectedChat(null);
+        options.chatState.setMessages([]);
+        options.chatState.setMessagesLoading(false);
+        options.chatState.setDraft("");
+        options.chatState.setAttachment(null);
+      }
+      actions.setDeletePersonalChatCandidate(null);
+      options.notify("Личный диалог и все его сообщения и вложения удалены у всех участников");
+    } catch (error) {
+      options.setError(error.message || "Не удалось удалить личный диалог");
+    } finally {
+      actions.setDeletingPersonalChat(false);
+    }
+  };
   const confirmDeleteMessage = async () => {
     const message = actions.deleteMessageCandidate;
     if (!message || actions.deletingMessage) return;
@@ -508,6 +540,7 @@ export function createChatsController(options) {
     openCreatePersonalChat,
     createPersonalChat,
     confirmDeleteMessage,
+    confirmDeletePersonalChat,
     sendChatMessage,
     get deleteMessageCandidate() {
       return actions.deleteMessageCandidate;
@@ -516,5 +549,12 @@ export function createChatsController(options) {
       return actions.deletingMessage;
     },
     setDeleteMessageCandidate: actions.setDeleteMessageCandidate,
+    get deletePersonalChatCandidate() {
+      return actions.deletePersonalChatCandidate;
+    },
+    get deletingPersonalChat() {
+      return actions.deletingPersonalChat;
+    },
+    setDeletePersonalChatCandidate: actions.setDeletePersonalChatCandidate,
   };
 }

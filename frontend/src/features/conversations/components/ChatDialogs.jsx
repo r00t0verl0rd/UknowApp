@@ -63,6 +63,31 @@ export default function ChatDialogs(options) {
         </Modal>
       )}
 
+      {options.deletePersonalChatCandidate && (
+        <ConfirmDialog
+          eyebrow="ЛИЧНЫЕ ДИАЛОГИ"
+          title="Удалить личный диалог навсегда?"
+          titleId="delete-personal-chat-title"
+          describedBy="delete-personal-chat-description"
+          busy={options.deletingPersonalChat}
+          icon={<Trash2 />}
+          confirmLabel="Удалить диалог"
+          busyLabel="Удаляем…"
+          onClose={() => options.setDeletePersonalChatCandidate(null)}
+          onConfirm={options.confirmDeletePersonalChat}
+          preview={
+            <div class="message-delete-preview">
+              {options.deletePersonalChatCandidate.participant?.full_name ||
+                options.deletePersonalChatCandidate.title}
+            </div>
+          }
+        >
+          Диалог исчезнет у администратора и участника. Вся переписка и вложения
+          будут безвозвратно удалены из базы данных и хранилища UknowApp.
+          Восстановить их через приложение нельзя.
+        </ConfirmDialog>
+      )}
+
       {options.deleteMessageCandidate && (
         <ConfirmDialog
           eyebrow="Сообщение"

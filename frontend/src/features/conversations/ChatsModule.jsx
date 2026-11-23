@@ -55,6 +55,7 @@ export default function ChatsModule(options) {
         messages={options.chatState.messages}
         messagesLoading={options.chatState.messagesLoading}
         setDeleteMessageCandidate={state.setDeleteMessageCandidate}
+        setDeletePersonalChatCandidate={state.setDeletePersonalChatCandidate}
         attachment={options.chatState.attachment}
         setAttachment={options.chatState.setAttachment}
         sendChatMessage={state.sendChatMessage}
@@ -70,6 +71,10 @@ export default function ChatsModule(options) {
         deletingMessage={state.deletingMessage}
         setDeleteMessageCandidate={state.setDeleteMessageCandidate}
         confirmDeleteMessage={state.confirmDeleteMessage}
+        deletePersonalChatCandidate={state.deletePersonalChatCandidate}
+        deletingPersonalChat={state.deletingPersonalChat}
+        setDeletePersonalChatCandidate={state.setDeletePersonalChatCandidate}
+        confirmDeletePersonalChat={state.confirmDeletePersonalChat}
       />
     </>
   );

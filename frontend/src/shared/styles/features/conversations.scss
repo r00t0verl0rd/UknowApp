@@ -111,6 +111,24 @@
     margin:0;
     white-space:nowrap;
   }
+  .personal-chat-delete {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    flex:none;
+    min-height:36px;
+    padding:7px 10px;
+    white-space:nowrap;
+    font-size:12px;
+    font-weight:650;
+    box-shadow:none;
+  }
+  .personal-chat-delete svg {
+    width:16px;
+    height:16px;
+    flex:none;
+  }
 }
 .mobile-chat-back {
   display:none;
@@ -696,6 +714,15 @@
     max-width:135px;
     padding:6px;
     font-size:11px;
+  }
+  .chat-head-tools .personal-chat-delete {
+    width:36px;
+    min-width:36px;
+    height:36px;
+    padding:0;
+  }
+  .personal-chat-delete-label {
+    display:none;
   }
   .messages {
     padding:12px 2px;

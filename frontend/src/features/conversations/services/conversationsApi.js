@@ -46,6 +46,12 @@ export function createPersonalConversation(request, userId) {
   });
 }
 
+export function deletePersonalConversation(request, conversationId) {
+  return request("/api/panel/personal-conversations/" + Number(conversationId), {
+    method: "DELETE",
+  });
+}
+
 export function deleteChatMessage(request, message, personal) {
   const path = personal ? "/api/panel/personal-messages/" : "/api/panel/messages/";
   return request(path + message.id, { method: "DELETE" });

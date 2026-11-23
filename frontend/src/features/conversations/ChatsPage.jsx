@@ -7,6 +7,7 @@ import {
   IconPlus as Plus,
   IconSearch as Search,
   IconSend as Send,
+  IconTrash2 as Trash2,
   IconX as X,
 } from "../../shared/components/Icons.jsx";
 import MessageBubble from "./components/MessageBubble.jsx";
@@ -14,6 +15,7 @@ import { MESSAGE_DAY_MS, parseMessageDate } from "./services/formatMessageTime.j
 import EmptyState from "../../shared/components/EmptyState.jsx";
 import CountBadge from "../../shared/components/CountBadge.jsx";
 import IconButton from "../../shared/components/IconButton.jsx";
+import Button from "../../shared/components/Button.jsx";
 import ToolbarSelect from "../../shared/components/ToolbarSelect.jsx";
 export default function ChatsPage(options) {
   const [messageNowMs, setMessageNowMs] = createSignal(Date.now());
@@ -328,6 +330,19 @@ export default function ChatsPage(options) {
                   <option value="photos">Фото</option>
                   <option value="files">Файлы и видео</option>
                 </select>
+                {options.profile?.role === "admin" && options.selectedChat.type === "personal" && (
+                  <Button
+                    variant="danger"
+                    size="small"
+                    class="personal-chat-delete"
+                    onClick={() => options.setDeletePersonalChatCandidate(options.selectedChat)}
+                    aria-label="Закрыть и удалить личный диалог"
+                    title="Закрыть личный диалог и удалить историю у всех"
+                  >
+                    <Trash2 size={16} />
+                    <span class="personal-chat-delete-label">Закрыть диалог</span>
+                  </Button>
+                )}
                 {options.selectedChat.type !== "personal" && options.selectedChat.status !== "active" && (
                   <span class="role-tag">Закрыта</span>
                 )}
