@@ -23,6 +23,8 @@ function formatBytes(bytes) {
 }
 export default function AdditionalPage(options) {
   const isRestore = () => options.pendingConfirmation?.type === "restore";
+  const isPostgres = () => options.dataStats?.database_engine === "postgresql";
+  const sqliteBackupsAvailable = () => options.dataStats?.database_backups_supported !== false;
   const confirmationText = () =>
     isRestore()
       ? options.pendingConfirmation.kind === "full"
@@ -73,10 +75,10 @@ export default function AdditionalPage(options) {
         )}
         <div class="data-stats-grid">
           <article class="data-stat-card">
-            <span>Размер файла базы SQLite</span>
-            <b>{options.dataStats ? formatBytes(options.dataStats.database_bytes) : "—"}</b>
+            <span>{isPostgres() ? "Размер базы PostgreSQL" : "Размер файла базы SQLite"}</span>
+            <b>{options.dataStats?.database_bytes != null ? formatBytes(options.dataStats.database_bytes) : "—"}</b>
             <small>{options.dataStats?.users ?? "—"} пользователей</small>
-            <small>Размер включает структуру таблиц и индексы SQLite, даже если записей ещё нет.</small>
+            <small>Размер включает таблицы, индексы и служебные данные, даже если пользовательских записей ещё нет.</small>
             <div class="data-stat-details">
               <span>
                 Учителя: <b>{options.dataStats?.teachers ?? "—"}</b>
@@ -155,7 +157,7 @@ export default function AdditionalPage(options) {
                 type="button"
                 class="btn primary"
                 onClick={() => options.downloadAdminFile("full")}
-                disabled={options.dataBusy}
+                disabled={options.dataBusy || !sqliteBackupsAvailable()}
               >
                 Скачать полную резервную копию
               </button>
@@ -164,7 +166,7 @@ export default function AdditionalPage(options) {
                 <input
                   type="file"
                   accept=".zip"
-                  disabled={options.dataBusy}
+                  disabled={options.dataBusy || !sqliteBackupsAvailable()}
                   onInput={(e) => {
                     options.uploadAdminFile("full", e.target.files?.[0]);
                     e.target.value = "";
@@ -181,6 +183,12 @@ export default function AdditionalPage(options) {
                     : "Копия принята. Ожидаем результат после перезапуска сервера."}
                 {options.restore.finished_at &&
                   " " + new Date(options.restore.finished_at).toLocaleString("ru-RU")}
+              </p>
+            )}
+            {isPostgres() && (
+              <p role="status" class="data-warning">
+                Резервное копирование и восстановление SQLite через ZIP недоступны для PostgreSQL.
+                Для базы используйте pg_dump, а медиафайлы скачайте отдельно.
               </p>
             )}
             <p class="data-warning">
@@ -207,7 +215,7 @@ export default function AdditionalPage(options) {
                 type="button"
                 class="btn outline"
                 onClick={() => options.downloadAdminFile("database")}
-                disabled={options.dataBusy}
+                disabled={options.dataBusy || !sqliteBackupsAvailable()}
               >
                 Скачать базу данных
               </button>
@@ -216,7 +224,7 @@ export default function AdditionalPage(options) {
                 <input
                   type="file"
                   accept=".db,.sqlite,.sqlite3"
-                  disabled={options.dataBusy}
+                  disabled={options.dataBusy || !sqliteBackupsAvailable()}
                   onInput={(e) => {
                     options.uploadAdminFile("database", e.target.files?.[0]);
                     e.target.value = "";
@@ -253,10 +261,11 @@ export default function AdditionalPage(options) {
           </article>
         </div>
         <div class="data-backup-hint">
-          <b>Для резервного копирования и переноса сервера используйте полную копию.</b>
+          <b>{isPostgres() ? "Для PostgreSQL используйте pg_dump и отдельный архив медиафайлов." : "Для резервного копирования и переноса сервера используйте полную копию."}</b>
           <span>
-            Архив содержит весь каталог data, включая базу, медиафайлы, ключ Web Push и другие файлы.
-            Конфигурацию .env переносите отдельно.
+            {isPostgres()
+              ? "Полный ZIP со встроенной базой поддерживает только SQLite. Не забудьте отдельно перенести ключ Web Push, конфигурацию и остальные файлы из data."
+              : "Архив содержит весь каталог data, включая базу, медиафайлы, ключ Web Push и другие файлы. Конфигурацию .env переносите отдельно."}
           </span>
         </div>
         <article class="data-cleanup-card">
