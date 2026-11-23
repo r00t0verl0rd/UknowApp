@@ -69,7 +69,7 @@ export function createPushNotificationsState(options) {
       return;
     }
     if (pushState().permission === "denied") {
-      options.notify("Уведомления запрещены в настройках устройства. Разрешите их для UknowApp и попробуйте снова.", { kind: "info" });
+      options.notify("Уведомления отключены в настройках устройства. Разрешите их для UknowApp и попробуйте снова.", { kind: "info" });
       return;
     }
     setPushBusy(true);
@@ -83,7 +83,7 @@ export function createPushNotificationsState(options) {
       }
       setPushState(await getPushNotificationState());
     } catch (error) {
-      options.setError(error.message || "Не удалось изменить настройки уведомлений");
+      options.setError(error.message || "Пока не получилось изменить настройки уведомлений. Попробуйте ещё раз.");
       try {
         setPushState(await getPushNotificationState());
       } catch {
@@ -97,7 +97,7 @@ export function createPushNotificationsState(options) {
     !pushState().supported
       ? "Как включить уведомления"
       : pushState().permission === "denied"
-        ? "Уведомления запрещены в настройках браузера"
+        ? "Уведомления отключены в настройках браузера"
         : pushState().enabled
           ? "Отключить push-уведомления"
           : "Включить push-уведомления";

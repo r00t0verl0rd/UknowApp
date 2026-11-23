@@ -80,6 +80,7 @@ test("iPhone Safari explains Home Screen installation before missing push APIs",
   assert.equal(safari.supported, false);
   assert.match(safari.reason, /«На экран Домой»/);
   assert.doesNotMatch(safari.reason, /не поддерживает push/);
+  assert.doesNotMatch(safari.reason, /запрещен/i);
 
   const installed = runInNewContext(supportSource + "\ngetPushSupport()", {
     window: { isSecureContext: true, matchMedia: () => ({ matches: true }), PushManager: function () {}, Notification: function () {} },
@@ -93,4 +94,14 @@ test("unsupported push uses informational feedback, not a success toast", () => 
   assert.match(state, /options\.notify\(pushState\(\)\.reason, \{ kind: "info" \}\)/);
   assert.match(toast, /native-feedback-info/);
   assert.match(toast, /isInfo\(\) \? "Уведомления" : "Готово"/);
+});
+
+test("notification permission messages are gentle and actionable", () => {
+  const source = readFileSync(new URL("../src/features/notifications/pushNotifications.js", import.meta.url), "utf8");
+  const state = readFileSync(new URL("../src/shared/state/notifications/createPushNotificationsState.js", import.meta.url), "utf8");
+  assert.doesNotMatch(source + state, /запрещен[а-яё]*/i);
+  assert.doesNotMatch(source + state, /браузер не разрешил/i);
+  assert.match(state, /Уведомления отключены в настройках устройства\. Разрешите их для UknowApp и попробуйте снова\./);
+  assert.match(state, /Уведомления отключены в настройках браузера/);
+  assert.match(source, /В этом браузере уведомления пока недоступны/);
 });

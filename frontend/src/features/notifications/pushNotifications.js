@@ -17,7 +17,7 @@ function getPushSupport() {
     return { supported: false, reason: "Для уведомлений нужно открыть UknowApp по защищённому адресу HTTPS." };
   }
   if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
-    return { supported: false, reason: "Этот браузер не поддерживает push. Попробуйте открыть UknowApp в другом браузере." };
+    return { supported: false, reason: "В этом браузере уведомления пока недоступны. Попробуйте открыть UknowApp в другом браузере." };
   }
   return { supported: true, reason: "" };
 }
@@ -38,7 +38,7 @@ async function subscribeToPush(registration) {
   const keyResponse = await fetchApi("/api/push/public-key", { credentials: "include" });
   const keyData = await keyResponse.json().catch(() => ({}));
   if (!keyResponse.ok || !keyData.enabled || !keyData.public_key) {
-    throw new Error(keyData.detail || "Push-уведомления не настроены на сервере");
+    throw new Error(keyData.detail || "Уведомления пока не настроены в UknowApp. Попробуйте чуть позже.");
   }
 
   let subscription = await registration.pushManager.getSubscription();
@@ -55,7 +55,7 @@ async function subscribeToPush(registration) {
     body: JSON.stringify(subscription.toJSON()),
   });
   const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.detail || "Не удалось сохранить подписку на уведомления");
+  if (!response.ok) throw new Error(result.detail || "Пока не получилось включить уведомления. Попробуйте ещё раз.");
   return subscription;
 }
 
@@ -71,7 +71,7 @@ export async function getPushNotificationState() {
       supported: true,
       enabled: false,
       permission,
-      reason: "Уведомления запрещены в настройках браузера",
+      reason: "Уведомления отключены в настройках браузера",
     };
   }
   const registration = await navigator.serviceWorker.getRegistration("/");
@@ -92,8 +92,8 @@ export async function enablePushNotifications() {
   if (permission === "default") permission = await Notification.requestPermission();
   if (permission !== "granted") {
     throw new Error(permission === "denied"
-      ? "Разрешите уведомления для UknowApp в настройках браузера"
-      : "Браузер не разрешил включить уведомления");
+      ? "Уведомления отключены в настройках устройства. Разрешите их для UknowApp и попробуйте снова."
+      : "Уведомления пока не включены. Попробуйте ещё раз, когда будет удобно.");
   }
 
   const registration = await getRegistration();
@@ -112,7 +112,7 @@ export async function disablePushNotifications() {
     body: JSON.stringify({ endpoint: subscription.endpoint }),
   });
   const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.detail || "Не удалось отключить push-уведомления");
+  if (!response.ok) throw new Error(result.detail || "Пока не получилось отключить уведомления. Попробуйте ещё раз.");
   await subscription.unsubscribe();
 }
 
