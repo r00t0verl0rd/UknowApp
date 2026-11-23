@@ -123,7 +123,7 @@ export default function WorkspaceLayout(options) {
     </IconButton>
   );
   return (
-    <div ref={shellRef} class={`shell workspace-shell workspace-${options.role}`}>
+    <div ref={shellRef} class="shell workspace-shell">
       <aside ref={sidebarRef} class="sidebar">
         <div class="brand">
           <img src="/logo-main.svg" alt="" />
