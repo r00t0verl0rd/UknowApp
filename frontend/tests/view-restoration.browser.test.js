@@ -87,6 +87,22 @@ test("remembers current page, list filters and scroll after asynchronous reload"
       await page.getByRole("button", { name: "Диалоги", exact: true }).click();
       await page.getByRole("button", { name: "Пользователи", exact: true }).click();
       await page.getByText("Ученик 090", { exact: true }).waitFor();
+      await page.waitForTimeout(200);
+      console.log("view-nav-diagnostics", JSON.stringify(await page.evaluate(expected => {
+        const container = expected.kind === "content"
+          ? document.querySelector(".workspace-content")
+          : document.scrollingElement;
+        const scroll = JSON.parse(sessionStorage.getItem("uknowapp-view-v1:1") || "{}").pages?.users?.scroll;
+        const anchor = scroll?.[expected.kind]?.anchor;
+        const row = [...container.querySelectorAll("[data-view-anchor]")]
+          .find(el => el.getAttribute("data-view-anchor") === anchor?.id);
+        return { viewport: expected, scrollY: window.scrollY, scrollTop: container.scrollTop,
+          stored: scroll, anchorTop: row?.getBoundingClientRect().top,
+          containerTop: container.getBoundingClientRect().top,
+          available: container.scrollHeight - container.clientHeight,
+          page: location.pathname,
+        };
+      }, savedPosition)));
       await page.waitForFunction(
         pos => {
           const container = pos.kind === "content"
