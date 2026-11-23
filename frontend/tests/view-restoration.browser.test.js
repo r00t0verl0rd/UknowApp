@@ -63,6 +63,11 @@ test("remembers current page, list filters and scroll after asynchronous reload"
         viewport: expected,
         actualContent: document.querySelector(".workspace-content")?.scrollTop,
         actualDocument: window.scrollY,
+        documentAvailable: document.scrollingElement.scrollHeight - document.scrollingElement.clientHeight,
+        documentHeight: document.scrollingElement.scrollHeight,
+        bodyHeight: document.body.scrollHeight,
+        htmlOverflow: getComputedStyle(document.documentElement).overflowY,
+        anchorRect: document.querySelector('[data-view-anchor="user:189"]')?.getBoundingClientRect().top,
         availableContent: document.querySelector(".workspace-content")?.scrollHeight -
           document.querySelector(".workspace-content")?.clientHeight,
         stored: sessionStorage.getItem("uknowapp-view-v1:1"),
