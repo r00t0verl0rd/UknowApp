@@ -16,6 +16,15 @@
   }
 }
 :root .workspace-shell {
+  .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control[aria-current="page"] {
+    &, &:hover {
+      @include primitives.selected;
+      box-shadow:0 0 0 1px var(--ui-selected-outline);
+    }
+    &:focus-visible {
+      box-shadow:none;
+    }
+  }
   .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control,
   .workspace-content .graph-add-participant.ui-menu-control {
     box-sizing:border-box;

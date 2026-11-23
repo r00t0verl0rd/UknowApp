@@ -1,3 +1,4 @@
+@use "../core/primitives";
 // Единые сегментированные кнопки для кабинета администратора на всех экранах.
 // Стили не зависят от роли, типа указателя или выбранной темы.
 :root .workspace-shell .chat-list {
@@ -43,9 +44,7 @@
   }
   .chat-section-tabs > button.chat-section-tab[aria-pressed="true"],
   .chat-section-tabs > button.chat-section-tab[aria-pressed="true"]:hover {
-    background:var(--ui-selected-bg);
-    border-color:var(--ui-selected-border);
-    color:var(--ui-selected-text);
+    @include primitives.selected;
     box-shadow:0 0 0 1px var(--ui-selected-outline);
   }
   .chat-section-tabs > button.chat-section-tab[aria-pressed="false"]:hover {
@@ -56,6 +55,7 @@
   .chat-section-tabs > button.chat-section-tab:focus-visible {
     outline:2px solid var(--ui-selected-border);
     outline-offset:1px;
+    box-shadow:none;
   }
   .chat-section-tab > .chat-tab-count {
     flex:0 0 auto;
@@ -68,5 +68,15 @@
   .chat-list-actions > .personal-chat-create.ui-icon-button {
     align-self:center;
     margin:0;
+  }
+}
+
+:root .workspace-shell .chat-items > button.chat-item:is(.selected, [aria-pressed="true"]) {
+  &, &:hover {
+    @include primitives.selected;
+    box-shadow:inset 3px 0 0 var(--ui-selected-border), 0 0 0 1px var(--ui-selected-outline);
+  }
+  &:focus-visible {
+    box-shadow:inset 3px 0 0 var(--ui-selected-border);
   }
 }

@@ -1,3 +1,130 @@
+:root[data-theme="dark-soft"] {
+  & .teacher-card {
+    border:1px solid var(--teacher-card-border);
+    background:var(--teacher-card-background);
+    box-shadow:var(--ui-shadow-card);
+    color:#edf0f5;
+  }
+  & .workspace-content:has(.admin-card) .legend {
+    color:#d1d7e3;
+    background:#2a3342;
+    border:1px solid #46536a;
+    box-shadow:none;
+  }
+  & .workspace-content:has(.admin-card) .admin-card small {
+    color:#aab4c5;
+  }
+  & .teacher-branch {
+    border:1px solid #374253;
+    background:#242c38;
+
+    box-shadow:none;
+  }
+  & .student-card {
+    border:1px solid #746044;
+    background:#40382d;
+
+  }
+  & .workspace-content:has(.admin-card) .empty-students {
+    background:#252e3a;
+    border:1px dashed #566176;
+    color:#aab4c5;
+  }
+  & .workspace-content:has(.admin-card) .add-student {
+    background:#303448;
+    border:1px solid #4b4c69;
+    color:#c7bdf0;
+    box-shadow:none;
+  }
+  & .workspace-content:has(.admin-card) .add-student:hover {
+    background:#3b3a55;
+    border-color:#77729d;
+  }
+  & .workspace-content:has(.admin-card) .unassigned {
+    border-top:1px solid #414d60;
+  }
+  & .workspace-content:has(.admin-card) .person-actions button:hover,
+  & .workspace-content:has(.admin-card) .icon-btn:hover {
+    background:#3b4057;
+    border-color:#525b78;
+    color:#d3cafa;
+    box-shadow:none;
+  }
+  & .workspace-content:has(.admin-card) .person-actions .danger-icon:hover,
+  & .workspace-content:has(.admin-card) .danger-icon:hover {
+    background:#482f3b;
+    border-color:#78505f;
+    color:#f0aab4;
+  }
+  & .workspace-content:has(.admin-card) .unassigned-grid .unassigned-student-card {
+    background:#40382d;
+    background-image:none;
+    border-color:#746044;
+    box-shadow:none;
+    color:#e4e8f0;
+  }
+  & .workspace-content:has(.admin-card) .unassigned-grid .unassigned-student-card .avatar {
+    background:#574a38;
+    color:#e5c995;
+  }
+  & .workspace-content:has(.admin-card) .unassigned-grid .unassigned-student-card:hover {
+    background:#30394a;
+    border-color:#66728c;
+  }
+  & .teacher-card .avatar {
+    background:var(--teacher-avatar-background);
+    color:var(--teacher-avatar-text);
+  }
+  & .student-card .avatar {
+    background:#574a38;
+    color:#e5c995;
+  }
+  & .workspace-content:has(.admin-card) .admin-card {
+    color:#edf0f5;
+    background:#2e3933;
+    border-color:#485c4d;
+    box-shadow:none;
+  }
+  & .workspace-content:has(.admin-card) .teacher-dot {
+    background:#a99bc8;
+    box-shadow:none;
+  }
+  & .workspace-content:has(.admin-card) .student-dot {
+    background:#c4a879;
+    box-shadow:none;
+  }
+}
+:root:not([data-theme="dark-soft"]) {
+  & .student-card,
+  & .teacher-card {
+    border-color:#dcd6e3;
+  }
+  & .workspace-content:has(.admin-card) .graph-legend-row > .graph-legend {
+    border:1px solid #e4deec;
+    border-radius:12px;
+  }
+  & .teacher-branch {
+    border:1px solid #e7e1ed;
+    border-radius:16px;
+    padding:12px;
+    background:#f7f4fa;
+    border-color:#e7e0ed;
+    box-shadow:0 2px 8px rgba(56, 43, 77, 0.035);
+  }
+  & .workspace-content:has(.admin-card) .admin-card {
+    background:#eaf0e9;
+    border-color:#d2dfd0;
+    box-shadow:none;
+  }
+  & .workspace-content:has(.admin-card) .teacher-dot {
+    background:#a99ac2;
+    box-shadow:none;
+  }
+  & .workspace-content:has(.admin-card) .student-dot {
+    background:#c5aa7e;
+    box-shadow:none;
+  }
+}
 .grid {
   column-gap:26px;
 }
@@ -244,50 +371,6 @@ select:focus-visible {
     row-gap:17px;
     width:100%;
   }
-}
-.teacher-branch {
-  display:block;
-  margin:0;
-  padding:13px;
-  border-radius:17px;
-}
-.teacher-card {
-  padding:12px 13px;
-  border:1px solid #e3d8f1;
-  border-radius:13px;
-  background:linear-gradient(110deg, #f0e9fb, #fff 78%);
-}
-.teacher-card .avatar {
-  width:42px;
-  height:42px;
-  border-radius:12px;
-  background:#e7dcf7;
-  color:#62459b;
-}
-.teacher-card .person-info b,
-.student-card .person-info b {
-  font-size:13px;
-}
-.teacher-card .person-info small,
-.student-card .person-info small {
-  margin-top:5px;
-  font-size:10px;
-}
-.workspace-content:has(.admin-card) .student-list {
-  gap:8px;
-  border:0;
-}
-.student-card {
-  min-height:61px;
-  padding:9px 11px;
-  border:1px solid #f0e5ce;
-  border-radius:12px;
-  overflow:hidden;
-}
-.student-card .avatar {
-  border-radius:11px;
-}
-.workspace-content:has(.admin-card) {
   .empty-students {
     display:flex;
     align-items:center;
@@ -332,6 +415,202 @@ select:focus-visible {
   .unassigned-title {
     margin-bottom:11px;
   }
+  & .graph-legend {
+    display:flex;
+    align-items:center;
+    width:fit-content;
+    max-width:100%;
+    box-sizing:border-box;
+    flex:0 1 auto;
+    flex-wrap:wrap;
+    justify-content:flex-start;
+    gap:18px;
+  }
+  & .graph-legend-item {
+    display:inline-flex;
+    align-items:center;
+    color:var(--muted);
+    white-space:nowrap;
+    font-size:12px;
+    font-weight:750;
+    gap:9px;
+  }
+  & .graph-legend-item > span {
+    flex:0 0 9px;
+    width:9px;
+    height:9px;
+    margin:0;
+  }
+  & .graph-legend-row {
+    margin:0 0 17px;
+  }
+  & .unassigned {
+    width:100%;
+    min-width:0;
+  }
+  & .unassigned-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+    align-items:stretch;
+    gap:26px;
+    width:100%;
+    min-width:0;
+  }
+  & .unassigned-grid .unassigned-student-card {
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    justify-content:space-between;
+    gap:9px;
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    min-height:72px;
+    padding:10px 12px;
+    box-sizing:border-box;
+    overflow:hidden;
+    background:#f3e8d4;
+    border-color:#ddc69d;
+  }
+  & .unassigned-student-card > .person-main {
+    display:flex;
+    flex:1 1 auto;
+    align-items:center;
+    width:auto;
+    min-width:0;
+    max-width:100%;
+    gap:9px;
+    overflow:hidden;
+  }
+  & .unassigned-student-card > .person-main > .avatar {
+    flex:0 0 38px;
+    width:38px;
+    height:38px;
+  }
+  & .unassigned-student-card .person-info {
+    flex:1 1 auto;
+    width:auto;
+    min-width:0;
+    max-width:100%;
+    overflow:hidden;
+  }
+  & .unassigned-student-card .person-info b {
+    display:block;
+    max-width:100%;
+    overflow:hidden;
+    white-space:normal;
+    overflow-wrap:anywhere;
+    word-break:normal;
+    text-overflow:ellipsis;
+    line-height:1.25;
+  }
+  & .unassigned-student-actions {
+    display:flex;
+    flex:0 0 auto;
+    align-items:center;
+    justify-content:flex-end;
+    gap:6px;
+    width:auto;
+    min-width:0;
+    margin:0;
+  }
+  & .unassigned-student-actions .btn {
+    flex:0 0 auto;
+    min-height:36px;
+    padding:8px 13px;
+    white-space:nowrap;
+  }
+  & .unassigned-grid .unassigned-student-card:hover {
+    border-color:#d8c8eb;
+    box-shadow:0 5px 17px rgba(87, 62, 153, 0.08);
+  }
+  & .unassigned-student-actions > .graph-person-action {
+    flex:0 0 34px;
+    width:34px;
+    height:34px;
+    min-width:34px;
+    min-height:34px;
+    padding:0;
+  }
+  .teacher-collapse-btn svg {
+    transition:transform 0.18s ease;
+  }
+  .teacher-collapse-btn.is-expanded svg {
+    transform:rotate(-90deg);
+  }
+}
+.teacher-branch {
+  display:block;
+  margin:0;
+  padding:13px;
+  border-radius:17px;
+  width:100%;
+}
+.teacher-card {
+  padding:12px 13px;
+  border:1px solid #e3d8f1;
+  border-radius:13px;
+  background:linear-gradient(110deg, #f0e9fb, #fff 78%);
+  display:flex;
+  width:100%;
+  box-sizing:border-box;
+  gap:8px;
+  max-width:100%;
+  overflow:hidden;
+  min-width:0;
+  min-height:64px;
+  align-items:center;
+  background:var(--teacher-card-background);
+}
+.teacher-card .avatar {
+  width:42px;
+  height:42px;
+  border-radius:12px;
+  background:#e7dcf7;
+  color:#62459b;
+  flex:0 0 auto;
+}
+.teacher-card .person-info b,
+.student-card .person-info b {
+  font-size:13px;
+}
+.teacher-card .person-info small,
+.student-card .person-info small {
+  margin-top:5px;
+  font-size:10px;
+}
+.workspace-content:has(.admin-card) .student-list {
+  gap:8px;
+  border:0;
+  display:grid;
+  grid-template-columns:minmax(0, 1fr);
+  width:100%;
+  margin:12px 0 0;
+  padding:0;
+  overflow:visible;
+}
+.student-card {
+  min-height:61px;
+  padding:9px 11px;
+  border:1px solid #f0e5ce;
+  border-radius:12px;
+  overflow:hidden;
+  align-items:center;
+  gap:7px;
+  display:flex;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  background:linear-gradient(112deg, #f4eadb, #faf6ee);
+}
+.student-card .avatar {
+  border-radius:11px;
+  flex:0 0 34px;
+  width:34px;
+  height:34px;
+  background:#ecdfc6;
+  color:#90764c;
 }
 html,
 body,
@@ -404,4 +683,150 @@ audio {
 }
 .teacher-structure .student-list > .empty-state {
   grid-column:1 / -1;
+}
+.student-card .person-info b {
+  display:block;
+  overflow:visible;
+  line-height:1.25;
+}
+.student-card > .graph-person-action svg {
+  width:14px;
+  height:14px;
+}
+.workspace-content:has(.admin-card) .grid,
+.teacher-branch,
+.workspace-content:has(.admin-card) .student-list {
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+}
+.student-card .person-main {
+  align-items:center;
+  gap:8px;
+  display:flex;
+  flex:1 1 0%;
+  width:auto;
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+}
+.student-card .person-info {
+  flex:1 1 0%;
+  width:auto;
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+}
+.student-card .person-info b,
+.student-card .person-info small {
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:normal;
+  text-overflow:clip;
+}
+.teacher-card > .person-main {
+  display:flex;
+  flex:1 1 0%;
+  width:0;
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+  gap:8px;
+}
+.teacher-card .person-info {
+  flex:1 1 0%;
+  width:0;
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+  b {
+    display:block;
+    max-width:100%;
+    overflow:visible;
+    white-space:normal;
+    overflow-wrap:anywhere;
+    word-break:normal;
+    text-overflow:clip;
+    line-height:1.25;
+  }
+  small {
+    display:block;
+    max-width:100%;
+    white-space:normal;
+    overflow-wrap:anywhere;
+    line-height:1.25;
+  }
+}
+.teacher-card .person-actions {
+  display:flex;
+  flex:0 0 auto;
+  min-width:0;
+  gap:1px;
+}
+.teacher-card .person-actions button {
+  flex:0 0 28px;
+  width:28px;
+  height:28px;
+}
+:root[data-theme="dark-soft"] .workspace-content:has(.admin-card) .graph-legend-item {
+  color:#d1d7e3;
+}
+.student-card > .graph-person-action {
+  flex:0 0 27px;
+  width:27px;
+  height:27px;
+  min-width:27px;
+  min-height:27px;
+  padding:0;
+}
+.teacher-card > .person-actions {
+  flex:0 0 auto;
+}
+.teacher-card .avatar,
+.avatar.teacher,
+.teacher-avatar {
+  background:var(--teacher-avatar-background);
+  color:var(--teacher-avatar-text);
+}
+.unassigned-grid .student-card {
+  background:linear-gradient(112deg, #f4eadb, #faf6ee);
+  border-color:#e0cda9;
+}
+.avatar.student,
+.student-avatar {
+  background:#ecdfc6;
+  color:#90764c;
+}
+.student-dot {
+  background:var(--role-student);
+  box-shadow:0 0 8px color-mix(in srgb, var(--role-student) 35%, transparent);
+}
+.add-student {
+  color:var(--role-student);
+}
+.add-student:hover {
+  background:var(--role-student-soft);
+}
+.workspace-content:has(.admin-card) .student-list[hidden] {
+  display:none;
+}
+.teacher-branch > .teacher-card {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:clamp(50px, 7vw, 76px);
+  padding:clamp(6px, 1.2vw, 12px) 10px;
+  border-radius:13px;
+}
+
+:root[data-theme] .workspace-shell {
+  .workspace-content:has(.admin-card) {
+    :is(.teacher-branch > .add-student, .unassigned-student-actions > .btn.outline) {
+      background:var(--ui-control-bg);
+      border-color:var(--ui-border);
+      color:var(--muted);
+      box-shadow:none;
+    }
+  }
 }

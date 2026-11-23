@@ -31,3 +31,9 @@
   border-color:var(--ui-border-strong);
   box-shadow:var(--ui-focus);
 }
+
+@mixin selected {
+  background:var(--ui-selected-bg);
+  border-color:var(--ui-selected-border);
+  color:var(--ui-selected-text);
+}

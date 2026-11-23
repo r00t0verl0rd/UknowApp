@@ -3,6 +3,7 @@
   box-sizing:border-box;
 }
 body {
+  margin:0;
   min-width:320px;
 }
 button:not(.chat-item),
@@ -339,4 +340,20 @@ button:not(.chat-item):disabled {
 }
 .student-additional-info {
   white-space:normal;
+}
+
+html,
+body {
+  font-family:var(--font-family-ui);
+  overflow-x:clip;
+}
+h1,
+h2,
+h3,
+.brand,
+.admin-card b,
+.person-info b,
+.modal-head h2,
+.user-person-info {
+  font-family:var(--font-family-ui);
 }

@@ -313,32 +313,13 @@
     border-color 0.18s,
     transform 0.18s;
 }
-.push-toggle.active {
-  color:var(--ui-selected-text);
-  border-color:var(--ui-selected-border);
-  background:var(--ui-selected-bg);
-}
 .push-toggle:disabled {
   opacity:0.45;
   cursor:not-allowed;
   transform:none;
 }
 .topbar-actions > .push-toggle,
-.mobile-quick-actions > .push-toggle {
-  flex:0 0 32px;
-  width:32px;
-  height:32px;
-  min-width:32px;
-  min-height:32px;
-  padding:6px;
-  display:grid;
-  place-items:center;
-  border:1px solid var(--ui-border);
-  border-radius:var(--ui-radius-sm);
-  background:var(--ui-control-bg);
-  color:var(--ui-control-text);
-  box-shadow:var(--ui-shadow-soft);
-}
+.mobile-quick-actions > .push-toggle,
 .topbar-actions > .theme-toggle,
 .mobile-quick-actions > .theme-toggle {
   flex:0 0 32px;
@@ -356,20 +337,30 @@
   box-shadow:var(--ui-shadow-soft);
 }
 .topbar-actions > .theme-toggle svg,
-.mobile-quick-actions > .theme-toggle svg {
-  width:15px;
-  height:15px;
-}
+.mobile-quick-actions > .theme-toggle svg,
 .topbar-actions > .push-toggle svg,
 .mobile-quick-actions > .push-toggle svg {
   width:15px;
   height:15px;
 }
-.topbar-actions > .push-toggle.active,
-.mobile-quick-actions > .push-toggle.active {
-  color:var(--ui-selected-text);
-  border-color:var(--ui-selected-border);
-  background:var(--ui-selected-bg);
+:root[data-theme] .workspace-shell {
+  :is(.topbar-actions, .mobile-quick-actions) > button.push-toggle.active {
+    background:var(--ui-selected-bg);
+    border-color:var(--ui-selected-border);
+    color:var(--ui-selected-text);
+    box-shadow:none;
+  }
+  :is(.topbar-actions, .mobile-quick-actions) > button.push-toggle.active:hover:not(:disabled) {
+    background:color-mix(in srgb, var(--ui-selected-bg) 84%, var(--ui-selected-border));
+    border-color:var(--ui-selected-border);
+    color:var(--ui-selected-text);
+    box-shadow:none;
+  }
+  :is(.topbar-actions, .mobile-quick-actions) > button.push-toggle.active:focus-visible {
+    outline:2px solid var(--ui-selected-border);
+    outline-offset:2px;
+    box-shadow:none;
+  }
 }
 .workspace-content:has(.admin-card) {
   & > .unassigned {
@@ -439,12 +430,6 @@
   .mobile-quick-actions > .push-toggle {
     @include primitives.control;
     box-shadow:none;
-  }
-  .topbar-actions > .push-toggle.active,
-  .mobile-quick-actions > .push-toggle.active {
-    color:var(--ui-selected-text);
-    border-color:var(--ui-selected-border);
-    background:var(--ui-selected-bg);
   }
   & .workspace-content:has(.admin-card) > .unassigned {
     border-color:#746044;

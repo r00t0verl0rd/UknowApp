@@ -318,3 +318,23 @@ textarea::placeholder {
 :root .ui-toolbar-select:focus-within > select.ui-toolbar-select-native {
   @include primitives.field-focus;
 }
+
+// Один фокусный контур вместо сочетания outline + glow от разных
+// CSS-модулей. Не показываем вторую рамку при наведении или нажатии.
+:root :is(button, a, [role="button"]):focus-visible {
+  outline:2px solid var(--ui-selected-border);
+  outline-offset:2px;
+  box-shadow:none;
+}
+:root .workspace-shell {
+  :is(.sidebar .ui-menu-control, .chat-section-tabs .chat-section-tab, .chat-items .chat-item, .workspace-content .ui-icon-button, .workspace-content .btn):focus-visible {
+    outline:2px solid var(--ui-selected-border);
+    outline-offset:2px;
+    box-shadow:none;
+  }
+}
+// В поисковых полях фокус рисует контейнер, а не контейнер вместе с input.
+:root .search input:focus-visible {
+  outline:none;
+  box-shadow:none;
+}

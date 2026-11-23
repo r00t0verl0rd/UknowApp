@@ -1894,8 +1894,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
         }
       }
     }
-    // Назначение ученика и активный колокольчик используют общую
-    // фиолетовую палитру в обеих темах и при сенсорном viewport.
+    // Назначение ученика — обычное действие, включённые уведомления имеют цвет выбора.
     for (const width of [390, 760, 1024, 1280]) {
       await page.setViewportSize({ width, height: 800 });
       for (const theme of ["light", "dark-soft"]) {
@@ -1930,10 +1929,13 @@ test("global SSE updates real counters across tabs and replays missed events", {
           };
           const reference = document.createElement("span");
           reference.style.cssText = "background:var(--ui-selected-bg);border:1px solid var(--ui-selected-border);color:var(--ui-selected-text)";
-          host.append(reference);
+          const action = document.createElement("span");
+          action.style.cssText = "background:var(--ui-control-bg);border:1px solid var(--ui-border);color:var(--muted)";
+          host.append(reference, action);
           try {
             return {
-              expected: prop(reference),
+              selected: prop(reference),
+              action: prop(action),
               add: prop(host.querySelector(".add-student")),
               assign: prop(host.querySelector(".btn.outline")),
               bells: [...host.querySelectorAll(".push-toggle.active")].map(prop),
@@ -1943,14 +1945,13 @@ test("global SSE updates real counters across tabs and replays missed events", {
             root.dataset.theme = oldTheme;
           }
         }, theme);
-        for (const [name, style] of [
-          ["Добавить ученика", styles.add],
-          ["Назначить", styles.assign],
-          ["Десктопный колокольчик", styles.bells[0]],
-          ["Мобильный колокольчик", styles.bells[1]],
+        for (const [name, style, expected] of [
+          ["Добавить ученика", styles.add, styles.action],
+          ["Назначить", styles.assign, styles.action],
+          ["Десктопный колокольчик", styles.bells[0], styles.selected],
+          ["Мобильный колокольчик", styles.bells[1], styles.selected],
         ]) {
-          assert.deepEqual(style, styles.expected,
-            `${width}px ${theme}: ${name} uses shared purple selected palette`);
+          assert.deepEqual(style, expected, `${width}px ${theme}: ${name}`);
         }
       }
     }

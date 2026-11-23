@@ -1,3 +1,229 @@
+@use "../core/primitives";
+:root[data-theme="dark-soft"] {
+  & .panel-credentials-panel {
+    box-shadow:inset 0 1px 0 rgba(255, 255, 255, 0.025);
+    background:#222a37;
+    border-color:#394456;
+  }
+  & .panel-credential-row + .panel-credential-row {
+    border-top-color:#394456;
+  }
+  & .panel-credential-row > span,
+  & .panel-credential-row > label {
+    color:#a4afc0;
+  }
+  & .panel-login-edit-row > input,
+  & .panel-access-value {
+    background:#293140;
+    border-color:#414c60;
+    color:#e0e5ee;
+  }
+  & .panel-login-edit-row > input:focus {
+    background:#30394a;
+    border-color:#69758e;
+    color:#f0f2f7;
+  }
+  & .panel-access-value b {
+    color:#b9afe8;
+  }
+  & .panel-access-value .password-code-refresh {
+    background:#30394a;
+    border-color:#465268;
+    color:#c8c0e4;
+  }
+  & .credential-field-code .credential-field-value b {
+    color:#c9c0ef;
+  }
+  & .user-row {
+    border-color:#343d4d;
+    background:transparent;
+    border-bottom:1px solid #343f52;
+  }
+  & .user-row .role-tag.teacher {
+    background:#393650;
+    color:#c8c0ef;
+  }
+  & .user-action-btn:hover {
+    background:#303b4d;
+    border-color:#4b5870;
+    color:#f0f2f7;
+  }
+  & .user-action-btn {
+    color:#c0c8d6;
+    border-color:#414e62;
+    background:#252e3d;
+  }
+  & .user-action-btn.user-delete:hover {
+    color:#fff;
+    background:#a94e60;
+  }
+  & .user-action-btn.user-info-btn {
+    color:#c0b7d7;
+    border-color:#414e62;
+    background:#252e3d;
+  }
+  & .user-action-btn.user-info-btn:hover,
+  & .user-action-btn.user-info-btn.is-open {
+    color:#e4d7ff;
+    border-color:#665980;
+    background:#39334c;
+  }
+  & .user-info-line,
+  & .user-info-login > span {
+    color:#bbc4d3;
+  }
+  & .user-info-login {
+    border-top-color:#414e62;
+  }
+  & .user-info-login > b {
+    color:#edf0f6;
+  }
+  & .user-row:hover {
+    background:#262f3d;
+  }
+}
+.user-row:hover {
+  background:#f8f7fb;
+}
+.user-row:last-child {
+  border-bottom:0;
+}
+.user-person-info {
+  display:block;
+  flex:1 1 auto;
+  min-width:0;
+  overflow:hidden;
+  color:var(--ink);
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  letter-spacing:-0.18px;
+  font-size:16px;
+  font-weight:600;
+  line-height:1.35;
+}
+.user-action-btn {
+  place-items:center;
+  cursor:pointer;
+  flex:0 0 42px;
+  color:#777085;
+  background:#faf9fc;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+  @include primitives.center;
+  gap:8px;
+  width:42px;
+  height:42px;
+  padding:0;
+  border:1px solid #e5dfed;
+}
+.user-action-btn:hover {
+  border-color:var(--line);
+  color:var(--ink);
+  background:rgba(130, 140, 160, 0.1);
+}
+.user-add-btn {
+  white-space:nowrap;
+}
+.user-add-btn svg {
+  width:18px;
+  height:18px;
+}
+.user-list {
+  padding:0;
+  border-radius:17px;
+  overflow:visible;
+}
+.user-row {
+  border-bottom:1px solid var(--line);
+  transition:background 0.15s ease;
+  min-height:86px;
+  gap:16px;
+  padding:16px 20px;
+}
+.user-row > .avatar {
+  border-radius:14px;
+}
+.user-row > .avatar svg {
+  width:22px;
+  height:22px;
+}
+.user-actions {
+  display:flex;
+  flex:0 0 auto;
+  margin-left:auto;
+  align-items:center;
+}
+.user-action-btn svg {
+  stroke-width:1.9;
+  width:18px;
+  height:18px;
+}
+.user-action-btn.edit-btn {
+  color:#756a91;
+  background:#f8f6fb;
+}
+.user-action-btn.user-delete {
+  margin-left:3px;
+  color:#c66f7a;
+  border-color:#efd4d8;
+  background:#fff5f6;
+}
+.user-action-btn.user-delete:hover {
+  color:#fff;
+  border-color:#bd5968;
+  background:#bd5968;
+}
+.user-info-wrap {
+  position:relative;
+  display:inline-flex;
+  flex:0 0 auto;
+}
+.user-action-btn.user-info-btn {
+  width:42px;
+  height:42px;
+  flex-basis:42px;
+  color:#8a7da4;
+  border-color:#e5dfed;
+  background:#faf9fc;
+}
+.user-action-btn.user-info-btn:hover,
+.user-action-btn.user-info-btn.is-open {
+  color:#62439d;
+  border-color:#cbb9e7;
+  background:#f2ecfa;
+}
+.user-info-line {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:25px;
+  color:#777183;
+}
+.user-info-line > svg {
+  width:14px;
+  height:14px;
+  flex:0 0 14px;
+  color:#8d82a4;
+}
+.user-info-login {
+  display:grid;
+  gap:3px;
+  margin-top:8px;
+  padding-top:9px;
+  border-top:1px solid #eeeaf2;
+  > span {
+    color:#9a93a4;
+    font-size:10px;
+  }
+  > b {
+    color:#5c5568;
+    font-size:12px;
+    overflow-wrap:anywhere;
+  }
+}
+
 .toolbar.user-toolbar {
   display:grid;
   grid-template-columns:minmax(0, 1fr) auto;
@@ -61,4 +287,20 @@
     margin:0;
     border:0;
   }
+}
+
+:root:not([data-theme="dark-soft"]) {
+  & .user-row {
+    border-color:#e7dfef;
+  }
+}
+.user-row .avatar.teacher,
+.user-row .role-tag.teacher {
+  background:var(--role-teacher-soft);
+  color:var(--role-teacher);
+}
+.user-row .avatar.student,
+.user-row .role-tag.student {
+  background:var(--role-student-soft);
+  color:var(--role-student);
 }

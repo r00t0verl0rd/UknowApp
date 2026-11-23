@@ -52,9 +52,6 @@ a:focus-visible {
   background-color:var(--lavender-soft);
   color:var(--purple);
 }
-.unassigned-grid .student-card {
-  background:var(--surface);
-}
 .role-tag {
   background:var(--lavender-soft);
   color:var(--purple);
@@ -64,7 +61,12 @@ a:focus-visible {
   color:var(--red);
 }
 :root[data-theme="dark-soft"] {
-  & .teacher-card,
+  & .teacher-branch:hover {
+    transform:inherit;
+    background:#262f3c;
+    border-color:#465267;
+    box-shadow:none;
+  }
   & .empty-students,
   & .unassigned-grid .student-card {
     background:var(--surface);
@@ -301,4 +303,52 @@ a:focus-visible {
 }
 .user-row > .user-actions {
   flex-wrap:nowrap;
+}
+
+.sidebar,
+.topbar,
+.user-list > .user-row,
+.credential-modal {
+  background-color:var(--surface);
+}
+:root:not([data-theme="dark-soft"]) {
+  & body {
+    background:#f2eff7;
+  }
+  & .sidebar,
+  & .topbar,
+  & .user-list > .user-row,
+  & .modal,
+  & .login-card,
+  & .credential-modal {
+    background-color:#faf8fd;
+  }
+  & .search,
+  & .stack input,
+  & .stack select {
+    background:#fdfbff;
+    border-color:#e6deed;
+  }
+  & .workspace-content:has(.admin-card) .graph-legend-row > .graph-legend {
+    background:#f0eaf7;
+    border-color:#e2d8ed;
+  }
+  & .workspace-content:has(.admin-card) .empty-students {
+    background:#f4eff9;
+    border-color:#e4daef;
+  }
+}
+:root[data-theme="dark-soft"] {
+  & .student-card {
+    color:#edf0f5;
+    box-shadow:none;
+  }
+  & .user-list .user-row > .avatar.student {
+    background:var(--role-student-soft);
+    color:var(--role-student);
+  }
+  & .user-list .user-row > .avatar.teacher {
+    background:var(--role-teacher-soft);
+    color:var(--role-teacher);
+  }
 }

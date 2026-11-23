@@ -20,6 +20,7 @@ const walk = directory => {
 walk(styles);
 
 const entrypoints = new Set(["index.scss", "critical.scss", "core/_primitives.scss"]);
+const owners = new Set(["core", "components", "features", "workspace"]);
 const sourceFiles = new Set(files.map(file => path.relative(styles, file).replaceAll(path.sep, "/")));
 const resolveUse = (file, relative) => {
   const target = path.resolve(path.dirname(file), relative);
@@ -38,8 +39,8 @@ for (const [, relative] of index.matchAll(/^@use\s+["']\.\/([^"']+)["'];/gm)) {
 for (const file of files) {
   const name = path.relative(styles, file).replaceAll(path.sep, "/");
   const source = fs.readFileSync(file, "utf8");
-  if (!name.includes("/") && !entrypoints.has(name)) {
-    errors.push(`Unowned SCSS module in root: ${name}`);
+  if (!entrypoints.has(name) && !owners.has(name.split("/")[0])) {
+    errors.push(`Choose a component, feature, workspace or core owner for ${name}`);
   }
   if (!entrypoints.has(name) && !imported.has(name)) {
     errors.push(`SCSS module absent from index.scss: ${name}`);
