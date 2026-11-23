@@ -29,7 +29,6 @@ from app.models import (
     Conversation,
     Message,
     StudentTelegramGroup,
-    TeacherSession,
     User,
 )
 from app.modules.communication.accounts import (
