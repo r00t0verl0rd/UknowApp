@@ -120,6 +120,12 @@ export function installViewRestoration({ root, userId, page }) {
   let pendingRestore = {};
   let restoring = false;
   let userInteracted = new Set();
+  let lastUserScrollIntent = 0;
+  // Programmatic scroll events are isTrusted in modern browsers too. Only
+  // real wheel/touch/keyboard input is allowed to cancel a pending restore.
+  const onScrollIntent = event => {
+    if (event.isTrusted) lastUserScrollIntent = Date.now();
+  };
   let flushTimer = 0;
   let queuedScroll = {};
 
@@ -194,6 +200,7 @@ export function installViewRestoration({ root, userId, page }) {
   };
   const onScroll = event => {
     if (restoring || disposed || !event.isTrusted) return;
+    if (Date.now() - lastUserScrollIntent > 1600) return;
     const target = event.target;
     const baseName = target === doc || target === win
       ? "document"
@@ -255,6 +262,10 @@ export function installViewRestoration({ root, userId, page }) {
     attachObservers();
     scheduleApply();
   };
+  doc.addEventListener("wheel", onScrollIntent, { capture: true, passive: true });
+  doc.addEventListener("touchstart", onScrollIntent, { capture: true, passive: true });
+  doc.addEventListener("pointerdown", onScrollIntent, { capture: true, passive: true });
+  doc.addEventListener("keydown", onScrollIntent, true);
   doc.addEventListener("scroll", onScroll, true);
   win.addEventListener("scroll", onScroll, { passive: true });
   doc.addEventListener("toggle", onToggle, true);
@@ -279,6 +290,10 @@ export function installViewRestoration({ root, userId, page }) {
       if (frame) win.cancelAnimationFrame(frame);
       observer.disconnect();
       resize?.disconnect();
+      doc.removeEventListener("wheel", onScrollIntent, true);
+      doc.removeEventListener("touchstart", onScrollIntent, true);
+      doc.removeEventListener("pointerdown", onScrollIntent, true);
+      doc.removeEventListener("keydown", onScrollIntent, true);
       doc.removeEventListener("scroll", onScroll, true);
       doc.removeEventListener("toggle", onToggle, true);
       win.removeEventListener("scroll", onScroll);
