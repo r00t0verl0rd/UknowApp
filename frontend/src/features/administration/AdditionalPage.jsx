@@ -128,39 +128,32 @@ export default function AdditionalPage(options) {
         </div>
         <div class="data-tools-grid">
           <article class="data-tool-card data-tool-primary">
-            <div class="data-tool-icon">
-              <ArchiveIcon />
-            </div>
+            <span class="data-tool-icon" aria-hidden="true"><ArchiveIcon /></span>
             <div class="data-tool-copy">
-              <div class="data-tool-kicker">ПОЛНЫЙ ПЕРЕНОС ДАННЫХ · ZIP</div>
-              <h3>Полная резервная копия UknowApp</h3>
-              <p>
-                Один архив для резервного копирования и переезда на другой сервер. В него автоматически
-                попадает всё содержимое каталога data.
-              </p>
-              <div class="data-includes">
-                <b>
-                  <Check size={14} /> Что входит
-                </b>
+              <div class="data-tool-kicker">Резервная копия · ZIP</div>
+              <h3>Весь UknowApp в одном архиве</h3>
+              <p>Сохраните данные и файлы вместе, чтобы при необходимости восстановить приложение.</p>
+              <details class="data-info-details data-includes">
+                <summary><Check size={15} aria-hidden="true" /> Что входит в архив <ChevronDown size={15} aria-hidden="true" /></summary>
                 <ul>
-                  <li>Полная база SQLite: пользователи, роли, назначения и переписки</li>
-                  <li>Все фотографии, аудио, голосовые, видео и документы</li>
-                  <li>Ключ Web Push и остальные служебные файлы из data</li>
-                  <li>Все будущие файлы в data автоматически, без изменения экспортера</li>
+                  <li>Пользователи, назначения и переписки</li>
+                  <li>Фотографии, аудио, видео и документы</li>
+                  <li>Ключ Web Push и другие файлы из каталога data</li>
                 </ul>
-              </div>
+              </details>
             </div>
             <div class="data-tool-actions">
-              <button
-                type="button"
-                class="btn primary"
+              <Button
+                variant="primary"
+                class="data-action-btn"
                 onClick={() => options.downloadAdminFile("full")}
                 disabled={options.dataBusy || !sqliteBackupsAvailable()}
               >
-                Скачать полную резервную копию
-              </button>
-              <label class="btn outline data-upload-label">
-                {options.dataBusy ? "Обработка…" : "Восстановить из полной копии"}
+                <Download size={16} aria-hidden="true" /> Скачать полную копию
+              </Button>
+              <label class="btn outline data-action-btn data-upload-label">
+                <Upload size={16} aria-hidden="true" />
+                {options.dataBusy ? "Обработка…" : "Восстановить из архива"}
                 <input
                   type="file"
                   accept=".zip"
@@ -173,51 +166,48 @@ export default function AdditionalPage(options) {
               </label>
             </div>
             {options.restore && (
-              <p role="status" class="data-warning">
+              <p role="status" class={"data-operation-status" + (options.restore.status === "completed" ? " is-complete" : "")}>
                 {options.restore.status === "completed"
-                  ? "Резервная копия восстановлена."
+                  ? "Данные успешно восстановлены."
                   : options.restore.status === "failed"
-                    ? "Восстановление не выполнено. Сохранены исходные данные."
-                    : "Копия принята. Ожидаем результат после перезапуска сервера."}
+                    ? "Восстановление не завершилось. Исходные данные сохранены."
+                    : "Архив принят. Проверяем результат восстановления."}
                 {options.restore.finished_at &&
                   " " + new Date(options.restore.finished_at).toLocaleString("ru-RU")}
               </p>
             )}
             {isPostgres() && (
-              <p role="status" class="data-warning">
-                Резервное копирование и восстановление SQLite через ZIP недоступны для PostgreSQL.
-                Для базы используйте pg_dump, а медиафайлы скачайте отдельно.
+              <p role="status" class="data-important-note">
+                Для PostgreSQL сохраните базу через pg_dump, а файлы скачайте отдельно.
               </p>
             )}
-            <p class="data-warning">
-              Восстановление заменит весь каталог data. В Docker backend перезапустится автоматически; при
-              локальном запуске перезапустите backend вручную. Файл .env, токен Telegram и конфигурация
-              сервера в архив не входят. Перед экспортом проверяются ссылки на вложения: при отсутствующих
-              медиафайлах полная копия не создаётся.
-            </p>
+            <p class="data-important-note">При восстановлении текущие данные заменятся содержимым архива.</p>
+            <details class="data-info-details">
+              <summary>Что важно знать перед восстановлением <ChevronDown size={15} aria-hidden="true" /></summary>
+              <p class="data-note-copy">
+                В Docker сервер перезапустится автоматически, при локальном запуске нужен ручной перезапуск backend.
+                Настройки .env и Telegram сохраняйте отдельно. Для полной копии все вложения должны быть доступны.
+              </p>
+            </details>
           </article>
           <article class="data-tool-card">
-            <div class="data-tool-icon">
-              <DatabaseIcon />
-            </div>
+            <span class="data-tool-icon" aria-hidden="true"><DatabaseIcon /></span>
             <div class="data-tool-copy">
-              <div class="data-tool-kicker">ТОЛЬКО БАЗА · SQLITE3</div>
-              <h3>База данных отдельно</h3>
-              <p>
-                Содержит всю структуру и данные системы, включая текстовую историю сообщений и сведения о
-                вложениях. Сами фотографии и другие файлы не входят.
-              </p>
+              <div class="data-tool-kicker">Отдельная копия · SQLite</div>
+              <h3>Только база данных</h3>
+              <p>Пользователи, назначения и переписки без фотографий и других вложений.</p>
             </div>
             <div class="data-tool-actions">
-              <button
-                type="button"
-                class="btn outline"
+              <Button
+                variant="outline"
+                class="data-action-btn"
                 onClick={() => options.downloadAdminFile("database")}
                 disabled={options.dataBusy || !sqliteBackupsAvailable()}
               >
-                Скачать базу данных
-              </button>
-              <label class="btn outline data-upload-label">
+                <Download size={16} aria-hidden="true" /> Скачать базу
+              </Button>
+              <label class="btn outline data-action-btn data-upload-label">
+                <Upload size={16} aria-hidden="true" />
                 {options.dataBusy ? "Обработка…" : "Восстановить базу"}
                 <input
                   type="file"
@@ -230,74 +220,72 @@ export default function AdditionalPage(options) {
                 />
               </label>
             </div>
-            <p class="data-warning">
-              Восстановление заменит всю текущую базу. Для полной копии используйте основной ZIP-файл.
-            </p>
+            <p class="data-important-note">Восстановление заменит текущую базу. Для переноса всех файлов используйте полную копию.</p>
           </article>
           <article class="data-tool-card">
-            <div class="data-tool-icon">
-              <ArchiveIcon />
-            </div>
+            <span class="data-tool-icon" aria-hidden="true"><ArchiveIcon /></span>
             <div class="data-tool-copy">
-              <div class="data-tool-kicker">ТОЛЬКО ФАЙЛЫ · ZIP</div>
-              <h3>Медиафайлы отдельно</h3>
-              <p>
-                Архив фотографий, аудио, голосовых, видео, документов и других файлов, загруженных в
-                переписки. Без базы данных и текстов сообщений.
-              </p>
+              <div class="data-tool-kicker">Отдельная копия · ZIP</div>
+              <h3>Только вложения</h3>
+              <p>Фотографии, голосовые сообщения, видео и документы — без базы и текстов переписки.</p>
             </div>
             <div class="data-tool-actions">
-              <button
-                type="button"
-                class="btn outline"
+              <Button
+                variant="outline"
+                class="data-action-btn"
                 onClick={() => options.downloadAdminFile("media")}
                 disabled={options.dataBusy}
               >
-                Скачать медиафайлы
-              </button>
+                <Download size={16} aria-hidden="true" /> Скачать вложения
+              </Button>
             </div>
           </article>
         </div>
         <div class="data-backup-hint">
-          <b>{isPostgres() ? "Для PostgreSQL используйте pg_dump и отдельный архив медиафайлов." : "Для резервного копирования и переноса сервера используйте полную копию."}</b>
-          <span>
-            {isPostgres()
-              ? "Полный ZIP со встроенной базой поддерживает только SQLite. Не забудьте отдельно перенести ключ Web Push, конфигурацию и остальные файлы из data."
-              : "Архив содержит весь каталог data, включая базу, медиафайлы, ключ Web Push и другие файлы. Конфигурацию .env переносите отдельно."}
-          </span>
+          <Info size={18} aria-hidden="true" />
+          <div>
+            <b>{isPostgres() ? "Для PostgreSQL сохраните базу и файлы отдельно." : "Для переезда на другой сервер выбирайте полную копию."}</b>
+            <span>{isPostgres()
+              ? "Сделайте дамп через pg_dump, скачайте файлы и сохраните .env отдельно."
+              : "В ней будут база и вложения. Настройки .env нужно сохранить отдельно."}</span>
+          </div>
         </div>
         <article class="data-cleanup-card">
-          <div>
-            <div class="eyebrow">ХРАНЕНИЕ И ОЧИСТКА</div>
-            <h3>Удаление старых переписок и медиа</h3>
-            <p>
-              Удаляются сообщения старше выбранного срока и связанные с ними архивные вложения. Аккаунты,
-              назначения и сами диалоги сохраняются.
-            </p>
+          <div class="data-cleanup-copy">
+            <span class="data-tool-icon" aria-hidden="true"><Trash2 /></span>
+            <div>
+              <div class="data-tool-kicker">Уход за переписками</div>
+              <h3>Очистить старые сообщения</h3>
+              <p>Освободите место, удалив старые сообщения и вложения. Пользователи, назначения и сами диалоги останутся.</p>
+            </div>
           </div>
           <div class="data-cleanup-actions">
-            <label>
-              Удалять старше
-              <select
-                value={options.retentionDays}
-                onChange={(e) => options.setRetentionDays(e.target.value)}
-                disabled={options.dataBusy}
-              >
-                <option value="30">30 дней</option>
-                <option value="60">60 дней</option>
-                <option value="180">180 дней</option>
-                <option value="360">360 дней</option>
-              </select>
-            </label>
-            <button
-              type="button"
-              class="btn danger"
+            <div class="data-retention-field">
+              <label for="data-retention-days">Удалять старше</label>
+              <div class="data-retention-select">
+                <Clock3 size={16} aria-hidden="true" />
+                <select
+                  id="data-retention-days"
+                  value={options.retentionDays}
+                  onChange={(e) => options.setRetentionDays(e.target.value)}
+                  disabled={options.dataBusy}
+                >
+                  <option value="30">30 дней</option>
+                  <option value="60">60 дней</option>
+                  <option value="180">180 дней</option>
+                  <option value="360">360 дней</option>
+                </select>
+                <ChevronDown size={16} aria-hidden="true" />
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              class="data-action-btn data-action-danger"
               onClick={options.cleanupOldDialogues}
               disabled={options.dataBusy}
             >
-              <Trash2 size={15} />
-              Удалить старые данные
-            </button>
+              <Trash2 size={16} aria-hidden="true" /> Удалить старые данные
+            </Button>
           </div>
         </article>
       </Panel>
