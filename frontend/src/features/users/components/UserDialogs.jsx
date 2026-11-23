@@ -198,7 +198,7 @@ export default function UserDialogs(options) {
                       <div class="panel-credential-row panel-access-row">
                         <span>Единый код доступа</span>
                         <div class="panel-access-value">
-                          <b>Скрыт</b>
+                          <b>XXX-XXX</b>
                           <Button
                             variant="outline"
                             class="password-code-refresh"
