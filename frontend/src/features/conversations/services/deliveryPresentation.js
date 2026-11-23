@@ -3,12 +3,32 @@ const names = { telegram: "Telegram", max: "Max", whatsapp: "WhatsApp" };
 export function messengerName(platform) {
   return names[platform] || (platform ? platform[0].toUpperCase() + platform.slice(1).toLowerCase() : "Мессенджер");
 }
-function recipient(error) {
+function recipient(error, participants = []) {
   if (typeof error === "object" && error !== null) {
     if (typeof error.name === "string" && error.name.trim()) return error.name.trim();
+    const match = participants.find(person => Number(person.id) === Number(error.user_id) && person.id != null);
+    if (typeof match?.full_name === "string" && match.full_name.trim()) return match.full_name.trim();
     return { teacher: "Преподаватель", student: "Ученик", admin: "Администратор" }[error.role] || "Получатель";
   }
   return "Получатель";
+}
+function deliveredEntries(channel, delivered, includeRecipient, participants) {
+  if (!includeRecipient) return [{
+    title: channel,
+    description: delivered.length === 1 ? "Копия отправлена." : `Отправлено копий: ${delivered.length}.`,
+    delivered: true,
+  }];
+  return delivered.map(entry => {
+    const name = recipient(entry, participants);
+    const person = participants.find(p => p.id != null && Number(p.id) === Number(entry?.user_id));
+    const role = entry?.role || person?.role;
+    return {
+      title: `${channel} · ${name}`,
+      ...(name !== "Получатель" ? { namedRecipient: name, role, channel } : {}),
+      description: "Копия отправлена.",
+      delivered: true,
+    };
+  });
 }
 function friendlyReason(error, channel) {
   const reason = typeof error === "string" ? error : String(error?.reason || "");
@@ -22,7 +42,7 @@ function friendlyReason(error, channel) {
   }
   return `Копию в ${channel} пока не удалось отправить.`;
 }
-export function getDeliveryDetails(metadata, includeRecipient = false) {
+export function getDeliveryDetails(metadata, includeRecipient = false, participants = []) {
   if (!metadata || typeof metadata !== "object") return [];
   const details = [];
   const deliveries = metadata.messenger_deliveries || {};
@@ -32,16 +52,16 @@ export function getDeliveryDetails(metadata, includeRecipient = false) {
     const delivered = Array.isArray(result.delivered) ? result.delivered : [];
     const errors = Array.isArray(result.errors) ? result.errors : [];
     if (delivered.length) {
-      details.push({
-        title: channel,
-        description: delivered.length === 1 ? "Копия отправлена." : `Отправлено копий: ${delivered.length}.`,
-        delivered: true,
-      });
+      details.push(...deliveredEntries(channel, delivered, includeRecipient, participants));
     }
     for (const error of errors) {
       details.push({
-        title: `${channel} · ${recipient(error)}`,
-        ...(includeRecipient && error?.name ? { namedRecipient: recipient(error), role: error.role, channel: channel } : {}),
+        title: `${channel} · ${recipient(error, participants)}`,
+        ...(includeRecipient && recipient(error, participants) !== "Получатель" ? {
+          namedRecipient: recipient(error, participants),
+          role: error.role || participants.find(person => Number(person.id) === Number(error?.user_id))?.role,
+          channel,
+        } : {}),
         description: friendlyReason(error, channel),
         delivered: false,
       });
@@ -58,16 +78,16 @@ export function getDeliveryDetails(metadata, includeRecipient = false) {
     const sent = Array.isArray(metadata.telegram_deliveries) ? metadata.telegram_deliveries : [];
     const errors = Array.isArray(metadata.telegram_delivery_errors) ? metadata.telegram_delivery_errors : [];
     if (sent.length) {
-      details.push({
-        title: "Telegram",
-        description: sent.length === 1 ? "Копия отправлена." : `Отправлено копий: ${sent.length}.`,
-        delivered: true,
-      });
+      details.push(...deliveredEntries("Telegram", sent, includeRecipient, participants));
     }
     for (const error of errors) {
       details.push({
-        title: `Telegram · ${recipient(error)}`,
-        ...(includeRecipient && error?.name ? { namedRecipient: recipient(error), role: error.role, channel: "Telegram" } : {}),
+        title: `Telegram · ${recipient(error, participants)}`,
+        ...(includeRecipient && recipient(error, participants) !== "Получатель" ? {
+          namedRecipient: recipient(error, participants),
+          role: error.role || participants.find(person => Number(person.id) === Number(error?.user_id))?.role,
+          channel: "Telegram",
+        } : {}),
         description: friendlyReason(error, "Telegram"),
         delivered: false,
       });
