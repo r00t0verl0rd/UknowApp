@@ -63,7 +63,10 @@ try {
     // Восстановление базы заменяет сессию администратора.
     await page.getByRole("button", { name: "Войти" }).waitFor({ timeout: 120000 });
     await login();
-    await page.getByText("Полная копия восстановлена.", { exact: false }).waitFor();
+    // Проверяем результат переноса по серверному статусу, а не по исчезающему уведомлению.
+    const restoreResponse = await api.get(url + "/api/admin/data/restore-status");
+    assert.equal(restoreResponse.status(), 200);
+    assert.equal((await restoreResponse.json()).restore?.status, "completed");
     const personalChatsResponse = await api.get(url + "/api/panel/personal-conversations");
     assert.equal(personalChatsResponse.status(), 200);
     const personalChats = await personalChatsResponse.json();
