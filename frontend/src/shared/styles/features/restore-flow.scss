@@ -113,6 +113,10 @@
   }
 }
 
+:root[data-theme="dark-soft"] .restore-flow-dialog .restore-flow-steps .is-complete > span {
+  color:var(--app-foreground);
+}
+
 .restore-login-notice {
   display:grid;
   gap:5px;
