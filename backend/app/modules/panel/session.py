@@ -11,20 +11,18 @@ from fastapi import (
 )
 from fastapi.responses import StreamingResponse
 
+from app.core.database import SessionLocal
 from app.event_hub import (
     replay_chat_updates,
     subscribe_chat_updates,
     unsubscribe_chat_updates,
 )
-from app.core.database import SessionLocal
-from app.modules.messaging.service import _panel_visible_conversation
-from app.modules.personal_chat.service import _personal_conversation
-from app.models import (
-    User,
-)
+from app.models import User
 from app.modules.auth.permissions import ROLE_PERMISSIONS
 from app.modules.auth.service import _load_panel_identity
 from app.modules.dependencies import Db, PanelUser
+from app.modules.messaging.service import _panel_visible_conversation
+from app.modules.personal_chat.service import _personal_conversation
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
