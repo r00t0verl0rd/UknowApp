@@ -396,13 +396,10 @@ async def refresh_teacher_panel_after_web_delivery(bot, teacher_id: int, convers
                 return
             if not get_messenger_account(db, teacher.id, MessengerPlatform.TELEGRAM):
                 return
-            from app.modules.telegram.teacher import (
-                clear_teacher_session,
-                update_teacher_panel,
-            )
-            current_session = db.get(TeacherSession, teacher.id)
-            if current_session and current_session.conversation_id != conversation.id:
-                clear_teacher_session(db, teacher)
+            from app.modules.telegram.teacher import update_teacher_panel
+            # Incoming messages update the existing panel in place. Clearing
+            # another selected conversation would replace the Telegram keyboard
+            # and delete the old panel, producing a transient double alert.
             await update_teacher_panel(bot, db, teacher)
     except (TelegramAPIError, SQLAlchemyError) as exc:
         logger.warning(
