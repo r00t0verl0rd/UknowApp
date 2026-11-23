@@ -149,6 +149,7 @@ export default function ChatsPage(options) {
                 Личные
                 <CountBadge
                   value={unreadPersonalCount()}
+                  unread={unreadPersonalCount() > 0}
                   label="непрочитанных личных сообщений"
                   hideWhenZero
                 />
