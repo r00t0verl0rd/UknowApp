@@ -23,7 +23,9 @@ export function installViewportEnvironment(win = window, doc = document) {
     const focused = isEditorFocused();
     const mobile = win.matchMedia("(max-width: 1024px)").matches;
     const inBrowser = mobile && win.matchMedia("(display-mode: browser)").matches;
-    if (!focused || !mobile) baselineHeight = Math.max(win.innerHeight, height);
+    // Keep the original height until Safari has finished dismissing the keyboard.
+    // Focus can leave an input while the visual viewport is still shrinking.
+    if ((!focused && !keyboardOpen) || !mobile) baselineHeight = Math.max(win.innerHeight, height);
     else baselineHeight = Math.max(baselineHeight, height);
     const heightLoss = baselineHeight - height;
     // Hysteresis keeps the viewport stable as Safari animates the keyboard closed.
