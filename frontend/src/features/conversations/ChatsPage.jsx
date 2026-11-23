@@ -250,8 +250,11 @@ export default function ChatsPage(options) {
                     <div class={"person-info" + (showMessageCount() ? " participant-chat-names" : "")}>
                       {showMessageCount() ? (
                         <>
-                          <b><span data-chat-name-role="teacher">{chat.teacher.full_name}</span></b>
-                          <b><span data-chat-name-role="student">{chat.student.full_name}</span></b>
+                          <b class="participant-pair" title={chat.teacher.full_name + " ↔ " + chat.student.full_name}>
+                            <span data-chat-name-role="teacher">{chat.teacher.full_name}</span>
+                            <span class="participant-pair-arrow" aria-hidden="true">↔</span>
+                            <span data-chat-name-role="student">{chat.student.full_name}</span>
+                          </b>
                         </>
                       ) : (
                         <>
@@ -304,22 +307,28 @@ export default function ChatsPage(options) {
                 <span>Диалоги</span>
               </button>
               <div class="chat-head-person">
-                <b data-chat-name-role={titleRole(options.selectedChat)}>
-                  {options.selectedChat.type === "personal"
-                    ? options.selectedChat.title
-                    : options.profile?.role === "student"
-                      ? options.selectedChat.teacher.full_name
-                      : options.selectedChat.student.full_name}
-                </b>
-                {options.selectedChat.type !== "personal" && options.profile?.role === "admin" && (
-                  <b data-chat-name-role="teacher">{options.selectedChat.teacher.full_name}</b>
+                {options.selectedChat.type !== "personal" && options.profile?.role === "admin" ? (
+                  <b class="participant-pair" title={options.selectedChat.teacher.full_name + " ↔ " + options.selectedChat.student.full_name}>
+                    <span data-chat-name-role="teacher">{options.selectedChat.teacher.full_name}</span>
+                    <span class="participant-pair-arrow" aria-hidden="true">↔</span>
+                    <span data-chat-name-role="student">{options.selectedChat.student.full_name}</span>
+                  </b>
+                ) : (
+                  <b data-chat-name-role={titleRole(options.selectedChat)}>
+                    {options.selectedChat.type === "personal"
+                      ? options.selectedChat.title
+                      : options.profile?.role === "student"
+                        ? options.selectedChat.teacher.full_name
+                        : options.selectedChat.student.full_name}
+                  </b>
                 )}
                 {options.selectedChat.type !== "personal" && options.profile?.role === "student" && (
                   <small>Ваш учитель</small>
                 )}
               </div>
               <div class="chat-head-tools">
-                <select
+                <ToolbarSelect
+                  class="chat-message-filter"
                   aria-label="Фильтр сообщений"
                   value={options.messageFilter}
                   onChange={(event) => options.setMessageFilter(event.target.value)}
@@ -329,7 +338,7 @@ export default function ChatsPage(options) {
                   <option value="audio">Аудио</option>
                   <option value="photos">Фото</option>
                   <option value="files">Файлы и видео</option>
-                </select>
+                </ToolbarSelect>
                 {options.profile?.role === "admin" && options.selectedChat.type === "personal" && (
                   <Button
                     variant="danger"
@@ -395,7 +404,7 @@ export default function ChatsPage(options) {
                     options.selectedChat.type === "personal"
                       ? "Личное сообщение…"
                       : options.profile?.role === "admin"
-                        ? "Сообщение будет отправлено обоим участникам — ученику и учителю."
+                        ? "Напишите сообщение — его увидят ученик и учитель."
                         : options.profile?.role === "student"
                           ? "Сообщение учителю…"
                           : "Ответить ученику…"

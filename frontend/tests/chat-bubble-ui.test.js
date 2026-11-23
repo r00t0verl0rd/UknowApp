@@ -74,3 +74,16 @@ test("toast duration and viewport motion keep feedback readable and Safari scrol
   assert.match(styles, /background-color var\(--ui-transition-fast\)/);
   assert.match(tabs, /font-weight:700;/);
 });
+
+
+test("admin participant conversations use one-line linked names and shared message filter", () => {
+  const chats = readFileSync(path.join(frontend, "src/features/conversations/ChatsPage.jsx"), "utf8");
+  assert.match(chats, /class="participant-pair"/);
+  assert.match(chats, /class="participant-pair-arrow" aria-hidden="true">↔<\/span>/);
+  assert.match(chats, /<ToolbarSelect\s+class="chat-message-filter"/);
+  assert.doesNotMatch(chats, /Сообщение будет отправлено обоим участникам/);
+  assert.match(chats, /Напишите сообщение — его увидят ученик и учитель/);
+  assert.match(styles, /\.participant-pair \{[^}]*white-space:nowrap;/s);
+  assert.match(styles, /\.participant-pair > \[data-chat-name-role\] \{[^}]*text-overflow:ellipsis;/s);
+  assert.match(styles, /\.mobile-chat-back \{[^}]*width:48px;[^}]*height:48px;/s);
+});

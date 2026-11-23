@@ -95,17 +95,11 @@
   justify-content:flex-end;
   gap:8px;
   min-width:0;
-  select {
-    width:auto;
-    min-width:145px;
-    max-width:190px;
-    min-height:36px;
-    padding:7px 10px;
-    border:1px solid var(--ui-border);
-    border-radius:8px;
-    background:var(--surface-input);
-    color:var(--ink);
-    font-size:12px;
+  .chat-message-filter {
+    flex:0 1 auto;
+    width:clamp(145px, 16vw, 190px);
+    min-width:0;
+    height:var(--workspace-control-height);
   }
   .role-tag {
     margin:0;
@@ -688,11 +682,8 @@
     gap:8px;
     padding:12px;
   }
-  .chat-head-tools select {
-    min-width:112px;
-    max-width:145px;
-    padding:6px;
-    font-size:11px;
+  .chat-head-tools .chat-message-filter {
+    width:clamp(130px, 20vw, 170px);
   }
   .messages {
     padding:12px 2px;
@@ -727,13 +718,25 @@
   .mobile-chat-back {
     display:inline-flex;
     align-items:center;
+    justify-content:center;
+    flex:0 0 48px;
+    width:48px;
+    min-width:48px;
+    height:48px;
+    min-height:48px;
+    padding:0;
+    border-radius:12px;
     gap:4px;
   }
-  .chat-head-tools select {
-    min-width:100px;
-    max-width:135px;
-    padding:6px;
-    font-size:11px;
+  .mobile-chat-back svg {
+    width:22px;
+    height:22px;
+  }
+  .chat-head-person {
+    padding-left:7px;
+  }
+  .chat-head-tools .chat-message-filter {
+    width:clamp(128px, 30vw, 160px);
   }
   .chat-head-tools .personal-chat-delete {
     width:36px;
@@ -756,12 +759,13 @@
     gap:8px;
   }
   .chat-detail > .chat-head {
-    grid-template-columns:36px minmax(0, 1fr) auto;
+    grid-template-columns:48px minmax(0, 1fr) auto;
   }
   .chat-head-tools {
     justify-content:flex-end;
   }
-  .chat-head-tools select {
+  .chat-head-tools .chat-message-filter {
+    width:clamp(122px, 34vw, 145px);
     max-width:100%;
     min-width:0;
   }
@@ -784,17 +788,40 @@
   min-width:0;
 }
 .chat-item .participant-chat-names {
-  display:grid;
-  gap:3px;
-  align-content:center;
+  display:flex;
+  min-width:0;
+  align-items:center;
   > b {
-    display:block;
     margin:0;
     font-size:12px;
     line-height:1.25;
     font-weight:650;
   }
-
+}
+/* A conversation is two people, not two stacked labels. Long names
+   truncate independently; the complete pair remains available as a title. */
+.participant-pair {
+  display:flex;
+  min-width:0;
+  width:100%;
+  max-width:100%;
+  align-items:center;
+  gap:5px;
+  white-space:nowrap;
+}
+.participant-pair > [data-chat-name-role] {
+  min-width:0;
+  flex:0 1 auto;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.participant-pair-arrow {
+  flex:0 0 auto;
+  color:var(--muted);
+  font-size:1em;
+  font-weight:650;
+  line-height:1;
 }
 .chat-tab-count {
   display:inline-flex;
@@ -905,8 +932,11 @@
   .mobile-chat-back {
     white-space:nowrap;
     justify-content:center;
-    width:36px;
-    min-height:40px;
+    flex-basis:48px;
+    width:48px;
+    min-width:48px;
+    min-height:48px;
+    height:48px;
     padding:0;
   }
   .chat-composer .selected-file {
