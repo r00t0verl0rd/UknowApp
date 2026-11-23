@@ -1922,10 +1922,9 @@ test("global SSE updates real counters across tabs and replays missed events", {
           <div class="stack"><label>Имя<input value="Иван Иванов"></label>
           <div class="panel-access-value"><b>XXXX-XXXX</b>
             <button class="btn outline password-code-refresh">Новый код</button></div></div>
-          <div class="modal-actions">
-            <button class="btn ghost">Отмена</button>
-            <button class="icon-btn ui-icon-button ui-icon-button--danger">×</button>
+          <div class="modal-actions participant-form-actions">
             <button class="btn primary">Сохранить</button>
+            <button class="icon-btn ui-icon-button ui-icon-button--danger user-delete">×</button>
           </div>`;
         document.body.append(dialog);
         dialog.showModal();
@@ -1950,8 +1949,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
       assert.equal(dialogGeometry.tag, "DIALOG");
       assert.ok(dialogGeometry.modal, `${width}px: HTMLDialogElement is in browser top layer`);
       assert.ok(dialogGeometry.width <= width - 16, `${width}px: dialog fits screen`);
-      assert.deepEqual(dialogGeometry.actionHeights, [44, 44, 44],
-        `${width}px: right-aligned action buttons are equally tall`);
+      assert.deepEqual(dialogGeometry.actionHeights, [44, 44],
+        `${width}px: save and delete stay compact and equally tall`);
       assert.equal(dialogGeometry.refreshHeight, 44,
         `${width}px: new access code button matches action heights`);
       assert.ok(dialogGeometry.rightInset >= 10 && dialogGeometry.rightInset <= 35,
