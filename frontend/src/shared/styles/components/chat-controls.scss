@@ -45,7 +45,11 @@
   .chat-section-tabs > button.chat-section-tab[aria-pressed="true"],
   .chat-section-tabs > button.chat-section-tab[aria-pressed="true"]:hover {
     @include primitives.selected;
-    box-shadow:0 0 0 1px var(--ui-selected-outline);
+    border-color:var(--ui-selected-border);
+    font-weight:800;
+    box-shadow:
+      inset 0 0 0 1px var(--ui-selected-border),
+      0 0 0 2px var(--ui-selected-outline);
   }
   .chat-section-tabs > button.chat-section-tab[aria-pressed="false"]:hover {
     background:var(--ui-control-hover);
