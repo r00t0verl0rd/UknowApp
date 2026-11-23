@@ -216,4 +216,7 @@
   :root .workspace-shell .sidebar .sidebar-bottom > button.ui-menu-control:not([aria-current="page"]) {
     color:var(--muted);
   }
+  :root .workspace-shell .workspace-content .graph-add-participant.ui-menu-control {
+    border-radius:11px;
+  }
 }
