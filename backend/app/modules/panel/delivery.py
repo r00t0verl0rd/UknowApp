@@ -303,6 +303,8 @@ async def deliver_panel_message(
                 ))
                 delivered.append({
                     "user_id": recipient.id,
+                    "name": recipient.full_name,
+                    "role": recipient_role,
                     "external_message_id": str(sent.external_message_id),
                     "external_chat_id": str(target["chat_id"]),
                     "external_thread_id": (
