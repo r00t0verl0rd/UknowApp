@@ -39,7 +39,8 @@ test("workspace stays closed until the server confirms the role and redirects a 
     );
     assert.equal(await page.getByRole("button", { name: "Структура", exact: true }).count(), 0);
     assert.ok(requests.every(path => !path.startsWith("/api/admin/")));
-    await page.route("**/api/panel/me", route => route.fulfill({ status: 503, json: {} }));
+    // An expired session (401) must return to login; a temporary 503 should not discard the view.
+    await page.route("**/api/panel/me", route => route.fulfill({ status: 401, json: {} }));
     await page.reload();
     await page.getByRole("button", { name: "Войти", exact: true }).waitFor();
     assert.equal(await page.getByRole("button", { name: "Доски", exact: true }).count(), 0);
