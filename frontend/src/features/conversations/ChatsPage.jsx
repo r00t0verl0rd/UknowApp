@@ -117,8 +117,8 @@ export default function ChatsPage(options) {
             >
               <button
                 type="button"
-                class="chat-section-tab ui-toolbar-tab"
-                aria-pressed={options.chatSection === "participants"}
+                class={options.chatSection === "participants" ? "chat-section-tab ui-toolbar-tab is-current" : "chat-section-tab ui-toolbar-tab"}
+                aria-pressed={options.chatSection === "participants" ? "true" : "false"}
                 title="Чаты участников"
                 onClick={() => {
                   options.setChatSection("participants");
@@ -130,8 +130,8 @@ export default function ChatsPage(options) {
               </button>
               <button
                 type="button"
-                class="chat-section-tab ui-toolbar-tab"
-                aria-pressed={options.chatSection === "personal"}
+                class={options.chatSection === "personal" ? "chat-section-tab ui-toolbar-tab is-current" : "chat-section-tab ui-toolbar-tab"}
+                aria-pressed={options.chatSection === "personal" ? "true" : "false"}
                 title="Личные диалоги"
                 onClick={() => {
                   options.setChatSection("personal");

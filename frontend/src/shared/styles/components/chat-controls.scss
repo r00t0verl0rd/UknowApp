@@ -84,3 +84,16 @@
     box-shadow:inset 3px 0 0 var(--ui-selected-border);
   }
 }
+
+:root .workspace-admin .workspace-panel.chat-list {
+  .chat-section-tabs > button.chat-section-tab.is-current {
+    background:var(--button-primary);
+    color:white;
+    border-color:var(--ui-selected-border);
+    font-weight:700;
+  }
+  .chat-items > .chat-item .person-info.participant-chat-names {
+    > .participant-teacher-name { color:var(--role-teacher); }
+    > .participant-student-name { color:var(--role-student); }
+  }
+}
