@@ -77,6 +77,15 @@
   -webkit-backdrop-filter:blur(5px);
   backdrop-filter:blur(5px);
 }
+/* Blurring the full page behind an open dialog forces mobile browsers to
+   repaint a large layer while the virtual keyboard resizes the viewport.
+   Keep the dimmed backdrop, but skip that costly live effect on touch devices. */
+@media (pointer:coarse) {
+  :root dialog.native-dialog::backdrop {
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
+  }
+}
 /* Unified, unobtrusive close buttons in every dialog. Keyboard focus
    remains apparent through a soft background, without a double outline. */
 :root dialog.native-dialog .modal-head > .ui-icon-button {
