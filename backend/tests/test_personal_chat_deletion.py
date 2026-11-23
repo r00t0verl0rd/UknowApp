@@ -123,3 +123,35 @@ def test_delete_personal_chat_requires_admin_and_existing_chat(api):
     with sessions() as db:
         assert db.get(PersonalConversation, chat_id) is not None
     assert admin.delete("/api/panel/personal-conversations/9999999").status_code == 404
+
+
+def test_cleanup_retries_without_reusing_deleted_chat_id(api, monkeypatch, tmp_path):
+    make_client, users, sessions = api
+    admin = make_client()
+    login(admin, "test-admin", "a-long-test-password-123")
+    base = "/api/panel/personal-conversations"
+    old = admin.post(base, json={"user_id": users["teacher-one"]}).json()["id"]
+    folder = tmp_path / "personal" / str(old)
+    folder.mkdir(parents=True)
+    (folder / "attachment.bin").write_bytes(b"attachment")
+    monkeypatch.setattr(personal, "MEDIA_DIR", tmp_path)
+
+    def disk_error(_path):
+        raise OSError("disk unavailable")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(personal.shutil, "rmtree", disk_error)
+        result = admin.delete(f"{base}/{old}")
+    assert result.status_code == 200
+    assert result.json()["media_cleanup_pending"] is True
+    assert folder.exists()
+
+    fresh = admin.post(base, json={"user_id": users["teacher-two"]}).json()["id"]
+    assert fresh != old
+    assert admin.delete(f"{base}/{old}").status_code == 404
+    monkeypatch.setattr(personal, "SessionLocal", sessions)
+    personal.retry_personal_media_cleanup()
+    assert not folder.exists()
+    with sessions() as db:
+        assert db.get(personal.PersonalMediaCleanup, old) is None
+    assert admin.get(f"{base}/{fresh}/summary").status_code == 200

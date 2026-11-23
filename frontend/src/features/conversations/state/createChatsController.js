@@ -44,13 +44,15 @@ export function createChatsController(options) {
     return cache.messages;
   };
   // Отзыв доступа к личному чату удаляет и локально закэшированную историю.
-  // В SQLite ID диалога может быть переиспользован после удаления.
-  createEffect(() => {
-    const existing = new Set(options.personalState.personalChats.map(chat => "personal:" + chat.id));
-    for (const key of recentChats.keys()) {
-      if (key.startsWith("personal:") && !existing.has(key)) recentChats.delete(key);
-    }
-  });
+  createEffect(
+    () => options.personalState.personalChats.map(chat => "personal:" + chat.id),
+    keys => {
+      const existing = new Set(keys);
+      for (const key of recentChats.keys()) {
+        if (key.startsWith("personal:") && !existing.has(key)) recentChats.delete(key);
+      }
+    },
+  );
   createEffect(
     () => [options.auth],
     () => {
@@ -397,7 +399,7 @@ export function createChatsController(options) {
     actions.setDeletingPersonalChat(true);
     const key = "personal:" + chat.id;
     try {
-      await deletePersonalConversation(options.request, chat.id);
+      const result = await deletePersonalConversation(options.request, chat.id);
       recentChats.delete(key);
       options.personalState.setPersonalChats((current) => current.filter((row) => row.id !== chat.id));
       if (viewPreference(options.profile?.id, "chats.active", "") === key) {
@@ -415,7 +417,9 @@ export function createChatsController(options) {
         options.chatState.setAttachment(null);
       }
       actions.setDeletePersonalChatCandidate(null);
-      options.notify("Личный диалог и все его сообщения и вложения удалены у всех участников");
+      options.notify(result.media_cleanup_pending
+        ? "Диалог удалён у всех. Очистка вложений продолжится автоматически."
+        : "Личный диалог и все его сообщения и вложения удалены у всех участников");
     } catch (error) {
       options.setError(error.message || "Не удалось удалить личный диалог");
     } finally {

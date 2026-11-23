@@ -13,6 +13,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     event,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -107,6 +108,34 @@ class PersonalConversation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
     participant: Mapped[User] = relationship()
+
+
+class PersonalChatCounter(Base):
+    __tablename__ = "personal_chat_counter"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    last_id: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+@event.listens_for(PersonalConversation, "before_insert")
+def _allocate_personal_id(_mapper, connection, chat):
+    if connection.dialect.name != "sqlite" or chat.id is not None:
+        return
+    # Existing SQLite tables lack AUTOINCREMENT. Keep a durable high-water mark
+    # and start the new range above legacy IDs, including recently deleted ones.
+    chat.id = connection.scalar(text("""
+        INSERT INTO personal_chat_counter (id, last_id)
+        SELECT 1, max(1000000000, coalesce(max(id), 0) + 1)
+        FROM personal_conversations WHERE true
+        ON CONFLICT (id) DO UPDATE SET last_id = max(last_id + 1, excluded.last_id)
+        RETURNING last_id
+    """))
+
+
+class PersonalMediaCleanup(Base):
+    __tablename__ = "personal_media_cleanup"
+
+    conversation_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
 
 
 class PersonalMessage(Base):

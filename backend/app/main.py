@@ -9,6 +9,7 @@ from contextlib import AsyncExitStack, asynccontextmanager, suppress
 from aiogram.exceptions import TelegramAPIError, TelegramConflictError
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import SQLAlchemyError
 
 from .api import router
 from .core.config import (
@@ -26,6 +27,7 @@ from .modules.administration.data import (
 )
 from .modules.communication.service import CommunicationService
 from .modules.notifications.vapid import reload_vapid_keys
+from .modules.panel.personal import retry_personal_media_cleanup
 from .modules.telegram.adapter import TelegramAdapter
 from .modules.telegram.transport import create_telegram_bot
 
@@ -114,6 +116,15 @@ async def lifespan(app: FastAPI):
         yield
 
 
+async def _retry_media_cleanup():
+    while True:
+        try:
+            await asyncio.to_thread(retry_personal_media_cleanup)
+        except (SQLAlchemyError, OSError):
+            logger.exception("Personal media cleanup worker will retry")
+        await asyncio.sleep(30)
+
+
 @asynccontextmanager
 async def _start_services(app: FastAPI, restoring: bool):
     reload_vapid_keys()
@@ -130,6 +141,7 @@ async def _start_services(app: FastAPI, restoring: bool):
     bot_task = None
     bot = None
     dispatcher = None
+    cleanup_task = asyncio.create_task(_retry_media_cleanup())
     polling_lock_fd = None
     try:
         if TELEGRAM_BOT_ENABLED and TELEGRAM_BOT_TOKEN:
@@ -169,6 +181,9 @@ async def _start_services(app: FastAPI, restoring: bool):
                 logger.info("TELEGRAM_MODULE_DISABLED: no Telegram bot token is configured.")
         yield
     finally:
+        cleanup_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await cleanup_task
         if dispatcher:
             with suppress(Exception):
                 await dispatcher.stop_polling()

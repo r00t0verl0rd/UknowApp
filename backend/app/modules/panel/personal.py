@@ -18,6 +18,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.database import SessionLocal
 from app.event_hub import publish_chat_update
 from app.infrastructure.storage.media import (
     MEDIA_DIR,
@@ -27,6 +28,7 @@ from app.infrastructure.storage.media import (
 from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.models import (
     PersonalConversation,
+    PersonalMediaCleanup,
     PersonalMessage,
     User,
 )
@@ -107,42 +109,44 @@ def delete_personal_conversation(conversation_id: int, principal: PanelUser, db:
 
     # Сначала убираем все дочерние записи в одной транзакции (внешний ключ
     # personal_messages.conversation_id не настроен на ON DELETE CASCADE).
-    media_metadata = db.scalars(
-        select(PersonalMessage.metadata_json).where(PersonalMessage.conversation_id == conversation_id),
-    ).all()
+    db.add(PersonalMediaCleanup(conversation_id=conversation_id))
     result = db.execute(delete(PersonalMessage).where(PersonalMessage.conversation_id == conversation_id))
     db.delete(item)
     db.commit()
+    publish_chat_update(
+        conversation_id, conversation_type="personal", action="delete_conversation",
+        audience={"participant_id": participant_id}, db=db,
+    )
+    cleaned = clean_personal_media(db, conversation_id)
+    return {"ok": True, "deleted_conversation_id": conversation_id,
+            "deleted_messages": result.rowcount, "media_cleanup_pending": not cleaned}
 
-    # После успешного коммита удаляем как зарегистрированные вложения, так и
-    # оставшиеся файлы каталога чата (например, после неудачной загрузки).
-    # Даже если диск недоступен, все участники должны узнать об удалённом чате.
+
+def clean_personal_media(db: Session, conversation_id: int) -> bool:
+    directory = MEDIA_DIR / "personal" / str(conversation_id)
     try:
-        for metadata_json in media_metadata:
-            delete_message_media(metadata_json)
-        media_root = MEDIA_DIR.resolve()
-        chat_media_dir = media_root / "personal" / str(conversation_id)
-        if chat_media_dir.is_symlink():
-            chat_media_dir.unlink()
-        elif chat_media_dir.is_dir():
-            if media_root not in chat_media_dir.resolve().parents:
-                logger.error("Unsafe personal chat media directory: conversation_id=%s", conversation_id)
-                raise HTTPException(status_code=500, detail="Не удалось безопасно очистить медиафайлы")
-            shutil.rmtree(chat_media_dir)
+        if directory.parent.is_symlink():
+            raise OSError("Unexpected symlink for personal media root")
+        if directory.is_symlink():
+            directory.unlink()
+        else:
+            shutil.rmtree(directory)
+    except FileNotFoundError:
+        # Another worker may also be cleaning this directory.
+        if directory.exists() or directory.is_symlink():
+            return False
     except OSError:
-        logger.exception("Could not remove personal chat media: conversation_id=%s", conversation_id)
-        raise HTTPException(status_code=500, detail="Диалог удалён, но очистка медиафайлов не завершена") from None
-    finally:
-        # После удаления запись недоступна: SSE отправит адресный resync,
-        # чтобы чат исчез у администратора и участника.
-        publish_chat_update(
-            conversation_id,
-            conversation_type="personal",
-            action="delete_conversation",
-            audience={"participant_id": participant_id},
-            db=db,
-        )
-    return {"ok": True, "deleted_conversation_id": conversation_id, "deleted_messages": result.rowcount}
+        logger.exception("Personal media cleanup pending: conversation_id=%s", conversation_id)
+        return False
+    db.execute(delete(PersonalMediaCleanup).where(PersonalMediaCleanup.conversation_id == conversation_id))
+    db.commit()
+    return True
+
+
+def retry_personal_media_cleanup():
+    with SessionLocal() as db:
+        for conversation_id in db.scalars(select(PersonalMediaCleanup.conversation_id)).all():
+            clean_personal_media(db, conversation_id)
 
 
 @router.get("/panel/personal-conversations/{conversation_id}/summary")
