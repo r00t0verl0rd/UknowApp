@@ -8,6 +8,7 @@ const workerSource = readFileSync(new URL("../public/sw.js", import.meta.url), "
 function createWorker({ navigateFails = false } = {}) {
   const listeners = {};
   const actions = [];
+  const notifications = [];
   const client = {
     url: "https://uknowschool.ru/",
     focused: true,
@@ -19,14 +20,29 @@ function createWorker({ navigateFails = false } = {}) {
   };
   const self = {
     location: { origin: "https://uknowschool.ru" },
+    registration: {
+      async showNotification(title, options) { notifications.push({ title, options }); },
+    },
     addEventListener(name, callback) { listeners[name] = callback; },
     clients: {
       async matchAll() { return [client]; },
       async openWindow(url) { actions.push(["openWindow", url]); },
     },
   };
-  runInNewContext(workerSource, { self, URL, setTimeout, clearTimeout });
+  runInNewContext(workerSource, {
+    self, URL, setTimeout, clearTimeout,
+    fetch: async () => ({ ok: true, headers: { get: () => "application/json" } }),
+  });
   return {
+    async push(payload) {
+      let pending;
+      listeners.push({
+        data: { json: () => payload },
+        waitUntil(task) { pending = task; },
+      });
+      await pending;
+      return notifications.at(-1);
+    },
     async click(url) {
       let pending;
       listeners.notificationclick({
@@ -38,6 +54,37 @@ function createWorker({ navigateFails = false } = {}) {
     },
   };
 }
+
+test("push uses sender name, not the app name, as its only visible text", async () => {
+  const notification = await createWorker().push({
+    title: "UknowApp",
+    body: "Ученик Иван",
+    conversation_id: 17,
+    conversation_type: "conversation",
+  });
+  assert.equal(notification.title, "Ученик Иван");
+  assert.equal(Object.hasOwn(notification.options, "body"), false);
+});
+
+test("admin push keeps direction instead of the app name", async () => {
+  const notification = await createWorker().push({
+    title: "",
+    body: "Ученик Иван → Учитель Анна",
+    conversation_id: 17,
+    conversation_type: "conversation",
+  });
+  assert.equal(notification.title, "Ученик Иван → Учитель Анна");
+});
+
+test("missing push body uses a neutral fallback, never the app name", async () => {
+  const notification = await createWorker().push({
+    title: "UknowApp",
+    body: "",
+    conversation_id: 17,
+    conversation_type: "conversation",
+  });
+  assert.equal(notification.title, "Новое сообщение");
+});
 
 test("push click opens the exact participant conversation", async () => {
   const actions = await createWorker().click("/?openConversation=17");
