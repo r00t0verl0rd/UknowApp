@@ -4,7 +4,7 @@
   & .modal {
     box-shadow:0 12px 35px rgba(0, 0, 0, 0.16);
     background:#202633;
-    color:#e4e8f0;
+    color:var(--app-foreground);
     border-color:#343d4d;
   }
   & .topbar svg,
@@ -13,7 +13,7 @@
   }
   & body {
     background:#171b25;
-    color:#e4e8f0;
+    color:var(--app-foreground);
   }
   & .school-label,
   & .eyebrow,
@@ -24,13 +24,13 @@
   & .topbar b,
   & .person-info b,
   & .empty-state b {
-    color:#e4e8f0;
+    color:var(--app-foreground);
   }
   & input,
   & select,
   & textarea {
     background:#262f3d;
-    color:#e4e8f0;
+    color:var(--app-foreground);
     border-color:#414c60;
   }
   & input::placeholder,
@@ -38,7 +38,7 @@
     color:#8793a7;
   }
   & .btn.primary {
-    color:#fff;
+    color:var(--app-foreground);
     box-shadow:0 5px 16px rgba(0, 0, 0, 0.18);
   }
   & .btn.primary:hover {
@@ -55,7 +55,7 @@
   & .invite-code {
     background:#2b2d3e;
     border-color:#4b4662;
-    color:#c6cddd;
+    color:var(--app-foreground);
   }
   & .empty-state {
     color:#9ba6b8;
@@ -84,7 +84,7 @@
   }
   & .search input {
     background:transparent;
-    color:#e4e8f0;
+    color:var(--app-foreground);
   }
   & .search input::placeholder {
     color:#8895a9;
