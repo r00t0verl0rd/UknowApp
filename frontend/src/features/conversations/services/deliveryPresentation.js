@@ -13,7 +13,9 @@ function recipient(error) {
 function friendlyReason(error, channel) {
   const reason = typeof error === "string" ? error : String(error?.reason || "");
   if (/не подключ|not.connected|not linked|not_connected/i.test(reason)) {
-    return `Получатель пока не подключил ${channel}.`;
+    return channel === "Telegram"
+      ? "Получатель не подключил телеграм-бота."
+      : `Получатель пока не подключил ${channel}.`;
   }
   if (/не удалось определить адресата|chat not found|чат не найден/i.test(reason)) {
     return `Чат получателя в ${channel} пока не найден.`;
@@ -44,7 +46,11 @@ export function getDeliveryDetails(metadata) {
       });
     }
     if (!delivered.length && !errors.length && result.status === "not_connected") {
-      details.push({ title: channel, description: "Получатель пока не подключён.", delivered: false });
+      details.push({
+        title: channel,
+        description: channel === "Telegram" ? "Получатель не подключил телеграм-бота." : "Получатель пока не подключён.",
+        delivered: false,
+      });
     }
   }
   if (!Object.hasOwn(deliveries, "telegram")) {
