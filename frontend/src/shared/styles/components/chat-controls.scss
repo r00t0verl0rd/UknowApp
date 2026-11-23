@@ -98,6 +98,10 @@
   }
 }
 
+:root[data-theme="dark-soft"] .workspace-admin .workspace-panel.chat-list .chat-section-tabs > button.chat-section-tab.is-current {
+  color:var(--app-foreground);
+}
+
 :root [data-chat-name-role="teacher"] { color:var(--role-teacher); }
 :root [data-chat-name-role="student"] { color:var(--role-student); }
 
