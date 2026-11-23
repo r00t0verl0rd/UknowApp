@@ -11,6 +11,7 @@ import { createPersonalChatState } from "../features/conversations/state/createP
 import { createConversationSync } from "../features/conversations/state/createConversationSync.js";
 import AppToast from "../shared/components/AppToast.jsx";
 import { installViewportEnvironment } from "../shared/services/viewportEnvironment.js";
+import { viewPreference, saveViewPreference } from "../shared/services/viewSession.js";
 import IconButton from "../shared/components/IconButton.jsx";
 import LoginPage from "./authentication/LoginPage.jsx";
 import { createPushNotificationsState } from "../shared/state/notifications/createPushNotificationsState.js";
@@ -71,6 +72,38 @@ function Application(options) {
   const personalState = createPersonalChatState();
   const navigation = createUiState();
   const directory = createDirectoryState();
+  // Restore view-only preferences after the authenticated user has been identified.
+  // Do not persist credentials, private messages, files or destructive dialogs.
+  const viewPreferences = [
+    ["users.search", () => directory.search, directory.setSearch],
+    ["users.sort", () => directory.userSort, directory.setUserSort],
+    ["chats.search", () => chatState.chatSearch, chatState.setChatSearch],
+    ["chats.filter", () => chatState.chatFilter, chatState.setChatFilter],
+    ["chats.messageFilter", () => chatState.messageFilter, chatState.setMessageFilter],
+    ["chats.section", () => personalState.chatSection, personalState.setChatSection],
+  ];
+  let preferencesReadyFor = null;
+  createEffect(
+    () => [authState.profile?.id],
+    ([id]) => {
+      preferencesReadyFor = null;
+      if (id == null) return;
+      for (const [name, , setter] of viewPreferences) {
+        const saved = viewPreference(id, name, undefined);
+        if (saved !== undefined) setter(saved);
+      }
+      preferencesReadyFor = id;
+    },
+  );
+  createEffect(
+    () => [authState.profile?.id, ...viewPreferences.map(([, read]) => read())],
+    ([id, ...values]) => {
+      if (id == null || preferencesReadyFor !== id) return;
+      for (let i = 0; i < viewPreferences.length; i++) {
+        saveViewPreference(id, viewPreferences[i][0], values[i]);
+      }
+    },
+  );
   const workspace = createMemo(() => workspaceFor(authState.profile));
   const Workspace = dynamic(() => workspace()?.Component);
   const panel = createPanelDataState({
