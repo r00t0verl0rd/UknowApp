@@ -919,7 +919,8 @@
 }
 @media (min-width: 1025px) {
   .workspace-shell .workspace-content:has(> .chat-list) {
-    grid-template-columns:minmax(300px, min(30%, 390px)) minmax(0, 1fr);
+    // Достаточная ширина панели для полностью читаемых поиска и фильтра.
+    grid-template-columns:minmax(380px, min(34%, 430px)) minmax(0, 1fr);
   }
 }
 :root .workspace-shell .workspace-panel .chat-list-filters.workspace-control-row {
@@ -932,6 +933,25 @@
   .chat-filter .ui-toolbar-select {
     width:100%;
     flex:1 1 auto;
+  }
+}
+// На Desktop оба фильтра располагаются в одну строку; при отсутствии
+// выпадающего списка поиск по-прежнему занимает всю ширину панели.
+@media (min-width: 1025px) {
+  :root .workspace-shell .workspace-panel.chat-list .chat-list-filters.workspace-control-row:has(> .chat-filter) {
+    grid-template-columns:minmax(0, 1fr) minmax(158px, 44%);
+    align-items:stretch;
+    --workspace-control-padding:9px;
+    --workspace-control-font-size:12px;
+  }
+  :root .workspace-shell .workspace-panel.chat-list .chat-list-filters > :is(.search, .chat-filter) {
+    min-width:0;
+    width:100%;
+    margin:0;
+  }
+  :root .workspace-shell .workspace-panel.chat-list .chat-list-filters .chat-filter .ui-toolbar-select {
+    min-width:0;
+    width:100%;
   }
 }
 .workspace-shell {
