@@ -27,3 +27,14 @@ test("participant dialogs remain compact across screen sizes with accessible tou
   assert.match(styles, /--icon-action-size:44px/);
   assert.match(styles, /@media \(max-width: 480px\)/);
 });
+
+test("dialog close icons are borderless and masked access code is aligned", () => {
+  const nativeDialogs = readFileSync(new URL("../src/shared/styles/components/native-dialogs.scss", import.meta.url), "utf8");
+  assert.match(dialogs, /<b>XXX-XXX<\/b>/);
+  assert.doesNotMatch(dialogs, /<b>Скрыт<\/b>/);
+  assert.match(nativeDialogs, /dialog\.native-dialog \.modal-head > \.ui-icon-button \{\s*border:0;\s*outline:none;/);
+  assert.match(nativeDialogs, /dialog\.native-dialog \.modal-head > \.ui-icon-button:focus-visible \{/);
+  assert.match(styles, /\.panel-access-value \{\s*display:flex;\s*align-items:center;/);
+  assert.match(styles, /\.panel-access-value \.password-code-refresh \{\s*display:inline-flex;\s*align-items:center;\s*justify-content:center;/);
+  assert.match(styles, /height:36px;\s*min-height:36px;/);
+});
