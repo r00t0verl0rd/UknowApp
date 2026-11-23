@@ -28,7 +28,8 @@ export function installViewportEnvironment(win = window, doc = document) {
 
     if (open !== keyboardOpen) {
       keyboardOpen = open;
-      root.toggleAttribute("data-app-keyboard", open);
+      if (open) root.setAttribute("data-app-keyboard", "open");
+      else root.removeAttribute("data-app-keyboard");
       // Existing chat/layout styles continue to use this shared state.
       if (open) root.setAttribute("data-workspace-keyboard", "open");
       else root.removeAttribute("data-workspace-keyboard");

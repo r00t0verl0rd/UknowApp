@@ -1,5 +1,5 @@
 // Consistent minimum hit areas without enlarging decorative icons or toolbar tabs.
-:root .btn {
+:root .btn:not(.ui-toolbar-control) {
   min-height:44px;
   font-size:14px;
   line-height:1.35;
