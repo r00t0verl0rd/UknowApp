@@ -4,7 +4,7 @@
  */
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,7 +30,9 @@ try {
     const content = execFileSync("git", ["show", `${base}:${file}`], {
       cwd: repository, encoding: "utf8", maxBuffer: 1024 * 1024,
     });
-    writeFileSync(path.join(baseline, path.basename(file)), content);
+    const output = path.join(baseline, file.slice(styles.length));
+    mkdirSync(path.dirname(output), { recursive: true });
+    writeFileSync(output, content);
   }
   const oldCss = compile(path.join(baseline, "index.scss"), { style: "compressed" }).css;
   const newCss = compile(path.join(root, "src/shared/styles/index.scss"), {

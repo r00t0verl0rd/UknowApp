@@ -9,7 +9,7 @@
   "overrides": [
     {
       "files": [
-        "frontend/src/shared/styles/*.scss"
+        "frontend/src/shared/styles/**/*.scss"
       ],
       "rules": {
         "no-duplicate-selectors": null
@@ -17,7 +17,7 @@
     },
     {
       "files": [
-        "frontend/src/shared/styles/tokens.scss"
+        "frontend/src/shared/styles/core/tokens.scss"
       ],
       "rules": {
         "no-duplicate-selectors": true
@@ -25,7 +25,7 @@
     },
     {
       "files": [
-        "frontend/src/shared/styles/workspace-refinements.scss"
+        "frontend/src/shared/styles/workspace/workspace-refinements.scss"
       ],
       "rules": {
         "declaration-block-no-duplicate-properties": [

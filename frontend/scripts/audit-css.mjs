@@ -40,9 +40,19 @@ let totalBytes = 0;
 const candidates = new Map();
 const selectorUses = new Map();
 const repeatedClasses = [];
+const scssFiles = [];
+const walkScss = directory => {
+  for (const item of fs.readdirSync(directory, { withFileTypes: true })) {
+    const file = path.join(directory, item.name);
+    if (item.isDirectory()) walkScss(file);
+    else if (file.endsWith(".scss")) scssFiles.push(file);
+  }
+};
+walkScss(cssDir);
 
-for (const file of fs.readdirSync(cssDir).filter(name => name.endsWith(".scss"))) {
-  const source = fs.readFileSync(path.join(cssDir, file), "utf8");
+for (const filePath of scssFiles) {
+  const file = path.relative(cssDir, filePath);
+  const source = fs.readFileSync(filePath, "utf8");
   totalBytes += Buffer.byteLength(source);
   const ast = postcss.parse(source, { from: file });
   ast.walkRules(rule => {
@@ -82,7 +92,7 @@ compiled.walkRules(rule => {
 });
 
 console.log("Сводка CSS:", JSON.stringify({
-  files: fs.readdirSync(cssDir).filter(name => name.endsWith(".scss")).length,
+  files: scssFiles.length,
   bytes: totalBytes, rules, declarations, important, repeatedSelectorBlocks,
   uniqueClasses: selectorUses.size,
   unconfirmedClasses: candidates.size,
@@ -94,9 +104,8 @@ for (const [name, files] of [...candidates].sort((a, b) => (
   console.log(name + "\t" + [...files].join(", "));
 }
 
-const tokenFile = fs.readFileSync(path.join(cssDir, "tokens.scss"), "utf8");
-const allCss = fs.readdirSync(cssDir).filter(name => name.endsWith(".scss"))
-  .map(name => fs.readFileSync(path.join(cssDir, name), "utf8")).join("\n");
+const tokenFile = fs.readFileSync(path.join(cssDir, "core/tokens.scss"), "utf8");
+const allCss = scssFiles.map(file => fs.readFileSync(file, "utf8")).join("\n");
 const definitions = [...tokenFile.matchAll(/^\s*(--[\w-]+)\s*:/gm)].map(match => match[1]);
 const referencedTokens = new Set([...allCss.matchAll(/var\(\s*(--[\w-]+)/g)]
   .map(match => match[1]));

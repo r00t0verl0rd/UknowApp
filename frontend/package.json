@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 22222 --strictPort",
-    "build": "vite build",
+    "build": "node scripts/check-scss-architecture.mjs && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 22222 --strictPort",
     "test": "node --test src/shared/services/inboxState.test.js src/shared/services/panelEventStream.test.js src/features/conversations/services/messageState.test.js src/features/conversations/services/formatMessageTime.test.js tests/csp.test.js tests/branding.test.js tests/first-paint.test.js",
     "test:browser": "node --test tests/realtime.browser.test.js",
-    "audit:css": "node scripts/audit-css.mjs"
+    "audit:css": "node scripts/audit-css.mjs",
+    "check:scss": "node scripts/check-scss-architecture.mjs"
   },
   "dependencies": {
     "solid-js": "2.0.3",
