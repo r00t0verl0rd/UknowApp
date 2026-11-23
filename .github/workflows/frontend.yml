@@ -46,10 +46,6 @@ jobs:
       - run: npm test
       - name: Install browser test runtime
         run: npm install --no-save playwright@1.56.1
-      - name: Verify system Chrome
-        run: |
-          test -x "$CHROMIUM_PATH"
-          "$CHROMIUM_PATH" --version
       - name: Run UI and realtime browser integration tests
         run: npm run test:browser
       - name: Lint shared styles
