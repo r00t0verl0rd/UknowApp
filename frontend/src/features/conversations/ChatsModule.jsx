@@ -1,6 +1,7 @@
 import ChatsPage from "./ChatsPage.jsx";
 import ChatDialogs from "./components/ChatDialogs.jsx";
 import { createChatsController } from "./state/createChatsController.js";
+import { saveViewPreference } from "../../shared/services/viewSession.js";
 export default function ChatsModule(options) {
   const state = createChatsController({
     get auth() {
@@ -16,7 +17,12 @@ export default function ChatsModule(options) {
     setError: options.setError,
     setModal: options.setModal,
     notify: options.notify,
+    get inboxLoading() { return options.inboxLoading; },
   });
+  const clearSelectedChat = () => {
+    saveViewPreference(options.profile?.id, "chats.active", null);
+    options.chatState.setSelectedChat(null);
+  };
   return (
     <>
       <ChatsPage
@@ -26,7 +32,7 @@ export default function ChatsModule(options) {
         chatSection={options.personalState.chatSection}
         setChatSection={options.personalState.setChatSection}
         personalChats={options.personalState.personalChats}
-        setSelectedChat={options.chatState.setSelectedChat}
+        setSelectedChat={clearSelectedChat}
         setMessages={options.chatState.setMessages}
         chatFilter={options.chatState.chatFilter}
         setChatFilter={options.chatState.setChatFilter}

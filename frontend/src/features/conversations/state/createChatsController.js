@@ -1,5 +1,6 @@
 import { createSignal, createMemo, createEffect } from "solid-js";
 import { createChatActionState } from "./createChatActionState.js";
+import { readScrollPositions, saveViewPreference, viewPreference } from "../../../shared/services/viewSession.js";
 import { markConversationMessageDeleted, mergeConversationMessages } from "../services/messageState.js";
 import {
   createPersonalConversation,
@@ -19,6 +20,8 @@ export function createChatsController(options) {
   let sendingMessage = false;
   let pendingClientMessage = null;
   let openingChatRequest = null;
+  let attemptedRestoreForUser = null;
+  let restoredChatScrollKey = "";
   // Только память текущей вкладки. Недавние чаты показываем сразу, затем
   // проверяем сервер; не сохраняем приватные сообщения в localStorage.
   const recentChats = new Map();
@@ -142,6 +145,8 @@ export function createChatsController(options) {
     );
   });
   let requestLatestScroll = () => {};
+  const preservingScroll = key => key && restoredChatScrollKey === key &&
+    Object.hasOwn(readScrollPositions(options.profile?.id, "chats"), "messages");
   createEffect(
     () => [
       options.chatState.selectedChat?.id,
@@ -152,7 +157,7 @@ export function createChatsController(options) {
       const history = options.chatState.messagesViewportRef.current;
       if (!history) return undefined;
       let frame = 0;
-      let followBottom = true;
+      let followBottom = !preservingScroll(activeChatKey());
       let forced = false;
       let lastObserved = null;
       const distanceToLatest = () =>
@@ -196,7 +201,7 @@ export function createChatsController(options) {
       mutationObserver?.observe(history, { childList: true });
       observeLastMessage();
       requestLatestScroll = () => scheduleLatest(true);
-      scheduleLatest(true);
+      if (!preservingScroll(activeChatKey())) scheduleLatest(true);
       return () => {
         if (frame) window.cancelAnimationFrame(frame);
         history.removeEventListener("scroll", handleScroll);
@@ -215,19 +220,21 @@ export function createChatsController(options) {
       if (chatKey !== previousScrollChat) {
         previousScrollChat = chatKey;
         previousTail = tail;
-        if (chatKey) requestLatestScroll();
+        if (chatKey && !preservingScroll(chatKey)) requestLatestScroll();
       } else if (tail && tail !== previousTail) {
         previousTail = tail;
         // Новое полученное или отправленное сообщение: показать его сразу.
         // Изменение статуса прочтения не вызывает повторную прокрутку.
-        requestLatestScroll();
+        if (!preservingScroll(chatKey)) requestLatestScroll();
       } else if (!tail) {
         previousTail = "";
       }
     },
   );
-  const openChat = async (chat) => {
+  const openChat = async (chat, { restoring = false } = {}) => {
     const chatKey = (chat.type === "personal" ? "personal:" : "conversation:") + chat.id;
+    restoredChatScrollKey = restoring ? chatKey : "";
+    saveViewPreference(options.profile?.id, "chats.active", chatKey);
     const previousRequest = openingChatRequest;
     if (activeChatKey() === chatKey && (previousRequest?.key === chatKey ||
       !options.chatState.messagesLoading)) return;
@@ -252,7 +259,7 @@ export function createChatsController(options) {
     options.setPage("chats");
     options.chatState.setDraft("");
     options.chatState.setAttachment(null);
-    options.chatState.setMessageFilter("all");
+    if (!restoring) options.chatState.setMessageFilter("all");
     try {
       const loadedMessages = await getChatMessages(options.request, chat, controller.signal);
       if (controller.signal.aborted || activeChatKey() !== chatKey) return;
@@ -279,6 +286,31 @@ export function createChatsController(options) {
       if (openingChatRequest?.controller === controller) openingChatRequest = null;
     }
   };
+  // Reopen the same conversation once its list has been loaded.
+  createEffect(
+    () => [
+      options.profile?.id,
+      options.inboxLoading,
+      options.chatState.chats,
+      options.personalState.personalChats,
+    ],
+    ([userId, loading, conversations, personals]) => {
+      if (userId == null || loading || attemptedRestoreForUser === userId) return;
+      attemptedRestoreForUser = userId;
+      if (options.chatState.selectedChat) return;
+      const key = viewPreference(userId, "chats.active", "");
+      if (!/^(conversation|personal):\d+$/.test(key)) return;
+      const [type, idText] = key.split(":");
+      const chat = (type === "personal" ? personals : conversations)
+        .find(item => String(item.id) === idText);
+      if (!chat) {
+        saveViewPreference(userId, "chats.active", null);
+        return;
+      }
+      if (type === "personal") options.personalState.setChatSection("personal");
+      void openChat(chat, { restoring: true });
+    },
+  );
   const loadOlder = async () => {
     const chat = options.chatState.selectedChat;
     const key = activeChatKey();
@@ -421,6 +453,7 @@ export function createChatsController(options) {
         options.chatState.setAttachment(null);
       }
       options.chatState.setMessages((current) => mergeConversationMessages(current, [sentMessage], chatKey));
+      requestLatestScroll();
     } catch (error) {
       if (clientMessageId && activeChatKey() === chatKey) {
         options.chatState.setMessages((current) =>
