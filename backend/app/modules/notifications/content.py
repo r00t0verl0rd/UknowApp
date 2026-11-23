@@ -2,7 +2,8 @@
 
 from app.core import config
 
-PUSH_TITLE = "UknowApp"
+# Отображаем отправителя вместо отдельного названия приложения.
+PUSH_TITLE = ""
 
 _MEDIA_LABELS = {
     "photo": "Фото",
