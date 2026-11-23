@@ -17,7 +17,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
-from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.core.database import SessionLocal
 from app.infrastructure.storage.media import (
     ATTACHMENT_SIZE_ERROR,
@@ -25,6 +24,7 @@ from app.infrastructure.storage.media import (
     MEDIA_DIR,
     safe_media_type,
 )
+from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.models import (
     Conversation,
     Message,

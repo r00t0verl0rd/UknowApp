@@ -14,13 +14,13 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
 from aiogram.types import FSInputFile
 
-from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.infrastructure.storage.media import (
     ATTACHMENT_SIZE_ERROR,
     MAX_ATTACHMENT_BYTES,
     MEDIA_DIR,
     safe_media_type,
 )
+from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.models import Message
 from app.modules.communication.contracts import (
     DeliveryResult,

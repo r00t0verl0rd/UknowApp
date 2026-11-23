@@ -5,8 +5,8 @@ import logging
 
 from fastapi import (
     APIRouter,
-    Query,
     HTTPException,
+    Query,
     Request,
 )
 from sqlalchemy import select
@@ -14,8 +14,8 @@ from sqlalchemy.orm import selectinload
 
 from app.infrastructure.storage.media import (
     MEDIA_DIR,
-    delete_message_media,
     attachment_response,
+    delete_message_media,
 )
 from app.models import (
     Assignment,

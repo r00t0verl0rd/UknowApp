@@ -15,10 +15,10 @@ from fastapi import (
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 
-from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.infrastructure.storage.media import (
     delete_message_media,
 )
+from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.models import (
     Message,
 )

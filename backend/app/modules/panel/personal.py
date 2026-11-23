@@ -6,23 +6,23 @@ from typing import Annotated
 
 from fastapi import (
     APIRouter,
-    Query,
     File,
     Form,
-    Request,
     HTTPException,
+    Query,
+    Request,
     UploadFile,
 )
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
-from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.infrastructure.storage.media import (
     MEDIA_DIR,
-    delete_message_media,
     attachment_response,
+    delete_message_media,
 )
+from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.models import (
     PersonalConversation,
     PersonalMessage,
