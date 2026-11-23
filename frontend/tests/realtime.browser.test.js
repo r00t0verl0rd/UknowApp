@@ -1884,6 +1884,11 @@ test("global SSE updates real counters across tabs and replays missed events", {
             <span class="ui-toolbar-select chat-filter-field">
               <select class="ui-toolbar-control ui-toolbar-select-native"><option>Все личные</option></select>
             </span>
+            <div class="chat-head-tools">
+              <span class="ui-toolbar-select chat-message-filter">
+                <select class="ui-toolbar-control ui-toolbar-select-native"><option>Все сообщения</option></select>
+              </span>
+            </div>
           `;
           document.querySelector(".workspace-content").append(host);
           try {
@@ -1897,6 +1902,12 @@ test("global SSE updates real counters across tabs and replays missed events", {
                   getComputedStyle(el.parentElement, "::after").content !== "normal",
                 arrowWidth: getComputedStyle(el.parentElement, "::after").width,
                 arrowColor: getComputedStyle(el.parentElement, "::after").color,
+                textFits: (() => {
+                  const ctx = document.createElement("canvas").getContext("2d");
+                  ctx.font = s.font;
+                  return ctx.measureText(el.options[0].text).width + 3 <=
+                    el.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight);
+                })(),
               };
             });
           } finally {
@@ -1910,6 +1921,9 @@ test("global SSE updates real counters across tabs and replays missed events", {
         assert.equal(styles[0].appearance, "none");
         assert.equal(styles[0].arrowVisible, true);
         assert.equal(styles[0].arrowWidth, "7px");
+        assert.equal(styles[2].appearance, "none");
+        assert.equal(styles[2].arrowVisible, true);
+        assert.ok(styles[2].textFits, `${width}px ${theme}: message filter label must not overlap chevron`);
       }
     }
     await page.setViewportSize({ width: 1280, height: 800 });
