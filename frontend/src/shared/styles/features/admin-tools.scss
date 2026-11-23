@@ -667,10 +667,6 @@
     }
   }
 }
-.data-warning {
-  margin-top:auto;
-  font-size:10px;
-}
 :root[data-theme="dark-soft"] .topbar-actions > .theme-toggle,
 :root[data-theme="dark-soft"] .mobile-quick-actions > .theme-toggle {
   @include primitives.control;
