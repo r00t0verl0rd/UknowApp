@@ -63,7 +63,7 @@ test("backup restore explains the restart, asks before re-login and shows verifi
       .getByRole("button", { name: "Восстановить", exact: true }).click();
 
     await page.getByRole("progressbar", { name: "Ход восстановления резервной копии" }).waitFor();
-    await page.getByRole("alertdialog", { name: "Требуется повторный вход" }).waitFor({ timeout: 12000 });
+    await page.getByRole("alertdialog", { name: "Войдите в UknowApp ещё раз" }).waitFor({ timeout: 12000 });
     assert.equal(accepted, true);
     assert.ok(statusChecks > 0);
     assert.ok(page.url().endsWith("/additional"), "The page must not silently redirect to login");
@@ -74,9 +74,9 @@ test("backup restore explains the restart, asks before re-login and shows verifi
     await page.getByLabel("Логин").fill("new-admin");
     await page.getByLabel("Пароль").fill("restored-password");
     await page.getByRole("button", { name: "Войти" }).click();
-    await page.getByRole("alertdialog", { name: "Восстановление завершено" }).waitFor({ timeout: 12000 });
+    await page.getByRole("alertdialog", { name: "Данные восстановлены" }).waitFor({ timeout: 12000 });
     await page.getByRole("button", { name: "Понятно" }).click();
-    assert.equal(await page.getByRole("alertdialog", { name: "Восстановление завершено" }).count(), 0);
+    assert.equal(await page.getByRole("alertdialog", { name: "Данные восстановлены" }).count(), 0);
   } finally {
     await browser.close();
     await new Promise((resolve, reject) => server.httpServer.close(error => error ? reject(error) : resolve()));
