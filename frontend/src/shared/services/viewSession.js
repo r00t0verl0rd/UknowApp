@@ -76,11 +76,26 @@ const CONTAINERS = [
   [".sidebar nav", "navigation"],
 ];
 
-function readPosition(element) {
+function readPosition(element, withAnchor = false) {
   if (!element) return null;
   const top = Math.min(MAX_SCROLL, Math.max(0, Math.round(element.scrollTop || 0)));
   const left = Math.min(MAX_SCROLL, Math.max(0, Math.round(element.scrollLeft || 0)));
-  return { top, left };
+  const position = { top, left };
+  if (!withAnchor || top < 10) return position;
+  const bounds = element.getBoundingClientRect();
+  // The first visible stable row/message is more robust than a raw offset if
+  // asynchronous images or responsive line breaks change element heights.
+  for (const child of element.querySelectorAll("[data-view-anchor]")) {
+    const row = child.getBoundingClientRect();
+    if (row.bottom > bounds.top + 2 && row.top < bounds.bottom) {
+      position.anchor = {
+        id: child.getAttribute("data-view-anchor"),
+        offset: Math.round(row.top - bounds.top),
+      };
+      break;
+    }
+  }
+  return position;
 }
 
 function getContainers(root) {
@@ -99,14 +114,28 @@ export function installViewRestoration({ root, userId, page }) {
   let pendingRestore = {};
   let restoring = false;
   let userInteracted = new Set();
+  let flushTimer = 0;
+  let queuedScroll = {};
 
+  const flushScroll = () => {
+    if (flushTimer) win.clearTimeout(flushTimer);
+    flushTimer = 0;
+    if (!Object.keys(queuedScroll).length) return;
+    saveScrollPositions(userId, activePage, queuedScroll);
+    queuedScroll = {};
+  };
   const collect = () => {
-    const patch = { document: { top: win.scrollY || doc.scrollingElement?.scrollTop || 0, left: win.scrollX || 0 } };
-    for (const [name, element] of Object.entries(getContainers(root))) patch[name] = readPosition(element);
+    const scrolling = doc.scrollingElement;
+    const documentPosition = readPosition(scrolling, true) || { top: 0, left: 0 };
+    const patch = { document: documentPosition };
+    for (const [name, element] of Object.entries(getContainers(root))) {
+      patch[name] = readPosition(element, true);
+    }
     return patch;
   };
   const save = () => {
     if (disposed) return;
+    flushScroll();
     const patch = collect();
     // Empty placeholders must not overwrite a pending scroll restoration.
     for (const [name, saved] of Object.entries(pendingRestore)) {
@@ -126,8 +155,19 @@ export function installViewRestoration({ root, userId, page }) {
       }
       const el = name === "document" ? doc.scrollingElement : nodes[name];
       if (!el || !saved || !Number.isFinite(saved.top)) continue;
-      const desired = Math.max(0, saved.top);
       const available = Math.max(0, el.scrollHeight - el.clientHeight);
+      let desired = Math.max(0, saved.top);
+      let anchorFound = false;
+      if (saved.anchor?.id) {
+        const anchor = [...el.querySelectorAll("[data-view-anchor]")]
+          .find(node => node.getAttribute("data-view-anchor") === saved.anchor.id);
+        if (anchor) {
+          desired = Math.max(0, el.scrollTop +
+            anchor.getBoundingClientRect().top - el.getBoundingClientRect().top -
+            (saved.anchor.offset || 0));
+          anchorFound = true;
+        }
+      }
       const current = Math.min(desired, available);
       if (name === "document") {
         win.scrollTo(saved.left || 0, current);
@@ -135,9 +175,11 @@ export function installViewRestoration({ root, userId, page }) {
         el.scrollTop = current;
         el.scrollLeft = saved.left || 0;
       }
-      // When data is still streaming in, keep the original target. Never
-      // rewrite it with the clamped initial position (usually 0).
-      if (available + 2 >= desired) delete pendingRestore[name];
+      // Keep the target if rows are still loading; do not replace it with a
+      // temporary clamped offset or discard an anchor before it is rendered.
+      if (available + 2 >= desired && (!saved.anchor || anchorFound)) {
+        delete pendingRestore[name];
+      }
     }
     win.requestAnimationFrame(() => { restoring = false; });
   };
@@ -153,15 +195,12 @@ export function installViewRestoration({ root, userId, page }) {
     if (!name) return;
     userInteracted.add(name);
     delete pendingRestore[name];
-    saveScrollPositions(userId, activePage, {
-      [name]: name === "document"
-        ? { top: Math.round(win.scrollY), left: Math.round(win.scrollX) }
-        : readPosition(target),
-    });
+    queuedScroll[name] = name === "document"
+      ? { top: Math.round(win.scrollY), left: Math.round(win.scrollX) }
+      : readPosition(target);
+    if (!flushTimer) flushTimer = win.setTimeout(flushScroll, 90);
   };
-  const onPageHide = () => {
-    if (!restoring) save();
-  };
+  const onPageHide = () => save();
   const onToggle = event => {
     if (event.target?.tagName !== "DETAILS" || !event.isTrusted) return;
     const details = [...root.querySelectorAll(".workspace-content details")];
@@ -180,6 +219,7 @@ export function installViewRestoration({ root, userId, page }) {
 
   const observer = new MutationObserver(() => {
     restoreDetails();
+    attachObservers();
     if (Object.keys(pendingRestore).length) scheduleApply();
   });
   observer.observe(root, { childList: true, subtree: true });
@@ -214,13 +254,14 @@ export function installViewRestoration({ root, userId, page }) {
     capture: save,
     changePage(nextPage) {
       if (nextPage === activePage) return;
+      flushScroll();
       // Prior UI actions store scroll independently, including when navigation
       // came from history rather than a sidebar click.
       activePage = nextPage;
       startRestore();
     },
     dispose() {
-      if (!restoring) save();
+      save();
       disposed = true;
       if (frame) win.cancelAnimationFrame(frame);
       observer.disconnect();
