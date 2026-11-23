@@ -36,7 +36,13 @@ test("dialog search and select share a row at every screen size", { timeout: 600
           await page.getByRole("combobox", { name: "Фильтр диалогов" }).selectOption(selection);
           for (const rowWidth of [null, 250, 280, 320]) {
             await page.evaluate(value => {
-              document.querySelector(".chat-list-filters").style.width = value ? value + "px" : "";
+              const filters = document.querySelector(".chat-list-filters");
+              // Тестируем узкие панели, не растягивая фильтры за пределы
+              // фактической доступной ширины мобильного экрана.
+              const available = filters.parentElement.clientWidth -
+                parseFloat(getComputedStyle(filters.parentElement).paddingLeft) -
+                parseFloat(getComputedStyle(filters.parentElement).paddingRight);
+              filters.style.width = value ? Math.min(value, available) + "px" : "";
             }, rowWidth);
           const layout = await page.evaluate(() => {
             const search = document.querySelector(".chat-list-filters > .search");
