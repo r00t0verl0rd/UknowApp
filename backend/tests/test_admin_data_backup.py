@@ -59,21 +59,6 @@ def create_vapid_key(path):
     return private_key
 
 
-def make_legacy_archive(database_path, media_bytes):
-    buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr(
-            "manifest.json",
-            json.dumps({
-                "format": "uknowapp-full-backup-v1",
-                "created_at": "2026-01-01T00:00:00+00:00",
-            }),
-        )
-        archive.write(database_path, "database.sqlite3")
-        archive.writestr("media/legacy.bin", media_bytes)
-    return buffer.getvalue()
-
-
 def setup_data_root(monkeypatch, root):
     root.mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(admin_data, "DATA_DIR", root)
@@ -199,31 +184,3 @@ def test_full_restore_is_staged_then_applied_before_app_start(api, monkeypatch, 
     assert (data_root / "future-state.json").read_text(encoding="utf-8") == "original-state"
     assert not (data_root / "obsolete.txt").exists()
     assert not (data_root / admin_data.PENDING_RESTORE_NAME).exists()
-
-
-def test_legacy_full_backup_restores_database_and_media_and_keeps_current_key(
-    api, monkeypatch, tmp_path,
-):
-    make_client, _, _ = api
-    monkeypatch.delenv("UKNOWAPP_AUTO_RESTART_ON_RESTORE", raising=False)
-    data_root = tmp_path / "data"
-    setup_data_root(monkeypatch, data_root)
-
-    create_database(data_root / "uknowapp.db")
-    target_vapid_key = create_vapid_key(data_root / "vapid_private.pem")
-    old_database = tmp_path / "old.sqlite3"
-    create_database(old_database)
-    archive_bytes = make_legacy_archive(old_database, b"legacy-media")
-
-    admin = make_client()
-    login_admin(admin)
-    uploaded = admin.post(
-        "/api/admin/data/full",
-        files={"file": ("old-backup.zip", archive_bytes, "application/zip")},
-    )
-    assert uploaded.status_code == status.HTTP_202_ACCEPTED
-    assert uploaded.json()["legacy_format"] is True
-    assert admin_data.apply_pending_data_restore() is True
-
-    assert (data_root / "media" / "legacy.bin").read_bytes() == b"legacy-media"
-    assert (data_root / "vapid_private.pem").read_bytes() == target_vapid_key

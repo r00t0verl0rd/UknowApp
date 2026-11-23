@@ -4,14 +4,12 @@ from datetime import UTC, datetime
 
 from sqlalchemy import text
 
-from app.core.database import create_tables, engine, is_sqlite
+from app.core.database import create_tables, engine
 
-from .legacy import migrate_legacy_schema
 from .login_keys import migrate_login_keys
 from .maintenance import cleanup_expired_records
 from .remove_boards import remove_board_tables
 
-_LEGACY_VERSION = "2026-11-22-legacy-schema"
 _LOGIN_VERSION = "2026-11-22-login-lookup"
 _BOARDS_REMOVAL_VERSION = "2026-11-22-remove-interactive-boards"
 
@@ -43,11 +41,6 @@ def initialize_database() -> None:
             "version VARCHAR(100) PRIMARY KEY, applied_at TIMESTAMP NOT NULL)"
         ))
 
-    # Миграции старой схемы выполняются только для SQLite.
-    if not _is_applied(_LEGACY_VERSION):
-        if is_sqlite:
-            migrate_legacy_schema()
-        _mark_applied(_LEGACY_VERSION)
     if not _is_applied(_LOGIN_VERSION):
         migrate_login_keys()
         _mark_applied(_LOGIN_VERSION)

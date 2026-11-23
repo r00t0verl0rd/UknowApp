@@ -59,7 +59,6 @@ INTERNAL_PREFIX = ".uknowapp-"
 
 MAX_ARCHIVE_ENTRIES = 100000
 FULL_BACKUP_FORMAT = "uknowapp-full-backup-v2"
-LEGACY_FULL_BACKUP_FORMAT = "uknowapp-full-backup-v1"
 
 
 def _database_path() -> Path:
@@ -147,15 +146,9 @@ def _create_database_snapshot(destination: Path) -> None:
         source.backup(target)
 
 
-def _iter_data_files(
-    data_dir: Path,
-    database: Path,
-    *,
-    excluded_top_level: set[str] | None = None,
-):
+def _iter_data_files(data_dir: Path, database: Path):
     root = data_dir.resolve()
     database = database.resolve()
-    excluded = excluded_top_level or set()
     sidecars = {
         Path(str(database) + "-wal"),
         Path(str(database) + "-shm"),
@@ -166,7 +159,7 @@ def _iter_data_files(
         if current_path == root:
             directory_names[:] = [
                 name for name in directory_names
-                if not name.startswith(INTERNAL_PREFIX) and name not in excluded
+                if not name.startswith(INTERNAL_PREFIX)
             ]
         for name in tuple(directory_names):
             candidate = current_path / name
@@ -187,23 +180,6 @@ def _iter_data_files(
             if not source.is_file() or source.resolve() == database or source.resolve() in sidecars:
                 continue
             yield source, source.relative_to(root)
-
-
-def _copy_live_files(
-    destination: Path,
-    *,
-    excluded_top_level: set[str] | None = None,
-) -> None:
-    database = _database_path()
-    for source, relative in _iter_data_files(
-        DATA_DIR,
-        database,
-        excluded_top_level=excluded_top_level,
-    ):
-        target = destination / relative
-        target.parent.mkdir(parents=True, exist_ok=True)
-        _require_backup_space(target.parent, source.stat().st_size)
-        shutil.copy2(source, target)
 
 
 def _hash_file(path: Path) -> tuple[int, str]:
@@ -469,51 +445,7 @@ def _extract_v2_archive(
     return _count_missing_media_references(staged_database, staged_data)
 
 
-def _extract_legacy_archive(
-    archive: zipfile.ZipFile,
-    entries: list[zipfile.ZipInfo],
-    manifest: dict,
-    staged_data: Path,
-    expected_database: Path,
-) -> int:
-    if manifest.get("format") != LEGACY_FULL_BACKUP_FORMAT:
-        raise HTTPException(status_code=400, detail="Формат резервной копии не поддерживается")
-    allowed_names = {"manifest.json", "database.sqlite3"}
-    for item in entries:
-        if item.filename in allowed_names:
-            continue
-        if not item.filename.startswith("media/"):
-            raise HTTPException(status_code=400, detail="Старая резервная копия содержит неизвестные файлы")
-        _safe_relative(item.filename[6:])
-
-    database_info = next((item for item in entries if item.filename == "database.sqlite3"), None)
-    if database_info is None:
-        raise HTTPException(status_code=400, detail="В старой резервной копии отсутствует база данных")
-
-    staged_data.mkdir(parents=True, exist_ok=True)
-    _copy_live_files(staged_data, excluded_top_level={"media"})
-    database_destination = staged_data / expected_database
-    database_destination.parent.mkdir(parents=True, exist_ok=True)
-    with archive.open(database_info) as source, database_destination.open("wb") as target:
-        shutil.copyfileobj(source, target)
-
-    media_root = staged_data / "media"
-    for item in entries:
-        if not item.filename.startswith("media/"):
-            continue
-        relative = _safe_relative(item.filename[6:])
-        destination = (media_root / relative).resolve()
-        if media_root.resolve() not in destination.parents:
-            raise HTTPException(status_code=400, detail="Недопустимый путь к медиафайлу")
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        with archive.open(item) as source, destination.open("wb") as target:
-            shutil.copyfileobj(source, target)
-
-    _validate_database(database_destination)
-    return _count_missing_media_references(database_destination, staged_data)
-
-
-def _prepare_restore_archive(archive_path: Path, staged_data: Path) -> dict:
+def _prepare_restore_archive(archive_path: Path, staged_data: Path) -> int:
     data_dir = DATA_DIR.resolve()
     expected_database = _database_relative_path(data_dir)
     try:
@@ -521,18 +453,9 @@ def _prepare_restore_archive(archive_path: Path, staged_data: Path) -> dict:
             entries = _validate_archive_entries(archive)
             _require_backup_space(archive_path.parent, sum(item.file_size for item in entries))
             manifest = _read_archive_manifest(archive)
-            archive_format = manifest.get("format")
-            if archive_format == FULL_BACKUP_FORMAT:
-                missing_media = _extract_v2_archive(
-                    archive, entries, manifest, staged_data, expected_database,
-                )
-                return {"legacy": False, "missing_media": missing_media}
-            if archive_format == LEGACY_FULL_BACKUP_FORMAT:
-                missing_media = _extract_legacy_archive(
-                    archive, entries, manifest, staged_data, expected_database,
-                )
-                return {"legacy": True, "missing_media": missing_media}
-            raise HTTPException(status_code=400, detail="Формат резервной копии UknowApp не поддерживается")
+            if manifest.get("format") != FULL_BACKUP_FORMAT:
+                raise HTTPException(status_code=400, detail="Формат резервной копии UknowApp не поддерживается")
+            return _extract_v2_archive(archive, entries, manifest, staged_data, expected_database)
     except zipfile.BadZipFile as exc:
         raise HTTPException(status_code=400, detail="Файл не является корректным ZIP-архивом") from exc
 
@@ -919,28 +842,22 @@ async def restore_full_backup(_: Admin, file: Annotated[UploadFile, File()]):
                 _require_backup_space(Path(target.name).parent, len(chunk))
                 target.write(chunk)
 
-        restore_info = _prepare_restore_archive(archive_path, stage_dir / "data")
+        missing_media = _prepare_restore_archive(archive_path, stage_dir / "data")
         backup_name = RESTORE_BACKUP_PREFIX + uuid.uuid4().hex
         _write_restore_record(marker_path, {
             "status": "prepared",
             "created_at": datetime.now(UTC).isoformat(),
             "stage": stage_dir.name,
             "backup": backup_name,
-            "legacy_format": restore_info["legacy"],
-            "missing_media_references": restore_info["missing_media"],
+            "missing_media_references": missing_media,
         })
         marker_created = True
 
         automatic_restart = _automatic_restart_enabled()
         warnings = []
-        if restore_info["legacy"]:
+        if missing_media:
             warnings.append(
-                "Используется резервная копия старого формата: ключ Web Push и прочие файлы data "
-                "в неё не входили; текущие файлы сервера сохранены.",
-            )
-        if restore_info["missing_media"]:
-            warnings.append(
-                f"В базе обнаружено ссылок на отсутствующие медиафайлы: {restore_info['missing_media']}.",
+                f"В базе обнаружено ссылок на отсутствующие медиафайлы: {missing_media}.",
             )
         message = (
             "Архив проверен. Backend будет перезапущен и применит все данные до запуска Telegram."
@@ -957,7 +874,6 @@ async def restore_full_backup(_: Admin, file: Annotated[UploadFile, File()]):
                 "restore_id": stage_dir.name.removeprefix(RESTORE_STAGE_PREFIX),
                 "restart_required": True,
                 "automatic_restart": automatic_restart,
-                "legacy_format": restore_info["legacy"],
                 "warnings": warnings,
                 "message": message,
             },
