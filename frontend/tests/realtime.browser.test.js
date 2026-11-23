@@ -452,6 +452,49 @@ test("global SSE updates real counters across tabs and replays missed events", {
                 sidebarBottomPadding:parseFloat(getComputedStyle(aside).paddingBottom),
               };
             })(),
+            roleLayouts: (() => {
+              const menu = fixture.querySelector(".sidebar nav");
+              const bottom = fixture.querySelector(".sidebar-bottom");
+              const extra = bottom.querySelector(".desktop-admin-extra");
+              const buttonHtml = label => '<button class="ui-menu-control" type="button">' + label + '</button>';
+              const roles = {
+                admin: ["Структура", "Диалоги", "Пользователи", "Доски"],
+                teacher: ["Структура", "Диалоги", "Доски"],
+                student: ["Диалоги", "Доски"],
+              };
+              return Object.entries(roles).map(([role, pages]) => {
+                fixture.className = "workspace-shell workspace-" + role;
+                menu.innerHTML = pages.map(buttonHtml).join("");
+                extra.style.display = role === "admin" ? "" : "none";
+                const navButtons = [...menu.querySelectorAll("button")];
+                const logout = bottom.querySelector(".desktop-sidebar-logout");
+                const rect = element => element.getBoundingClientRect();
+                const headStyle = getComputedStyle(navButtons[0]);
+                const logoutStyle = getComputedStyle(logout);
+                return {
+                  role,
+                  navHeights:navButtons.map(x => Math.round(rect(x).height)),
+                  navGap:getComputedStyle(menu).gap,
+                  footerGap:getComputedStyle(bottom).gap,
+                  logoutHeight:Math.round(rect(logout).height),
+                  logoutDisplay:logoutStyle.display,
+                  itemFont:headStyle.fontFamily,
+                  logoutFont:logoutStyle.fontFamily,
+                  itemRadius:headStyle.borderTopLeftRadius,
+                  logoutRadius:logoutStyle.borderTopLeftRadius,
+                  itemColor:headStyle.color,
+                  logoutColor:logoutStyle.color,
+                  itemBackground:headStyle.backgroundColor,
+                  logoutBackground:logoutStyle.backgroundColor,
+                  navLeft:rect(navButtons[0]).left,
+                  logoutLeft:rect(logout).left,
+                  footerBottom:rect(fixture.querySelector(".sidebar")).bottom - rect(logout).bottom,
+                  paddingBottom:parseFloat(getComputedStyle(fixture.querySelector(".sidebar")).paddingBottom),
+                  navScrollWidth:menu.scrollWidth,
+                  navClientWidth:menu.clientWidth,
+                };
+              });
+            })(),
           };
           fixture.remove();
           document.documentElement.dataset.theme = previous;
@@ -486,6 +529,27 @@ test("global SSE updates real counters across tabs and replays missed events", {
             `${width}px ${theme}: кнопки начинаются на одной вертикали`);
           assert.ok(Math.abs(g.footerBottomInset - g.sidebarBottomPadding) < 1,
             `${width}px ${theme}: нижняя граница меню следует внутреннему отступу боковой панели (${g.footerBottomInset} / ${g.sidebarBottomPadding})`);
+        }
+        for (const layout of result.roleLayouts) {
+          const label = `${layout.role} ${width}px ${theme}`;
+          assert.ok(layout.navHeights.every(h => h === 42),
+            `${label}: единая высота кнопок навигации`);
+          assert.equal(layout.itemFont, layout.logoutFont, `${label}: одинаковая гарнитура`);
+          assert.equal(layout.itemRadius, layout.logoutRadius, `${label}: одинаковое скругление`);
+          assert.equal(layout.itemColor, layout.logoutColor, `${label}: одинаковый цвет подписей`);
+          assert.equal(layout.itemBackground, layout.logoutBackground, `${label}: одинаковый фон`);
+          if (width >= 1025) {
+            assert.equal(layout.navGap, "6px", `${label}: единый вертикальный шаг меню`);
+            assert.equal(layout.footerGap, "6px", `${label}: единый вертикальный шаг подвала`);
+            assert.equal(layout.logoutHeight, 42, `${label}: высота кнопки Выход`);
+            assert.ok(Math.abs(layout.navLeft - layout.logoutLeft) < 0.5,
+              `${label}: навигация и Выход на одной вертикали`);
+            assert.ok(Math.abs(layout.footerBottom - layout.paddingBottom) < 1,
+              `${label}: одинаковый нижний отступ`);
+          } else {
+            assert.equal(layout.navGap, "4px", `${label}: одинаковый горизонтальный шаг`);
+            assert.equal(layout.logoutDisplay, "none", `${label}: мобильный Выход только в быстрых действиях`);
+          }
         }
         assert.notEqual(result.selected.background, expected.background, `${theme}: выделение активного раздела`);
         for (const name of ["additional", "logout"]) {
