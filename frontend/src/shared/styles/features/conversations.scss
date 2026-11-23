@@ -88,6 +88,30 @@
     font-size:11px;
   }
 }
+/* Only the open participant dialog uses one-line names with a two-way arrow.
+   The dialog picker continues to show two names on separate lines. */
+.chat-head-person > .participant-dialog-title {
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+  max-width:100%;
+  white-space:nowrap;
+}
+.chat-head-person > .participant-dialog-title > [data-chat-name-role] {
+  flex:0 1 auto;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.chat-head-person > .participant-dialog-title > .participant-dialog-arrow {
+  flex:0 0 auto;
+  color:var(--muted);
+  font-weight:650;
+  line-height:1;
+}
 .chat-head-tools {
   display:flex;
   flex:0 1 auto;
