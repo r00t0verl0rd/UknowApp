@@ -25,6 +25,7 @@ from starlette.background import BackgroundTask
 from app.core.database import SessionLocal, engine
 from app.event_hub import publish_chat_update
 from app.infrastructure.storage.media import MEDIA_DIR, delete_message_media
+from app.infrastructure.storage.database_info import database_storage_info
 from app.models import (
     Assignment,
     ConnectionCode,
@@ -757,11 +758,7 @@ def restore_status(_: Admin):
 
 @router.get("/stats")
 def data_stats(_: Admin):
-    database = _database_path()
-    with sqlite3.connect(f"file:{database}?mode=ro", uri=True) as source:
-        page_count = source.execute("PRAGMA page_count").fetchone()[0]
-        page_size = source.execute("PRAGMA page_size").fetchone()[0]
-        database_size = page_count * page_size
+    database_engine, database_size = database_storage_info()
 
     with SessionLocal() as db:
         users = db.query(User).all()
@@ -806,6 +803,8 @@ def data_stats(_: Admin):
         return {
             "restore": _restore_status(DATA_DIR),
             "database_bytes": database_size,
+            "database_engine": database_engine,
+            "database_backups_supported": database_engine == "sqlite",
             "media_bytes": _folder_size(MEDIA_DIR),
             "users": len(users),
             "teachers": sum(1 for item in users if item.role == "teacher"),
@@ -856,6 +855,7 @@ def download_database(_: Admin):
 
 @router.get("/full")
 def download_full_backup(_: Admin):
+    _database_path()  # ZIP contains SQLite; PostgreSQL requires pg_dump.
     data_dir = DATA_DIR.resolve()
     if (data_dir / PENDING_RESTORE_NAME).exists():
         raise HTTPException(
@@ -900,6 +900,7 @@ def download_media_archive(_: Admin):
 
 @router.post("/full")
 async def restore_full_backup(_: Admin, file: Annotated[UploadFile, File()]):
+    _database_path()  # Never apply an SQLite archive to PostgreSQL.
     if not (file.filename or "").lower().endswith(".zip"):
         raise HTTPException(status_code=400, detail="Загрузите ZIP-файл полной резервной копии")
 
@@ -907,6 +908,7 @@ async def restore_full_backup(_: Admin, file: Annotated[UploadFile, File()]):
 
 
 async def _stage_upload(file: UploadFile, kind: str):
+    _database_path()
     data_dir = DATA_DIR.resolve()
     data_dir.mkdir(parents=True, exist_ok=True)
     marker_path = data_dir / PENDING_RESTORE_NAME
@@ -987,6 +989,7 @@ async def _stage_upload(file: UploadFile, kind: str):
 
 @router.post("/database")
 async def restore_database(_: Admin, file: Annotated[UploadFile, File()]):
+    _database_path()
     if not (file.filename or "").lower().endswith((".db", ".sqlite", ".sqlite3")):
         raise HTTPException(status_code=400, detail="Загрузите файл SQLite (.db, .sqlite или .sqlite3)")
     return await _stage_upload(file, "database")

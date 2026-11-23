@@ -14,7 +14,7 @@ services:
       - .env
     environment:
       TELEGRAM_FILES_DIR: /var/lib/telegram-bot-api
-      DATABASE_URL: sqlite:////app/data/uknowapp.db
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/uknowapp.db}
       PYTHONPATH: /app/backend
       TMPDIR: /app/data
       UKNOWAPP_AUTO_RESTART_ON_RESTORE: "true"
@@ -46,6 +46,24 @@ services:
       retries: 3
       start_period: 20s
     # Не масштабировать backend: бот использует один polling-процесс.
+
+  postgres:
+    image: postgres:17-alpine
+    profiles: [postgres]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-uknowapp}
+      POSTGRES_USER: ${POSTGRES_USER:-uknowapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   frontend:
     build:
@@ -90,3 +108,4 @@ volumes:
   app_data:
   caddy_data:
   caddy_config:
+  postgres_data:
