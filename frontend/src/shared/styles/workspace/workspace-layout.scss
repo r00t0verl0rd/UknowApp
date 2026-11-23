@@ -632,7 +632,7 @@
     & .btn.primary {
       background:var(--button-primary);
       border-color:transparent;
-      color:#fff;
+      color:var(--app-foreground);
     }
   }
   .student-card > .graph-person-action {
@@ -702,7 +702,7 @@
     & .btn.primary {
       background:var(--button-primary);
       border-color:transparent;
-      color:#fff;
+      color:var(--app-foreground);
     }
     & .user-row:hover,
     & .student-card:hover,
