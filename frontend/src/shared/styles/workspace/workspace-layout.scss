@@ -621,7 +621,7 @@
     & button:not(.primary):not(.danger-icon):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)),
     & .btn:not(.primary):not(.danger-icon),
     & .person-actions button:not(.danger-icon),
-    & .icon-btn:not(.danger-icon):not(:where(.message-tools button)),
+    & .icon-btn:not(.danger-icon):not(:where(.message-actions button)),
     & .add-student,
     & .modal-head button {
       background:var(--ui-control-bg);
@@ -691,7 +691,7 @@
   :root[data-theme="dark-soft"] {
     & button:not(.primary):not(.danger-icon):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)),
     & .btn:not(.primary):not(.danger-icon),
-    & .icon-btn:not(.danger-icon):not(:where(.message-tools button)),
+    & .icon-btn:not(.danger-icon):not(:where(.message-actions button)),
     & .add-student,
     & .modal-head button {
       background:var(--ui-control-bg);

@@ -163,31 +163,66 @@ function MessageBubble(options) {
   const deliveryDetails = () => getDeliveryDetails(options.message.metadata, true);
   return (
     <div class={"message " + options.message.sender_role} data-view-anchor={"message:" + options.message.id}>
-      <div class="message-topline">
-        <b data-chat-name-role={options.message.sender_role}>{options.message.sender}</b>
-        <div class="message-tools">
-          <time class="message-time">{formatMessageTime(options.message.created_at, options.nowMs)}</time>
-          {options.message.sender_role === options.viewerRole &&
-            (options.viewerRole !== "admin" || options.personalChat) &&
-            (() => {
-              const status = options.message.delivery_status || "unknown";
-              const read = Boolean(options.message.panel_read_at);
-              const pending = status === "pending";
-              const blocked = status === "blocked_contact";
-              const title = read
-                ? "Прочитано в UknowApp"
-                : blocked
-                  ? "Сообщение заблокировано системой"
-                  : pending
-                    ? "Отправлено из UknowApp"
-                    : "Доставлено в UknowApp";
-              const statusClass = read ? " is-read" : blocked ? " is-failed" : "";
-              return (
-                <span class={"message-read-status" + statusClass} title={title} aria-label={title}>
-                  {blocked ? <CircleX size={15} /> : pending ? <Check size={14} /> : <CheckCheck size={15} />}
-                </span>
-              );
-            })()}
+      <div class="message-content">
+        <div class="message-topline">
+          <b data-chat-name-role={options.message.sender_role}>{options.message.sender}</b>
+          <div class="message-tools">
+            <time class="message-time">{formatMessageTime(options.message.created_at, options.nowMs)}</time>
+            {options.message.sender_role === options.viewerRole &&
+              (options.viewerRole !== "admin" || options.personalChat) &&
+              (() => {
+                const status = options.message.delivery_status || "unknown";
+                const read = Boolean(options.message.panel_read_at);
+                const pending = status === "pending";
+                const blocked = status === "blocked_contact";
+                const title = read
+                  ? "Прочитано в UknowApp"
+                  : blocked
+                    ? "Сообщение заблокировано системой"
+                    : pending
+                      ? "Отправлено из UknowApp"
+                      : "Доставлено в UknowApp";
+                const statusClass = read ? " is-read" : blocked ? " is-failed" : "";
+                return (
+                  <span class={"message-read-status" + statusClass} title={title} aria-label={title}>
+                    {blocked ? <CircleX size={15} /> : pending ? <Check size={14} /> : <CheckCheck size={15} />}
+                  </span>
+                );
+              })()}
+          </div>
+        </div>
+        {options.message.text && <p>{options.message.text}</p>}
+        {mediaUrl() && kind() === "photo" && <img loading="lazy" decoding="async" class="chat-media-image" src={mediaUrl()} alt={label()} />}
+        {mediaUrl() && ["voice", "audio"].includes(kind()) && (
+          <ChatAudioPlayer src={mediaUrl()} label={label()} />
+        )}
+        {mediaUrl() && ["video", "video_note", "animation"].includes(kind()) && (
+          <video
+            class={"chat-media-video" + (kind() === "video_note" ? " chat-media-video-note" : "")}
+            controls
+            playsInline
+            preload="none"
+            aria-label={label()}
+            src={mediaUrl()}
+          />
+        )}
+        {mediaUrl() && ["document", "photo"].includes(kind()) && (
+          <a class="chat-media-download" href={mediaUrl()} download={media()?.file_name || label()}>
+            Скачать файл: {media()?.file_name || label()}
+          </a>
+        )}
+        {!mediaUrl() &&
+          ["too_large_for_telegram_download", "download_failed"].includes(media()?.archive_status) && (
+            <small class="chat-media-status">
+              {media().archive_status === "too_large_for_telegram_download"
+                ? "Файл больше 20 МБ: Telegram не позволяет сохранить копию для веб-панели. Оригинал остаётся в исходном чате Telegram."
+                : "Не удалось сохранить копию вложения. Проверьте оригинал в Telegram."}
+            </small>
+          )}
+        {!media() && !options.message.text && <p>Вложение: {options.message.content_type}</p>}
+      </div>
+      {(options.message.can_delete || (options.viewerRole === "admin" && deliveryDetails().length > 0)) && (
+        <div class="message-actions">
           {options.viewerRole === "admin" && deliveryDetails().length > 0 && (
             <IconButton
               type="button"
@@ -215,36 +250,7 @@ function MessageBubble(options) {
             </IconButton>
           )}
         </div>
-      </div>
-      {options.message.text && <p>{options.message.text}</p>}
-      {mediaUrl() && kind() === "photo" && <img loading="lazy" decoding="async" class="chat-media-image" src={mediaUrl()} alt={label()} />}
-      {mediaUrl() && ["voice", "audio"].includes(kind()) && (
-        <ChatAudioPlayer src={mediaUrl()} label={label()} />
       )}
-      {mediaUrl() && ["video", "video_note", "animation"].includes(kind()) && (
-        <video
-          class={"chat-media-video" + (kind() === "video_note" ? " chat-media-video-note" : "")}
-          controls
-          playsInline
-          preload="none"
-          aria-label={label()}
-          src={mediaUrl()}
-        />
-      )}
-      {mediaUrl() && ["document", "photo"].includes(kind()) && (
-        <a class="chat-media-download" href={mediaUrl()} download={media()?.file_name || label()}>
-          Скачать файл: {media()?.file_name || label()}
-        </a>
-      )}
-      {!mediaUrl() &&
-        ["too_large_for_telegram_download", "download_failed"].includes(media()?.archive_status) && (
-          <small class="chat-media-status">
-            {media().archive_status === "too_large_for_telegram_download"
-              ? "Файл больше 20 МБ: Telegram не позволяет сохранить копию для веб-панели. Оригинал остаётся в исходном чате Telegram."
-              : "Не удалось сохранить копию вложения. Проверьте оригинал в Telegram."}
-          </small>
-        )}
-      {!media() && !options.message.text && <p>Вложение: {options.message.content_type}</p>}
       {options.viewerRole === "admin" && deliveryDetails().length > 0 && (
         <section
           id={deliveryPopoverId}

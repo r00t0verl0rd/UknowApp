@@ -2239,18 +2239,19 @@ test("global SSE updates real counters across tabs and replays missed events", {
       const infoButton = page.getByRole("button", { name: "Подробности внешней доставки" });
       const deleteButton = page.getByRole("button", { name: "Удалить своё сообщение" });
       await infoButton.waitFor({ state: "visible" });
-      const positions = await page.locator(".message-tools").first().evaluate(row => {
+      const positions = await page.locator(".message:has(.message-detail-btn):has(.message-delete-btn)").first().evaluate(row => {
         const info = row.querySelector(".message-detail-btn");
         const remove = row.querySelector(".message-delete-btn");
         const time = row.querySelector(".message-time");
         const bounds = el => {
           const b = el.getBoundingClientRect();
-          return { cy: b.y + b.height / 2, size: b.width, background: getComputedStyle(el).backgroundColor };
+          return { x: b.x, right: b.right, top: b.top, bottom: b.bottom, size: b.width, background: getComputedStyle(el).backgroundColor };
         };
         return { info: bounds(info), remove: bounds(remove), time: bounds(time) };
       });
-      assert.ok(Math.abs(positions.info.cy - positions.remove.cy) < 1, `${width}px: icons vertically centered`);
-      assert.ok(Math.abs(positions.time.cy - positions.remove.cy) < 1, `${width}px: time and icons aligned`);
+      assert.ok(Math.abs(positions.info.x - positions.remove.x) < 1, `${width}px: aligned right column`);
+      assert.ok(positions.info.bottom <= positions.remove.top, `${width}px: information above delete`);
+      assert.ok(positions.time.right <= positions.info.x, `${width}px: actions clear the timestamp`);
       assert.ok(positions.info.size === 40 && positions.remove.size === 40, `${width}px: clickable hit area`);
       assert.equal(positions.info.background, "rgba(0, 0, 0, 0)");
       assert.equal(positions.remove.background, "rgba(0, 0, 0, 0)");

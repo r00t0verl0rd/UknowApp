@@ -47,7 +47,7 @@ test("chat header actions align and remain clickable on touch and desktop", () =
 });
 
 test("message text and unobtrusive icon actions share desktop and mobile styles", () => {
-  assert.match(styles, /\.message > p \{[^}]*font-size:15px;[^}]*font-weight:400;[^}]*line-height:1\.58;/s);
+  assert.match(styles, /\.message-content > p \{[^}]*font-size:15px;[^}]*font-weight:400;[^}]*line-height:1\.58;/s);
   assert.match(styles, /\.message-topline > b \{[^}]*font-size:11px;/s);
   assert.match(styles, /\.message \{[^}]*padding:5px 10px 8px;/s);
   assert.match(styles, /:root\[data-theme="dark-soft"\] \.message \.ui-icon-button:is\(\.message-delete-btn, \.message-detail-btn\)/);

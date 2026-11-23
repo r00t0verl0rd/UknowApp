@@ -156,6 +156,20 @@
   box-shadow:var(--ui-shadow-message);
   overflow-wrap:anywhere;
 }
+.message:has(> .message-actions) {
+  display:grid;
+  grid-template-columns:minmax(0, 1fr) auto;
+  align-items:start;
+  column-gap:6px;
+}
+.message-content {
+  min-width:0;
+}
+.message-actions {
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
 .message.student {
   align-self:flex-start;
   border-color:var(--role-student-border);
@@ -290,7 +304,7 @@
   background:rgba(255, 255, 255, 0.09);
   opacity:1;
 }
-.message > p {
+.message-content > p {
   margin:1px 0 0;
   color:var(--ink);
   font-size:15px;
