@@ -18,13 +18,13 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
+from app.event_hub import publish_chat_update
 from app.infrastructure.storage.media import (
     MEDIA_DIR,
     attachment_response,
     delete_message_media,
 )
 from app.infrastructure.storage.message_metadata import encode_message_metadata
-from app.event_hub import publish_chat_update
 from app.models import (
     PersonalConversation,
     PersonalMessage,
