@@ -2,13 +2,13 @@
 .workspace-shell {
   .sidebar nav {
     display:grid;
-    gap:4px;
+    gap:6px;
   }
   .sidebar-bottom {
     margin-top:auto;
     @include primitives.stack;
     align-items:stretch;
-    gap:4px;
+    gap:6px;
   }
   .sidebar-bottom > .ui-menu-control {
     width:100%;
@@ -31,7 +31,10 @@
     display:inline-flex;
     align-items:center;
     justify-content:flex-start;
+    height:var(--workspace-control-height);
     min-height:var(--workspace-control-height);
+    max-height:var(--workspace-control-height);
+    flex-shrink:0;
     line-height:1.35;
     letter-spacing:-0.01em;
     text-decoration:none;
@@ -62,11 +65,6 @@
   .workspace-content .graph-add-participant.ui-menu-control:focus-visible {
     outline:2px solid var(--purple);
     outline-offset:2px;
-  }
-}
-@media (min-width: 1025px) {
-  :root .workspace-shell .sidebar .sidebar-bottom > button.ui-menu-control.desktop-sidebar-logout {
-    margin-top:8px;
   }
 }
 :root .workspace-shell {
@@ -125,7 +123,7 @@
   .workspace-content .graph-add-participant.ui-menu-control {
     -webkit-appearance:none;
     appearance:none;
-    padding:10px 12px;
+    padding:0 12px;
     gap:10px;
     border:1px solid var(--menu-border);
     border-radius:var(--ui-radius-sm);
@@ -167,7 +165,7 @@
 @media (max-width: 1024px) {
   :root .workspace-shell {
     .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control {
-      padding:9px 8px;
+      padding:0 8px;
       font-size:clamp(11px, 3vw, 13px);
       gap:5px;
     }
