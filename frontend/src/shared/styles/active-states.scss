@@ -53,18 +53,14 @@
 }
 
 
-/* Назначения и уведомления используют одну тему, включая мобильный hover. */
+/* Уведомления остаются акцентными; назначение учеников — второстепенное действие. */
 :root[data-theme] .workspace-shell {
-  .workspace-content:has(.admin-card) .teacher-branch > button.add-student,
-  .workspace-content:has(.admin-card) .unassigned-student-actions > button.btn.outline,
   :is(.topbar-actions, .mobile-quick-actions) > button.push-toggle.active {
     background:var(--ui-selected-bg);
     border-color:var(--ui-selected-border);
     color:var(--ui-selected-text);
     box-shadow:none;
   }
-  .workspace-content:has(.admin-card) .teacher-branch > button.add-student:hover:not(:disabled),
-  .workspace-content:has(.admin-card) .unassigned-student-actions > button.btn.outline:hover:not(:disabled),
   :is(.topbar-actions, .mobile-quick-actions) > button.push-toggle.active:hover:not(:disabled) {
     background:color-mix(in srgb, var(--ui-selected-bg) 84%, var(--ui-selected-border));
     border-color:var(--ui-selected-border);
@@ -74,6 +70,37 @@
   :is(.topbar-actions, .mobile-quick-actions) > button.push-toggle.active:focus-visible {
     outline:2px solid var(--ui-selected-border);
     outline-offset:2px;
+    box-shadow:none;
+  }
+
+  // Без яркого фиолетового фона на любых экранах, включая touch-устройства.
+  .workspace-content:has(.admin-card) .teacher-branch > button.add-student,
+  .workspace-content:has(.admin-card) .unassigned-student-actions > button.btn.outline {
+    background:var(--ui-control-bg);
+    border-color:var(--ui-border);
+    color:var(--muted);
+    font-weight:600;
+    box-shadow:none;
+  }
+  .workspace-content:has(.admin-card) .teacher-branch > button.add-student:hover:not(:disabled),
+  .workspace-content:has(.admin-card) .unassigned-student-actions > button.btn.outline:hover:not(:disabled) {
+    background:var(--ui-control-hover);
+    border-color:var(--ui-border-strong);
+    color:var(--ui-control-text);
+    box-shadow:none;
+  }
+
+  // Стрелка раскрытия списка учеников сохраняет жёлтый акцент и на мобильных.
+  .workspace-content:has(.admin-card) .teacher-card .person-actions > button.teacher-collapse-btn.ui-icon-button--student {
+    background:var(--role-student-soft);
+    border-color:var(--role-student-border);
+    color:var(--role-student);
+    box-shadow:none;
+  }
+  .workspace-content:has(.admin-card) .teacher-card .person-actions > button.teacher-collapse-btn.ui-icon-button--student:hover:not(:disabled) {
+    background:color-mix(in srgb, var(--role-student-soft) 82%, var(--role-student));
+    border-color:var(--role-student-border);
+    color:var(--role-student);
     box-shadow:none;
   }
 }
