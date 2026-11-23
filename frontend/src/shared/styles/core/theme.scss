@@ -340,7 +340,7 @@ a:focus-visible {
 }
 :root[data-theme="dark-soft"] {
   & .student-card {
-    color:#edf0f5;
+    color:var(--app-foreground);
     box-shadow:none;
   }
   & .user-list .user-row > .avatar.student {
