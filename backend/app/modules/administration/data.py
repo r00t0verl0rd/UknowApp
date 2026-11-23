@@ -215,9 +215,11 @@ def _count_missing_media_references(database: Path, data_root: Path) -> int:
                         continue
                     target = (media_root / _safe_relative(media.get("local_path"))).resolve()
                     size = media.get("file_size")
-                    if media_root not in target.parents or not target.is_file():
-                        missing += 1
-                    elif size is not None and target.stat().st_size != size:
+                    if (
+                        media_root not in target.parents
+                        or not target.is_file()
+                        or (size is not None and target.stat().st_size != size)
+                    ):
                         missing += 1
                     else:
                         with target.open("rb") as file:
