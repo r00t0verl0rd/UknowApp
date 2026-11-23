@@ -85,17 +85,6 @@
   }
 }
 
-:root .workspace-admin .workspace-panel.chat-list {
-  .chat-section-tabs > button.chat-section-tab.is-current {
-    background:var(--ui-selected-bg);
-    color:var(--ui-selected-text);
-    border-color:var(--ui-selected-border);
-    font-weight:700;
-    box-shadow:inset 0 -2px 0 var(--ui-selected-border);
-  }
-
-}
-
 // The sender role selects the palette in every workspace and dialog.
 @each $role in teacher, student {
   :root[data-theme] [data-chat-name-role="#{$role}"] {
