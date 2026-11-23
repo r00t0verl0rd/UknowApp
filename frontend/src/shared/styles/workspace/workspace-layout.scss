@@ -725,3 +725,58 @@
     opacity: 0.15;
   }
 }
+
+
+// The same full-area boards notice in admin, teacher and student workspaces.
+.workspace-shell > .content > .workspace-content:has(> .boards-placeholder) {
+  display:flex;
+  max-width:none;
+  padding:0;
+}
+.boards-placeholder {
+  display:flex;
+  flex:1 1 auto;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:clamp(14px, 2.5vh, 26px);
+  width:100%;
+  min-height:max(420px, calc(100dvh - 56px));
+  padding:clamp(22px, 4vw, 60px);
+  text-align:center;
+  background:radial-gradient(ellipse at 50% 42%, rgba(148, 114, 202, 0.09), transparent 57%);
+}
+.boards-placeholder img {
+  display:block;
+  width:clamp(220px, min(34vw, 43dvh), 430px);
+  height:clamp(220px, min(34vw, 43dvh), 430px);
+  object-fit:contain;
+  filter:drop-shadow(0 12px 32px rgba(118, 91, 177, 0.18));
+}
+.boards-placeholder h1 {
+  margin:0;
+  color:var(--ink);
+  font-size:clamp(27px, 3.6vw, 46px);
+  font-weight:800;
+  line-height:1.15;
+  letter-spacing:-0.035em;
+  text-wrap:balance;
+}
+.boards-placeholder p {
+  max-width:680px;
+  margin:0;
+  color:var(--muted);
+  font-size:clamp(15px, 1.45vw, 19px);
+  line-height:1.65;
+  text-wrap:pretty;
+}
+@media (max-width:1024px) {
+  .boards-placeholder {
+    min-height:max(400px, calc(100dvh - var(--workspace-sidebar-height, 140px)));
+    padding:clamp(24px, 6vw, 42px);
+  }
+  .boards-placeholder img {
+    width:clamp(180px, min(60vw, 36dvh), 320px);
+    height:clamp(180px, min(60vw, 36dvh), 320px);
+  }
+}

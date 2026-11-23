@@ -58,3 +58,13 @@ test("vector UI logo and PNG compatibility icons use the supplied assets", () =>
   assert.match(read("Caddyfile"), /@appIcons path \/logo-main\.svg \/logo-touch\.png \/logo-192\.png \/logo-big\.png \/manifest\.webmanifest/);
   assert.doesNotMatch(read("Dockerfile"), /generate_icons|py3-pillow/);
 });
+
+test("boards notice uses the same logo and exact message for every role", () => {
+  for (const role of ["Admin", "Teacher", "Student"]) {
+    const source = read("src/workspaces/" + role + "Workspace.jsx");
+    assert.ok(source.includes('<section class="boards-placeholder" aria-label="Доски">'), role);
+    assert.ok(source.includes('<img src="/logo-main.svg" alt="" />'), role);
+    assert.ok(source.includes("<h1>Раздел в разработке.</h1>"), role);
+    assert.ok(source.includes("Здесь появится удобное пространство для совместной работы, материалов и визуальных задач."), role);
+  }
+});

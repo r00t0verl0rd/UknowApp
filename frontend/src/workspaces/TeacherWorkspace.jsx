@@ -1,5 +1,4 @@
 import { For, Match, Switch, lazy } from "solid-js";
-import BoardsPlaceholder from "./BoardsPlaceholder.jsx";
 const ChatsView = lazy(() => import("./ChatsView.jsx"));
 import CountBadge from "../shared/components/CountBadge.jsx";
 import EmptyState from "../shared/components/EmptyState.jsx";
@@ -53,7 +52,13 @@ function TeacherStructurePage(options) {
 export default function TeacherWorkspace(options) {
   return (
     <Switch>
-      <Match when={options.context.page === "boards"}><BoardsPlaceholder /></Match>
+      <Match when={options.context.page === "boards"}>
+        <section class="boards-placeholder" aria-label="Доски">
+          <img src="/logo-main.svg" alt="" />
+          <h1>Раздел в разработке.</h1>
+          <p>Здесь появится удобное пространство для совместной работы, материалов и визуальных задач.</p>
+        </section>
+      </Match>
       <Match when={options.context.page === "graph"}>
         <TeacherStructurePage context={options.context} />
       </Match>
