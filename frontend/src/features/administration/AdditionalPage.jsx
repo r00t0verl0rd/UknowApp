@@ -1,14 +1,18 @@
 import {
   IconArchive as ArchiveIcon,
   IconCheck as Check,
+  IconChevronDown as ChevronDown,
+  IconClock3 as Clock3,
   IconDatabase as DatabaseIcon,
+  IconDownload as Download,
+  IconInfo as Info,
+  IconUpload as Upload,
   IconRefreshCw as RefreshCw,
   IconTrash2 as Trash2,
 } from "../../shared/components/Icons.jsx";
 import Panel from "../../shared/components/Panel.jsx";
 import ConfirmDialog from "../../shared/components/ConfirmDialog.jsx";
 import Button from "../../shared/components/Button.jsx";
-import IconButton from "../../shared/components/IconButton.jsx";
 function formatBytes(bytes) {
   if (!bytes) return "0 Б";
   const units = ["Б", "КБ", "МБ", "ГБ", "ТБ"];
@@ -38,35 +42,40 @@ export default function AdditionalPage(options) {
       <Panel class="additional-panel">
         <div class="additional-heading">
           <div>
-            <div class="eyebrow">ОБСЛУЖИВАНИЕ ДАННЫХ</div>
+            <div class="eyebrow">Данные и резервные копии</div>
             <h2>Дополнительно</h2>
+            <p>Посмотрите, что хранится в UknowApp, и сохраните важные данные.</p>
           </div>
-          <button
-            type="button"
-            class="btn outline"
+          <Button
+            variant="outline"
+            class="data-action-btn"
             onClick={options.loadDataStats}
             disabled={options.dataBusy || options.statsLoading}
           >
-            <RefreshCw size={15} />
+            <RefreshCw size={16} aria-hidden="true" />
             Обновить
-          </button>
+          </Button>
         </div>
         {options.statsLoading && !options.dataStats && (
-          <p class="data-stats-loading" role="status">Загружаем статистику сервера…</p>
+          <p class="data-stats-loading" role="status">Собираем сведения о данных…</p>
         )}
         {options.statsError && (
           <div class="data-stats-feedback" role="alert">
             <div class="data-stats-feedback-copy">
               <strong>Не удалось загрузить статистику</strong>
-              <p>{options.statsError.message}</p>
-              <small>Резервные копии и данные пользователей не изменялись этим запросом.</small>
+              <p>Данные остались без изменений. Попробуйте обновить сведения.</p>
+              <details class="data-info-details">
+                <summary>Технические подробности <ChevronDown size={15} aria-hidden="true" /></summary>
+                <small>{options.statsError.message}</small>
+              </details>
             </div>
             <div class="data-stats-feedback-actions">
-              <Button variant="outline" onClick={options.loadDataStats} disabled={options.statsLoading}>
+              <Button variant="outline" class="data-action-btn" onClick={options.loadDataStats} disabled={options.statsLoading}>
+                <RefreshCw size={16} aria-hidden="true" />
                 Повторить загрузку
               </Button>
               {options.statsError.needsLogin && (
-                <Button variant="primary" onClick={options.loginForStats}>
+                <Button variant="primary" class="data-action-btn" onClick={options.loginForStats}>
                   Войти повторно
                 </Button>
               )}
@@ -75,57 +84,46 @@ export default function AdditionalPage(options) {
         )}
         <div class="data-stats-grid">
           <article class="data-stat-card">
-            <span>{isPostgres() ? "Размер базы PostgreSQL" : "Размер файла базы SQLite"}</span>
-            <b>{options.dataStats?.database_bytes != null ? formatBytes(options.dataStats.database_bytes) : "—"}</b>
-            <small>{options.dataStats?.users ?? "—"} пользователей</small>
-            <small>Размер включает таблицы, индексы и служебные данные, даже если пользовательских записей ещё нет.</small>
-            <div class="data-stat-details">
-              <span>
-                Учителя: <b>{options.dataStats?.teachers ?? "—"}</b>
-              </span>
-              <span>
-                Ученики: <b>{options.dataStats?.students ?? "—"}</b>
-              </span>
-              <span>
-                Связи учитель–ученик: <b>{options.dataStats?.assignments ?? "—"}</b>
-              </span>
-              <span>
-                Диалоги: <b>{options.dataStats?.conversations ?? "—"}</b> ученических ·{" "}
-                <b>{options.dataStats?.personal_conversations ?? "—"}</b> личных
-              </span>
-              <span>
-                Сообщения: <b>{options.dataStats?.total_messages ?? "—"}</b> всего
-              </span>
-              <span class="data-stat-subline">
-                Ученические: {options.dataStats?.messages ?? "—"} · Личные:{" "}
-                {options.dataStats?.personal_messages ?? "—"}
-              </span>
-              <span>
-                Telegram-группы: <b>{options.dataStats?.telegram_groups ?? "—"}</b>
-              </span>
-              <span>
-                Действующие коды подключения: <b>{options.dataStats?.connection_codes ?? "—"}</b>
-              </span>
+            <div class="data-stat-heading">
+              <span class="data-tool-icon" aria-hidden="true"><DatabaseIcon /></span>
+              <span>База данных <small>{isPostgres() ? "PostgreSQL" : "SQLite"}</small></span>
             </div>
+            <b class="data-stat-value">{options.dataStats?.database_bytes != null ? formatBytes(options.dataStats.database_bytes) : "—"}</b>
+            <small>{options.dataStats?.users ?? "—"} пользователей</small>
+            <p class="data-stat-hint">В размере учтены таблицы и служебные данные.</p>
+            <details class="data-info-details">
+              <summary>Что хранится в базе <ChevronDown size={15} aria-hidden="true" /></summary>
+              <div class="data-stat-details">
+                <span>Учителя <b>{options.dataStats?.teachers ?? "—"}</b></span>
+                <span>Ученики <b>{options.dataStats?.students ?? "—"}</b></span>
+                <span>Назначения <b>{options.dataStats?.assignments ?? "—"}</b></span>
+                <span>Учебные диалоги <b>{options.dataStats?.conversations ?? "—"}</b></span>
+                <span>Личные диалоги <b>{options.dataStats?.personal_conversations ?? "—"}</b></span>
+                <span>Всего сообщений <b>{options.dataStats?.total_messages ?? "—"}</b></span>
+                <span>В учебных диалогах <b>{options.dataStats?.messages ?? "—"}</b></span>
+                <span>В личных диалогах <b>{options.dataStats?.personal_messages ?? "—"}</b></span>
+                <span>Telegram-группы <b>{options.dataStats?.telegram_groups ?? "—"}</b></span>
+                <span>Коды подключения <b>{options.dataStats?.connection_codes ?? "—"}</b></span>
+              </div>
+            </details>
           </article>
           <article class="data-stat-card">
-            <span>Файлы из диалогов, сохранённые на сервере</span>
-            <b>{options.dataStats ? formatBytes(options.dataStats.media_bytes) : "—"}</b>
-            <small>{options.dataStats?.media_files ?? "—"} файлов</small>
-            <div class="data-stat-details">
-              <span>
-                Изображения: <b>{options.dataStats?.media_images ?? "—"}</b>
-              </span>
-              <span>
-                Аудио: <b>{options.dataStats?.media_audio ?? "—"}</b>
-              </span>
-              <span>
-                Видео: <b>{options.dataStats?.media_videos ?? "—"}</b>
-              </span>
-              <span>
-                Другие файлы: <b>{options.dataStats?.media_other ?? "—"}</b>
-              </span>
+            <div class="data-stat-heading">
+              <span class="data-tool-icon" aria-hidden="true"><ArchiveIcon /></span>
+              <span>Вложения из переписок</span>
             </div>
+            <b class="data-stat-value">{options.dataStats ? formatBytes(options.dataStats.media_bytes) : "—"}</b>
+            <small>{options.dataStats?.media_files ?? "—"} файлов</small>
+            <p class="data-stat-hint">Фото, голосовые сообщения и документы на сервере.</p>
+            <details class="data-info-details">
+              <summary>Посмотреть по типам <ChevronDown size={15} aria-hidden="true" /></summary>
+              <div class="data-stat-details">
+                <span>Изображения <b>{options.dataStats?.media_images ?? "—"}</b></span>
+                <span>Аудио <b>{options.dataStats?.media_audio ?? "—"}</b></span>
+                <span>Видео <b>{options.dataStats?.media_videos ?? "—"}</b></span>
+                <span>Другие файлы <b>{options.dataStats?.media_other ?? "—"}</b></span>
+              </div>
+            </details>
           </article>
         </div>
         <div class="data-tools-grid">
