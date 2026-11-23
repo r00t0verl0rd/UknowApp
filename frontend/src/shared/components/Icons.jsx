@@ -51,6 +51,12 @@ export const IconLayers = icon("layers", () => (
 export const IconMessageCircle = icon("message-circle", () => (
   <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
 ));
+export const IconEye = icon("eye", () => (
+  <>
+    <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+    <circle cx="12" cy="12" r="3" />
+  </>
+));
 export const IconUsers = icon("users", () => (
   <>
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
