@@ -10,6 +10,7 @@ import {
 import Button from "../shared/components/Button.jsx";
 import ConfirmDialog from "../shared/components/ConfirmDialog.jsx";
 import IconButton from "../shared/components/IconButton.jsx";
+import { installViewRestoration } from "../shared/services/viewSession.js";
 
 // Одна разметка и один источник состояния для всех пунктов меню.
 function SidebarControl(options) {
@@ -34,16 +35,30 @@ export default function WorkspaceLayout(options) {
   let contentRef = null;
   let sidebarRef = null;
   let shellRef = null;
+  let viewMemory = null;
+  // One owner for document, workspace and nested scrolling on every page.
+  // The saved position survives reloads, navigation and asynchronous rendering.
   createEffect(
-    () => [options.page],
-    () => {
-      contentRef.scrollTop = 0;
-      // В мобильном Safari нативный document — единственный скроллер.
-      if (window.matchMedia("(max-width: 1024px) and (display-mode: browser)").matches) {
-        window.scrollTo(0, 0);
-      }
+    () => [options.profile?.id],
+    ([id]) => {
+      viewMemory?.dispose();
+      viewMemory = id == null ? null : installViewRestoration({
+        root: shellRef, userId: id, page: options.page,
+      });
+      return () => {
+        viewMemory?.dispose();
+        viewMemory = null;
+      };
     },
   );
+  createEffect(
+    () => [options.page],
+    ([page]) => viewMemory?.changePage(page),
+  );
+  const navigate = page => {
+    viewMemory?.capture();
+    options.setPage(page);
+  };
 
   // ResizeObserver уже сообщает измеренную высоту: не читаем layout на каждом
   // window.resize и не обновляем отступ, когда ширина меняется без переноса меню.
@@ -120,7 +135,7 @@ export default function WorkspaceLayout(options) {
               <SidebarControl
                 icon={item.icon}
                 current={options.page === item.page}
-                onClick={() => options.setPage(item.page)}
+                onClick={() => navigate(item.page)}
               >
                 {item.label}
               </SidebarControl>
@@ -133,7 +148,7 @@ export default function WorkspaceLayout(options) {
               icon={Info}
               class="desktop-admin-extra"
               current={options.page === additionalItem().page}
-              onClick={() => options.setPage(additionalItem().page)}
+              onClick={() => navigate(additionalItem().page)}
             >
               {additionalItem().label}
             </SidebarControl>
