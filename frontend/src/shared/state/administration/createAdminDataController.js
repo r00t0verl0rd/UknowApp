@@ -1,4 +1,5 @@
 import { createSignal, createEffect } from "solid-js";
+import { viewPreference, saveViewPreference } from "../../services/viewSession.js";
 import {
   cleanupAdminDialogues,
   adminBackupUrl,
@@ -11,7 +12,19 @@ export function createAdminDataController(options) {
   const [statsError, setStatsError] = createSignal(null);
   const [dataBusy, setDataBusy] = createSignal(false);
   const [restore, setRestore] = createSignal(null);
-  const [retentionDays, setRetentionDays] = createSignal("30");
+  const [retentionDays, setRetentionDaysSignal] = createSignal(
+    viewPreference(options.profile?.id, "additional.retentionDays", "30"),
+  );
+  const setRetentionDays = value => {
+    setRetentionDaysSignal(value);
+    saveViewPreference(options.profile?.id, "additional.retentionDays", value);
+  };
+  createEffect(
+    () => [options.profile?.id],
+    ([id]) => {
+      if (id != null) setRetentionDaysSignal(viewPreference(id, "additional.retentionDays", "30"));
+    },
+  );
   const [pendingConfirmation, setPendingConfirmation] = createSignal(null);
   let statsRequestRevision = 0;
   const loadDataStats = async () => {

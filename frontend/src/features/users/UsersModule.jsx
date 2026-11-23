@@ -39,6 +39,7 @@ export default function UsersModule(options) {
       )}
       {options.page === "graph" && (
         <StructurePage
+          userId={options.profile?.id}
           overview={state.overview}
           loading={options.adminDataLoading}
           openCreate={state.openCreate}

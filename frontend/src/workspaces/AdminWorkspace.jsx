@@ -21,6 +21,7 @@ function AdminPage(options) {
       </Match>
       <Match when={["graph", "users"].includes(options.context.page)}>
         <UsersModule
+          profile={options.context.profile}
           page={options.context.page}
           directory={options.context.directory}
           request={options.context.request}
