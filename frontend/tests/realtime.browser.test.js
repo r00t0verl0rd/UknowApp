@@ -197,23 +197,61 @@ test("global SSE updates real counters across tabs and replays missed events", {
     // в «Структуре», возврат к существующему списку диалогов.
     const teacherContext = await browser.newContext();
     try {
-      await teacherContext.addInitScript(() => localStorage.setItem("uknowapp-auth", "1"));
+      await teacherContext.addInitScript(() => {
+        localStorage.setItem("uknowapp-auth", "1");
+        // Synthetic SSE events stay inside this teacher tab, not the shared server log.
+        const NativeEventSource = window.EventSource;
+        window.EventSource = class extends NativeEventSource {
+          constructor(...args) {
+            super(...args);
+            window.__teacherTestStream = this;
+          }
+        };
+      });
       const teacherPage = await teacherContext.newPage();
       await teacherPage.route("**/api/panel/me", route => route.fulfill({
         status: 200, contentType: "application/json",
         body: JSON.stringify({ role: "teacher", permissions: ["structure.view", "dialogs.own", "boards.view"], id: 7, full_name: "Светлана Ивановна" }),
       }));
+      const teacherDialog = {
+        id: 15,
+        type: "assignment",
+        student: { id: 27, full_name: "Тестовый ученик" },
+        teacher: { id: 7, full_name: "Светлана Ивановна" },
+        unread_count: 0,
+        created_at: "2026-11-23T10:00:00+00:00",
+      };
+      const teacherMessage = {
+        id: 11,
+        sender: "Светлана Ивановна",
+        sender_role: "teacher",
+        text: "Открытый диалог учителя",
+        content_type: "text",
+        metadata: {},
+        delivery_status: "delivered",
+        panel_read_at: null,
+        created_at: "2026-11-23T10:01:00+00:00",
+      };
+      let teacherSyncRequests = 0;
+      let teacherSyncMessages = [];
       await teacherPage.route("**/api/panel/conversations", route => route.fulfill({
-        status: 200, contentType: "application/json",
-        body: JSON.stringify([{
-          id: 15,
-          type: "assignment",
-          student: { id: 27, full_name: "Тестовый ученик" },
-          teacher: { id: 7, full_name: "Светлана Ивановна" },
-          unread_count: 0,
-          created_at: "2026-11-23T10:00:00+00:00",
-        }]),
+        status: 200, contentType: "application/json", body: JSON.stringify([teacherDialog]),
       }));
+      await teacherPage.route("**/api/panel/conversations/15/messages*", route => route.fulfill({
+        status: 200, contentType: "application/json", body: JSON.stringify([teacherMessage]),
+      }));
+      await teacherPage.route("**/api/panel/conversations/15/sync", route => {
+        teacherSyncRequests += 1;
+        return route.fulfill({
+          status: 200, contentType: "application/json",
+          body: JSON.stringify({
+            messages: teacherSyncMessages,
+            updated_messages: [],
+            deleted_message_ids: [],
+            summary: { ...teacherDialog, unread_count: teacherSyncMessages.length ? 1 : 0 },
+          }),
+        });
+      });
       const pendingTeacherPersonalInbox = [];
       await teacherPage.route("**/api/panel/personal-conversations", route => {
         pendingTeacherPersonalInbox.push(route);
@@ -234,6 +272,59 @@ test("global SSE updates real counters across tabs and replays missed events", {
       await teacherPage.getByText("В разработке").waitFor({ state: "visible" });
       await teacherPage.getByRole("button", { name: "Диалоги", exact: true }).click();
       await teacherPage.locator(".chat-list").waitFor({ state: "visible" });
+      await teacherPage.getByRole("button", { name: /Тестовый ученик/ }).click();
+      await teacherPage.getByText("Открытый диалог учителя").waitFor({ state: "visible" });
+      await teacherPage.locator(".chat-composer textarea").fill("Черновик преподавателя");
+      await teacherPage.evaluate(() => {
+        window.__teacherDialogNodes = [".chat-head", ".messages", ".chat-composer", ".chat-composer textarea"]
+          .map(selector => document.querySelector(selector));
+      });
+      const teacherNodesAreStable = () => teacherPage.evaluate(() =>
+        [".chat-head", ".messages", ".chat-composer", ".chat-composer textarea"]
+          .every((selector, index) => document.querySelector(selector) === window.__teacherDialogNodes[index]));
+      await teacherPage.waitForFunction(() => Boolean(window.__teacherTestStream));
+      const syncBeforeReceipt = teacherSyncRequests;
+      await teacherPage.evaluate(() => window.__teacherTestStream.dispatchEvent(
+        new MessageEvent("update", { data: JSON.stringify({
+          event_id: 901,
+          conversation_id: 15,
+          conversation_type: "conversation",
+          action: "read",
+          actor_role: "student",
+          message_ids: [11],
+          read_at: "2026-11-23T10:02:00+00:00",
+          summary: { id: 15, unread_count: 0 },
+        }) }),
+      ));
+      await teacherPage.getByLabel("Прочитано в UknowApp").waitFor({ state: "visible" });
+      assert.equal(teacherSyncRequests, syncBeforeReceipt, "a read receipt does not refetch teacher messages");
+      assert.equal(await teacherNodesAreStable(), true, "read receipt must not remount teacher dialog");
+      teacherSyncMessages = [{
+        id: 12,
+        sender: "Тестовый ученик",
+        sender_role: "student",
+        text: "Новое сообщение ученика",
+        content_type: "text",
+        metadata: {},
+        delivery_status: "delivered",
+        panel_read_at: null,
+        created_at: "2026-11-23T10:03:00+00:00",
+      }];
+      await teacherPage.evaluate(() => window.__teacherTestStream.dispatchEvent(
+        new MessageEvent("update", { data: JSON.stringify({
+          event_id: 902,
+          conversation_id: 15,
+          conversation_type: "conversation",
+          action: "upsert",
+          message_id: 12,
+          summary: { id: 15, unread_count: 1, last_message_at: "2026-11-23T10:03:00+00:00" },
+        }) }),
+      ));
+      await teacherPage.getByText("Новое сообщение ученика").waitFor({ state: "visible" });
+      assert.ok(teacherSyncRequests > syncBeforeReceipt, "new student message must sync into teacher chat");
+      assert.equal(await teacherNodesAreStable(), true, "incoming message must not remount teacher dialog");
+      assert.equal(await teacherPage.locator(".chat-composer textarea").inputValue(), "Черновик преподавателя",
+        "incoming message must preserve teacher draft");
       await teacherPage.getByRole("button", { name: "Структура", exact: true }).click();
       await teacherPage.getByText("Тестовый ученик").waitFor({ state: "visible" });
     } finally {
@@ -2407,6 +2498,10 @@ test("global SSE updates real counters across tabs and replays missed events", {
         .getByRole("button", { name: "Отмена" }).click();
     }
     await page.setViewportSize(originalViewport);
+    await page.evaluate(() => {
+      window.__readReceiptNodes = [".chat-head", ".messages", ".chat-composer"]
+        .map(selector => document.querySelector(selector));
+    });
     publish({
       event_id: 102,
       conversation_id: 5,
@@ -2418,7 +2513,12 @@ test("global SSE updates real counters across tabs and replays missed events", {
       summary: summary(0),
     });
     await page.getByLabel("Прочитано в UknowApp").waitFor({ state: "visible" });
-    await waitFor(() => syncRequests > 0);
+    assert.equal(await page.evaluate(() =>
+      [".chat-head", ".messages", ".chat-composer"]
+        .every((selector, index) => document.querySelector(selector) === window.__readReceiptNodes[index])),
+    true, "read receipt must keep the active chat DOM intact");
+    await delay(150);
+    assert.equal(syncRequests, 0, "read receipts should not request a redundant message sync");
 
     await page.getByRole("button", { name: "Доски" }).click();
     await waitFor(() => streams.size === 1);
@@ -2441,7 +2541,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     await page.getByLabel("2 непрочитанных личных сообщений").waitFor({ state: "visible" });
     assert.equal(inboxRequests, 1, "SSE reconnect must not reload inbox lists when replay is sufficient");
     assert.equal(personalRequests, 1, "SSE reconnect must not reload personal lists when replay is sufficient");
-    assert.ok(syncRequests > 0, "opening a dialog and a read event must reconcile only that dialog");
+    assert.equal(syncRequests, 0, "read receipts were already applied without requesting a full sync");
     // SSE: новое сообщение (даже когда читатель прокрутил историю вверх)
     // должно появиться в зоне видимости без скролла всей страницы.
     await page.getByRole("button", { name: /Учитель/ }).click();
@@ -2450,6 +2550,11 @@ test("global SSE updates real counters across tabs and replays missed events", {
       el.style.height = "120px";
       el.style.maxHeight = "120px";
       el.style.overflowY = "auto";
+    });
+    await page.locator(".chat-composer textarea").fill("Черновик остаётся при входящем сообщении");
+    await page.evaluate(() => {
+      window.__upsertNodes = [".chat-head", ".messages", ".chat-composer", ".chat-composer textarea"]
+        .map(selector => document.querySelector(selector));
     });
     syncNewMessages = Array.from({ length: 32 }, (_, index) => ({
       id: index + 78,
@@ -2472,6 +2577,13 @@ test("global SSE updates real counters across tabs and replays missed events", {
       summary: summary(3),
     });
     await page.getByText("Новое сообщение для автопрокрутки").waitFor({ state: "visible" });
+    assert.equal(await page.evaluate(() =>
+      [".chat-head", ".messages", ".chat-composer", ".chat-composer textarea"]
+        .every((selector, index) => document.querySelector(selector) === window.__upsertNodes[index])),
+    true, "an incoming message must preserve the open dialog's DOM");
+    assert.equal(await page.locator(".chat-composer textarea").inputValue(),
+      "Черновик остаётся при входящем сообщении");
+    assert.ok(syncRequests > 0, "incoming messages still request targeted synchronization");
     await page.waitForFunction(() => {
       const history = document.querySelector(".messages");
       return history && history.scrollHeight > history.clientHeight &&

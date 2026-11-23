@@ -94,8 +94,8 @@ test("participant list stays stacked while open dialog title has inline names an
   assert.ok(styles.includes('.chat-head-person > .participant-dialog-title {'));
   assert.ok(styles.includes('flex-direction:row;'));
   assert.ok(styles.includes('.participant-dialog-title > [data-chat-name-role] {'));
-  assert.match(chats, /<b><span data-chat-name-role="teacher">\{chat\.teacher\.full_name\}<\/span><\/b>/);
-  assert.match(chats, /<b><span data-chat-name-role="student">\{chat\.student\.full_name\}<\/span><\/b>/);
+  assert.match(chats, /<b><span data-chat-name-role="teacher">\{row\(\)\.teacher\.full_name\}<\/span><\/b>/);
+  assert.match(chats, /<b><span data-chat-name-role="student">\{row\(\)\.student\.full_name\}<\/span><\/b>/);
   assert.match(chats, /<ToolbarSelect\s+class="chat-message-filter"/);
   assert.match(chats, /Напишите сообщение... его увидят ученик и учитель/);
   assert.match(styles, /\.participant-chat-names \{[^}]*display:grid;/s);
