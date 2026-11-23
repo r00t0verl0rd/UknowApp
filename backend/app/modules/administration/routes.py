@@ -115,14 +115,6 @@ def create_user(payload: dict, _: UserManagement, db: Db):
                 db, user.id, MessengerPlatform.TELEGRAM,
                 str(user.telegram_id), external_chat_id=str(user.telegram_id),
             )
-        if issued_access_code:
-            now = datetime.now(UTC)
-            db.add(ConnectionCode(
-                user_id=user.id,
-                code_hash=hashlib.sha256(issued_access_code.replace("-", "").encode("utf-8")).hexdigest(),
-                created_at=now,
-                expires_at=now + timedelta(days=36500),
-            ))
         db.commit()
         db.refresh(user)
     except (IntegrityError, MessengerAccountConflict) as exc:
@@ -160,15 +152,7 @@ def update_user(user_id: int, payload: dict, _: UserManagement, db: Db):
         user.web_username = None
 
     role_changed = "role" in changes and changes["role"] != user.role
-    active_access_codes = db.scalars(
-        select(ConnectionCode).where(
-            ConnectionCode.user_id == user.id,
-            ConnectionCode.used_at.is_(None),
-            ConnectionCode.expires_at > datetime.now(UTC),
-        ),
-    ).all()
-    has_active_access_code = bool(user.web_password_hash and active_access_codes)
-    if has_web_panel and (role_changed or not has_active_access_code):
+    if has_web_panel and not user.web_password_hash:
         issued_access_code = generate_panel_access_code()
         user.web_password_hash = hash_web_password(issued_access_code)
     elif not has_web_panel:
@@ -194,16 +178,7 @@ def update_user(user_id: int, payload: dict, _: UserManagement, db: Db):
             if len(value) < 2:
                 raise HTTPException(status_code=400, detail="Имя должно содержать минимум два символа")
         setattr(user, field, value)
-    if issued_access_code:
-        now = datetime.now(UTC)
-        db.query(ConnectionCode).filter(ConnectionCode.user_id == user.id).delete(synchronize_session=False)
-        db.add(ConnectionCode(
-            user_id=user.id,
-            code_hash=hashlib.sha256(issued_access_code.replace("-", "").encode("utf-8")).hexdigest(),
-            created_at=now,
-            expires_at=now + timedelta(days=36500),
-        ))
-    elif not has_web_panel:
+    if role_changed or not has_web_panel:
         db.query(ConnectionCode).filter(ConnectionCode.user_id == user.id).delete(synchronize_session=False)
     try:
         if "telegram_id" in changes:
@@ -232,14 +207,6 @@ def regenerate_panel_access_code(user_id: int, _: UserManagement, db: Db):
         raise HTTPException(status_code=404, detail="Участник не найден")
     issued_access_code = generate_panel_access_code()
     user.web_password_hash = hash_web_password(issued_access_code)
-    now = datetime.now(UTC)
-    db.query(ConnectionCode).filter(ConnectionCode.user_id == user.id).delete(synchronize_session=False)
-    db.add(ConnectionCode(
-        user_id=user.id,
-        code_hash=hashlib.sha256(issued_access_code.replace("-", "").encode("utf-8")).hexdigest(),
-        created_at=now,
-        expires_at=now + timedelta(days=36500),
-    ))
     db.query(PanelSession).filter(
         PanelSession.role == user.role,
         PanelSession.user_id == user.id,
@@ -347,30 +314,27 @@ def generate_connection_code(user_id: int, _: UserManagement, db: Db):
     if not user or user.role not in {"teacher", "student"}:
         raise HTTPException(status_code=404, detail="Учитель или ученик не найден")
 
-    access_code = generate_panel_access_code()
-    user.web_password_hash = hash_web_password(access_code)
-    db.query(PanelSession).filter(
-        PanelSession.role == user.role,
-        PanelSession.user_id == user.id,
-    ).delete(synchronize_session=False)
+    if user.telegram_id is not None:
+        raise HTTPException(status_code=409, detail="Telegram уже подключён")
 
+    code = generate_panel_access_code()
     now = datetime.now(UTC)
+    expires_at = now + timedelta(minutes=30)
     db.query(ConnectionCode).filter(ConnectionCode.user_id == user.id).delete(synchronize_session=False)
     db.add(ConnectionCode(
         user_id=user.id,
-        code_hash=hashlib.sha256(access_code.replace("-", "").encode("utf-8")).hexdigest(),
+        code_hash=hashlib.sha256(code.replace("-", "").encode("utf-8")).hexdigest(),
         created_at=now,
-        expires_at=now + timedelta(days=36500),
+        expires_at=expires_at,
     ))
     db.commit()
-    db.refresh(user)
     return {
-        "code": access_code,
-        "expires_at": None,
-        "lifetime_minutes": None,
+        "code": code,
+        "expires_at": expires_at,
+        "lifetime_minutes": 30,
         "user": user.full_name,
         "role": user.role,
-        "shared_access": True,
+        "shared_access": False,
     }
 
 @router.post("/admin/assignments", status_code=201)

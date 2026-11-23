@@ -166,12 +166,15 @@ export default function UserDialogs(options) {
                       autoComplete="off"
                     />
                   </div>
+                  {options.modal.mode !== "edit" && (
+                    <p class="hint">Код входа появится после сохранения участника. Код для Telegram выдаётся отдельно.</p>
+                  )}
                   {options.modal.mode === "edit" &&
                     options.users.find((user) => user.id === options.modal.id)?.role === options.role && (
                       <div class="panel-credential-row panel-access-row">
-                        <span>Код доступа</span>
+                        <span>Код входа в UknowApp</span>
                         <div class="panel-access-value">
-                          <b>XXXX-XXXX</b>
+                          <b>Скрыт</b>
                           <Button
                             variant="outline"
                             class="password-code-refresh"
@@ -180,7 +183,7 @@ export default function UserDialogs(options) {
                             title="Старый код сразу перестанет действовать"
                           >
                             <RefreshCw size={16} />
-                            Новый код
+                            Перевыпустить
                           </Button>
                         </div>
                       </div>
@@ -229,8 +232,8 @@ export default function UserDialogs(options) {
 
       {options.modal?.mode === "edit" && confirmNewCode() && (
         <ConfirmDialog
-          eyebrow="Код доступа"
-          title="Выдать новый код?"
+          eyebrow="Код входа"
+          title="Перевыпустить код входа?"
           titleId="new-access-code-title"
           busy={options.savingUser}
           tone="primary"
@@ -241,7 +244,7 @@ export default function UserDialogs(options) {
             await options.regeneratePanelAccessCode();
           }}
         >
-          Новый код можно будет скопировать сразу после создания. Старый код перестанет работать.
+          Старый код входа сразу перестанет работать, а участнику потребуется войти заново. Скопируйте новый код и передайте его участнику. Подключение Telegram сохранится.
         </ConfirmDialog>
       )}
 
@@ -299,11 +302,7 @@ export default function UserDialogs(options) {
         <Modal onClose={() => options.setIssuedCredential(null)} class="credential-modal">
           <div class="modal-head">
             <div>
-              <div class="eyebrow">
-                {options.issuedCredential.role === "student"
-                  ? "Доступ ученика"
-                  : "Доступ преподавателя"}
-              </div>
+              <div class="eyebrow">Вход в UknowApp</div>
               <h2>{options.issuedCredential.full_name}</h2>
             </div>
             <IconButton onClick={() => options.setIssuedCredential(null)}>
@@ -329,14 +328,14 @@ export default function UserDialogs(options) {
             </div>
           </div>
           <div class="credential-field credential-field-code">
-            <div class="credential-field-label">Код доступа</div>
+            <div class="credential-field-label">Код входа</div>
             <div class="credential-field-value">
               <b>{options.issuedCredential.code}</b>
               <IconButton
                 onClick={async () =>
                   options.notify(
                     (await copyText(options.issuedCredential.code))
-                      ? "Код доступа скопирован"
+                      ? "Код входа скопирован"
                       : "Не удалось скопировать код доступа",
                   )
                 }
@@ -354,7 +353,7 @@ export default function UserDialogs(options) {
                   (await copyText(
                     "Логин: " +
                       options.issuedCredential.username +
-                      "\nКод доступа: " +
+                      "\nКод входа: " +
                       options.issuedCredential.code,
                   ))
                     ? "Данные для входа скопированы"
@@ -382,9 +381,7 @@ export default function UserDialogs(options) {
           </div>
           <div class="invite-code">{options.code.code}</div>
           <p class="hint">
-            {options.code.shared_access
-              ? "Код подходит для входа в UknowApp (вместе с логином) и подключения Telegram. Он действует до выдачи нового кода."
-              : "Передайте код ученику для подключения Telegram. Использовать его можно только один раз."}
+            Передайте этот код участнику, чтобы он отправил его боту UknowSchool в Telegram. Код действует 30 минут и используется один раз. Логин и код входа в UknowApp сохраняются.
           </p>
           <div class="modal-actions">
             <Button variant="ghost" onClick={() => options.setCode(null)}>

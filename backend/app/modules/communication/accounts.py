@@ -7,7 +7,7 @@ import re
 from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -152,7 +152,7 @@ def claim_messenger_connection_code(
     external_chat_id: str,
     username: str | None = None,
 ) -> tuple[User | None, str]:
-    """Привязать аккаунт по постоянному коду доступа."""
+    """Привязать аккаунт по одноразовому коду подключения."""
     normalized = re.sub(r"[\s-]", "", raw_code).upper()
     if not CONNECTION_CODE_RE.fullmatch(normalized):
         return None, "invalid_format"
@@ -165,7 +165,7 @@ def claim_messenger_connection_code(
         return None, "invalid"
 
     user = db.get(User, connection_code.user_id)
-    if not user or user.role not in {"teacher", "student"} or not user.web_password_hash:
+    if not user or user.role not in {"teacher", "student"}:
         return None, "invalid"
 
     expires_at = connection_code.expires_at
@@ -174,7 +174,7 @@ def claim_messenger_connection_code(
     now = datetime.now(UTC)
     if expires_at <= now:
         return None, "expired"
-    if expires_at <= now + timedelta(days=365):
+    if expires_at > now + timedelta(days=365):
         return None, "invalid"
     if connection_code.used_at is not None:
         return None, "invalid"
@@ -197,10 +197,17 @@ def claim_messenger_connection_code(
             telegram_id = int(external_user_id)
         except (TypeError, ValueError):
             return None, "invalid"
-        # Сохраняем поле старого API для совместимости.
-        user.telegram_id = telegram_id
-
     try:
+        claimed = db.execute(
+            update(ConnectionCode)
+            .where(ConnectionCode.id == connection_code.id, ConnectionCode.used_at.is_(None))
+            .values(used_at=now),
+        )
+        if claimed.rowcount != 1:
+            db.rollback()
+            return None, "invalid"
+        if platform == MessengerPlatform.TELEGRAM:
+            user.telegram_id = telegram_id
         sync_messenger_account(
             db, user.id, platform, external_user_id, external_chat_id, username,
         )
