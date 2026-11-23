@@ -558,9 +558,10 @@ async def _deliver_student_message_to_teacher(
         db, conversation, message_id=row.id, action="delivery",
         sender_role=row.sender_role,
     )
-    teacher_session = db.get(TeacherSession, teacher.id)
-    if teacher_session and teacher_session.conversation_id != conversation.id:
-        clear_teacher_session(db, teacher)
+    # Keep the teacher's current selection when another student writes.
+    # Resetting it changes the reply keyboard and forces Telegram to send a
+    # replacement panel and delete the old one (visible flicker/extra alert).
+    # Unread messages remain available from the student list.
 
 
 async def _deliver_teacher_reply(
@@ -739,7 +740,6 @@ async def process_inbound_message(
         if duplicate:
             return InboundProcessResult(
                 refresh_teacher_id=conversation.teacher_id,
-                force_teacher_panel_refresh=sender.role == "student",
             )
 
     if contact_would_be_exposed(inbound):
@@ -769,7 +769,6 @@ async def process_inbound_message(
     if not created:
         return InboundProcessResult(
             refresh_teacher_id=conversation.teacher_id,
-            force_teacher_panel_refresh=sender.role == "student",
         )
     metadata = json.loads(row.metadata_json or "{}")
     metadata["source_mode"] = "group_topic" if group_binding else "private"
@@ -822,7 +821,6 @@ async def process_inbound_message(
 
         return InboundProcessResult(
             refresh_teacher_id=conversation.teacher_id,
-            force_teacher_panel_refresh=sender.role == "student",
         )
 
     try:
