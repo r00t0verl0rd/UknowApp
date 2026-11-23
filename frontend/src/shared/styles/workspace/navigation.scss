@@ -1,0 +1,193 @@
+@use "../core/primitives";
+.workspace-shell {
+  .sidebar nav {
+    display:grid;
+    gap:4px;
+  }
+  .sidebar-bottom {
+    margin-top:auto;
+    @include primitives.stack;
+    align-items:stretch;
+    gap:4px;
+  }
+  .sidebar-bottom > .ui-menu-control {
+    width:100%;
+    margin:0;
+  }
+}
+:root .workspace-shell {
+  .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control[aria-current="page"] {
+    &, &:hover {
+      @include primitives.selected;
+      box-shadow:0 0 0 1px var(--ui-selected-outline);
+    }
+    &:focus-visible {
+      box-shadow:none;
+    }
+  }
+  .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control,
+  .workspace-content .graph-add-participant.ui-menu-control {
+    box-sizing:border-box;
+    display:inline-flex;
+    align-items:center;
+    justify-content:flex-start;
+    min-height:var(--workspace-control-height);
+    line-height:1.35;
+    letter-spacing:-0.01em;
+    text-decoration:none;
+    text-align:left;
+    transition:
+      background-color var(--ui-transition-fast),
+      border-color var(--ui-transition-fast),
+      color var(--ui-transition-fast);
+  }
+  .workspace-content .graph-add-participant.ui-menu-control {
+    justify-content:center;
+    flex:0 0 auto;
+    align-self:stretch;
+    min-width:0;
+    max-width:52%;
+    height:auto;
+    margin-left:0;
+    white-space:nowrap;
+  }
+  .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control > svg,
+  .workspace-content .graph-add-participant.ui-menu-control > svg {
+    flex:0 0 18px;
+    width:18px;
+    height:18px;
+    stroke-width:1.9;
+  }
+  .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control:focus-visible,
+  .workspace-content .graph-add-participant.ui-menu-control:focus-visible {
+    outline:2px solid var(--purple);
+    outline-offset:2px;
+  }
+}
+@media (min-width: 1025px) {
+  :root .workspace-shell .sidebar .sidebar-bottom > button.ui-menu-control.desktop-sidebar-logout {
+    margin-top:8px;
+  }
+}
+:root .workspace-shell {
+  :is(.person-info b, .admin-card b) {
+    font-weight:650;
+  }
+  .graph-legend {
+    font-weight:600;
+  }
+}
+@media (max-width: 1024px) {
+  .workspace-shell {
+    .sidebar .school-label {
+      display:none;
+    }
+    .sidebar nav {
+      display:flex;
+      gap:4px;
+      overflow-x:auto;
+      scrollbar-width:none;
+    }
+    .sidebar nav::-webkit-scrollbar {
+      display:none;
+    }
+    .sidebar-bottom {
+      position:absolute;
+      top:calc(10px + env(safe-area-inset-top, 0px));
+      right:12px;
+      display:flex;
+      margin:0;
+    }
+  }
+  :root .workspace-shell {
+    .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control {
+      flex:1 0 auto;
+      min-width:0;
+      min-height:var(--workspace-control-height);
+      justify-content:center;
+      white-space:nowrap;
+    }
+    .workspace-content .graph-add-participant.ui-menu-control {
+      flex:0 1 auto;
+      min-height:38px;
+      max-width:52%;
+      text-align:center;
+    }
+    .workspace-content .graph-add-participant.ui-menu-control > svg {
+      flex:0 0 15px;
+      width:15px;
+      height:15px;
+    }
+  }
+}
+:root .workspace-shell {
+  .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control,
+  .workspace-content .graph-add-participant.ui-menu-control {
+    -webkit-appearance:none;
+    appearance:none;
+    padding:10px 12px;
+    gap:10px;
+    border:1px solid var(--menu-border);
+    border-radius:var(--ui-radius-sm);
+    background:var(--menu-bg);
+    background-image:none;
+    color:var(--menu-text);
+    box-shadow:none;
+    font-family:var(--font-family-ui);
+    font-size:13px;
+    font-weight:600;
+  }
+  .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control:hover:not(:disabled),
+  .workspace-content .graph-add-participant.ui-menu-control:hover:not(:disabled) {
+    background:var(--menu-hover-bg);
+    border-color:var(--menu-hover-border);
+    color:var(--menu-text);
+    box-shadow:none;
+  }
+}
+:root
+  .workspace-shell
+  .sidebar
+  .sidebar-bottom
+  > button.ui-menu-control:is(.desktop-admin-extra, .desktop-sidebar-logout) {
+  display:none;
+}
+@media (min-width: 1025px) {
+  :root
+    .workspace-shell
+    .sidebar
+    .sidebar-bottom
+    > button.ui-menu-control:is(.desktop-admin-extra, .desktop-sidebar-logout) {
+    display:flex;
+  }
+}
+:root .workspace-shell :is(.person-info b, .admin-card b, .school-label, .graph-legend) {
+  font-family:var(--font-family-ui);
+}
+@media (max-width: 1024px) {
+  :root .workspace-shell {
+    .sidebar :is(nav, .sidebar-bottom) > button.ui-menu-control {
+      padding:9px 8px;
+      font-size:clamp(11px, 3vw, 13px);
+      gap:5px;
+    }
+    .workspace-content .graph-add-participant.ui-menu-control {
+      padding:8px 10px;
+      font-size:clamp(11px, 3vw, 13px);
+      gap:6px;
+    }
+  }
+}
+:root[data-theme="dark-soft"] .workspace-shell .workspace-content:has(.admin-card) {
+  button.graph-add-participant.ui-menu-control {
+    background:var(--menu-bg);
+    background-image:none;
+    border-color:var(--menu-border);
+    color:var(--menu-text);
+  }
+  button.graph-add-participant.ui-menu-control:hover:not(:disabled) {
+    background:var(--menu-hover-bg);
+    border-color:var(--menu-hover-border);
+    color:var(--menu-text);
+  }
+}

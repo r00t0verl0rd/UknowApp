@@ -1,0 +1,261 @@
+import { For } from "solid-js";
+import { dynamic } from "@solidjs/web";
+import { createSignal, createEffect } from "solid-js";
+import {
+  IconLogOut as LogOut,
+  IconMoon as Moon,
+  IconSun as Sun,
+  IconInfo as Info,
+} from "../shared/components/Icons.jsx";
+import Button from "../shared/components/Button.jsx";
+import ConfirmDialog from "../shared/components/ConfirmDialog.jsx";
+import IconButton from "../shared/components/IconButton.jsx";
+
+// Одна разметка и один источник состояния для всех пунктов меню.
+function SidebarControl(options) {
+  const Icon = dynamic(() => options.icon);
+  return (
+    <button
+      type="button"
+      class={["ui-menu-control", options.class ?? ""].filter(Boolean).join(" ")}
+      aria-current={(options.current ?? false) ? "page" : undefined}
+      onClick={options.onClick}
+    >
+      <Icon size={18} aria-hidden="true" />
+      {options.children}
+    </button>
+  );
+}
+export default function WorkspaceLayout(options) {
+  const additionalItem = () =>
+    options.role === "admin" ? options.navigation.find((item) => item.page === "additional") : null;
+  const [showSignOutConfirm, setShowSignOutConfirm] = createSignal(false);
+  const [signingOut, setSigningOut] = createSignal(false);
+  let contentRef = null;
+  let sidebarRef = null;
+  let shellRef = null;
+  createEffect(
+    () => [options.page],
+    () => {
+      contentRef.scrollTop = 0;
+      // В мобильном Safari нативный document — единственный скроллер.
+      if (window.matchMedia("(max-width: 1024px) and (display-mode: browser)").matches) {
+        window.scrollTo(0, 0);
+      }
+    },
+  );
+
+  // Меняем CSS-переменные только при реальном изменении размеров, не на каждый
+  // resize ширины: иначе WebKit/Chromium пересчитывают стили всего документа.
+  createEffect(
+    () => [],
+    () => {
+      const root = document.documentElement;
+      const viewport = window.visualViewport;
+      if (!viewport) return undefined;
+      let frame = 0;
+      let previousHeight = -1;
+      let previousTop = NaN;
+      let unobstructedHeight = Math.max(window.innerHeight, viewport.height);
+      let keyboardOpen = false;
+      const editorFocused = () =>
+        document.activeElement?.matches?.(
+          "textarea, input:is([type='text'], [type='search'], [type='email'], [type='password'], [type='tel'], [type='url'], [type='number'], :not([type])), [contenteditable='true']",
+        ) ?? false;
+      const measureViewport = () => {
+        frame = 0;
+        const height = Math.round(viewport.height);
+        const top = Math.round(viewport.offsetTop);
+        if (!Number.isFinite(height) || height <= 0) return;
+        const editing = editorFocused();
+        if (!editing) unobstructedHeight = Math.max(window.innerHeight, viewport.height);
+        const open = window.matchMedia("(max-width: 1024px)").matches &&
+          editing && viewport.scale <= 1.1 &&
+          Math.max(unobstructedHeight, window.innerHeight) - height >= 140;
+        if (open !== keyboardOpen) {
+          keyboardOpen = open;
+          if (open) root.setAttribute("data-workspace-keyboard", "open");
+          else root.removeAttribute("data-workspace-keyboard");
+        }
+        if (height !== previousHeight) {
+          root.style.setProperty("--workspace-viewport-height", `${height}px`);
+          previousHeight = height;
+        }
+        if (top !== previousTop) {
+          root.style.setProperty("--workspace-viewport-top", `${top}px`);
+          previousTop = top;
+        }
+      };
+      const scheduleViewport = () => {
+        if (!frame) frame = window.requestAnimationFrame(measureViewport);
+      };
+      measureViewport();
+      viewport.addEventListener("resize", scheduleViewport);
+      viewport.addEventListener("scroll", scheduleViewport, { passive: true });
+      window.addEventListener("resize", scheduleViewport);
+      window.addEventListener("orientationchange", scheduleViewport);
+      window.addEventListener("pageshow", scheduleViewport);
+      document.addEventListener("focusin", scheduleViewport);
+      document.addEventListener("focusout", scheduleViewport);
+      return () => {
+        if (frame) window.cancelAnimationFrame(frame);
+        viewport.removeEventListener("resize", scheduleViewport);
+        viewport.removeEventListener("scroll", scheduleViewport);
+        window.removeEventListener("resize", scheduleViewport);
+        window.removeEventListener("orientationchange", scheduleViewport);
+        window.removeEventListener("pageshow", scheduleViewport);
+        document.removeEventListener("focusin", scheduleViewport);
+        document.removeEventListener("focusout", scheduleViewport);
+        root.removeAttribute("data-workspace-keyboard");
+        root.style.removeProperty("--workspace-viewport-height");
+        root.style.removeProperty("--workspace-viewport-top");
+      };
+    },
+  );
+
+  // ResizeObserver уже сообщает измеренную высоту: не читаем layout на каждом
+  // window.resize и не обновляем отступ, когда ширина меняется без переноса меню.
+  createEffect(
+    () => [],
+    () => {
+      const sidebar = sidebarRef;
+      const shell = shellRef;
+      if (!sidebar || !shell) return undefined;
+      const mobile = window.matchMedia("(max-width: 1024px)");
+      let previousHeight = -1;
+      const syncSidebarHeight = (entry) => {
+        if (!mobile.matches) return;
+        const box = entry?.borderBoxSize;
+        const measuredHeight = (Array.isArray(box) ? box[0]?.blockSize : box?.blockSize)
+          ?? sidebar.getBoundingClientRect().height;
+        const height = Math.ceil(measuredHeight);
+        if (height > 0 && height !== previousHeight) {
+          shell.style.setProperty("--workspace-sidebar-height", `${height}px`);
+          previousHeight = height;
+        }
+      };
+      const observer = typeof ResizeObserver === "function"
+        ? new ResizeObserver(([entry]) => syncSidebarHeight(entry))
+        : null;
+      const onBreakpointChange = () => {
+        if (mobile.matches) {
+          observer?.observe(sidebar);
+          syncSidebarHeight();
+        } else {
+          // На десктопе наблюдение не нужно: sidebar меняет ширину на каждом пикселе.
+          observer?.unobserve(sidebar);
+        }
+      };
+      mobile.addEventListener("change", onBreakpointChange);
+      if (!observer) window.addEventListener("resize", onBreakpointChange);
+      onBreakpointChange();
+      return () => {
+        observer?.disconnect();
+        mobile.removeEventListener("change", onBreakpointChange);
+        if (!observer) window.removeEventListener("resize", onBreakpointChange);
+        shell.style.removeProperty("--workspace-sidebar-height");
+      };
+    },
+  );
+  const confirmSignOut = async () => {
+    if (signingOut()) return;
+    setSigningOut(true);
+    await options.signOut();
+  };
+  const themeToggle = () => (
+    <IconButton
+      class="theme-toggle"
+      onClick={options.toggleTheme}
+      title={options.theme === "dark-soft" ? "Светлая тема" : "Тёмная soft-тема"}
+      aria-label={options.theme === "dark-soft" ? "Включить светлую тему" : "Включить тёмную soft-тему"}
+    >
+      {options.theme === "dark-soft" ? <Sun size={17} /> : <Moon size={17} />}
+    </IconButton>
+  );
+  return (
+    <div ref={shellRef} class={`shell workspace-shell workspace-${options.role}`}>
+      <aside ref={sidebarRef} class="sidebar">
+        <div class="brand">
+          <img src="/logo-main.svg" alt="" />
+          <span>
+            Uknow<span>App</span>
+          </span>
+        </div>
+        <div class="school-label">{options.label}</div>
+        <nav aria-label="Основная навигация">
+          <For each={options.navigation.filter((item) => item.page !== "additional")}>
+            {(item) => (
+              <SidebarControl
+                icon={item.icon}
+                current={options.page === item.page}
+                onClick={() => options.setPage(item.page)}
+              >
+                {item.label}
+              </SidebarControl>
+            )}
+          </For>
+        </nav>
+        <div class="sidebar-bottom">
+          {additionalItem() && (
+            <SidebarControl
+              icon={Info}
+              class="desktop-admin-extra"
+              current={options.page === additionalItem().page}
+              onClick={() => options.setPage(additionalItem().page)}
+            >
+              {additionalItem().label}
+            </SidebarControl>
+          )}
+          <SidebarControl
+            icon={LogOut}
+            class="desktop-sidebar-logout"
+            onClick={() => setShowSignOutConfirm(true)}
+          >
+            Выход
+          </SidebarControl>
+          <div class="mobile-quick-actions">
+            {options.pushToggle}
+            {themeToggle()}
+            <IconButton onClick={() => setShowSignOutConfirm(true)} title="Выйти" aria-label="Выйти">
+              <LogOut />
+            </IconButton>
+          </div>
+        </div>
+      </aside>
+      <main class="content">
+        <header class="topbar">
+          <small class="topbar-user">{options.profile.full_name}</small>
+          <div class="topbar-actions">
+            {options.pushToggle}
+            {themeToggle()}
+          </div>
+        </header>
+        <div
+          ref={contentRef}
+          tabIndex={0}
+          class={"workspace-content" + (options.page === "additional" ? " page-additional" : "")}
+        >
+          {options.children}
+        </div>
+      </main>
+      {showSignOutConfirm() && (
+        <ConfirmDialog
+          eyebrow="ЗАВЕРШЕНИЕ СЕАНСА"
+          title="Выйти из аккаунта?"
+          titleId="sign-out-title"
+          describedBy="sign-out-description"
+          dismissible={false}
+          busy={signingOut()}
+          tone="primary"
+          cancelLabel="Нет"
+          confirmLabel="Да"
+          busyLabel="Выходим…"
+          onClose={() => setShowSignOutConfirm(false)}
+          onConfirm={confirmSignOut}
+        >
+          Вы действительно хотите выйти из аккаунта?
+        </ConfirmDialog>
+      )}
+    </div>
+  );
+}

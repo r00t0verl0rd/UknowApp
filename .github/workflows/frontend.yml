@@ -1,0 +1,101 @@
+name: Project checks
+
+# Only the newest run for a branch matters; never cancel a different PR or main.
+concurrency:
+  group: project-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - "backend/**"
+      - "docker-compose.yml"
+      - ".stylelintrc.json"
+      - ".github/workflows/frontend.yml"
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - "backend/**"
+      - "docker-compose.yml"
+      - ".stylelintrc.json"
+      - ".github/workflows/frontend.yml"
+
+jobs:
+  frontend:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      # Ubuntu 24.04 runners ship with Chrome; avoid apt installs and browser downloads.
+      CHROMIUM_PATH: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - name: Install browser test runtime
+        run: npm install --no-save playwright@1.56.1
+      - name: Verify system Chrome
+        run: |
+          test -x "$CHROMIUM_PATH"
+          "$CHROMIUM_PATH" --version
+      - name: Run UI and realtime browser integration tests
+        run: npm run test:browser
+      - name: Lint shared styles
+        run: npx --yes stylelint@16 'src/shared/styles/*.scss' --config ../.stylelintrc.json
+      - name: Audit CSS selectors against SolidJS sources
+        run: node scripts/audit-css.mjs
+
+
+  backup-function:
+    name: backup-function
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install backup test dependencies
+        run: python -m pip install -r requirements.txt pytest httpx
+      - name: Verify backup export, restore and rollback
+        run: python -m pytest -q tests/test_admin_data_backup.py tests/test_restore_startup.py
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: python -m pip install -r requirements.txt ruff vulture bandit detect-secrets pytest httpx
+      - run: ruff check app --extend-select BLE001,SIM115,B008
+      - run: vulture app --min-confidence 80
+      - run: bandit -r . -ll
+      - name: Block newly introduced secrets
+        run: git ls-files -z -- ':!.secrets.baseline' | xargs -0 detect-secrets-hook --baseline .secrets.baseline
+        working-directory: .
+      # Backup tests run once in the dedicated backup-function job.
+      - run: python -m pytest -q tests --ignore=tests/test_admin_data_backup.py --ignore=tests/test_restore_startup.py
+      - run: python -m compileall -q app

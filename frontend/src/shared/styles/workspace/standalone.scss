@@ -1,0 +1,6 @@
+@media (display-mode: standalone) and (max-width: 1024px) {
+  .workspace-shell > .sidebar {
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
+  }
+}

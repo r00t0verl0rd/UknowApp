@@ -1,0 +1,66 @@
+import { fetchApi, request } from "../../../shared/services/api.js";
+
+export function getChatMessages(request, chat, signal) {
+  const base = chat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
+  return request(base + chat.id + "/messages", { signal });
+}
+
+export function syncChatState(request, chat, afterId, knownMessageIds) {
+  const base = chat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
+  return request(base + chat.id + "/sync", {
+    method: "POST",
+    body: JSON.stringify({
+      after_id: Math.max(0, Number(afterId) || 0),
+      known_message_ids: knownMessageIds.slice(-5000),
+    }),
+  });
+}
+
+
+export function createPersonalConversation(request, userId) {
+  return request("/api/panel/personal-conversations", {
+    method: "POST",
+    body: JSON.stringify({ user_id: Number(userId) }),
+  });
+}
+
+export function deleteChatMessage(request, message, personal) {
+  const path = personal ? "/api/panel/personal-messages/" : "/api/panel/messages/";
+  return request(path + message.id, { method: "DELETE" });
+}
+
+export function sendPersonalMessage(request, chatId, text, clientMessageId) {
+  return request("/api/panel/personal-conversations/" + chatId + "/messages", {
+    method: "POST",
+    body: JSON.stringify({
+      text,
+      ...(clientMessageId ? { client_message_id: clientMessageId } : {}),
+    }),
+  });
+}
+
+export function sendConversationText(request, chatId, text, clientMessageId) {
+  return request("/api/panel/conversations/" + chatId + "/messages", {
+    method: "POST",
+    body: JSON.stringify({
+      text,
+      ...(clientMessageId ? { client_message_id: clientMessageId } : {}),
+    }),
+  });
+}
+
+export async function sendConversationAttachment(chatId, file, text, clientMessageId, personal = false) {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("text", text);
+  if (clientMessageId) form.append("client_message_id", clientMessageId);
+  const path = personal ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
+  return request(path + chatId + "/attachments", { method: "POST", body: form });
+}
+
+export async function getMessageMedia(messageId, signal, personal = false) {
+  const path = personal ? "/api/panel/personal-messages/" : "/api/panel/messages/";
+  const response = await fetchApi(path + messageId + "/media", { signal });
+  if (!response.ok) throw new Error("Не удалось загрузить вложение");
+  return response.blob();
+}

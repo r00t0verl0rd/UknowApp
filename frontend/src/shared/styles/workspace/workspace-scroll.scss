@@ -1,0 +1,442 @@
+@use "../core/primitives";
+:root[data-theme]:has(.workspace-shell),
+:root[data-theme] body:has(.workspace-shell),
+:root[data-theme] #root:has(.workspace-shell) {
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  overscroll-behavior:none;
+}
+.workspace-shell {
+  border-radius:0;
+  position:fixed;
+  inset:var(--workspace-viewport-top, 0px) 0 auto;
+  width:100%;
+  display:grid;
+  grid-template-columns:clamp(250px, 18vw, 280px) minmax(0, 1fr);
+  grid-template-rows:minmax(0, 1fr);
+  height:var(--workspace-viewport-height, 100dvh);
+  min-height:0;
+  overflow:hidden;
+}
+@supports not (height: 100dvh) {
+  .workspace-shell {
+    height:var(--workspace-viewport-height, 100vh);
+  }
+}
+.workspace-shell > .sidebar {
+  border-radius:0;
+}
+@media (min-width: 1025px) {
+  .workspace-shell > .sidebar {
+    min-height:0;
+  }
+}
+.workspace-shell {
+  > .content {
+    @include primitives.stack;
+    min-width:0;
+    min-height:0;
+    overflow:hidden;
+  }
+  > .content > .workspace-content {
+    flex:1 1 0;
+    width:100%;
+    max-width:1680px;
+    min-height:0;
+    margin-inline:auto;
+    padding:var(--workspace-gutter);
+    overflow:hidden auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;
+    padding-bottom:max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
+  }
+}
+.workspace-content:has(> .user-list, > .structure-scroll) {
+  @include primitives.stack;
+  gap:8px;
+}
+.workspace-content > .graph-legend-row,
+.chat-list > :is(.chat-list-actions, .chat-list-filters) {
+  flex:none;
+}
+// Контейнер прокрутки остаётся доступным с клавиатуры, но не рисует
+// декоративные полосы по краю экрана при восстановлении фокуса из диалога.
+// Фокус на интерактивных элементах подсвечивается отдельно.
+.workspace-content:focus-visible {
+  outline:none;
+  box-shadow:none;
+}
+@media (max-width: 1024px) {
+  .workspace-shell {
+    grid-template-columns:minmax(0, 1fr);
+    grid-template-rows:minmax(0, 1fr);
+  }
+  :root[data-theme] .workspace-shell > .sidebar {
+    position:absolute;
+    inset:0 0 auto;
+    grid-column:1;
+    grid-row:1;
+    z-index:50;
+    width:100%;
+    min-height:0;
+    max-height:100%;
+    overflow:hidden;
+    overscroll-behavior:none;
+    touch-action:pan-x;
+  }
+  .workspace-shell {
+    > .sidebar nav {
+      overscroll-behavior-x:contain;
+      touch-action:pan-x;
+    }
+    > .content {
+      grid-column:1;
+      grid-row:1;
+      width:100%;
+      height:100%;
+      padding-bottom:0;
+      min-height:0;
+    }
+    > .content > .workspace-content {
+      padding-top:calc(var(--workspace-sidebar-height, 140px) + var(--workspace-gutter));
+      padding-bottom:max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
+      scroll-padding-top:calc(var(--workspace-sidebar-height, 140px) + var(--workspace-gutter));
+      scroll-padding-bottom:max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
+    }
+  }
+}
+@media (max-width: 1024px) and (display-mode: browser) {
+  :root[data-theme]:has(.workspace-shell),
+  :root[data-theme] body:has(.workspace-shell),
+  :root[data-theme] #root:has(.workspace-shell) {
+    height:auto;
+    min-height:100lvh;
+    overflow-x:clip;
+    overflow-y:visible;
+    overscroll-behavior-y:auto;
+  }
+  :root[data-theme] {
+    .workspace-shell {
+      position:relative;
+      inset:auto;
+      grid-template-rows:auto minmax(0, 1fr);
+      height:auto;
+      min-height:100lvh;
+      overflow:visible;
+    }
+    .workspace-shell > .sidebar {
+      position:sticky;
+      inset:0 0 auto;
+      grid-column:1;
+      grid-row:1;
+      align-self:start;
+      z-index:50;
+      max-height:none;
+    }
+    .workspace-shell > .content {
+      grid-column:1;
+      grid-row:2;
+      height:auto;
+      min-height:calc(100lvh - var(--workspace-sidebar-height, 140px));
+      overflow:visible;
+    }
+    .workspace-shell > .content > .workspace-content {
+      flex:1 0 auto;
+      min-height:calc(100lvh - var(--workspace-sidebar-height, 140px));
+      overflow:visible;
+      padding-top:var(--workspace-gutter);
+      padding-bottom:max(104px, calc(env(safe-area-inset-bottom, 0px) + 78px));
+      scroll-padding-top:calc(var(--workspace-sidebar-height, 140px) + var(--workspace-gutter));
+    }
+  }
+  :root[data-theme] .workspace-shell:has(.mobile-chat-back) {
+    > .content {
+      min-height:0;
+    }
+    > .content > .workspace-content {
+      flex:0 0 auto;
+      margin-block:0;
+      height:max(
+        0px,
+        calc(min(var(--workspace-viewport-height, 100dvh), 100dvh) - var(--workspace-sidebar-height, 140px))
+      );
+      min-height:0;
+      overflow:hidden;
+      padding-top:var(--workspace-gutter);
+      padding-bottom:max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
+    }
+  }
+}
+@supports not (height: 100lvh) {
+  @media (max-width: 1024px) and (display-mode: browser) {
+    :root[data-theme]:has(.workspace-shell),
+    :root[data-theme] body:has(.workspace-shell),
+    :root[data-theme] #root:has(.workspace-shell),
+    :root[data-theme] .workspace-shell {
+      min-height:100vh;
+    }
+    :root[data-theme] .workspace-shell > .content,
+    :root[data-theme] .workspace-shell > .content > .workspace-content {
+      min-height:calc(100vh - var(--workspace-sidebar-height, 140px));
+    }
+  }
+}
+@media (max-width: 760px) {
+  .workspace-shell {
+    .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) {
+      @include primitives.stack;
+      overflow-y:auto;
+    }
+    .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) > .chat-list {
+      flex:1 0 auto;
+      max-height:none;
+      overflow:visible;
+    }
+    .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) > .chat-list > .chat-items {
+      flex:0 0 auto;
+      overflow:visible;
+    }
+  }
+}
+// Структура: стабильная построчная сетка. CSS columns балансировали
+// высоту колонок заново при сворачивании учеников и перемещали преподавателей.
+.workspace-content:has(.admin-card) {
+  > .graph-legend-row {
+    margin-bottom:8px;
+  }
+  > .structure-scroll {
+    > .admin-card {
+      width:min(100%, 240px);
+      min-height:58px;
+      margin-bottom:10px;
+      padding:6px 10px;
+    }
+    > .admin-card img {
+      flex:0 0 40px;
+      width:40px;
+      height:40px;
+    }
+    > .grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+      grid-auto-flow:row;
+      align-items:start;
+      gap:12px;
+      column-count:auto;
+    }
+    > .grid > .teacher-branch {
+      width:100%;
+      margin:0;
+      break-inside:auto;
+    }
+  }
+}
+// Действия структуры никогда не перемещаются под имя при сужении карточки.
+// Измеряет только CSS Grid: без ResizeObserver, вычислений JS и reflow при hover.
+.workspace-content:has(.admin-card) {
+  .unassigned-grid > .unassigned-student-card {
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) max-content;
+    align-items:center;
+    column-gap:clamp(4px, 0.7vw, 10px);
+  }
+  .unassigned-student-card > .person-main {
+    flex-wrap:nowrap;
+    width:100%;
+    min-width:0;
+  }
+  .unassigned-student-card > .unassigned-student-actions {
+    display:flex;
+    flex-wrap:nowrap;
+    flex:0 0 auto;
+    align-items:center;
+    justify-content:flex-end;
+    justify-self:end;
+    align-self:center;
+    width:max-content;
+    min-width:max-content;
+    white-space:nowrap;
+    margin:0;
+  }
+  .unassigned-student-actions > button {
+    flex-shrink:0;
+    white-space:nowrap;
+  }
+  .grid .teacher-card {
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) max-content;
+    align-items:center;
+  }
+  .grid .teacher-card > .person-main {
+    width:100%;
+    min-width:0;
+  }
+  .grid .teacher-card > .person-actions {
+    display:flex;
+    flex-wrap:nowrap;
+    align-items:center;
+    justify-self:end;
+    white-space:nowrap;
+  }
+  .student-list > .student-card {
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) max-content max-content;
+    align-items:center;
+    column-gap:clamp(3px, 0.5vw, 7px);
+  }
+  .student-list > .student-card > .person-main {
+    width:100%;
+    min-width:0;
+    flex-wrap:nowrap;
+  }
+  .student-list > .student-card > .graph-person-action {
+    justify-self:end;
+    flex-shrink:0;
+  }
+  :is(.teacher-card, .student-card) .person-info {
+    min-width:0;
+    max-width:100%;
+    container-type:inline-size;
+  }
+  :is(.teacher-card, .student-card) .person-info > b {
+    display:block;
+    max-width:100%;
+    overflow:hidden;
+    white-space:nowrap;
+    overflow-wrap:normal;
+    text-overflow:ellipsis;
+    font-size:clamp(10px, 10cqi, 13px);
+    line-height:1.3;
+  }
+  :is(.teacher-card, .student-card) .person-info > small {
+    display:block;
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+}
+:root[data-theme]:has(.workspace-shell) {
+  background:var(--workspace-background);
+}
+:root[data-theme] body:has(.workspace-shell),
+:root[data-theme] #root:has(.workspace-shell),
+:root[data-theme] .workspace-shell,
+:root[data-theme] .workspace-shell > .sidebar,
+:root[data-theme] .workspace-shell > .content,
+:root[data-theme] .workspace-shell > .content > .topbar,
+:root[data-theme] .workspace-shell > .content > .workspace-content {
+  background:transparent;
+}
+@media (max-width: 1024px) {
+  :root[data-theme] .workspace-shell > .sidebar {
+    background:var(--workspace-background);
+  }
+}
+
+
+// Когда Safari открывает программную клавиатуру, визуальный viewport становится
+// меньше layout viewport. В этом режиме используем единый фиксированный
+// контейнер: без конкуренции 100lvh, sticky sidebar и прокрутки документа.
+// Работает для поиска, форм, личных/обычных переписок всех ролей.
+@media (max-width: 1024px) {
+  :root[data-workspace-keyboard="open"] {
+    height:100%;
+    min-height:0;
+    overflow:hidden;
+    overscroll-behavior:none;
+
+    & body:has(.workspace-shell),
+    & #root:has(.workspace-shell) {
+      height:100%;
+      min-height:0;
+      overflow:hidden;
+      overscroll-behavior:none;
+    }
+    & .workspace-shell {
+      position:fixed;
+      inset:var(--workspace-viewport-top, 0px) 0 auto;
+      display:grid;
+      grid-template-columns:minmax(0, 1fr);
+      grid-template-rows:minmax(0, 1fr);
+      width:100%;
+      height:var(--workspace-viewport-height, 100dvh);
+      min-height:0;
+      overflow:hidden;
+    }
+    & .workspace-shell > .sidebar,
+    & .workspace-shell > .content > .topbar {
+      display:none;
+    }
+    & .workspace-shell > .content {
+      grid-column:1;
+      grid-row:1;
+      height:100%;
+      min-height:0;
+      overflow:hidden;
+    }
+    & .workspace-shell > .content > .workspace-content,
+    & .workspace-shell:has(.mobile-chat-back) > .content > .workspace-content {
+      display:flex;
+      flex-direction:column;
+      flex:1 1 0;
+      height:100%;
+      min-height:0;
+      max-height:100%;
+      overflow-y:auto;
+      overscroll-behavior-y:contain;
+      padding:var(--workspace-gutter);
+      scroll-padding:var(--workspace-gutter);
+    }
+    // Список переписок и открытый чат получают всю свободную высоту.
+    & .workspace-shell > .content > .workspace-content:has(> .chat-list) {
+      display:grid;
+      grid-template-columns:minmax(0, 1fr);
+      grid-template-rows:minmax(0, 1fr);
+      gap:0;
+      overflow:hidden;
+    }
+    & .workspace-content:has(> .chat-list) > :is(.chat-list, .chat-detail) {
+      grid-column:1;
+      grid-row:1;
+      height:100%;
+      min-height:0;
+      max-height:100%;
+      overflow:hidden;
+    }
+    & .workspace-content:has(> .chat-list):has(.mobile-chat-back) > .chat-list,
+    & .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) > .chat-detail {
+      display:none;
+    }
+    & .workspace-content:has(> .chat-list):has(.mobile-chat-back) > .chat-detail {
+      display:flex;
+      flex-direction:column;
+    }
+    & .workspace-content:has(> .chat-list) > .chat-detail > .messages {
+      flex:1 1 0;
+      min-height:0;
+      overflow-y:auto;
+      overscroll-behavior-y:contain;
+    }
+    & .workspace-content:has(> .chat-list) > .chat-detail > .chat-composer {
+      flex:0 0 auto;
+      max-height:none;
+      margin-top:6px;
+      margin-bottom:0;
+      overflow:visible;
+    }
+    & .chat-detail .chat-composer .composer-footer {
+      position:static;
+      bottom:auto;
+    }
+    // Нативные dialog размещаются в видимой части экрана, а не за клавиатурой.
+    & dialog.native-dialog.modal[open] {
+      inset:var(--workspace-viewport-top, 0px) 0 auto;
+      max-height:calc(var(--workspace-viewport-height, 100dvh) - 12px);
+      margin:6px auto;
+      overflow-y:auto;
+    }
+  }
+}

@@ -1,0 +1,92 @@
+services:
+  telegram-bot-api:
+    extends:
+      file: compose.telegram.yml
+      service: telegram-bot-api
+    profiles: [telegram]
+    networks: [app_net]
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - .env
+    environment:
+      TELEGRAM_FILES_DIR: /var/lib/telegram-bot-api
+      DATABASE_URL: sqlite:////app/data/uknowapp.db
+      PYTHONPATH: /app/backend
+      TMPDIR: /app/data
+      UKNOWAPP_AUTO_RESTART_ON_RESTORE: "true"
+      TRUSTED_PROXY_IPS: 127.0.0.1,::1,172.31.255.2
+    networks:
+      app_net:
+        ipv4_address: 172.31.255.3
+    volumes:
+      - app_data:/app/data
+      - ${TELEGRAM_CACHE_HOST_DIR:-/srv/uknow-telegram}:/var/lib/telegram-bot-api:ro
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=4).read()"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    # Не масштабировать backend: бот использует один polling-процесс.
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ""
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      app_net:
+        ipv4_address: 172.31.255.2
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - -q
+        - -O
+        - /dev/null
+        - http://127.0.0.1:2019/config/
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  app_net:
+    ipam:
+      config:
+        - subnet: ${UKNOWAPP_DOCKER_SUBNET:-172.31.255.0/24}
+
+volumes:
+  app_data:
+  caddy_data:
+  caddy_config:

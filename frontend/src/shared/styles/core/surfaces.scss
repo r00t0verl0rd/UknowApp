@@ -1,0 +1,110 @@
+:root[data-theme="dark-soft"] {
+  & .login-card,
+  & .user-list,
+  & .modal {
+    box-shadow:0 12px 35px rgba(0, 0, 0, 0.16);
+    background:#202633;
+    color:#e4e8f0;
+    border-color:#343d4d;
+  }
+  & .topbar svg,
+  & .theme-toggle svg {
+    color:inherit;
+  }
+  & body {
+    background:#171b25;
+    color:#e4e8f0;
+  }
+  & .school-label,
+  & .eyebrow,
+  & .person-info small {
+    color:#9ba6b8;
+  }
+  & .topbar > div,
+  & .topbar b,
+  & .person-info b,
+  & .empty-state b {
+    color:#e4e8f0;
+  }
+  & input,
+  & select,
+  & textarea {
+    background:#262f3d;
+    color:#e4e8f0;
+    border-color:#414c60;
+  }
+  & input::placeholder,
+  & textarea::placeholder {
+    color:#8793a7;
+  }
+  & .btn.primary {
+    color:#fff;
+    box-shadow:0 5px 16px rgba(0, 0, 0, 0.18);
+  }
+  & .btn.primary:hover {
+    background:#8176b0;
+  }
+  & .btn.outline {
+    background:#353149;
+    border-color:#514b6d;
+    color:#c9c0ef;
+  }
+  & .role-tag,
+  & .avatar,
+  & .credential-field-code,
+  & .invite-code {
+    background:#2b2d3e;
+    border-color:#4b4662;
+    color:#c6cddd;
+  }
+  & .empty-state {
+    color:#9ba6b8;
+  }
+  & .student-card:hover,
+  & .teacher-card:hover,
+  & .user-row:hover,
+  & .unassigned-grid .student-card:hover {
+    background:#30394a;
+    border-color:#66728c;
+    box-shadow:0 4px 13px rgba(0, 0, 0, 0.2);
+  }
+  & .toolbar .search,
+  & .search {
+    background:#262f3d;
+    border:1px solid #414e62;
+    box-shadow:none;
+  }
+  & .search:focus-within {
+    background:#2c3747;
+    border-color:#8c82ba;
+    box-shadow:0 0 0 3px rgba(170, 160, 216, 0.13);
+  }
+  & .search svg {
+    color:#aab4c5;
+  }
+  & .search input {
+    background:transparent;
+    color:#e4e8f0;
+  }
+  & .search input::placeholder {
+    color:#8895a9;
+  }
+}
+:root:not([data-theme="dark-soft"]) {
+  & body {
+    color:#514d5a;
+  }
+  & .topbar,
+  & .sidebar,
+  & .user-list {
+    border-color:#ded9e5;
+  }
+  & .person-info b {
+    color:#56515f;
+  }
+  & .person-info small,
+  & .toolbar,
+  & .hint {
+    color:#918b9a;
+  }
+}

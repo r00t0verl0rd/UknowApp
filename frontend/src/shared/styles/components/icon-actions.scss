@@ -1,0 +1,131 @@
+@use "../core/primitives";
+:root .ui-icon-button {
+  margin:0;
+  font:inherit;
+  cursor:pointer;
+  touch-action:manipulation;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
+}
+:root .ui-icon-button svg {
+  display:block;
+  width:16px;
+  height:16px;
+  flex:none;
+  stroke-width:1.8;
+}
+:root .ui-icon-button:disabled {
+  opacity:0.5;
+  cursor:not-allowed;
+}
+:root .ui-icon-button.ui-icon-button--compact {
+  --icon-action-size: 30px;
+}
+:root .ui-icon-button.ui-icon-button--large {
+  --icon-action-size: 40px;
+}
+:root .ui-icon-button {
+  -webkit-appearance:none;
+  appearance:none;
+  display:inline-grid;
+  place-items:center;
+  box-sizing:border-box;
+  flex:0 0 var(--icon-action-size);
+  width:var(--icon-action-size);
+  min-width:var(--icon-action-size);
+  max-width:var(--icon-action-size);
+  height:var(--icon-action-size);
+  min-height:var(--icon-action-size);
+  padding:0;
+  border:1px solid var(--ui-border);
+  border-radius:var(--icon-action-radius);
+  background:var(--ui-control-bg);
+  color:var(--ui-control-text);
+  box-shadow:none;
+}
+:root .ui-icon-button:hover:not(:disabled) {
+  background:var(--ui-control-hover);
+  border-color:var(--ui-border-strong);
+  color:var(--purple);
+}
+:root .ui-icon-button:focus-visible {
+  outline-offset:2px;
+  outline:2px solid var(--purple);
+  box-shadow:var(--ui-focus);
+}
+:root .ui-icon-button.ui-icon-button--danger {
+  @include primitives.danger;
+}
+:root .ui-icon-button.ui-icon-button--danger:hover:not(:disabled) {
+  background:var(--button-danger-hover-bg);
+  border-color:var(--button-danger-hover-border);
+  color:var(--button-danger-hover-text);
+}
+:root .workspace-content:has(.admin-card) .person-actions .ui-icon-button,
+:root .workspace-content:has(.admin-card) .student-card > .ui-icon-button,
+:root .workspace-content:has(.admin-card) .unassigned-student-actions > .ui-icon-button {
+  flex-basis:var(--icon-action-size);
+  width:var(--icon-action-size);
+  min-width:var(--icon-action-size);
+  max-width:var(--icon-action-size);
+  height:var(--icon-action-size);
+  min-height:var(--icon-action-size);
+}
+:root[data-theme="dark-soft"] {
+  .ui-icon-button {
+    @include primitives.control;
+  }
+  .ui-icon-button:hover:not(:disabled) {
+    background:var(--ui-control-hover);
+    border-color:var(--ui-border-strong);
+    color:var(--purple);
+  }
+  .ui-icon-button.ui-icon-button--danger {
+    @include primitives.danger;
+  }
+  .ui-icon-button.ui-icon-button--danger:hover:not(:disabled) {
+    background:var(--button-danger-hover-bg);
+    border-color:var(--button-danger-hover-border);
+    color:var(--button-danger-hover-text);
+  }
+}
+@media (hover: none), (pointer: coarse) {
+  :root .ui-icon-button {
+    border:1px solid var(--ui-border);
+    background:var(--ui-control-bg);
+    color:var(--ui-control-text);
+  }
+  :root .ui-icon-button.ui-icon-button--danger {
+    border-color:var(--button-danger-border);
+    background:var(--button-danger-bg);
+    color:var(--button-danger-text);
+  }
+}
+:root .ui-icon-button.ui-icon-button--student,
+:root .workspace-shell .workspace-content:has(.admin-card) .person-actions .ui-icon-button.ui-icon-button--student {
+  background:#f4eadb;
+  border-color:#e0cda9;
+  color:#90764c;
+}
+:root .ui-icon-button.ui-icon-button--student:hover:not(:disabled),
+:root .workspace-shell .workspace-content:has(.admin-card) .person-actions .ui-icon-button.ui-icon-button--student:hover:not(:disabled) {
+  background:#ecdfc6;
+  border-color:#c5aa7e;
+  color:#80643c;
+}
+:root[data-theme="dark-soft"] {
+  .ui-icon-button.ui-icon-button--student,
+  .workspace-shell .workspace-content:has(.admin-card) .person-actions .ui-icon-button.ui-icon-button--student {
+    background:#40382d;
+    border-color:#746044;
+    color:#e5c995;
+  }
+  .ui-icon-button.ui-icon-button--student:hover:not(:disabled),
+  .workspace-shell .workspace-content:has(.admin-card) .person-actions .ui-icon-button.ui-icon-button--student:hover:not(:disabled) {
+    background:#574a38;
+    border-color:#927b55;
+    color:#f3d9a8;
+  }
+}

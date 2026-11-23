@@ -1,0 +1,54 @@
+import { createSignal } from "solid-js";
+export function createChatState() {
+  const [draft, setDraft] = createSignal("");
+  const [attachment, setAttachment] = createSignal(null);
+  const [chats, setChats] = createSignal([]);
+  const [selectedChat, setSelectedChat] = createSignal(null);
+  const [messages, setMessages] = createSignal([]);
+  const [messagesLoading, setMessagesLoading] = createSignal(false);
+  const messagesViewportRef = {
+    current: null,
+  };
+  const [chatSearch, setChatSearch] = createSignal("");
+  const [chatFilter, setChatFilter] = createSignal("all");
+  const [messageFilter, setMessageFilter] = createSignal("all");
+  return {
+    get draft() {
+      return draft();
+    },
+    setDraft,
+    get attachment() {
+      return attachment();
+    },
+    setAttachment,
+    get chats() {
+      return chats();
+    },
+    setChats,
+    get selectedChat() {
+      return selectedChat();
+    },
+    setSelectedChat,
+    get messages() {
+      return messages();
+    },
+    setMessages,
+    get messagesLoading() {
+      return messagesLoading();
+    },
+    setMessagesLoading,
+    messagesViewportRef,
+    get chatSearch() {
+      return chatSearch();
+    },
+    setChatSearch,
+    get chatFilter() {
+      return chatFilter();
+    },
+    setChatFilter,
+    get messageFilter() {
+      return messageFilter();
+    },
+    setMessageFilter,
+  };
+}

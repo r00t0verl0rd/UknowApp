@@ -1,0 +1,42 @@
+{
+  "rules": {
+    "block-no-empty": true,
+    "declaration-no-important": true,
+    "color-no-invalid-hex": true,
+    "declaration-block-no-duplicate-properties": true,
+    "no-duplicate-selectors": true
+  },
+  "overrides": [
+    {
+      "files": [
+        "frontend/src/shared/styles/**/*.scss"
+      ],
+      "rules": {
+        "no-duplicate-selectors": null
+      }
+    },
+    {
+      "files": [
+        "frontend/src/shared/styles/core/tokens.scss"
+      ],
+      "rules": {
+        "no-duplicate-selectors": true
+      }
+    },
+    {
+      "files": [
+        "frontend/src/shared/styles/workspace/workspace-refinements.scss"
+      ],
+      "rules": {
+        "declaration-block-no-duplicate-properties": [
+          true,
+          {
+            "ignore": [
+              "consecutive-duplicates-with-different-values"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

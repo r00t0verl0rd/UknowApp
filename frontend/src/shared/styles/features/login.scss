@@ -1,0 +1,151 @@
+@use "../core/primitives";
+:root[data-theme] {
+  body:has(.login-screen),
+  #root:has(.login-screen) {
+    min-height:100%;
+  }
+  .login-screen {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    min-height:100dvh;
+    padding:max(20px, env(safe-area-inset-top, 0px)) 16px max(24px, env(safe-area-inset-bottom, 0px));
+  }
+  .login-card {
+    position:relative;
+    width:min(100%, 420px);
+    max-width:420px;
+    min-width:0;
+    padding:24px;
+    border-radius:var(--ui-radius-lg);
+  }
+  .login-brand {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    width:100%;
+    min-width:0;
+    margin:0 auto 26px;
+    padding:4px 0 0;
+    text-align:center;
+  }
+  .login-brand .login-logo {
+    display:block;
+    flex:none;
+    width:clamp(104px, 25vw, 136px);
+    height:clamp(104px, 25vw, 136px);
+    margin:0;
+    object-fit:contain;
+    filter:drop-shadow(0 5px 14px rgba(87, 62, 153, 0.12));
+  }
+  .login-brand h1 {
+    min-width:0;
+    margin:0;
+    color:var(--purple);
+    font-size:clamp(29px, 6vw, 36px);
+    font-weight:800;
+    line-height:1.15;
+    letter-spacing:-0.03em;
+    text-align:center;
+  }
+  .login-brand h1 span {
+    color:var(--red);
+  }
+  .login-theme-toggle {
+    position:absolute;
+    top:24px;
+    right:24px;
+  }
+  .login-card .stack {
+    display:grid;
+    gap:12px;
+    width:100%;
+    min-width:0;
+  }
+  .login-card .stack label {
+    display:block;
+    width:100%;
+    min-width:0;
+  }
+  .login-card .stack input {
+    display:block;
+    box-sizing:border-box;
+    width:100%;
+    min-width:0;
+    height:46px;
+    min-height:46px;
+    border:1px solid var(--ui-border);
+    border-radius:var(--ui-radius-sm);
+    font-size:16px;
+  }
+  .login-card .stack input:focus {
+    @include primitives.field-focus;
+  }
+  .login-card .stack .login-submit {
+    width:100%;
+    min-height:46px;
+    margin-top:4px;
+  }
+}
+@media (max-width: 1024px) and (display-mode: browser) {
+  :root[data-theme]:has(.login-screen),
+  :root[data-theme] body:has(.login-screen),
+  :root[data-theme] #root:has(.login-screen) {
+    min-height:100lvh;
+    overflow-x:clip;
+    overflow-y:auto;
+  }
+  :root[data-theme] .login-screen {
+    min-height:100lvh;
+    padding-top:max(20px, env(safe-area-inset-top, 0px));
+    padding-bottom:max(104px, calc(env(safe-area-inset-bottom, 0px) + 78px));
+  }
+}
+@media (max-width: 480px) {
+  :root[data-theme] {
+    .login-card {
+      padding:20px 16px;
+    }
+    .login-theme-toggle {
+      top:18px;
+      right:16px;
+    }
+  }
+}
+@supports not (min-height: 100dvh) {
+  :root[data-theme] .login-screen {
+    min-height:100vh;
+  }
+}
+@supports not (min-height: 100lvh) {
+  @media (max-width: 1024px) and (display-mode: browser) {
+    :root[data-theme] .login-screen {
+      min-height:100vh;
+    }
+  }
+}
+:root[data-theme]:has(.login-screen) {
+  background:var(--workspace-background);
+}
+:root[data-theme] {
+  body:has(.login-screen),
+  #root:has(.login-screen) {
+    background:transparent;
+  }
+  .login-screen {
+    background:transparent;
+  }
+  .login-card {
+    border:1px solid var(--ui-border);
+    background:var(--surface);
+    color:var(--ink);
+    box-shadow:var(--ui-shadow-card);
+  }
+  .login-card .stack input {
+    background:var(--surface-input);
+    color:var(--ink);
+  }
+}

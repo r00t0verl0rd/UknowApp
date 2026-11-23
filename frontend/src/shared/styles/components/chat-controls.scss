@@ -1,0 +1,82 @@
+@use "../core/primitives";
+// Единые сегментированные кнопки для кабинета администратора на всех экранах.
+// Стили не зависят от роли, типа указателя или выбранной темы.
+:root .workspace-shell .chat-list {
+  .chat-list-actions:empty {
+    display:none;
+  }
+  .chat-section-tabs {
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    min-width:0;
+    width:100%;
+    padding:1px;
+    gap:2px;
+    border:1px solid var(--ui-border);
+    border-radius:var(--workspace-control-radius);
+    background:var(--ui-control-bg);
+  }
+  .chat-section-tabs > button.chat-section-tab {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    min-width:0;
+    width:100%;
+    height:100%;
+    min-height:0;
+    padding:0 5px;
+    border:1px solid transparent;
+    border-radius:var(--workspace-control-radius);
+    background:transparent;
+    color:var(--ui-control-text);
+    font-size:var(--workspace-control-font-size);
+    font-weight:650;
+    line-height:1.2;
+    text-align:center;
+    white-space:nowrap;
+    box-shadow:none;
+    touch-action:manipulation;
+    transition:
+      background-color var(--ui-transition-fast),
+      border-color var(--ui-transition-fast),
+      color var(--ui-transition-fast);
+  }
+  .chat-section-tabs > button.chat-section-tab[aria-pressed="true"],
+  .chat-section-tabs > button.chat-section-tab[aria-pressed="true"]:hover {
+    @include primitives.selected;
+    box-shadow:0 0 0 1px var(--ui-selected-outline);
+  }
+  .chat-section-tabs > button.chat-section-tab[aria-pressed="false"]:hover {
+    background:var(--ui-control-hover);
+    border-color:var(--ui-border-strong);
+    color:var(--ui-control-text);
+  }
+  .chat-section-tabs > button.chat-section-tab:focus-visible {
+    outline:2px solid var(--ui-selected-border);
+    outline-offset:1px;
+    box-shadow:none;
+  }
+  .chat-section-tab > .chat-tab-count {
+    flex:0 0 auto;
+    min-width:19px;
+    height:19px;
+    margin:0;
+    padding:0 5px;
+    font-size:10px;
+  }
+  .chat-list-actions > .personal-chat-create.ui-icon-button {
+    align-self:center;
+    margin:0;
+  }
+}
+
+:root .workspace-shell .chat-items > button.chat-item:is(.selected, [aria-pressed="true"]) {
+  &, &:hover {
+    @include primitives.selected;
+    box-shadow:inset 3px 0 0 var(--ui-selected-border), 0 0 0 1px var(--ui-selected-outline);
+  }
+  &:focus-visible {
+    box-shadow:inset 3px 0 0 var(--ui-selected-border);
+  }
+}
