@@ -31,9 +31,6 @@ jobs:
     defaults:
       run:
         working-directory: frontend
-    env:
-      # Ubuntu 24.04 runners ship with Chrome; avoid apt installs and browser downloads.
-      CHROMIUM_PATH: /usr/bin/google-chrome
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -44,15 +41,31 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
-      - name: Install browser test runtime
-        run: npm install --no-save playwright@1.56.1
-      - name: Run UI and realtime browser integration tests
-        run: npm run test:browser
       - name: Lint shared styles
         run: npx --yes stylelint@16 'src/shared/styles/*.scss' --config ../.stylelintrc.json
       - name: Audit CSS selectors against SolidJS sources
         run: node scripts/audit-css.mjs
 
+  frontend-browser:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      # UI browser tests use the Chrome preinstalled on GitHub's Ubuntu runners.
+      CHROMIUM_PATH: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Install browser test runtime
+        run: npm install --no-save playwright@1.56.1
+      - name: Run UI and realtime browser integration tests
+        run: npm run test:browser
 
   backup-function:
     name: backup-function
