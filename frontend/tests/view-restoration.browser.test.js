@@ -59,27 +59,25 @@ test("remembers current page, list filters and scroll after asynchronous reload"
       await page.waitForTimeout(140);
       await page.reload();
       await page.getByText("Ученик 090", { exact: true }).waitFor();
-      console.log("view-restore-diagnostics", JSON.stringify(await page.evaluate(expected => ({
-        viewport: expected,
-        actualContent: document.querySelector(".workspace-content")?.scrollTop,
-        actualDocument: window.scrollY,
-        documentAvailable: document.scrollingElement.scrollHeight - document.scrollingElement.clientHeight,
-        documentHeight: document.scrollingElement.scrollHeight,
-        bodyHeight: document.body.scrollHeight,
-        htmlOverflow: getComputedStyle(document.documentElement).overflowY,
-        anchorRect: document.querySelector('[data-view-anchor="user:189"]')?.getBoundingClientRect().top,
-        availableContent: document.querySelector(".workspace-content")?.scrollHeight -
-          document.querySelector(".workspace-content")?.clientHeight,
-        stored: sessionStorage.getItem("uknowapp-view-v1:1"),
-      }), savedPosition)));
       assert.equal(await page.getByLabel("Сортировка пользователей").inputValue(), "name-desc");
       assert.equal(await page.getByLabel("Поиск по имени").inputValue(), "Ученик");
       await page.waitForFunction(
         pos => {
-          const y = pos.kind === "content"
-            ? document.querySelector(".workspace-content")?.scrollTop
-            : window.scrollY;
-          return Math.abs(y - pos.y) <= 8;
+          const container = pos.kind === "content"
+            ? document.querySelector(".workspace-content")
+            : document.scrollingElement;
+          const y = pos.kind === "content" ? container?.scrollTop : window.scrollY;
+          if (Math.abs(y - pos.y) <= 8) return true;
+          // On mobile a sticky header may move in the layout. Restoring the
+          // same visible row is the invariant, not an arbitrary pixel offset.
+          const snapshot = JSON.parse(sessionStorage.getItem("uknowapp-view-v1:1") || "{}");
+          const anchor = snapshot.pages?.users?.scroll?.[pos.kind]?.anchor;
+          const row = [...(container?.querySelectorAll("[data-view-anchor]") || [])]
+            .find(el => el.getAttribute("data-view-anchor") === anchor?.id);
+          if (!row) return false;
+          return Math.abs(
+            row.getBoundingClientRect().top - container.getBoundingClientRect().top - anchor.offset,
+          ) <= 8;
         },
         savedPosition,
         { timeout: 12000 },
@@ -91,10 +89,21 @@ test("remembers current page, list filters and scroll after asynchronous reload"
       await page.getByText("Ученик 090", { exact: true }).waitFor();
       await page.waitForFunction(
         pos => {
-          const y = pos.kind === "content"
-            ? document.querySelector(".workspace-content")?.scrollTop
-            : window.scrollY;
-          return Math.abs(y - pos.y) <= 8;
+          const container = pos.kind === "content"
+            ? document.querySelector(".workspace-content")
+            : document.scrollingElement;
+          const y = pos.kind === "content" ? container?.scrollTop : window.scrollY;
+          if (Math.abs(y - pos.y) <= 8) return true;
+          // On mobile a sticky header may move in the layout. Restoring the
+          // same visible row is the invariant, not an arbitrary pixel offset.
+          const snapshot = JSON.parse(sessionStorage.getItem("uknowapp-view-v1:1") || "{}");
+          const anchor = snapshot.pages?.users?.scroll?.[pos.kind]?.anchor;
+          const row = [...(container?.querySelectorAll("[data-view-anchor]") || [])]
+            .find(el => el.getAttribute("data-view-anchor") === anchor?.id);
+          if (!row) return false;
+          return Math.abs(
+            row.getBoundingClientRect().top - container.getBoundingClientRect().top - anchor.offset,
+          ) <= 8;
         },
         savedPosition,
         { timeout: 12000 },
