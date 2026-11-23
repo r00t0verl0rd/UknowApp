@@ -1,0 +1,68 @@
+name: Database compatibility
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "alembic.ini"
+      - "docker-compose.yml"
+      - ".github/workflows/database-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "alembic.ini"
+      - "docker-compose.yml"
+      - ".github/workflows/database-ci.yml"
+
+jobs:
+  sqlite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r backend/requirements.txt pytest httpx
+      - name: Reviewable baseline on temporary SQLite
+        env:
+          PYTHONPATH: backend
+          DATABASE_URL: sqlite:///./ci-test.sqlite3
+          TELEGRAM_BOT_ENABLED: "false"
+          ADMIN_PASSWORD: ci-only-admin-password-123
+        run: |
+          alembic -c alembic.ini upgrade head
+          python -c 'from app.migrations import initialize_database; initialize_database()'
+          pytest -q backend/tests/test_database_storage_info.py backend/tests/test_admin_stats.py backend/tests/test_database_dialects.py
+
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: uknowapp_ci
+          POSTGRES_USER: uknowapp_ci
+          POSTGRES_PASSWORD: ci-only-db-password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U uknowapp_ci -d uknowapp_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r backend/requirements.txt pytest httpx
+      - name: Reviewable baseline on temporary PostgreSQL
+        env:
+          PYTHONPATH: backend
+          DATABASE_URL: postgresql+psycopg://uknowapp_ci:ci-only-db-password@127.0.0.1:5432/uknowapp_ci
+          TELEGRAM_BOT_ENABLED: "false"
+          ADMIN_PASSWORD: ci-only-admin-password-123
+        run: |
+          alembic -c alembic.ini upgrade head
+          python -c 'from app.migrations import initialize_database; initialize_database()'
+          pytest -q backend/tests/test_database_storage_info.py backend/tests/test_database_dialects.py
