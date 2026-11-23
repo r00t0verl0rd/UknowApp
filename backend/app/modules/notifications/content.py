@@ -1,5 +1,7 @@
 """Короткие подписи для уведомлений о сообщениях."""
 
+from app.core import config
+
 PUSH_TITLE = "Новое сообщение"
 
 _MEDIA_LABELS = {
@@ -31,11 +33,13 @@ def push_body(
     recipient_name: str | None = None,
     kind: str = "text",
 ) -> str:
-    """Обычный пуш показывает отправителя, админский — обоих участников."""
+    """Только имена по умолчанию; предпросмотр включается отдельной настройкой."""
     sender = _shorten(sender_name, 32) or "Участник"
     heading = sender
     if recipient_name:
         heading += " → " + (_shorten(recipient_name, 32) or "Участник")
+    if not config.PUSH_MESSAGE_PREVIEW_ENABLED:
+        return heading
     preview = " ".join((text or "").split())
     if kind != "text":
         label = _MEDIA_LABELS.get(kind, "Вложение")

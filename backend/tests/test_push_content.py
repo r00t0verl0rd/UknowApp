@@ -1,28 +1,35 @@
 import json
 
+from app.core import config
 from app.modules.notifications import service as push_service
 from app.modules.notifications.content import PUSH_TITLE, push_body
 
 
-def test_message_push_is_short_without_duplicate_app_name():
-    message = push_body("Падаван", "  Привет!  Как дела? ")
+def test_default_push_shows_sender_only(monkeypatch):
+    monkeypatch.setattr(config, "PUSH_MESSAGE_PREVIEW_ENABLED", False)
     assert PUSH_TITLE == "Новое сообщение"
-    assert message == "Падаван: Привет! Как дела?"
-    assert "UknowApp" not in message
+    assert push_body("Падаван", "Привет! Как дела?") == "Падаван"
+    assert push_body("Администратор", "Личное сообщение") == "Администратор"
+    assert push_body("Падаван", "", kind="voice") == "Падаван"
 
 
-def test_admin_gets_both_names_and_direction():
-    message = push_body(
-        "Учитель Анна", "   Домашнее задание готово  ",
-        recipient_name="Ученик Иван",
+def test_admin_push_shows_direction_but_not_text(monkeypatch):
+    monkeypatch.setattr(config, "PUSH_MESSAGE_PREVIEW_ENABLED", False)
+    assert push_body("Учитель Анна", "Домашнее задание готово", recipient_name="Ученик Иван") == (
+        "Учитель Анна → Ученик Иван"
     )
-    assert message == "Учитель Анна → Ученик Иван: Домашнее задание готово"
     assert push_body("Ученик Иван", "Спасибо", recipient_name="Учитель Анна") == (
-        "Ученик Иван → Учитель Анна: Спасибо"
+        "Ученик Иван → Учитель Анна"
     )
+    assert push_body("Анна", "секретный текст", recipient_name="Иван", kind="document") == "Анна → Иван"
 
 
-def test_media_preview_and_long_text_are_concise():
+def test_optional_previews_can_be_switched_on(monkeypatch):
+    monkeypatch.setattr(config, "PUSH_MESSAGE_PREVIEW_ENABLED", True)
+    assert push_body("Падаван", "  Привет!  Как дела? ") == "Падаван: Привет! Как дела?"
+    assert push_body("Учитель Анна", "Домашнее задание", recipient_name="Иван") == (
+        "Учитель Анна → Иван: Домашнее задание"
+    )
     assert push_body("Администратор", "", kind="document") == "Администратор: Файл"
     assert push_body("Падаван", "", kind="voice") == "Падаван: Голосовое"
     message = push_body("А" * 120, "Б" * 400, recipient_name="В" * 120)
