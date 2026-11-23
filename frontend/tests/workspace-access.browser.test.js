@@ -1,11 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { chromium } from "playwright";
-import { createServer } from "vite";
+import { preview } from "vite";
 
 test("workspace stays closed until the server confirms the role and redirects a student from /users", async () => {
-  const server = await createServer({ server: { port: 22223 }, logLevel: "error" });
-  await server.listen();
+  const server = await preview({ preview: { host: "127.0.0.1", port: 22223, strictPort: true }, logLevel: "error" });
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH });
   try {
     const page = await browser.newPage();
@@ -42,6 +41,6 @@ test("workspace stays closed until the server confirms the role and redirects a 
     assert.equal(await page.getByRole("button", { name: "Доски", exact: true }).count(), 0);
   } finally {
     await browser.close();
-    await server.close();
+    await new Promise((resolve, reject) => server.httpServer.close(error => error ? reject(error) : resolve()));
   }
 });

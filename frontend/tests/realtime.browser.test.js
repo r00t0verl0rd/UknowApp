@@ -127,7 +127,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
   try {
     await new Promise(resolve => apiServer.listen(API_PORT, "127.0.0.1", resolve));
     vite = spawn(process.execPath, [
-      "node_modules/vite/bin/vite.js",
+      "node_modules/vite/bin/vite.js", "preview",
       "--host", "127.0.0.1",
       "--port", String(APP_PORT),
       "--strictPort",
