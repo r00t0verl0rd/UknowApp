@@ -384,8 +384,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize({ width: 1280, height: 720 });
 
-    // Меню, нижние пункты и действие создания используют единый шрифт и оформление.
-    for (const width of [390, 1280]) {
+    // Меню, нижние пункты и действие создания используют единую геометрию.
+    for (const width of [390, 768, 1025, 1280, 1600]) {
       await page.setViewportSize({ width, height: 800 });
       for (const theme of ["light", "dark-soft"]) {
         const result = await page.evaluate(currentTheme => {
@@ -434,6 +434,24 @@ test("global SSE updates real counters across tabs and replays missed events", {
             create: styleOf(".graph-add-participant"),
             selected: styleOf(".sidebar nav button[aria-current=\"page\"]"),
             teacher: styleOf(".teacher-card .person-info b"),
+            geometry: (() => {
+              const aside = fixture.querySelector(".sidebar");
+              const nav = [...aside.querySelectorAll("nav > button")];
+              const footer = [...aside.querySelectorAll(".sidebar-bottom > button.ui-menu-control")];
+              const bounds = element => element.getBoundingClientRect();
+              const list = [...nav, ...footer];
+              return {
+                heights:list.map(x => Math.round(bounds(x).height)),
+                widths:list.map(x => Math.round(bounds(x).width)),
+                mainGap:bounds(nav[1]).top - bounds(nav[0]).bottom,
+                footerGap:bounds(footer[1]).top - bounds(footer[0]).bottom,
+                footerMargin:getComputedStyle(footer[1]).marginTop,
+                navLeft:bounds(nav[0]).left,
+                footerLeft:bounds(footer[0]).left,
+                footerBottomInset:bounds(aside).bottom - bounds(footer[1]).bottom,
+                gutter:parseFloat(getComputedStyle(fixture).getPropertyValue("--workspace-gutter")),
+              };
+            })(),
           };
           fixture.remove();
           document.documentElement.dataset.theme = previous;
@@ -454,6 +472,21 @@ test("global SSE updates real counters across tabs and replays missed events", {
           }
         }
         assert.equal(result.teacher.family, expected.family, `${theme}: гарнитура карточки`);
+        if (width >= 1025) {
+          const g = result.geometry;
+          assert.ok(g.heights.every(h => h === 42),
+            `${width}px ${theme}: все пункты меню высотой 42px (${g.heights})`);
+          assert.ok(g.widths.every(w => w === g.widths[0]),
+            `${width}px ${theme}: равная ширина всех пунктов меню (${g.widths})`);
+          assert.ok(Math.abs(g.mainGap - 6) < 0.5 && Math.abs(g.footerGap - 6) < 0.5,
+            `${width}px ${theme}: одинаковые промежутки в верхней и нижней группах`);
+          assert.equal(g.footerMargin, "0px",
+            `${width}px ${theme}: нет лишнего отступа перед Выходом`);
+          assert.ok(Math.abs(g.navLeft - g.footerLeft) < 0.5,
+            `${width}px ${theme}: кнопки начинаются на одной вертикали`);
+          assert.ok(Math.abs(g.footerBottomInset - g.gutter) < 1,
+            `${width}px ${theme}: нижняя граница меню совпадает с сеткой панелей`);
+        }
         assert.notEqual(result.selected.background, expected.background, `${theme}: выделение активного раздела`);
         for (const name of ["additional", "logout"]) {
           assert.equal(result[name].display === "none", width < 1025,
