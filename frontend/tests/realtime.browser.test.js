@@ -47,6 +47,13 @@ test("global SSE updates real counters across tabs and replays missed events", {
   let browser;
   const apiPaths = [];
   const pageErrors = [];
+  const timerStart = performance.now();
+  let lastPhase = timerStart;
+  const markPhase = name => {
+    const now = performance.now();
+    console.log(`[browser-phase] ${name}: ${Math.round(now - lastPhase)}ms (total ${Math.round(now - timerStart)}ms)`);
+    lastPhase = now;
+  };
 
   const writeEvent = (response, event) => {
     response.write(`id: ${event.event_id}\nevent: update\ndata: ${JSON.stringify(event)}\n\n`);
@@ -137,7 +144,9 @@ test("global SSE updates real counters across tabs and replays missed events", {
       return response.ok;
     });
 
+    markPhase("preview ready");
     browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_PATH });
+    markPhase("browser launched");
     // Логотип входа центрирован над UknowApp, не соприкасается с
     // переключателем темы и не выходит за экран на узких телефонах.
     const loginContext = await browser.newContext();
@@ -180,6 +189,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     } finally {
       await loginContext.close();
     }
+    markPhase("login visuals");
     // Личный кабинет учителя: три вкладки, собственные ученики
     // в «Структуре», возврат к существующему списку диалогов.
     const teacherContext = await browser.newContext();
@@ -226,6 +236,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     } finally {
       await teacherContext.close();
     }
+    markPhase("teacher workspace");
     const context = await browser.newContext();
     await context.addInitScript(() => localStorage.setItem("uknowapp-auth", "1"));
     const page = await context.newPage();
@@ -2005,6 +2016,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     }
     await page.setViewportSize(originalViewport);
 
+    markPhase("UI fixtures and layout");
     await waitFor(() => pendingPersonalResponses.length === 1);
     assert.equal(pendingPersonalResponses.length, 1,
       "the workspace shell must render before the personal inbox request finishes");
@@ -2158,6 +2170,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
       }, ...syncNewMessages]),
     });
     await page.getByText("Новое сообщение для автопрокрутки").waitFor({ state: "visible" });
+    markPhase("SSE interactions");
 
   } finally {
     for (const response of pendingPersonalResponses.splice(0)) {
