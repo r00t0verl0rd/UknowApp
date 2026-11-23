@@ -275,3 +275,20 @@
   border-color:color-mix(in srgb, var(--purple) 24%, var(--button-border));
   box-shadow:none;
 }
+
+// File attachment previews follow the active dark palette.
+:root[data-theme="dark-soft"] .workspace-shell .chat-composer .selected-file {
+  background:var(--ui-control-bg);
+  border-color:var(--ui-border);
+  color:var(--ui-control-text);
+}
+:root[data-theme="dark-soft"] .workspace-shell .chat-composer .selected-file .ui-icon-button {
+  background:transparent;
+  border-color:transparent;
+  color:var(--muted);
+  box-shadow:none;
+}
+:root[data-theme="dark-soft"] .workspace-shell .chat-composer .selected-file .ui-icon-button:hover:not(:disabled) {
+  background:var(--ui-control-hover);
+  color:var(--ui-control-text);
+}

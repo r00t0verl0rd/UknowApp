@@ -88,3 +88,55 @@
     padding-right:0;
   }
 }
+
+// Keep assignment secondary and compact instead of inheriting the 44px form-button size.
+:root .workspace-shell .workspace-content:has(.admin-card) .teacher-branch > .add-student.btn {
+  box-sizing:border-box;
+  width:fit-content;
+  max-width:100%;
+  height:34px;
+  min-height:34px;
+  margin:3px 0 7px auto;
+  padding:0 10px;
+  gap:6px;
+  border-radius:var(--ui-radius-sm);
+  font-size:12px;
+  font-weight:650;
+  line-height:1.2;
+  white-space:nowrap;
+  transition:
+    background-color var(--ui-transition-fast),
+    border-color var(--ui-transition-fast),
+    color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast),
+    transform var(--ui-transition-fast);
+}
+:root .workspace-shell .workspace-content:has(.admin-card) .teacher-branch > .add-student.btn svg {
+  flex:0 0 13px;
+  width:13px;
+  height:13px;
+}
+@media (hover: hover) and (pointer: fine) {
+  :root[data-theme] .workspace-shell .workspace-content:has(.admin-card) .teacher-branch > .add-student.btn:hover:not(:disabled) {
+    background:var(--ui-control-hover);
+    border-color:var(--ui-border-strong);
+    color:var(--purple);
+    box-shadow:0 4px 12px color-mix(in srgb, var(--purple) 14%, transparent);
+    transform:translateY(-1px);
+  }
+}
+:root[data-theme] .workspace-shell .workspace-content:has(.admin-card) .teacher-branch > .add-student.btn:focus-visible {
+  outline:2px solid var(--ui-selected-border);
+  outline-offset:2px;
+}
+@media (max-width: 1024px) {
+  :root .workspace-shell .workspace-content:has(.admin-card) .teacher-branch > .add-student.btn {
+    min-height:38px;
+    height:38px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root .workspace-shell .workspace-content:has(.admin-card) .teacher-branch > .add-student.btn {
+    transition:none;
+  }
+}

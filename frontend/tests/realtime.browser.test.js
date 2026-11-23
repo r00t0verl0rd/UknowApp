@@ -1932,8 +1932,12 @@ test("global SSE updates real counters across tabs and replays missed events", {
             </div></aside>
             <div class="workspace-content"><div class="admin-card"></div>
               <div class="grid"><section class="teacher-branch">
-                <button class="add-student">Назначить ученика</button>
+                <button class="btn add-student"><svg aria-hidden="true"></svg>Назначить ученика</button>
               </section></div>
+              <form class="chat-composer"><span class="selected-file">
+                <span class="selected-file-name">example.pdf</span>
+                <button class="ui-icon-button" type="button">×</button>
+              </span></form>
               <div class="unassigned-grid"><div class="unassigned-student-card">
                 <div class="unassigned-student-actions">
                   <button class="btn outline">Назначить</button>
@@ -1949,12 +1953,19 @@ test("global SSE updates real counters across tabs and replays missed events", {
           reference.style.cssText = "background:var(--ui-selected-bg);border:1px solid var(--ui-selected-border);color:var(--ui-selected-text)";
           const action = document.createElement("span");
           action.style.cssText = "background:var(--ui-control-bg);border:1px solid var(--ui-border);color:var(--muted)";
-          host.append(reference, action);
+          const attachmentText = document.createElement("span");
+          attachmentText.style.cssText = "color:var(--ui-control-text)";
+          host.append(reference, action, attachmentText);
           try {
             return {
               selected: prop(reference),
               action: prop(action),
               add: prop(host.querySelector(".add-student")),
+              addHeight: Math.round(host.querySelector(".add-student").getBoundingClientRect().height),
+              addFontSize: getComputedStyle(host.querySelector(".add-student")).fontSize,
+              attachment: prop(host.querySelector(".selected-file")),
+              attachmentRemove: prop(host.querySelector(".selected-file .ui-icon-button")),
+              expectedAttachmentText: prop(attachmentText).color,
               assign: prop(host.querySelector(".btn.outline")),
               bells: [...host.querySelectorAll(".push-toggle.active")].map(prop),
             };
@@ -1970,6 +1981,18 @@ test("global SSE updates real counters across tabs and replays missed events", {
           ["Мобильный колокольчик", styles.bells[1], styles.selected],
         ]) {
           assert.deepEqual(style, expected, `${width}px ${theme}: ${name}`);
+        }
+        assert.equal(styles.addHeight, width < 1025 ? 38 : 34,
+          `${width}px ${theme}: compact assign button height`);
+        assert.equal(styles.addFontSize, "12px",
+          `${width}px ${theme}: compact assign button font size`);
+        if (theme === "dark-soft") {
+          assert.equal(styles.attachment.background, styles.action.background,
+            `${width}px dark: attachment chip uses dark control background`);
+          assert.equal(styles.attachment.color, styles.expectedAttachmentText,
+            `${width}px dark: attachment filename uses theme text`);
+          assert.notEqual(styles.attachmentRemove.background, "rgb(242, 239, 246)",
+            `${width}px dark: remove file icon is not light-themed`);
         }
       }
     }
