@@ -449,7 +449,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
                 navLeft:bounds(nav[0]).left,
                 footerLeft:bounds(footer[0]).left,
                 footerBottomInset:bounds(aside).bottom - bounds(footer[1]).bottom,
-                gutter:parseFloat(getComputedStyle(fixture).getPropertyValue("--workspace-gutter")),
+                sidebarBottomPadding:parseFloat(getComputedStyle(aside).paddingBottom),
               };
             })(),
           };
@@ -484,8 +484,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
             `${width}px ${theme}: нет лишнего отступа перед Выходом`);
           assert.ok(Math.abs(g.navLeft - g.footerLeft) < 0.5,
             `${width}px ${theme}: кнопки начинаются на одной вертикали`);
-          assert.ok(Math.abs(g.footerBottomInset - g.gutter) < 1,
-            `${width}px ${theme}: нижняя граница меню совпадает с сеткой панелей`);
+          assert.ok(Math.abs(g.footerBottomInset - g.sidebarBottomPadding) < 1,
+            `${width}px ${theme}: нижняя граница меню следует внутреннему отступу боковой панели (${g.footerBottomInset} / ${g.sidebarBottomPadding})`);
         }
         assert.notEqual(result.selected.background, expected.background, `${theme}: выделение активного раздела`);
         for (const name of ["additional", "logout"]) {
