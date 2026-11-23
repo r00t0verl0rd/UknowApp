@@ -160,7 +160,13 @@
   display:grid;
   grid-template-columns:minmax(0, 1fr) auto;
   align-items:start;
-  column-gap:6px;
+  --message-action-height:28px;
+  column-gap:2px;
+  padding-block:4px;
+  padding-inline-end:3px;
+  .message-topline {
+    min-height:var(--message-action-height);
+  }
 }
 .message-content {
   min-width:0;
@@ -168,7 +174,8 @@
 .message-actions {
   display:flex;
   flex-direction:column;
-  gap:2px;
+  align-self:start;
+  gap:0;
 }
 .message.student {
   align-self:flex-start;
@@ -262,8 +269,8 @@
   width:var(--icon-action-size);
   min-width:var(--icon-action-size);
   max-width:var(--icon-action-size);
-  height:var(--icon-action-size);
-  min-height:var(--icon-action-size);
+  height:var(--message-action-height);
+  min-height:var(--message-action-height);
   padding:0;
   margin:0;
   border:0;

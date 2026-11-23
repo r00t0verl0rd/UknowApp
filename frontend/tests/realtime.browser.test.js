@@ -2248,7 +2248,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     await page.getByRole("button", { name: /Учитель/ }).click();
     await page.getByText("Проверка адресной синхронизации").waitFor({ state: "visible" });
     // Проверяем настоящие клики по иконкам и их центровку на двух ширинах.
-    for (const width of [1280, 390]) {
+    for (const width of [1280, 768, 390, 320]) {
       await page.setViewportSize({ width, height: 800 });
       const infoButton = page.getByRole("button", { name: "Подробности внешней доставки" });
       const deleteButton = page.getByRole("button", { name: "Удалить своё сообщение" });
@@ -2261,12 +2261,16 @@ test("global SSE updates real counters across tabs and replays missed events", {
           const b = el.getBoundingClientRect();
           return { x: b.x, right: b.right, top: b.top, bottom: b.bottom, size: b.width, background: getComputedStyle(el).backgroundColor };
         };
-        return { info: bounds(info), remove: bounds(remove), time: bounds(time) };
+        return { info: bounds(info), remove: bounds(remove), time: bounds(time), bubble: bounds(row) };
       });
       assert.ok(Math.abs(positions.info.x - positions.remove.x) < 1, `${width}px: aligned right column`);
       assert.ok(positions.info.bottom <= positions.remove.top, `${width}px: information above delete`);
       assert.ok(positions.time.right <= positions.info.x, `${width}px: actions clear the timestamp`);
       assert.ok(positions.info.size === 40 && positions.remove.size === 40, `${width}px: clickable hit area`);
+      assert.ok(Math.abs((positions.info.top + positions.info.bottom - positions.time.top - positions.time.bottom) / 2) <= 1);
+      assert.equal(positions.info.bottom - positions.info.top, 28);
+      assert.equal(positions.remove.top, positions.info.bottom);
+      assert.equal(positions.bubble.right - positions.info.right, 4);
       assert.equal(positions.info.background, "rgba(0, 0, 0, 0)");
       assert.equal(positions.remove.background, "rgba(0, 0, 0, 0)");
       await infoButton.click();
