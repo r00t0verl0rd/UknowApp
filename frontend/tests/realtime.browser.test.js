@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 import test from "node:test";
 import { chromium } from "playwright";
+import { RESPONSIVE_VIEWPORT_WIDTHS } from "./support/responsive-viewports.js";
 
 const API_PORT = 8000;
 const APP_PORT = 22222;
@@ -385,7 +386,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     await page.setViewportSize({ width: 1280, height: 720 });
 
     // Меню, нижние пункты и действие создания используют единую геометрию.
-    for (const width of [390, 768, 1025, 1280, 1600]) {
+    for (const width of RESPONSIVE_VIEWPORT_WIDTHS) {
       await page.setViewportSize({ width, height: 800 });
       for (const theme of ["light", "dark-soft"]) {
         const result = await page.evaluate(currentTheme => {

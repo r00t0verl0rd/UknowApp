@@ -2,17 +2,18 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { chromium } from "playwright";
 import { preview } from "vite";
+import { RESPONSIVE_VIEWPORT_WIDTHS } from "./support/responsive-viewports.js";
 
 const HOST = "http://127.0.0.1:22252";
 
-test("dialog search and select share a row at every screen size", { timeout: 60000 }, async () => {
+test("dialog search and select share a row at every screen size", { timeout: 120000 }, async () => {
   const server = await preview({
     preview: { host: "127.0.0.1", port: 22252, strictPort: true }, logLevel: "error",
   });
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH });
   try {
     for (const role of ["admin", "teacher"]) {
-      for (const width of [390, 760, 1024, 1025, 1280, 1600]) {
+      for (const width of RESPONSIVE_VIEWPORT_WIDTHS) {
         const page = await browser.newPage({ viewport: { width, height: 820 } });
         await page.route("**/api/**", route => {
           const path = new URL(route.request().url()).pathname;
