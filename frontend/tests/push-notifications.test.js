@@ -58,12 +58,12 @@ function createWorker({ navigateFails = false } = {}) {
 test("push replaces the duplicated app-name title with «Сообщение»", async () => {
   const notification = await createWorker().push({
     title: "UknowApp",
-    body: "Падаван",
+    body: "от Падаван",
     conversation_id: 17,
     conversation_type: "conversation",
   });
   assert.equal(notification.title, "Сообщение");
-  assert.equal(notification.options.body, "Падаван");
+  assert.equal(notification.options.body, "от Падаван");
 });
 
 test("admin push keeps message direction in the body", async () => {

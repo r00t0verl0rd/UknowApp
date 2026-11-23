@@ -36,9 +36,11 @@ def push_body(
 ) -> str:
     """Только имена по умолчанию; предпросмотр включается отдельной настройкой."""
     sender = _shorten(sender_name, 32) or "Участник"
-    heading = sender
-    if recipient_name:
-        heading += " → " + (_shorten(recipient_name, 32) or "Участник")
+    heading = (
+        sender + " → " + (_shorten(recipient_name, 32) or "Участник")
+        if recipient_name
+        else "от " + sender
+    )
     if not config.PUSH_MESSAGE_PREVIEW_ENABLED:
         return heading
     preview = " ".join((text or "").split())
