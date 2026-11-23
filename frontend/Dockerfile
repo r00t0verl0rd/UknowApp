@@ -7,6 +7,7 @@ RUN --mount=type=cache,target=/root/.npm npm ci --no-fund --no-audit
 COPY index.html vite.config.js ./
 COPY public ./public
 COPY src ./src
+COPY scripts/check-scss-architecture.mjs ./scripts/
 ARG VITE_API_BASE_URL=""
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 RUN npm run build
