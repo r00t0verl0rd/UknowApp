@@ -81,7 +81,7 @@ function readPosition(element, withAnchor = false) {
   const top = Math.min(MAX_SCROLL, Math.max(0, Math.round(element.scrollTop || 0)));
   const left = Math.min(MAX_SCROLL, Math.max(0, Math.round(element.scrollLeft || 0)));
   const position = { top, left };
-  if (!withAnchor || top < 10) return position;
+  if (!withAnchor) return position;
   const bounds = element.getBoundingClientRect();
   // The first visible stable row/message is more robust than a raw offset if
   // asynchronous images or responsive line breaks change element heights.
