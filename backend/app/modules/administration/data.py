@@ -203,8 +203,14 @@ def _count_missing_media_references(database: Path, data_root: Path) -> int:
             columns = {row[1] for row in connection.execute(f"PRAGMA table_info({table})")}
             if "metadata_json" not in columns:
                 continue
-            kind = "content_type" if "content_type" in columns else "NULL"
-            for raw, content_type in connection.execute(f"SELECT metadata_json, {kind} FROM {table}"):
+            # В таблицах и названиях столбцов используем только проверенные SQL-литералы.
+            query = {
+                ("messages", True): "SELECT metadata_json, content_type FROM messages",
+                ("messages", False): "SELECT metadata_json, NULL FROM messages",
+                ("personal_messages", True): "SELECT metadata_json, content_type FROM personal_messages",
+                ("personal_messages", False): "SELECT metadata_json, NULL FROM personal_messages",
+            }[(table, "content_type" in columns)]
+            for raw, content_type in connection.execute(query):
                 try:
                     metadata = json.loads(raw or "{}")
                     media = metadata.get("media")
