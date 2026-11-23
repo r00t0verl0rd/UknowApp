@@ -261,8 +261,27 @@ export function createChatsController(options) {
     options.chatState.setAttachment(null);
     if (!restoring) options.chatState.setMessageFilter("all");
     try {
-      const loadedMessages = await getChatMessages(options.request, chat, controller.signal);
+      let loadedMessages = await getChatMessages(options.request, chat, controller.signal);
       if (controller.signal.aborted || activeChatKey() !== chatKey) return;
+      // A view restored in the middle of a long conversation can be older than
+      // the last 50 messages. Load preceding pages only for that specific chat.
+      const anchor = restoring
+        ? readScrollPositions(options.profile?.id, "chats")[`messages:${chatKey}`]?.anchor?.id
+        : null;
+      const targetId = /^message:\d+$/.test(anchor || "") ? Number(anchor.slice(8)) : 0;
+      if (targetId && loadedMessages.length) {
+        let pages = 0;
+        while (loadedMessages.length >= HISTORY_PAGE_SIZE &&
+          Number(loadedMessages[0].id) > targetId && pages < 16) {
+          const previousOldest = Number(loadedMessages[0].id);
+          const older = await getChatMessages(options.request, chat, controller.signal, previousOldest);
+          if (controller.signal.aborted || activeChatKey() !== chatKey) return;
+          if (!older.length || Number(older[0].id) >= previousOldest) break;
+          loadedMessages = mergeConversationMessages(older, loadedMessages, chatKey);
+          pages++;
+          if (older.length < HISTORY_PAGE_SIZE) break;
+        }
+      }
       setOlderCursor(loadedMessages.length >= HISTORY_PAGE_SIZE ? loadedMessages[0].id : 0);
       // Сервер — источник истины: удалённые в другом окне сообщения не
       // остаются в кэше. Одновременно сохраняем изменения SSE за время запроса.
