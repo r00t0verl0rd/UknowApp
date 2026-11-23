@@ -1,5 +1,5 @@
 import { lazy, Loading, Switch, Match } from "solid-js";
-import ChatsModule from "../features/conversations/index.js";
+import ChatsView from "./ChatsView.jsx";
 const UsersModule = lazy(() => import("../features/users/index.js"));
 const AdministrationModule = lazy(() => import("../features/administration/index.js"));
 export default function AdminWorkspace(props) {
@@ -42,20 +42,7 @@ function AdminPage(options) {
         />
       </Match>
       <Match when={options.context.page === "chats"}>
-        <ChatsModule
-          auth={options.context.auth}
-          profile={options.context.profile}
-          request={options.context.request}
-          chatState={options.context.chatState}
-          personalState={options.context.personalState}
-          inboxLoading={options.context.inboxLoading}
-          users={options.context.directory.users}
-          modal={options.context.modal}
-          setPage={options.context.setPage}
-          setError={options.context.setError}
-          setModal={options.context.setModal}
-          notify={options.context.notify}
-        />
+        <ChatsView context={options.context} users={options.context.directory.users} />
       </Match>
     </Switch>
   );

@@ -1,5 +1,5 @@
 import { For, Match, Switch } from "solid-js";
-import ChatsModule from "../features/conversations/index.js";
+import ChatsView from "./ChatsView.jsx";
 import CountBadge from "../shared/components/CountBadge.jsx";
 import EmptyState from "../shared/components/EmptyState.jsx";
 import { IconGraduationCap as GraduationCap, IconSmile as Smile } from "../shared/components/Icons.jsx";
@@ -56,20 +56,7 @@ export default function TeacherWorkspace(options) {
         <TeacherStructurePage context={options.context} />
       </Match>
       <Match when={options.context.page === "chats"}>
-        <ChatsModule
-          auth={options.context.auth}
-          profile={options.context.profile}
-          request={options.context.request}
-          chatState={options.context.chatState}
-          personalState={options.context.personalState}
-          inboxLoading={options.context.inboxLoading}
-          users={[]}
-          modal={options.context.modal}
-          setPage={options.context.setPage}
-          setError={options.context.setError}
-          setModal={options.context.setModal}
-          notify={options.context.notify}
-        />
+        <ChatsView context={options.context} />
       </Match>
     </Switch>
   );

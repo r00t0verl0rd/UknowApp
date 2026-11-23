@@ -1,6 +1,7 @@
 import { For } from "solid-js";
 import { IconTrash2 as Trash2, IconX as X } from "../../../shared/components/Icons.jsx";
 import Modal from "../../../shared/components/Modal.jsx";
+import ConfirmDialog from "../../../shared/components/ConfirmDialog.jsx";
 import Button from "../../../shared/components/Button.jsx";
 import IconButton from "../../../shared/components/IconButton.jsx";
 import FormField from "../../../shared/components/FormField.jsx";
@@ -63,60 +64,28 @@ export default function ChatDialogs(options) {
       )}
 
       {options.deleteMessageCandidate && (
-        <Modal
+        <ConfirmDialog
+          eyebrow="УДАЛЕНИЕ СООБЩЕНИЯ"
+          title="Удалить у всех?"
+          titleId="delete-message-title"
+          busy={options.deletingMessage}
+          icon={<Trash2 />}
+          confirmLabel="Удалить у всех"
+          busyLabel="Удаляем…"
           onClose={() => options.setDeleteMessageCandidate(null)}
-          closeOnBackdrop={!options.deletingMessage}
-          class="confirm-delete-modal"
-          role="alertdialog"
-          labelledBy="delete-message-title"
-        >
-          <div class="modal-head">
-            <div>
-              <div class="eyebrow">УДАЛЕНИЕ СООБЩЕНИЯ</div>
-              <h2 id="delete-message-title">Удалить у всех?</h2>
+          onConfirm={options.confirmDeleteMessage}
+          preview={
+            <div class="message-delete-preview">
+              {options.deleteMessageCandidate.text ||
+                options.deleteMessageCandidate.metadata?.media?.file_name ||
+                "Вложение"}
             </div>
-            <IconButton
-              onClick={() => options.setDeleteMessageCandidate(null)}
-              disabled={options.deletingMessage}
-              aria-label="Закрыть"
-            >
-              <X />
-            </IconButton>
-          </div>
-          <p class="hint">
-            {options.selectedChat?.type === "personal"
-              ? "Сообщение будет удалено из личного диалога UknowApp. Чужие сообщения удалить нельзя."
-              : "Сообщение будет удалено из переписки UknowApp и предпринята попытка удалить его копии в Telegram у всех получателей. Чужие сообщения удалить нельзя."}
-          </p>
-          <div class="message-delete-preview">
-            {options.deleteMessageCandidate.text ||
-              options.deleteMessageCandidate.metadata?.media?.file_name ||
-              "Вложение"}
-          </div>
-          <div class="modal-actions">
-            <Button
-              variant="ghost"
-              onClick={() => options.setDeleteMessageCandidate(null)}
-              disabled={options.deletingMessage}
-            >
-              Отмена
-            </Button>
-            <Button
-              variant="danger"
-              onClick={options.confirmDeleteMessage}
-              disabled={options.deletingMessage}
-            >
-              {options.deletingMessage ? (
-                "Удаляем…"
-              ) : (
-                <>
-                  <Trash2 />
-                  Удалить у всех
-                </>
-              )}
-            </Button>
-          </div>
-        </Modal>
+          }
+        >
+          {options.selectedChat?.type === "personal"
+            ? "Сообщение будет удалено из личного диалога UknowApp. Чужие сообщения удалить нельзя."
+            : "Сообщение будет удалено из переписки UknowApp и предпринята попытка удалить его копии в Telegram у всех получателей. Чужие сообщения удалить нельзя."}
+        </ConfirmDialog>
       )}
     </>
   );

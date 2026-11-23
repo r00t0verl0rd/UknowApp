@@ -8,7 +8,7 @@ import {
   IconInfo as Info,
 } from "../shared/components/Icons.jsx";
 import Button from "../shared/components/Button.jsx";
-import Modal from "../shared/components/Modal.jsx";
+import ConfirmDialog from "../shared/components/ConfirmDialog.jsx";
 import IconButton from "../shared/components/IconButton.jsx";
 
 // Одна разметка и один источник состояния для всех пунктов меню.
@@ -239,32 +239,22 @@ export default function WorkspaceLayout(options) {
         </div>
       </main>
       {showSignOutConfirm() && (
-        <Modal
-          onClose={() => setShowSignOutConfirm(false)}
-          closeOnBackdrop={!signingOut()}
-          class="confirm-delete-modal"
-          role="alertdialog"
-          labelledBy="sign-out-title"
+        <ConfirmDialog
+          eyebrow="ЗАВЕРШЕНИЕ СЕАНСА"
+          title="Выйти из аккаунта?"
+          titleId="sign-out-title"
           describedBy="sign-out-description"
+          dismissible={false}
+          busy={signingOut()}
+          tone="primary"
+          cancelLabel="Нет"
+          confirmLabel="Да"
+          busyLabel="Выходим…"
+          onClose={() => setShowSignOutConfirm(false)}
+          onConfirm={confirmSignOut}
         >
-          <div class="modal-head">
-            <div>
-              <div class="eyebrow">ЗАВЕРШЕНИЕ СЕАНСА</div>
-              <h2 id="sign-out-title">Выйти из аккаунта?</h2>
-            </div>
-          </div>
-          <p class="hint" id="sign-out-description">
-            Вы действительно хотите выйти из аккаунта?
-          </p>
-          <div class="modal-actions">
-            <Button variant="ghost" onClick={() => setShowSignOutConfirm(false)} disabled={signingOut()}>
-              Нет
-            </Button>
-            <Button variant="primary" onClick={confirmSignOut} disabled={signingOut()}>
-              {signingOut() ? "Выходим…" : "Да"}
-            </Button>
-          </div>
-        </Modal>
+          Вы действительно хотите выйти из аккаунта?
+        </ConfirmDialog>
       )}
     </div>
   );

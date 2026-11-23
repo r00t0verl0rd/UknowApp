@@ -9,6 +9,7 @@ import {
   IconUnlink as Unlink,
 } from "../../../shared/components/Icons.jsx";
 import Modal from "../../../shared/components/Modal.jsx";
+import ConfirmDialog from "../../../shared/components/ConfirmDialog.jsx";
 import Button from "../../../shared/components/Button.jsx";
 import IconButton from "../../../shared/components/IconButton.jsx";
 import FormField from "../../../shared/components/FormField.jsx";
@@ -227,190 +228,74 @@ export default function UserDialogs(options) {
       )}
 
       {options.modal?.mode === "edit" && confirmNewCode() && (
-        <Modal
+        <ConfirmDialog
+          eyebrow="НОВЫЙ КОД ДОСТУПА"
+          title="Выдать новый код?"
+          titleId="new-access-code-title"
+          busy={options.savingUser}
+          tone="primary"
+          confirmLabel="Выдать код"
           onClose={() => setConfirmNewCode(false)}
-          closeOnBackdrop={!options.savingUser}
-          class="confirm-delete-modal"
-          role="alertdialog"
-          labelledBy="new-access-code-title"
+          onConfirm={async () => {
+            setConfirmNewCode(false);
+            await options.regeneratePanelAccessCode();
+          }}
         >
-          <div class="modal-head">
-            <div>
-              <div class="eyebrow">НОВЫЙ КОД ДОСТУПА</div>
-              <h2 id="new-access-code-title">Выдать новый код?</h2>
-            </div>
-            <IconButton
-              aria-label="Закрыть"
-              disabled={options.savingUser}
-              onClick={() => setConfirmNewCode(false)}
-            >
-              <X />
-            </IconButton>
-          </div>
-          <p class="hint">
-            После выдачи нового кода прежний сразу перестанет действовать. Новый код появится в отдельном
-            окне, откуда его можно скопировать.
-          </p>
-          <div class="modal-actions">
-            <Button variant="ghost" onClick={() => setConfirmNewCode(false)} disabled={options.savingUser}>
-              Отмена
-            </Button>
-            <Button
-              variant="primary"
-              disabled={options.savingUser}
-              onClick={async () => {
-                setConfirmNewCode(false);
-                await options.regeneratePanelAccessCode();
-              }}
-            >
-              Выдать код
-            </Button>
-          </div>
-        </Modal>
+          После выдачи нового кода прежний сразу перестанет действовать. Новый код появится в отдельном
+          окне, откуда его можно скопировать.
+        </ConfirmDialog>
       )}
 
       {options.deleteCandidate && (
-        <Modal
+        <ConfirmDialog
+          eyebrow="УДАЛЕНИЕ УЧАСТНИКА"
+          title="Удалить участника?"
+          titleId="delete-user-title"
+          busy={options.deletingUser}
+          icon={<Trash2 />}
+          confirmLabel="Удалить участника"
+          busyLabel="Удаляем…"
           onClose={() => options.setDeleteCandidate(null)}
-          closeOnBackdrop={!options.deletingUser}
-          class="confirm-delete-modal"
-          role="alertdialog"
-          labelledBy="delete-user-title"
+          onConfirm={options.confirmRemoveUser}
         >
-          <div class="modal-head">
-            <div>
-              <div class="eyebrow">УДАЛЕНИЕ УЧАСТНИКА</div>
-              <h2 id="delete-user-title">Удалить участника?</h2>
-            </div>
-            <IconButton
-              onClick={() => options.setDeleteCandidate(null)}
-              disabled={options.deletingUser}
-              aria-label="Закрыть"
-            >
-              <X />
-            </IconButton>
-          </div>
-          <p class="hint">
-            Профиль «<b>{options.deleteCandidate.full_name}</b>», связанные переписки и сообщения будут
-            удалены. Это действие нельзя отменить.
-          </p>
-          <div class="modal-actions">
-            <Button
-              variant="ghost"
-              onClick={() => options.setDeleteCandidate(null)}
-              disabled={options.deletingUser}
-            >
-              Отмена
-            </Button>
-            <Button variant="danger" onClick={options.confirmRemoveUser} disabled={options.deletingUser}>
-              {options.deletingUser ? (
-                "Удаляем…"
-              ) : (
-                <>
-                  <Trash2 />
-                  Удалить участника
-                </>
-              )}
-            </Button>
-          </div>
-        </Modal>
+          Профиль «<b>{options.deleteCandidate.full_name}</b>», связанные переписки и сообщения будут
+          удалены. Это действие нельзя отменить.
+        </ConfirmDialog>
       )}
 
       {options.unassignCandidate && (
-        <Modal
+        <ConfirmDialog
+          eyebrow="ОТВЯЗКА УЧЕНИКА"
+          title="Отвязать ученика?"
+          titleId="unassign-student-title"
+          busy={options.unassigningStudent}
+          icon={<Unlink />}
+          confirmLabel="Отвязать ученика"
+          busyLabel="Отвязываем…"
           onClose={() => options.setUnassignCandidate(null)}
-          closeOnBackdrop={!options.unassigningStudent}
-          class="confirm-delete-modal"
-          role="alertdialog"
-          labelledBy="unassign-student-title"
+          onConfirm={options.confirmUnassignStudent}
         >
-          <div class="modal-head">
-            <div>
-              <div class="eyebrow">ОТВЯЗКА УЧЕНИКА</div>
-              <h2 id="unassign-student-title">Отвязать ученика?</h2>
-            </div>
-            <IconButton
-              onClick={() => options.setUnassignCandidate(null)}
-              disabled={options.unassigningStudent}
-              aria-label="Закрыть"
-            >
-              <X />
-            </IconButton>
-          </div>
-          <p class="hint">
-            Ученик «<b>{options.unassignCandidate.full_name}</b>» будет отвязан от учителя и появится в
-            разделе «Ученики без учителя». Активная переписка с учителем закроется, история сообщений
-            сохранится.
-          </p>
-          <div class="modal-actions">
-            <Button
-              variant="ghost"
-              onClick={() => options.setUnassignCandidate(null)}
-              disabled={options.unassigningStudent}
-            >
-              Отмена
-            </Button>
-            <Button
-              variant="danger"
-              onClick={options.confirmUnassignStudent}
-              disabled={options.unassigningStudent}
-            >
-              {options.unassigningStudent ? (
-                "Отвязываем…"
-              ) : (
-                <>
-                  <Unlink />
-                  Отвязать ученика
-                </>
-              )}
-            </Button>
-          </div>
-        </Modal>
+          Ученик «<b>{options.unassignCandidate.full_name}</b>» будет отвязан от учителя и появится в
+          разделе «Ученики без учителя». Активная переписка с учителем закроется, история сообщений
+          сохранится.
+        </ConfirmDialog>
       )}
 
       {options.disconnectCandidate && (
-        <Modal
+        <ConfirmDialog
+          eyebrow="ОТКЛЮЧЕНИЕ TELEGRAM"
+          title="Отключить Telegram?"
+          titleId="disconnect-telegram-title"
+          busy={options.disconnectingTelegram}
+          confirmLabel="Отключить Telegram"
+          busyLabel="Отключаем…"
           onClose={() => options.setDisconnectCandidate(null)}
-          closeOnBackdrop={!options.disconnectingTelegram}
-          class="confirm-delete-modal"
-          role="alertdialog"
-          labelledBy="disconnect-telegram-title"
+          onConfirm={options.confirmDisconnectTelegram}
         >
-          <div class="modal-head">
-            <div>
-              <div class="eyebrow">ОТКЛЮЧЕНИЕ TELEGRAM</div>
-              <h2 id="disconnect-telegram-title">Отключить Telegram?</h2>
-            </div>
-            <IconButton
-              onClick={() => options.setDisconnectCandidate(null)}
-              disabled={options.disconnectingTelegram}
-              aria-label="Закрыть"
-            >
-              <X />
-            </IconButton>
-          </div>
-          <p class="hint">
-            Отключить Telegram у пользователя «<b>{options.disconnectCandidate.full_name}</b>»? Профиль и
-            история переписки останутся в системе. Отправлять и получать сообщения через бота он не сможет до
-            повторного подключения.
-          </p>
-          <div class="modal-actions">
-            <Button
-              variant="ghost"
-              onClick={() => options.setDisconnectCandidate(null)}
-              disabled={options.disconnectingTelegram}
-            >
-              Отмена
-            </Button>
-            <Button
-              variant="danger"
-              onClick={options.confirmDisconnectTelegram}
-              disabled={options.disconnectingTelegram}
-            >
-              {options.disconnectingTelegram ? "Отключаем…" : "Отключить Telegram"}
-            </Button>
-          </div>
-        </Modal>
+          Отключить Telegram у пользователя «<b>{options.disconnectCandidate.full_name}</b>»? Профиль и
+          история переписки останутся в системе. Отправлять и получать сообщения через бота он не сможет до
+          повторного подключения.
+        </ConfirmDialog>
       )}
 
       {options.issuedCredential && (

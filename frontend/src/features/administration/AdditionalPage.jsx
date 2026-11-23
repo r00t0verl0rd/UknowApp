@@ -4,10 +4,9 @@ import {
   IconDatabase as DatabaseIcon,
   IconRefreshCw as RefreshCw,
   IconTrash2 as Trash2,
-  IconX as X,
 } from "../../shared/components/Icons.jsx";
 import Panel from "../../shared/components/Panel.jsx";
-import Modal from "../../shared/components/Modal.jsx";
+import ConfirmDialog from "../../shared/components/ConfirmDialog.jsx";
 import Button from "../../shared/components/Button.jsx";
 import IconButton from "../../shared/components/IconButton.jsx";
 function formatBytes(bytes) {
@@ -273,46 +272,18 @@ export default function AdditionalPage(options) {
         </article>
       </Panel>
       {options.pendingConfirmation && (
-        <Modal
-          class="confirm-delete-modal"
-          role="alertdialog"
-          labelledBy="admin-operation-title"
+        <ConfirmDialog
+          eyebrow={isRestore() ? "ВОССТАНОВЛЕНИЕ ДАННЫХ" : "ОЧИСТКА ДАННЫХ"}
+          title={isRestore() ? "Восстановить резервную копию?" : "Удалить старые данные?"}
+          titleId="admin-operation-title"
+          busy={options.dataBusy}
+          tone={isRestore() ? "primary" : "danger"}
+          confirmLabel={isRestore() ? "Восстановить" : "Удалить данные"}
           onClose={() => options.setPendingConfirmation(null)}
-          closeOnBackdrop={!options.dataBusy}
+          onConfirm={options.confirmPendingAction}
         >
-          <div class="modal-head">
-            <div>
-              <div class="eyebrow">{isRestore() ? "ВОССТАНОВЛЕНИЕ ДАННЫХ" : "ОЧИСТКА ДАННЫХ"}</div>
-              <h2 id="admin-operation-title">
-                {isRestore() ? "Восстановить резервную копию?" : "Удалить старые данные?"}
-              </h2>
-            </div>
-            <IconButton
-              onClick={() => options.setPendingConfirmation(null)}
-              disabled={options.dataBusy}
-              aria-label="Закрыть"
-            >
-              <X />
-            </IconButton>
-          </div>
-          <p class="hint">{confirmationText()}</p>
-          <div class="modal-actions">
-            <Button
-              variant="ghost"
-              onClick={() => options.setPendingConfirmation(null)}
-              disabled={options.dataBusy}
-            >
-              Отмена
-            </Button>
-            <Button
-              variant={isRestore() ? "primary" : "danger"}
-              disabled={options.dataBusy}
-              onClick={options.confirmPendingAction}
-            >
-              {isRestore() ? "Восстановить" : "Удалить данные"}
-            </Button>
-          </div>
-        </Modal>
+          {confirmationText()}
+        </ConfirmDialog>
       )}
     </>
   );
