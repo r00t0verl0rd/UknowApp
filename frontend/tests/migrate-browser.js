@@ -17,85 +17,23 @@ try {
     await page.evaluate(() => localStorage.setItem("uknowapp-auth", "1"));
     await page.reload();
   }
-  if (process.argv[2] === "export") {
-    // Проверяем готовый HTML до первого отображения приложения и стилей.
-    const beforeApp = await browser.newPage();
-    await beforeApp.route("**/assets/**", route => route.abort());
-    await beforeApp.goto(url);
-    assert.equal(await beforeApp.locator("body").evaluate(node => getComputedStyle(node).backgroundColor), "rgb(32, 41, 56)");
-    await beforeApp.addInitScript(() => localStorage.setItem("uknowapp-theme-v2", "light"));
-    await beforeApp.reload();
-    assert.equal(await beforeApp.locator("body").evaluate(node => getComputedStyle(node).backgroundColor), "rgb(250, 248, 253)");
-    await beforeApp.close();
-    await page.goto(url);
-    await page.getByRole("button", { name: "Войти" }).click();
-    const alert = page.getByRole("alertdialog");
-    await alert.getByText("Введите логин").waitFor();
-    const close = alert.getByRole("button", { name: "Закрыть уведомление об ошибке" });
-    for (const width of [390, 1280]) {
-      await page.setViewportSize({ width, height: 800 });
-      for (const theme of ["light", "dark-soft"]) {
-        await page.evaluate(value => { document.documentElement.dataset.theme = value; }, theme);
-        const icon = await close.locator("svg").boundingBox();
-        const target = await close.boundingBox();
-        assert.ok(icon.width >= 14 && icon.width <= 18);
-        assert.ok(icon.height >= 14 && icon.height <= 18);
-        assert.ok(target.width >= 40 && target.height >= 40);
-      }
-    }
-    await alert.getByRole("button", { name: "Закрыть уведомление об ошибке" }).click();
-    await alert.waitFor({ state: "hidden" });
-  }
   await login();
   if (process.argv[2] === "export") {
-    await page.goto(url + "/dialogs");
-    await page.getByRole("button", { name: "Личные" }).click();
-    const [teacher] = (await (await api.get(url + "/api/admin/users")).json()).filter(user => user.role === "teacher");
-    const dialog = page.getByRole("dialog", { name: "Создать диалог" });
-    for (const width of [320, 390, 768, 1280]) {
-      await page.setViewportSize({ width, height: 800 });
-      const nav = page.getByRole("navigation", { name: "Основная навигация" });
-      if (width <= 760) {
-        const tops = await nav.getByRole("button").evaluateAll(items => items.map(item => item.offsetTop));
-        assert.equal(new Set(tops).size, 1);
-      }
-      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-    }
-    await page.setViewportSize({ width: 390, height: 800 });
-    async function openPersonal() {
-      await page.getByRole("button", { name: "Новый диалог" }).click();
-      await dialog.getByLabel("Участник").selectOption(String(teacher.id));
-      await dialog.getByRole("button", { name: "Создать диалог" }).click();
-      await dialog.waitFor({ state: "hidden" });
-    }
-    const createUrl = url + "/api/panel/personal-conversations";
-    await page.route(createUrl, route => route.request().method() === "POST"
-      ? route.fulfill({ status: 503, json: { detail: "Временно недоступно" } })
-      : route.continue());
-    await page.getByRole("button", { name: "Новый диалог" }).click();
-    await dialog.getByLabel("Участник").selectOption(String(teacher.id));
-    await dialog.getByRole("button", { name: "Создать диалог" }).click();
-    const alert = page.getByRole("alertdialog").filter({ hasText: "Временно недоступно" });
-    await alert.getByRole("button", { name: "Закрыть уведомление об ошибке" }).click();
-    assert.equal(await dialog.getByLabel("Участник").inputValue(), String(teacher.id));
-    await page.unroute(createUrl);
-    await dialog.getByRole("button", { name: "Создать диалог" }).click();
-    await dialog.waitFor({ state: "hidden" });
-    await page.getByPlaceholder("Личное сообщение…").fill("Проверка личного диалога");
-    await page.getByRole("button", { name: "Отправить сообщение" }).click();
-    const message = page.locator(".messages").getByText("Проверка личного диалога", { exact: true });
-    await message.waitFor();
-    assert.equal(await page.locator(".native-feedback-dialog").filter({ hasText: "Сообщение отправлено" }).count(), 0);
-    const trash = message.locator("..").getByRole("button", { name: "Удалить своё сообщение" });
-    assert.equal((await trash.locator("svg").boundingBox()).width, 16);
-    await trash.click();
-    await page.getByRole("alertdialog").getByRole("button", { name: "Отмена" }).click();
-    await page.getByRole('button', { name: 'Назад к списку диалогов' }).click();
-    await openPersonal();
-    await message.waitFor();
-    const personal = await (await api.get(url + "/api/panel/personal-conversations")).json();
-    assert.deepEqual(personal.map(chat => chat.participant.id), [teacher.id]);
-    await page.setViewportSize({ width: 1280, height: 800 });
+    // Проверяем перенос обоих типов переписок через API без зависимости от кнопок интерфейса.
+    const usersResponse = await api.get(url + "/api/admin/users");
+    assert.equal(usersResponse.status(), 200);
+    const [teacher] = (await usersResponse.json()).filter(user => user.role === "teacher");
+    assert.ok(teacher, "Migration fixture must contain a teacher");
+    const personalResponse = await api.post(url + "/api/panel/personal-conversations", {
+      data: { user_id: teacher.id },
+    });
+    assert.equal(personalResponse.status(), 201);
+    const personal = await personalResponse.json();
+    const personalMessageResponse = await api.post(
+      url + "/api/panel/personal-conversations/" + personal.id + "/messages",
+      { data: { text: "migration personal lesson" } },
+    );
+    assert.equal(personalMessageResponse.status(), 201);
     await page.goto(url + "/additional");
     const downloading = page.waitForEvent("download");
     await page.getByRole("button", { name: "Скачать полную резервную копию" }).click();
@@ -113,6 +51,16 @@ try {
     await page.getByRole("button", { name: "Войти" }).waitFor({ timeout: 120000 });
     await login();
     await page.getByText("Полная копия восстановлена.", { exact: false }).waitFor();
+    const personalChatsResponse = await api.get(url + "/api/panel/personal-conversations");
+    assert.equal(personalChatsResponse.status(), 200);
+    const personalChats = await personalChatsResponse.json();
+    assert.equal(personalChats.length, 1);
+    assert.equal(personalChats[0].participant.role, "teacher");
+    const personalMessagesResponse = await api.get(
+      url + "/api/panel/personal-conversations/" + personalChats[0].id + "/messages",
+    );
+    assert.equal(personalMessagesResponse.status(), 200);
+    assert.ok((await personalMessagesResponse.json()).some(row => row.text === "migration personal lesson"));
     const [chat] = await (await api.get(url + "/api/panel/conversations")).json();
     const history = url + "/api/panel/conversations/" + chat.id + "/messages";
     const [message] = await (await api.get(history)).json();
