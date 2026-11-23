@@ -120,14 +120,37 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
     await page.evaluate(() => localStorage.setItem("uknowapp-auth", "1"));
     await page.goto(HOST + "/additional");
     await page.getByText("Не удалось загрузить статистику").waitFor({ timeout: 12000 });
+    await page.getByText("Данные остались без изменений. Попробуйте обновить сведения.").waitFor();
+    await page.getByText("Технические подробности").click();
     await page.getByText("Сервер не смог получить статистику (HTTP 500)", { exact: false }).waitFor();
-    assert.ok(await page.getByText("Полная резервная копия UknowApp").isVisible(),
+    assert.ok(await page.getByText("Весь UknowApp в одном архиве").isVisible(),
       "Backup controls remain available when statistics fails");
 
     await page.getByRole("button", { name: "Повторить загрузку" }).click();
     await page.getByText("7 пользователей").waitFor({ timeout: 12000 });
     assert.ok(statsRequests >= 2);
     assert.equal(await page.getByText("Не удалось загрузить статистику").count(), 0);
+    // Одинаковые действия и единый стиль для компьютера и телефона.
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: 850 });
+      const panel = page.locator(".additional-panel");
+      await panel.waitFor({ state: "visible" });
+      assert.ok(await panel.getByText("Весь UknowApp в одном архиве").isVisible());
+      const picker = page.getByLabel("Удалять старше");
+      await picker.selectOption("60");
+      assert.equal(await picker.inputValue(), "60");
+      const selectRect = await picker.evaluate(el => {
+        const rect = el.getBoundingClientRect();
+        return { height: rect.height, width: rect.width };
+      });
+      assert.ok(selectRect.height >= 44 && selectRect.width >= 100,
+        `${width}px: retention selection is a usable touch target`);
+      await page.getByRole("button", { name: "Удалить старые данные" }).click();
+      await page.getByRole("alertdialog", { name: "Удалить старые данные?" })
+        .getByText("Сообщения и вложения старше 60 дней", { exact: false }).waitFor();
+      await page.getByRole("alertdialog", { name: "Удалить старые данные?" })
+        .getByRole("button", { name: "Отмена" }).click();
+    }
   } finally {
     await browser.close();
     await new Promise((resolve, reject) => server.httpServer.close(error => error ? reject(error) : resolve()));
