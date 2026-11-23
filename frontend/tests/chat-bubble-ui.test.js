@@ -76,9 +76,12 @@ test("toast duration and viewport motion keep feedback readable and Safari scrol
 });
 
 
-test("admin participant names stay stacked without arrows; message filter uses shared control", () => {
+test("participant list stays stacked while open dialog title has inline names and arrow", () => {
   const chats = readFileSync(path.join(frontend, "src/features/conversations/ChatsPage.jsx"), "utf8");
-  assert.doesNotMatch(chats, /participant-pair-arrow/);
+  assert.match(chats, /class="participant-dialog-title"/);
+  assert.match(chats, /class="participant-dialog-arrow" aria-hidden="true">↔<\\/span>/);
+  assert.match(styles, /\\.chat-head-person > \\.participant-dialog-title \\{[^}]*flex-direction:row;/s);
+  assert.match(styles, /\\.participant-dialog-title > \\[data-chat-name-role\\] \\{[^}]*text-overflow:ellipsis;/s);
   assert.match(chats, /<b><span data-chat-name-role="teacher">\{chat\.teacher\.full_name\}<\/span><\/b>/);
   assert.match(chats, /<b><span data-chat-name-role="student">\{chat\.student\.full_name\}<\/span><\/b>/);
   assert.match(chats, /<ToolbarSelect\s+class="chat-message-filter"/);
