@@ -17,6 +17,12 @@ test("delivery details use a native popover, not an error modal", () => {
   assert.doesNotMatch(bubble, /class="btn small"/);
 });
 
+test("sender name is always visible for all conversation participants", () => {
+  assert.match(bubble, /<div class="message-topline">\s*<b>\{options\.message\.sender\}<\/b>/);
+  assert.doesNotMatch(bubble, /options\.viewerRole === "teacher" && options\.message\.sender_role/);
+  assert.doesNotMatch(bubble, /\{[^}]*options\.message\.sender_role[^}]*&&\s*\(\s*<b>/);
+});
+
 test("message text and unobtrusive icon actions share desktop and mobile styles", () => {
   assert.match(styles, /\.message > p \{[^}]*font-size:15px;[^}]*font-weight:400;[^}]*line-height:1\.58;/s);
   assert.match(styles, /\.message-topline > b \{[^}]*font-size:11px;/s);

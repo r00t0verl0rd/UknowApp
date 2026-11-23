@@ -232,9 +232,7 @@ function MessageBubble(options) {
   return (
     <div ref={bubbleRef} class={"message " + options.message.sender_role}>
       <div class="message-topline">
-        {!(options.viewerRole === "teacher" && options.message.sender_role !== "admin") && (
-          <b>{options.message.sender}</b>
-        )}
+        <b>{options.message.sender}</b>
         <div class="message-tools">
           <time class="message-time">{formatMessageTime(options.message.created_at, options.nowMs)}</time>
           {options.message.sender_role === options.viewerRole &&
