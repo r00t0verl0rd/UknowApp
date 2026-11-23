@@ -256,7 +256,7 @@ export default function AdditionalPage(options) {
             <div>
               <div class="data-tool-kicker">Уход за переписками</div>
               <h3>Очистить старые сообщения</h3>
-              <p>Освободите место, удалив старые сообщения и вложения. Пользователи, назначения и сами диалоги останутся.</p>
+              <p>Удалите старые сообщения и вложения. Пользователи, назначения и диалоги сохранятся.</p>
             </div>
           </div>
           <div class="data-cleanup-actions">
@@ -284,7 +284,7 @@ export default function AdditionalPage(options) {
               onClick={options.cleanupOldDialogues}
               disabled={options.dataBusy}
             >
-              <Trash2 size={16} aria-hidden="true" /> Удалить старые данные
+              <Trash2 size={16} aria-hidden="true" /> Очистить данные
             </Button>
           </div>
         </article>

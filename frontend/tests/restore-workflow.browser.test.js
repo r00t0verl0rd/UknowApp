@@ -131,11 +131,33 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
     assert.ok(statsRequests >= 2);
     assert.equal(await page.getByText("Не удалось загрузить статистику").count(), 0);
     // Одинаковые действия и единый стиль для компьютера и телефона.
-    for (const width of [1280, 390]) {
+    for (const width of [1280, 1024, 900, 760, 390, 320]) {
       await page.setViewportSize({ width, height: 850 });
       const panel = page.locator(".additional-panel");
       await panel.waitFor({ state: "visible" });
       assert.ok(await panel.getByText("Весь UknowApp в одном архиве").isVisible());
+      const cleanupGeometry = await page.locator(".data-cleanup-card").evaluate(card => {
+        const action = card.querySelector(".data-cleanup-actions .data-action-btn");
+        const retention = card.querySelector(".data-retention-select");
+        const button = action.getBoundingClientRect();
+        const picker = retention.getBoundingClientRect();
+        return {
+          height: card.getBoundingClientRect().height,
+          buttonHeight: button.height,
+          buttonWidth: button.width,
+          pickerHeight: picker.height,
+          buttonTextNoWrap: getComputedStyle(action).whiteSpace === "nowrap",
+          controlGap: Math.abs(button.bottom - picker.bottom),
+        };
+      });
+      assert.ok(cleanupGeometry.height < (width >= 760 ? 260 : 340),
+        `${width}px: cleanup card stays compact without empty vertical space`);
+      assert.ok(cleanupGeometry.buttonTextNoWrap && cleanupGeometry.buttonWidth >= 170,
+        `${width}px: cleanup button text stays on one line`);
+      assert.ok(cleanupGeometry.buttonHeight >= 44 && cleanupGeometry.pickerHeight >= 44,
+        `${width}px: both controls are convenient to tap`);
+      if (width > 760) assert.ok(cleanupGeometry.controlGap <= 2,
+        `${width}px: button and retention field align along the bottom`);
       const picker = page.getByLabel("Удалять старше");
       await picker.selectOption("60");
       assert.equal(await picker.inputValue(), "60");
@@ -145,7 +167,7 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
       });
       assert.ok(selectRect.height >= 44 && selectRect.width >= 100,
         `${width}px: retention selection is a usable touch target`);
-      await page.getByRole("button", { name: "Удалить старые данные" }).click();
+      await page.getByRole("button", { name: "Очистить данные" }).click();
       await page.getByRole("alertdialog", { name: "Удалить старые данные?" })
         .getByText("Сообщения и вложения старше 60 дней", { exact: false }).waitFor();
       await page.getByRole("alertdialog", { name: "Удалить старые данные?" })
