@@ -378,6 +378,9 @@ export default function ChatsPage(options) {
                     onDelete={options.setDeleteMessageCandidate}
                     viewerRole={options.profile?.role}
                     personalChat={options.selectedChat.type === "personal"}
+                    deliveryRecipients={options.selectedChat.type === "personal"
+                      ? [options.selectedChat.participant].filter(Boolean)
+                      : [options.selectedChat.student, options.selectedChat.teacher].filter(Boolean)}
                     nowMs={messageNowMs()}
                   />
                 )}
