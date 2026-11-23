@@ -36,6 +36,15 @@ test("sender name is always visible for all conversation participants", () => {
   assert.doesNotMatch(bubble, /\{[^}]*options\.message\.sender_role[^}]*&&\s*\(\s*<b>/);
 });
 
+test("chat header actions align and remain clickable on touch and desktop", () => {
+  assert.match(styles, /\.message-topline \{[^}]*display:grid;[^}]*grid-template-columns:minmax\(0, 1fr\) auto;/s);
+  assert.match(styles, /\.message-tools \{[^}]*align-items:center;[^}]*height:36px;/s);
+  assert.match(styles, /--icon-action-size:36px/);
+  assert.match(styles, /touch-action:manipulation/);
+  assert.match(bubble, /class="message-detail-btn"[\s\S]*?popovertarget=\{deliveryPopoverId\}/);
+  assert.match(bubble, /class="message-delete-btn"[\s\S]*?onClick=\{\(\) => options\.onDelete\?\.\(options\.message\)\}/);
+});
+
 test("message text and unobtrusive icon actions share desktop and mobile styles", () => {
   assert.match(styles, /\.message > p \{[^}]*font-size:15px;[^}]*font-weight:400;[^}]*line-height:1\.58;/s);
   assert.match(styles, /\.message-topline > b \{[^}]*font-size:11px;/s);

@@ -127,7 +127,7 @@
 .message {
   width:fit-content;
   max-width:min(92%, 760px);
-  min-width:min(166px, 84%);
+  min-width:min(204px, 88%);
   padding:11px 14px 12px;
   border:1px solid var(--ui-border);
   border-radius:16px;
@@ -169,10 +169,12 @@
   );
 }
 .message-topline {
-  @include primitives.spread;
+  display:grid;
+  grid-template-columns:minmax(0, 1fr) auto;
+  align-items:center;
   gap:10px;
   min-width:0;
-  align-items:center;
+  min-height:36px;
 }
 .message-topline > b {
   min-width:0;
@@ -188,18 +190,29 @@
   display:inline-flex;
   flex:0 0 auto;
   align-items:center;
+  justify-content:flex-end;
   gap:2px;
+  height:36px;
+  white-space:nowrap;
 }
 .message-time {
+  display:inline-grid;
+  place-items:center;
+  align-self:center;
+  min-height:36px;
   color:var(--muted);
   font-size:10.5px;
   font-weight:400;
   font-variant-numeric:tabular-nums;
+  line-height:1;
   white-space:nowrap;
 }
 .message-read-status {
-  display:inline-flex;
-  align-items:center;
+  display:inline-grid;
+  place-items:center;
+  flex:0 0 20px;
+  width:20px;
+  height:36px;
   color:var(--muted);
   line-height:1;
 }
@@ -212,20 +225,25 @@
 // Одинаковые спокойные иконки для мобильной и десктопной версии.
 // Селектор перекрывает общие цветные стили IconButton, включая touch-режим.
 :root .message .ui-icon-button:is(.message-delete-btn, .message-detail-btn) {
-  --icon-action-size:27px;
-  flex:0 0 27px;
-  width:27px;
-  min-width:27px;
-  max-width:27px;
-  height:27px;
-  min-height:27px;
+  --icon-action-size:36px;
+  display:inline-grid;
+  place-items:center;
+  flex:0 0 36px;
+  width:36px;
+  min-width:36px;
+  max-width:36px;
+  height:36px;
+  min-height:36px;
   padding:0;
+  margin:0;
   border:0;
-  border-radius:7px;
+  border-radius:9px;
   background:transparent;
   box-shadow:none;
   color:var(--muted);
-  opacity:0.72;
+  opacity:0.78;
+  cursor:pointer;
+  touch-action:manipulation;
 }
 :root .message .ui-icon-button:is(.message-delete-btn, .message-detail-btn) svg {
   width:15px;
@@ -238,6 +256,13 @@
   color:var(--ink);
   background:color-mix(in srgb, var(--ink) 8%, transparent);
   opacity:1;
+  outline-offset:1px;
+}
+:root .message .ui-icon-button:is(.message-delete-btn, .message-detail-btn):active:not(:disabled) {
+  transform:scale(0.96);
+}
+:root .message .ui-icon-button:is(.message-delete-btn, .message-detail-btn) svg {
+  pointer-events:none;
 }
 :root[data-theme="dark-soft"] .message .ui-icon-button:is(.message-delete-btn, .message-detail-btn) {
   color:#fff;

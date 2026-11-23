@@ -232,6 +232,7 @@ function MessageBubble(options) {
             })()}
           {options.viewerRole === "admin" && deliveryDetails().length > 0 && (
             <IconButton
+              type="button"
               size="compact"
               class="message-detail-btn"
               popovertarget={deliveryPopoverId}
@@ -245,6 +246,7 @@ function MessageBubble(options) {
           )}
           {options.message.can_delete && (
             <IconButton
+              type="button"
               size="compact"
               class="message-delete-btn"
               onClick={() => options.onDelete?.(options.message)}
