@@ -16,12 +16,12 @@
   & .panel-access-value {
     background:#293140;
     border-color:#414c60;
-    color:#e0e5ee;
+    color:var(--app-foreground);
   }
   & .panel-login-edit-row > input:focus {
     background:#30394a;
     border-color:#69758e;
-    color:#f0f2f7;
+    color:var(--app-foreground);
   }
   & .panel-access-value b {
     color:#b9afe8;
@@ -46,7 +46,7 @@
   & .user-action-btn:hover {
     background:#303b4d;
     border-color:#4b5870;
-    color:#f0f2f7;
+    color:var(--app-foreground);
   }
   & .user-action-btn {
     color:#c0c8d6;
@@ -54,7 +54,7 @@
     background:#252e3d;
   }
   & .user-action-btn.user-delete:hover {
-    color:#fff;
+    color:var(--app-foreground);
     background:#a94e60;
   }
   & .user-action-btn.user-info-btn {
@@ -76,7 +76,7 @@
     border-top-color:#414e62;
   }
   & .user-info-login > b {
-    color:#edf0f6;
+    color:var(--app-foreground);
   }
   & .user-row:hover {
     background:#262f3d;
