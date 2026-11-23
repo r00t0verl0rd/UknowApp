@@ -923,8 +923,45 @@
     grid-template-columns:minmax(380px, min(34%, 430px)) minmax(0, 1fr);
   }
 }
+/* Фильтр и поиск: всегда одна строка, в том числе в узкой колонке чатов. */
 :root .workspace-shell .workspace-panel .chat-list-filters.workspace-control-row {
-  grid-template-columns:repeat(auto-fit, minmax(min(100%, 11.5rem), 1fr));
+  container-type:inline-size;
+  grid-template-columns:minmax(0, 1fr) minmax(0, 1.12fr);
+  gap:6px;
+  align-items:center;
+}
+:root .workspace-shell .workspace-panel .chat-list-filters.workspace-control-row:not(:has(> .chat-filter)) {
+  grid-template-columns:minmax(0, 1fr);
+}
+:root .workspace-shell .workspace-panel.chat-list .chat-list-filters > :is(.search, .chat-filter) {
+  width:100%;
+  min-width:0;
+  margin:0;
+}
+:root .workspace-shell .workspace-panel.chat-list .chat-list-filters .chat-filter .ui-toolbar-select {
+  width:100%;
+  min-width:0;
+}
+@container (max-width: 340px) {
+  :root .workspace-shell .workspace-panel.chat-list .chat-list-filters > .search,
+  :root .workspace-shell .workspace-panel.chat-list .chat-list-filters > .chat-filter {
+    --workspace-control-font-size:11px;
+    --workspace-control-padding:6px;
+    --workspace-control-gap:3px;
+  }
+  :root .workspace-shell .workspace-panel.chat-list .chat-list-filters > .search > svg {
+    flex:none;
+    width:12px;
+    height:12px;
+  }
+}
+@container (max-width: 285px) {
+  :root .workspace-shell .workspace-panel.chat-list .chat-list-filters > .search,
+  :root .workspace-shell .workspace-panel.chat-list .chat-list-filters > .chat-filter {
+    --workspace-control-font-size:10px;
+    --workspace-control-padding:4px;
+    --workspace-control-gap:2px;
+  }
 }
 .workspace-panel.chat-list {
   .chat-filter {
@@ -933,24 +970,6 @@
   .chat-filter .ui-toolbar-select {
     width:100%;
     flex:1 1 auto;
-  }
-}
-/* На Desktop оба фильтра располагаются в одну строку; при отсутствии
-   выпадающего списка поиск по-прежнему занимает всю ширину панели. */
-@media (min-width: 1025px) {
-  :root .workspace-shell .workspace-panel.chat-list .chat-list-filters.workspace-control-row:has(> .chat-filter) {
-    grid-template-columns:repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
-    align-items:stretch;
-    --workspace-control-padding:9px;
-  }
-  :root .workspace-shell .workspace-panel.chat-list .chat-list-filters > :is(.search, .chat-filter) {
-    min-width:0;
-    width:100%;
-    margin:0;
-  }
-  :root .workspace-shell .workspace-panel.chat-list .chat-list-filters .chat-filter .ui-toolbar-select {
-    min-width:0;
-    width:100%;
   }
 }
 .workspace-shell {
