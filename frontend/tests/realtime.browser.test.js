@@ -106,10 +106,12 @@ test("global SSE updates real counters across tabs and replays missed events", {
         id: 77,
         sender: "Администратор",
         sender_role: "admin",
-        can_delete: false,
+        can_delete: true,
         content_type: "text",
         text: "Проверка адресной синхронизации",
-        metadata: {},
+        metadata: { messenger_deliveries: {
+          telegram: { delivered: [], errors: [{ name: "Учитель", role: "teacher", reason: "Аккаунт получателя не подключён к TELEGRAM" }] },
+        } },
         delivery_status: "delivered",
         panel_read_at: null,
         created_at: "2026-11-21T10:00:00+00:00",
@@ -2071,6 +2073,35 @@ test("global SSE updates real counters across tabs and replays missed events", {
 
     await page.getByRole("button", { name: /Учитель/ }).click();
     await page.getByText("Проверка адресной синхронизации").waitFor({ state: "visible" });
+    // Проверяем настоящие клики по иконкам и их центровку на двух ширинах.
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: 800 });
+      const infoButton = page.getByRole("button", { name: "Подробности внешней доставки" });
+      const deleteButton = page.getByRole("button", { name: "Удалить своё сообщение" });
+      await infoButton.waitFor({ state: "visible" });
+      const positions = await page.locator(".message-tools").first().evaluate(row => {
+        const info = row.querySelector(".message-detail-btn");
+        const remove = row.querySelector(".message-delete-btn");
+        const time = row.querySelector(".message-time");
+        const bounds = el => {
+          const b = el.getBoundingClientRect();
+          return { cy: b.y + b.height / 2, size: b.width };
+        };
+        return { info: bounds(info), remove: bounds(remove), time: bounds(time) };
+      });
+      assert.ok(Math.abs(positions.info.cy - positions.remove.cy) < 1, `${width}px: icons vertically centered`);
+      assert.ok(Math.abs(positions.time.cy - positions.remove.cy) < 1, `${width}px: time and icons aligned`);
+      assert.ok(positions.info.size >= 36 && positions.remove.size >= 36, `${width}px: clickable hit area`);
+      await infoButton.click();
+      await page.getByRole("dialog", { name: "Подробности внешней доставки" })
+        .getByText("Получатель не подключил телеграм-бота.").waitFor({ state: "visible" });
+      await page.getByRole("button", { name: "Закрыть подробности доставки" }).click();
+      await deleteButton.click();
+      await page.getByRole("alertdialog", { name: "Удалить у всех?" }).waitFor({ state: "visible" });
+      await page.getByRole("alertdialog", { name: "Удалить у всех?" })
+        .getByRole("button", { name: "Отмена" }).click();
+    }
+    await page.setViewportSize(originalViewport);
     publish({
       event_id: 102,
       conversation_id: 5,
