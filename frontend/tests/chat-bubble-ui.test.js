@@ -20,6 +20,16 @@ test("delivery details use a native popover, not an error modal", () => {
   assert.doesNotMatch(bubble, /class="btn small"/);
 });
 
+test("related popups communicate outcomes before caveats", () => {
+  const chats = readFileSync(path.join(frontend, "src/features/conversations/state/createChatsController.js"), "utf8");
+  const feedback = readFileSync(path.join(frontend, "src/shared/components/AppToast.jsx"), "utf8");
+  const backup = readFileSync(path.join(frontend, "src/features/administration/RestoreFlowDialog.jsx"), "utf8");
+  assert.match(chats, /options\.notify\(\s*"Сообщение удалено из UknowApp/);
+  assert.doesNotMatch(chats, /Не удалось удалить копии во внешних мессенджерах/);
+  assert.match(feedback, /"Не получилось"/);
+  assert.match(backup, /Данные из резервной копии восстановлены/);
+});
+
 test("sender name is always visible for all conversation participants", () => {
   assert.match(bubble, /<div class="message-topline">\s*<b>\{options\.message\.sender\}<\/b>/);
   assert.doesNotMatch(bubble, /options\.viewerRole === "teacher" && options\.message\.sender_role/);

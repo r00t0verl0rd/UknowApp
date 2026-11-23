@@ -311,13 +311,12 @@ export function createChatsController(options) {
       actions.setDeleteMessageCandidate(null);
       const messengerFailed = Number(result.messenger_failed ?? result.telegram_failed ?? 0);
       if (messengerFailed > 0) {
-        options.setError(
-          "Сообщение удалено из UknowApp. Не удалось удалить копии во внешних мессенджерах: " +
-            messengerFailed +
-            ".",
+        options.notify(
+          "Сообщение удалено из UknowApp. " +
+            "Часть копий в мессенджерах удалить не удалось (" + messengerFailed + ").",
         );
       } else {
-        options.notify("Сообщение удалено у всех участников");
+        options.notify("Сообщение удалено из UknowApp и подключённых мессенджеров");
       }
     } catch (error) {
       options.setError(error.message || "Не удалось удалить сообщение");

@@ -93,12 +93,10 @@ export function createAdminDataController(options) {
     try {
       const result = await cleanupAdminDialogues(options.request, days);
       options.notify(
-        "Удалено сообщений: " +
-          result.deleted_messages +
-          ", личных: " +
-          result.deleted_personal_messages +
-          ", медиафайлов: " +
-          result.deleted_media_files,
+        "Очистка завершена: удалено " +
+          (result.deleted_messages + result.deleted_personal_messages) +
+          " сообщений и " + result.deleted_media_files + " вложений. " +
+          "Участники и назначения сохранены.",
       );
       await loadDataStats();
       await options.refresh();

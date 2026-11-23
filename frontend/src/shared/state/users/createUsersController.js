@@ -190,7 +190,7 @@ export function createUsersController(options) {
       await unassignStudentApi(options.request, student.id);
       actions.setUnassignCandidate(null);
       await options.refresh();
-      options.notify("Ученик отвязан от учителя");
+      options.notify("Ученик теперь в списке «Без учителя». История переписки сохранена");
     } catch (error) {
       options.setError(error.message || "Не удалось отвязать ученика");
     } finally {
@@ -206,7 +206,7 @@ export function createUsersController(options) {
       await disconnectUserTelegram(options.request, user.id);
       actions.setDisconnectCandidate(null);
       await options.refresh();
-      options.notify("Telegram отключён");
+      options.notify("Telegram отключён. Переписка сохранена в UknowApp");
     } catch (error) {
       options.setError(error.message);
     } finally {
