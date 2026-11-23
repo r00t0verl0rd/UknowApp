@@ -261,12 +261,12 @@
     background:var(--ui-control-bg);
   }
   .btn.ghost {
-    background:#eae7ef;
-    border-color:#ded8e6;
+    background:var(--ui-control-bg);
+    border-color:var(--ui-border);
   }
   .btn.outline {
-    background:#f1edf7;
-    border-color:#d8c9ed;
+    background:var(--ui-control-bg);
+    border-color:var(--ui-selected-border);
   }
   .person-actions button,
   .icon-btn {
@@ -275,7 +275,7 @@
     color:#716981;
   }
   .add-student {
-    background:#f3eff8;
+    background:var(--surface-soft);
   }
   .topbar-actions {
     gap:5px;
@@ -595,7 +595,7 @@
     box-shadow:none;
   }
   .btn.ghost {
-    background-color:#eae7ef;
+    background-color:var(--ui-control-bg);
   }
   .btn.outline,
   .add-student {
@@ -607,7 +607,7 @@
     background:var(--button-primary);
   }
   .btn.ghost:not(.primary):not(.danger-icon) {
-    background-color:#eae7ef;
+    background-color:var(--ui-control-bg);
   }
   .btn.outline:not(.primary):not(.danger-icon),
   button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn)).add-student:not(.primary):not(
@@ -670,8 +670,8 @@
     background:var(--button-primary);
   }
   .btn.ghost {
-    background:#eae7ef;
-    border-color:#ded8e6;
+    background:var(--ui-control-bg);
+    border-color:var(--ui-border);
   }
   .btn.outline,
   .add-student {

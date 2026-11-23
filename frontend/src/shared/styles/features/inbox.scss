@@ -10,7 +10,7 @@
   align-items:center;
   width:fit-content;
   border:1px solid var(--line);
-  background:#f8f5fc;
+  background:var(--button-bg);
   font-weight:800;
   cursor:pointer;
 }
@@ -22,8 +22,8 @@
   align-items:center;
   gap:6px;
   max-width:100%;
-  color:#625b70;
-  background:#f2eff6;
+  color:var(--ui-control-text);
+  background:var(--surface-soft);
   border-radius:8px;
   padding:7px 9px;
   font-size:11px;
@@ -35,9 +35,9 @@
   min-width:0;
   box-sizing:border-box;
   padding:4px 14px;
-  border:1px solid #e9e4ef;
+  border:1px solid var(--ui-border);
   border-radius:12px;
-  background:#f8f7fb;
+  background:var(--surface-soft);
 }
 .panel-credential-row {
   @include primitives.stack;
@@ -53,7 +53,7 @@
     display:block;
     min-width:0;
     margin:0;
-    color:#817b8d;
+    color:var(--muted);
     font-size:11px;
     font-weight:650;
     line-height:1.25;
@@ -68,9 +68,9 @@
     min-height:36px;
     margin:0;
     padding:7px 10px;
-    border:1px solid #e8e3ef;
+    border:1px solid var(--ui-border);
     border-radius:8px;
-    background:#fff;
+    background:var(--surface-input);
     color:var(--ink);
     font-size:12px;
     font-weight:550;
@@ -78,8 +78,8 @@
     box-shadow:none;
   }
   > input:focus {
-    border-color:#c8b8e3;
-    background:#fff;
+    border-color:var(--ui-selected-border);
+    background:var(--surface-input);
     outline:2px solid rgba(133, 104, 184, 0.1);
     outline-offset:1px;
   }
@@ -92,12 +92,12 @@
   min-width:0;
   min-height:38px;
   padding:3px 5px 3px 10px;
-  border:1px solid #e8e3ef;
+  border:1px solid var(--ui-border);
   border-radius:8px;
-  background:#fff;
+  background:var(--surface-input);
   b {
     min-width:0;
-    color:#75629a;
+    color:var(--purple);
     font:
       800 13px ui-monospace,
       SFMono-Regular,
@@ -207,11 +207,11 @@
   }
 }
 .credential-field-code {
-  border-color:#ded1ef;
-  background:linear-gradient(115deg, #f7f3fc 0%, #f1ebf9 100%);
+  border-color:var(--ui-selected-border);
+  background:linear-gradient(115deg, var(--lavender-soft), var(--surface-soft));
 }
 .credential-field-code .credential-field-value b {
-  color:#7656a5;
+  color:var(--purple);
   font:
     800 20px ui-monospace,
     SFMono-Regular,
@@ -250,11 +250,11 @@
   height:36px;
   @include primitives.center;
   border-radius:10px;
-  background:#faf9fc;
+  background:var(--ui-control-bg);
 }
 .theme-toggle:hover {
-  background:#f0ebf9;
-  border-color:#dcd2ed;
+  background:var(--ui-control-hover);
+  border-color:var(--ui-border-strong);
   transform:translateY(-1px);
 }
 .mobile-quick-actions {

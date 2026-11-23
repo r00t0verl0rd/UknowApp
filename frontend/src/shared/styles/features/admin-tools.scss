@@ -569,7 +569,7 @@
   @include primitives.center;
   border:1px solid var(--line);
   border-radius:10px;
-  background:#faf9fc;
+  background:var(--ui-control-bg);
   color:var(--purple);
   transition:
     background 0.18s,
@@ -631,13 +631,13 @@
     width:min(100%, 1040px);
     margin:36px auto 24px;
     padding:22px 18px 16px;
-    border:1px solid #e5d8c0;
+    border:1px solid #CFC1AA;
     border-radius:18px;
-    border-top:1px solid #e5d8c0;
-    background:linear-gradient(135deg, #fbf6ec, #fffdf8);
+    border-top:1px solid #CFC1AA;
+    background:linear-gradient(135deg, #E6DCCD, #E8DFD5);
     box-shadow:
       0 5px 18px rgba(155, 113, 43, 0.07),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
   }
   & > .unassigned .unassigned-title {
     margin:0 0 13px;
