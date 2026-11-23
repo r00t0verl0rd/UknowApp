@@ -3,10 +3,10 @@
     border:1px solid var(--teacher-card-border);
     background:var(--teacher-card-background);
     box-shadow:var(--ui-shadow-card);
-    color:#edf0f5;
+    color:var(--app-foreground);
   }
   & .workspace-content:has(.admin-card) .legend {
-    color:#d1d7e3;
+    color:var(--app-foreground);
     background:#2a3342;
     border:1px solid #46536a;
     box-shadow:none;
@@ -61,7 +61,7 @@
     background-image:none;
     border-color:#746044;
     box-shadow:none;
-    color:#e4e8f0;
+    color:var(--app-foreground);
   }
   & .workspace-content:has(.admin-card) .unassigned-grid .unassigned-student-card .avatar {
     background:#574a38;
@@ -80,7 +80,7 @@
     color:#e5c995;
   }
   & .workspace-content:has(.admin-card) .admin-card {
-    color:#edf0f5;
+    color:var(--app-foreground);
     background:#2e3933;
     border-color:#485c4d;
     box-shadow:none;
@@ -770,7 +770,7 @@ audio {
   height:28px;
 }
 :root[data-theme="dark-soft"] .workspace-content:has(.admin-card) .graph-legend-item {
-  color:#d1d7e3;
+  color:var(--app-foreground);
 }
 .student-card > .graph-person-action {
   flex:0 0 27px;
