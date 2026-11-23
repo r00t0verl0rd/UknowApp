@@ -5,14 +5,14 @@ import { preview } from "vite";
 
 const HOST = "http://127.0.0.1:22252";
 
-test("desktop dialog search and select stay in one row with legible labels", { timeout: 60000 }, async () => {
+test("dialog search and select share a row at every screen size", { timeout: 60000 }, async () => {
   const server = await preview({
     preview: { host: "127.0.0.1", port: 22252, strictPort: true }, logLevel: "error",
   });
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH });
   try {
     for (const role of ["admin", "teacher"]) {
-      for (const width of [1025, 1280, 1600]) {
+      for (const width of [390, 760, 1024, 1025, 1280, 1600]) {
         const page = await browser.newPage({ viewport: { width, height: 820 } });
         await page.route("**/api/**", route => {
           const path = new URL(route.request().url()).pathname;
@@ -34,6 +34,10 @@ test("desktop dialog search and select stay in one row with legible labels", { t
         await page.getByRole("combobox", { name: "Фильтр диалогов" }).waitFor();
         for (const selection of ["all", "unread"]) {
           await page.getByRole("combobox", { name: "Фильтр диалогов" }).selectOption(selection);
+          for (const rowWidth of [null, 250, 280, 320]) {
+            await page.evaluate(value => {
+              document.querySelector(".chat-list-filters").style.width = value ? value + "px" : "";
+            }, rowWidth);
           const layout = await page.evaluate(() => {
             const search = document.querySelector(".chat-list-filters > .search");
             const filter = document.querySelector(".chat-list-filters > .chat-filter");
@@ -67,6 +71,7 @@ test("desktop dialog search and select stay in one row with legible labels", { t
             `${role} ${width}px: search placeholder is clipped: ${JSON.stringify(layout)}`);
           assert.ok(layout.usableSelect >= layout.optionWidth - 1,
             `${role} ${width}px: some filter options are clipped: ${JSON.stringify(layout)}`);
+          }
         }
         await page.close();
       }
