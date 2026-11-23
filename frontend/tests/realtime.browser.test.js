@@ -2000,47 +2000,51 @@ test("global SSE updates real counters across tabs and replays missed events", {
         }
       }
     }
-    // Nonmodal feedback is centered and uses the active theme without a blue focus ring.
+    // All feedback variants share responsive placement and theme.
     for (const width of [390, 760, 1280]) {
       await page.setViewportSize({ width, height: 800 });
       for (const theme of ["light", "dark-soft"]) {
-        const notice = await page.evaluate(currentTheme => {
-          const root = document.documentElement;
-          const previous = root.dataset.theme;
-          root.dataset.theme = currentTheme;
-          const dialog = document.createElement("dialog");
-          dialog.className = "modal native-dialog native-feedback-dialog native-feedback-info";
-          dialog.tabIndex = -1;
-          dialog.innerHTML = '<div class="native-feedback-content"><div class="native-feedback-copy"><h2>Уведомления</h2><p class="toast-message">Откройте приложение с экрана «Домой»</p></div></div>';
-          document.body.append(dialog);
-          try {
-            dialog.show();
-            dialog.focus();
-            const bounds = dialog.getBoundingClientRect();
-            const style = getComputedStyle(dialog);
-            return {
-              centerX: bounds.left + bounds.width / 2,
-              viewCenterX: window.innerWidth / 2,
-              width: bounds.width,
-              border: style.borderTopWidth,
-              radius: style.borderTopLeftRadius,
-              outline: style.outlineStyle,
-              background: style.backgroundColor,
-              text: dialog.querySelector(".toast-message").textContent,
-            };
-          } finally {
-            dialog.close();
-            dialog.remove();
-            root.dataset.theme = previous;
-          }
-        }, theme);
-        assert.ok(Math.abs(notice.centerX - notice.viewCenterX) < 2,
-          `${width}px ${theme}: informational toast horizontally centered`);
-        assert.ok(notice.width <= width - 24, `${width}px: toast fits screen`);
-        assert.equal(notice.border, "1px", `${width}px: toast has subtle border`);
-        assert.equal(notice.outline, "none", `${width}px: no native blue focus ring`);
-        assert.ok(notice.background !== "rgba(0, 0, 0, 0)");
-        assert.match(notice.text, /экрана «Домой»/);
+        for (const kind of ["info", "success", "error"]) {
+          const notice = await page.evaluate(([currentTheme, kind]) => {
+            const root = document.documentElement;
+            const previous = root.dataset.theme;
+            root.dataset.theme = currentTheme;
+            const dialog = document.createElement("dialog");
+            dialog.className = "modal native-dialog native-feedback-dialog native-feedback-" + kind;
+            dialog.tabIndex = -1;
+            dialog.innerHTML = '<div class="native-feedback-content"><div class="native-feedback-copy"><h2>Уведомления</h2><p class="toast-message">Откройте приложение с экрана «Домой»</p></div></div>';
+            document.body.append(dialog);
+            try {
+              if (kind === "error") dialog.showModal();
+              else dialog.show();
+              dialog.focus();
+              const bounds = dialog.getBoundingClientRect();
+              const style = getComputedStyle(dialog);
+              return {
+                right: bounds.right,
+                centerX: bounds.left + bounds.width / 2,
+                viewCenterX: window.innerWidth / 2,
+                width: bounds.width,
+                border: style.borderTopWidth,
+                radius: style.borderTopLeftRadius,
+                outline: style.outlineStyle,
+                background: style.backgroundColor,
+                text: dialog.querySelector(".toast-message").textContent,
+              };
+            } finally {
+              dialog.close();
+              dialog.remove();
+              root.dataset.theme = previous;
+            }
+          }, [theme, kind]);
+          assert.ok(width <= 760 ? Math.abs(notice.centerX - notice.viewCenterX) < 2 : Math.abs(width - notice.right - 18) < 2,
+            `${width}px ${theme}: ${kind} placement`);
+          assert.ok(notice.width <= width - 24, `${width}px: toast fits screen`);
+          assert.equal(notice.border, "1px", `${width}px: toast has subtle border`);
+          assert.equal(notice.outline, "none", `${width}px: no native blue focus ring`);
+          assert.ok(notice.background !== "rgba(0, 0, 0, 0)");
+          assert.match(notice.text, /экрана «Домой»/);
+        }
       }
     }
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -2241,13 +2245,15 @@ test("global SSE updates real counters across tabs and replays missed events", {
         const time = row.querySelector(".message-time");
         const bounds = el => {
           const b = el.getBoundingClientRect();
-          return { cy: b.y + b.height / 2, size: b.width };
+          return { cy: b.y + b.height / 2, size: b.width, background: getComputedStyle(el).backgroundColor };
         };
         return { info: bounds(info), remove: bounds(remove), time: bounds(time) };
       });
       assert.ok(Math.abs(positions.info.cy - positions.remove.cy) < 1, `${width}px: icons vertically centered`);
       assert.ok(Math.abs(positions.time.cy - positions.remove.cy) < 1, `${width}px: time and icons aligned`);
-      assert.ok(positions.info.size >= 36 && positions.remove.size >= 36, `${width}px: clickable hit area`);
+      assert.ok(positions.info.size === 40 && positions.remove.size === 40, `${width}px: clickable hit area`);
+      assert.equal(positions.info.background, "rgba(0, 0, 0, 0)");
+      assert.equal(positions.remove.background, "rgba(0, 0, 0, 0)");
       await infoButton.click();
       await page.getByRole("dialog", { name: "Подробности внешней доставки" })
         .getByText("Получатель не подключил телеграм-бота.").waitFor({ state: "visible" });

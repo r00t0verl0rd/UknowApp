@@ -145,8 +145,8 @@
 .message {
   width:fit-content;
   max-width:min(92%, 760px);
-  min-width:min(204px, 88%);
-  padding:11px 14px 12px;
+  min-width:0;
+  padding:5px 10px 8px;
   border:1px solid var(--ui-border);
   border-radius:16px;
   background:var(--surface);
@@ -190,9 +190,9 @@
   display:grid;
   grid-template-columns:minmax(0, 1fr) auto;
   align-items:center;
-  gap:10px;
+  gap:8px;
   min-width:0;
-  min-height:36px;
+  min-height:22px;
 }
 .message-topline > b {
   min-width:0;
@@ -210,14 +210,12 @@
   align-items:center;
   justify-content:flex-end;
   gap:2px;
-  height:36px;
   white-space:nowrap;
 }
 .message-time {
   display:inline-grid;
   place-items:center;
   align-self:center;
-  min-height:36px;
   color:var(--muted);
   font-size:10.5px;
   font-weight:400;
@@ -230,7 +228,7 @@
   place-items:center;
   flex:0 0 20px;
   width:20px;
-  height:36px;
+  height:18px;
   color:var(--muted);
   line-height:1;
 }
@@ -243,15 +241,15 @@
 // Одинаковые спокойные иконки для мобильной и десктопной версии.
 // Селектор перекрывает общие цветные стили IconButton, включая touch-режим.
 :root .message .ui-icon-button:is(.message-delete-btn, .message-detail-btn) {
-  --icon-action-size:36px;
+  --icon-action-size:40px;
   display:inline-grid;
   place-items:center;
-  flex:0 0 36px;
-  width:36px;
-  min-width:36px;
-  max-width:36px;
-  height:36px;
-  min-height:36px;
+  flex:none;
+  width:var(--icon-action-size);
+  min-width:var(--icon-action-size);
+  max-width:var(--icon-action-size);
+  height:var(--icon-action-size);
+  min-height:var(--icon-action-size);
   padding:0;
   margin:0;
   border:0;
@@ -293,7 +291,7 @@
   opacity:1;
 }
 .message > p {
-  margin:6px 0 0;
+  margin:1px 0 0;
   color:var(--ink);
   font-size:15px;
   font-weight:400;

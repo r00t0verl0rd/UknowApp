@@ -251,7 +251,7 @@
     width:100%;
     min-width:0;
   }
-  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn)),
+  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)),
   .btn,
   .person-actions button {
     -webkit-appearance:none;
@@ -581,7 +581,7 @@
   .topbar > .topbar-actions {
     display:none;
   }
-  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn)):not(.primary):not(.danger-icon),
+  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)):not(.primary):not(.danger-icon),
   .btn:not(.primary),
   .person-actions button:not(.danger-icon),
   .icon-btn:not(.danger-icon),
@@ -610,7 +610,7 @@
     background-color:var(--ui-control-bg);
   }
   .btn.outline:not(.primary):not(.danger-icon),
-  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn)).add-student:not(.primary):not(
+  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)).add-student:not(.primary):not(
       .danger-icon
     ) {
     background-color:var(--ui-selected-bg);
@@ -618,10 +618,10 @@
     color:var(--ui-selected-text);
   }
   :root[data-theme="dark-soft"] {
-    & button:not(.primary):not(.danger-icon):not(:where(.toast-close, .message-delete-btn)),
+    & button:not(.primary):not(.danger-icon):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)),
     & .btn:not(.primary):not(.danger-icon),
     & .person-actions button:not(.danger-icon),
-    & .icon-btn:not(.danger-icon),
+    & .icon-btn:not(.danger-icon):not(:where(.message-tools button)),
     & .add-student,
     & .modal-head button {
       background:var(--ui-control-bg);
@@ -653,8 +653,8 @@
   }
 }
 @media (hover: none), (pointer: coarse) {
-  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn)),
-  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn)).btn,
+  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)),
+  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)).btn,
   .person-actions button,
   .icon-btn,
   .add-student,
@@ -685,13 +685,13 @@
     border-color:var(--button-danger-border);
     color:var(--button-danger-text);
   }
-  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn)):disabled {
+  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)):disabled {
     opacity:0.5;
   }
   :root[data-theme="dark-soft"] {
-    & button:not(.primary):not(.danger-icon):not(:where(.toast-close, .message-delete-btn)),
+    & button:not(.primary):not(.danger-icon):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)),
     & .btn:not(.primary):not(.danger-icon),
-    & .icon-btn:not(.danger-icon),
+    & .icon-btn:not(.danger-icon):not(:where(.message-tools button)),
     & .add-student,
     & .modal-head button {
       background:var(--ui-control-bg);

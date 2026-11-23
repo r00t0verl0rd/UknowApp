@@ -39,8 +39,8 @@ test("sender name is always visible for all conversation participants", () => {
 
 test("chat header actions align and remain clickable on touch and desktop", () => {
   assert.match(styles, /\.message-topline \{[^}]*display:grid;[^}]*grid-template-columns:minmax\(0, 1fr\) auto;/s);
-  assert.match(styles, /\.message-tools \{[^}]*align-items:center;[^}]*height:36px;/s);
-  assert.match(styles, /--icon-action-size:36px/);
+  assert.match(styles, /\.message-tools \{[^}]*align-items:center;/s);
+  assert.match(styles, /--icon-action-size:40px/);
   assert.match(styles, /touch-action:manipulation/);
   assert.match(bubble, /class="message-detail-btn"[\s\S]*?popovertarget=\{deliveryPopoverId\}/);
   assert.match(bubble, /class="message-delete-btn"[\s\S]*?onClick=\{\(\) => options\.onDelete\?\.\(options\.message\)\}/);
@@ -49,7 +49,7 @@ test("chat header actions align and remain clickable on touch and desktop", () =
 test("message text and unobtrusive icon actions share desktop and mobile styles", () => {
   assert.match(styles, /\.message > p \{[^}]*font-size:15px;[^}]*font-weight:400;[^}]*line-height:1\.58;/s);
   assert.match(styles, /\.message-topline > b \{[^}]*font-size:11px;/s);
-  assert.match(styles, /\.message \{[^}]*padding:11px 14px 12px;/s);
+  assert.match(styles, /\.message \{[^}]*padding:5px 10px 8px;/s);
   assert.match(styles, /:root\[data-theme="dark-soft"\] \.message \.ui-icon-button:is\(\.message-delete-btn, \.message-detail-btn\)/);
   assert.match(styles, /\.message-delivery-popover:popover-open/);
   assert.doesNotMatch(bubble, /tone="danger"/);
