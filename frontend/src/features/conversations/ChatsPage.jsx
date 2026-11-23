@@ -1,4 +1,4 @@
-import { For } from "solid-js";
+import { For, Show } from "solid-js";
 import { createSignal, createEffect } from "solid-js";
 import {
   IconArrowLeft as ArrowLeft,
@@ -112,6 +112,10 @@ export default function ChatsPage(options) {
   }
   const unreadPersonalCount = () =>
     options.personalChats.reduce((total, chat) => total + (Number(chat.unread_count) || 0), 0);
+  const selectedChatKey = () => {
+    const chat = options.selectedChat;
+    return chat ? (chat.type === "personal" ? "personal:" : "conversation:") + chat.id : null;
+  };
   return (
     <>
       <section class="teacher-branch chat-list workspace-panel">
@@ -208,28 +212,29 @@ export default function ChatsPage(options) {
         )}
 
         <div class="chat-items" role="region" aria-label="Список диалогов">
-          <For each={options.visibleChats}>
+          <For each={options.visibleChats} keyed={(chat) => (chat.type === "personal" ? "personal:" : "conversation:") + chat.id}>
             {(chat) => {
-              const personal = () => chat.type === "personal";
+              const row = () => chat();
+              const personal = () => row().type === "personal";
               const showMessageCount = () =>
                 options.profile?.role === "admin" && options.chatSection === "participants" && !personal();
-              const unreadCount = () => Number(chat.unread_count) || 0;
+              const unreadCount = () => Number(row().unread_count) || 0;
               const displayedCount = () =>
-                showMessageCount() ? Number(chat.message_count) || 0 : unreadCount();
+                showMessageCount() ? Number(row().message_count) || 0 : unreadCount();
               const isSelected = () =>
-                options.selectedChat?.id === chat.id &&
+                options.selectedChat?.id === row().id &&
                 (options.selectedChat?.type === "personal") === personal();
               const title = () =>
                 personal()
-                  ? chat.title
+                  ? row().title
                   : options.profile?.role === "student"
-                    ? chat.teacher.full_name
+                    ? row().teacher.full_name
                     : options.profile?.role === "admin"
-                      ? chat.teacher.full_name
-                      : chat.student.full_name;
+                      ? row().teacher.full_name
+                      : row().student.full_name;
               const secondary = () =>
                 !personal() && options.profile?.role === "admin"
-                  ? chat.student.full_name
+                  ? row().student.full_name
                   : !personal() && options.profile?.role === "student"
                     ? "Учитель"
                     : "";
@@ -242,8 +247,8 @@ export default function ChatsPage(options) {
                     (unreadCount() > 0 && !showMessageCount() ? " has-unread" : "")
                   }
                   aria-pressed={isSelected()}
-                  data-view-anchor={"chat:" + (personal() ? "personal:" : "conversation:") + chat.id}
-                  onClick={() => options.openChat(chat)}
+                  data-view-anchor={"chat:" + (personal() ? "personal:" : "conversation:") + row().id}
+                  onClick={() => options.openChat(row())}
                 >
                   <div class="person-main">
                     <div class="avatar chat-avatar">
@@ -252,12 +257,12 @@ export default function ChatsPage(options) {
                     <div class={"person-info" + (showMessageCount() ? " participant-chat-names" : "")}>
                       {showMessageCount() ? (
                         <>
-                          <b><span data-chat-name-role="teacher">{chat.teacher.full_name}</span></b>
-                          <b><span data-chat-name-role="student">{chat.student.full_name}</span></b>
+                          <b><span data-chat-name-role="teacher">{row().teacher.full_name}</span></b>
+                          <b><span data-chat-name-role="student">{row().student.full_name}</span></b>
                         </>
                       ) : (
                         <>
-                          <b><span data-chat-name-role={titleRole(chat)}>{title()}</span></b>
+                          <b><span data-chat-name-role={titleRole(row())}>{title()}</span></b>
                           {secondary() && <small>{secondary()}</small>}
                         </>
                       )}
@@ -290,8 +295,19 @@ export default function ChatsPage(options) {
       </section>
 
       <section class="teacher-branch chat-detail">
-        {options.selectedChat ? (
-          <>
+        <Show
+          when={selectedChatKey()}
+          keyed
+          fallback={
+            <EmptyState>
+              {options.profile?.role === "student"
+                ? "Ваша переписка с учителем появится здесь"
+                : "Выберите диалог из списка"}
+            </EmptyState>
+          }
+        >
+          {() => (
+            <>
             <header class="chat-head">
               <button
                 type="button"
@@ -458,14 +474,9 @@ export default function ChatsPage(options) {
                 </div>
               </form>
             )}
-          </>
-        ) : (
-          <EmptyState>
-            {options.profile?.role === "student"
-              ? "Ваша переписка с учителем появится здесь"
-              : "Выберите диалог из списка"}
-          </EmptyState>
-        )}
+            </>
+          )}
+        </Show>
       </section>
     </>
   );

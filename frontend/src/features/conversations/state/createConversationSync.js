@@ -4,6 +4,7 @@ import { subscribePanelEvents } from "../../../shared/services/panelEventStream.
 import { acknowledgeChatMessages, syncChatState } from "../services/conversationsApi.js";
 import { markConversationMessageDeleted, mergeConversationMessages } from "../services/messageState.js";
 import { mergeInboxSnapshot } from "../../../shared/services/inboxState.js";
+import { hasSummaryChanges, requiresMessageSync } from "../services/conversationEventPolicy.js";
 const maxMessageId = (rows) => rows.reduce((max, row) => Math.max(max, Number(row.id) || 0), 0);
 const isSameChat = (chat, id, type) =>
   Number(chat?.id) === Number(id) && (chat?.type === "personal") === (type === "personal");
@@ -30,17 +31,17 @@ export function createConversationSync(options) {
         const rowKey = conversationKey(id, type);
         options.inboxRowRevision.set(rowKey, (options.inboxRowRevision.get(rowKey) || 0) + 1);
         const setList = type === "personal" ? options.setPersonalChats : options.setChats;
-        setList((items) =>
-          items.some((item) => Number(item.id) === Number(id))
-            ? items.map((item) => (Number(item.id) === Number(id) ? { ...item, ...summary } : item))
-            : [summary, ...items],
-        );
+        setList((items) => {
+          const existing = items.find((item) => Number(item.id) === Number(id));
+          if (!existing) return [summary, ...items];
+          if (!hasSummaryChanges(existing, summary)) return items;
+          return items.map((item) =>
+            Number(item.id) === Number(id) ? { ...item, ...summary } : item,
+          );
+        });
         options.setSelectedChat((previous) =>
-          isSameChat(previous, id, type)
-            ? {
-                ...previous,
-                ...summary,
-              }
+          isSameChat(previous, id, type) && hasSummaryChanges(previous, summary)
+            ? { ...previous, ...summary }
             : previous,
         );
       };
@@ -265,18 +266,21 @@ export function createConversationSync(options) {
           } else if (expectedReader === payload.actor_role) {
             const readIds = new Set(payload.message_ids.map(Number));
             const readAt = payload.read_at || new Date().toISOString();
-            options.setMessages((rows) =>
-              rows.map((row) =>
-                readIds.has(Number(row.id)) && row.sender_role === viewerRole && !row.panel_read_at
-                  ? {
-                      ...row,
-                      panel_read_at: readAt,
-                    }
-                  : row,
-              ),
-            );
+            options.setMessages((rows) => {
+              let changed = false;
+              const next = rows.map((row) => {
+                if (!readIds.has(Number(row.id)) || row.sender_role !== viewerRole || row.panel_read_at)
+                  return row;
+                changed = true;
+                return { ...row, panel_read_at: readAt };
+              });
+              return changed ? next : rows;
+            });
           }
         }
+        // Read receipts are already reflected in the summary and outgoing bubbles.
+        // Only the admin participant view needs a full status refresh.
+        if (!requiresMessageSync(payload.action, viewerRole, type)) return;
         const state = pending.get(key) || {
           conversation_id: id,
           conversation_type: type,
