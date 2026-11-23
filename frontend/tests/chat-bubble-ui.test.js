@@ -76,6 +76,17 @@ test("toast duration and viewport motion keep feedback readable and Safari scrol
 });
 
 
+test("unread personal tab uses the standard highlighted unread badge", () => {
+  const chats = readFileSync(path.join(frontend, "src/features/conversations/ChatsPage.jsx"), "utf8");
+  const personalTab = chats.slice(chats.indexOf('title="Личные диалоги"'), chats.indexOf('title="Личные диалоги"') + 900);
+  assert.match(personalTab, /value=\{unreadPersonalCount\(\)\}/);
+  assert.match(personalTab, /unread=\{unreadPersonalCount\(\) > 0\}/);
+  assert.match(personalTab, /hideWhenZero/);
+  const badges = readFileSync(path.join(frontend, "src/shared/components/CountBadge.jsx"), "utf8");
+  assert.match(badges, /chat-tab-count--unread/);
+  assert.match(styles, /\.chat-tab-count--unread \{/);
+});
+
 test("participant list stays stacked while open dialog title has inline names and arrow", () => {
   const chats = readFileSync(path.join(frontend, "src/features/conversations/ChatsPage.jsx"), "utf8");
   assert.match(chats, /class="participant-dialog-title"/);
