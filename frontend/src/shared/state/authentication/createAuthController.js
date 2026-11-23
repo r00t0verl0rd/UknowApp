@@ -4,6 +4,7 @@ import {
   getPushNotificationState,
 } from "../../../features/notifications/pushNotifications.js";
 import { signInRequest, signOutRequest } from "../../../app/authentication/services/authApi.js";
+import { clearViewState } from "../../services/viewSession.js";
 export function createAuthController(options) {
   const signIn = async (event) => {
     event.preventDefault();
@@ -46,6 +47,7 @@ export function createAuthController(options) {
     }
   };
   const signOut = async () => {
+    const userId = options.authState.profile?.id;
     options.authState.setProfile(null);
     try {
       await detachPushSubscription().catch(() => {});
@@ -55,6 +57,7 @@ export function createAuthController(options) {
     }
     localStorage.removeItem("uknowapp-auth");
     sessionStorage.removeItem("uknowapp-auth");
+    clearViewState(userId);
     options.authState.setAuth("");
     options.authState.setProfile(null);
     options.setUsers([]);
