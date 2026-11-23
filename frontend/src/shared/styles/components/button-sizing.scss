@@ -213,6 +213,8 @@
   padding-top:9px;
 }
 :root dialog.native-dialog.participant-profile-modal .panel-access-value {
+  display:flex;
+  align-items:center;
   min-height:44px;
   height:44px;
   padding:3px 4px 3px 10px;
@@ -220,10 +222,17 @@
   border-radius:10px;
 }
 :root dialog.native-dialog.participant-profile-modal .panel-access-value .password-code-refresh {
-  height:44px;
-  min-height:44px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  align-self:center;
+  height:36px;
+  min-height:36px;
+  margin:0;
   padding:0 10px;
   font-size:12px;
+  line-height:1;
+  white-space:nowrap;
 }
 :root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal)
   .modal-actions.participant-form-actions {
