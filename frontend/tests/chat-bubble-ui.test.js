@@ -101,3 +101,12 @@ test("participant list stays stacked while open dialog title has inline names an
   assert.match(styles, /\.participant-chat-names \{[^}]*display:grid;/s);
   assert.match(styles, /\.mobile-chat-back \{[^}]*width:48px;[^}]*height:48px;/s);
 });
+
+test("observation eye appears only for admin participant conversations", () => {
+  const chats = readFileSync(path.join(frontend, "src/features/conversations/ChatsPage.jsx"), "utf8");
+  const icons = readFileSync(path.join(frontend, "src/shared/components/Icons.jsx"), "utf8");
+  assert.match(icons, /export const IconEye = icon\("eye"/);
+  assert.match(chats, /const showMessageCount = \(\) =>\s*options\.profile\?\.role === "admin" && options\.chatSection === "participants" && !personal\(\)/);
+  assert.match(chats, /showMessageCount\(\) \? <Eye size=\{19\} aria-hidden="true" \/> : <MessageCircle size=\{17\} aria-hidden="true" \/>/);
+  assert.equal((chats.match(/<Eye size=/g) || []).length, 1, "eye appears only in the intended chat list");
+});
