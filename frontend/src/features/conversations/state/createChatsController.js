@@ -390,15 +390,6 @@ export function createChatsController(options) {
         options.chatState.setAttachment(null);
       }
       options.chatState.setMessages((current) => mergeConversationMessages(current, [sentMessage], chatKey));
-      if (chat.type !== "personal" && options.profile?.role === "admin") {
-        const hasMessengerIssues = Object.values(sentMessage?.metadata?.messenger_deliveries || {}).some(
-          (delivery) => (delivery?.errors || []).length > 0,
-        );
-        if (hasMessengerIssues)
-          options.setError(
-            "Сообщение доставлено в UknowApp. Подробности внешней доставки доступны в переписке.",
-          );
-      }
     } catch (error) {
       if (clientMessageId && activeChatKey() === chatKey) {
         options.chatState.setMessages((current) =>
