@@ -7,7 +7,7 @@
     "dev": "vite --host 127.0.0.1 --port 22222 --strictPort",
     "build": "node scripts/check-scss-architecture.mjs && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 22222 --strictPort",
-    "test": "node --test src/shared/services/inboxState.test.js src/shared/services/panelEventStream.test.js src/features/conversations/services/messageState.test.js src/features/conversations/services/formatMessageTime.test.js tests/csp.test.js tests/branding.test.js tests/chat-bubble-ui.test.js tests/first-paint.test.js tests/load-performance.test.js src/shared/state/authentication/createAuthController.test.js src/shared/state/administration/createRestoreFlow.test.js",
+    "test": "node --test src/shared/services/inboxState.test.js src/shared/services/panelEventStream.test.js src/features/conversations/services/messageState.test.js src/features/conversations/services/deliveryPresentation.test.js src/features/conversations/services/formatMessageTime.test.js tests/csp.test.js tests/branding.test.js tests/chat-bubble-ui.test.js tests/first-paint.test.js tests/load-performance.test.js src/shared/state/authentication/createAuthController.test.js src/shared/state/administration/createRestoreFlow.test.js",
     "test:browser": "node --test tests/*.browser.test.js",
     "audit:css": "node scripts/audit-css.mjs",
     "check:scss": "node scripts/check-scss-architecture.mjs"

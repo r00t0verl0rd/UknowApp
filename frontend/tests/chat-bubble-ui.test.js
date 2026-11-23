@@ -13,6 +13,9 @@ test("delivery details use a native popover, not an error modal", () => {
   assert.match(bubble, /popovertarget=\{deliveryPopoverId\}/);
   assert.match(bubble, /aria-label="Подробности внешней доставки"/);
   assert.match(bubble, /message-detail-btn/);
+  assert.match(bubble, /Сообщение доставлено в UknowApp/);
+  assert.match(bubble, /getDeliveryDetails\(options\.message\.metadata\)/);
+  assert.match(styles, /\.message-delivery-popover h3 \{[^}]*color:var\(--success\)/s);
   assert.doesNotMatch(bubble, /options\.onError\(/);
   assert.doesNotMatch(bubble, /class="btn small"/);
 });

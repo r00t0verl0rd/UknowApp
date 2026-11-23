@@ -10,6 +10,7 @@ import {
   IconPause as Pause,
 } from "../../../shared/components/Icons.jsx";
 import { formatMessageTime } from "../services/formatMessageTime.js";
+import { getDeliveryDetails } from "../services/deliveryPresentation.js";
 import IconButton from "../../../shared/components/IconButton.jsx";
 import { getMessageMedia } from "../services/conversationsApi.js";
 
@@ -201,34 +202,7 @@ function MessageBubble(options) {
       video_sticker: "Видео-стикер",
       animation: "Анимация",
     })[sourceKind()] || "Вложение";
-  const channelLabels = {
-    telegram: "Telegram",
-    max: "MAX",
-    whatsapp: "WhatsApp",
-  };
-  const messengerIssues = () =>
-    Object.entries(options.message.metadata?.messenger_deliveries || {}).flatMap(([platform, delivery]) =>
-      (delivery?.errors || []).map((error) => ({
-        ...(typeof error === "string"
-          ? {
-              reason: error,
-            }
-          : error),
-        platform: channelLabels[platform] || platform.toUpperCase(),
-      })),
-    );
-  const legacyTelegramIssues = () =>
-    messengerIssues().length
-      ? []
-      : (options.message.metadata?.telegram_delivery_errors || []).map((error) => ({
-          ...(typeof error === "string"
-            ? {
-                reason: error,
-              }
-            : error),
-          platform: "Telegram",
-        }));
-  const deliveryIssues = () => [...messengerIssues(), ...legacyTelegramIssues()];
+  const deliveryDetails = () => getDeliveryDetails(options.message.metadata);
   return (
     <div ref={bubbleRef} class={"message " + options.message.sender_role}>
       <div class="message-topline">
@@ -256,7 +230,7 @@ function MessageBubble(options) {
                 </span>
               );
             })()}
-          {options.viewerRole === "admin" && deliveryIssues().length > 0 && (
+          {options.viewerRole === "admin" && deliveryDetails().length > 0 && (
             <IconButton
               size="compact"
               class="message-detail-btn"
@@ -311,7 +285,7 @@ function MessageBubble(options) {
           </small>
         )}
       {!media() && !options.message.text && <p>Вложение: {options.message.content_type}</p>}
-      {options.viewerRole === "admin" && deliveryIssues().length > 0 && (
+      {options.viewerRole === "admin" && deliveryDetails().length > 0 && (
         <section
           id={deliveryPopoverId}
           popover="auto"
@@ -320,7 +294,7 @@ function MessageBubble(options) {
           aria-label="Подробности внешней доставки"
         >
           <div class="message-delivery-popover-heading">
-            <h3>Подробности внешней доставки</h3>
+            <h3><Check size={19} aria-hidden="true" /> Сообщение доставлено в UknowApp</h3>
             <button
               type="button"
               class="message-delivery-popover-close"
@@ -331,12 +305,12 @@ function MessageBubble(options) {
               <X size={16} aria-hidden="true" />
             </button>
           </div>
-          <p>Сообщение сохранено в UknowApp. Информация о доставке через мессенджеры:</p>
+          <p class="message-delivery-subtitle">Доставка через мессенджеры</p>
           <ul>
-            {deliveryIssues().map((issue) => (
-              <li>
-                <strong>{[issue.platform, issue.name, issue.role].filter(Boolean).join(" · ")}</strong>
-                <span>{issue.reason || "Причина не указана."}</span>
+            {deliveryDetails().map((detail) => (
+              <li class={detail.delivered ? "is-delivered" : ""}>
+                <strong>{detail.title}</strong>
+                <span>{detail.description}</span>
               </li>
             ))}
           </ul>
