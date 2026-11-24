@@ -150,6 +150,7 @@ function TeacherStructurePage(options) {
           class={["teacher-zen-canvas", { "is-small-class": students().length > 0 && students().length <= 2 }]}
           style={{
             "--zen-canvas-height": layout().height + "px",
+            "--zen-center-y": layout().centerY + "px",
           }}
         >
           <svg class="teacher-zen-network" viewBox={`0 0 ${layout().width} ${layout().height}`} aria-hidden="true">
