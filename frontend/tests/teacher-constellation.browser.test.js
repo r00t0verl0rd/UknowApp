@@ -12,7 +12,7 @@ test("teacher graph grows around the center without extra lists and highlights i
   });
   const browser = await chromium.launch({ executablePath:process.env.CHROMIUM_PATH });
   try {
-    for (const [count, width] of [[9, 1280], [42, 1280], [42, 390]]) {
+    for (const [count, width] of [[1, 1280], [2, 1280], [9, 1280], [42, 1280], [2, 390], [42, 390]]) {
       const page = await browser.newPage({ viewport:{ width, height:900 } });
       await page.addInitScript(() => localStorage.setItem("uknowapp-auth", "1"));
       await page.route("**/api/**", route => {
@@ -47,6 +47,31 @@ test("teacher graph grows around the center without extra lists and highlights i
           const r = el.getBoundingClientRect();
           return { x:r.left, y:r.top, width:r.width, height:r.height };
         }));
+        if (count <= 2) {
+          const teacher = await page.locator(".teacher-zen-center").boundingBox();
+          const teacherMiddleX = teacher.x + teacher.width / 2;
+          for (const student of geometry) {
+            assert.ok(student.y > teacher.y + teacher.height + 20,
+              "small class: every student is clearly below their teacher");
+          }
+          if (count === 1) {
+            const studentMiddleX = geometry[0].x + geometry[0].width / 2;
+            assert.ok(Math.abs(studentMiddleX - teacherMiddleX) < 2,
+              "single student is centered directly below teacher");
+          } else {
+            const leftX = geometry[0].x + geometry[0].width / 2;
+            const rightX = geometry[1].x + geometry[1].width / 2;
+            assert.ok(leftX < teacherMiddleX && rightX > teacherMiddleX,
+              "two students sit below on opposite sides");
+            assert.ok(Math.abs((leftX + rightX) / 2 - teacherMiddleX) < 2,
+              "two students are symmetric around teacher");
+          }
+          assert.equal(await page.locator(".teacher-zen-orbit-ring").count(), 0,
+            "small class uses a hierarchy rather than circular orbit");
+        } else {
+          assert.ok(await page.locator(".teacher-zen-orbit-ring").count() >= 1,
+            "three or more students form a circular orbit");
+        }
         for (let i = 0; i < geometry.length; i++) {
           for (let j = i + 1; j < geometry.length; j++) {
             const a = geometry[i], b = geometry[j];
@@ -60,6 +85,12 @@ test("teacher graph grows around the center without extra lists and highlights i
         await page.waitForTimeout(220);
         const after = await islands.first().evaluate(el => getComputedStyle(el).transform);
         assert.notEqual(after, before, "hover raises and enlarges the student's island");
+        const teacherIsland = page.locator(".teacher-zen-center");
+        const teacherBefore = await teacherIsland.evaluate(el => getComputedStyle(el).transform);
+        await teacherIsland.hover();
+        await page.waitForTimeout(220);
+        const teacherAfter = await teacherIsland.evaluate(el => getComputedStyle(el).transform);
+        assert.notEqual(teacherAfter, teacherBefore, "teacher island highlights when hovered");
       } else {
         const stage = page.locator(".teacher-zen-stage");
         assert.equal(await stage.evaluate(el => getComputedStyle(el).overflowX), "visible");
