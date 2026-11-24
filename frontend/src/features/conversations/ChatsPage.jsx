@@ -1,4 +1,4 @@
-import { For, Show, onMount, onCleanup } from "solid-js";
+import { For, Show } from "solid-js";
 import { createSignal, createEffect } from "solid-js";
 import {
   IconArrowLeft as ArrowLeft,
@@ -40,22 +40,26 @@ function FittedParticipantHeading(props) {
     heading.style.fontSize = fittedSize + "px";
   };
 
-  onMount(() => {
-    fit();
-    if (typeof ResizeObserver === "function") {
-      resizeObserver = new ResizeObserver(fit);
-      resizeObserver.observe(heading.parentElement);
-    } else {
-      window.addEventListener("resize", fit);
-    }
-    document.fonts?.ready.then(() => {
-      if (heading?.isConnected) fit();
-    });
-  });
-  onCleanup(() => {
-    resizeObserver?.disconnect();
-    window.removeEventListener("resize", fit);
-  });
+  // Solid 2 effects start after JSX refs are attached and return their cleanup.
+  createEffect(
+    () => [props.student, props.teacher],
+    () => {
+      fit();
+      if (typeof ResizeObserver === "function") {
+        resizeObserver = new ResizeObserver(fit);
+        resizeObserver.observe(heading.parentElement);
+      } else {
+        window.addEventListener("resize", fit);
+      }
+      document.fonts?.ready.then(() => {
+        if (heading?.isConnected) fit();
+      });
+      return () => {
+        resizeObserver?.disconnect();
+        window.removeEventListener("resize", fit);
+      };
+    },
+  );
 
   return (
     <b
