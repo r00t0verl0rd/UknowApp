@@ -1,0 +1,356 @@
+// Teacher-only learning constellation. Do not alter the administrator graph.
+.teacher-zen {
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+  width:min(100%, 900px);
+  min-width:0;
+  margin-inline:auto;
+}
+.teacher-zen-intro {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  padding:3px 6px;
+}
+.teacher-zen-eyebrow {
+  color:var(--role-teacher);
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:0.16em;
+}
+.teacher-zen-intro h1 {
+  margin:6px 0 4px;
+  color:var(--ink);
+  font-size:clamp(20px, 3vw, 28px);
+  font-weight:750;
+  letter-spacing:-0.03em;
+}
+.teacher-zen-intro p {
+  margin:0;
+  color:var(--muted);
+  font-size:13px;
+}
+.teacher-zen-count {
+  display:inline-flex;
+  align-items:center;
+  align-self:center;
+  gap:8px;
+  padding:9px 12px;
+  border:1px solid var(--ui-border);
+  border-radius:999px;
+  background:var(--surface);
+  color:var(--muted);
+  font-size:12px;
+  font-weight:650;
+  white-space:nowrap;
+}
+.teacher-zen-count .student-dot {
+  flex:0 0 8px;
+  width:8px;
+  height:8px;
+}
+.teacher-zen-stage {
+  position:relative;
+  isolation:isolate;
+  box-sizing:border-box;
+  width:100%;
+  min-height:570px;
+  overflow:hidden;
+  border:1px solid var(--ui-border);
+  border-radius:28px;
+  background:
+    radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--role-teacher) 12%, transparent) 0%, transparent 49%),
+    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--role-student) 8%, transparent), transparent 34%),
+    var(--surface);
+}
+.teacher-zen-stage::before,
+.teacher-zen-stage::after {
+  position:absolute;
+  z-index:-1;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--role-student);
+  content:"";
+  opacity:0.45;
+}
+.teacher-zen-stage::before {
+  top:16%;
+  left:15%;
+}
+.teacher-zen-stage::after {
+  right:15%;
+  bottom:16%;
+}
+.teacher-zen-ring {
+  position:absolute;
+  z-index:-1;
+  top:50%;
+  left:50%;
+  border:1px solid color-mix(in srgb, var(--role-teacher) 25%, transparent);
+  border-radius:50%;
+  transform:translate(-50%, -50%);
+  pointer-events:none;
+}
+.teacher-zen-ring-outer {
+  width:min(76%, 520px);
+  aspect-ratio:1;
+  border-style:dashed;
+  opacity:0.58;
+}
+.teacher-zen-ring-inner {
+  width:min(41%, 290px);
+  aspect-ratio:1;
+  box-shadow:0 0 48px color-mix(in srgb, var(--role-teacher) 9%, transparent);
+  opacity:0.65;
+}
+.teacher-zen-links {
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  width:100%;
+  height:100%;
+  overflow:visible;
+  pointer-events:none;
+}
+.teacher-zen-links line {
+  stroke:color-mix(in srgb, var(--role-teacher) 34%, transparent);
+  stroke-width:0.3;
+  stroke-dasharray:1.1 0.9;
+}
+.teacher-zen-center {
+  position:absolute;
+  z-index:2;
+  top:50%;
+  left:50%;
+  display:flex;
+  box-sizing:border-box;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  width:clamp(165px, 29%, 226px);
+  min-height:174px;
+  padding:21px 16px;
+  border:1px solid var(--role-teacher-border);
+  border-radius:44%;
+  background:linear-gradient(145deg, var(--role-teacher-soft), var(--surface) 92%);
+  box-shadow:
+    0 12px 36px color-mix(in srgb, var(--role-teacher) 14%, transparent),
+    0 0 0 8px color-mix(in srgb, var(--role-teacher) 7%, transparent);
+  text-align:center;
+  transform:translate(-50%, -50%);
+}
+.teacher-zen-center-avatar {
+  display:grid;
+  place-items:center;
+  width:49px;
+  height:49px;
+  border:1px solid var(--role-teacher-border);
+  border-radius:50%;
+  background:var(--role-teacher-soft);
+  color:var(--role-teacher);
+}
+.teacher-zen-center-label {
+  color:var(--role-teacher);
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:0.14em;
+}
+.teacher-zen-center strong {
+  max-width:100%;
+  overflow:hidden;
+  color:var(--ink);
+  font-size:clamp(13px, 1.8vw, 17px);
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+.teacher-zen-center small {
+  color:var(--muted);
+  font-size:11px;
+}
+.teacher-zen-satellites {
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+.teacher-zen-student {
+  position:absolute;
+  z-index:3;
+  top:var(--orbit-y);
+  left:var(--orbit-x);
+  display:flex;
+  box-sizing:border-box;
+  align-items:center;
+  gap:8px;
+  width:clamp(114px, 19%, 160px);
+  min-height:65px;
+  padding:9px 11px;
+  border:1px solid var(--role-student-border);
+  border-radius:17px;
+  background:linear-gradient(120deg, var(--role-student-soft), var(--surface));
+  box-shadow:0 7px 24px color-mix(in srgb, var(--role-student) 10%, transparent);
+  color:var(--ink);
+  transform:translate(-50%, -50%);
+}
+.teacher-zen-student-avatar {
+  display:grid;
+  flex:0 0 33px;
+  place-items:center;
+  width:33px;
+  height:33px;
+  border-radius:12px;
+  background:color-mix(in srgb, var(--role-student) 14%, var(--role-student-soft));
+  color:var(--role-student);
+}
+.teacher-zen-student-name {
+  display:block;
+  flex:1 1 auto;
+  min-width:0;
+  overflow:hidden;
+  color:var(--ink);
+  font-size:12px;
+  font-weight:650;
+  line-height:1.3;
+  text-overflow:ellipsis;
+  overflow-wrap:anywhere;
+}
+.teacher-zen-empty {
+  position:absolute;
+  right:14px;
+  bottom:42px;
+  left:14px;
+  margin:0;
+  color:var(--muted);
+  font-size:13px;
+  text-align:center;
+}
+.teacher-zen-more {
+  padding:15px 18px;
+  border:1px solid var(--ui-border);
+  border-radius:19px;
+  background:var(--surface);
+}
+.teacher-zen-more h2 {
+  margin:0 0 12px;
+  color:var(--muted);
+  font-size:14px;
+}
+.teacher-zen-more-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(min(100%, 175px), 1fr));
+  gap:10px;
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+.teacher-zen-extra-student {
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-width:0;
+  padding:9px;
+  border:1px solid var(--role-student-border);
+  border-radius:13px;
+  background:var(--role-student-soft);
+  color:var(--ink);
+  font-size:12px;
+  font-weight:650;
+  overflow-wrap:anywhere;
+}
+.teacher-zen-extra-student > span:last-child {
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+@media (max-width:640px) {
+  .teacher-zen {
+    gap:14px;
+  }
+  .teacher-zen-intro {
+    gap:9px;
+  }
+  .teacher-zen-intro p {
+    font-size:12px;
+  }
+  .teacher-zen-count {
+    padding:7px 10px;
+  }
+  .teacher-zen-stage {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    min-height:0;
+    padding:27px 13px 23px;
+    border-radius:22px;
+  }
+  .teacher-zen-links {
+    display:none;
+  }
+  .teacher-zen-ring-outer {
+    top:145px;
+    width:min(85%, 310px);
+  }
+  .teacher-zen-ring-inner {
+    top:145px;
+    width:min(50%, 195px);
+  }
+  .teacher-zen-center {
+    position:relative;
+    top:auto;
+    left:auto;
+    flex:0 0 auto;
+    width:min(100%, 210px);
+    min-height:164px;
+    margin:0 auto 38px;
+    transform:none;
+  }
+  .teacher-zen-center strong {
+    font-size:15px;
+  }
+  .teacher-zen-satellites {
+    position:relative;
+    z-index:2;
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:11px;
+    width:100%;
+  }
+  .teacher-zen-student {
+    position:static;
+    top:auto;
+    left:auto;
+    width:100%;
+    min-height:68px;
+    padding:9px;
+    transform:none;
+  }
+  .teacher-zen-student:last-child:nth-child(odd) {
+    grid-column:1 / -1;
+    justify-self:center;
+    width:min(100%, 190px);
+  }
+  .teacher-zen-student-name {
+    font-size:11px;
+  }
+  .teacher-zen-empty {
+    position:static;
+    margin:0 auto 13px;
+  }
+}
+@media (max-width:350px) {
+  .teacher-zen-student {
+    flex-direction:column;
+    justify-content:center;
+    gap:5px;
+    text-align:center;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  .teacher-zen-stage,
+  .teacher-zen-student {
+    scroll-behavior:auto;
+  }
+}
