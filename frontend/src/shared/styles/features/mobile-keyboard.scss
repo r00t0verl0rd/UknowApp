@@ -38,12 +38,18 @@
   // cqh uses the visible screen after safe-area padding. Spend the spare
   // height on the brand while leaving the fields and submit button full size.
   @supports (height:1cqh) {
+    :root[data-theme] .login-card {
+      padding-block:clamp(8px, calc(10cqh - 24px), 20px);
+    }
+    :root[data-theme] .login-card .stack {
+      gap:clamp(7px, calc(4cqh - 5px), 12px);
+    }
     :root[data-theme] .login-brand {
       gap:clamp(4px, 1.5cqh, 12px);
       margin-bottom:clamp(8px, calc(8cqh - 20px), 26px);
     }
     :root[data-theme] .login-brand .login-logo {
-      width:clamp(28px, calc(30cqh - 70px), clamp(104px, 25vw, 136px));
+      width:clamp(48px, calc(40cqh - 58px), clamp(104px, 25vw, 136px));
       height:auto;
       aspect-ratio:1;
     }

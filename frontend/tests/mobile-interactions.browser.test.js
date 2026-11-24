@@ -45,7 +45,9 @@ test("keyboard-aware login, workspace dialogs and consistent touch buttons", { t
       const submit = document.querySelector(".login-submit").getBoundingClientRect();
       return submit.bottom <= window.visualViewport.height - 12;
     });
+    await page.locator(".login-screen").evaluate(el => Promise.all(el.getAnimations().map(a => a.finished)));
     const compactLogo = await logo.boundingBox();
+    assert.ok(compactLogo.width >= 64, "The logo remains legible above the keyboard");
     assert.ok(compactLogo.width < fullLogo.width && compactLogo.width === compactLogo.height);
     const password = page.getByPlaceholder("Пароль");
     await password.focus();
