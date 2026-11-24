@@ -439,7 +439,7 @@ export default function ChatsPage(options) {
                     options.selectedChat.type === "personal"
                       ? "Личное сообщение…"
                       : options.profile?.role === "admin"
-                        ? "Напишите сообщение... его увидят ученик и учитель"
+                        ? "Сообщение ученику и учителю…"
                         : options.profile?.role === "student"
                           ? "Сообщение учителю…"
                           : "Ответить ученику…"
