@@ -7,6 +7,7 @@ export function installViewportEnvironment(win = window, doc = document) {
   let previousHeight = -1;
   let previousTop = NaN;
   let baselineHeight = Math.max(win.innerHeight, viewport?.height || 0);
+  let loginHeight = null;
   let keyboardOpen = false;
   let workspaceKeyboardOpen = false;
 
@@ -44,6 +45,17 @@ export function installViewportEnvironment(win = window, doc = document) {
     const workspaceOpen = prepareChat || (open && !form &&
       (workspaceEditor || (!focused && workspaceKeyboardOpen)));
 
+    // The password accessory bar can change height during a field switch.
+    // Keep the smaller login layout until the keyboard is actually dismissed.
+    const loginKeyboard = open && (form?.matches(".login-screen") ||
+      (loginHeight !== null && field === doc.body && doc.querySelector(".login-screen")));
+    const nextLoginHeight = loginKeyboard ? Math.min(loginHeight ?? height, height) : null;
+    if (loginHeight !== nextLoginHeight) {
+      loginHeight = nextLoginHeight;
+      if (loginHeight === null) root.style.removeProperty("--login-height");
+      else root.style.setProperty("--login-height", `${loginHeight}px`);
+    }
+
     if (open !== keyboardOpen) {
       keyboardOpen = open;
       if (open) root.setAttribute("data-app-keyboard", "open");
@@ -67,7 +79,7 @@ export function installViewportEnvironment(win = window, doc = document) {
       previousTop = top;
     }
 
-    if (open && focused && form && form.scrollHeight > form.clientHeight) {
+    if (open && focused && form?.matches("dialog.native-dialog") && form.scrollHeight > form.clientHeight) {
       const bounds = field.getBoundingClientRect();
       const frame = form.getBoundingClientRect();
       const visibleTop = Math.max(top, frame.top + form.clientTop) + 12;
@@ -80,6 +92,8 @@ export function installViewportEnvironment(win = window, doc = document) {
     if (!animationFrame) animationFrame = win.requestAnimationFrame(measure);
   };
   const onOrientationChange = () => {
+    loginHeight = null;
+    root.style.removeProperty("--login-height");
     baselineHeight = Math.max(win.innerHeight, viewport?.height || 0);
     schedule();
   };
@@ -112,7 +126,7 @@ export function installViewportEnvironment(win = window, doc = document) {
     root.removeAttribute("data-app-keyboard");
     root.removeAttribute("data-workspace-keyboard");
     for (const key of [
-      "--app-viewport-height", "--app-viewport-top",
+      "--login-height", "--app-viewport-height", "--app-viewport-top",
       "--workspace-viewport-height", "--workspace-viewport-top",
     ]) root.style.removeProperty(key);
   };

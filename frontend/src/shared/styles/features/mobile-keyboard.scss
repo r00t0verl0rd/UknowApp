@@ -18,7 +18,10 @@
     align-items:safe center;
     justify-content:safe center;
     width:100%;
-    height:var(--app-viewport-height, 100dvh);
+    height:var(--login-height, var(--app-viewport-height, 100dvh));
+    @media (prefers-reduced-motion:no-preference) {
+      transition:height 180ms cubic-bezier(.2, .7, .2, 1);
+    }
     min-height:0;
     padding:max(8px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
     overflow-x:hidden;
@@ -43,9 +46,6 @@
       width:clamp(28px, calc(30cqh - 70px), clamp(104px, 25vw, 136px));
       height:auto;
       aspect-ratio:1;
-      @media (prefers-reduced-motion:no-preference) {
-        transition:width 100ms ease-out;
-      }
     }
   }
 
