@@ -164,7 +164,7 @@ function TeacherStructurePage(options) {
             </For>
           </svg>
 
-          <div class="teacher-zen-center">
+          <div class="teacher-zen-center" tabindex="0" aria-label={"Преподаватель " + teacherName()}>
             <span class="teacher-zen-center-avatar"><GraduationCap size={30} aria-hidden="true" /></span>
             <strong title={teacherName()}>{teacherName()}</strong>
           </div>
