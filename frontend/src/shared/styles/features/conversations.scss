@@ -1146,8 +1146,7 @@
   opacity:0;
   cursor:pointer;
 }
-/* Keep both names together on one line instead of stretching the
-   participant title across the desktop header. Overflow remains scrollable. */
+/* The header fits names by font size rather than offering horizontal scrolling. */
 .chat-head-person {
   overflow:hidden;
 }
@@ -1161,12 +1160,9 @@
   width:max-content;
   max-width:100%;
   min-width:0;
-  overflow-x:auto;
-  overflow-y:hidden;
+  overflow:hidden;
   white-space:nowrap;
   text-overflow:clip;
-  scrollbar-width:thin;
-  -webkit-overflow-scrolling:touch;
 }
 .chat-head-person > .participant-dialog-title > [data-chat-name-role] {
   display:block;
@@ -1183,14 +1179,14 @@
   white-space:nowrap;
 }
 .chat-head-person > b:not(.participant-dialog-title) {
+  display:block;
+  max-width:100%;
+  overflow:hidden;
   white-space:nowrap;
-  overflow-x:auto;
-  overflow-y:hidden;
-  text-overflow:clip;
+  text-overflow:ellipsis;
 }
 @media (max-width:760px) {
-  /* One row: a wider back target, comfortably spaced names, and a
-     40px filter. Names stay on one line and scroll if space runs out. */
+  /* One row: an accessible back target, names scaled to fit, and a 40px filter. */
   .chat-detail > .chat-head {
     grid-template-columns:52px minmax(0,1fr) 40px;
     grid-template-rows:auto;
@@ -1227,26 +1223,28 @@
   }
 }
 
-/* Keep each name on one line in the dialog list, on desktop and mobile.
-   Narrow columns scroll the name rather than adding ellipses or wrapping. */
+/* List names never scroll sideways; they scale with the available card
+   width, with ellipsis as a readable fallback for unusually long names. */
 .chat-items > .chat-item .person-info {
   min-width:0;
+  container-type:inline-size;
 }
 .chat-items > .chat-item .person-info b,
 .chat-items > .chat-item .participant-chat-names > b {
   display:block;
   min-width:0;
   max-width:100%;
+  overflow:hidden;
   white-space:nowrap;
-  overflow-x:auto;
-  overflow-y:hidden;
-  text-overflow:clip;
+  text-overflow:ellipsis;
   overflow-wrap:normal;
-  scrollbar-width:thin;
-  -webkit-overflow-scrolling:touch;
+  font-size:clamp(10px, 4cqi, 12px);
 }
 .chat-items > .chat-item .person-info b > [data-chat-name-role] {
-  display:inline-block;
-  min-width:max-content;
+  display:block;
+  width:100%;
+  min-width:0;
+  overflow:hidden;
   white-space:nowrap;
+  text-overflow:ellipsis;
 }
