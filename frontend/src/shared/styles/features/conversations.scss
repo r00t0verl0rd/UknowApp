@@ -330,6 +330,22 @@
   background:rgba(255, 255, 255, 0.09);
   opacity:1;
 }
+// Blue is a quiet positive indicator, not a claim that a message was read.
+// Any disconnected recipient or other messenger warning keeps the neutral gray.
+:root .message .ui-icon-button.message-detail-btn[data-delivery-complete="true"] {
+  color:color-mix(in srgb, var(--info) 68%, var(--muted));
+  opacity:0.9;
+}
+:root .message .ui-icon-button.message-detail-btn[data-delivery-complete="true"]:is(:hover, :focus-visible) {
+  color:var(--info);
+}
+:root[data-theme="dark-soft"] .message .ui-icon-button.message-detail-btn[data-delivery-complete="true"] {
+  color:color-mix(in srgb, var(--info) 58%, var(--muted));
+  opacity:0.9;
+}
+:root[data-theme="dark-soft"] .message .ui-icon-button.message-detail-btn[data-delivery-complete="true"]:is(:hover, :focus-visible) {
+  color:var(--info);
+}
 .message-content > p {
   margin:1px 0 0;
   color:var(--ink);
