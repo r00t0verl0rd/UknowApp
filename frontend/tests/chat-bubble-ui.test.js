@@ -76,9 +76,9 @@ test("message text and unobtrusive icon actions share desktop and mobile styles"
 });
 
 test("conversation count badges show the full number and grow into a pill", () => {
-  assert.match(countBadge, /const formatted = \(\) => count\(\);/);
+  assert.match(countBadge, /\{count\(\)\}/);
   assert.doesNotMatch(countBadge, /99\+/);
-  assert.match(countBadge, /\$\{formatted\(\)\} \$\{props\.label\}/);
+  assert.match(countBadge, /\$\{count\(\)\} \$\{props\.label\}/);
   assert.match(styles, /\.chat-tab-count \{[^}]*min-width:22px;[^}]*width:max-content;[^}]*max-width:none;[^}]*padding:0 6px;[^}]*border-radius:999px;[^}]*white-space:nowrap;/s);
 });
 

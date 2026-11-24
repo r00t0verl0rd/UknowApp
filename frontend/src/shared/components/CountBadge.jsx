@@ -3,7 +3,6 @@ import { Show } from "solid-js";
 
 export default function CountBadge(props) {
   const count = () => Math.max(0, Number(props.value) || 0);
-  const formatted = () => count();
   const Badge = dynamic(() => (props.as === "b" ? "b" : "span"));
 
   return (
@@ -11,9 +10,9 @@ export default function CountBadge(props) {
       <Badge
         class={props.unread ? "chat-tab-count chat-tab-count--unread" : "chat-tab-count"}
         title={props.title}
-        aria-label={props.label ? `${formatted()} ${props.label}` : undefined}
+        aria-label={props.label ? `${count()} ${props.label}` : undefined}
       >
-        {formatted()}
+        {count()}
       </Badge>
     </Show>
   );

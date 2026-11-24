@@ -30,25 +30,21 @@ export default function LoginPage(options) {
           </div>
         )}
         <form onSubmit={options.signIn} class="stack">
-          <label>
-            <input
-              value={options.login}
-              onInput={(e) => options.setLogin(e.target.value)}
-              autoComplete="username"
-              placeholder="Логин"
-              aria-label="Логин"
-            />
-          </label>
-          <label>
-            <input
-              type="password"
-              value={options.password}
-              onInput={(e) => options.setPassword(e.target.value)}
-              autoComplete="current-password"
-              placeholder="Пароль"
-              aria-label="Пароль"
-            />
-          </label>
+          <input
+            value={options.login}
+            onInput={(e) => options.setLogin(e.target.value)}
+            autoComplete="username"
+            placeholder="Логин"
+            aria-label="Логин"
+          />
+          <input
+            type="password"
+            value={options.password}
+            onInput={(e) => options.setPassword(e.target.value)}
+            autoComplete="current-password"
+            placeholder="Пароль"
+            aria-label="Пароль"
+          />
           <Button variant="primary" class="login-submit" type="submit">
             Войти <ChevronRight size={17} />
           </Button>

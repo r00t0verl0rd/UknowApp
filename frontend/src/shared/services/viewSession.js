@@ -164,6 +164,7 @@ export function installViewRestoration({ root, userId, page }) {
   const apply = () => {
     frame = 0;
     if (disposed || !root.isConnected) return;
+    if (!Object.keys(pendingRestore).length) return;
     restoring = true;
     const nodes = getContainers(root);
     for (const [name, saved] of Object.entries(pendingRestore)) {
@@ -199,6 +200,7 @@ export function installViewRestoration({ root, userId, page }) {
         delete pendingRestore[name];
       }
     }
+    if (!Object.keys(pendingRestore).length) resize?.disconnect();
     win.requestAnimationFrame(() => { restoring = false; });
   };
   const scheduleApply = () => {
@@ -233,16 +235,20 @@ export function installViewRestoration({ root, userId, page }) {
   };
   const restoreDetails = () => {
     const details = root.querySelectorAll(".workspace-content details");
+    if (!details.length) return;
+    const preferences = readViewState(userId).preferences;
     details.forEach((element, index) => {
-      const expected = viewPreference(userId, `${activePage}:expanded:${index}`, null);
+      const expected = preferences?.[`${activePage}:expanded:${index}`] ?? null;
       if (expected !== null && element.open !== expected) element.open = expected;
     });
   };
 
   const observer = new MutationObserver(() => {
     restoreDetails();
-    attachObservers();
-    if (Object.keys(pendingRestore).length) scheduleApply();
+    if (Object.keys(pendingRestore).length) {
+      attachObservers();
+      scheduleApply();
+    }
   });
   observer.observe(root, { childList: true, subtree: true });
   const resize = typeof ResizeObserver === "function"
@@ -250,8 +256,8 @@ export function installViewRestoration({ root, userId, page }) {
         if (Object.keys(pendingRestore).length) scheduleApply();
       })
     : null;
-  resize?.observe(root);
   const attachObservers = () => {
+    resize?.observe(root);
     for (const element of Object.values(getContainers(root))) resize?.observe(element);
   };
   const startRestore = () => {
@@ -283,7 +289,9 @@ export function installViewRestoration({ root, userId, page }) {
   doc.addEventListener("toggle", onToggle, true);
   win.addEventListener("pagehide", onPageHide);
   win.addEventListener("beforeunload", onPageHide);
-  const onResize = () => { attachObservers(); scheduleApply(); };
+  const onResize = () => {
+    if (Object.keys(pendingRestore).length) scheduleApply();
+  };
   win.addEventListener("resize", onResize);
   startRestore();
   return {

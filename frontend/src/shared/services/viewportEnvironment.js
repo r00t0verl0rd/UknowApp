@@ -3,6 +3,9 @@
 export function installViewportEnvironment(win = window, doc = document) {
   const root = doc.documentElement;
   const viewport = win.visualViewport;
+  const mobileQuery = win.matchMedia("(max-width: 1024px)");
+  const browserQuery = win.matchMedia("(display-mode: browser)");
+  const touchQuery = win.matchMedia("(pointer: coarse)");
   let animationFrame = 0;
   let previousHeight = -1;
   let previousTop = NaN;
@@ -22,8 +25,8 @@ export function installViewportEnvironment(win = window, doc = document) {
     const top = Math.round(viewport?.offsetTop || 0);
     if (!Number.isFinite(height) || height <= 0) return;
     const focused = isEditorFocused();
-    const mobile = win.matchMedia("(max-width: 1024px)").matches;
-    const inBrowser = mobile && win.matchMedia("(display-mode: browser)").matches;
+    const mobile = mobileQuery.matches;
+    const inBrowser = mobile && browserQuery.matches;
     // Keep the original height until Safari has finished dismissing the keyboard.
     // Focus can leave an input while the visual viewport is still shrinking.
     if ((!focused && !keyboardOpen) || !mobile) baselineHeight = Math.max(win.innerHeight, height);
@@ -35,7 +38,7 @@ export function installViewportEnvironment(win = window, doc = document) {
     // On touch Safari, prepare the chat layout on focus, before the keyboard
     // starts resizing visualViewport. Standalone iOS keeps its existing flow.
     const prepareChat = inBrowser && focused &&
-      win.matchMedia("(pointer: coarse)").matches &&
+      touchQuery.matches &&
       Boolean(doc.activeElement?.closest?.(".chat-composer"));
     // Only an editor in the workspace needs its navigation collapsed. Portal
     // dialogs manage their own viewport and must leave the page behind them still.
@@ -100,7 +103,7 @@ export function installViewportEnvironment(win = window, doc = document) {
   const onViewportScroll = () => {
     // Safari's address bar sends frequent visualViewport scroll notifications.
     // When nothing is focused, resize is enough to update the document layout.
-    if (win.matchMedia("(max-width: 1024px) and (display-mode: browser)").matches &&
+    if (mobileQuery.matches && browserQuery.matches &&
         !keyboardOpen && !isEditorFocused()) return;
     schedule();
   };
