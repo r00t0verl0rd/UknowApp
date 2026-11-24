@@ -1,5 +1,5 @@
-// Read-only teacher constellation. Dynamic rings are calculated from student
-// count; the graph never moves students into a separate overflow list.
+/* Read-only teacher constellation. Dynamic rings are calculated from student
+   count; the graph never moves students into a separate overflow list. */
 .teacher-zen {
   display:flex;
   flex-direction:column;
@@ -194,8 +194,8 @@
   text-align:center;
 }
 @media (max-width:640px) {
-  // On small screens the same graph becomes a single connected panel with
-  // the teacher on top and ALL students in a responsive, readable layout.
+  /* On small screens the same graph becomes a single connected panel with
+     the teacher on top and ALL students in a responsive, readable layout. */
   .teacher-zen {
     gap:12px;
   }
