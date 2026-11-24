@@ -7,6 +7,8 @@ import test from "node:test";
 const frontend = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const bubble = readFileSync(path.join(frontend, "src/features/conversations/components/MessageBubble.jsx"), "utf8");
 const styles = readFileSync(path.join(frontend, "src/shared/styles/features/conversations.scss"), "utf8");
+const actionStyles = readFileSync(path.join(frontend, "src/shared/styles/components/icon-actions.scss"), "utf8");
+const chatsPage = readFileSync(path.join(frontend, "src/features/conversations/ChatsPage.jsx"), "utf8");
 const countBadge = readFileSync(path.join(frontend, "src/shared/components/CountBadge.jsx"), "utf8");
 
 test("delivery details use a native popover, not an error modal", () => {
@@ -21,11 +23,21 @@ test("delivery details use a native popover, not an error modal", () => {
   assert.doesNotMatch(bubble, /class="btn small"/);
 });
 
-test("message delivery info stays gray for warnings and turns softly blue when all copies succeeded", () => {
+test("message delivery info is softly blue for warnings, neutral gray for complete delivery", () => {
   assert.match(bubble, /data-delivery-complete=\{deliveryDetails\(\)\.every\(detail => detail\.delivered\) \? "true" : "false"\}/);
-  assert.match(styles, /\.message-detail-btn\[data-delivery-complete="true"\]/);
+  assert.match(styles, /\.message-detail-btn\[data-delivery-complete="false"\]/);
   assert.match(styles, /color:color-mix\(in srgb, var\(--info\) 68%, var\(--muted\)\)/);
-  assert.match(styles, /:root\[data-theme="dark-soft"\] \.message \.ui-icon-button\.message-detail-btn\[data-delivery-complete="true"\]/);
+  assert.match(styles, /:root\[data-theme="dark-soft"\] \.message \.ui-icon-button\.message-detail-btn\[data-delivery-complete="false"\]/);
+  assert.doesNotMatch(styles, /\.message-detail-btn\[data-delivery-complete="true"\]/);
+});
+
+test("personal-chat close and filter share a single icon-only header style on all screens", () => {
+  assert.match(chatsPage, /<label\s+class="chat-message-filter-control ui-chat-head-action"/);
+  assert.match(chatsPage, /<IconButton\s+size="large"\s+class="ui-chat-head-action"[\s\S]*?<Trash2 size=\{18\} \/>/);
+  assert.doesNotMatch(chatsPage, /personal-chat-delete|personal-chat-delete-label/);
+  assert.doesNotMatch(styles, /personal-chat-delete|personal-chat-delete-label/);
+  assert.match(actionStyles, /:root \.workspace-shell \.chat-head-tools > \.ui-chat-head-action \{[^}]*--icon-action-size:40px;[^}]*width:var\(--icon-action-size\);[^}]*height:var\(--icon-action-size\);/s);
+  assert.match(actionStyles, /\.chat-head-tools > \.ui-chat-head-action > svg \{[^}]*width:18px;[^}]*height:18px;/s);
 });
 
 test("related popups communicate outcomes before caveats", () => {
