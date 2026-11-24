@@ -4,7 +4,7 @@
   display:flex;
   flex-direction:column;
   gap:14px;
-  width:min(100%, 900px);
+  width:100%;
   min-width:0;
   margin-inline:auto;
 }
@@ -33,27 +33,24 @@
   width:8px;
   height:8px;
 }
+/* No separate panel, frame or scrollbars: this is part of workspace content. */
 .teacher-zen-stage {
   position:relative;
   isolation:isolate;
   box-sizing:border-box;
   width:100%;
-  height:min(72dvh, 700px);
-  min-height:520px;
-  overflow:auto;
-  border:1px solid var(--ui-border);
-  border-radius:26px;
-  overscroll-behavior:contain;
-  scrollbar-width:thin;
-  background:
-    radial-gradient(ellipse at center, color-mix(in srgb, var(--role-teacher) 9%, transparent) 0%, transparent 66%),
-    var(--surface);
+  height:auto;
+  min-height:0;
+  overflow:visible;
+  border:0;
+  border-radius:0;
+  background:transparent;
 }
 .teacher-zen-canvas {
   position:relative;
   isolation:isolate;
   box-sizing:border-box;
-  width:var(--zen-canvas-width);
+  width:100%;
   height:var(--zen-canvas-height);
   min-width:0;
   margin-inline:auto;
@@ -232,7 +229,9 @@
     height:auto;
     min-height:0;
     overflow:visible;
-    border-radius:22px;
+    border:0;
+    border-radius:0;
+    background:transparent;
   }
   .teacher-zen-canvas {
     display:flex;
