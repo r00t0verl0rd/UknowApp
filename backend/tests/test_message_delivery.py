@@ -676,3 +676,146 @@ def test_panel_message_client_id_prevents_duplicate_persistence(api):
     assert first.json()["id"] == second.json()["id"]
     rows = teacher.get(f"/api/panel/conversations/{conversation_id}/messages")
     assert len(rows.json()) == 1
+
+@pytest.mark.parametrize("sender_role", ["admin", "student"])
+def test_teacher_bot_panel_does_not_receive_duplicate_plain_text(api, sender_role):
+    _, users, sessions = api
+    adapter = FakeMessengerAdapter(MessengerPlatform.TELEGRAM)
+    with sessions() as db:
+        teacher = db.get(User, users["teacher-one"])
+        student = db.get(User, users["student-one"])
+        assignment = Assignment(teacher_id=teacher.id, student_id=student.id, active=True)
+        db.add(assignment)
+        db.flush()
+        conversation = Conversation(
+            assignment_id=assignment.id, teacher_id=teacher.id,
+            student_id=student.id, status="active",
+        )
+        db.add(conversation)
+        db.flush()
+        for user, chat in ((teacher, "teacher-chat"), (student, "student-chat")):
+            sync_messenger_account(db, user.id, MessengerPlatform.TELEGRAM,
+                                   external_user_id=chat, external_chat_id=chat)
+        row = Message(conversation_id=conversation.id, sender_id=student.id,
+                      sender_role=sender_role, text="Важный текст", delivery_status="delivered")
+        db.add(row)
+        db.commit()
+        recipients = [(student, "student"), (teacher, "teacher")] if sender_role == "admin" else [(teacher, "teacher")]
+        result = asyncio.run(deliver_panel_message(
+            db, CommunicationService([adapter]), row, conversation, recipients,
+            sender_role, student, row.text, MessageKind.TEXT, teacher_panel_available=True,
+        ))
+        assert [item.external_chat_id for item in adapter.sent] == (
+            ["student-chat"] if sender_role == "admin" else []
+        )
+        assert result["telegram"]["panel_recipients"] == [{
+            "user_id": teacher.id, "name": teacher.full_name, "role": "teacher",
+        }]
+        if sender_role == "student":
+            assert result["telegram"]["status"] == "panel"
+        save_panel_messenger_results(db, row, conversation, result)
+        record = json.loads(db.get(Message, row.id).metadata_json)["messenger_deliveries"]["telegram"]
+        assert record["panel_recipients"][0]["user_id"] == teacher.id
+        assert all(item["user_id"] != teacher.id for item in record["delivered"])
+
+
+def test_admin_attachment_still_reaches_teacher_as_native_telegram_media(api):
+    _, users, sessions = api
+    adapter = FakeMessengerAdapter(MessengerPlatform.TELEGRAM)
+    with sessions() as db:
+        teacher = db.get(User, users["teacher-one"])
+        student = db.get(User, users["student-one"])
+        assignment = Assignment(teacher_id=teacher.id, student_id=student.id, active=True)
+        db.add(assignment)
+        db.flush()
+        conversation = Conversation(
+            assignment_id=assignment.id, teacher_id=teacher.id,
+            student_id=student.id, status="active",
+        )
+        db.add(conversation)
+        db.flush()
+        for user, chat in ((teacher, "teacher-chat"), (student, "student-chat")):
+            sync_messenger_account(db, user.id, MessengerPlatform.TELEGRAM,
+                                   external_user_id=chat, external_chat_id=chat)
+        row = Message(conversation_id=conversation.id, sender_id=teacher.id,
+                      sender_role="admin", text="Смотрите файл", delivery_status="delivered")
+        db.add(row)
+        db.commit()
+        file = OutboundMedia(storage_key="files/lesson.pdf", file_name="lesson.pdf")
+        result = asyncio.run(deliver_panel_message(
+            db, CommunicationService([adapter]), row, conversation,
+            [(student, "student"), (teacher, "teacher")],
+            "admin", student, row.text, MessageKind.DOCUMENT,
+            media=file, teacher_panel_available=True,
+        ))
+        assert sorted(item.external_chat_id for item in adapter.sent) == ["student-chat", "teacher-chat"]
+        assert all(item.media == file for item in adapter.sent)
+        assert result["telegram"]["panel_recipients"] == []
+
+
+def test_admin_message_updates_existing_teacher_panel_without_second_telegram_send(api, monkeypatch):
+    from app.main import app
+    from app.models import TeacherPanel, TeacherSession
+    from app.modules.panel import delivery as panel_delivery
+    from app.modules.telegram.teacher import (
+        TEACHER_KEYBOARD_VERSION, teacher_keyboard_signature, teacher_panel_view,
+    )
+
+    make_client, users, sessions = api
+    telegram = FakeMessengerAdapter(MessengerPlatform.TELEGRAM)
+    monkeypatch.setattr(panel_delivery, "SessionLocal", sessions)
+    monkeypatch.setattr(app.state, "communication", CommunicationService([telegram]), raising=False)
+
+    class RecordingBot:
+        def __init__(self):
+            self.edited = []
+            self.sent = []
+        async def edit_message_text(self, **kwargs):
+            self.edited.append(kwargs)
+        async def send_message(self, **kwargs):
+            self.sent.append(kwargs)
+            raise AssertionError("Existing teacher panel must be edited in place")
+    bot = RecordingBot()
+    monkeypatch.setattr(app.state, "telegram_bot", bot, raising=False)
+
+    admin = make_client()
+    login(admin, "test-admin", "a-long-test-password-123")
+    assigned = admin.post("/api/admin/assignments", json={
+        "teacher_id": users["teacher-one"], "student_id": users["student-one"],
+    })
+    assert assigned.status_code == 201
+    conversation_id = assigned.json()["id"]
+
+    with sessions() as db:
+        teacher = db.get(User, users["teacher-one"])
+        student = db.get(User, users["student-one"])
+        sync_messenger_account(db, teacher.id, MessengerPlatform.TELEGRAM,
+                               external_user_id="100", external_chat_id="100")
+        sync_messenger_account(db, student.id, MessengerPlatform.TELEGRAM,
+                               external_user_id="200", external_chat_id="200")
+        db.add(TeacherSession(teacher_id=teacher.id, conversation_id=conversation_id))
+        _, markup, _ = teacher_panel_view(db, teacher, selected_student_name=student.full_name)
+        db.add(TeacherPanel(
+            teacher_id=teacher.id, chat_id=100, message_id=321,
+            keyboard_version=TEACHER_KEYBOARD_VERSION,
+            keyboard_signature=teacher_keyboard_signature(markup),
+        ))
+        db.commit()
+
+    payload = {"text": "Сообщение администратора", "client_message_id": "admin-once-001"}
+    first = admin.post(f"/api/panel/conversations/{conversation_id}/messages", json=payload)
+    second = admin.post(f"/api/panel/conversations/{conversation_id}/messages", json=payload)
+    assert first.status_code == second.status_code == 201
+    assert first.json()["id"] == second.json()["id"]
+    assert [msg.external_chat_id for msg in telegram.sent] == ["200"]
+    assert len(bot.edited) == 1
+    assert "Администратор: Сообщение администратора" in bot.edited[0]["text"]
+    assert bot.edited[0]["message_id"] == 321
+    assert bot.sent == []
+    with sessions() as db:
+        rows = db.query(Message).filter(Message.conversation_id == conversation_id).all()
+        assert len(rows) == 1
+        record = json.loads(rows[0].metadata_json)["messenger_deliveries"]["telegram"]
+        assert len(record["delivered"]) == 1
+        assert record["panel_recipients"][0]["user_id"] == users["teacher-one"]
+

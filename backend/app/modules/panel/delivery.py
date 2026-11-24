@@ -204,6 +204,8 @@ def save_panel_messenger_results(
             errors=result.get("errors", []),
             status=result.get("status"),
         )
+        if result.get("panel_recipients"):
+            metadata["messenger_deliveries"][platform]["panel_recipients"] = result["panel_recipients"]
     row.metadata_json = encode_message_metadata(metadata)
     # Статус сообщения отражает хранение в UknowApp, не внешнюю доставку.
     row.delivery_status = "delivered"
@@ -225,8 +227,10 @@ async def deliver_panel_message(
     body: str,
     content_type: MessageKind,
     media: OutboundMedia | None = None,
+    *,
+    teacher_panel_available: bool = False,
 ) -> dict[str, dict]:
-    """Доставлять каждому подключённому адресату независимо от отправителя."""
+    """Доставлять участникам без второй Telegram-копии текста в панели учителя."""
     results: dict[str, dict] = {}
     if communication is None:
         return results
@@ -245,6 +249,7 @@ async def deliver_panel_message(
         )
         delivered: list[dict] = []
         errors: list[dict] = []
+        panel_recipients: list[dict] = []
         missing_count = 0
         for recipient, recipient_role in recipients:
             account = accounts_by_user.get(recipient.id)
@@ -255,6 +260,23 @@ async def deliver_panel_message(
                     "name": recipient.full_name,
                     "role": recipient_role,
                     "reason": "Аккаунт получателя не подключён к " + platform.value.upper(),
+                })
+                continue
+            # The Telegram teacher bot already renders text from students and
+            # admins in its panel. Sending an additional chat message produces
+            # a duplicate alert, especially when the panel keyboard changes.
+            # Attachments still need a native Telegram delivery for download.
+            if (
+                teacher_panel_available
+                and platform == MessengerPlatform.TELEGRAM
+                and recipient_role == "teacher"
+                and sender_role in {"admin", "student"}
+                and content_type == MessageKind.TEXT
+            ):
+                panel_recipients.append({
+                    "user_id": recipient.id,
+                    "name": recipient.full_name,
+                    "role": "teacher",
                 })
                 continue
             target = (
@@ -326,8 +348,16 @@ async def deliver_panel_message(
         results[platform.value] = {
             "delivered": delivered,
             "errors": errors,
-            # Отсутствие привязки не является ошибкой Telegram API.
-            "status": "not_connected" if not delivered and len(errors) == missing_count else None,
+            "panel_recipients": panel_recipients,
+            # A message rendered in the teacher panel is not a separately
+            # sent Telegram copy, and must not be reported as unconnected.
+            "status": (
+                "panel" if panel_recipients and not delivered and not errors
+                else "partial" if panel_recipients and errors and not delivered
+                else "not_connected"
+                if not delivered and len(errors) == missing_count and not panel_recipients
+                else None
+            ),
         }
 
     return results

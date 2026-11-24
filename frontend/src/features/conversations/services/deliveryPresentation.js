@@ -54,6 +54,17 @@ export function getDeliveryDetails(metadata, includeRecipient = false, participa
     if (delivered.length) {
       details.push(...deliveredEntries(channel, delivered, includeRecipient, participants));
     }
+    const panelRecipients = Array.isArray(result.panel_recipients) ? result.panel_recipients : [];
+    for (const entry of panelRecipients) {
+      const name = recipient(entry, participants);
+      details.push({
+        title: `${channel} · ${name}`,
+        ...(includeRecipient && name !== "Получатель"
+          ? { namedRecipient: name, role: entry.role || "teacher", channel } : {}),
+        description: "Сообщение доступно в панели бота.",
+        delivered: true,
+      });
+    }
     for (const error of errors) {
       details.push({
         title: `${channel} · ${recipient(error, participants)}`,

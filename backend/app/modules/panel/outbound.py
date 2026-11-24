@@ -120,7 +120,8 @@ async def _publish_and_deliver(
     bot = getattr(request.app.state, "telegram_bot", None)
     communication = getattr(request.app.state, "communication", None)
     messenger_results = await deliver_panel_message(
-        db, communication, row, conversation, recipients, role, student, row.text, kind, media=media,
+        db, communication, row, conversation, recipients, role, student, row.text, kind,
+        media=media, teacher_panel_available=bot is not None,
     )
     save_panel_messenger_results(db, row, conversation, messenger_results)
 
