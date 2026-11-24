@@ -32,6 +32,8 @@ test("keyboard-aware login, workspace dialogs and consistent touch buttons", { t
         configurable: true, get() { return window.__fakeViewportHeight; },
       });
     });
+    const logo = page.locator(".login-logo");
+    const fullLogo = await logo.boundingBox();
     await login.focus();
     await page.evaluate(() => {
       window.__fakeViewportHeight = 345;
@@ -39,6 +41,16 @@ test("keyboard-aware login, workspace dialogs and consistent touch buttons", { t
     });
     await page.waitForFunction(() => document.documentElement.hasAttribute("data-app-keyboard"));
     assert.equal(await page.locator(".login-screen").evaluate(el => Math.round(el.getBoundingClientRect().height)), 345);
+    await page.waitForFunction(() => {
+      const submit = document.querySelector(".login-submit").getBoundingClientRect();
+      return submit.bottom <= window.visualViewport.height - 12;
+    });
+    const compactLogo = await logo.boundingBox();
+    assert.ok(compactLogo.width < fullLogo.width && compactLogo.width === compactLogo.height);
+    const password = page.getByPlaceholder("Пароль");
+    await password.focus();
+    await login.focus();
+    assert.equal(await login.evaluate(el => el.closest(".login-screen").scrollTop), 0);
     const loginRect = await login.evaluate(el => {
       const { top, bottom } = el.getBoundingClientRect();
       return { top, bottom };

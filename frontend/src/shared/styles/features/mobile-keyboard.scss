@@ -1,7 +1,7 @@
 // Keyboard-aware positioning is shared by login, workspace and portalled modals.
 // visualViewport values come from one observer in App, also in standalone (PWA) mode.
 @media (max-width: 1024px) {
-  // Keep one scroll container and one card size throughout keyboard animation.
+  // Keep one scroll container throughout keyboard animation.
   :root[data-theme]:has(.login-screen),
   :root[data-theme] body:has(.login-screen),
   :root[data-theme] #root:has(.login-screen) {
@@ -11,6 +11,7 @@
     overscroll-behavior:none;
   }
   :root[data-theme] .login-screen {
+    container-type:size;
     position:fixed;
     inset:var(--app-viewport-top, 0px) 0 auto;
     display:flex;
@@ -19,7 +20,7 @@
     width:100%;
     height:var(--app-viewport-height, 100dvh);
     min-height:0;
-    padding:max(8px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom));
+    padding:max(8px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
     overflow-x:hidden;
     overflow-y:auto;
     overscroll-behavior:contain;
@@ -29,6 +30,23 @@
   :root[data-theme] .login-card {
     flex:0 0 auto;
     margin-block:auto;
+  }
+
+  // cqh uses the visible screen after safe-area padding. Spend the spare
+  // height on the brand while leaving the fields and submit button full size.
+  @supports (height:1cqh) {
+    :root[data-theme] .login-brand {
+      gap:clamp(4px, 1.5cqh, 12px);
+      margin-bottom:clamp(8px, calc(8cqh - 20px), 26px);
+    }
+    :root[data-theme] .login-brand .login-logo {
+      width:clamp(28px, calc(30cqh - 70px), clamp(104px, 25vw, 136px));
+      height:auto;
+      aspect-ratio:1;
+      @media (prefers-reduced-motion:no-preference) {
+        transition:width 100ms ease-out;
+      }
+    }
   }
 
   // Native dialogs live in a Portal, not inside WorkspaceLayout.
