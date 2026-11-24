@@ -593,7 +593,14 @@
 }
 .chat-composer textarea::placeholder {
   color:var(--muted);
-  opacity:1;
+  font-size:14px;
+  opacity:0.82;
+  white-space:nowrap;
+}
+@media (max-width: 760px) {
+  .chat-composer textarea::placeholder {
+    font-size:13px;
+  }
 }
 .composer-footer {
   @include primitives.spread;
