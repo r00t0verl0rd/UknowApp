@@ -262,7 +262,7 @@ def test_admin_web_message_notifies_teacher_once_even_with_stale_keyboard(api, m
     monkeypatch.setattr(app.state, "communication", CommunicationService([telegram]), raising=False)
     admin = make_client()
     login = admin.post("/api/auth/login", json={
-        "username": "test-admin", "password": "a-long-test-password-123",
+        "username": "test-admin", "password": "a-long-test-password-123",  # pragma: allowlist secret - fixed test-only credential
     })
     assert login.status_code == 200
     created = admin.post("/api/admin/assignments", json={
