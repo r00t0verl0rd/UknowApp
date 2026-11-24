@@ -11,6 +11,7 @@ import {
 } from "../../../shared/components/Icons.jsx";
 import { formatMessageTime } from "../services/formatMessageTime.js";
 import { getDeliveryDetails } from "../services/deliveryPresentation.js";
+import AutoFitText from "./AutoFitText.jsx";
 import IconButton from "../../../shared/components/IconButton.jsx";
 import { messageMediaUrl } from "../services/conversationsApi.js";
 
@@ -165,7 +166,11 @@ function MessageBubble(options) {
     <div class={"message " + options.message.sender_role} data-view-anchor={"message:" + options.message.id}>
       <div class="message-content">
         <div class="message-topline">
-          <b data-chat-name-role={options.message.sender_role}>{options.message.sender}</b>
+          <b data-chat-name-role={options.message.sender_role}>
+            <AutoFitText text={options.message.sender} baseSize={13} minSize={11}>
+              {options.message.sender}
+            </AutoFitText>
+          </b>
           <div class="message-tools">
             <time class="message-time">{formatMessageTime(options.message.created_at, options.nowMs)}</time>
             {options.message.sender_role === options.viewerRole &&
