@@ -68,18 +68,3 @@ test("historical delivery IDs resolve to actual participants and never falsely c
   }, true, participants);
   assert.deepEqual(multiple.map(item => item.title), ["Telegram · Профессор", "Telegram · Падаван"]);
 });
-
-test("teacher panel text is not represented as a second Telegram copy", () => {
-  const details = getDeliveryDetails({
-    messenger_deliveries: { telegram: {
-      status: "delivered",
-      delivered: [{ user_id: 22, name: "Ученик", role: "student" }],
-      errors: [],
-      panel_recipients: [{ user_id: 14, name: "Преподаватель", role: "teacher" }],
-    } },
-  }, true);
-  assert.deepEqual(details.map(item => [item.title, item.description]), [
-    ["Telegram · Ученик", "Копия отправлена."],
-    ["Telegram · Преподаватель", "Сообщение доступно в панели бота."],
-  ]);
-});

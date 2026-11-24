@@ -222,3 +222,89 @@ def test_student_message_refreshes_teacher_panel_without_replacing_it(api):
         duplicate = asyncio.run(process_inbound_message(db, inbound, gateway))
         assert not duplicate.force_teacher_panel_refresh
         assert db.get(TeacherSession, teacher.id).conversation_id == old_conversation.id
+
+def test_admin_web_message_notifies_teacher_once_even_with_stale_keyboard(api, monkeypatch):
+    from app.main import app
+    from app.models import TeacherPanel, TeacherSession
+    from app.modules.panel import delivery as panel_delivery
+    from app.modules.communication.contracts import DeliveryResult, MessengerCapabilities
+    from app.modules.communication.service import CommunicationService
+
+    class RecordingAdapter:
+        platform = MessengerPlatform.TELEGRAM
+        capabilities = MessengerCapabilities(text=True, attachments=True)
+        def __init__(self):
+            self.sent = []
+        async def send(self, message):
+            self.sent.append(message)
+            return DeliveryResult(platform=self.platform,
+                                  external_chat_id=message.external_chat_id,
+                                  external_message_id=str(1000 + len(self.sent)))
+
+    class RecordingBot:
+        def __init__(self):
+            self.edited = []
+            self.sent = []
+            self.deleted = []
+        async def edit_message_text(self, **kwargs):
+            self.edited.append(kwargs)
+        async def send_message(self, **kwargs):
+            self.sent.append(kwargs)
+            raise AssertionError("Background refresh must not create a new teacher panel")
+        async def delete_message(self, **kwargs):
+            self.deleted.append(kwargs)
+
+    make_client, users, sessions = api
+    telegram = RecordingAdapter()
+    bot = RecordingBot()
+    monkeypatch.setattr(panel_delivery, "SessionLocal", sessions)
+    monkeypatch.setattr(app.state, "telegram_bot", bot, raising=False)
+    monkeypatch.setattr(app.state, "communication", CommunicationService([telegram]), raising=False)
+    admin = make_client()
+    login = admin.post("/api/auth/login", json={
+        "username": "test-admin", "password": "a-long-test-password-123",
+    })
+    assert login.status_code == 200
+    created = admin.post("/api/admin/assignments", json={
+        "teacher_id": users["teacher-one"], "student_id": users["student-one"],
+    })
+    assert created.status_code == 201
+    conversation_id = created.json()["id"]
+    with sessions() as db:
+        teacher = db.get(User, users["teacher-one"])
+        student = db.get(User, users["student-one"])
+        sync_messenger_account(db, teacher.id, MessengerPlatform.TELEGRAM,
+                               external_user_id="100", external_chat_id="100")
+        sync_messenger_account(db, student.id, MessengerPlatform.TELEGRAM,
+                               external_user_id="200", external_chat_id="200")
+        db.add(TeacherSession(teacher_id=teacher.id, conversation_id=conversation_id))
+        db.add(TeacherPanel(teacher_id=teacher.id, chat_id=100, message_id=321,
+                            keyboard_version=0, keyboard_signature="stale-keyboard"))
+        db.commit()
+
+    url = f"/api/panel/conversations/{conversation_id}/messages"
+    payload = {"text": "Текст от администратора", "client_message_id": "admin-once-001"}
+    first = admin.post(url, json=payload)
+    repeated = admin.post(url, json=payload)
+    assert first.status_code == repeated.status_code == 201
+    assert first.json()["id"] == repeated.json()["id"]
+    assert sorted(message.external_chat_id for message in telegram.sent) == ["100", "200"]
+    assert len([m for m in telegram.sent if m.external_chat_id == "100"]) == 1
+    assert len(bot.edited) == 1
+    assert bot.edited[0]["message_id"] == 321
+    assert "Администратор: Текст от администратора" in bot.edited[0]["text"]
+    assert bot.sent == bot.deleted == []
+
+    # If the panel was deleted, the teacher still gets a single direct alert.
+    with sessions() as db:
+        db.delete(db.get(TeacherPanel, users["teacher-one"]))
+        db.commit()
+    second = admin.post(url, json={
+        "text": "Следующее сообщение", "client_message_id": "admin-once-002",
+    })
+    assert second.status_code == 201
+    assert len([m for m in telegram.sent if m.external_chat_id == "100"]) == 2
+    assert len(bot.edited) == 1
+    assert bot.sent == []
+    with sessions() as db:
+        assert db.query(Message).filter(Message.conversation_id == conversation_id).count() == 2

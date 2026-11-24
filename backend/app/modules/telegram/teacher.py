@@ -337,6 +337,7 @@ async def _update_teacher_panel_locked(
     db: Session,
     teacher: User,
     force_keyboard_refresh: bool = False,
+    background_refresh: bool = False,
 ) -> bool:
     """Обновить панель и клавиатуру только при изменениях."""
     telegram_account = get_messenger_account(db, teacher.id, MessengerPlatform.TELEGRAM)
@@ -364,6 +365,30 @@ async def _update_teacher_panel_locked(
 
     text = teacher_chat_view(db, conversation) if conversation else list_text
     signature = teacher_keyboard_signature(markup)
+
+    if background_refresh:
+        # The message already reached the teacher as a native Telegram send.
+        # Even with a changed keyboard signature, edits must not post an
+        # additional panel message (Telegram would notify twice).
+        # Keep the keyboard signature unchanged until the teacher uses it.
+        if not panel or panel.chat_id != telegram_chat_id:
+            return False
+        try:
+            await bot.edit_message_text(
+                chat_id=panel.chat_id,
+                message_id=panel.message_id,
+                text=text,
+                parse_mode="HTML",
+            )
+            return True
+        except TelegramBadRequest as exc:
+            if "message is not modified" in str(exc).lower():
+                return True
+            logger.warning(
+                "Teacher background panel edit failed (teacher_id=%s message_id=%s error_type=%s)",
+                teacher.id, panel.message_id, type(exc).__name__,
+            )
+            return False
 
     if (
         not force_keyboard_refresh
@@ -466,12 +491,14 @@ async def update_teacher_panel(
     db: Session,
     teacher: User,
     force_keyboard_refresh: bool = False,
+    background_refresh: bool = False,
 ) -> bool:
     lock = _teacher_panel_locks.setdefault(teacher.id, asyncio.Lock())
     async with lock:
         try:
             return await _update_teacher_panel_locked(
                 bot, db, teacher, force_keyboard_refresh=force_keyboard_refresh,
+                background_refresh=background_refresh,
             )
         except Exception:
             db.rollback()

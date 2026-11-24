@@ -204,8 +204,6 @@ def save_panel_messenger_results(
             errors=result.get("errors", []),
             status=result.get("status"),
         )
-        if result.get("panel_recipients"):
-            metadata["messenger_deliveries"][platform]["panel_recipients"] = result["panel_recipients"]
     row.metadata_json = encode_message_metadata(metadata)
     # Статус сообщения отражает хранение в UknowApp, не внешнюю доставку.
     row.delivery_status = "delivered"
@@ -227,10 +225,8 @@ async def deliver_panel_message(
     body: str,
     content_type: MessageKind,
     media: OutboundMedia | None = None,
-    *,
-    teacher_panel_available: bool = False,
 ) -> dict[str, dict]:
-    """Доставлять участникам без второй Telegram-копии текста в панели учителя."""
+    """Доставлять каждому подключённому адресату независимо от отправителя."""
     results: dict[str, dict] = {}
     if communication is None:
         return results
@@ -249,7 +245,6 @@ async def deliver_panel_message(
         )
         delivered: list[dict] = []
         errors: list[dict] = []
-        panel_recipients: list[dict] = []
         missing_count = 0
         for recipient, recipient_role in recipients:
             account = accounts_by_user.get(recipient.id)
@@ -260,23 +255,6 @@ async def deliver_panel_message(
                     "name": recipient.full_name,
                     "role": recipient_role,
                     "reason": "Аккаунт получателя не подключён к " + platform.value.upper(),
-                })
-                continue
-            # The Telegram teacher bot already renders text from students and
-            # admins in its panel. Sending an additional chat message produces
-            # a duplicate alert, especially when the panel keyboard changes.
-            # Attachments still need a native Telegram delivery for download.
-            if (
-                teacher_panel_available
-                and platform == MessengerPlatform.TELEGRAM
-                and recipient_role == "teacher"
-                and sender_role in {"admin", "student"}
-                and content_type == MessageKind.TEXT
-            ):
-                panel_recipients.append({
-                    "user_id": recipient.id,
-                    "name": recipient.full_name,
-                    "role": "teacher",
                 })
                 continue
             target = (
@@ -348,16 +326,8 @@ async def deliver_panel_message(
         results[platform.value] = {
             "delivered": delivered,
             "errors": errors,
-            "panel_recipients": panel_recipients,
-            # A message rendered in the teacher panel is not a separately
-            # sent Telegram copy, and must not be reported as unconnected.
-            "status": (
-                "panel" if panel_recipients and not delivered and not errors
-                else "partial" if panel_recipients and errors and not delivered
-                else "not_connected"
-                if not delivered and len(errors) == missing_count and not panel_recipients
-                else None
-            ),
+            # Отсутствие привязки не является ошибкой Telegram API.
+            "status": "not_connected" if not delivered and len(errors) == missing_count else None,
         }
 
     return results
@@ -426,10 +396,10 @@ async def refresh_teacher_panel_after_web_delivery(bot, teacher_id: int, convers
             if not get_messenger_account(db, teacher.id, MessengerPlatform.TELEGRAM):
                 return
             from app.modules.telegram.teacher import update_teacher_panel
-            # Incoming messages update the existing panel in place. Clearing
-            # another selected conversation would replace the Telegram keyboard
-            # and delete the old panel, producing a transient double alert.
-            await update_teacher_panel(bot, db, teacher)
+            # A new Telegram message has already notified the teacher. Refresh
+            # only the existing panel: do not send another Telegram message
+            # merely because the keyboard changed or the panel is missing.
+            await update_teacher_panel(bot, db, teacher, background_refresh=True)
     except (TelegramAPIError, SQLAlchemyError) as exc:
         logger.warning(
             "Could not refresh teacher panel after web delivery "
