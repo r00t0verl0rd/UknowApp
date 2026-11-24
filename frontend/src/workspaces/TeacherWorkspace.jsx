@@ -13,6 +13,26 @@ const RING_RADIUS_STEP_X = 215;
 const RING_RADIUS_STEP_Y = 172;
 
 function buildTeacherOrbit(count) {
+  // A small class reads as a hierarchy: teacher above, one student centered
+  // below or two students balanced below on the left and right.
+  // With 3+ students we switch to concentric circles automatically.
+  if (count === 1 || count === 2) {
+    const width = 720;
+    const height = 560;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const studentY = centerY + 195;
+    const xs = count === 1 ? [centerX] : [centerX - 165, centerX + 165];
+    return {
+      width,
+      height,
+      centerX,
+      centerY,
+      rings: [],
+      links: xs.map(x => ({ x1:centerX, y1:centerY, x2:x, y2:studentY })),
+      nodes: xs.map((x, index) => ({ index, x, y:studentY })),
+    };
+  }
   const rings = [];
   const nodes = [];
   let remaining = count;
@@ -120,6 +140,7 @@ function TeacherStructurePage(options) {
       <div class="teacher-zen-stage" ref={stage} role="region" aria-label="Граф учеников преподавателя" tabindex="0">
         <div
           class="teacher-zen-canvas"
+          classList={{ "is-small-class": students().length > 0 && students().length <= 2 }}
           style={{
             "--zen-canvas-width": layout().width + "px",
             "--zen-canvas-height": layout().height + "px",
