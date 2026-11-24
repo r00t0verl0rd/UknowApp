@@ -18,52 +18,11 @@ import CountBadge from "../../shared/components/CountBadge.jsx";
 import IconButton from "../../shared/components/IconButton.jsx";
 import Button from "../../shared/components/Button.jsx";
 import ToolbarSelect from "../../shared/components/ToolbarSelect.jsx";
-// Scale participant names to the available header width without a horizontal scrollbar.
-// Keep a readable 9px floor; unusually long names remain available in the tooltip.
-function FittedParticipantHeading(props) {
-  let heading;
-  let resizeObserver;
-
-  const fit = () => {
-    if (!heading?.parentElement) return;
-    const available = heading.parentElement.clientWidth;
-    if (!available) return;
-    const baseSize = 14;
-    heading.style.fontSize = baseSize + "px";
-    const items = [...heading.children];
-    const gap = Number.parseFloat(getComputedStyle(heading).columnGap) || 0;
-    const naturalWidth = items.reduce((width, item) => width + item.getBoundingClientRect().width, 0)
-      + gap * Math.max(0, items.length - 1);
-    const fittedSize = naturalWidth > available
-      ? Math.max(9, Math.floor((baseSize * (available - 2) / naturalWidth) * 10) / 10)
-      : baseSize;
-    heading.style.fontSize = fittedSize + "px";
-  };
-
-  // Solid 2 effects start after JSX refs are attached and return their cleanup.
-  createEffect(
-    () => [props.student, props.teacher],
-    () => {
-      fit();
-      if (typeof ResizeObserver === "function") {
-        resizeObserver = new ResizeObserver(fit);
-        resizeObserver.observe(heading.parentElement);
-      } else {
-        window.addEventListener("resize", fit);
-      }
-      document.fonts?.ready.then(() => {
-        if (heading?.isConnected) fit();
-      });
-      return () => {
-        resizeObserver?.disconnect();
-        window.removeEventListener("resize", fit);
-      };
-    },
-  );
-
+// Preserve full participant names. On narrow screens the header may grow
+// vertically instead of shrinking the text or hiding part of a name.
+function ParticipantHeading(props) {
   return (
     <b
-      ref={heading}
       class="participant-dialog-title"
       title={props.student + " ↔ " + props.teacher}
       aria-label={props.student + " ↔ " + props.teacher}
@@ -380,7 +339,7 @@ export default function ChatsPage(options) {
               </button>
               <div class="chat-head-person">
                 {options.selectedChat.type !== "personal" && options.profile?.role === "admin" ? (
-                  <FittedParticipantHeading
+                  <ParticipantHeading
                     student={options.selectedChat.student.full_name}
                     teacher={options.selectedChat.teacher.full_name}
                   />
