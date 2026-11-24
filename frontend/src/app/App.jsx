@@ -12,6 +12,7 @@ import { createConversationSync } from "../features/conversations/state/createCo
 import AppToast from "../shared/components/AppToast.jsx";
 import { installViewportEnvironment } from "../shared/services/viewportEnvironment.js";
 import { viewPreference, saveViewPreference } from "../shared/services/viewSession.js";
+import { readUserSortPreference, saveUserSortPreference } from "../shared/services/userSortPreference.js";
 import IconButton from "../shared/components/IconButton.jsx";
 import LoginPage from "./authentication/LoginPage.jsx";
 import { createPushNotificationsState } from "../shared/state/notifications/createPushNotificationsState.js";
@@ -93,7 +94,10 @@ function Application(options) {
       preferencesReadyFor = null;
       if (id == null) return;
       for (const [name, , setter] of viewPreferences) {
-        const saved = viewPreference(id, name, undefined);
+        const sessionValue = viewPreference(id, name, undefined);
+        const saved = name === "users.sort" && authState.profile?.role === "admin"
+          ? readUserSortPreference(id, sessionValue ?? "students")
+          : sessionValue;
         if (saved !== undefined) setter(saved);
       }
       preferencesReadyFor = id;
@@ -104,7 +108,11 @@ function Application(options) {
     ([id, ...values]) => {
       if (id == null || preferencesReadyFor !== id) return;
       for (let i = 0; i < viewPreferences.length; i++) {
-        saveViewPreference(id, viewPreferences[i][0], values[i]);
+        const name = viewPreferences[i][0];
+        saveViewPreference(id, name, values[i]);
+        if (name === "users.sort" && authState.profile?.role === "admin") {
+          saveUserSortPreference(id, values[i]);
+        }
       }
     },
   );
