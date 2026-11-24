@@ -16,7 +16,6 @@ import { MESSAGE_DAY_MS, parseMessageDate } from "./services/formatMessageTime.j
 import EmptyState from "../../shared/components/EmptyState.jsx";
 import CountBadge from "../../shared/components/CountBadge.jsx";
 import IconButton from "../../shared/components/IconButton.jsx";
-import Button from "../../shared/components/Button.jsx";
 import ToolbarSelect from "../../shared/components/ToolbarSelect.jsx";
 import AutoFitText from "./components/AutoFitText.jsx";
 // Names and the arrow remain on one line; shrinking is limited to tight space.
@@ -396,17 +395,15 @@ export default function ChatsPage(options) {
                   </ToolbarSelect>
                 </label>
                 {options.profile?.role === "admin" && options.selectedChat.type === "personal" && (
-                  <Button
-                    variant="danger"
-                    size="small"
+                  <IconButton
+                    size="large"
                     class="personal-chat-delete"
                     onClick={() => options.setDeletePersonalChatCandidate(options.selectedChat)}
                     aria-label="Закрыть и удалить личный диалог"
                     title="Закрыть личный диалог и удалить историю у всех"
                   >
-                    <Trash2 size={16} />
-                    <span class="personal-chat-delete-label">Закрыть диалог</span>
-                  </Button>
+                    <Trash2 size={18} />
+                  </IconButton>
                 )}
                 {options.selectedChat.type !== "personal" && options.selectedChat.status !== "active" && (
                   <span class="role-tag">Закрыта</span>
