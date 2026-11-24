@@ -1,50 +1,110 @@
-import { For, Match, Switch, lazy } from "solid-js";
+import { For, Match, Show, Switch, lazy } from "solid-js";
 const ChatsView = lazy(() => import("./ChatsView.jsx"));
 import CountBadge from "../shared/components/CountBadge.jsx";
-import EmptyState from "../shared/components/EmptyState.jsx";
 import { IconGraduationCap as GraduationCap, IconSmile as Smile } from "../shared/components/Icons.jsx";
 
+const ORBIT_CAPACITY = 8;
+
+// Keep the constellation readable: the first eight students orbit the
+// teacher and additional students remain visible in a separate group.
+function orbitPosition(index, count) {
+  if (count === 1) return { x: 50, y: 85 };
+  const angle = count === 2
+    ? Math.PI - index * Math.PI
+    : -Math.PI / 2 + index * (Math.PI * 2) / count;
+  return {
+    x: Math.round((50 + 33 * Math.cos(angle)) * 10) / 10,
+    y: Math.round((50 + 35 * Math.sin(angle)) * 10) / 10,
+  };
+}
+
 function TeacherStructurePage(options) {
-  // Только собственные активные назначения, уже отфильтрованные сервером
-  // /panel/conversations для роли teacher. Административных действий нет.
-  const students = () => options.context.chatState.chats.filter((chat) => chat.student && chat.type !== "personal");
+  // The teacher only sees their own active assignments from panel/conversations.
+  // This view is intentionally read-only, unlike the administrator's graph.
+  const students = () => options.context.chatState.chats.filter(
+    (chat) => chat.student && chat.type !== "personal",
+  );
+  const orbitStudents = () => students().slice(0, ORBIT_CAPACITY);
+  const moreStudents = () => students().slice(ORBIT_CAPACITY);
+  const teacherName = () => options.context.profile?.full_name || "Преподаватель";
+
   return (
-    <section class="teacher-structure" aria-label="Структура преподавателя">
-      <div class="graph-legend-row">
-        <div class="legend graph-legend">
-          <div class="graph-legend-item">
-            <span class="student-dot" />
-            Мои ученики
-            <CountBadge as="b" value={students().length} label="учеников" />
-          </div>
+    <section class="teacher-structure teacher-zen" aria-label="Структура преподавателя">
+      <header class="teacher-zen-intro">
+        <div>
+          <span class="teacher-zen-eyebrow">МОЙ УЧЕБНЫЙ КРУГ</span>
+          <h1>Вместе к новым знаниям</h1>
+          <p>Вы в центре, а ваши ученики — рядом.</p>
         </div>
-      </div>
-      <div class="teacher-branch">
-        <div class="teacher-card">
-          <div class="person-main">
-            <div class="avatar teacher-avatar"><GraduationCap /></div>
-            <div class="person-info">
-              <b>{options.context.profile?.full_name || "Преподаватель"}</b>
-              <small>Учитель · {students().length} учен.</small>
-            </div>
-          </div>
+        <div class="teacher-zen-count">
+          <span class="student-dot" aria-hidden="true" />
+          <span>Мои ученики</span>
+          <CountBadge as="b" value={students().length} label="учеников" />
         </div>
-        <div class="student-list">
-          <For each={students()}>
-            {(chat) => (
-              <div class="student-card">
-                <div class="person-main">
-                  <div class="avatar student-avatar"><Smile /></div>
-                  <div class="person-info"><b>{chat.student.full_name}</b></div>
-                </div>
-              </div>
+      </header>
+
+      <div class="teacher-zen-stage" classList={{ "is-empty": !students().length }}>
+        <span class="teacher-zen-ring teacher-zen-ring-outer" aria-hidden="true" />
+        <span class="teacher-zen-ring teacher-zen-ring-inner" aria-hidden="true" />
+        <svg class="teacher-zen-links" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <For each={orbitStudents()}>
+            {(_chat, index) => (
+              <line
+                x1="50"
+                y1="50"
+                x2={orbitPosition(index(), orbitStudents().length).x}
+                y2={orbitPosition(index(), orbitStudents().length).y}
+              />
             )}
           </For>
-          {!options.context.inboxLoading && !students().length && (
-            <EmptyState>Пока нет назначенных учеников</EmptyState>
-          )}
+        </svg>
+
+        <div class="teacher-zen-center">
+          <div class="teacher-zen-center-avatar"><GraduationCap size={30} aria-hidden="true" /></div>
+          <span class="teacher-zen-center-label">ВАШ ЦЕНТР</span>
+          <strong title={teacherName()}>{teacherName()}</strong>
+          <small>Преподаватель · {students().length} учен.</small>
         </div>
+
+        <ul class="teacher-zen-satellites" aria-label="Ученики преподавателя">
+          <For each={orbitStudents()}>
+            {(chat, index) => (
+              <li
+                class="teacher-zen-student"
+                style={{
+                  "--orbit-x": orbitPosition(index(), orbitStudents().length).x + "%",
+                  "--orbit-y": orbitPosition(index(), orbitStudents().length).y + "%",
+                }}
+              >
+                <span class="teacher-zen-student-avatar"><Smile size={20} aria-hidden="true" /></span>
+                <span class="teacher-zen-student-name" title={chat.student.full_name}>
+                  {chat.student.full_name}
+                </span>
+              </li>
+            )}
+          </For>
+        </ul>
+
+        {!options.context.inboxLoading && !students().length && (
+          <p class="teacher-zen-empty">Когда появятся ученики, здесь расцветёт ваш учебный круг.</p>
+        )}
       </div>
+
+      <Show when={moreStudents().length}>
+        <div class="teacher-zen-more">
+          <h2>Ещё ученики</h2>
+          <ul class="teacher-zen-more-grid">
+            <For each={moreStudents()}>
+              {(chat) => (
+                <li class="teacher-zen-extra-student">
+                  <span class="teacher-zen-student-avatar"><Smile size={18} aria-hidden="true" /></span>
+                  <span title={chat.student.full_name}>{chat.student.full_name}</span>
+                </li>
+              )}
+            </For>
+          </ul>
+        </div>
+      </Show>
     </section>
   );
 }
