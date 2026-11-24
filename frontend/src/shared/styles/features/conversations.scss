@@ -88,29 +88,37 @@
     font-size:11px;
   }
 }
-/* Only the open participant dialog uses one-line names with a two-way arrow.
-   The dialog picker continues to show two names on separate lines. */
+/* Full names take priority over a forced single line or tiny type. The
+   participant title wraps naturally when space is limited. */
 .chat-head-person > .participant-dialog-title {
   display:flex;
   flex-direction:row;
-  align-items:center;
-  gap:6px;
+  flex-wrap:wrap;
+  align-items:baseline;
+  justify-content:flex-start;
+  align-self:flex-start;
+  gap:2px 6px;
+  width:100%;
   min-width:0;
   max-width:100%;
-  white-space:nowrap;
+  overflow:visible;
+  white-space:normal;
+  font-size:15px;
+  line-height:1.4;
 }
 .chat-head-person > .participant-dialog-title > [data-chat-name-role] {
   flex:0 1 auto;
   min-width:0;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
+  max-width:100%;
+  overflow:visible;
+  white-space:normal;
+  overflow-wrap:anywhere;
 }
 .chat-head-person > .participant-dialog-title > .participant-dialog-arrow {
   flex:0 0 auto;
   color:var(--muted);
   font-weight:650;
-  line-height:1;
+  line-height:1.1;
 }
 .chat-head-tools {
   display:flex;
@@ -235,13 +243,14 @@
 }
 .message-topline > b {
   min-width:0;
-  overflow:hidden;
-  font-size:11px;
-  font-weight:550;
+  overflow:visible;
+  font-size:13px;
+  font-weight:600;
   line-height:1.4;
   letter-spacing:0.005em;
-  text-overflow:ellipsis;
-  white-space:nowrap;
+  text-overflow:clip;
+  white-space:normal;
+  overflow-wrap:anywhere;
 }
 .message-tools {
   display:inline-flex;
@@ -837,17 +846,17 @@
 .chat-item .participant-chat-names {
   display:grid;
   min-width:0;
-  gap:3px;
+  gap:5px;
   align-content:center;
   > b {
     display:block;
     min-width:0;
     margin:0;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-    font-size:12px;
-    line-height:1.25;
+    overflow:visible;
+    white-space:normal;
+    overflow-wrap:anywhere;
+    font-size:14px;
+    line-height:1.35;
     font-weight:650;
   }
 }
@@ -1162,47 +1171,22 @@
   opacity:0;
   cursor:pointer;
 }
-/* The header fits names by font size rather than offering horizontal scrolling. */
+/* Header names use comfortable type with no horizontal scroll or ellipsis. */
 .chat-head-person {
-  overflow:hidden;
-}
-.chat-head-person > .participant-dialog-title {
-  display:flex;
-  flex-flow:row nowrap;
-  align-items:center;
-  justify-content:flex-start;
-  align-self:flex-start;
-  gap:6px;
-  width:max-content;
-  max-width:100%;
-  min-width:0;
-  overflow:hidden;
-  white-space:nowrap;
-  text-overflow:clip;
-}
-.chat-head-person > .participant-dialog-title > [data-chat-name-role] {
-  display:block;
-  flex:0 0 auto;
-  min-width:max-content;
   overflow:visible;
-  text-overflow:clip;
-  white-space:nowrap;
-  overflow-wrap:normal;
-}
-.chat-head-person > .participant-dialog-title > .participant-dialog-arrow {
-  flex:0 0 auto;
-  align-self:center;
-  white-space:nowrap;
 }
 .chat-head-person > b:not(.participant-dialog-title) {
   display:block;
   max-width:100%;
-  overflow:hidden;
-  white-space:nowrap;
-  text-overflow:ellipsis;
+  overflow:visible;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  text-overflow:clip;
+  font-size:15px;
+  line-height:1.4;
 }
 @media (max-width:760px) {
-  /* One row: an accessible back target, names scaled to fit, and a 40px filter. */
+  /* Navigation remains fixed while readable full names can wrap vertically. */
   .chat-detail > .chat-head {
     grid-template-columns:52px minmax(0,1fr) 40px;
     grid-template-rows:auto;
@@ -1234,33 +1218,70 @@
     grid-column:3;
     grid-row:1;
   }
-  .chat-head-person > .participant-dialog-title {
-    font-size:clamp(12px,3.5vw,14px);
+  .chat-head-person > .participant-dialog-title,
+  .chat-head-person > b:not(.participant-dialog-title) {
+    font-size:14px;
   }
 }
 
-/* List names never scroll sideways; they scale with the available card
-   width, with ellipsis as a readable fallback for unusually long names. */
-.chat-items > .chat-item .person-info {
-  min-width:0;
-  container-type:inline-size;
+/* Dialog list: full-sized names on every screen. Allow card height to grow
+   instead of shrinking or truncating names. This is scoped to conversations. */
+.workspace-shell .chat-items > .chat-item.student-card {
+  height:auto;
+  min-height:62px;
+  padding:10px 11px;
 }
-.chat-items > .chat-item .person-info b,
-.chat-items > .chat-item .participant-chat-names > b {
-  display:block;
+.workspace-shell .chat-items > .chat-item .person-info {
   min-width:0;
   max-width:100%;
-  overflow:hidden;
-  white-space:nowrap;
-  text-overflow:ellipsis;
-  overflow-wrap:normal;
-  font-size:clamp(10px, 4cqi, 12px);
+  container-type:normal;
+  overflow:visible;
 }
-.chat-items > .chat-item .person-info b > [data-chat-name-role] {
+.workspace-shell .chat-items > .chat-item .person-info b,
+.workspace-shell .chat-items > .chat-item .participant-chat-names > b {
   display:block;
   width:100%;
   min-width:0;
-  overflow:hidden;
-  white-space:nowrap;
-  text-overflow:ellipsis;
+  max-width:100%;
+  margin:0;
+  overflow:visible;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:normal;
+  text-overflow:clip;
+  font-size:14px;
+  line-height:1.4;
+}
+.workspace-shell .chat-items > .chat-item .person-info b > [data-chat-name-role] {
+  display:inline;
+  width:auto;
+  min-width:0;
+  overflow:visible;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  text-overflow:clip;
+}
+.workspace-shell .chat-items > .chat-item .person-info small {
+  display:block;
+  margin-top:3px;
+  overflow:visible;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  text-overflow:clip;
+  font-size:12px;
+  line-height:1.4;
+}
+/* Keep search and filter controls readable, including in narrow side panels. */
+:root .workspace-shell .workspace-panel.chat-list .chat-list-filters > :is(.search, .chat-filter) {
+  --workspace-control-font-size:14px;
+}
+:root .workspace-shell .workspace-panel.chat-list .chat-list-filters .search input,
+:root .workspace-shell .workspace-panel.chat-list .chat-filter .ui-toolbar-select {
+  font-size:14px;
+}
+@media (max-width:480px) {
+  :root .workspace-shell .workspace-panel .chat-list-filters.workspace-control-row {
+    grid-template-columns:minmax(0, 1fr);
+    gap:8px;
+  }
 }
