@@ -369,7 +369,7 @@ export default function ChatsPage(options) {
               </div>
               <div class="chat-head-tools">
                 <label
-                  class="chat-message-filter-control"
+                  class="chat-message-filter-control ui-chat-head-action"
                   title={{
                     all: "Все сообщения",
                     media: "Все вложения",
@@ -397,7 +397,7 @@ export default function ChatsPage(options) {
                 {options.profile?.role === "admin" && options.selectedChat.type === "personal" && (
                   <IconButton
                     size="large"
-                    class="personal-chat-delete"
+                    class="ui-chat-head-action"
                     onClick={() => options.setDeletePersonalChatCandidate(options.selectedChat)}
                     aria-label="Закрыть и удалить личный диалог"
                     title="Закрыть личный диалог и удалить историю у всех"
