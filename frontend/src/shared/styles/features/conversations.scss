@@ -224,16 +224,18 @@
   min-width:0;
   min-height:22px;
 }
+.message:has(.message-topline .chat-name-fit) {
+  min-width:min(190px, 90%);
+}
 .message-topline > b {
   min-width:0;
-  overflow:visible;
+  overflow:hidden;
   font-size:13px;
   font-weight:600;
   line-height:1.4;
   letter-spacing:0.005em;
   text-overflow:clip;
-  white-space:normal;
-  overflow-wrap:anywhere;
+  white-space:nowrap;
 }
 .message-tools {
   display:inline-flex;
