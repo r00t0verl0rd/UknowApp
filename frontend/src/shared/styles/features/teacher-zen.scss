@@ -100,6 +100,29 @@
     0 0 0 8px color-mix(in srgb, var(--role-teacher) 8%, transparent);
   text-align:center;
   transform:translate(-50%, -50%);
+  transition:transform 190ms ease, border-color 190ms ease, box-shadow 190ms ease;
+}
+.teacher-zen-center:is(:hover, :focus-visible) {
+  z-index:6;
+  border-color:var(--role-teacher);
+  outline:none;
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--role-teacher) 15%, transparent),
+    0 17px 46px color-mix(in srgb, var(--role-teacher) 24%, transparent);
+  transform:translate(-50%, -50%) scale(1.055);
+}
+.teacher-zen-canvas.is-small-class .teacher-zen-center {
+  width:214px;
+  min-height:168px;
+  border-width:2px;
+  box-shadow:
+    0 16px 40px color-mix(in srgb, var(--role-teacher) 19%, transparent),
+    0 0 0 9px color-mix(in srgb, var(--role-teacher) 8%, transparent);
+}
+.teacher-zen-canvas.is-small-class .teacher-zen-center:is(:hover, :focus-visible) {
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--role-teacher) 15%, transparent),
+    0 21px 46px color-mix(in srgb, var(--role-teacher) 27%, transparent);
 }
 .teacher-zen-center-avatar {
   display:grid;
@@ -237,6 +260,9 @@
   .teacher-zen-center strong {
     font-size:15px;
   }
+  .teacher-zen-center:is(:hover, :focus-visible) {
+    transform:scale(1.035);
+  }
   .teacher-zen-satellites {
     display:grid;
     grid-template-columns:repeat(2, minmax(0, 1fr));
@@ -282,7 +308,8 @@
 }
 @media (prefers-reduced-motion:reduce) {
   .teacher-zen-student,
-  .teacher-zen-student-avatar {
+  .teacher-zen-student-avatar,
+  .teacher-zen-center {
     transition:none;
   }
 }
