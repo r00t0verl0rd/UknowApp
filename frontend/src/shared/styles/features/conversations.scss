@@ -1206,14 +1206,26 @@
   }
 }
 
-/* Dialog list: show complete names for every role, including compact columns. */
+/* Keep each name on one line in the dialog list, on desktop and mobile.
+   Narrow columns scroll the name rather than adding ellipses or wrapping. */
 .chat-items > .chat-item .person-info {
   min-width:0;
 }
 .chat-items > .chat-item .person-info b,
 .chat-items > .chat-item .participant-chat-names > b {
-  white-space:normal;
-  overflow:visible;
+  display:block;
+  min-width:0;
+  max-width:100%;
+  white-space:nowrap;
+  overflow-x:auto;
+  overflow-y:hidden;
   text-overflow:clip;
-  overflow-wrap:anywhere;
+  overflow-wrap:normal;
+  scrollbar-width:thin;
+  -webkit-overflow-scrolling:touch;
+}
+.chat-items > .chat-item .person-info b > [data-chat-name-role] {
+  display:inline-block;
+  min-width:max-content;
+  white-space:nowrap;
 }
