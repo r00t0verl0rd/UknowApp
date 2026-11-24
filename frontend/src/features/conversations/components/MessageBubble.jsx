@@ -228,6 +228,7 @@ function MessageBubble(options) {
               type="button"
               size="compact"
               class="message-detail-btn"
+              data-delivery-complete={deliveryDetails().every(detail => detail.delivered) ? "true" : "false"}
               popovertarget={deliveryPopoverId}
               aria-controls={deliveryPopoverId}
               aria-haspopup="dialog"
