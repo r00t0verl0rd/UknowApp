@@ -1,105 +1,111 @@
-import { For, Match, Switch, createEffect, lazy } from "solid-js";
+import { For, Match, Switch, createEffect, createSignal, lazy } from "solid-js";
 const ChatsView = lazy(() => import("./ChatsView.jsx"));
 import CountBadge from "../shared/components/CountBadge.jsx";
 import { IconGraduationCap as GraduationCap, IconSmile as Smile } from "../shared/components/Icons.jsx";
 
-// Orbit capacity and radii grow together: each circle has room for its cards.
-// All students belong to this graph; there is no separate overflow list.
-const FIRST_RING_CAPACITY = 10;
-const RING_CAPACITY_STEP = 6;
-const BASE_RADIUS_X = 330;
-const BASE_RADIUS_Y = 240;
-const RING_RADIUS_STEP_X = 215;
-const RING_RADIUS_STEP_Y = 172;
+// The teacher graph is part of the content flow, without its own scrolling.
+// For small classes keep the orbit; bigger groups spread across more vertical
+// space rather than shrinking names or overflowing horizontally.
+const STUDENT_WIDTH = 170;
+const STUDENT_HEIGHT = 76;
+const STUDENT_COLUMNS_SPACING = 184;
+const STUDENT_ROWS_SPACING = 114;
 
-function buildTeacherOrbit(count) {
-  // A small class reads as a hierarchy: teacher above, one student centered
-  // below or two students balanced below on the left and right.
-  // With 3+ students we switch to concentric circles automatically.
-  if (count === 1 || count === 2) {
-    const width = 720;
-    const height = 560;
-    const centerX = width / 2;
-    const centerY = height / 2;
-    const studentY = centerY + 195;
-    const xs = count === 1 ? [centerX] : [centerX - 165, centerX + 165];
+function buildTeacherOrbit(count, availableWidth = 900) {
+  const width = Math.max(320, Math.round(availableWidth));
+  const centerX = width / 2;
+
+  if (count < 3) {
+    const centerY = 162;
+    const studentY = 367;
+    const offset = Math.min(165, (width - STUDENT_WIDTH - 30) / 4);
+    const xs = count === 1 ? [centerX] : count === 2
+      ? [centerX - offset, centerX + offset] : [];
     return {
-      width,
-      height,
-      centerX,
-      centerY,
-      rings: [],
-      links: xs.map(x => ({ x1:centerX, y1:centerY, x2:x, y2:studentY })),
-      nodes: xs.map((x, index) => ({ index, x, y:studentY })),
+      width, height:470, centerX, centerY, rings:[],
+      links:xs.map(x => ({x1:centerX, y1:centerY, x2:x, y2:studentY})),
+      nodes:xs.map((x,index) => ({index,x,y:studentY})),
     };
   }
-  const rings = [];
-  const nodes = [];
-  let remaining = count;
-  let index = 0;
-  while (remaining > 0) {
-    const ringIndex = rings.length;
-    const capacity = FIRST_RING_CAPACITY + RING_CAPACITY_STEP * ringIndex;
-    const size = Math.min(remaining, capacity);
-    const radiusX = BASE_RADIUS_X + ringIndex * RING_RADIUS_STEP_X;
-    const radiusY = BASE_RADIUS_Y + ringIndex * RING_RADIUS_STEP_Y;
-    const members = [];
 
-    for (let slot = 0; slot < size; slot++) {
-      const angle = size === 1
-        ? -Math.PI / 2
-        : size === 2
-          ? slot * Math.PI
-          : -Math.PI / 2 + ((slot + (ringIndex % 2) * 0.5) * 2 * Math.PI) / size;
-      const node = {
-        index,
-        ringIndex,
-        x: radiusX * Math.cos(angle),
-        y: radiusY * Math.sin(angle),
-        angle,
-      };
-      nodes.push(node);
-      members.push(node);
-      index++;
+  if (count <= 10) {
+    const radiusX = Math.max(178, Math.min(330, (width - STUDENT_WIDTH) / 2 - 25));
+    let radiusY = 240;
+    let offsets = [];
+    // A taller oval keeps islands from colliding on narrower desktop widths.
+    for (let attempt = 0; attempt < 25; attempt++) {
+      offsets = Array.from({length:count}, (_,index) => {
+        const angle = -Math.PI / 2 + index * 2 * Math.PI / count;
+        return {index,x:radiusX*Math.cos(angle),y:radiusY*Math.sin(angle)};
+      });
+      const overlaps = offsets.some((node,i) => offsets.some((other,j) =>
+        i < j && Math.abs(node.x-other.x) < STUDENT_WIDTH+12
+          && Math.abs(node.y-other.y) < STUDENT_HEIGHT+13));
+      const hitsTeacher = offsets.some(node =>
+        Math.abs(node.x) < (214+STUDENT_WIDTH)/2 + 10
+          && Math.abs(node.y) < (168+STUDENT_HEIGHT)/2 + 12);
+      if (!overlaps && !hitsTeacher) break;
+      radiusY += 38;
     }
-    rings.push({ radiusX, radiusY, members });
-    remaining -= size;
+    const centerY = radiusY + 80;
+    return {
+      width, height:2*centerY, centerX, centerY,
+      rings:[{radiusX,radiusY}],
+      links:offsets.map(node => ({
+        x1:centerX,y1:centerY,x2:centerX+node.x,y2:centerY+node.y,
+      })),
+      nodes:offsets.map(node => ({
+        index:node.index,x:centerX+node.x,y:centerY+node.y,
+      })),
+    };
   }
 
-  const last = rings[rings.length - 1];
-  const width = last ? Math.ceil(2 * (last.radiusX + 85 + 44)) : 760;
-  const height = last ? Math.ceil(2 * (last.radiusY + 41 + 42)) : 560;
-  const centerX = width / 2;
-  const centerY = height / 2;
+  // Dense groups are a connected constellation on a wider/taller content
+  // canvas. Rows expand symmetrically around the teacher, so every full-size
+  // island remains visible, even with dozens of students.
+  const columns = Math.max(2, Math.min(4, Math.floor((width-30)/190)));
+  const columnOffsets = Array.from({length:columns}, (_,i) =>
+    (i-(columns-1)/2)*STUDENT_COLUMNS_SPACING);
+  const positions = [];
+  for (let row = 0; positions.length < count; row++) {
+    const ys = row === 0 ? [0] : [-row*STUDENT_ROWS_SPACING, row*STUDENT_ROWS_SPACING];
+    for (const y of ys) {
+      // Preserve left/right symmetry as far as possible for partial rows.
+      const sorted = [...columnOffsets].sort((a,b) => Math.abs(b)-Math.abs(a) || a-b);
+      for (const x of sorted) {
+        if (Math.abs(x) < (214+STUDENT_WIDTH)/2 + 8
+            && Math.abs(y) < (168+STUDENT_HEIGHT)/2 + 14) continue;
+        positions.push({index:positions.length,x,y});
+        if (positions.length === count) break;
+      }
+      if (positions.length === count) break;
+    }
+  }
 
-  const links = nodes.map(node => {
-    const previous = rings[node.ringIndex - 1]?.members;
-    const parent = previous?.length
-      ? previous.reduce((nearest, candidate) => {
-        const nearestDistance = (nearest.x - node.x) ** 2 + (nearest.y - node.y) ** 2;
-        const candidateDistance = (candidate.x - node.x) ** 2 + (candidate.y - node.y) ** 2;
-        return candidateDistance < nearestDistance ? candidate : nearest;
-      })
-      : null;
+  const maxY = Math.max(...positions.map(node => Math.abs(node.y)), 180);
+  const centerY = maxY + 95;
+  const radiusX = Math.min((width-STUDENT_WIDTH)/2-19, 345);
+  const ringCount = Math.max(1, Math.ceil(maxY/230));
+  const rings = Array.from({length:ringCount}, (_,i) => ({
+    radiusX:radiusX - i%2*8,
+    radiusY:Math.min(maxY+20,(i+1)*230),
+  }));
+  const links = positions.map(node => {
+    const parent = positions
+      .filter(candidate => Math.abs(candidate.y)<Math.abs(node.y)-25)
+      .sort((a,b) => Math.abs(a.x-node.x)-Math.abs(b.x-node.x))[0];
+    const nearCenter = Math.abs(node.y)<=STUDENT_ROWS_SPACING;
     return {
-      x1: centerX + (parent?.x || 0),
-      y1: centerY + (parent?.y || 0),
-      x2: centerX + node.x,
-      y2: centerY + node.y,
+      x1:centerX+(nearCenter?0:parent?.x || 0),
+      y1:centerY+(nearCenter?0:parent?.y || 0),
+      x2:centerX+node.x,
+      y2:centerY+node.y,
     };
   });
-
   return {
-    width,
-    height,
-    centerX,
-    centerY,
-    rings,
-    links,
-    nodes: nodes.map(node => ({
-      index:node.index,
-      x:centerX + node.x,
-      y:centerY + node.y,
+    width, height:2*centerY, centerX, centerY, rings, links,
+    nodes:positions.map(node => ({
+      index:node.index,x:centerX+node.x,y:centerY+node.y,
     })),
   };
 }
@@ -109,23 +115,25 @@ function TeacherStructurePage(options) {
   const students = () => options.context.chatState.chats.filter(
     (chat) => chat.student && chat.type !== "personal",
   );
-  const layout = () => buildTeacherOrbit(students().length);
+  const [availableWidth, setAvailableWidth] = createSignal(900);
+  const layout = () => buildTeacherOrbit(students().length, availableWidth());
   const teacherName = () => options.context.profile?.full_name || "Преподаватель";
   let stage;
 
-  // Center the teacher in the visible viewport when the constellation grows
-  // beyond the container. Users can still pan to every other circle.
-  createEffect(
-    () => [layout().width, layout().height],
-    () => {
-      const frame = requestAnimationFrame(() => {
-        if (!stage || window.matchMedia("(max-width: 640px)").matches) return;
-        stage.scrollLeft = Math.max(0, (stage.scrollWidth - stage.clientWidth) / 2);
-        stage.scrollTop = Math.max(0, (stage.scrollHeight - stage.clientHeight) / 2);
-      });
-      return () => cancelAnimationFrame(frame);
-    },
-  );
+  // Measure the actual content column, not the browser viewport. The canvas
+  // stretches vertically as the number of students grows.
+  createEffect(() => [], () => {
+    if (!stage) return;
+    const measure = () => setAvailableWidth(Math.max(320, Math.round(stage.clientWidth || 900)));
+    measure();
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : null;
+    if (observer) observer.observe(stage);
+    else window.addEventListener("resize", measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  });
 
   return (
     <section class="teacher-structure teacher-zen" aria-label="Структура преподавателя">
@@ -137,11 +145,10 @@ function TeacherStructurePage(options) {
         </div>
       </header>
 
-      <div class="teacher-zen-stage" ref={stage} role="region" aria-label="Граф учеников преподавателя" tabindex="0">
+      <div class="teacher-zen-stage" ref={stage} role="group" aria-label="Граф учеников преподавателя">
         <div
           class={["teacher-zen-canvas", { "is-small-class": students().length > 0 && students().length <= 2 }]}
           style={{
-            "--zen-canvas-width": layout().width + "px",
             "--zen-canvas-height": layout().height + "px",
           }}
         >
