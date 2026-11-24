@@ -1139,8 +1139,8 @@
   opacity:0;
   cursor:pointer;
 }
-/* Keep both participants and the separator on exactly one line on every screen.
-   Long names can be scrolled horizontally rather than truncated or overlapped. */
+/* Keep both names together on one line instead of stretching the
+   participant title across the desktop header. Overflow remains scrollable. */
 .chat-head-person {
   overflow:hidden;
 }
@@ -1148,8 +1148,10 @@
   display:flex;
   flex-flow:row nowrap;
   align-items:center;
+  justify-content:flex-start;
+  align-self:flex-start;
   gap:6px;
-  width:100%;
+  width:max-content;
   max-width:100%;
   min-width:0;
   overflow-x:auto;
@@ -1180,26 +1182,38 @@
   text-overflow:clip;
 }
 @media (max-width:760px) {
-  /* Give the names a full-width dedicated line while keeping them
-     themselves on one line. Navigation and filter share the first row. */
+  /* One row: a wider back target, comfortably spaced names, and a
+     40px filter. Names stay on one line and scroll if space runs out. */
   .chat-detail > .chat-head {
-    grid-template-columns:48px minmax(0,1fr) 40px;
-    grid-template-rows:auto auto;
+    grid-template-columns:52px minmax(0,1fr) 40px;
+    grid-template-rows:auto;
     align-items:center;
+    column-gap:12px;
   }
   .chat-detail > .chat-head > .mobile-chat-back {
     grid-column:1;
     grid-row:1;
+    box-sizing:border-box;
+    flex:0 0 52px;
+    width:52px;
+    min-width:52px;
+    height:40px;
+    min-height:40px;
+    padding:0;
+  }
+  .chat-detail > .chat-head > .mobile-chat-back svg {
+    width:20px;
+    height:20px;
+  }
+  .chat-detail > .chat-head > .chat-head-person {
+    grid-column:2;
+    grid-row:1;
+    min-width:0;
+    padding-left:0;
   }
   .chat-detail > .chat-head > .chat-head-tools {
     grid-column:3;
     grid-row:1;
-  }
-  .chat-detail > .chat-head > .chat-head-person {
-    grid-column:1 / -1;
-    grid-row:2;
-    min-width:0;
-    padding-left:0;
   }
   .chat-head-person > .participant-dialog-title {
     font-size:clamp(12px,3.5vw,14px);
