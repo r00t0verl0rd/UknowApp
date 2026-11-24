@@ -1139,49 +1139,70 @@
   opacity:0;
   cursor:pointer;
 }
-/* Long participant names must never be cut off by the separator or filter. */
+/* Keep both participants and the separator on exactly one line on every screen.
+   Long names can be scrolled horizontally rather than truncated or overlapped. */
+.chat-head-person {
+  overflow:hidden;
+}
 .chat-head-person > .participant-dialog-title {
-  display:grid;
-  grid-template-columns:minmax(0, 1fr) auto minmax(0, 1fr);
+  display:flex;
+  flex-flow:row nowrap;
   align-items:center;
   gap:6px;
   width:100%;
   max-width:100%;
-  white-space:normal;
-  overflow:visible;
+  min-width:0;
+  overflow-x:auto;
+  overflow-y:hidden;
+  white-space:nowrap;
   text-overflow:clip;
+  scrollbar-width:thin;
+  -webkit-overflow-scrolling:touch;
 }
 .chat-head-person > .participant-dialog-title > [data-chat-name-role] {
   display:block;
-  min-width:0;
+  flex:0 0 auto;
+  min-width:max-content;
   overflow:visible;
   text-overflow:clip;
-  white-space:normal;
-  overflow-wrap:anywhere;
+  white-space:nowrap;
+  overflow-wrap:normal;
 }
 .chat-head-person > .participant-dialog-title > .participant-dialog-arrow {
+  flex:0 0 auto;
   align-self:center;
+  white-space:nowrap;
 }
 .chat-head-person > b:not(.participant-dialog-title) {
-  white-space:normal;
-  overflow:visible;
+  white-space:nowrap;
+  overflow-x:auto;
+  overflow-y:hidden;
   text-overflow:clip;
-  overflow-wrap:anywhere;
 }
 @media (max-width:760px) {
+  /* Give the names a full-width dedicated line while keeping them
+     themselves on one line. Navigation and filter share the first row. */
   .chat-detail > .chat-head {
+    grid-template-columns:48px minmax(0,1fr) 40px;
+    grid-template-rows:auto auto;
     align-items:center;
   }
-  .chat-head-person > .participant-dialog-title {
-    grid-template-columns:minmax(0, 1fr);
-    gap:2px;
+  .chat-detail > .chat-head > .mobile-chat-back {
+    grid-column:1;
+    grid-row:1;
   }
-  .chat-head-person > .participant-dialog-title > .participant-dialog-arrow {
-    justify-self:start;
-    line-height:1;
+  .chat-detail > .chat-head > .chat-head-tools {
+    grid-column:3;
+    grid-row:1;
   }
-  .chat-head-person {
+  .chat-detail > .chat-head > .chat-head-person {
+    grid-column:1 / -1;
+    grid-row:2;
+    min-width:0;
     padding-left:0;
+  }
+  .chat-head-person > .participant-dialog-title {
+    font-size:clamp(12px,3.5vw,14px);
   }
 }
 
