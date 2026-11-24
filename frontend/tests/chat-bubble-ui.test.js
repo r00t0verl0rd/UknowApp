@@ -21,6 +21,13 @@ test("delivery details use a native popover, not an error modal", () => {
   assert.doesNotMatch(bubble, /class="btn small"/);
 });
 
+test("message delivery info stays gray for warnings and turns softly blue when all copies succeeded", () => {
+  assert.match(bubble, /data-delivery-complete=\{deliveryDetails\(\)\.every\(detail => detail\.delivered\) \? "true" : "false"\}/);
+  assert.match(styles, /\.message-detail-btn\[data-delivery-complete="true"\]/);
+  assert.match(styles, /color:color-mix\(in srgb, var\(--info\) 68%, var\(--muted\)\)/);
+  assert.match(styles, /:root\[data-theme="dark-soft"\] \.message \.ui-icon-button\.message-detail-btn\[data-delivery-complete="true"\]/);
+});
+
 test("related popups communicate outcomes before caveats", () => {
   const chats = readFileSync(path.join(frontend, "src/features/conversations/state/createChatsController.js"), "utf8");
   const feedback = readFileSync(path.join(frontend, "src/shared/components/AppToast.jsx"), "utf8");
