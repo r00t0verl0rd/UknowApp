@@ -129,3 +129,53 @@
     color:#f3d9a8;
   }
 }
+
+/* Single source of truth for open-chat header icon actions.
+   The filter label and close-dialog IconButton share identical tap targets,
+   color, shape, sizing, hover and focus across all breakpoints and themes. */
+:root .workspace-shell .chat-head-tools > .ui-chat-head-action {
+  --icon-action-size:40px;
+  -webkit-appearance:none;
+  appearance:none;
+  display:inline-grid;
+  place-items:center;
+  box-sizing:border-box;
+  flex:0 0 var(--icon-action-size);
+  width:var(--icon-action-size);
+  min-width:var(--icon-action-size);
+  max-width:var(--icon-action-size);
+  height:var(--icon-action-size);
+  min-height:var(--icon-action-size);
+  max-height:var(--icon-action-size);
+  margin:0;
+  padding:0;
+  border:1px solid var(--ui-border);
+  border-radius:10px;
+  background:var(--ui-control-bg);
+  color:var(--ui-control-text);
+  box-shadow:none;
+  cursor:pointer;
+  touch-action:manipulation;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
+}
+:root .workspace-shell .chat-head-tools > .ui-chat-head-action > svg {
+  display:block;
+  flex:none;
+  width:18px;
+  height:18px;
+  stroke-width:1.8;
+  pointer-events:none;
+}
+:root .workspace-shell .chat-head-tools > .ui-chat-head-action:hover:not(:disabled) {
+  border-color:var(--ui-border-strong);
+  background:var(--ui-control-hover);
+  color:var(--purple);
+}
+:root .workspace-shell .chat-head-tools > .ui-chat-head-action:is(:focus-visible, :focus-within) {
+  border-color:var(--ui-border-strong);
+  outline:2px solid var(--ui-border-strong);
+  outline-offset:2px;
+}
