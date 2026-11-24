@@ -38,16 +38,15 @@ export default function ChatDialogs(options) {
             <FormField label="Участник">
               <select name="participant" required autofocus disabled={options.creating}>
                 <option value="" disabled selected>
-                  Выберите учителя или ученика
+                  Выберите участника
                 </option>
                 <For
-                  each={options.users.filter((user) => user.role === "teacher" || user.role === "student")}
+                  each={options.users
+                    .filter((user) => user.role === "teacher" || user.role === "student")
+                    .sort((a, b) => a.full_name.localeCompare(b.full_name, "ru", { sensitivity: "base" })
+                      || Number(a.id) - Number(b.id))}
                 >
-                  {(user) => (
-                    <option value={user.id} data-chat-name-role={user.role}>
-                      {user.full_name} · {user.role === "teacher" ? "Учитель" : "Ученик"} · №{user.id}
-                    </option>
-                  )}
+                  {(user) => <option value={user.id}>{user.full_name}</option>}
                 </For>
               </select>
             </FormField>
