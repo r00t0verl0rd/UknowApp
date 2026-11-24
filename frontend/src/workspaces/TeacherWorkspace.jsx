@@ -139,8 +139,7 @@ function TeacherStructurePage(options) {
 
       <div class="teacher-zen-stage" ref={stage} role="region" aria-label="Граф учеников преподавателя" tabindex="0">
         <div
-          class="teacher-zen-canvas"
-          classList={{ "is-small-class": students().length > 0 && students().length <= 2 }}
+          class={["teacher-zen-canvas", { "is-small-class": students().length > 0 && students().length <= 2 }]}
           style={{
             "--zen-canvas-width": layout().width + "px",
             "--zen-canvas-height": layout().height + "px",
