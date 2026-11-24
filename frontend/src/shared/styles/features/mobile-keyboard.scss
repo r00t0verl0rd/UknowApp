@@ -1,15 +1,16 @@
 // Keyboard-aware positioning is shared by login, workspace and portalled modals.
 // visualViewport values come from one observer in App, also in standalone (PWA) mode.
 @media (max-width: 1024px) {
-  :root[data-theme][data-app-keyboard="open"]:has(.login-screen),
-  :root[data-theme][data-app-keyboard="open"] body:has(.login-screen),
-  :root[data-theme][data-app-keyboard="open"] #root:has(.login-screen) {
+  // Keep one scroll container and one card size throughout keyboard animation.
+  :root[data-theme]:has(.login-screen),
+  :root[data-theme] body:has(.login-screen),
+  :root[data-theme] #root:has(.login-screen) {
     height:100%;
     min-height:0;
     overflow:hidden;
     overscroll-behavior:none;
   }
-  :root[data-theme][data-app-keyboard="open"] .login-screen {
+  :root[data-theme] .login-screen {
     position:fixed;
     inset:var(--app-viewport-top, 0px) 0 auto;
     display:flex;
@@ -18,46 +19,27 @@
     width:100%;
     height:var(--app-viewport-height, 100dvh);
     min-height:0;
-    padding:8px 14px 12px;
+    padding:max(8px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom));
     overflow-x:hidden;
     overflow-y:auto;
     overscroll-behavior:contain;
     -webkit-overflow-scrolling:touch;
     scroll-padding-block:14px;
   }
-  :root[data-theme][data-app-keyboard="open"] .login-card {
+  :root[data-theme] .login-card {
     flex:0 0 auto;
     margin-block:auto;
-    padding:14px 16px;
-  }
-  :root[data-theme][data-app-keyboard="open"] .login-brand {
-    gap:5px;
-    margin-bottom:12px;
-    padding:0;
-  }
-  :root[data-theme][data-app-keyboard="open"] .login-brand .login-logo {
-    width:56px;
-    height:56px;
-  }
-  :root[data-theme][data-app-keyboard="open"] .login-brand h1 {
-    font-size:27px;
-  }
-  :root[data-theme][data-app-keyboard="open"] .login-theme-toggle {
-    top:12px;
-    right:12px;
-  }
-  :root[data-theme][data-app-keyboard="open"] .login-card .stack {
-    gap:9px;
   }
 
   // Native dialogs live in a Portal, not inside WorkspaceLayout.
   // They must follow the same visual viewport even when the keyboard shifts it.
-  :root[data-app-keyboard="open"] dialog.native-dialog.modal[open] {
+  :root[data-theme] dialog.native-dialog.modal[open]:has(input, textarea, [contenteditable="true"]) {
     position:fixed;
-    inset:calc(var(--app-viewport-top, 0px) + 8px) 0 auto;
+    top:var(--app-viewport-top, 0px);
+    bottom:calc(100% - var(--app-viewport-top, 0px) - var(--app-viewport-height, 100dvh));
     max-height:calc(var(--app-viewport-height, 100dvh) - 16px);
     height:auto;
-    margin:0 auto;
+    margin:auto;
     overflow-y:auto;
     scroll-padding-bottom:18px;
   }
