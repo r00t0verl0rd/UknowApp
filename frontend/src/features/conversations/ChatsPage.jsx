@@ -18,18 +18,18 @@ import CountBadge from "../../shared/components/CountBadge.jsx";
 import IconButton from "../../shared/components/IconButton.jsx";
 import Button from "../../shared/components/Button.jsx";
 import ToolbarSelect from "../../shared/components/ToolbarSelect.jsx";
-// Preserve full participant names. On narrow screens the header may grow
-// vertically instead of shrinking the text or hiding part of a name.
+import AutoFitText from "./components/AutoFitText.jsx";
+// Names and the arrow remain on one line; shrinking is limited to tight space.
 function ParticipantHeading(props) {
+  const title = () => props.student + " ↔ " + props.teacher;
   return (
-    <b
-      class="participant-dialog-title"
-      title={props.student + " ↔ " + props.teacher}
-      aria-label={props.student + " ↔ " + props.teacher}
-    >
-      <span data-chat-name-role="student">{props.student}</span>
-      <span class="participant-dialog-arrow" aria-hidden="true">↔</span>
-      <span data-chat-name-role="teacher">{props.teacher}</span>
+    <b class="participant-dialog-title" title={title()} aria-label={title()}>
+      <AutoFitText text={title()} baseSize={15} mobileSize={14} minSize={11}
+        class="participant-heading-fit">
+        <span data-chat-name-role="student">{props.student}</span>
+        <span class="participant-dialog-arrow" aria-hidden="true">↔</span>
+        <span data-chat-name-role="teacher">{props.teacher}</span>
+      </AutoFitText>
     </b>
   );
 }
@@ -273,12 +273,18 @@ export default function ChatsPage(options) {
                     <div class={"person-info" + (showMessageCount() ? " participant-chat-names" : "")}>
                       {showMessageCount() ? (
                         <>
-                          <b><span data-chat-name-role="teacher">{row().teacher.full_name}</span></b>
-                          <b><span data-chat-name-role="student">{row().student.full_name}</span></b>
+                          <b><AutoFitText text={row().teacher.full_name} baseSize={14} minSize={12}>
+                            <span data-chat-name-role="teacher">{row().teacher.full_name}</span>
+                          </AutoFitText></b>
+                          <b><AutoFitText text={row().student.full_name} baseSize={14} minSize={12}>
+                            <span data-chat-name-role="student">{row().student.full_name}</span>
+                          </AutoFitText></b>
                         </>
                       ) : (
                         <>
-                          <b><span data-chat-name-role={titleRole(row())}>{title()}</span></b>
+                          <b><AutoFitText text={title()} baseSize={14} minSize={12}>
+                            <span data-chat-name-role={titleRole(row())}>{title()}</span>
+                          </AutoFitText></b>
                           {secondary() && <small>{secondary()}</small>}
                         </>
                       )}
@@ -345,11 +351,17 @@ export default function ChatsPage(options) {
                   />
                 ) : (
                   <b data-chat-name-role={titleRole(options.selectedChat)}>
-                    {options.selectedChat.type === "personal"
+                    <AutoFitText text={options.selectedChat.type === "personal"
+                      ? options.selectedChat.title
+                      : options.profile?.role === "student"
+                        ? options.selectedChat.teacher.full_name
+                        : options.selectedChat.student.full_name} baseSize={15} mobileSize={14} minSize={12}>
+                      {options.selectedChat.type === "personal"
                       ? options.selectedChat.title
                       : options.profile?.role === "student"
                         ? options.selectedChat.teacher.full_name
                         : options.selectedChat.student.full_name}
+                    </AutoFitText>
                   </b>
                 )}
                 {options.selectedChat.type !== "personal" && options.profile?.role === "student" && (
