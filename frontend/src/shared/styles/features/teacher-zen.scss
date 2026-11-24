@@ -78,7 +78,7 @@
 .teacher-zen-center {
   position:absolute;
   z-index:2;
-  top:50%;
+  top:var(--zen-center-y, 50%);
   left:50%;
   display:flex;
   box-sizing:border-box;
