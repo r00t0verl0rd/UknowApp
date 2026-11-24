@@ -90,3 +90,95 @@ test("keyboard-aware login, workspace dialogs and consistent touch buttons", { t
     await new Promise((resolve, reject) => server.httpServer.close(error => error ? reject(error) : resolve()));
   }
 });
+
+test("workspace header has clear spacing and mobile dialogs stay below it", { timeout: 90000 }, async () => {
+  const server = await preview({ preview: { host: "127.0.0.1", port: 22236, strictPort: true }, logLevel: "error" });
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH });
+  try {
+    for (const role of ["teacher", "admin", "student"]) {
+      for (const width of [320, 390, 768, 1280]) {
+        const mobile = width <= 1024;
+        const page = await browser.newPage({ viewport: { width, height: 780 }, isMobile: mobile, hasTouch: mobile });
+        await page.addInitScript(() => localStorage.setItem("uknowapp-auth", "1"));
+        await page.route("**/api/**", route => {
+          const path = new URL(route.request().url()).pathname;
+          if (path === "/api/panel/me") return route.fulfill({ json: {
+            id: 7, role, full_name: "Пользователь",
+            permissions: role === "admin"
+              ? ["structure.view", "dialogs.own", "dialogs.observe", "users.manage", "school.manage", "boards.view"]
+              : role === "teacher" ? ["structure.view", "dialogs.own", "boards.view"] : ["dialogs.own", "boards.view"],
+          } });
+          if (path === "/api/admin/overview") return route.fulfill({ json: { teachers: [] } });
+          if (path === "/api/panel/conversations" && role === "teacher") return route.fulfill({ json:
+            Array.from({ length: 30 }, (_, i) => ({
+              id: i + 1, type: "assignment", status: "active", unread_count: 0,
+              student: { id: 100 + i, full_name: "Ученик " + (i + 1) },
+              teacher: { id: 7, full_name: "Пользователь" },
+            })),
+          });
+          return route.fulfill({ json: [] });
+        });
+        await page.goto(HOST + "/boards");
+        await page.getByRole("button", { name: "Диалоги", exact: true }).waitFor();
+        if (role === "teacher" && mobile) {
+          await page.getByRole("button", { name: "Структура", exact: true }).click();
+          await page.locator(".teacher-zen-student").first().waitFor();
+          await page.evaluate(() => {
+            // A stored offset from the old document-scrolling dialogs layout.
+            sessionStorage.setItem("uknowapp-view-v1:7", JSON.stringify({
+              pages: { chats: { scroll: { document: { top: 45, left: 0 }, content: { top: 30, left: 0 } } } },
+            }));
+            window.scrollTo(0, 300);
+          });
+        }
+        await page.getByRole("button", { name: "Диалоги", exact: true }).click();
+        await page.locator(".chat-list").waitFor();
+        const geometry = await page.evaluate(async mobile => {
+          await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+          const rect = el => el.getBoundingClientRect();
+          const header = document.querySelector(".sidebar");
+          const list = document.querySelector(".chat-list");
+          const filters = list.querySelector(".chat-list-filters") || list.querySelector(".chat-items");
+          const actions = [...document.querySelectorAll(mobile
+            ? ".mobile-quick-actions > button" : ".topbar-actions > button")].map(rect);
+          const nav = rect(header.querySelector("nav"));
+          return {
+            headerBottom: rect(header).bottom,
+            filtersTop: rect(filters).top,
+            listTop: rect(list).top,
+            navTop: nav.top,
+            actionBottom: Math.max(...actions.map(r => r.bottom)),
+            actionGaps: actions.slice(1).map((r, i) => r.left - actions[i].right),
+            actionCount: actions.length,
+            documentScroll: window.scrollY,
+            contentScroll: document.querySelector(".workspace-content").scrollTop,
+          };
+        }, mobile);
+        assert.equal(geometry.actionCount, mobile ? 3 : 2);
+        assert.ok(geometry.actionGaps.every(gap => gap >= 5),
+          `${role} ${width}px: icon buttons have even gaps`);
+        if (mobile) {
+          assert.ok(geometry.navTop - geometry.actionBottom >= 6,
+            `${role} ${width}px: navigation has a clear gap below quick actions`);
+          assert.ok(geometry.listTop >= geometry.headerBottom && geometry.filtersTop >= geometry.headerBottom,
+            `${role} ${width}px: dialogs and filters stay below the header: ${JSON.stringify(geometry)}`);
+          assert.equal(geometry.documentScroll, 0);
+          assert.equal(geometry.contentScroll, 0);
+          if (role === "teacher") {
+            await page.locator(".chat-item").first().waitFor();
+            const afterScroll = await page.locator(".chat-items").evaluate(el => {
+              el.scrollTop = 250;
+              return { scroll: el.scrollTop, filterTop: document.querySelector(".chat-list-filters").getBoundingClientRect().top };
+            });
+            assert.ok(afterScroll.scroll > 0, "Long dialog lists can scroll independently");
+            assert.ok(afterScroll.filterTop >= geometry.headerBottom, "Filters remain visible while dialogs scroll");
+          }
+        }
+        await page.close();
+      }
+    }
+  } finally {
+    await browser.close();
+    await new Promise((resolve, reject) => server.httpServer.close(error => error ? reject(error) : resolve()));
+  }
+});

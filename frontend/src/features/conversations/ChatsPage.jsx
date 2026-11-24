@@ -36,20 +36,6 @@ function ParticipantHeading(props) {
 export default function ChatsPage(options) {
   const [messageNowMs, setMessageNowMs] = createSignal(Date.now());
 
-  // В обычной вкладке Safari список диалогов прокручивается нативным document.
-  // При открытии переписки возвращаемся наверх, где закреплена навигация.
-  createEffect(
-    () => [options.selectedChat?.id, options.selectedChat?.type],
-    () => {
-      if (
-        options.selectedChat &&
-        window.matchMedia("(max-width: 1024px) and (display-mode: browser)").matches
-      ) {
-        window.scrollTo(0, 0);
-      }
-    },
-  );
-
   createEffect(
     () => [options.selectedChat?.id, options.selectedChat?.type, options.profile?.role, options.visibleMessages],
     () => {

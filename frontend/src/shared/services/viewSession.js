@@ -264,6 +264,12 @@ export function installViewRestoration({ root, userId, page }) {
     pendingRestore = Object.keys(relevant).length
       ? relevant
       : { content: { top: 0, left: 0 }, document: { top: 0, left: 0 } };
+    // Mobile dialogs have a fixed header and independently scrolling chat items/messages.
+    // Ignore old document/content offsets from the previous browser layout.
+    if (activePage === "chats" && win.matchMedia("(max-width: 1024px)").matches) {
+      pendingRestore.document = { top: 0, left: 0 };
+      pendingRestore.content = { top: 0, left: 0 };
+    }
     restoreDetails();
     attachObservers();
     scheduleApply();

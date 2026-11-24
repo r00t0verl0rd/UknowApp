@@ -8,7 +8,7 @@
     margin-top:auto;
     @include primitives.stack;
     align-items:stretch;
-    gap:6px;
+    gap:8px;
   }
   .sidebar-bottom > .ui-menu-control {
     width:100%;
@@ -75,12 +75,36 @@
     font-weight:600;
   }
 }
+@media (min-width: 1025px) {
+  .workspace-shell .topbar > .topbar-actions {
+    gap:10px;
+  }
+}
 @media (max-width: 1024px) {
   .workspace-shell {
+    > .sidebar {
+      display:grid;
+      grid-template-columns:minmax(0, 1fr) auto;
+      grid-template-rows:auto auto;
+      align-items:center;
+      column-gap:6px;
+      row-gap:8px;
+    }
+    .sidebar .brand {
+      grid-column:1;
+      grid-row:1;
+      min-width:0;
+      padding:0 0 0 2px;
+    }
+    .sidebar .brand img {
+      flex-shrink:0;
+    }
     .sidebar .school-label {
       display:none;
     }
     .sidebar nav {
+      grid-column:1 / -1;
+      grid-row:2;
       display:flex;
       gap:4px;
       overflow-x:auto;
@@ -90,9 +114,10 @@
       display:none;
     }
     .sidebar-bottom {
-      position:absolute;
-      top:calc(10px + env(safe-area-inset-top, 0px));
-      right:12px;
+      position:static;
+      grid-column:2;
+      grid-row:1;
+      justify-self:end;
       display:flex;
       margin:0;
     }
