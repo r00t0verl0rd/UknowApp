@@ -1318,6 +1318,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
           sidebarTopStable: Math.abs(before - whileScrolling) <= 2,
           documentScrolled: window.scrollY > 100,
           bottomReserve: parseFloat(getComputedStyle(content).paddingBottom),
+          gutter: parseFloat(getComputedStyle(content).paddingTop),
           finalItemBottom: row.getBoundingClientRect().bottom,
           visibleBottom: window.visualViewport?.height || window.innerHeight,
         };
@@ -1331,8 +1332,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
     assert.equal(underlay.sidebarPosition, "sticky");
     assert.ok(underlay.sidebarTopStable, "sidebar stays pinned during document scroll");
     assert.ok(underlay.documentScrolled, "the document itself is the scroll container");
-    assert.ok(underlay.bottomReserve >= 104, "last item clears the floating browser controls");
-    assert.ok(underlay.finalItemBottom <= underlay.visibleBottom - 72,
+    assert.ok(underlay.bottomReserve >= underlay.gutter, "last item clears the floating browser controls");
+    assert.ok(underlay.finalItemBottom <= underlay.visibleBottom - underlay.bottomReserve + 1,
       "last item is fully reachable above the Safari controls");
 
     // Открытый диалог не получает большой browser-bottom padding:

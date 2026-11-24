@@ -53,9 +53,12 @@
     padding-bottom:max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
   }
 }
-.workspace-content:has(> .user-list, > .structure-scroll) {
+.workspace-content:has(> .users-panel, > .structure-scroll, > .additional-panel, > .teacher-structure) {
   @include primitives.stack;
   gap:8px;
+}
+.workspace-content > :is(.users-panel, .structure-scroll, .additional-panel, .teacher-structure) {
+  flex:1 0 auto;
 }
 .workspace-content > .graph-legend-row,
 .chat-list > :is(.chat-list-actions, .chat-list-filters) {
@@ -114,7 +117,8 @@
   :root[data-theme] body:has(.workspace-shell:where(:not([data-workspace-page="chats"]))),
   :root[data-theme] #root:has(.workspace-shell:where(:not([data-workspace-page="chats"]))) {
     height:auto;
-    min-height:100lvh;
+    min-height:100vh;
+    min-height:100dvh;
     overflow-x:clip;
     overflow-y:visible;
     overscroll-behavior-y:auto;
@@ -125,7 +129,8 @@
       inset:auto;
       grid-template-rows:auto minmax(0, 1fr);
       height:auto;
-      min-height:100lvh;
+      min-height:100vh;
+      min-height:100dvh;
       overflow:visible;
     }
     .workspace-shell:where(:not([data-workspace-page="chats"])) > .sidebar {
@@ -141,30 +146,12 @@
       grid-column:1;
       grid-row:2;
       height:auto;
-      min-height:calc(100lvh - var(--workspace-sidebar-height, 140px));
       overflow:visible;
     }
     .workspace-shell:where(:not([data-workspace-page="chats"])) > .content > .workspace-content {
       flex:1 0 auto;
-      min-height:calc(100lvh - var(--workspace-sidebar-height, 140px));
       overflow:visible;
-      padding-top:var(--workspace-gutter);
-      padding-bottom:max(104px, calc(env(safe-area-inset-bottom, 0px) + 78px));
       scroll-padding-top:calc(var(--workspace-sidebar-height, 140px) + var(--workspace-gutter));
-    }
-  }
-}
-@supports not (height: 100lvh) {
-  @media (max-width: 1024px) and (display-mode: browser) {
-    :root[data-theme]:has(.workspace-shell:where(:not([data-workspace-page="chats"]))),
-    :root[data-theme] body:has(.workspace-shell:where(:not([data-workspace-page="chats"]))),
-    :root[data-theme] #root:has(.workspace-shell:where(:not([data-workspace-page="chats"]))),
-    :root[data-theme] .workspace-shell:where(:not([data-workspace-page="chats"])) {
-      min-height:100vh;
-    }
-    :root[data-theme] .workspace-shell:where(:not([data-workspace-page="chats"])) > .content,
-    :root[data-theme] .workspace-shell:where(:not([data-workspace-page="chats"])) > .content > .workspace-content {
-      min-height:calc(100vh - var(--workspace-sidebar-height, 140px));
     }
   }
 }
