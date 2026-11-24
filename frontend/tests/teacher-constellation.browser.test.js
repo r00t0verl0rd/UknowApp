@@ -41,6 +41,27 @@ test("teacher graph grows around the center without extra lists and highlights i
       assert.equal(await page.getByText("Вместе к новым знаниям").count(), 0);
       assert.equal(await page.getByText("ВАШ ЦЕНТР").count(), 0);
       assert.equal(await page.getByText(/Преподаватель · .* учен/).count(), 0);
+      // The constellation now lives directly in workspace content:
+      // no inner scrollbars, border, or separate framed panel.
+      const graph = await page.locator(".teacher-zen-stage").evaluate(el => {
+        const styles = getComputedStyle(el);
+        return {
+          overflowX:styles.overflowX,
+          overflowY:styles.overflowY,
+          border:styles.borderTopWidth,
+          scrollWidth:el.scrollWidth,
+          clientWidth:el.clientWidth,
+          scrollHeight:el.scrollHeight,
+          clientHeight:el.clientHeight,
+        };
+      });
+      assert.equal(graph.overflowX, "visible", "the graph has no horizontal scrollbar");
+      assert.equal(graph.overflowY, "visible", "the graph has no vertical scrollbar");
+      assert.equal(graph.border, "0px", "the graph has no outer frame");
+      assert.ok(graph.scrollWidth <= graph.clientWidth + 2,
+        `no horizontal overflow for ${count} students at ${width}px: ${JSON.stringify(graph)}`);
+      assert.ok(graph.scrollHeight <= graph.clientHeight + 2,
+        `no internal vertical overflow for ${count} students at ${width}px: ${JSON.stringify(graph)}`);
 
       if (width > 640) {
         const geometry = await islands.evaluateAll(elements => elements.map(el => {
