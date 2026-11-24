@@ -11,6 +11,7 @@ import {
   IconTrash2 as Trash2,
   IconX as X,
 } from "../../shared/components/Icons.jsx";
+import { isUnreadIncoming } from "./services/messageState.js";
 import MessageBubble from "./components/MessageBubble.jsx";
 import { MESSAGE_DAY_MS, parseMessageDate } from "./services/formatMessageTime.js";
 import EmptyState from "../../shared/components/EmptyState.jsx";
@@ -44,10 +45,7 @@ export default function ChatsPage(options) {
       const role = options.profile?.role;
       if (!chat || !viewport || !role || (role === "admin" && chat.type !== "personal")) return;
       const unread = new Set(options.visibleMessages
-        .filter(message => message.sender_role !== role
-          && (chat.type === "personal" || message.sender_role !== "admin"
-            ? !message.panel_read_at
-            : !message.metadata?.[role + "_read_at"]))
+        .filter(message => isUnreadIncoming(message, chat, role))
         .map(message => Number(message.id))
         .filter(id => Number.isSafeInteger(id) && id > 0));
       if (!unread.size) return;

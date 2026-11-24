@@ -132,13 +132,14 @@ test("restores the selected conversation and the same message after loading olde
     content_type: "text", text: `Chat message ${String(i + 1).padStart(3, "0")}`,
     metadata: {}, can_delete: false, delivery_status: "delivered",
   }));
+  let role = "admin";
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
     await page.route("**/api/**", route => {
       const url = new URL(route.request().url());
       const name = url.pathname;
       if (name === "/api/panel/me") return route.fulfill({ json: {
-        id: 1, full_name: "Администратор", role: "admin",
+        id: 1, full_name: "Пользователь", role,
         permissions: ["structure.view", "dialogs.own", "users.manage", "dialogs.observe"],
       } });
       if (name === "/api/panel/conversations") return route.fulfill({ json: [chat] });
@@ -171,6 +172,19 @@ test("restores the selected conversation and the same message after loading olde
       Math.abs(document.querySelector(".messages")?.scrollTop - expected) < 14,
     original, { timeout: 14000 });
     assert.equal(await page.locator(".chat-item.selected").count(), 1);
+    // Start a new student session with the oldest unread outside the latest page.
+    role = "student";
+    chat.unread_count = 61;
+    messages.forEach(row => { row.panel_read_at = row.id < 60 ? row.created_at : null; });
+    await page.goto("about:blank");
+    await page.addInitScript(() => sessionStorage.clear());
+    await page.goto("http://127.0.0.1:22240/dialogs");
+    await page.locator(".chat-item").first().click();
+    await page.waitForFunction(() => {
+      const history = document.querySelector(".messages");
+      const row = history?.querySelector('[data-view-anchor="message:60"]');
+      return row && Math.abs(row.getBoundingClientRect().top - history.getBoundingClientRect().top) < 3;
+    }, null, { timeout: 5000 });
     await page.close();
   } finally {
     await browser.close();

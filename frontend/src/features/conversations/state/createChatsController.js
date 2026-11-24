@@ -1,7 +1,7 @@
 import { createSignal, createMemo, createEffect } from "solid-js";
 import { createChatActionState } from "./createChatActionState.js";
 import { readScrollPositions, saveViewPreference, viewPreference } from "../../../shared/services/viewSession.js";
-import { markConversationMessageDeleted, mergeConversationMessages } from "../services/messageState.js";
+import { isUnreadIncoming, markConversationMessageDeleted, mergeConversationMessages } from "../services/messageState.js";
 import {
   createPersonalConversation,
   deleteChatMessage,
@@ -155,6 +155,7 @@ export function createChatsController(options) {
         b.id - a.id,
     );
   });
+  let unreadAnchor = null;
   let requestLatestScroll = () => {};
   const preservingScroll = key => key && restoredChatScrollKey === key &&
     Object.hasOwn(readScrollPositions(options.profile?.id, "chats"), `messages:${key}`);
@@ -175,6 +176,15 @@ export function createChatsController(options) {
         history.scrollHeight - history.scrollTop - history.clientHeight;
       const scrollToLatest = () => {
         frame = 0;
+        if (unreadAnchor?.key === activeChatKey()) {
+          const row = history.querySelector(`[data-view-anchor="message:${unreadAnchor.id}"]`);
+          if (!row) return;
+          history.scrollTop += row.getBoundingClientRect().top - history.getBoundingClientRect().top;
+          unreadAnchor = null;
+          forced = false;
+          followBottom = distanceToLatest() < 80;
+          return;
+        }
         if (forced || followBottom) {
           history.scrollTop = history.scrollHeight;
           followBottom = true;
@@ -222,26 +232,6 @@ export function createChatsController(options) {
       };
     },
   );
-  let previousScrollChat = "";
-  let previousTail = "";
-  createEffect(
-    () => [activeChatKey(), options.chatState.messageFilter, visibleMessages().at(-1)?.id],
-    ([chatKey, , lastId]) => {
-      const tail = lastId == null ? "" : String(lastId);
-      if (chatKey !== previousScrollChat) {
-        previousScrollChat = chatKey;
-        previousTail = tail;
-        if (chatKey && !preservingScroll(chatKey)) requestLatestScroll();
-      } else if (tail && tail !== previousTail) {
-        previousTail = tail;
-        // Новое полученное или отправленное сообщение: показать его сразу.
-        // Изменение статуса прочтения не вызывает повторную прокрутку.
-        if (!preservingScroll(chatKey)) requestLatestScroll();
-      } else if (!tail) {
-        previousTail = "";
-      }
-    },
-  );
   const openChat = async (chat, { restoring = false } = {}) => {
     const chatKey = (chat.type === "personal" ? "personal:" : "conversation:") + chat.id;
     restoredChatScrollKey = restoring ? chatKey : "";
@@ -249,6 +239,7 @@ export function createChatsController(options) {
     const previousRequest = openingChatRequest;
     if (activeChatKey() === chatKey && (previousRequest?.key === chatKey ||
       !options.chatState.messagesLoading)) return;
+    unreadAnchor = null;
     previousRequest?.controller.abort();
     olderRequest?.abort();
     setOlderCursor(0);
@@ -257,7 +248,10 @@ export function createChatsController(options) {
     if (previousKey && previousKey !== chatKey && !options.chatState.messagesLoading) {
       cacheChat(previousKey, options.chatState.messages);
     }
-    const cachedMessages = getCachedChat(chatKey);
+    const role = options.profile?.role;
+    const unreadCount = (!restoring || !preservingScroll(chatKey)) &&
+      (role !== "admin" || chat.type === "personal") ? Number(chat.unread_count) || 0 : 0;
+    const cachedMessages = unreadCount ? null : getCachedChat(chatKey);
     const cachedById = new Map((cachedMessages || []).map((item) => [String(item.id), item]));
     const controller = new AbortController();
     openingChatRequest = { key: chatKey, controller };
@@ -292,6 +286,23 @@ export function createChatsController(options) {
           pages++;
           if (older.length < HISTORY_PAGE_SIZE) break;
         }
+      }
+      if (unreadCount && options.chatState.messageFilter === "all") {
+        const unread = message => isUnreadIncoming(message, chat, role);
+        let page = loadedMessages;
+        let missing = unreadCount - page.filter(unread).length;
+        const pages = [];
+        while (missing > 0 && page.length >= HISTORY_PAGE_SIZE) {
+          const before = page[0].id;
+          page = await getChatMessages(options.request, chat, controller.signal, before);
+          if (controller.signal.aborted || activeChatKey() !== chatKey) return;
+          if (!page.length || Number(page[page.length - 1].id) >= Number(before)) break;
+          pages.push(page);
+          missing -= page.filter(unread).length;
+        }
+        if (pages.length) loadedMessages = pages.reverse().flat().concat(loadedMessages);
+        const first = loadedMessages.find(unread);
+        if (first) unreadAnchor = { key: chatKey, id: Number(first.id) };
       }
       setOlderCursor(loadedMessages.length >= HISTORY_PAGE_SIZE ? loadedMessages[0].id : 0);
       // Сервер — источник истины: удалённые в другом окне сообщения не

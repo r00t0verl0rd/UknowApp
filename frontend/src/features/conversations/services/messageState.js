@@ -100,3 +100,10 @@ export function mergeConversationMessages(previous, incoming, conversationKey = 
   ))) return previous;
   return merged.sort(compareMessages);
 }
+
+export function isUnreadIncoming(message, chat, role) {
+  if (!role || message.sender_role === role || (role === "admin" && chat.type !== "personal")) return false;
+  return chat.type === "personal" || message.sender_role !== "admin"
+    ? !message.panel_read_at
+    : !message.metadata?.[role + "_read_at"];
+}
