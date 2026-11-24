@@ -1184,3 +1184,15 @@
     padding-left:0;
   }
 }
+
+/* Dialog list: show complete names for every role, including compact columns. */
+.chat-items > .chat-item .person-info {
+  min-width:0;
+}
+.chat-items > .chat-item .person-info b,
+.chat-items > .chat-item .participant-chat-names > b {
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  overflow-wrap:anywhere;
+}
