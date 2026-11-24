@@ -101,17 +101,42 @@ test("teacher graph grows around the center without extra lists and highlights i
             assert.equal(intersects, false, `overlapping islands ${i} and ${j} for ${count} students`);
           }
         }
-        const before = await islands.first().evaluate(el => getComputedStyle(el).transform);
+        const appearance = el => {
+          const style = getComputedStyle(el);
+          const bounds = el.getBoundingClientRect();
+          return {
+            transform:style.transform,
+            shadow:style.boxShadow,
+            border:style.borderColor,
+            width:bounds.width, height:bounds.height,
+          };
+        };
+        const studentBefore = await islands.first().evaluate(appearance);
         await islands.first().hover();
-        await page.waitForTimeout(220);
-        const after = await islands.first().evaluate(el => getComputedStyle(el).transform);
-        assert.notEqual(after, before, "hover raises and enlarges the student's island");
+        await page.waitForTimeout(250);
+        const studentAfter = await islands.first().evaluate(appearance);
+        assert.notEqual(studentAfter.shadow, studentBefore.shadow, "student island highlights smoothly");
+        assert.equal(studentAfter.transform, studentBefore.transform, "hover does not scale student");
+        assert.equal(studentAfter.width, studentBefore.width, "student bounds remain stable");
+        assert.equal(studentAfter.height, studentBefore.height, "student height remains stable");
+        const bounds = await islands.first().boundingBox();
+        for (const fraction of [0.3, 0.6, 0.4, 0.7]) {
+          await page.mouse.move(bounds.x + bounds.width * fraction, bounds.y + bounds.height * 0.5);
+          await page.waitForTimeout(45);
+          assert.equal(await islands.first().evaluate(el => el.matches(":hover")), true,
+            "moving the pointer within an island never drops hover");
+          assert.equal(await islands.first().evaluate(el => getComputedStyle(el).transform),
+            studentBefore.transform, "pointer movement must not shift or rerasterize the island");
+        }
+
         const teacherIsland = page.locator(".teacher-zen-center");
-        const teacherBefore = await teacherIsland.evaluate(el => getComputedStyle(el).transform);
+        const teacherBefore = await teacherIsland.evaluate(appearance);
         await teacherIsland.hover();
-        await page.waitForTimeout(220);
-        const teacherAfter = await teacherIsland.evaluate(el => getComputedStyle(el).transform);
-        assert.notEqual(teacherAfter, teacherBefore, "teacher island highlights when hovered");
+        await page.waitForTimeout(250);
+        const teacherAfter = await teacherIsland.evaluate(appearance);
+        assert.notEqual(teacherAfter.shadow, teacherBefore.shadow, "teacher island highlights smoothly");
+        assert.equal(teacherAfter.transform, teacherBefore.transform, "teacher island does not scale");
+        assert.equal(teacherAfter.width, teacherBefore.width, "teacher hit area stays steady");
       } else {
         const stage = page.locator(".teacher-zen-stage");
         assert.equal(await stage.evaluate(el => getComputedStyle(el).overflowX), "visible");
