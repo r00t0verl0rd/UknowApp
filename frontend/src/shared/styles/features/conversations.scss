@@ -120,24 +120,6 @@
     margin:0;
     white-space:nowrap;
   }
-  .personal-chat-delete {
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    gap:6px;
-    flex:none;
-    min-height:36px;
-    padding:7px 10px;
-    white-space:nowrap;
-    font-size:12px;
-    font-weight:650;
-    box-shadow:none;
-  }
-  .personal-chat-delete svg {
-    width:16px;
-    height:16px;
-    flex:none;
-  }
 }
 .mobile-chat-back {
   display:none;
@@ -324,20 +306,21 @@
   background:rgba(255, 255, 255, 0.09);
   opacity:1;
 }
-// Blue is a quiet positive indicator, not a claim that a message was read.
-// Any disconnected recipient or other messenger warning keeps the neutral gray.
-:root .message .ui-icon-button.message-detail-btn[data-delivery-complete="true"] {
+/* An incomplete Telegram delivery or a missing recipient gets a quiet
+   blue info icon. Completed deliveries retain the ordinary neutral gray.
+   This state is independent of screen width and the user's theme. */
+:root .message .ui-icon-button.message-detail-btn[data-delivery-complete="false"] {
   color:color-mix(in srgb, var(--info) 68%, var(--muted));
   opacity:0.9;
 }
-:root .message .ui-icon-button.message-detail-btn[data-delivery-complete="true"]:is(:hover, :focus-visible) {
+:root .message .ui-icon-button.message-detail-btn[data-delivery-complete="false"]:is(:hover, :focus-visible) {
   color:var(--info);
 }
-:root[data-theme="dark-soft"] .message .ui-icon-button.message-detail-btn[data-delivery-complete="true"] {
+:root[data-theme="dark-soft"] .message .ui-icon-button.message-detail-btn[data-delivery-complete="false"] {
   color:color-mix(in srgb, var(--info) 58%, var(--muted));
   opacity:0.9;
 }
-:root[data-theme="dark-soft"] .message .ui-icon-button.message-detail-btn[data-delivery-complete="true"]:is(:hover, :focus-visible) {
+:root[data-theme="dark-soft"] .message .ui-icon-button.message-detail-btn[data-delivery-complete="false"]:is(:hover, :focus-visible) {
   color:var(--info);
 }
 .message-content > p {
@@ -779,15 +762,6 @@
   .chat-head-tools .chat-message-filter {
     width:clamp(158px, 30vw, 170px);
   }
-  .chat-head-tools .personal-chat-delete {
-    width:36px;
-    min-width:36px;
-    height:36px;
-    padding:0;
-  }
-  .personal-chat-delete-label {
-    display:none;
-  }
   .messages {
     padding:12px 2px;
   }
@@ -1123,26 +1097,10 @@
 .chat-head-tools {
   flex:0 0 auto;
 }
+/* The filter's native select remains an invisible accessible control.
+   Size, colors, focus and icons live in the shared icon-actions.scss rule. */
 .chat-head-tools .chat-message-filter-control {
   position:relative;
-  display:grid;
-  flex:0 0 40px;
-  place-items:center;
-  width:40px;
-  height:40px;
-  min-width:40px;
-  border:1px solid var(--ui-border);
-  border-radius:10px;
-  background:var(--ui-control-bg);
-  color:var(--ui-control-text);
-  cursor:pointer;
-}
-.chat-head-tools .chat-message-filter-control:focus-within {
-  outline:2px solid var(--ui-border-strong);
-  outline-offset:2px;
-}
-.chat-head-tools .chat-message-filter-control > svg {
-  pointer-events:none;
 }
 .chat-head-tools .chat-message-filter-control > .chat-message-filter {
   position:absolute;
