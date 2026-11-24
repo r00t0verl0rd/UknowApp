@@ -39,7 +39,7 @@ test("related popups communicate outcomes before caveats", () => {
 });
 
 test("sender name is always visible for all conversation participants", () => {
-  assert.match(bubble, /<div class="message-topline">\s*<b data-chat-name-role=\{options\.message\.sender_role\}>\{options\.message\.sender\}<\/b>/);
+  assert.match(bubble, /<div class="message-topline">\s*<b data-chat-name-role=\{options\.message\.sender_role\}>\s*<AutoFitText text=\{options\.message\.sender\}/);
   assert.doesNotMatch(bubble, /options\.viewerRole === "teacher" && options\.message\.sender_role/);
   assert.doesNotMatch(bubble, /\{[^}]*options\.message\.sender_role[^}]*&&\s*\(\s*<b>/);
 });
@@ -56,7 +56,7 @@ test("chat header actions align and remain clickable on touch and desktop", () =
 
 test("message text and unobtrusive icon actions share desktop and mobile styles", () => {
   assert.match(styles, /\.message-content > p \{[^}]*font-size:15px;[^}]*font-weight:400;[^}]*line-height:1\.58;/s);
-  assert.match(styles, /\.message-topline > b \{[^}]*font-size:11px;/s);
+  assert.match(styles, /\.message-topline > b \{[^}]*font-size:13px;/s);
   assert.match(styles, /\.message \{[^}]*padding:5px 10px 8px;/s);
   assert.match(styles, /:root\[data-theme="dark-soft"\] \.message \.ui-icon-button:is\(\.message-delete-btn, \.message-detail-btn\)/);
   assert.match(styles, /\.message-delivery-popover:popover-open/);
@@ -94,22 +94,30 @@ test("unread personal tab uses the standard highlighted unread badge", () => {
   assert.match(styles, /\.chat-tab-count--unread \{/);
 });
 
-test("participant list stays stacked while open dialog title has inline names and arrow", () => {
+test("participant names are readable, complete and single-line in chat cards and headers", () => {
   const chats = readFileSync(path.join(frontend, "src/features/conversations/ChatsPage.jsx"), "utf8");
+  const fitter = readFileSync(path.join(frontend, "src/features/conversations/components/AutoFitText.jsx"), "utf8");
+  assert.match(chats, /function ParticipantHeading\(props\)/);
   assert.match(chats, /class="participant-dialog-title"/);
-  assert.ok(chats.includes('class="participant-dialog-arrow" aria-hidden="true">↔</span>'));
-  assert.ok(styles.includes('.chat-head-person > .participant-dialog-title {'));
-  assert.ok(styles.includes('flex-direction:row;'));
-  assert.ok(styles.includes('.participant-dialog-title > [data-chat-name-role] {'));
-  assert.match(chats, /<b><span data-chat-name-role="teacher">\{row\(\)\.teacher\.full_name\}<\/span><\/b>/);
-  assert.match(chats, /<b><span data-chat-name-role="student">\{row\(\)\.student\.full_name\}<\/span><\/b>/);
+  assert.match(chats, /class="participant-dialog-arrow" aria-hidden="true">↔<\/span>/);
+  assert.match(chats, /<AutoFitText text=\{title\(\)\} baseSize=\{14\} minSize=\{12\}/);
+  assert.match(chats, /<AutoFitText text=\{row\(\)\.teacher\.full_name\}/);
+  assert.match(chats, /<AutoFitText text=\{row\(\)\.student\.full_name\}/);
   assert.match(chats, /<ToolbarSelect\s+class="chat-message-filter"/);
   assert.match(chats, /Сообщение ученику и учителю…/);
-  assert.match(chats, /function FittedParticipantHeading\(props\)/);
-  assert.match(chats, /ResizeObserver\(fit\)/);
-  assert.match(styles, /\.chat-head-person > \.participant-dialog-title \{[\s\S]*?overflow:hidden;/);
-  assert.match(styles, /\.participant-chat-names \{[^}]*display:grid;/s);
+  assert.match(fitter, /ResizeObserver\(onResize\)/);
+  assert.match(styles, /\.chat-head-person > \.participant-dialog-title \{[^}]*white-space:nowrap;/s);
+  assert.match(styles, /\.chat-name-fit-content \{[^}]*white-space:nowrap;/s);
+  assert.match(styles, /\.chat-item \.participant-chat-names \{[^}]*display:grid;/s);
   assert.match(styles, /\.mobile-chat-back \{[^}]*width:48px;[^}]*height:48px;/s);
+});
+
+test("personal chat recipient picker contains only alphabetically sorted names", () => {
+  const dialogs = readFileSync(path.join(frontend, "src/features/conversations/components/ChatDialogs.jsx"), "utf8");
+  assert.match(dialogs, /\.sort\(\(a, b\) => a\.full_name\.localeCompare\(b\.full_name, "ru"/);
+  assert.match(dialogs, /<option value=\{user\.id\}>\{user\.full_name\}<\/option>/);
+  assert.doesNotMatch(dialogs, /№\{user\.id\}/);
+  assert.doesNotMatch(dialogs, /\{user\.role === "teacher" \? "Учитель" : "Ученик"\}/);
 });
 
 test("observation eye appears only for admin participant conversations", () => {
