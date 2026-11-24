@@ -87,7 +87,6 @@ test("toast duration and viewport motion keep feedback readable and Safari scrol
   const viewport = readFileSync(path.join(frontend, "src/shared/services/viewportEnvironment.js"), "utf8");
   const tabs = readFileSync(path.join(frontend, "src/shared/styles/components/chat-controls.scss"), "utf8");
   assert.match(app, /setTimeout\(\(\) => setNotice\(null\), 6000\)/);
-  assert.match(viewport, /const workspaceOpen = open \|\| prepareChat;/);
   assert.match(viewport, /const onViewportScroll = \(\) => \{/);
   assert.match(styles, /\.chat-composer textarea \{[^}]*height:84px;[^}]*min-height:84px;[^}]*max-height:84px;/s);
   assert.match(styles, /background-color var\(--ui-transition-fast\)/);

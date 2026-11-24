@@ -370,3 +370,12 @@ textarea::placeholder {
   outline:none;
   box-shadow:none;
 }
+
+@media (max-width: 1024px) and (pointer: coarse) {
+  :root .ui-toolbar-control.workspace-search input {
+    font-size:max(16px, var(--workspace-control-font-size));
+  }
+  :root .ui-toolbar-control.workspace-search input::placeholder {
+    font-size:var(--workspace-control-font-size);
+  }
+}

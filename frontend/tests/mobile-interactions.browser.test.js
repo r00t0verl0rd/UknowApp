@@ -73,6 +73,30 @@ test("keyboard-aware login, workspace dialogs and consistent touch buttons", { t
     await signOut.waitFor({ state: "visible" });
     const iconBox = await signOut.evaluate(el => el.getBoundingClientRect().width);
     assert.ok(iconBox >= 36, "Mobile header icon buttons have adequate touch targets");
+    const sidebar = page.locator(".workspace-shell > .sidebar");
+    const sidebarBefore = await sidebar.boundingBox();
+    await page.evaluate(() => {
+      const dialog = document.createElement("dialog");
+      dialog.className = "native-dialog modal";
+      dialog.innerHTML = '<input /><div style="height:800px"></div><input />';
+      document.body.append(dialog);
+      dialog.showModal();
+      dialog.firstElementChild.focus();
+      Object.defineProperty(window.visualViewport, "height", { configurable: true, value: 340 });
+      window.visualViewport.dispatchEvent(new Event("resize"));
+    });
+    await page.waitForFunction(() => document.documentElement.dataset.appKeyboard === "open");
+    assert.deepEqual(await sidebar.boundingBox(), sidebarBefore, "A modal keeps the workspace header in place");
+    await page.evaluate(() => document.querySelector("dialog[open]").lastElementChild.focus({ preventScroll: true }));
+    await page.waitForFunction(() => {
+      const dialog = document.querySelector("dialog[open]");
+      return dialog.scrollTop > 0 && document.activeElement.getBoundingClientRect().bottom <= dialog.getBoundingClientRect().bottom;
+    });
+    await page.evaluate(() => {
+      document.querySelector("dialog[open]").remove();
+      delete window.visualViewport.height;
+      window.visualViewport.dispatchEvent(new Event("resize"));
+    });
     await signOut.click();
     const confirm = page.getByRole("alertdialog", { name: "Выйти из аккаунта?" });
     await confirm.waitFor({ state: "visible" });
@@ -173,6 +197,22 @@ test("workspace header has clear spacing and mobile dialogs stay below it", { ti
             assert.ok(afterScroll.scroll > 0, "Long dialog lists can scroll independently");
             assert.ok(afterScroll.filterTop >= geometry.headerBottom, "Filters remain visible while dialogs scroll");
           }
+        }
+        if (mobile && role === "teacher") {
+          const search = page.locator(".workspace-search input").first();
+          assert.ok(await search.evaluate(el => parseFloat(getComputedStyle(el).fontSize) >= 16));
+          await page.locator(".chat-item").first().click();
+          const composer = page.locator(".chat-composer textarea");
+          await composer.focus();
+          await page.waitForFunction(() => document.documentElement.dataset.workspaceKeyboard === "open");
+          await page.evaluate(() => {
+            Object.defineProperty(window.visualViewport, "height", { configurable: true, value: 350 });
+            window.visualViewport.dispatchEvent(new Event("resize"));
+          });
+          await page.waitForFunction(() => {
+            const box = document.querySelector(".chat-composer textarea").getBoundingClientRect();
+            return box.top >= 0 && box.bottom <= 350;
+          });
         }
         await page.close();
       }

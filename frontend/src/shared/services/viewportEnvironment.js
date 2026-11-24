@@ -36,7 +36,13 @@ export function installViewportEnvironment(win = window, doc = document) {
     const prepareChat = inBrowser && focused &&
       win.matchMedia("(pointer: coarse)").matches &&
       Boolean(doc.activeElement?.closest?.(".chat-composer"));
-    const workspaceOpen = open || prepareChat;
+    // Only an editor in the workspace needs its navigation collapsed. Portal
+    // dialogs manage their own viewport and must leave the page behind them still.
+    const field = doc.activeElement;
+    const form = field?.closest?.(".login-screen, dialog.native-dialog");
+    const workspaceEditor = focused && !form && Boolean(field.closest(".workspace-shell"));
+    const workspaceOpen = prepareChat || (open && !form &&
+      (workspaceEditor || (!focused && workspaceKeyboardOpen)));
 
     if (open !== keyboardOpen) {
       keyboardOpen = open;
@@ -61,14 +67,13 @@ export function installViewportEnvironment(win = window, doc = document) {
       previousTop = top;
     }
 
-    // Native scrollIntoView is necessary for long forms inside a modal or
-    // login card; chat composer positioning is handled by workspace CSS.
-    if (open && doc.activeElement?.closest?.(".login-screen, dialog.native-dialog")) {
-      const field = doc.activeElement;
+    if (open && focused && form && form.scrollHeight > form.clientHeight) {
       const bounds = field.getBoundingClientRect();
-      if (bounds.bottom > top + height - 12 || bounds.top < top + 12) {
-        field.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
-      }
+      const frame = form.getBoundingClientRect();
+      const visibleTop = Math.max(top, frame.top + form.clientTop) + 12;
+      const visibleBottom = Math.min(top + height, frame.top + form.clientTop + form.clientHeight) - 12;
+      if (bounds.top < visibleTop) form.scrollTop += bounds.top - visibleTop;
+      else if (bounds.bottom > visibleBottom) form.scrollTop += bounds.bottom - visibleBottom;
     }
   };
   const schedule = () => {
