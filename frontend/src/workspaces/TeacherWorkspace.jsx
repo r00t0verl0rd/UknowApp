@@ -43,7 +43,7 @@ function TeacherStructurePage(options) {
         </div>
       </header>
 
-      <div class="teacher-zen-stage" classList={{ "is-empty": !students().length }}>
+      <div class={["teacher-zen-stage", { "is-empty": !students().length }]}>
         <span class="teacher-zen-ring teacher-zen-ring-outer" aria-hidden="true" />
         <span class="teacher-zen-ring teacher-zen-ring-inner" aria-hidden="true" />
         <svg class="teacher-zen-links" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
