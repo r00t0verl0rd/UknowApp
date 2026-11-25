@@ -1,17 +1,12 @@
-name: Bots Gateway checks
+name: NATS Gateway checks
 on:
   push:
     branches: [test]
-    paths:
-      - "backend/**"
-      - "connectors/**"
-      - "docker-compose.yml"
-      - "compose*.yml"
-      - ".github/workflows/bots-gateway.yml"
   pull_request:
     paths:
       - "backend/**"
       - "connectors/**"
+      - "infrastructure/nats/**"
       - "docker-compose.yml"
       - "compose*.yml"
       - ".github/workflows/bots-gateway.yml"
@@ -22,18 +17,32 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PYTHONPATH: backend:.
-      TELEGRAM_BOT_ENABLED: "false"
-      ADMIN_PASSWORD: ci-only-admin-password-123
+      BOTS_PLATFORMS: ""
+      ADMIN_PASSWORD: ci-only-admin-password-123 # pragma: allowlist secret
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
-      - run: pip install -r backend/requirements.txt -r connectors/telegram/requirements.txt pytest httpx
+      - run: pip install -r backend/requirements.txt pytest httpx
       - run: python -m compileall -q backend/app connectors
-      - run: python -m pytest -q backend/tests/test_bots_gateway.py connectors/tests backend/tests/test_telegram_bot.py backend/tests/test_telegram_api_modes.py backend/tests/test_message_delivery.py backend/tests/test_realtime_events.py
-      - name: Validate local connector Compose configuration
+      - name: Verify Core does not require aiogram
+        run: python -c "import importlib.util; assert importlib.util.find_spec('aiogram') is None; from app.main import app"
+      - run: python -m pytest -q backend/tests/test_bots_gateway.py backend/tests/test_access_control.py backend/tests/test_realtime_events.py backend/tests/test_admin_data_backup.py backend/tests/test_restore_startup.py
+      - run: pip install -r connectors/telegram/requirements.txt
+      - run: python -m pytest -q connectors/tests
+      - name: Validate and build Compose configuration
         run: |
           cp .env.example .env
-          docker compose -f docker-compose.yml -f compose.connectors.yml --profile bots config --quiet
-          docker compose -f docker-compose.yml -f compose.connectors.yml --profile bots build backend tgbot
+          docker compose --profile gateway --profile bots config --quiet
+          docker compose --profile gateway --profile bots build backend tgbot
+      - name: Validate actual NATS config and protocol
+        env:
+          BOTS_NATS_CORE_PASSWORD: ci-core-password-12345678901234567890 # pragma: allowlist secret
+          BOTS_NATS_TELEGRAM_PASSWORD: ci-connector-password-12345678901234567890 # pragma: allowlist secret
+          BOTS_MEDIA_SECRET_TELEGRAM: ci-media-secret-12345678901234567890 # pragma: allowlist secret
+        run: |
+          docker compose --profile gateway up -d nats
+          docker compose --profile gateway logs nats
+          docker compose --profile gateway exec -T nats nats-server -t -c /etc/nats/nats.conf
+          docker compose --profile gateway stop nats

@@ -1,117 +1,118 @@
-"""Protocol, media authorization and durable Core queue tests."""
-import asyncio
+"""Provider-neutral gateway invariants (no provider SDK required)."""
 import json
 from types import SimpleNamespace
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
-from starlette.websockets import WebSocketDisconnect
 
-from app.bots_gateway.gateway import BotsGateway, GatewayUnavailable, router
-from app.bots_gateway.outbox import enqueue_web_delivery
-from app.models import Assignment, BotDeliveryJob, Conversation, Message, User
+from app.bots_gateway import gateway
+from app.bots_gateway.operations import receive_message, rpc
+from app.bots_gateway.outbox import enqueue_web_delivery, record_result
+from app.models import Assignment, BotEventReceipt, ConnectorDelivery, Conversation, Message, User
+from app.modules.communication.accounts import sync_messenger_account
 
-SECRET = "test-gateway-" + "x" * 40
+SECRET = "test-media-" + "x" * 40
 
 
-def test_duplex_rpc_event_ack_and_duplicate_connector():
+def prepare(db, users):
+    teacher = db.get(User, users["teacher-one"])
+    student = db.get(User, users["student-one"])
+    assignment = Assignment(teacher_id=teacher.id, student_id=student.id, active=True)
+    db.add(assignment)
+    db.flush()
+    chat = Conversation(assignment=assignment, teacher=teacher, student=student, status="active")
+    db.add(chat)
+    sync_messenger_account(db, teacher.id, "alpha", "teacher", "100")
+    sync_messenger_account(db, student.id, "beta", "student", "200")
+    db.commit()
+    return chat
+
+
+def test_media_is_platform_scoped_and_idempotent(tmp_path, monkeypatch):
     app = FastAPI()
-    gateway = BotsGateway()
-    app.state.bots_gateway = gateway
-    app.include_router(router)
-    received = []
-
-    async def handle(event_id, payload):
-        result = await gateway.call("telegram", "send", payload, timeout=2)
-        received.append((event_id, result))
-
-    gateway.register("telegram", SECRET, handle, lambda _: None)
-    with TestClient(app) as client:
-        with pytest.raises(WebSocketDisconnect):
-            with client.websocket_connect("/internal/bots/ws/telegram"):
-                pass
-        headers = {"Authorization": "Bearer " + SECRET}
-        with client.websocket_connect("/internal/bots/ws/telegram", headers=headers) as socket:
-            assert socket.receive_json() == {"type": "hello", "version": 1}
-            with pytest.raises(WebSocketDisconnect):
-                with client.websocket_connect("/internal/bots/ws/telegram", headers=headers):
-                    pass
-            socket.send_json({"type": "event", "id": "event-1", "payload": {"text": "hello"}})
-            command = socket.receive_json()
-            assert command["type"] == "command"
-            assert command["operation"] == "send"
-            assert command["payload"] == {"text": "hello"}
-            socket.send_json({"type": "result", "id": command["id"], "payload": {"id": "42"}})
-            assert socket.receive_json() == {"type": "ack", "id": "event-1", "ok": True}
-        assert received == [("event-1", {"id": "42"})]
-    with pytest.raises(GatewayUnavailable):
-        asyncio.run(gateway.call("telegram", "send", {}))
-
-
-def test_media_tickets_are_scoped_and_single_use(tmp_path):
-    app = FastAPI()
-    gateway = BotsGateway()
-    app.state.bots_gateway = gateway
-    app.include_router(router)
-
-    async def handle(*_):
-        pass
-
-    gateway.register("telegram", SECRET, handle, lambda _: None)
-    gateway.register("max", SECRET + "max", handle, lambda _: None)
+    app.state.bots_gateway = SimpleNamespace(platforms=("alpha", "beta"))
+    app.include_router(gateway.router)
+    monkeypatch.setattr(gateway, "MEDIA_DIR", tmp_path)
+    monkeypatch.setenv("BOTS_MEDIA_SECRET_ALPHA", SECRET)
+    monkeypatch.setenv("BOTS_MEDIA_SECRET_BETA", SECRET + "beta")
     headers = {"Authorization": "Bearer " + SECRET}
-    source = tmp_path / "source"
-    source.write_bytes(b"test media")
-    ticket = gateway.issue_ticket("telegram", source, "download")
-    target = tmp_path / "target"
-    upload = gateway.issue_ticket("telegram", target, "upload")
     with TestClient(app) as client:
-        url = f"/internal/bots/media/telegram/{ticket}"
-        assert client.get(url).status_code == 403
-        assert client.get(f"/internal/bots/media/max/{ticket}",
-                          headers={"Authorization": "Bearer " + SECRET + "max"}).status_code == 404
-        assert client.get(url, headers=headers).content == b"test media"
-        assert client.get(url, headers=headers).status_code == 404
-        assert client.put(f"/internal/bots/media/telegram/{upload}",
-                          headers=headers, content=b"upload").json() == {"size": 6}
-        assert target.read_bytes() == b"upload"
-        assert gateway.tickets[upload].completed
-        gateway.revoke_ticket(upload)
-        assert client.put(f"/internal/bots/media/telegram/{upload}",
-                          headers=headers, content=b"overwrite").status_code == 404
-        assert target.read_bytes() == b"upload"
+        url = "/internal/bots/media/alpha/inbound/event-1"
+        assert client.put(url, content=b"test").status_code == 403
+        assert client.put(url.replace("/alpha/", "/beta/"), content=b"test", headers=headers).status_code == 403
+        assert client.put(url, content=b"test", headers=headers).json() == {"size": 4}
+        assert client.put(url, content=b"new", headers=headers).json() == {"size": 4}
+        assert gateway.media_path("alpha", "event-1")[0].read_bytes() == b"test"
 
 
-def test_outbox_message_and_job_commit_together(api):
-    _, _, sessions = api
+def test_inbound_receipt_and_cross_provider_outbox(api):
+    _, users, sessions = api
     with sessions() as db:
-        teacher = db.query(User).filter_by(role="teacher").first()
-        student = db.query(User).filter_by(role="student").first()
-        assignment = Assignment(teacher_id=teacher.id, student_id=student.id, active=True)
-        db.add(assignment)
-        db.flush()
-        conversation = Conversation(assignment=assignment, teacher=teacher, student=student, status="active")
-        db.add(conversation)
-        db.flush()
-        row = Message(conversation_id=conversation.id, sender_id=teacher.id, sender_role="teacher",
-                      text="queued", metadata_json='{"source_mode":"web"}')
+        chat = prepare(db, users)
+        chat_id = chat.id
+        event = {"id":"event-1", "external_message_id":"42", "actor":"student", "chat_id":"200",
+                 "channel":"private", "kind":"text", "text":"hello"}
+        receive_message(db, "beta", event, ("alpha", "beta"), gateway.media_path)
+        receive_message(db, "beta", event, ("alpha", "beta"), gateway.media_path)
+        # Provider retransmit with different delivery event ID, same source message.
+        receive_message(db, "beta", {**event, "id":"event-2"}, ("alpha", "beta"), gateway.media_path)
+        assert db.query(Message).count() == 1
+        assert db.query(BotEventReceipt).count() == 2
+        job = db.query(ConnectorDelivery).one()
+        assert job.platform == "alpha" and job.chat_id == "100"
+        assert job.status == "queued"
+        assert rpc(db, "alpha", "delivery.authorize", {"id":job.id})["text"].endswith("hello")
+        with pytest.raises(HTTPException):
+            rpc(db, "beta", "delivery.authorize", {"id":job.id})
+        view = rpc(db, "alpha", "conversation.open", {"actor":"teacher", "conversation_id":chat_id})
+        assert view["messages"][0]["text"] == "hello"
+        record_result(db, job, "delivered", "message-123")
+        record_result(db, job, "unknown")
+        row = db.query(Message).one()
+        assert json.loads(row.metadata_json)["messenger_deliveries"]["alpha"]["status"] == "delivered"
+
+
+def test_account_cannot_open_other_conversation(api):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        sync_messenger_account(db, users["teacher-two"], "alpha", "other", "300")
+        db.commit()
+        with pytest.raises(HTTPException) as err:
+            rpc(db, "alpha", "conversation.open", {"actor":"other", "conversation_id":chat.id})
+        assert err.value.status_code == 403
+
+
+def test_web_outbox_rolls_back_with_message(api):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        row = Message(conversation_id=chat.id, sender_id=chat.teacher_id, sender_role="teacher",
+                      text="queued", metadata_json="{}")
         db.add(row)
         db.flush()
-        enqueue_web_delivery(db, row)
-        db.commit()
-        ident = row.id
+        enqueue_web_delivery(db, row, ("alpha", "beta"))
+        db.flush()
+        assert db.query(ConnectorDelivery).count() == 1
+        db.rollback()
+        assert db.query(Message).count() == db.query(ConnectorDelivery).count() == 0
+
+
+def test_revoked_binding_cancels_pending_job(api):
+    _, users, sessions = api
     with sessions() as db:
-        assert db.get(BotDeliveryJob, ident).status == "queued"
-        assert json.loads(db.get(Message, ident).metadata_json)["messenger_deliveries"]["telegram"]["status"] == "queued"
-
-
-def test_offline_outbox_does_not_read_database(monkeypatch):
-    from app.bots_gateway import outbox
-
-    def unexpected_db():
-        raise AssertionError("No database polling while connector is offline")
-
-    monkeypatch.setattr(outbox, "SessionLocal", unexpected_db)
-    gateway = BotsGateway()
-    assert asyncio.run(outbox.deliver_one(SimpleNamespace(), gateway)) is False
+        chat = prepare(db, users)
+        row = Message(conversation_id=chat.id, sender_id=chat.teacher_id, sender_role="teacher",
+                      text="queued", metadata_json="{}")
+        db.add(row)
+        db.flush()
+        enqueue_web_delivery(db, row, ("alpha", "beta"))
+        db.commit()
+        job = db.query(ConnectorDelivery).one()
+        sync_messenger_account(db, chat.student_id, "beta", None)
+        db.commit()
+        with pytest.raises(HTTPException) as err:
+            rpc(db, "beta", "delivery.authorize", {"id":job.id})
+        assert err.value.status_code == 403
+        assert job.status == "cancelled"
