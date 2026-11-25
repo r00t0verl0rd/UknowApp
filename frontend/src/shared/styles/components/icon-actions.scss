@@ -8,6 +8,7 @@
     background-color 0.16s ease,
     border-color 0.16s ease,
     color 0.16s ease;
+
 }
 :root .ui-icon-button svg {
   display:block;
@@ -15,16 +16,20 @@
   height:16px;
   flex:none;
   stroke-width:1.8;
+
 }
 :root .ui-icon-button:disabled {
   opacity:0.5;
   cursor:not-allowed;
+
 }
 :root .ui-icon-button.ui-icon-button--compact {
   --icon-action-size: 30px;
+
 }
 :root .ui-icon-button.ui-icon-button--large {
   --icon-action-size: 40px;
+
 }
 :root .ui-icon-button {
   -webkit-appearance:none;
@@ -44,34 +49,29 @@
   background:var(--ui-control-bg);
   color:var(--ui-control-text);
   box-shadow:none;
+
 }
 :root .ui-icon-button:hover:not(:disabled) {
   background:var(--ui-control-hover);
   border-color:var(--ui-border-strong);
   color:var(--purple);
+
 }
 :root .ui-icon-button:focus-visible {
   outline-offset:2px;
   outline:2px solid var(--purple);
   box-shadow:var(--ui-focus);
+
 }
 :root .ui-icon-button.ui-icon-button--danger {
   @include primitives.danger;
+
 }
 :root .ui-icon-button.ui-icon-button--danger:hover:not(:disabled) {
   background:var(--button-danger-hover-bg);
   border-color:var(--button-danger-hover-border);
   color:var(--button-danger-hover-text);
-}
-:root .workspace-content:has(.admin-card) .person-actions .ui-icon-button,
-:root .workspace-content:has(.admin-card) .student-card > .ui-icon-button,
-:root .workspace-content:has(.admin-card) .unassigned-student-actions > .ui-icon-button {
-  flex-basis:var(--icon-action-size);
-  width:var(--icon-action-size);
-  min-width:var(--icon-action-size);
-  max-width:var(--icon-action-size);
-  height:var(--icon-action-size);
-  min-height:var(--icon-action-size);
+
 }
 :root[data-theme="dark-soft"] {
   .ui-icon-button {
@@ -90,44 +90,45 @@
     border-color:var(--button-danger-hover-border);
     color:var(--button-danger-hover-text);
   }
+
 }
 @media (hover: none), (pointer: coarse) {
   :root .ui-icon-button {
     border:1px solid var(--ui-border);
     background:var(--ui-control-bg);
     color:var(--ui-control-text);
-  }
+  
+}
   :root .ui-icon-button.ui-icon-button--danger {
     border-color:var(--button-danger-border);
     background:var(--button-danger-bg);
     color:var(--button-danger-text);
-  }
+  
 }
-:root .ui-icon-button.ui-icon-button--student,
-:root .workspace-shell .workspace-content:has(.admin-card) .person-actions .ui-icon-button.ui-icon-button--student {
+
+}
+:root .ui-icon-button.ui-icon-button--student {
   background:#f4eadb;
   border-color:#e0cda9;
   color:#90764c;
 }
-:root .ui-icon-button.ui-icon-button--student:hover:not(:disabled),
-:root .workspace-shell .workspace-content:has(.admin-card) .person-actions .ui-icon-button.ui-icon-button--student:hover:not(:disabled) {
+:root .ui-icon-button.ui-icon-button--student:hover:not(:disabled) {
   background:#ecdfc6;
   border-color:#c5aa7e;
   color:#80643c;
 }
 :root[data-theme="dark-soft"] {
-  .ui-icon-button.ui-icon-button--student,
-  .workspace-shell .workspace-content:has(.admin-card) .person-actions .ui-icon-button.ui-icon-button--student {
+  .ui-icon-button.ui-icon-button--student {
     background:#40382d;
     border-color:#746044;
     color:#e5c995;
   }
-  .ui-icon-button.ui-icon-button--student:hover:not(:disabled),
-  .workspace-shell .workspace-content:has(.admin-card) .person-actions .ui-icon-button.ui-icon-button--student:hover:not(:disabled) {
+  .ui-icon-button.ui-icon-button--student:hover:not(:disabled) {
     background:#574a38;
     border-color:#927b55;
     color:#f3d9a8;
   }
+
 }
 
 /* Single source of truth for open-chat header icon actions.
@@ -160,6 +161,7 @@
     background-color 0.16s ease,
     border-color 0.16s ease,
     color 0.16s ease;
+
 }
 :root .workspace-shell .chat-head-tools > .ui-chat-head-action > svg {
   display:block;
@@ -168,14 +170,17 @@
   height:18px;
   stroke-width:1.8;
   pointer-events:none;
+
 }
 :root .workspace-shell .chat-head-tools > .ui-chat-head-action:hover:not(:disabled) {
   border-color:var(--ui-border-strong);
   background:var(--ui-control-hover);
   color:var(--purple);
+
 }
 :root .workspace-shell .chat-head-tools > .ui-chat-head-action:is(:focus-visible, :focus-within) {
   border-color:var(--ui-border-strong);
   outline:2px solid var(--ui-border-strong);
   outline-offset:2px;
+
 }

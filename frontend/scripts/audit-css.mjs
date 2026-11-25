@@ -77,7 +77,9 @@ for (const filePath of scssFiles) {
   });
 }
 
-const compiled = postcss.parse(compile(path.join(cssDir, "index.scss")).css);
+// Audit every emitted stylesheet, not only the initial entry.
+const styleEntries = ["index.scss", "admin.scss", "teacher.scss", "workspace/boards.scss", "features/restore-flow.scss"];
+const compiled = postcss.parse(styleEntries.map(entry => compile(path.join(cssDir, entry)).css).join("\n"));
 const ruleKeys = new Set();
 let repeatedSelectorBlocks = 0;
 compiled.walkRules(rule => {

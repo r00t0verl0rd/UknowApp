@@ -2,15 +2,14 @@
 @use "./core/base";
 @use "./core/surfaces";
 @use "./features/conversations";
-@use "./features/structure";
+@use "./core/participant-surfaces";
 @use "./features/inbox";
-@use "./features/users";
 @use "./workspace/workspace-layout";
 @use "./core/shared-controls";
 @use "./workspace/workspace-refinements";
 @use "./core/theme";
-@use "./features/admin-tools";
-@use "./features/restore-flow";
+@use "./workspace/header-controls";
+@use "./features/restore-login";
 @use "./workspace/standalone";
 @use "./components/icon-actions";
 @use "./workspace/navigation";
@@ -18,7 +17,5 @@
 @use "./workspace/workspace-scroll";
 @use "./components/native-dialogs";
 @use "./features/login";
-
 @use "./components/button-sizing";
 @use "./features/mobile-keyboard";
-@use "./features/teacher-zen";

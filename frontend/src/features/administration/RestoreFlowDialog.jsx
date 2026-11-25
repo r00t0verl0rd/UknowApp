@@ -1,3 +1,4 @@
+import "../../shared/styles/features/restore-flow.scss";
 import { Show } from "solid-js";
 import Modal from "../../shared/components/Modal.jsx";
 import Button from "../../shared/components/Button.jsx";

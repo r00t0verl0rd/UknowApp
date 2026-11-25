@@ -20,11 +20,6 @@
 
     box-shadow:none;
   }
-  & .student-card {
-    border:1px solid #746044;
-    background:#40382d;
-
-  }
   & .workspace-content:has(.admin-card) .empty-students {
     background:#252e3a;
     border:1px dashed #566176;
@@ -75,10 +70,6 @@
     background:var(--teacher-avatar-background);
     color:var(--teacher-avatar-text);
   }
-  & .student-card .avatar {
-    background:#574a38;
-    color:#e5c995;
-  }
   & .workspace-content:has(.admin-card) .admin-card {
     color:var(--app-foreground);
     background:#2e3933;
@@ -95,7 +86,6 @@
   }
 }
 :root:not([data-theme="dark-soft"]) {
-  & .student-card,
   & .teacher-card {
     border-color:var(--ui-border);
   }
@@ -125,36 +115,10 @@
     box-shadow:none;
   }
 }
-.grid {
-  column-gap:26px;
-}
-.person-main {
-  gap:12px;
-}
-.avatar {
-  width:44px;
-  height:44px;
-}
-.avatar svg {
-  width:21px;
-  height:21px;
-}
-.person-info b {
-  font-size:14px;
-}
-.person-info small {
-  font-size:11px;
-}
-.person-actions svg {
-  width:17px;
-  height:17px;
-}
-.toolbar,
 .user-row .person-info b {
   font-size:13px;
 }
-.user-row .person-info small,
-.role-tag {
+.user-row .person-info small {
   font-size:11px;
 }
 .user-row .avatar.student {
@@ -164,137 +128,19 @@
 .user-row .avatar.teacher {
   background:var(--role-teacher-soft);
 }
-.login-card {
-  background:var(--surface);
-  border:1px solid #e7def4;
-  border-radius:24px;
-  box-shadow:
-    0 12px 34px rgba(54, 46, 66, 0.075);
-}
-.brand {
-  color:var(--purple);
-}
-.brand span span {
-  color:var(--red);
-}
-.school-label,
-.eyebrow {
-  color:#8977a8;
-}
-.sidebar {
-  background:var(--surface);
-  border-right:1px solid var(--line);
-  box-shadow:none;
-}
-.topbar {
-  background:var(--surface);
-  box-shadow:none;
-}
-.topbar b,
-.workspace-content {
-  color:var(--ink);
-}
-.btn {
-  transition:
-    background-color var(--ui-transition-fast),
-    border-color var(--ui-transition-fast),
-    color var(--ui-transition-fast);
-  background:var(--button-bg);
-  color:var(--ink);
-  border:1px solid var(--button-border);
-  border-radius:11px;
-}
-.btn:hover {
-  background:var(--button-bg-hover);
-  border-color:#cdb9eb;
-  box-shadow:0 5px 16px rgba(87, 62, 153, 0.1);
-}
-.btn.primary:hover {
-  background:var(--button-primary-hover);
-  box-shadow:
-    0 4px 12px var(--purple-glow);
-}
-.btn.ghost {
-  background:var(--button-bg);
-}
-.btn.outline {
-  color:var(--purple);
-  border-color:#d8c9ed;
-  background:var(--button-bg-hover);
-}
-.btn.outline:hover {
-  background:var(--ui-selected-bg);
-}
 .user-list {
   background:var(--surface);
 }
-.legend,
-.toolbar {
-  color:var(--muted);
-}
 .unassigned {
   border-top-color:#eee2c9;
-}
-.search {
-  border-radius:11px;
-}
-.search:focus-within {
-  box-shadow:
-    0 0 0 3px rgba(118, 84, 189, 0.12),
-    0 0 14px rgba(194, 153, 255, 0.14);
-}
-.search input::placeholder {
-  color:#aaa3b4;
 }
 .user-row .avatar.student-avatar {
   background:var(--role-student-soft);
   color:var(--role-student);
 }
-.role-tag {
-  padding:6px 10px;
-}
-.user-row .avatar.teacher-avatar,
-.role-tag.teacher {
+.user-row .avatar.teacher-avatar {
   background:var(--role-teacher-soft);
   color:var(--role-teacher);
-}
-.person-actions .danger-icon:hover {
-  background:var(--red-soft);
-  color:var(--red);
-  box-shadow:0 0 10px var(--red-glow);
-}
-.stack input,
-.stack select {
-  outline:0;
-  background:var(--surface-input);
-  color:var(--ink);
-}
-.modal {
-  background:var(--surface);
-}
-.invite-code {
-  letter-spacing:4px;
-  color:var(--purple);
-  background:var(--lavender-soft);
-  border-color:#cdb9eb;
-  box-shadow:inset 0 0 18px rgba(194, 153, 255, 0.12);
-  text-align:center;
-}
-.hint {
-  color:var(--muted);
-}
-.empty-state {
-  color:var(--muted);
-}
-.empty-state > svg {
-  color:var(--purple2);
-}
-.empty-state b {
-  color:var(--ink);
-}
-input:focus-visible,
-select:focus-visible {
-  outline-offset:2px;
 }
 .workspace-content:has(.admin-card) {
   > * {
@@ -568,12 +414,10 @@ select:focus-visible {
   color:var(--teacher-avatar-text);
   flex:0 0 auto;
 }
-.teacher-card .person-info b,
-.student-card .person-info b {
+.teacher-card .person-info b {
   font-size:13px;
 }
-.teacher-card .person-info small,
-.student-card .person-info small {
+.teacher-card .person-info small {
   margin-top:5px;
   font-size:10px;
 }
@@ -587,106 +431,6 @@ select:focus-visible {
   padding:0;
   overflow:visible;
 }
-.student-card {
-  min-height:61px;
-  padding:9px 11px;
-  border:1px solid #f0e5ce;
-  border-radius:12px;
-  overflow:hidden;
-  align-items:center;
-  gap:7px;
-  display:flex;
-  width:100%;
-  max-width:100%;
-  min-width:0;
-  box-sizing:border-box;
-  background:linear-gradient(112deg, var(--role-student-soft), color-mix(in srgb, var(--surface) 28%, var(--role-student-soft)));
-}
-.student-card .avatar {
-  border-radius:11px;
-  flex:0 0 34px;
-  width:34px;
-  height:34px;
-  background:var(--role-student-soft);
-  color:var(--role-student);
-}
-html,
-body,
-#root {
-  min-height:100%;
-  width:100%;
-  max-width:100%;
-}
-.shell,
-.content,
-.workspace-content {
-  min-width:0;
-  max-width:100%;
-}
-img,
-video,
-audio {
-  max-width:100%;
-}
-
-// Личный кабинет преподавателя: компактная структура только его учеников.
-// Никаких административных кнопок или данных других учителей.
-.teacher-structure {
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-  width:min(100%, 760px);
-  min-width:0;
-  margin-inline:auto;
-}
-.teacher-structure > .graph-legend-row {
-  display:flex;
-  justify-content:flex-start;
-  margin:0;
-}
-.teacher-structure > .teacher-branch {
-  width:100%;
-  min-width:0;
-  margin:0;
-}
-.teacher-structure .teacher-card {
-  display:flex;
-  align-items:center;
-  min-width:0;
-}
-.teacher-structure .person-main {
-  min-width:0;
-  flex:1 1 auto;
-}
-.teacher-structure .person-info {
-  min-width:0;
-}
-.teacher-structure .person-info > b {
-  display:block;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-.teacher-structure .student-list {
-  display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(min(100%, 250px), 1fr));
-  gap:8px;
-  margin-top:10px;
-}
-.teacher-structure .student-list > .student-card {
-  display:flex;
-  align-items:center;
-  min-width:0;
-  min-height:58px;
-}
-.teacher-structure .student-list > .empty-state {
-  grid-column:1 / -1;
-}
-.student-card .person-info b {
-  display:block;
-  overflow:visible;
-  line-height:1.25;
-}
 .student-card > .graph-person-action svg {
   width:14px;
   height:14px;
@@ -697,31 +441,6 @@ audio {
   min-width:0;
   max-width:100%;
   box-sizing:border-box;
-}
-.student-card .person-main {
-  align-items:center;
-  gap:8px;
-  display:flex;
-  flex:1 1 0%;
-  width:auto;
-  min-width:0;
-  max-width:100%;
-  overflow:hidden;
-}
-.student-card .person-info {
-  flex:1 1 0%;
-  width:auto;
-  min-width:0;
-  max-width:100%;
-  overflow:hidden;
-}
-.student-card .person-info b,
-.student-card .person-info small {
-  max-width:100%;
-  white-space:normal;
-  overflow-wrap:anywhere;
-  word-break:normal;
-  text-overflow:clip;
 }
 .teacher-card > .person-main {
   display:flex;
@@ -781,24 +500,13 @@ audio {
 .teacher-card > .person-actions {
   flex:0 0 auto;
 }
-.teacher-card .avatar,
-.avatar.teacher,
-.teacher-avatar {
+.teacher-card .avatar {
   background:var(--teacher-avatar-background);
   color:var(--teacher-avatar-text);
 }
 .unassigned-grid .student-card {
   background:linear-gradient(112deg, var(--role-student-soft), color-mix(in srgb, var(--surface) 28%, var(--role-student-soft)));
   border-color:var(--role-student-border);
-}
-.avatar.student,
-.student-avatar {
-  background:var(--role-student-soft);
-  color:var(--role-student);
-}
-.student-dot {
-  background:var(--role-student);
-  box-shadow:0 0 8px color-mix(in srgb, var(--role-student) 35%, transparent);
 }
 .add-student {
   color:var(--role-student);

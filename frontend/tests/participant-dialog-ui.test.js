@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const dialogs = readFileSync(new URL("../src/features/users/components/UserDialogs.jsx", import.meta.url), "utf8");
-const styles = readFileSync(new URL("../src/shared/styles/components/button-sizing.scss", import.meta.url), "utf8");
+const styles = readFileSync(new URL("../src/shared/styles/components/admin-button-sizing.scss", import.meta.url), "utf8");
 
 test("participant create/edit forms use a single primary action and close icon", () => {
   const form = dialogs.slice(dialogs.indexOf('<form class="stack" onSubmit={options.saveUser}>'));

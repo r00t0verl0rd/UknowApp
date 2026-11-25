@@ -1,0 +1,32 @@
+:root .workspace-content:has(.admin-card) .person-actions .ui-icon-button,
+:root .workspace-content:has(.admin-card) .student-card > .ui-icon-button,
+:root .workspace-content:has(.admin-card) .unassigned-student-actions > .ui-icon-button {
+  flex-basis:var(--icon-action-size);
+  width:var(--icon-action-size);
+  min-width:var(--icon-action-size);
+  max-width:var(--icon-action-size);
+  height:var(--icon-action-size);
+  min-height:var(--icon-action-size);
+}
+:root .workspace-shell .workspace-content:has(.admin-card) .person-actions .ui-icon-button.ui-icon-button--student {
+  background:#f4eadb;
+  border-color:#e0cda9;
+  color:#90764c;
+}
+:root .workspace-shell .workspace-content:has(.admin-card) .person-actions .ui-icon-button.ui-icon-button--student:hover:not(:disabled) {
+  background:#ecdfc6;
+  border-color:#c5aa7e;
+  color:#80643c;
+}
+:root[data-theme="dark-soft"] {
+  .workspace-shell .workspace-content:has(.admin-card) .person-actions .ui-icon-button.ui-icon-button--student {
+    background:#40382d;
+    border-color:#746044;
+    color:#e5c995;
+  }
+  .workspace-shell .workspace-content:has(.admin-card) .person-actions .ui-icon-button.ui-icon-button--student:hover:not(:disabled) {
+    background:#574a38;
+    border-color:#927b55;
+    color:#f3d9a8;
+  }
+}

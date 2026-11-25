@@ -1,7 +1,6 @@
 @use "../core/primitives";
 .sidebar,
 .topbar,
-.user-list,
 .modal,
 .credential-modal {
   background-color:var(--surface);
@@ -9,17 +8,11 @@
 }
 .sidebar,
 .topbar,
-.user-list,
 .student-card,
-.teacher-card,
 .modal {
   box-shadow:var(--ui-shadow-card);
 }
-.empty-students {
-  border-color:var(--ui-border);
-}
 .btn:not(.primary):not(.danger),
-.user-action-btn:not(.danger-icon):not(.user-delete),
 .person-actions button:not(.danger-icon),
 .attach-control,
 .selected-file button {
@@ -61,147 +54,11 @@ a:focus-visible {
   color:var(--red);
 }
 :root[data-theme="dark-soft"] {
-  & .teacher-branch:hover {
-    transform:inherit;
-    background:#262f3c;
-    border-color:#465267;
-    box-shadow:none;
-  }
-  & .empty-students,
-  & .unassigned-grid .student-card {
-    background:var(--surface);
-    border-color:var(--ui-border);
-    box-shadow:var(--ui-shadow-card);
-  }
   & .student-dot {
     background:#e58c98;
     box-shadow:0 0 7px rgba(229, 140, 152, 0.2);
   }
-}
-.user-list,
-.user-row {
-  min-width:0;
-  max-width:100%;
-  box-sizing:border-box;
-}
-.user-row > .user-actions {
-  > .user-info-wrap {
-    min-width:0;
-    display:flex;
-  }
-  > .user-action-btn,
-  > .user-info-wrap > .user-action-btn {
-    max-width:100%;
-    box-sizing:border-box;
-    flex:0 0 auto;
-    width:clamp(30px, 3.2vw, 36px);
-    height:clamp(30px, 3.2vw, 36px);
-    min-width:0;
-    padding:0;
-  }
-}
-@media (min-width: 1025px) and (max-width: 1200px) {
-  .user-row {
-    grid-template-columns:44px minmax(0, 1fr);
-    grid-template-rows:auto auto;
-    column-gap:12px;
-    padding:13px clamp(10px, 1.5vw, 18px);
-  }
-  .user-row > .avatar {
-    width:44px;
-    height:44px;
-  }
-  .user-row > .user-actions {
-    justify-content:flex-start;
-  }
-}
-@media (max-width: 1024px) {
-  .user-row > .user-actions {
-    justify-content:flex-start;
-  }
-}
-.user-row {
-  grid-template-columns:clamp(32px, 4vw, 44px) minmax(0, 1fr) auto;
-  column-gap:clamp(6px, 1.2vw, 12px);
-  row-gap:0;
-  min-width:0;
-}
-.user-row > .avatar {
-  grid-column:1;
-  grid-row:1;
-  width:clamp(32px, 4vw, 44px);
-  height:clamp(32px, 4vw, 44px);
-  flex:0 0 auto;
-}
-.user-row > .user-person-info {
-  display:block;
-  max-width:100%;
-  overflow-wrap:anywhere;
-  @include primitives.truncate;
-  grid-column:2;
-  grid-row:1;
-  min-width:0;
-  width:auto;
-  flex:initial;
-}
-.user-row > .user-actions {
-  box-sizing:border-box;
-  grid-column:3;
-  grid-row:1;
-  display:flex;
-  flex:0 0 auto;
-  align-items:center;
-  justify-content:flex-end;
-  gap:clamp(3px, 0.7vw, 7px);
-  min-width:0;
-  width:auto;
-  max-width:100%;
-  margin:0;
-  padding:0;
-  border:0;
-}
-.user-row > .user-actions > .user-info-wrap {
-  flex:0 0 auto;
-}
-@media (max-width: 1024px) {
-  .user-row {
-    grid-template-columns:34px minmax(0, 1fr) auto;
-    column-gap:6px;
-    padding:10px 8px;
-  }
-  .user-row > .avatar {
-    width:34px;
-    height:34px;
-  }
-  .user-row > .user-actions {
-    gap:4px;
-  }
-  .user-row > .user-actions > .user-action-btn,
-  .user-row > .user-actions > .user-info-wrap > .user-action-btn {
-    width:32px;
-    height:32px;
-  }
-}
-@media (max-width: 380px) {
-  .user-row {
-    grid-template-columns:30px minmax(0, 1fr) auto;
-    column-gap:4px;
-    padding-inline:6px;
-  }
-  .user-row > .avatar {
-    width:30px;
-    height:30px;
-  }
-  .user-row > .user-actions {
-    gap:3px;
-  }
-  .user-row > .user-actions > .user-action-btn,
-  .user-row > .user-actions > .user-info-wrap > .user-action-btn {
-    width:29px;
-    min-width:29px;
-    height:29px;
-    min-height:29px;
-  }
+
 }
 @media (min-width: 1025px) {
   .workspace-shell {
@@ -218,7 +75,9 @@ a:focus-visible {
     > .content {
       margin-left:0;
     }
-  }
+  
+}
+
 }
 .content > .topbar {
   flex:0 0 auto;
@@ -237,6 +96,7 @@ a:focus-visible {
     min-height:calc(54px + env(safe-area-inset-top, 0px));
     padding-top:env(safe-area-inset-top, 0px);
   }
+
 }
 .btn.primary {
   color:#fff;
@@ -249,7 +109,6 @@ a:focus-visible {
   box-shadow:0 6px 16px var(--purple-glow);
 }
 .btn:not(.primary):not(.danger):hover:not(:disabled),
-.user-action-btn:not(.danger-icon):not(.user-delete):hover:not(:disabled),
 .icon-btn:not(.danger-icon):hover:not(:disabled),
 .person-actions button:not(.danger-icon):hover,
 .attach-control:hover {
@@ -259,7 +118,6 @@ a:focus-visible {
   box-shadow:var(--ui-shadow-soft);
 }
 .btn.danger,
-.user-action-btn.user-delete,
 .person-actions button.danger-icon,
 .icon-btn.danger-icon,
 .danger-icon {
@@ -273,20 +131,14 @@ a:focus-visible {
   border-color:var(--red-border);
   color:var(--red);
 }
-.toolbar.user-toolbar > .search > input:focus,
-.toolbar.user-toolbar > .search > input:focus-visible {
-  outline:none;
-  box-shadow:none;
-}
 :root[data-theme="dark-soft"] {
   & .avatar.student,
   & .student-avatar,
-  & .user-row .avatar.student,
-  & .role-tag.student,
-  & .user-row .role-tag.student {
+  & .role-tag.student {
     background:#402d37;
     color:#e58c98;
   }
+
 }
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -297,17 +149,11 @@ a:focus-visible {
     animation-iteration-count:1;
     transition-duration:0.01ms;
   }
-}
-.user-row {
-  display:grid;
-}
-.user-row > .user-actions {
-  flex-wrap:nowrap;
+
 }
 
 .sidebar,
 .topbar,
-.user-list > .user-row,
 .credential-modal {
   background-color:var(--surface);
 }
@@ -317,7 +163,6 @@ a:focus-visible {
   }
   & .sidebar,
   & .topbar,
-  & .user-list > .user-row,
   & .modal,
   & .login-card,
   & .credential-modal {
@@ -332,26 +177,12 @@ a:focus-visible {
     background:var(--surface-input);
     border-color:var(--ui-border);
   }
-  & .workspace-content:has(.admin-card) .graph-legend-row > .graph-legend {
-    background:var(--lavender-soft);
-    border-color:var(--ui-border);
-  }
-  & .workspace-content:has(.admin-card) .empty-students {
-    background:var(--surface-soft);
-    border-color:var(--ui-border);
-  }
+
 }
 :root[data-theme="dark-soft"] {
   & .student-card {
     color:var(--app-foreground);
     box-shadow:none;
   }
-  & .user-list .user-row > .avatar.student {
-    background:var(--role-student-soft);
-    color:var(--role-student);
-  }
-  & .user-list .user-row > .avatar.teacher {
-    background:var(--role-teacher-soft);
-    color:var(--role-teacher);
-  }
+
 }

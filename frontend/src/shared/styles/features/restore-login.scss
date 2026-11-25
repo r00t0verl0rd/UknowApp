@@ -1,0 +1,15 @@
+.restore-login-notice {
+  display:grid;
+  gap:5px;
+  padding:12px;
+  margin:0 0 16px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--surface-soft, var(--panel));
+  color:var(--ink);
+  font-size:12px;
+  line-height:1.5;
+}
+.restore-login-notice span {
+  color:var(--muted);
+}

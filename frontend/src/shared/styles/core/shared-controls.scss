@@ -6,9 +6,7 @@ textarea {
   font-family:inherit;
 }
 button:not(.chat-item),
-.btn,
-.add-student,
-.user-action-btn {
+.btn {
   transition:
     background-color var(--ui-transition-fast),
     border-color var(--ui-transition-fast),
@@ -18,8 +16,7 @@ button:not(.chat-item),
   outline:none;
   box-shadow:var(--ui-focus);
 }
-:is(.user-actions, .person-actions, .modal-head) button,
-button.graph-person-action {
+:is(.user-actions, .person-actions, .modal-head) button {
   appearance:none;
   @include primitives.center;
   border:1px solid transparent;
@@ -35,8 +32,7 @@ button.graph-person-action {
   color:var(--ui-control-text);
   background:var(--ui-control-bg);
 }
-:is(.user-actions, .person-actions, .modal-head) button:focus-visible,
-button.graph-person-action:focus-visible {
+:is(.user-actions, .person-actions, .modal-head) button:focus-visible {
   outline:2px solid var(--purple);
   outline-offset:2px;
 }
@@ -44,19 +40,16 @@ button.graph-person-action:focus-visible {
 .modal-head button {
   border-radius:var(--ui-radius-sm);
 }
-.btn,
-.user-action-btn {
+.btn {
   border-color:var(--ui-border);
   box-shadow:var(--ui-shadow-soft);
 }
 .btn:not(.primary):not(.danger),
-.user-action-btn:not(.danger),
 .icon-btn,
 .person-actions button {
   @include primitives.control;
 }
 .btn:not(.primary):not(.danger):hover,
-.user-action-btn:not(.danger):hover,
 .person-actions button:hover {
   background:var(--ui-control-hover);
   border-color:var(--ui-border-strong);
@@ -67,13 +60,7 @@ button.graph-person-action:focus-visible {
   border-radius:var(--ui-radius-sm);
   box-shadow:0 4px 13px rgba(87, 62, 153, 0.18);
 }
-.user-action-btn.danger {
-  border-color:var(--button-danger-border);
-  background:var(--button-danger-bg);
-  color:var(--button-danger-text);
-}
-.btn.danger:hover,
-.user-action-btn.danger:hover {
+.btn.danger:hover {
   background:var(--button-danger-hover-bg);
   border-color:var(--button-danger-hover-border);
   color:var(--button-danger-hover-text);
@@ -103,21 +90,14 @@ input::placeholder,
 textarea::placeholder {
   color:var(--placeholder);
 }
-.user-list,
-.student-card,
-.teacher-card {
+.student-card {
   border-radius:var(--ui-radius-lg);
 }
-.student-card,
-.teacher-card {
+.student-card {
   box-shadow:0 1px 4px rgba(47, 31, 84, 0.025);
 }
-.student-card:hover,
-.teacher-card:hover {
+.student-card:hover {
   box-shadow:0 5px 15px rgba(87, 62, 153, 0.075);
-}
-.user-row {
-  align-items:center;
 }
 .role-tag {
   border-radius:7px;
@@ -152,22 +132,26 @@ textarea::placeholder {
   box-sizing:border-box;
   height:var(--workspace-control-height);
   min-height:var(--workspace-control-height);
+
 }
 :root .ui-toolbar-control:is(.workspace-search, select) {
   border:1px solid var(--ui-border);
   padding-inline:var(--workspace-control-padding);
   background-color:var(--surface-input);
   color:var(--ink);
+
 }
 :root .ui-toolbar-control.workspace-search {
   display:flex;
   align-items:center;
   gap:var(--workspace-control-gap);
+
 }
 :root .ui-toolbar-control.workspace-search input {
   min-width:0;
   width:100%;
   font-size:var(--workspace-control-font-size);
+
 }
 :root .ui-toolbar-control.ui-toolbar-segmented {
   display:grid;
@@ -179,6 +163,7 @@ textarea::placeholder {
   overflow:hidden;
   background:var(--surface-input);
   background-clip:padding-box;
+
 }
 :root .ui-toolbar-tab {
   align-items:center;
@@ -190,12 +175,11 @@ textarea::placeholder {
   min-height:0;
   line-height:1.2;
   text-align:center;
+
 }
 :root .ui-toolbar-icon {
   --icon-action-size: var(--workspace-control-height);
-}
-:root .ui-toolbar-control.user-add-btn {
-  padding-inline:var(--workspace-control-padding);
+
 }
 :root .ui-toolbar-total {
   @include primitives.center;
@@ -205,6 +189,7 @@ textarea::placeholder {
   background:var(--surface-input);
   color:var(--muted);
   white-space:nowrap;
+
 }
 :root .workspace-shell {
   .workspace-content .workspace-panel {
@@ -228,11 +213,14 @@ textarea::placeholder {
     min-width:0;
     width:100%;
   }
+
 }
 @media (max-width: 1024px) {
   :root {
     --workspace-panel-padding: 8px;
-  }
+  
+}
+
 }
 :root .ui-toolbar-select {
   position:relative;
@@ -242,6 +230,7 @@ textarea::placeholder {
   height:var(--workspace-control-height);
   flex:1 1 auto;
   border-radius:var(--workspace-control-radius);
+
 }
 :root .ui-toolbar-select > select.ui-toolbar-select-native {
   display:block;
@@ -254,9 +243,11 @@ textarea::placeholder {
   color:var(--ink);
   font-family:var(--font-family-ui);
   font-size:var(--workspace-control-font-size);
+
 }
 :root .ui-toolbar-select:focus-within > select.ui-toolbar-select-native {
   outline:none;
+
 }
 :root[data-theme="dark-soft"] {
   & .btn:not(.primary):hover {
@@ -271,13 +262,12 @@ textarea::placeholder {
     border-color:var(--ui-border);
     color:var(--ink);
   }
-  & .user-action-btn.danger {
-    @include primitives.danger;
-  }
+
 }
 :root .ui-toolbar-control {
   border-radius:var(--workspace-control-radius);
   font-size:var(--workspace-control-font-size);
+
 }
 :root[data-theme] .workspace-shell {
   .ui-toolbar-control:is(.workspace-search, select) {
@@ -296,6 +286,7 @@ textarea::placeholder {
   .ui-toolbar-control:is(.workspace-search, select):focus-within {
     @include primitives.field-focus;
   }
+
 }
 :root .ui-toolbar-tab {
   -webkit-appearance:none;
@@ -311,10 +302,12 @@ textarea::placeholder {
   font-size:var(--workspace-control-font-size);
   font-weight:600;
   white-space:nowrap;
+
 }
 :root .workspace-shell .workspace-content .workspace-panel {
   border:1px solid var(--ui-border);
   background:var(--surface);
+
 }
 /* One consistent chevron for every toolbar select, regardless of Safari,
    Chromium or native OS arrow rendering. The menu itself remains native. */
@@ -329,6 +322,7 @@ textarea::placeholder {
   -webkit-appearance:none;
   appearance:none;
   cursor:pointer;
+
 }
 :root .ui-toolbar-select::after {
   content:"";
@@ -343,12 +337,15 @@ textarea::placeholder {
   color:var(--ui-control-text);
   transform:translateY(-65%) rotate(45deg);
   pointer-events:none;
+
 }
 :root .ui-toolbar-select:has(> select:disabled)::after {
   opacity:0.5;
+
 }
 :root .ui-toolbar-select:focus-within > select.ui-toolbar-select-native {
   @include primitives.field-focus;
+
 }
 
 // Один фокусный контур вместо сочетания outline + glow от разных
@@ -357,6 +354,7 @@ textarea::placeholder {
   outline:2px solid var(--ui-selected-border);
   outline-offset:2px;
   box-shadow:none;
+
 }
 :root .workspace-shell {
   :is(.sidebar .ui-menu-control, .chat-section-tabs .chat-section-tab, .chat-items .chat-item, .workspace-content .ui-icon-button, .workspace-content .btn):focus-visible {
@@ -364,18 +362,23 @@ textarea::placeholder {
     outline-offset:2px;
     box-shadow:none;
   }
+
 }
 // В поисковых полях фокус рисует контейнер, а не контейнер вместе с input.
 :root .search input:focus-visible {
   outline:none;
   box-shadow:none;
+
 }
 
 @media (max-width: 1024px) and (pointer: coarse) {
   :root .ui-toolbar-control.workspace-search input {
     font-size:max(16px, var(--workspace-control-font-size));
-  }
+  
+}
   :root .ui-toolbar-control.workspace-search input::placeholder {
     font-size:var(--workspace-control-font-size);
-  }
+  
+}
+
 }

@@ -1,3 +1,5 @@
+import "../shared/styles/workspace/boards.scss";
+import "../shared/styles/teacher.scss";
 import { For, Match, Switch, createEffect, createSignal, lazy } from "solid-js";
 const ChatsView = lazy(() => import("./ChatsView.jsx"));
 import CountBadge from "../shared/components/CountBadge.jsx";

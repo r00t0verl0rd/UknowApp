@@ -1,0 +1,201 @@
+// Keep assignment secondary and compact instead of inheriting the 44px form-button size.
+:root .workspace-shell .workspace-content:has(.admin-card) .teacher-branch > .add-student.btn {
+  box-sizing:border-box;
+  width:fit-content;
+  max-width:100%;
+  height:34px;
+  min-height:34px;
+  margin:3px 0 7px auto;
+  padding:0 10px;
+  gap:6px;
+  border-radius:var(--ui-radius-sm);
+  font-size:12px;
+  font-weight:650;
+  line-height:1.2;
+  white-space:nowrap;
+  transition:
+    background-color var(--ui-transition-fast),
+    border-color var(--ui-transition-fast),
+    color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast),
+    transform var(--ui-transition-fast);
+}
+:root .workspace-shell .workspace-content:has(.admin-card) .teacher-branch > .add-student.btn svg {
+  flex:0 0 13px;
+  width:13px;
+  height:13px;
+}
+@media (hover: hover) and (pointer: fine) {
+  :root[data-theme] .workspace-shell .workspace-content:has(.admin-card) .teacher-branch > .add-student.btn:hover:not(:disabled) {
+    background:var(--ui-control-hover);
+    border-color:var(--ui-border-strong);
+    color:var(--purple);
+    box-shadow:0 4px 12px color-mix(in srgb, var(--purple) 14%, transparent);
+    transform:translateY(-1px);
+  }
+}
+:root[data-theme] .workspace-shell .workspace-content:has(.admin-card) .teacher-branch > .add-student.btn:focus-visible {
+  outline:2px solid var(--ui-selected-border);
+  outline-offset:2px;
+}
+@media (max-width: 1024px) {
+  :root .workspace-shell .workspace-content:has(.admin-card) .teacher-branch > .add-student.btn {
+    min-height:38px;
+    height:38px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root .workspace-shell .workspace-content:has(.admin-card) .teacher-branch > .add-student.btn {
+    transition:none;
+  }
+}
+
+
+/* Compact, consistent participant forms. Kept separate from destructive
+   confirmation dialogs and from the credential handoff dialog. */
+:root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal)[open] {
+  width:min(430px, calc(100vw - 24px));
+  max-width:calc(100vw - 24px);
+  max-height:calc(100dvh - max(20px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+  padding:clamp(14px, 3vw, 20px);
+  border-radius:16px;
+}
+:root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal) .modal-head {
+  align-items:center;
+  gap:10px;
+  margin-bottom:14px;
+}
+:root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal) .modal-head .eyebrow {
+  font-size:10px;
+  font-weight:650;
+  letter-spacing:0.075em;
+}
+:root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal) .modal-head h2 {
+  margin:3px 0 0;
+  font-size:clamp(18px, 4.5vw, 21px);
+  font-weight:750;
+  line-height:1.25;
+}
+:root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal) .modal-head > .ui-icon-button {
+  --icon-action-size:40px;
+  flex:none;
+}
+:root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal) form.stack {
+  gap:10px;
+}
+:root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal) form.stack > label {
+  gap:5px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:650;
+}
+:root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal)
+  :is(form.stack input, form.stack select, .panel-login-edit-row > input) {
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  min-height:40px;
+  height:40px;
+  padding-inline:11px;
+  border-radius:10px;
+  font-size:16px;
+}
+:root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal) .panel-credentials-panel {
+  padding:11px 12px;
+  border:1px solid var(--ui-border);
+  border-radius:12px;
+  background:color-mix(in srgb, var(--surface-soft) 45%, var(--surface));
+  box-shadow:none;
+}
+:root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal) .panel-credential-row {
+  min-width:0;
+  gap:5px;
+}
+:root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal)
+  .panel-credential-row > :is(label, span) {
+  font-size:12px;
+  font-weight:650;
+}
+:root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal)
+  .panel-credential-row + .panel-credential-row {
+  margin-top:9px;
+  padding-top:9px;
+}
+:root dialog.native-dialog.participant-profile-modal .panel-access-value {
+  display:flex;
+  align-items:center;
+  min-height:44px;
+  height:44px;
+  padding:3px 4px 3px 10px;
+  gap:6px;
+  border-radius:10px;
+}
+:root dialog.native-dialog.participant-profile-modal .panel-access-value .password-code-refresh {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  align-self:center;
+  height:36px;
+  min-height:36px;
+  margin:0;
+  padding:0 10px;
+  font-size:12px;
+  line-height:1;
+  white-space:nowrap;
+}
+:root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal)
+  .modal-actions.participant-form-actions {
+  display:flex;
+  flex-wrap:nowrap;
+  align-items:center;
+  justify-content:flex-end;
+  gap:9px;
+  width:100%;
+  min-height:44px;
+  margin-top:14px;
+  padding:0;
+}
+:root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal)
+  .modal-actions.participant-form-actions > .btn.primary {
+  box-sizing:border-box;
+  flex:1 1 auto;
+  width:auto;
+  min-width:0;
+  max-width:230px;
+  min-height:44px;
+  height:44px;
+  max-height:44px;
+  padding:0 16px;
+  border-radius:11px;
+  font-size:14px;
+  font-weight:700;
+  white-space:nowrap;
+}
+:root dialog.native-dialog.create-participant-modal .modal-actions.participant-form-actions > .btn.primary {
+  max-width:none;
+}
+:root dialog.native-dialog.participant-profile-modal
+  .modal-actions.participant-form-actions > .ui-icon-button.user-delete {
+  --icon-action-size:44px;
+  box-sizing:border-box;
+  flex:0 0 44px;
+  width:44px;
+  min-width:44px;
+  max-width:44px;
+  height:44px;
+  min-height:44px;
+  margin:0;
+  padding:0;
+  border-radius:11px;
+}
+@media (max-width: 480px) {
+  :root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal)[open] {
+    width:calc(100vw - 20px);
+    max-width:calc(100vw - 20px);
+    padding:14px 12px;
+  }
+  :root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal)
+    .modal-actions.participant-form-actions > .btn.primary {
+    max-width:none;
+  }
+}

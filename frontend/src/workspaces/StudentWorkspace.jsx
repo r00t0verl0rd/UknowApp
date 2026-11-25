@@ -1,3 +1,4 @@
+import "../shared/styles/workspace/boards.scss";
 import { Match, Switch } from "solid-js";
 import ChatsView from "./ChatsView.jsx";
 

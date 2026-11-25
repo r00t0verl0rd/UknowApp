@@ -6,6 +6,7 @@
   height:100%;
   overflow:hidden;
   overscroll-behavior:none;
+
 }
 .workspace-shell {
   border-radius:0;
@@ -18,19 +19,25 @@
   height:var(--workspace-viewport-height, 100dvh);
   min-height:0;
   overflow:hidden;
+
 }
 @supports not (height: 100dvh) {
   .workspace-shell {
     height:var(--workspace-viewport-height, 100vh);
-  }
+  
+}
+
 }
 .workspace-shell > .sidebar {
   border-radius:0;
+
 }
 @media (min-width: 1025px) {
   .workspace-shell > .sidebar {
     min-height:0;
-  }
+  
+}
+
 }
 .workspace-shell {
   > .content {
@@ -52,6 +59,7 @@
     scrollbar-width:thin;
     padding-bottom:max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
   }
+
 }
 .workspace-content:has(> .users-panel, > .structure-scroll, > .additional-panel, > .teacher-structure) {
   @include primitives.stack;
@@ -60,7 +68,6 @@
 .workspace-content > :is(.users-panel, .structure-scroll, .additional-panel, .teacher-structure) {
   flex:1 0 auto;
 }
-.workspace-content > .graph-legend-row,
 .chat-list > :is(.chat-list-actions, .chat-list-filters) {
   flex:none;
 }
@@ -75,7 +82,8 @@
   .workspace-shell {
     grid-template-columns:minmax(0, 1fr);
     grid-template-rows:auto minmax(0, 1fr);
-  }
+  
+}
   :root[data-theme] .workspace-shell > .sidebar {
     position:relative;
     inset:auto;
@@ -88,7 +96,8 @@
     overflow:hidden;
     overscroll-behavior:none;
     touch-action:pan-x;
-  }
+  
+}
   .workspace-shell {
     > .sidebar nav {
       overscroll-behavior-x:contain;
@@ -108,7 +117,9 @@
       scroll-padding-top:var(--workspace-gutter);
       scroll-padding-bottom:max(var(--workspace-gutter), env(safe-area-inset-bottom, 0px));
     }
-  }
+  
+}
+
 }
 // Диалоги используют фиксированную сетку с отдельной прокруткой списка и сообщений.
 // В остальных разделах браузер сохраняет нативную прокрутку документа.
@@ -122,7 +133,8 @@
     overflow-x:clip;
     overflow-y:visible;
     overscroll-behavior-y:auto;
-  }
+  
+}
   :root[data-theme] {
     .workspace-shell:where(:not([data-workspace-page="chats"])) {
       position:relative;
@@ -132,7 +144,8 @@
       min-height:100vh;
       min-height:100dvh;
       overflow:visible;
-    }
+    
+}
     .workspace-shell:where(:not([data-workspace-page="chats"])) > .sidebar {
       position:sticky;
       inset:0 0 auto;
@@ -141,140 +154,28 @@
       align-self:start;
       z-index:50;
       max-height:none;
-    }
+    
+}
     .workspace-shell:where(:not([data-workspace-page="chats"])) > .content {
       grid-column:1;
       grid-row:2;
       height:auto;
       overflow:visible;
-    }
+    
+}
     .workspace-shell:where(:not([data-workspace-page="chats"])) > .content > .workspace-content {
       flex:1 0 auto;
       overflow:visible;
       scroll-padding-top:calc(var(--workspace-sidebar-height, 140px) + var(--workspace-gutter));
-    }
-  }
+    
 }
-// Структура: стабильная построчная сетка. CSS columns балансировали
-// высоту колонок заново при сворачивании учеников и перемещали преподавателей.
-.workspace-content:has(.admin-card) {
-  > .graph-legend-row {
-    margin-bottom:8px;
-  }
-  > .structure-scroll {
-    > .admin-card {
-      width:min(100%, 240px);
-      min-height:58px;
-      margin-bottom:10px;
-      padding:6px 10px;
-    }
-    > .admin-card img {
-      flex:0 0 40px;
-      width:40px;
-      height:40px;
-    }
-    > .grid {
-      display:grid;
-      grid-template-columns:repeat(auto-fit, minmax(min(100%, 320px), 1fr));
-      grid-auto-flow:row;
-      align-items:start;
-      gap:12px;
-      column-count:auto;
-    }
-    > .grid > .teacher-branch {
-      width:100%;
-      margin:0;
-      break-inside:auto;
-    }
-  }
+  
 }
-// Действия структуры никогда не перемещаются под имя при сужении карточки.
-// Измеряет только CSS Grid: без ResizeObserver, вычислений JS и reflow при hover.
-.workspace-content:has(.admin-card) {
-  .unassigned-grid > .unassigned-student-card {
-    display:grid;
-    grid-template-columns:minmax(0, 1fr) max-content;
-    align-items:center;
-    column-gap:clamp(4px, 0.7vw, 10px);
-  }
-  .unassigned-student-card > .person-main {
-    flex-wrap:nowrap;
-    width:100%;
-    min-width:0;
-  }
-  .unassigned-student-card > .unassigned-student-actions {
-    display:flex;
-    flex-wrap:nowrap;
-    flex:0 0 auto;
-    align-items:center;
-    justify-content:flex-end;
-    justify-self:end;
-    align-self:center;
-    width:max-content;
-    min-width:max-content;
-    white-space:nowrap;
-    margin:0;
-  }
-  .unassigned-student-actions > button {
-    flex-shrink:0;
-    white-space:nowrap;
-  }
-  .grid .teacher-card {
-    display:grid;
-    grid-template-columns:minmax(0, 1fr) max-content;
-    align-items:center;
-  }
-  .grid .teacher-card > .person-main {
-    width:100%;
-    min-width:0;
-  }
-  .grid .teacher-card > .person-actions {
-    display:flex;
-    flex-wrap:nowrap;
-    align-items:center;
-    justify-self:end;
-    white-space:nowrap;
-  }
-  .student-list > .student-card {
-    display:grid;
-    grid-template-columns:minmax(0, 1fr) max-content max-content;
-    align-items:center;
-    column-gap:clamp(3px, 0.5vw, 7px);
-  }
-  .student-list > .student-card > .person-main {
-    width:100%;
-    min-width:0;
-    flex-wrap:nowrap;
-  }
-  .student-list > .student-card > .graph-person-action {
-    justify-self:end;
-    flex-shrink:0;
-  }
-  :is(.teacher-card, .student-card) .person-info {
-    min-width:0;
-    max-width:100%;
-    container-type:inline-size;
-  }
-  :is(.teacher-card, .student-card) .person-info > b {
-    display:block;
-    max-width:100%;
-    overflow:hidden;
-    white-space:nowrap;
-    overflow-wrap:normal;
-    text-overflow:ellipsis;
-    font-size:clamp(10px, 10cqi, 13px);
-    line-height:1.3;
-  }
-  :is(.teacher-card, .student-card) .person-info > small {
-    display:block;
-    max-width:100%;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-  }
+
 }
 :root[data-theme]:has(.workspace-shell) {
   background:var(--workspace-background);
+
 }
 :root[data-theme] body:has(.workspace-shell),
 :root[data-theme] #root:has(.workspace-shell),
@@ -284,11 +185,14 @@
 :root[data-theme] .workspace-shell > .content > .topbar,
 :root[data-theme] .workspace-shell > .content > .workspace-content {
   background:transparent;
+
 }
 @media (max-width: 1024px) {
   :root[data-theme] .workspace-shell > .sidebar {
     background:var(--workspace-background);
-  }
+  
+}
+
 }
 
 
@@ -393,5 +297,7 @@
       margin:6px auto;
       overflow-y:auto;
     }
-  }
+  
+}
+
 }

@@ -13,43 +13,13 @@
   min-width:0;
   max-width:100%;
 }
-.workspace-content:has(.admin-card) {
-  & .graph-legend-row {
-    display:flex;
-    flex-flow:row wrap;
-    justify-content:space-between;
-    gap:5px;
-    min-width:0;
-    width:100%;
-    align-items:stretch;
-  }
-  & .graph-legend-row > * {
-    min-width:0;
-  }
-  & .graph-legend-row .legend {
-    display:flex;
-    flex:0 1 auto;
-    flex-wrap:wrap;
-    align-items:center;
-    width:fit-content;
-    max-width:100%;
-    gap:clamp(3px, 1.2vw, 7px);
-    font-size:clamp(9px, 2.7vw, 12px);
-  } /* Форма создания участника помещается на экране. */
-  & .graph-legend-row > .graph-legend {
-    flex:0 1 auto;
-    width:fit-content;
-    max-width:100%;
-    align-self:stretch;
-    box-sizing:border-box;
-  }
-}
 @media (min-width: 1025px) {
   .workspace-shell > .sidebar {
     box-sizing:border-box;
     padding:18px 14px var(--workspace-gutter);
     width:auto;
-  }
+  
+}
   .brand {
     gap:10px;
     padding:0 7px 22px;
@@ -73,48 +43,16 @@
     max-width:1900px;
     padding-inline:clamp(30px, 2.5vw, 42px);
   }
-  .workspace-content:has(.admin-card) .grid {
-    column-gap:12px;
-    row-gap:12px;
-  }
-  .teacher-branch {
-    padding:10px;
-    border-radius:13px;
-  }
-  .teacher-card {
-    padding:9px 11px;
-  }
-  .workspace-content:has(.admin-card) .student-list {
-    gap:8px;
-    margin:10px 0 0;
-    padding:0;
-    overflow:visible;
-  }
   .student-card {
     min-height:52px;
     padding:7px 9px;
-  }
-  .workspace-content:has(.admin-card) {
-    & .add-student {
-      margin-top:0;
-    }
-    & .unassigned {
-      margin-top:15px;
-      padding-top:13px;
-    }
-  }
-  .user-row {
-    gap:10px;
-    padding:9px 14px;
   } /* Отступы адаптируются к ширине экрана. */
   .content {
     margin-left:0;
   }
+
 }
 @media (max-width: 1024px) {
-  .user-row .person-info {
-    min-width:calc(100% - 65px);
-  }
   .role-tag {
     margin-left:45px;
   }
@@ -179,22 +117,8 @@
     width:100%;
     padding:12px 10px 16px;
   }
-  .user-list {
-    width:100%;
-    border-radius:15px;
-  }
-  .workspace-content:has(.admin-card) .legend,
-  .modal-actions,
-  .user-row {
+  .modal-actions {
     flex-wrap:wrap;
-  }
-  .workspace-content:has(.admin-card) {
-    & .person-main {
-      flex:1;
-    }
-  }
-  .unassigned-grid {
-    grid-template-columns:minmax(0, 1fr);
   }
   .toolbar {
     align-items:stretch;
@@ -208,37 +132,6 @@
   .search input {
     min-width:0;
     width:100%;
-  }
-  .user-row {
-    min-height:80px;
-  }
-  .user-row > .person-info {
-    flex:1 1 calc(100% - 50px);
-    min-width:0;
-  }
-  .user-row .person-info {
-    b {
-      white-space:normal;
-      overflow-wrap:anywhere;
-      line-height:1.35;
-    }
-    small {
-      white-space:normal;
-      overflow-wrap:anywhere;
-      line-height:1.5;
-    }
-  }
-  .user-row > .role-tag {
-    margin:0 0 0 45px;
-  }
-  .user-row > .btn {
-    flex:1 1 auto;
-    min-height:38px;
-    padding:8px 9px;
-    white-space:normal;
-  }
-  .user-row > .icon-btn {
-    flex:0 0 38px;
   }
   .modal-head h2 {
     font-size:20px;
@@ -275,9 +168,6 @@
     border:1px solid #e4deea;
     color:#716981;
   }
-  .add-student {
-    background:var(--surface-soft);
-  }
   .topbar-actions {
     gap:5px;
   }
@@ -286,72 +176,16 @@
     height:33px;
     flex:0 0 33px;
   }
-  .workspace-content:has(.admin-card) .legend {
-    display:inline-flex;
-    align-items:center;
-    gap:7px;
-    max-width:100%;
-    padding:8px 10px;
-    border-radius:11px;
-    line-height:1.3;
-  }
-  .teacher-branch {
-    min-width:0;
-    border-radius:13px;
-  }
-  .teacher-card,
   .student-card {
     min-height:58px;
     border-radius:10px;
   }
-  .workspace-content:has(.admin-card) {
-    & .person-main,
-    & .person-info {
-      min-width:0;
-    }
-    & .person-info b {
-      overflow-wrap:anywhere;
-      white-space:normal;
-      line-height:1.35;
-    }
-    & .person-actions {
-      flex:none;
-      gap:3px;
-    }
-    & .person-actions button {
-      flex:0 0 30px;
-      flex-basis:28px;
-      width:clamp(25px, 6.5vw, 28px);
-      height:clamp(25px, 6.5vw, 28px);
-    }
-    & .student-list {
-      gap:7px;
-      margin-top:8px;
-    }
-    & .add-student {
-      min-height:30px;
-      margin-top:5px;
-      padding:5px 9px;
-    }
-  }
-  .user-row:hover,
-  .student-card:hover,
-  .teacher-card:hover,
-  .teacher-branch:hover {
+  .student-card:hover {
     transform:none;
   }
   .topbar {
     height:46px;
     padding:0 12px;
-  }
-  .workspace-content:has(.admin-card) {
-    & .graph-legend {
-      padding:7px 9px;
-      gap:8px;
-    }
-    & .student-list {
-      padding-left:0;
-    }
   }
   .student-card {
     gap:5px;
@@ -362,58 +196,6 @@
     width:30px;
     height:30px;
   }
-  .teacher-card > .person-main {
-    gap:7px;
-  }
-  .teacher-card {
-    gap:5px;
-    padding:7px;
-  }
-  .teacher-card .person-actions button {
-    flex-basis:25px;
-    width:25px;
-    height:25px;
-  }
-  .workspace-content:has(.admin-card) {
-    & .graph-legend-item {
-      gap:6px;
-      font-size:10px;
-    }
-  }
-  .user-action-btn {
-    width:40px;
-    height:40px;
-    flex-basis:40px;
-  }
-  .user-actions {
-    align-self:center;
-    flex:1 1 100%;
-    justify-content:flex-end;
-    margin:2px 0 0;
-    padding-top:10px;
-    border-top:1px solid var(--line);
-  }
-  .user-action-btn.user-info-btn {
-    width:40px;
-    height:40px;
-    flex-basis:40px;
-  }
-  .workspace-content:has(.admin-card) {
-    & .unassigned-grid {
-      grid-template-columns:minmax(0, 1fr);
-      gap:11px;
-    }
-    & .unassigned-student-card {
-      min-height:0;
-      padding:clamp(10px, 2vw, 13px);
-    }
-    & .unassigned-student-actions {
-      gap:7px;
-    }
-    & .unassigned-student-actions .btn {
-      padding:7px 10px;
-    }
-  }
   .confirm-delete-modal {
     .modal-actions {
       flex-wrap:nowrap;
@@ -422,9 +204,6 @@
       flex:1 1 0;
       min-width:0;
     }
-  }
-  .user-person-info {
-    font-size:15px;
   }
   .login-screen {
     padding:14px;
@@ -444,7 +223,6 @@
     min-width:0;
     max-width:100%;
   }
-  .user-row,
   .modal {
     overflow-wrap:anywhere;
   }
@@ -460,9 +238,6 @@
     padding-right:8px;
     padding-left:8px;
     padding-inline:clamp(8px, 2vw, 15px);
-  }
-  .user-list {
-    padding:9px;
   }
   .modal *,
   .modal *::before,
@@ -494,90 +269,13 @@
     letter-spacing:clamp(2px, 1vw, 4px);
     overflow-wrap:anywhere;
   }
-  .workspace-content:has(.admin-card) .graph-legend-row .legend {
-    font-size:9px;
-    gap:3px;
-  }
-  .create-participant-modal {
-    .modal-head {
-      gap:8px;
-      margin-bottom:clamp(11px, 2.5vw, 14px);
-    }
-    .modal-head h2 {
-      font-size:clamp(17px, 5vw, 19px);
-    }
-    .stack label {
-      gap:5px;
-      font-size:12px;
-    }
-    .stack input,
-    .stack select {
-      height:42px;
-      min-height:42px;
-      font-size:16px;
-    }
-    .modal-actions,
-    .stack > .btn {
-      min-height:42px;
-    }
-  }
-  .teacher-branch {
-    padding:clamp(7px, 1.8vw, 10px);
-  }
-  .student-card,
-  .teacher-card {
+  .student-card {
     padding:clamp(7px, 1.8vw, 12px);
     gap:clamp(5px, 1.2vw, 8px);
   }
   .avatar {
     width:clamp(32px, 8.5vw, 38px);
     height:clamp(32px, 8.5vw, 38px);
-  }
-  .workspace-content:has(.admin-card) {
-    & .unassigned-student-card {
-      gap:clamp(9px, 2vw, 12px);
-    }
-    & .unassigned-student-card > .person-main {
-      gap:clamp(9px, 2vw, 12px);
-    }
-    & .unassigned-student-card > .person-main > .avatar {
-      flex-basis:clamp(38px, 10vw, 44px);
-      width:clamp(38px, 10vw, 44px);
-      height:clamp(38px, 10vw, 44px);
-    }
-  }
-  .create-participant-modal .stack {
-    gap:clamp(8px, 2vw, 10px);
-  }
-  .workspace-content:has(.admin-card) {
-    & .graph-legend-row {
-      margin-bottom:14px;
-      display:flex;
-      justify-content:space-between;
-      flex-wrap:wrap;
-      align-items:stretch;
-      gap:clamp(3px, 1vw, 8px);
-    }
-    & .graph-legend-row > .graph-legend {
-      flex:0 1 auto;
-      width:fit-content;
-      min-width:0;
-      max-width:100%;
-      padding:clamp(4px, 1.2vw, 7px) clamp(4px, 1.2vw, 9px);
-      gap:clamp(2px, 0.8vw, 6px);
-    }
-    & .graph-legend .graph-legend-item {
-      flex:0 1 auto;
-      min-width:0;
-      gap:clamp(2px, 0.8vw, 5px);
-      font-size:clamp(9px, 2.8vw, 12px);
-      white-space:nowrap;
-    }
-    & .graph-legend .graph-legend-item > span {
-      flex:0 0 7px;
-      width:7px;
-      height:7px;
-    }
   }
   .topbar > .topbar-actions {
     display:none;
@@ -586,7 +284,6 @@
   .btn:not(.primary),
   .person-actions button:not(.danger-icon),
   .icon-btn:not(.danger-icon),
-  .add-student,
   .modal-head button {
     -webkit-appearance:none;
     appearance:none;
@@ -598,8 +295,7 @@
   .btn.ghost {
     background-color:var(--ui-control-bg);
   }
-  .btn.outline,
-  .add-student {
+  .btn.outline {
     background-color:var(--ui-selected-bg);
     border-color:var(--ui-selected-border);
     color:var(--ui-selected-text);
@@ -610,10 +306,7 @@
   .btn.ghost:not(.primary):not(.danger-icon) {
     background-color:var(--ui-control-bg);
   }
-  .btn.outline:not(.primary):not(.danger-icon),
-  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)).add-student:not(.primary):not(
-      .danger-icon
-    ) {
+  .btn.outline:not(.primary):not(.danger-icon) {
     background-color:var(--ui-selected-bg);
     border-color:var(--ui-selected-border);
     color:var(--ui-selected-text);
@@ -623,7 +316,6 @@
     & .btn:not(.primary):not(.danger-icon),
     & .person-actions button:not(.danger-icon),
     & .icon-btn:not(.danger-icon):not(:where(.message-actions button)),
-    & .add-student,
     & .modal-head button {
       background:var(--ui-control-bg);
       border-color:var(--ui-border);
@@ -635,30 +327,15 @@
       border-color:transparent;
       color:var(--app-foreground);
     }
-  }
-  .student-card > .graph-person-action {
-    flex-basis:25px;
-    width:25px;
-    height:25px;
-    min-width:25px;
-    min-height:25px;
-  }
-  .workspace-content:has(.admin-card) {
-    & .unassigned-student-actions > .graph-person-action {
-      flex-basis:32px;
-      width:32px;
-      height:32px;
-      min-width:32px;
-      min-height:32px;
-    }
-  }
+  
+}
+
 }
 @media (hover: none), (pointer: coarse) {
   button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)),
   button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)).btn,
   .person-actions button,
   .icon-btn,
-  .add-student,
   .modal-head button {
     -webkit-appearance:none;
     appearance:none;
@@ -674,8 +351,7 @@
     background:var(--ui-control-bg);
     border-color:var(--ui-border);
   }
-  .btn.outline,
-  .add-student {
+  .btn.outline {
     background:var(--ui-selected-bg);
     border-color:var(--ui-selected-border);
     color:var(--ui-selected-text);
@@ -693,7 +369,6 @@
     & button:not(.primary):not(.danger-icon):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)),
     & .btn:not(.primary):not(.danger-icon),
     & .icon-btn:not(.danger-icon):not(:where(.message-actions button)),
-    & .add-student,
     & .modal-head button {
       background:var(--ui-control-bg);
       border-color:var(--ui-border);
@@ -705,65 +380,12 @@
       border-color:transparent;
       color:var(--app-foreground);
     }
-    & .user-row:hover,
-    & .student-card:hover,
-    & .teacher-card:hover {
+    & .student-card:hover {
       background:#293343;
       border-color:#59657b;
       box-shadow:none;
     }
-  }
+  
 }
 
-// The same full-area boards notice in admin, teacher and student workspaces.
-.workspace-shell > .content > .workspace-content:has(> .boards-placeholder) {
-  display:flex;
-
-}
-.boards-placeholder {
-  display:flex;
-  flex:1 1 auto;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:clamp(14px, 2.5vh, 26px);
-  width:100%;
-  min-height:min-content;
-  padding:clamp(22px, 4vw, 60px);
-  text-align:center;
-  background:radial-gradient(ellipse at 50% 42%, rgba(148, 114, 202, 0.09), transparent 57%);
-}
-.boards-placeholder img {
-  display:block;
-  width:clamp(220px, min(34vw, 43dvh), 430px);
-  height:clamp(220px, min(34vw, 43dvh), 430px);
-  opacity:0.15;
-  object-fit:contain;
-  filter:drop-shadow(0 12px 32px rgba(118, 91, 177, 0.18));
-}
-.boards-placeholder h1 {
-  margin:0;
-  color:var(--ink);
-  font-size:clamp(27px, 3.6vw, 46px);
-  font-weight:800;
-  line-height:1.15;
-  letter-spacing:-0.035em;
-  text-wrap:balance;
-}
-.boards-placeholder p {
-  max-width:680px;
-  margin:0;
-  color:var(--muted);
-  font-size:clamp(15px, 1.45vw, 19px);
-  line-height:1.65;
-  text-wrap:pretty;
-}
-@media (max-width:1024px) {
-  .boards-placeholder {
-    padding:clamp(24px, 6vw, 42px);
-  }
-  .boards-placeholder img {
-    width:clamp(180px, min(60vw, 36dvh), 320px);
-    height:clamp(180px, min(60vw, 36dvh), 320px);
-  }
 }

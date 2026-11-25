@@ -19,7 +19,14 @@ const walk = directory => {
 };
 walk(styles);
 
-const entrypoints = new Set(["index.scss", "core/_primitives.scss"]);
+const entries = new Map([
+  ["index.scss", ["src/main.jsx"]],
+  ["admin.scss", ["src/workspaces/AdminWorkspace.jsx"]],
+  ["teacher.scss", ["src/workspaces/TeacherWorkspace.jsx"]],
+  ["workspace/boards.scss", ["src/workspaces/AdminWorkspace.jsx", "src/workspaces/TeacherWorkspace.jsx", "src/workspaces/StudentWorkspace.jsx"]],
+  ["features/restore-flow.scss", ["src/features/administration/RestoreFlowDialog.jsx"]],
+]);
+const entrypoints = new Set([...entries.keys(), "core/_primitives.scss"]);
 const owners = new Set(["core", "components", "features", "workspace"]);
 const sourceFiles = new Set(files.map(file => path.relative(styles, file).replaceAll(path.sep, "/")));
 const resolveUse = (file, relative) => {
@@ -28,13 +35,29 @@ const resolveUse = (file, relative) => {
     .some(candidate => fs.existsSync(candidate));
 };
 
-const imported = new Set();
-const index = fs.readFileSync(path.join(styles, "index.scss"), "utf8");
-for (const [, relative] of index.matchAll(/^@use\s+["']\.\/([^"']+)["'];/gm)) {
-  const file = relative + ".scss";
-  if (imported.has(file)) errors.push(`Repeated index import: ${file}`);
-  imported.add(file);
-  if (!sourceFiles.has(file)) errors.push(`Index imports missing file: ${file}`);
+const imported = new Map();
+for (const [entry, jsOwners] of entries) {
+  const entryPath = path.join(styles, entry);
+  const source = fs.readFileSync(entryPath, "utf8");
+  for (const owner of jsOwners) {
+    const jsPath = path.join(root, owner);
+    const relative = path.relative(path.dirname(jsPath), entryPath).replaceAll(path.sep, "/");
+    if (!fs.readFileSync(jsPath, "utf8").includes(relative)) {
+      errors.push("Missing style import in " + owner + ": " + relative);
+    }
+  }
+  for (const [, relative] of source.matchAll(/^@use\s+["']\.\/([^"']+)["'];/gm)) {
+    const file = path.posix.normalize(path.posix.join(path.posix.dirname(entry), relative + ".scss"));
+    if (imported.has(file)) errors.push("Repeated entry import: " + file);
+    imported.set(file, entry);
+    if (!sourceFiles.has(file)) errors.push("Entry imports missing file: " + file);
+  }
+}
+for (const file of ["features/structure.scss", "features/users.scss", "features/admin-tools.scss"]) {
+  if (imported.get(file) !== "admin.scss") errors.push("Admin feature must stay lazy: " + file);
+}
+if (imported.get("features/teacher-zen.scss") !== "teacher.scss") {
+  errors.push("Teacher constellation must stay lazy");
 }
 for (const file of files) {
   const name = path.relative(styles, file).replaceAll(path.sep, "/");
@@ -43,7 +66,7 @@ for (const file of files) {
     errors.push(`Choose a component, feature, workspace or core owner for ${name}`);
   }
   if (!entrypoints.has(name) && !imported.has(name)) {
-    errors.push(`SCSS module absent from index.scss: ${name}`);
+    errors.push(`SCSS module absent from a stylesheet entry: ${name}`);
   }
   if (/!important\b/.test(source)) errors.push(`Avoid !important: ${name}`);
   if (/^\s*@import\s/m.test(source)) errors.push(`Use @use, not @import: ${name}`);
@@ -60,5 +83,5 @@ if (errors.length) {
   for (const error of errors) console.error(error);
   process.exitCode = 1;
 } else {
-  console.log(`SCSS architecture OK: ${files.length} files, ${imported.size} indexed modules; no !important or minified lines.`);
+  console.log(`SCSS architecture OK: ${files.length} files, ${imported.size} owned modules; no !important or minified lines.`);
 }

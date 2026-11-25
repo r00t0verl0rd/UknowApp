@@ -1,3 +1,5 @@
+import "../shared/styles/workspace/boards.scss";
+import "../shared/styles/admin.scss";
 import { lazy, Loading, Switch, Match } from "solid-js";
 const ChatsView = lazy(() => import("./ChatsView.jsx"));
 const UsersModule = lazy(() => import("../features/users/index.js"));

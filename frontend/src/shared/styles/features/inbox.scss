@@ -29,101 +29,6 @@
   font-size:11px;
   overflow-wrap:anywhere;
 }
-.panel-credentials-panel {
-  @include primitives.stack;
-  width:100%;
-  min-width:0;
-  box-sizing:border-box;
-  padding:4px 14px;
-  border:1px solid var(--ui-border);
-  border-radius:12px;
-  background:var(--surface-soft);
-}
-.panel-credential-row {
-  @include primitives.stack;
-  align-items:stretch;
-  gap:7px;
-  min-width:0;
-  padding:10px 0;
-  + .panel-credential-row {
-    border-top:1px solid var(--line);
-  }
-  > span,
-  > label {
-    display:block;
-    min-width:0;
-    margin:0;
-    color:var(--muted);
-    font-size:11px;
-    font-weight:650;
-    line-height:1.25;
-    letter-spacing:0.01em;
-  }
-}
-.panel-login-edit-row {
-  > input {
-    box-sizing:border-box;
-    width:100%;
-    min-width:0;
-    min-height:36px;
-    margin:0;
-    padding:7px 10px;
-    border:1px solid var(--ui-border);
-    border-radius:8px;
-    background:var(--surface-input);
-    color:var(--ink);
-    font-size:12px;
-    font-weight:550;
-    text-align:left;
-    box-shadow:none;
-  }
-  > input:focus {
-    border-color:var(--ui-selected-border);
-    background:var(--surface-input);
-    outline:2px solid rgba(133, 104, 184, 0.1);
-    outline-offset:1px;
-  }
-}
-.panel-access-value {
-  @include primitives.spread;
-  gap:10px;
-  box-sizing:border-box;
-  width:100%;
-  min-width:0;
-  min-height:38px;
-  padding:3px 5px 3px 10px;
-  border:1px solid var(--ui-border);
-  border-radius:8px;
-  background:var(--surface-input);
-  b {
-    min-width:0;
-    color:var(--purple);
-    font:
-      800 13px ui-monospace,
-      SFMono-Regular,
-      Menlo,
-      monospace;
-    letter-spacing:1.8px;
-    white-space:nowrap;
-  }
-  .password-code-refresh {
-    display:inline-flex;
-    flex:0 0 auto;
-    align-items:center;
-    justify-content:center;
-    gap:6px;
-    min-height:30px;
-    padding:5px 9px;
-    border-radius:7px;
-    font-size:10px;
-    font-weight:650;
-    white-space:nowrap;
-  }
-  .password-code-refresh svg {
-    width:11px;
-    height:11px;
-  }
-}
 .credential-modal {
   @include primitives.stack;
   box-sizing:border-box;
@@ -206,20 +111,6 @@
     border-radius:9px;
   }
 }
-.credential-field-code {
-  border-color:var(--ui-selected-border);
-  background:linear-gradient(115deg, var(--lavender-soft), var(--surface-soft));
-}
-.credential-field-code .credential-field-value b {
-  color:var(--purple);
-  font:
-    800 20px ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
-  letter-spacing:1.5px;
-  white-space:nowrap;
-}
 .credential-actions {
   display:flex;
   justify-content:center;
@@ -239,6 +130,7 @@
   background:#252d3b;
   border-color:#394457;
   box-shadow:none;
+
 }
 .topbar-actions {
   display:flex;
@@ -260,10 +152,6 @@
 .mobile-quick-actions {
   display:none;
 }
-.user-row,
-.user-actions {
-  position:relative;
-}
 
 .chat-items > .chat-item.student-card {
   background:var(--button-bg);
@@ -281,14 +169,17 @@
   background:var(--ui-control-bg);
   border-color:var(--ui-border);
   color:var(--ui-control-text);
+
 }
 :root[data-theme="dark-soft"] .workspace-shell .chat-composer .selected-file .ui-icon-button {
   background:transparent;
   border-color:transparent;
   color:var(--muted);
   box-shadow:none;
+
 }
 :root[data-theme="dark-soft"] .workspace-shell .chat-composer .selected-file .ui-icon-button:hover:not(:disabled) {
   background:var(--ui-control-hover);
   color:var(--ui-control-text);
+
 }

@@ -29,6 +29,10 @@ test("workspace stays closed until the server confirms the role and redirects a 
     await pending;
     assert.deepEqual(requests, ["/api/panel/me"]);
     assert.equal(await page.getByRole("button", { name: "Пользователи" }).count(), 0);
+    const stylesheetText = () => page.evaluate(() => [...document.styleSheets]
+      .flatMap(sheet => [...sheet.cssRules].map(rule => rule.cssText)).join("\n"));
+    const beforeAuth = await stylesheetText();
+    assert.doesNotMatch(beforeAuth, /\.data-stat-card\b|\.user-info-login\b|\.teacher-zen-stage\b/);
     confirm();
     await page.waitForURL("**/dialogs");
     await page.getByRole("button", { name: "Доски", exact: true }).click();
@@ -39,6 +43,9 @@ test("workspace stays closed until the server confirms the role and redirects a 
     );
     assert.equal(await page.getByRole("button", { name: "Структура", exact: true }).count(), 0);
     assert.ok(requests.every(path => !path.startsWith("/api/admin/")));
+    const studentCss = await stylesheetText();
+    assert.match(studentCss, /\.boards-placeholder\b/);
+    assert.doesNotMatch(studentCss, /\.data-stat-card\b|\.user-info-login\b|\.teacher-zen-stage\b|\.restore-flow-progress-bar\b/);
     // An expired session (401) must return to login; a temporary 503 should not discard the view.
     await page.route("**/api/panel/me", route => route.fulfill({ status: 401, json: {} }));
     await page.reload();

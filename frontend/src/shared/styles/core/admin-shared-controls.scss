@@ -1,0 +1,65 @@
+@use "../core/primitives";
+
+.add-student,
+.user-action-btn {
+  transition:
+    background-color var(--ui-transition-fast),
+    border-color var(--ui-transition-fast),
+    color var(--ui-transition-fast);
+}
+button.graph-person-action {
+  appearance:none;
+  @include primitives.center;
+  border:1px solid transparent;
+  border-radius:9px;
+  box-shadow:none;
+  cursor:pointer;
+}
+button.graph-person-action:focus-visible {
+  outline:2px solid var(--purple);
+  outline-offset:2px;
+}
+.user-action-btn {
+  border-color:var(--ui-border);
+  box-shadow:var(--ui-shadow-soft);
+}
+.user-action-btn:not(.danger) {
+  @include primitives.control;
+}
+.user-action-btn:not(.danger):hover {
+  background:var(--ui-control-hover);
+  border-color:var(--ui-border-strong);
+  color:var(--purple);
+  box-shadow:0 3px 9px rgba(87, 62, 153, 0.09);
+}
+.user-action-btn.danger {
+  border-color:var(--button-danger-border);
+  background:var(--button-danger-bg);
+  color:var(--button-danger-text);
+}
+.user-action-btn.danger:hover {
+  background:var(--button-danger-hover-bg);
+  border-color:var(--button-danger-hover-border);
+  color:var(--button-danger-hover-text);
+}
+.user-list,
+.teacher-card {
+  border-radius:var(--ui-radius-lg);
+}
+.teacher-card {
+  box-shadow:0 1px 4px rgba(47, 31, 84, 0.025);
+}
+.teacher-card:hover {
+  box-shadow:0 5px 15px rgba(87, 62, 153, 0.075);
+}
+.user-row {
+  align-items:center;
+}
+:root .ui-toolbar-control.user-add-btn {
+  padding-inline:var(--workspace-control-padding);
+}
+:root[data-theme="dark-soft"] {
+  & .user-action-btn.danger {
+    @include primitives.danger;
+  }
+}

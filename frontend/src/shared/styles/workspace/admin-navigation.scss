@@ -1,0 +1,105 @@
+:root .workspace-shell {
+  .workspace-content .graph-add-participant.ui-menu-control {
+    box-sizing:border-box;
+    display:inline-flex;
+    align-items:center;
+    justify-content:flex-start;
+    height:var(--workspace-control-height);
+    min-height:var(--workspace-control-height);
+    max-height:var(--workspace-control-height);
+    flex-shrink:0;
+    line-height:1.35;
+    letter-spacing:-0.01em;
+    text-decoration:none;
+    text-align:left;
+    transition:
+      background-color var(--ui-transition-fast),
+      border-color var(--ui-transition-fast),
+      color var(--ui-transition-fast);
+  }
+  .workspace-content .graph-add-participant.ui-menu-control {
+    justify-content:center;
+    flex:0 0 auto;
+    align-self:stretch;
+    min-width:0;
+    max-width:52%;
+    height:auto;
+    margin-left:0;
+    white-space:nowrap;
+  }
+  .workspace-content .graph-add-participant.ui-menu-control > svg {
+    flex:0 0 18px;
+    width:18px;
+    height:18px;
+    stroke-width:1.9;
+  }
+  .workspace-content .graph-add-participant.ui-menu-control:focus-visible {
+    outline:2px solid var(--purple);
+    outline-offset:2px;
+  }
+}
+:root .workspace-shell {
+  .graph-legend {
+    font-weight:600;
+  }
+}
+@media (max-width: 1024px) {
+  :root .workspace-shell {
+    .workspace-content .graph-add-participant.ui-menu-control {
+      flex:0 1 auto;
+      min-height:38px;
+      max-width:52%;
+      text-align:center;
+    }
+    .workspace-content .graph-add-participant.ui-menu-control > svg {
+      flex:0 0 15px;
+      width:15px;
+      height:15px;
+    }
+}
+}
+:root .workspace-shell {
+  .workspace-content .graph-add-participant.ui-menu-control {
+    -webkit-appearance:none;
+    appearance:none;
+    padding:0 12px;
+    gap:10px;
+    border:1px solid var(--menu-border);
+    border-radius:var(--ui-radius-sm);
+    background:var(--menu-bg);
+    background-image:none;
+    color:var(--menu-text);
+    box-shadow:none;
+    font-family:var(--font-family-ui);
+    font-size:13px;
+    font-weight:600;
+  }
+  .workspace-content .graph-add-participant.ui-menu-control:hover:not(:disabled) {
+    background:var(--menu-hover-bg);
+    border-color:var(--menu-hover-border);
+    color:var(--menu-text);
+    box-shadow:none;
+  }
+}
+@media (max-width: 1024px) {
+  :root .workspace-shell {
+    .workspace-content .graph-add-participant.ui-menu-control {
+      padding:8px 10px;
+      font-size:clamp(11px, 3vw, 13px);
+      gap:6px;
+    }
+}
+}
+:root[data-theme="dark-soft"] .workspace-shell .workspace-content:has(.admin-card) {
+  button.graph-add-participant.ui-menu-control {
+    background:var(--menu-bg);
+    background-image:none;
+    border-color:var(--menu-border);
+    color:var(--menu-text);
+  }
+  button.graph-add-participant.ui-menu-control:hover:not(:disabled) {
+    background:var(--menu-hover-bg);
+    border-color:var(--menu-hover-border);
+    color:var(--menu-text);
+  }
+}
