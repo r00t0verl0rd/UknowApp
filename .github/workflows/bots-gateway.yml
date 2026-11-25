@@ -38,8 +38,8 @@ jobs:
         working-directory: frontend
         run: |
           npm ci
-          npm test
           npm run build
+          npm test
       - name: Validate and build Compose configuration
         run: |
           cp .env.example .env
