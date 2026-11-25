@@ -7,7 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 
 from .api import router
-from .bots_gateway.gateway import BotsGateway, router as bots_gateway_router
+from .bots_gateway.gateway import BotsGateway
+from .bots_gateway.gateway import router as bots_gateway_router
 from .core.config import (
     ALLOWED_ORIGINS,
     SEED_DEMO_DATA,

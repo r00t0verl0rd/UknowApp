@@ -13,8 +13,7 @@ from sqlalchemy import or_, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.core import database, runtime_database
-from app.core import config
+from app.core import config, database, runtime_database
 from app.models import PanelSession, PushSubscription
 from app.modules.notifications import vapid
 from app.modules.notifications.endpoints import is_safe_push_endpoint

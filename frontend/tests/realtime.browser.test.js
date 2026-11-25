@@ -1424,6 +1424,11 @@ test("global SSE updates real counters across tabs and replays missed events", {
         const vv = window.visualViewport;
         const shell = document.querySelector(".workspace-shell");
         if (!shell) return false;
+        // Native pages are relative even while the resize RAF is pending.
+        // Wait for the measured visual viewport before mounting the fixed chat fixture.
+        const measured = parseFloat(getComputedStyle(document.documentElement)
+          .getPropertyValue("--workspace-viewport-height"));
+        if (Math.abs(measured - (vv?.height || window.innerHeight)) > 1 || !Number.isFinite(measured)) return false;
         if (matchMedia("(max-width: 1024px) and (display-mode: browser)").matches) {
           return getComputedStyle(shell).position === "relative";
         }
