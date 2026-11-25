@@ -10,7 +10,8 @@ from app.bots_gateway.gateway import BotsGateway
 from app.bots_gateway.outbox import enqueue_web_delivery
 from app.core.database import SessionLocal
 from app.migrations import initialize_database
-from app.models import Assignment, BotEventReceipt, ConnectorDelivery, Conversation, Message, User
+from app.models import Assignment, BotEventReceipt, ConnectorDelivery, Conversation, Message, User, TransportJob
+from app.core import runtime_database
 from app.modules.communication.accounts import sync_messenger_account
 from connectors.common.client import GatewayClient
 from connectors.common.contracts import STREAM
@@ -72,7 +73,11 @@ async def main():
         # Publish while connector is offline, then simulate total broker stream loss.
         worker = asyncio.create_task(gateway.publish_outbox())
         workers.append(worker)
-        await until(lambda:status()=="published")
+        def published():
+            with runtime_database.RuntimeSessionLocal() as runtime:
+                job = runtime.get(TransportJob, job_id)
+                return job is not None and job.state == "published"
+        await until(published)
         worker.cancel()
         await asyncio.gather(worker,return_exceptions=True)
         workers.clear()

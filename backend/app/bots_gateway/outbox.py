@@ -43,21 +43,6 @@ def earlier_send_pending(db, job):
     ).limit(1)) is not None
 
 
-def publication_candidates(db, platforms, now=None, limit=50):
-    cutoff = (now or now_utc()) - RECOVERY_AFTER
-    entries = []
-    for model in (ConnectorDeletion, ConnectorDelivery):
-        jobs = db.scalars(select(model).where(model.platform.in_(platforms), or_(
-            model.status == "queued", and_(model.status.in_(("published", "sending")),
-                or_(model.published_at.is_(None), model.published_at <= cutoff),
-                or_(model.published_at.is_(None), model.started_at.is_(None), model.started_at <= cutoff))))
-            .order_by(model.created_at, model.id).limit(limit)).all()
-        message_ids = [j.message_id for j in jobs if isinstance(j, ConnectorDelivery) and j.message_id is not None]
-        kinds = dict(db.execute(select(Message.id, Message.content_type).where(Message.id.in_(message_ids))).all()) if message_ids else {}
-        entries.extend((j.id, j.platform, j.chat_id, getattr(j, "thread_id", ""), j.status,
-                        kinds.get(getattr(j, "message_id", None), "text") != "text") for j in jobs)
-    return entries
-
 
 
 def uses_outbox(app):

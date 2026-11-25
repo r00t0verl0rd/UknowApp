@@ -308,7 +308,7 @@ class ExternalEndpoint(Base):
 
 
 class ConnectorDelivery(Base):
-    """Transactional outbox for one recipient/channel and one message."""
+    """Durable business delivery intent and claim fence; transport state lives in Runtime DB."""
     __tablename__ = "connector_deliveries"
     __table_args__ = (UniqueConstraint("message_id", "platform", "recipient_id", "chat_id", "thread_id", name="uq_connector_delivery_route"),
                       Index("ix_connector_delivery_queue", "platform", "status", "created_at", "id"),
@@ -324,10 +324,8 @@ class ConnectorDelivery(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="queued", index=True)
     external_message_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
-    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     claim_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    broker_seq: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
 
 
 class ConnectorDeletion(Base):
@@ -341,10 +339,8 @@ class ConnectorDeletion(Base):
     external_message_id: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="queued", index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
-    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     claim_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    broker_seq: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
 
 
 class TransportJob(RuntimeBase):

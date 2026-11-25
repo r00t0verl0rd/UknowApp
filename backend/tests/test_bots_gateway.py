@@ -225,7 +225,8 @@ def test_late_receipt_after_deletion(api):
 
 def test_batch_claim_retry_and_route_order(api):
     from datetime import timedelta
-    from app.bots_gateway.outbox import now_utc, publication_candidates
+    from app.bots_gateway.outbox import now_utc
+    from app.bots_gateway import transport
 
     _, users, sessions = api
     with sessions() as db:
@@ -247,10 +248,10 @@ def test_batch_claim_retry_and_route_order(api):
         with pytest.raises(HTTPException) as error:
             rpc(db, "beta", "delivery.authorize", {"id":first_private.id,"claim":"d"*32})
         assert error.value.status_code == 425
-        first_private.started_at = first_private.published_at = now_utc() - timedelta(minutes=20)
-        first_group.published_at = now_utc()
+        first_private.started_at = now_utc() - timedelta(minutes=20)
         db.commit()
-        assert first_private.id in {e[0] for e in publication_candidates(db, ("beta",))}
+        transport.project_pending(db, ("beta",), {})
+        assert first_private.id in {e[0] for e in transport.candidates(db, ("beta",))}
         with pytest.raises(HTTPException) as error:
             rpc(db, "beta", "delivery.authorize", {"id":first_private.id,"claim":"d"*32})
         assert error.value.status_code == 409

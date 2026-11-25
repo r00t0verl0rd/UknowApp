@@ -24,7 +24,9 @@ from app.models import ConnectorDeletion, ConnectorDelivery, Conversation, Messe
 from app.event_hub import subscribe_chat_updates, unsubscribe_chat_updates
 from .contracts import PREFIX, STREAM, decode, encode, identifier, platforms
 from .operations import receive_message, rpc
-from .outbox import PENDING, authorized_job, get_job, now_utc, publication_candidates, record_result
+from .outbox import PENDING, authorized_job, get_job, now_utc, record_result
+from . import transport
+from app.migrations.runtime_split import initialize_runtime_storage
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/internal/bots", include_in_schema=False)
@@ -48,6 +50,8 @@ class BotsGateway:
         self._db_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="bots-db")
         self._db_slot = asyncio.Semaphore(1)
         self._loop = None
+        self._projection_cursors = {}
+        self._projection_more = False
 
     def wake_outbox(self):
         if self._loop and not self._loop.is_closed():
@@ -79,6 +83,7 @@ class BotsGateway:
 
     async def setup(self):
         self._loop = asyncio.get_running_loop()
+        await self.run_db(initialize_runtime_storage)
         self.nc = await nats.connect(
             servers=[os.environ["BOTS_NATS_URL"]],
             user=os.environ["BOTS_NATS_USER"], password=os.environ["BOTS_NATS_PASSWORD"],
@@ -124,11 +129,7 @@ class BotsGateway:
         await self.nc.flush()
 
     def _reset_broker_sequences(self):
-        with SessionLocal() as db:
-            for model in (ConnectorDelivery, ConnectorDeletion):
-                db.execute(update(model).where(model.platform.in_(self.platforms),
-                    model.status.in_(("published", "sending"))).values(published_at=None, broker_seq=None))
-            db.commit()
+        transport.reset_sequences(self.platforms)
 
     @staticmethod
     def _rpc(platform, operation, payload):
@@ -152,30 +153,18 @@ class BotsGateway:
                     raise ValueError("invalid result")
                 external_id = identifier(payload.get("external_message_id")) if status == "delivered" else None
                 record_result(db, job, status, external_id)
+        if direction == "delivery":
+            transport.forget(payload["id"])
         return True
 
     def _candidates(self):
         with SessionLocal() as db:
-            return publication_candidates(db, self.platforms)
+            self._projection_cursors, self._projection_more = transport.project_pending(
+                db, self.platforms, self._projection_cursors)
+            return transport.candidates(db, self.platforms)
 
-    @staticmethod
-    def _previous_sequence(job_id):
-        with SessionLocal() as db:
-            job = get_job(db, job_id)
-            return job.broker_seq if job and job.status in PENDING else None
-
-    @staticmethod
-    def _mark_published(job_id, seq=None):
-        with SessionLocal() as db:
-            begin_serialized_write(db)
-            job = get_job(db, job_id, for_update=True)
-            if job and job.status in PENDING:
-                if job.status == "queued":
-                    job.status = "published"
-                job.published_at = now_utc()
-                if seq is not None:
-                    job.broker_seq = seq
-                db.commit()
+    _previous_sequence = staticmethod(transport.previous_sequence)
+    _mark_published = staticmethod(transport.mark_published)
 
     def _queue_stats(self):
         stats = {}
@@ -288,7 +277,9 @@ class BotsGateway:
                 await self.run_db(self._mark_published, job_id, ack.seq)
                 if status != "queued":
                     logger.info("Republished stale connector job platform=%s status=%s", platform, status)
-            if not entries:
+            if not entries and self._projection_more:
+                await asyncio.sleep(.05)
+            elif not entries:
                 try:
                     await asyncio.wait_for(self.outbox_wakeup.wait(), 5)
                 except TimeoutError:

@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 from starlette.background import BackgroundTask
 
 from app.core.database import SessionLocal, engine
+from app.core import runtime_database
 from app.event_hub import publish_chat_update
 from app.infrastructure.storage.database_info import database_storage_info
 from app.infrastructure.storage.media import MEDIA_DIR, delete_message_media
@@ -161,7 +162,7 @@ def _iter_data_files(data_dir: Path, database: Path):
         if current_path == root:
             directory_names[:] = [
                 name for name in directory_names
-                if not name.startswith(INTERNAL_PREFIX)
+                if not name.startswith(INTERNAL_PREFIX) and name != "runtime"
             ]
         for name in tuple(directory_names):
             candidate = current_path / name
@@ -292,6 +293,14 @@ def _build_full_backup(archive_path: Path, staging_root: Path) -> dict:
         target.parent.mkdir(parents=True, exist_ok=True)
         _require_backup_space(target.parent, source.stat().st_size)
         shutil.copy2(source, target)
+
+    # Snapshot SQLite using its backup API; never copy a live WAL as ordinary files.
+    runtime_path = data_dir / "runtime" / "runtime.db"
+    if runtime_path.is_file():
+        destination = staged_data / "runtime" / "runtime.db"
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with sqlite3.connect(runtime_path.as_uri() + "?mode=ro", uri=True) as source, sqlite3.connect(destination) as target:
+            source.backup(target)
 
     staged_database = staged_data / database_relative
     staged_database.parent.mkdir(parents=True, exist_ok=True)
@@ -587,6 +596,7 @@ def _database_files():
 
 def _rollback_restore(data_dir, marker):
     engine.dispose()
+    runtime_database.engine.dispose()
     backup = data_dir / marker["backup"]
     if marker.get("kind") == "database":
         for path in _database_files():
@@ -595,6 +605,13 @@ def _rollback_restore(data_dir, marker):
                 saved.replace(path)
             elif path.name not in marker["original_entries"]:
                 path.unlink(missing_ok=True)
+        runtime_dir = data_dir / "runtime"
+        saved_runtime = backup / "runtime"
+        if saved_runtime.is_dir():
+            shutil.rmtree(runtime_dir, ignore_errors=True)
+            saved_runtime.rename(runtime_dir)
+        elif "runtime" not in marker["original_entries"]:
+            shutil.rmtree(runtime_dir, ignore_errors=True)
     else:
         _rollback_partial_restore(data_dir, marker["stage"], marker["backup"], marker["original_entries"])
 
@@ -692,8 +709,9 @@ def apply_pending_data_restore() -> bool:
             _finish_restore(data_dir, marker, "failed")
             return False
         engine.dispose()
+        runtime_database.engine.dispose()
         if database_only:
-            originals = [path for path in _database_files() if path.exists()]
+            originals = [path for path in [*_database_files(), data_dir / "runtime"] if path.exists()]
         else:
             protected = _control_names(stage_name, backup_name)
             originals = [child for child in data_dir.iterdir() if child.name not in protected]
