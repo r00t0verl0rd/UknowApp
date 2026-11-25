@@ -21,6 +21,7 @@ export function createConversationSync(options) {
       let lastEventId = 0;
       const pending = new Map();
       let processing = false;
+      let flushTimer = 0;
       let syncing = false;
       let syncQueued = false;
       const eventRevision = new Map();
@@ -208,6 +209,13 @@ export function createConversationSync(options) {
           if (pending.size && active) void flush();
         }
       };
+      const scheduleFlush = () => {
+        if (flushTimer || !active) return;
+        flushTimer = setTimeout(() => {
+          flushTimer = 0;
+          void flush();
+        }, 35);
+      };
       const handleEvent = (event) => {
         let payload;
         try {
@@ -280,7 +288,10 @@ export function createConversationSync(options) {
         }
         // Read receipts are already reflected in the summary and outgoing bubbles.
         // Only the admin participant view needs a full status refresh.
-        if (!requiresMessageSync(payload.action, viewerRole, type)) return;
+        if (payload.action === "delete" && payload.message_id) {
+          markConversationMessageDeleted(key, Number(payload.message_id));
+        }
+        if (!isSameChat(selected, id, type) || !requiresMessageSync(payload.action, viewerRole, type)) return;
         const state = pending.get(key) || {
           conversation_id: id,
           conversation_type: type,
@@ -290,14 +301,13 @@ export function createConversationSync(options) {
         };
         if (payload.action === "delete" && payload.message_id) {
           state.deleted_message_ids.add(Number(payload.message_id));
-          markConversationMessageDeleted(key, payload.message_id);
         }
         if (payload.action !== "delete") state.refresh_messages = true;
         pending.set(key, state);
         if (syncing && isSameChat(options.selectedChat, id, type)) {
           syncQueued = true;
         }
-        void flush();
+        scheduleFlush();
       };
       const unsubscribe = subscribePanelEvents(handleEvent, () => {
         if (recoveryPending) {
@@ -325,6 +335,7 @@ export function createConversationSync(options) {
       window.addEventListener("focus", onForeground);
       return () => {
         active = false;
+        clearTimeout(flushTimer);
         pending.clear();
         unsubscribe?.();
         document.removeEventListener("visibilitychange", onForeground);

@@ -13,6 +13,14 @@ export function getChatMessages(request, chat, signal, beforeId, afterId) {
   return request(base + chat.id + "/messages?" + params, { signal });
 }
 
+export function getChatWindow(request, chat, signal, anchorId) {
+  const base = chat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
+  const params = new URLSearchParams({ mark_read: "false", limit: String(HISTORY_PAGE_SIZE) });
+  if (anchorId) params.set("around_id", String(anchorId));
+  else params.set("first_unread", "true");
+  return request(base + chat.id + "/messages?" + params, { signal });
+}
+
 export async function syncChatState(request, chat, afterId, knownMessageIds) {
   const base = chat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
   const result = { messages: [], updated_messages: [], deleted_message_ids: [] };

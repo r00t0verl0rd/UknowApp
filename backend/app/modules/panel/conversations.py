@@ -29,6 +29,7 @@ from app.modules.communication.contracts import (
 )
 from app.modules.conversations.service import (
     conversation_dicts,
+    _unread_condition,
     publish_conversation_update,
 )
 from app.modules.dependencies import Db, PanelUser
@@ -85,13 +86,37 @@ def panel_conversation_summary(conversation_id: int, principal: PanelUser, db: D
 @router.get("/panel/conversations/{conversation_id}/messages")
 def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id: int = 0,
                    limit: int | None = Query(None, ge=1, le=100), before_id: int | None = None,
-                   mark_read: bool = True, forward: bool = False):
+                   mark_read: bool = True, forward: bool = False,
+                   around_id: int | None = Query(None, ge=1), first_unread: bool = False):
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     if permits(principal, "dialogs.observe"):
         logger.info("Admin read conversation id=%s", conversation.id)
     query = select(Message).options(selectinload(Message.sender)).where(
         Message.conversation_id == conversation.id, Message.id > after_id,
     )
+    if first_unread and around_id is None:
+        if principal["role"] != "admin":
+            around_id = db.scalar(select(Message.id).where(
+                Message.conversation_id == conversation.id,
+                Message.sender_role != principal["role"],
+                _unread_condition(db, principal["role"]),
+            ).order_by(Message.id).limit(1))
+    if around_id is not None:
+        # A single response carries the adjacent pages, including the anchor.
+        size = limit or 50
+        before = list(db.scalars(query.where(Message.id < around_id)
+                                 .order_by(Message.id.desc()).limit(size)).all())
+        following = list(db.scalars(query.where(Message.id >= around_id)
+                                    .order_by(Message.id).limit(size)).all())
+        rows = list(reversed(before)) + following
+        return {"messages": [_panel_message_dict(row, expose_internal_metadata=principal["role"] == "admin", principal=principal) for row in rows],
+                "anchor_id": around_id, "has_older": len(before) == size,
+                "has_newer": len(following) == size}
+    if first_unread:
+        size = limit or 50
+        rows = list(reversed(db.scalars(query.order_by(Message.id.desc()).limit(size)).all()))
+        return {"messages": [_panel_message_dict(row, expose_internal_metadata=principal["role"] == "admin", principal=principal) for row in rows],
+                "anchor_id": None, "has_older": len(rows) == size, "has_newer": False}
     if before_id is not None:
         query = query.where(Message.id < before_id)
     if limit is None:

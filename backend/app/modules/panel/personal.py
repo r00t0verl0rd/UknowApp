@@ -191,11 +191,34 @@ def personal_message_status_dict(row: PersonalMessage) -> dict:
 @router.get("/panel/personal-conversations/{conversation_id}/messages")
 def personal_messages(conversation_id: int, principal: PanelUser, db: Db, after_id: int = 0,
                    limit: int | None = Query(None, ge=1, le=100), before_id: int | None = None,
-                   mark_read: bool = True, forward: bool = False):
+                   mark_read: bool = True, forward: bool = False,
+                   around_id: int | None = Query(None, ge=1), first_unread: bool = False):
     item = _personal_conversation(db, principal, conversation_id)
     query = select(PersonalMessage).options(selectinload(PersonalMessage.sender)).where(
         PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id,
     )
+    if first_unread and around_id is None:
+        around_id = db.scalar(select(PersonalMessage.id).where(
+            PersonalMessage.conversation_id == item.id,
+            PersonalMessage.sender_role != principal["role"],
+            (PersonalMessage.admin_read_at if principal["role"] == "admin" else PersonalMessage.participant_read_at).is_(None),
+        ).order_by(PersonalMessage.id).limit(1))
+    if around_id is not None:
+        # A single response carries the adjacent pages, including the anchor.
+        size = limit or 50
+        before = list(db.scalars(query.where(PersonalMessage.id < around_id)
+                                 .order_by(PersonalMessage.id.desc()).limit(size)).all())
+        following = list(db.scalars(query.where(PersonalMessage.id >= around_id)
+                                    .order_by(PersonalMessage.id).limit(size)).all())
+        rows = list(reversed(before)) + following
+        return {"messages": [personal_message_dict(row, principal) for row in rows],
+                "anchor_id": around_id, "has_older": len(before) == size,
+                "has_newer": len(following) == size}
+    if first_unread:
+        size = limit or 50
+        rows = list(reversed(db.scalars(query.order_by(PersonalMessage.id.desc()).limit(size)).all()))
+        return {"messages": [personal_message_dict(row, principal) for row in rows],
+                "anchor_id": None, "has_older": len(rows) == size, "has_newer": False}
     if before_id is not None:
         query = query.where(PersonalMessage.id < before_id)
     if limit is None:

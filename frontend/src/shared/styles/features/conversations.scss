@@ -134,6 +134,8 @@
   background:transparent;
 }
 .message {
+  content-visibility:auto;
+  contain-intrinsic-size:auto 300px auto 72px;
   width:fit-content;
   max-width:min(92%, 760px);
   min-width:0;

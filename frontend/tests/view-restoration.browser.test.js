@@ -165,6 +165,14 @@ test("restores the selected conversation and the same message after loading olde
         return route.fulfill({ json: [] });
       }
       if (name === "/api/panel/conversations/7/messages") {
+        const anchor = Number(url.searchParams.get("around_id")) ||
+          (url.searchParams.get("first_unread") === "true" ? 60 : 0);
+        if (anchor) {
+          const earlier = messages.filter(row => row.id < anchor).slice(-50);
+          const later = messages.filter(row => row.id >= anchor).slice(0, 50);
+          return route.fulfill({ json: { messages: earlier.concat(later), anchor_id: anchor,
+            has_older: earlier.length === 50, has_newer: later.length === 50 } });
+        }
         const before = Number(url.searchParams.get("before_id")) || Infinity;
         if (url.searchParams.get("forward") === "true") {
           const after = Number(url.searchParams.get("after_id"));

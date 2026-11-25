@@ -1,12 +1,13 @@
 import { createSignal, createMemo, createEffect } from "solid-js";
 import { createChatActionState } from "./createChatActionState.js";
 import { viewAccountKey, persistentViewValue, savePersistentViewValue, readScrollPositions, saveViewPreference, viewPreference } from "../../../shared/services/viewSession.js";
-import { isUnreadIncoming, markConversationMessageDeleted, mergeConversationMessages } from "../services/messageState.js";
+import { markConversationMessageDeleted, mergeConversationMessages } from "../services/messageState.js";
 import {
   createPersonalConversation,
   deleteChatMessage,
   deletePersonalConversation,
   getChatMessages,
+  getChatWindow,
   HISTORY_PAGE_SIZE,
   sendConversationAttachment,
   sendConversationText,
@@ -341,38 +342,17 @@ export function createChatsController(options) {
       let loadedMessages;
       let newerPage;
       let hasOlder;
-      if (targetId) {
-        // Seek by indexed message ID in both directions, independent of the
-        // distance from the latest message. Neither request marks anything read.
-        const [before, fromAnchor] = await Promise.all([
-          getChatMessages(options.request, chat, controller.signal, targetId),
-          getChatMessages(options.request, chat, controller.signal, null, targetId - 1),
-        ]);
-        loadedMessages = before.concat(fromAnchor);
-        newerPage = fromAnchor;
-        hasOlder = before.length === HISTORY_PAGE_SIZE;
+      if (targetId || unreadCount) {
+        const window = await getChatWindow(options.request, chat, controller.signal, targetId);
+        loadedMessages = window.messages;
+        hasOlder = window.has_older;
+        newerPage = window.has_newer ? loadedMessages.slice(-HISTORY_PAGE_SIZE) : null;
+        if (!targetId && window.anchor_id) unreadAnchor = { key: chatKey, id: window.anchor_id };
       } else {
         loadedMessages = await getChatMessages(options.request, chat, controller.signal);
         hasOlder = loadedMessages.length === HISTORY_PAGE_SIZE;
       }
       if (controller.signal.aborted || activeChatKey() !== chatKey) return;
-      if (unreadCount && options.chatState.messageFilter === "all") {
-        const unread = message => isUnreadIncoming(message, chat, role);
-        let page = loadedMessages;
-        let missing = unreadCount - page.filter(unread).length;
-        const pages = [];
-        while (missing > 0 && page.length >= HISTORY_PAGE_SIZE) {
-          const before = page[0].id;
-          page = await getChatMessages(options.request, chat, controller.signal, before);
-          if (controller.signal.aborted || activeChatKey() !== chatKey) return;
-          if (!page.length || Number(page[page.length - 1].id) >= Number(before)) break;
-          pages.push(page);
-          missing -= page.filter(unread).length;
-        }
-        if (pages.length) loadedMessages = pages.reverse().flat().concat(loadedMessages);
-        const first = loadedMessages.find(unread);
-        if (first) unreadAnchor = { key: chatKey, id: Number(first.id) };
-      }
       setOlderCursor(hasOlder ? loadedMessages[0].id : 0);
       // Сервер — источник истины: удалённые в другом окне сообщения не
       // остаются в кэше. Одновременно сохраняем изменения SSE за время запроса.
