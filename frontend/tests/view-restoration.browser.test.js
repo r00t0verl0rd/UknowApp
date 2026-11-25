@@ -141,9 +141,13 @@ test("restores the selected conversation and the same message after loading olde
     messages[i].metadata.media = { kind: "voice", archive_status: "stored", mime_type: "audio/ogg" };
   }
   let role = "admin";
+  let savedId;
+  let delayNewerPages = false;
+  let resumeNewer;
+  const newerGate = new Promise(resolve => { resumeNewer = resolve; });
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-    await page.route("**/api/**", route => {
+    await page.route("**/api/**", async route => {
       const url = new URL(route.request().url());
       const name = url.pathname;
       if (name === "/api/panel/me") return route.fulfill({ json: {
@@ -154,6 +158,11 @@ test("restores the selected conversation and the same message after loading olde
       if (name === "/api/panel/personal-conversations") return route.fulfill({ json: [] });
       if (name === "/api/panel/conversations/7/messages") {
         const before = Number(url.searchParams.get("before_id")) || Infinity;
+        if (url.searchParams.get("forward") === "true") {
+          const after = Number(url.searchParams.get("after_id"));
+          if (delayNewerPages && after >= savedId) await newerGate;
+          return route.fulfill({ json: messages.filter(row => row.id > after).slice(0, 50) });
+        }
         return route.fulfill({ json: messages.filter(row => row.id < before).slice(-50) });
       }
       if (name === "/api/admin/overview") return route.fulfill({ json: { teachers: [] } });
@@ -176,20 +185,47 @@ test("restores the selected conversation and the same message after loading olde
     });
     assert.ok(original > 100, "Scrolled into older messages");
     await page.waitForTimeout(160);
+    const anchor = await page.locator(".messages").evaluate(history => {
+      const top = history.getBoundingClientRect().top;
+      const row = [...history.querySelectorAll("[data-view-anchor]")].find(el => el.getBoundingClientRect().bottom > top);
+      return { id: row.dataset.viewAnchor, offset: row.getBoundingClientRect().top - top };
+    });
+    savedId = Number(anchor.id.split(":")[1]);
+    delayNewerPages = true;
+    await page.addInitScript(() => {
+      function sample() {
+        const history = document.querySelector(".messages");
+        if (history && getComputedStyle(history).visibility === "visible") {
+          const top = history.getBoundingClientRect().top;
+          const row = [...history.querySelectorAll("[data-view-anchor]")].find(el => el.getBoundingClientRect().bottom > top);
+          if (row) {
+            window.firstChatRow = { id: row.dataset.viewAnchor, offset: row.getBoundingClientRect().top - top };
+            return;
+          }
+        }
+        requestAnimationFrame(sample);
+      }
+      requestAnimationFrame(sample);
+    });
     await page.reload();
-    await page.getByText("Chat message 021").waitFor({ state: "visible", timeout: 14000 });
-    await page.waitForFunction(expected =>
-      Math.abs(document.querySelector(".messages")?.scrollTop - expected) < 14,
-    original, { timeout: 14000 });
+    const checkFirstFrame = async () => {
+      await page.waitForFunction(() => window.firstChatRow, null, { timeout: 10000 });
+      const first = await page.evaluate(() => window.firstChatRow);
+      assert.equal(first.id, anchor.id);
+      assert.ok(Math.abs(first.offset - anchor.offset) < 3);
+    };
+    await checkFirstFrame();
+    assert.equal(await page.getByText("Chat message 120").count(), 0);
+    delayNewerPages = false;
+    resumeNewer();
+    await page.getByText("Chat message 120").waitFor({ state: "attached" });
     assert.equal(await page.locator(".chat-item.selected").count(), 1);
     // Closing a tab removes its session state. A manual reopen still finds the same row.
     await page.goto("about:blank");
     await page.addInitScript(() => sessionStorage.clear());
     await page.goto("http://127.0.0.1:22240/dialogs");
     await page.locator(".chat-item").first().click();
-    await page.waitForFunction(expected =>
-      Math.abs(document.querySelector(".messages")?.scrollTop - expected) < 14,
-    original, { timeout: 14000 });
+    await checkFirstFrame();
     // A different account opens at its first unread message.
     role = "student";
     chat.unread_count = 61;

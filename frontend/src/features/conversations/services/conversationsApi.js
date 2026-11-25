@@ -2,9 +2,15 @@ import { apiUrl, request } from "../../../shared/services/api.js";
 
 export const HISTORY_PAGE_SIZE = 50;
 
-export function getChatMessages(request, chat, signal, beforeId) {
+export function getChatMessages(request, chat, signal, beforeId, afterId) {
   const base = chat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
-  return request(base + chat.id + "/messages?mark_read=false&limit=" + HISTORY_PAGE_SIZE + (beforeId ? "&before_id=" + beforeId : ""), { signal });
+  const params = new URLSearchParams({ mark_read: "false", limit: String(HISTORY_PAGE_SIZE) });
+  if (beforeId) params.set("before_id", String(beforeId));
+  if (afterId != null) {
+    params.set("after_id", String(afterId));
+    params.set("forward", "true");
+  }
+  return request(base + chat.id + "/messages?" + params, { signal });
 }
 
 export async function syncChatState(request, chat, afterId, knownMessageIds) {

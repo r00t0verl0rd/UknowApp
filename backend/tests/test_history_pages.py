@@ -28,5 +28,10 @@ def test_large_history_pages_and_sync(api, personal):
     latest = client.get(base + "/messages?limit=50").json()
     older = client.get(base + "/messages", params={"limit": 50, "before_id": latest[0]["id"]}).json()
     assert [int(row["text"]) for row in older + latest] == list(range(9900, 10000))
+    cursor = older[0]["id"] - 1
+    following = client.get(base + "/messages", params={
+        "limit": 6, "after_id": cursor, "forward": "true", "mark_read": "false",
+    }).json()
+    assert [row["id"] for row in following] == [row["id"] for row in older[:6]]
     batch = client.post(base + "/sync", json={"after_id": older[0]["id"] - 2, "paged": True}).json()
     assert len(batch["messages"]) == 100 and batch["has_more"]

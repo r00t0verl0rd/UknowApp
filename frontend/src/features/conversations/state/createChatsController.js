@@ -212,7 +212,7 @@ export function createChatsController(options) {
         if (!initialized) {
           const id = saved?.anchor?.id;
           const row = /^message:\d+$/.test(id || "") && history.querySelector(`[data-view-anchor="${id}"]`);
-          if (!row && openingChatRequest?.key === key) return;
+          if (!row && openingChatRequest?.key === key && !openingChatRequest.windowReady) return;
           if (saved) {
             history.scrollTop = row ? history.scrollTop + row.getBoundingClientRect().top -
               history.getBoundingClientRect().top - (saved.anchor.offset || 0) : saved.top;
@@ -336,22 +336,26 @@ export function createChatsController(options) {
     options.chatState.setAttachment(null);
     if (!restoring) options.chatState.setMessageFilter("all");
     try {
-      let loadedMessages = await getChatMessages(options.request, chat, controller.signal);
-      if (controller.signal.aborted || activeChatKey() !== chatKey) return;
-      // A view restored in the middle of a long conversation can be older than
-      // the last 50 messages. Load preceding pages only for that specific chat.
       const anchor = position?.anchor?.id;
       const targetId = /^message:\d+$/.test(anchor || "") ? Number(anchor.slice(8)) : 0;
-      let page = loadedMessages;
-      const olderPages = [];
-      while (targetId && page.length >= HISTORY_PAGE_SIZE && page[0].id > targetId) {
-        const before = Number(page[0].id);
-        page = await getChatMessages(options.request, chat, controller.signal, before);
-        if (controller.signal.aborted || activeChatKey() !== chatKey) return;
-        if (!page.length || Number(page[page.length - 1].id) >= before) break;
-        olderPages.push(page);
+      let loadedMessages;
+      let newerPage;
+      let hasOlder;
+      if (targetId) {
+        // Seek by indexed message ID in both directions, independent of the
+        // distance from the latest message. Neither request marks anything read.
+        const [before, fromAnchor] = await Promise.all([
+          getChatMessages(options.request, chat, controller.signal, targetId),
+          getChatMessages(options.request, chat, controller.signal, null, targetId - 1),
+        ]);
+        loadedMessages = before.concat(fromAnchor);
+        newerPage = fromAnchor;
+        hasOlder = before.length === HISTORY_PAGE_SIZE;
+      } else {
+        loadedMessages = await getChatMessages(options.request, chat, controller.signal);
+        hasOlder = loadedMessages.length === HISTORY_PAGE_SIZE;
       }
-      if (olderPages.length) loadedMessages = olderPages.reverse().flat().concat(loadedMessages);
+      if (controller.signal.aborted || activeChatKey() !== chatKey) return;
       if (unreadCount && options.chatState.messageFilter === "all") {
         const unread = message => isUnreadIncoming(message, chat, role);
         let page = loadedMessages;
@@ -369,7 +373,7 @@ export function createChatsController(options) {
         const first = loadedMessages.find(unread);
         if (first) unreadAnchor = { key: chatKey, id: Number(first.id) };
       }
-      setOlderCursor(loadedMessages.length >= HISTORY_PAGE_SIZE ? loadedMessages[0].id : 0);
+      setOlderCursor(hasOlder ? loadedMessages[0].id : 0);
       // Сервер — источник истины: удалённые в другом окне сообщения не
       // остаются в кэше. Одновременно сохраняем изменения SSE за время запроса.
       options.chatState.setMessages((previous) => {
@@ -380,6 +384,16 @@ export function createChatsController(options) {
         cacheChat(chatKey, merged);
         return merged;
       });
+      openingChatRequest.windowReady = true;
+      schedulePosition();
+      // The first screen is ready; append newer history without delaying it.
+      while (newerPage?.length === HISTORY_PAGE_SIZE) {
+        const after = Number(newerPage[newerPage.length - 1].id);
+        newerPage = await getChatMessages(options.request, chat, controller.signal, null, after);
+        if (controller.signal.aborted || activeChatKey() !== chatKey) return;
+        if (!newerPage.length || Number(newerPage[0].id) <= after) break;
+        options.chatState.setMessages(rows => mergeConversationMessages(newerPage, rows, chatKey));
+      }
     } catch (error) {
       if (!controller.signal.aborted && activeChatKey() === chatKey) {
         openingChatRequest = null;

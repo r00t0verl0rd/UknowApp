@@ -397,6 +397,8 @@ export default function ChatsPage(options) {
 
             <div
               class="messages"
+              style={{ visibility: options.positionReady ? "visible" : "hidden" }}
+              aria-busy={!options.positionReady}
               data-view-scroll-key={options.selectedChat
                 ? (options.selectedChat.type === "personal" ? "personal:" : "conversation:") + options.selectedChat.id
                 : ""}
