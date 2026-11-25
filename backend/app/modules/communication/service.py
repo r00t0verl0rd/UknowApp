@@ -113,6 +113,3 @@ def record_messenger_delivery(
         "delivered": delivered_items,
         "errors": error_items,
     }
-    if platform_value == MessengerPlatform.TELEGRAM.value:
-        metadata.pop("telegram_deliveries", None)
-        metadata.pop("telegram_delivery_errors", None)

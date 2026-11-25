@@ -53,21 +53,34 @@ def retire_legacy_schema(connection):
     # Legacy delivery identifiers are retained in generic history metadata.
     columns = {c["name"] for c in inspector.get_columns("messages")}
     legacy_cols = [name for name in ("source_message_id", "destination_message_id") if name in columns]
-    if legacy_cols:
-        old = Table("messages", MetaData(), autoload_with=connection)
-        for row in connection.execute(select(old.c.id, old.c.metadata_json, *(old.c[k] for k in legacy_cols))).mappings():
+    old = Table("messages", MetaData(), autoload_with=connection)
+    for row in connection.execute(select(old.c.id, old.c.metadata_json, *(old.c[k] for k in legacy_cols))).mappings():
+        try:
             metadata = json.loads(row["metadata_json"] or "{}")
-            if not isinstance(metadata, dict):
-                metadata = {}
-            changed = False
-            for key in legacy_cols:
-                if row[key] is not None:
-                    metadata.setdefault("legacy_" + key, str(row[key]))
-                    changed = True
-            if changed:
-                connection.execute(old.update().where(old.c.id == row["id"]).values(metadata_json=encode_message_metadata(metadata)))
+        except (ValueError, TypeError):
+            continue
+        if not isinstance(metadata, dict):
+            continue
+        changed = False
+        if "telegram_deliveries" in metadata or "telegram_delivery_errors" in metadata:
+            ledgers = metadata.setdefault("messenger_deliveries", {})
+            if "telegram" not in ledgers:
+                deliveries = metadata.get("telegram_deliveries") or []
+                for item in deliveries:
+                    item["external_chat_id"] = item.get("external_chat_id") or item.get("chat_id")
+                    item["external_message_id"] = item.get("external_message_id") or item.get("telegram_message_id")
+                record_messenger_delivery(metadata, "telegram", deliveries, metadata.get("telegram_delivery_errors") or [])
+            metadata.pop("telegram_deliveries", None)
+            metadata.pop("telegram_delivery_errors", None)
+            changed = True
         for key in legacy_cols:
-            connection.execute(text("ALTER TABLE messages DROP COLUMN " + key))
+            if row[key] is not None:
+                metadata.setdefault("legacy_" + key, str(row[key]))
+                changed = True
+        if changed:
+            connection.execute(old.update().where(old.c.id == row["id"]).values(metadata_json=encode_message_metadata(metadata)))
+    for key in legacy_cols:
+        connection.execute(text("ALTER TABLE messages DROP COLUMN " + key))
     for table in ("teacher_panels", "teacher_sessions", "student_telegram_groups", "bot_delivery_jobs"):
         if table in tables:
             connection.execute(text("DROP TABLE " + table))

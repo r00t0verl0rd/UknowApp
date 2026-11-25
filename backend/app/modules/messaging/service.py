@@ -52,7 +52,7 @@ def _panel_message_dict(
     expose_internal_metadata: bool = True,
     principal: dict | None = None,
 ) -> dict:
-    # Внутренние Telegram ID и file_id не раскрываем учителю в обычном ответе API.
+    # Внутренние ID внешних каналов и file_id не раскрываем учителю в обычном ответе API.
     metadata = json.loads(item.metadata_json or "{}")
     if metadata.get("source_mode") == "web":
         metadata.setdefault("web_sender_role", item.sender_role)
@@ -65,8 +65,8 @@ def _panel_message_dict(
     if not expose_internal_metadata:
         for key in (
             "source_chat_id", "source_thread_id", "source_platform", "source_event_id",
-            "telegram_deliveries", "telegram_delivery_errors", "messenger_deliveries",
-            "teacher_inbox_media_message_id", "teacher_inbox_notice_message_id",
+            "messenger_deliveries",
+            "teacher_inbox_media_message_id", "teacher_inbox_notice_message_id", "legacy_source_message_id", "legacy_destination_message_id",
         ):
             metadata.pop(key, None)
         for key in ("photo", "document", "audio", "video", "voice", "video_note", "sticker", "animation"):
@@ -144,8 +144,6 @@ def _panel_message_status_dict(item: Message, principal: dict) -> dict:
             key: metadata[key]
             for key in (
                 "messenger_deliveries",
-                "telegram_deliveries",
-                "telegram_delivery_errors",
             )
             if key in metadata
         })

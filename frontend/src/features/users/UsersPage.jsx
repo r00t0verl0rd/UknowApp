@@ -1,3 +1,4 @@
+import { telegramId } from "./services/usersApi.js";
 import { For } from "solid-js";
 import {
   IconGraduationCap as GraduationCap,
@@ -77,7 +78,7 @@ export default function UsersPage(options) {
                 >
                   <Pencil />
                 </IconButton>
-                {user.telegram_id ? (
+                {telegramId(user) ? (
                   <IconButton
                     onClick={() => options.disconnectTelegram(user)}
                     title="Отключить Telegram"
@@ -122,11 +123,11 @@ export default function UsersPage(options) {
                       </div>
                       <div class="user-info-line">
                         <Link2 size={14} />
-                        <span>{user.telegram_id ? "Telegram подключён" : "Telegram не подключён"}</span>
+                        <span>{telegramId(user) ? "Telegram подключён" : "Telegram не подключён"}</span>
                       </div>
                       <div class="user-info-login">
                         <span>Telegram ID</span>
-                        <b>{user.telegram_id || "Не подключён"}</b>
+                        <b>{telegramId(user) || "Не подключён"}</b>
                       </div>
                       {["teacher", "student"].includes(user.role) && (
                         <div class="user-info-login">

@@ -8,6 +8,7 @@ import {
   createUserConnectionCode,
   deleteUser,
   disconnectUserTelegram,
+  telegramId,
   issuePanelAccessCode,
   updateUser,
 } from "../../../features/users/services/usersApi.js";
@@ -34,7 +35,7 @@ export function createUsersController(options) {
   const visibleUsers = createMemo(() =>
     options.directory.users
       .filter((user) =>
-        (user.full_name + " " + (user.telegram_id || ""))
+        (user.full_name + " " + (telegramId(user) || ""))
           .toLowerCase()
           .includes(options.directory.search.toLowerCase()),
       )
@@ -89,7 +90,7 @@ export function createUsersController(options) {
     editor.setPanelLogin(user.web_username || user.full_name);
     editor.setRole(user.role);
     editor.setAdditionalInfo(user.additional_info || "");
-    editor.setTelegramId(user.telegram_id ? String(user.telegram_id) : "");
+    editor.setTelegramId(telegramId(user) ? String(telegramId(user)) : "");
   };
   const saveUser = async (event) => {
     event.preventDefault();
@@ -99,7 +100,7 @@ export function createUsersController(options) {
     const body = {
       full_name: editor.name.trim(),
       role: editor.role,
-      telegram_id: editor.telegramId.trim() ? Number(editor.telegramId) : null,
+      messenger_account: { platform: "telegram", external_user_id: editor.telegramId.trim() || null },
     };
     if (editor.role === "student") body.additional_info = editor.additionalInfo.trim();
     if (editor.role === "teacher" || editor.role === "student")

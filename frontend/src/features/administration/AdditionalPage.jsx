@@ -102,7 +102,7 @@ export default function AdditionalPage(options) {
                 <span>Всего сообщений <b>{options.dataStats?.total_messages ?? "—"}</b></span>
                 <span>В учебных диалогах <b>{options.dataStats?.messages ?? "—"}</b></span>
                 <span>В личных диалогах <b>{options.dataStats?.personal_messages ?? "—"}</b></span>
-                <span>Telegram-группы <b>{options.dataStats?.telegram_groups ?? "—"}</b></span>
+                <span>Внешние каналы <b>{options.dataStats?.external_endpoints ?? "—"}</b></span>
                 <span>Коды подключения <b>{options.dataStats?.connection_codes ?? "—"}</b></span>
               </div>
             </details>

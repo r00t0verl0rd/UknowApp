@@ -119,13 +119,11 @@ def enqueue_message_deletions(db, row):
     """Detach in-flight sends before deleting the web row; late receipts trigger deletion."""
     metadata = json.loads(row.metadata_json or "{}")
     ledgers = dict(metadata.get("messenger_deliveries") or {})
-    if "telegram" not in ledgers and metadata.get("telegram_deliveries"):
-        ledgers["telegram"] = {"delivered": metadata["telegram_deliveries"]}
     copies = set()
     for platform, result in ledgers.items():
         for copy in result.get("delivered", []):
             chat = copy.get("external_chat_id") or copy.get("chat_id")
-            ident = copy.get("external_message_id") or copy.get("telegram_message_id")
+            ident = copy.get("external_message_id")
             if chat and ident:
                 copies.add((platform, str(chat), str(ident)))
     jobs = db.scalars(select(ConnectorDelivery).where(ConnectorDelivery.message_id == row.id)).all()

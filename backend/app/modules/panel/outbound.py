@@ -101,7 +101,7 @@ async def _publish_and_deliver(
     role = principal["role"]
     if role == "admin":
         logger.info("Admin posted message id=%s in conversation id=%s", row.id, conversation.id)
-    # Событие публикуем сразу после сохранения, не ожидая Telegram.
+    # Событие публикуем сразу после сохранения, не ожидая внешней доставки.
     publish_conversation_update(db, conversation, message_id=row.id, sender_role=role)
     push_recipients = [student.id, teacher.id] if role == "admin" else ([student.id] if role == "teacher" else [teacher.id])
     admin_receiver = student if role == "teacher" else teacher
@@ -131,7 +131,7 @@ async def send_panel_message(
     background_tasks: BackgroundTasks,
 ):
     payload = message_payload(payload)
-    # Сначала сохраняем сообщение в БД, затем отправляем его адресатам в Telegram.
+    # Сначала сохраняем сообщение в БД, затем отправляем его адресатам через Gateway.
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     body = payload["text"].strip()
     if text_contains_contact_data(body):

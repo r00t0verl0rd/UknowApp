@@ -204,6 +204,4 @@ async def delete_panel_message(
         "messenger_delete_queued": queued,
         "messenger_deleted": 0,
         "messenger_failed": unknown,
-        "telegram_deleted": 0,
-        "telegram_failed": unknown,
     }

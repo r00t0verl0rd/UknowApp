@@ -65,7 +65,7 @@ class TeacherPanel:
             commands = Commands(gateway, spool)
             if view is None or commands.selection(actor) is not None:
                 view = await commands.panel(actor)
-            if view.get("account", {}).get("role") != "teacher":
+            if (view.get("account") or {}).get("role") != "teacher":
                 return
             if commands.selection(actor) is not None and not view.get("chat"):
                 commands.clear(actor)
