@@ -10,6 +10,7 @@ from pathlib import Path, PurePosixPath
 from typing import Annotated
 
 from fastapi import Depends, HTTPException
+
 from app.core.database import SessionLocal, engine
 from app.infrastructure.storage.media import MEDIA_DIR
 from app.modules.auth.service import require_admin

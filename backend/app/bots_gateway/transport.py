@@ -31,9 +31,9 @@ def project_pending(main, platforms, cursors):
             next_cursors[model.__tablename__] = jobs[-1].id
             more = True
         for job in jobs:
-            records.append(dict(id=job.id, platform=job.platform, chat_id=job.chat_id,
-                thread_id=getattr(job, "thread_id", ""), heavy=kinds.get(getattr(job,"message_id",None),"text") != "text",
-                created_at=job.created_at, state="queued"))
+            records.append({"id": job.id, "platform": job.platform, "chat_id": job.chat_id,
+                "thread_id": getattr(job, "thread_id", ""), "heavy": kinds.get(getattr(job,"message_id",None),"text") != "text",
+                "created_at": job.created_at, "state": "queued"})
     # Release the Main read transaction before acquiring the runtime writer.
     main.rollback()
     if records:

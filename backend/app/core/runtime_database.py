@@ -1,6 +1,5 @@
 """Auxiliary SQLite store. No business foreign keys or implicit cross-DB transaction."""
 import logging
-from pathlib import Path
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, sessionmaker

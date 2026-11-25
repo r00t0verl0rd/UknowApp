@@ -24,8 +24,8 @@ from app.models import (
 from app.modules.assignments.service import assign_student, unassign_student
 from app.modules.communication.accounts import (
     MessengerAccountConflict,
-    get_messenger_account,
     delete_user_messenger_accounts,
+    get_messenger_account,
     sync_messenger_account,
 )
 from app.modules.dependencies import Db, SchoolStructure, UserManagement

@@ -2572,7 +2572,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     await page.getByLabel("2 непрочитанных личных сообщений").waitFor({ state: "visible" });
     assert.equal(inboxRequests, 1, "SSE reconnect must not reload inbox lists when replay is sufficient");
     assert.equal(personalRequests, 1, "SSE reconnect must not reload personal lists when replay is sufficient");
-    assert.ok(syncRequests <= 1, "resuming the dialog may perform one targeted reconciliation");
+    assert.ok(syncRequests <= 1, `resuming the dialog may perform one targeted reconciliation (actual: ${syncRequests})`);
     // SSE: новое сообщение (даже когда читатель прокрутил историю вверх)
     // должно появиться в зоне видимости без скролла всей страницы.
     await page.getByRole("button", { name: /Учитель/ }).click();

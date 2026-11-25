@@ -1,6 +1,7 @@
 """Add hot-path indexes without rewriting business data."""
 from sqlalchemy import inspect
-from app.models import ConnectorDelivery, ConnectorDeletion, PushSubscription
+
+from app.models import ConnectorDeletion, ConnectorDelivery, PushSubscription
 
 NAMES = {"ix_push_role_state", "ix_push_session_hash", "ix_connector_delivery_queue",
          "ix_connector_delivery_route_order", "ix_connector_deletion_queue"}

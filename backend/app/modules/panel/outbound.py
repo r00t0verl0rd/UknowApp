@@ -21,11 +21,12 @@ from app.infrastructure.storage.message_metadata import (
     encode_message_metadata,
     metadata_value,
 )
+from app.infrastructure.storage.uploads import store_panel_attachment
 from app.models import (
     Message,
 )
-from app.modules.communication.outbox import enqueue_web_delivery
 from app.modules.communication.contracts import MessageKind
+from app.modules.communication.outbox import enqueue_web_delivery
 from app.modules.conversations.service import (
     publish_conversation_update,
 )
@@ -39,7 +40,6 @@ from app.modules.notifications.content import PUSH_TITLE, push_body
 from app.modules.notifications.service import schedule_push
 from app.request_validation import message_payload
 
-from app.infrastructure.storage.uploads import store_panel_attachment
 from .delivery import panel_sender_and_recipients
 
 logger = logging.getLogger(__name__)
@@ -91,7 +91,7 @@ def _publish_message_update(
     request, db, principal, conversation, parties, row, *, preview, kind,
 ):
     """Публикует событие и пуш, затем будит очередь доставки."""
-    sender, recipients, student, teacher = parties
+    sender, _recipients, student, teacher = parties
     role = principal["role"]
     if role == "admin":
         logger.info("Admin posted message id=%s in conversation id=%s", row.id, conversation.id)

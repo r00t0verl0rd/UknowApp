@@ -5,17 +5,20 @@ from datetime import UTC, datetime
 from sqlalchemy import inspect, text
 
 from app.core.database import Base, engine
+from app.infrastructure.storage.conversation_counters import (
+    upgrade_conversation_counters,
+    upgrade_physical_receipts,
+)
 
+from .delivery_recovery import upgrade_delivery_recovery
+from .delivery_routes import upgrade_delivery_routes
 from .login_keys import migrate_login_keys
 from .maintenance import cleanup_expired_records
-from .remove_boards import remove_board_tables
-from .provider_channels import migrate_provider_channels, retire_legacy_schema
-from .delivery_routes import upgrade_delivery_routes
-from .delivery_recovery import upgrade_delivery_recovery
-from .push_devices import upgrade_push_devices
 from .performance_indexes import upgrade_performance_indexes
+from .provider_channels import migrate_provider_channels, retire_legacy_schema
+from .push_devices import upgrade_push_devices
+from .remove_boards import remove_board_tables
 from .volatile_events import retire_realtime_events
-from app.infrastructure.storage.conversation_counters import upgrade_conversation_counters, upgrade_physical_receipts
 
 logger = logging.getLogger(__name__)
 

@@ -13,27 +13,25 @@ from sqlalchemy.orm import joinedload, load_only
 from app.models import (
     Message,
     PersonalMessage,
-    User,
 )
 from app.modules.conversations.service import (
     conversation_dicts,
 )
 from app.modules.dependencies import Db, PanelUser
+from app.modules.messaging.read_state import mark_conversation_read, mark_personal_read
 from app.modules.messaging.service import (
     panel_message_dict,
     panel_message_status_dict,
     panel_visible_conversation,
 )
-from app.modules.personal_chat.service import (
-    personal_conversation,
-)
-
 from app.modules.personal_chat.operations import (
     personal_message_dict,
     personal_message_status_dict,
     personal_summaries,
 )
-from app.modules.messaging.read_state import mark_conversation_read, mark_personal_read
+from app.modules.personal_chat.service import (
+    personal_conversation,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

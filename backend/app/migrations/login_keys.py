@@ -7,8 +7,8 @@ from app.core.security import normalize_login
 
 def migrate_login_keys(connection=None):
     if connection is None:
-        with engine.begin() as connection:
-            migrate_login_keys(connection)
+        with engine.begin() as owned_connection:
+            migrate_login_keys(owned_connection)
         return
     columns = {column["name"] for column in inspect(connection).get_columns("users")}
     if "web_login_key" not in columns:

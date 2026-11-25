@@ -27,7 +27,7 @@ def decode(data):
         raise ValueError("connector event too large")
     value = json.loads(data)
     if not isinstance(value, dict):
-        raise ValueError("invalid connector payload")
+        raise TypeError("invalid connector payload")
     return value
 
 

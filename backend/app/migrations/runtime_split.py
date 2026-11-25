@@ -1,10 +1,9 @@
 """Copy auxiliary rows before retiring their old storage; retry safely after crashes."""
-from sqlalchemy import inspect, select, text, MetaData, Table
+from sqlalchemy import MetaData, Table, inspect, select, text
 from sqlalchemy.dialects.sqlite import insert
-from sqlalchemy.orm import Session
 
 from app.core import database, runtime_database
-from app.models import PushSubscription, TransportJob, Message
+from app.models import Message, PushSubscription, TransportJob
 
 
 def migrate_push_subscriptions(main_connection, runtime_engine):
@@ -40,11 +39,11 @@ def migrate_transport_state(main_connection, runtime_engine):
                 kinds = dict(main_connection.execute(select(Message.id, Message.content_type).where(
                     Message.id.in_(message_ids))).all()) if message_ids else {}
                 for row in rows:
-                    values = dict(id=row["id"], platform=row["platform"], chat_id=row["chat_id"],
-                                  thread_id=row.get("thread_id") or "", created_at=row["created_at"],
-                                  heavy=kinds.get(row.get("message_id"), "text") != "text",
-                                  state="published" if row.get("published_at") else "queued",
-                                  published_at=row.get("published_at"), broker_seq=row.get("broker_seq"))
+                    values = {"id": row["id"], "platform": row["platform"], "chat_id": row["chat_id"],
+                              "thread_id": row.get("thread_id") or "", "created_at": row["created_at"],
+                              "heavy": kinds.get(row.get("message_id"), "text") != "text",
+                              "state": "published" if row.get("published_at") else "queued",
+                              "published_at": row.get("published_at"), "broker_seq": row.get("broker_seq")}
                     destination.execute(insert(TransportJob).values(**values).on_conflict_do_nothing(index_elements=["id"]))
         main_connection.execute(table.update().where(table.c.status == "published").values(status="queued"))
         for column in ("published_at", "broker_seq"):

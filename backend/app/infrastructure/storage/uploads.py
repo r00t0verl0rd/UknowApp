@@ -5,7 +5,13 @@ import uuid
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
-from app.infrastructure.storage.media import ATTACHMENT_SIZE_ERROR, MAX_ATTACHMENT_BYTES, MEDIA_DIR, safe_media_type
+
+from app.infrastructure.storage.media import (
+    ATTACHMENT_SIZE_ERROR,
+    MAX_ATTACHMENT_BYTES,
+    MEDIA_DIR,
+    safe_media_type,
+)
 
 
 def store_panel_attachment(file: UploadFile, conversation_id: int, *, personal: bool = False):

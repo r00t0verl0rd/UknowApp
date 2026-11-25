@@ -8,10 +8,23 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+
 from app.event_hub import publish_chat_update
 from app.infrastructure.storage.database_info import database_storage_info
 from app.infrastructure.storage.media import delete_message_media
-from app.models import Assignment, ConnectionCode, ExternalEndpoint, MessengerAccount, Conversation, Message, PanelSession, PersonalConversation, PersonalMessage, User
+from app.models import (
+    Assignment,
+    ConnectionCode,
+    Conversation,
+    ExternalEndpoint,
+    Message,
+    MessengerAccount,
+    PanelSession,
+    PersonalConversation,
+    PersonalMessage,
+    User,
+)
+
 from . import common
 from .common import Admin
 from .restore import restore_state

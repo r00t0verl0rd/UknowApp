@@ -24,6 +24,8 @@ export function createConversationSync(options) {
       let flushTimer = 0;
       let syncing = false;
       let syncQueued = false;
+      let inFlight = null;
+      const reconciledRevision = new Map();
       const eventRevision = new Map();
       let inboxRequestRevision = 0;
       let recoveryPending = false;
@@ -99,9 +101,14 @@ export function createConversationSync(options) {
         options.setPersonalChats((items) => mergeInboxSnapshot(personal, items, changedPersonal));
       };
       const syncSelected = async () => {
-        if (!options.foregroundChat) return;
+        const foreground = options.foregroundChat;
+        if (!foreground) return;
+        const requestedKey = conversationKey(foreground.id, foreground.type);
         if (syncing) {
-          syncQueued = true;
+          // A concurrent trigger for the same revision is covered by this request.
+          if (inFlight?.key !== requestedKey || inFlight.revision !== (eventRevision.get(requestedKey) || 0)) {
+            syncQueued = true;
+          }
           return;
         }
         syncing = true;
@@ -125,6 +132,7 @@ export function createConversationSync(options) {
               id: afterId,
             };
             const revisionAtStart = eventRevision.get(chatKey) || 0;
+            inFlight = { key: chatKey, revision: revisionAtStart };
             const summaryRevision = options.inboxRowRevision.get(chatKey) || 0;
             const result = await syncChatState(options.request, chat, afterId, knownIds);
             if (!active) break;
@@ -152,12 +160,14 @@ export function createConversationSync(options) {
               options.setMessages((previous) => mergeConversationMessages(previous, updated, chatKey));
             }
             if (result.has_more) syncQueued = true;
+            else reconciledRevision.set(chatKey, revisionAtStart);
             if (summaryRevision === (options.inboxRowRevision.get(chatKey) || 0)) {
               applySummary(chat.type, chat.id, result.summary);
             }
           } while (syncQueued && active);
         } finally {
           syncing = false;
+          inFlight = null;
           if (syncQueued && active && options.foregroundChat) {
             void syncSelected().catch(() => {});
           }
@@ -199,7 +209,9 @@ export function createConversationSync(options) {
                     for (const messageId of deletedIds) markConversationMessageDeleted(key, messageId);
                     options.setMessages((rows) => rows.filter((row) => !deletedIds.has(Number(row.id))));
                   }
-                  if (refreshMessages) await syncSelected();
+                  if (refreshMessages && reconciledRevision.get(key) !== (eventRevision.get(key) || 0)) {
+                    await syncSelected();
+                  }
                 }
               }),
             );

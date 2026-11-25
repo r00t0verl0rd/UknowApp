@@ -3,8 +3,8 @@
 import asyncio
 import json
 import logging
-from time import time_ns
 from threading import Lock
+from time import time_ns
 from typing import Any
 
 from sqlalchemy.orm import Session

@@ -17,13 +17,15 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.infrastructure.storage.conversation_counters import (
+    STUDENT_UNREAD,
+    TEACHER_UNREAD,
+    install_on_create,
+)
+
 from .core.database import Base
 from .core.runtime_database import RuntimeBase
 from .core.security import normalize_login
-from app.infrastructure.storage.conversation_counters import (
-    install_on_create,
-    TEACHER_UNREAD, STUDENT_UNREAD,
-)
 
 
 def utcnow() -> datetime:

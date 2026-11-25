@@ -5,7 +5,11 @@ from datetime import UTC, datetime
 from sqlalchemy import select, update
 
 from app.models import Message, PersonalMessage
-from app.modules.conversations.service import publish_conversation_update, unread_condition, read_cursor
+from app.modules.conversations.service import (
+    publish_conversation_update,
+    read_cursor,
+    unread_condition,
+)
 from app.modules.personal_chat.service import publish_personal_update
 
 

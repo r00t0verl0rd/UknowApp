@@ -5,7 +5,7 @@ cover ORM, bulk SQL, imports and rollback. No process cache can become stale.
 """
 import json
 
-from sqlalchemy import inspect, text, Text
+from sqlalchemy import Text, inspect, text
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import ColumnElement
 

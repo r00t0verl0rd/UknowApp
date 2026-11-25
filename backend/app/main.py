@@ -1,19 +1,19 @@
 import asyncio
 import logging
-from contextlib import AsyncExitStack, asynccontextmanager, suppress
+from contextlib import AsyncExitStack, asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 
 from .api import router
-from .event_hub import reset_replay
 from .bots_gateway.gateway import BotsGateway, router as bots_gateway_router
 from .core.config import (
     ALLOWED_ORIGINS,
     SEED_DEMO_DATA,
 )
 from .core.database import Base, SessionLocal, engine
+from .event_hub import reset_replay
 from .migrations import initialize_database
 from .migrations.runtime_split import initialize_runtime_storage
 from .models import Assignment, Conversation, User
@@ -94,8 +94,9 @@ async def _monitor_runtime(app):
 
 
 def runtime_probe():
-    from app.core import runtime_database
     from sqlalchemy import text
+
+    from app.core import runtime_database
     with runtime_database.engine.connect() as conn:
         conn.execute(text("SELECT 1 FROM transport_jobs LIMIT 1"))
 

@@ -27,18 +27,17 @@ from app.models import (
 from app.modules.auth.permissions import permits
 from app.modules.communication.outbox import enqueue_message_deletions
 from app.modules.conversations.service import (
-    unread_condition,
-    read_cursor,
     conversation_dicts,
     publish_conversation_update,
+    read_cursor,
+    unread_condition,
 )
 from app.modules.dependencies import Db, PanelUser
+from app.modules.messaging.read_state import mark_conversation_read
 from app.modules.messaging.service import (
     panel_message_dict,
     panel_visible_conversation,
 )
-
-from app.modules.messaging.read_state import mark_conversation_read
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

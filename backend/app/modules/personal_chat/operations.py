@@ -16,12 +16,14 @@ from app.infrastructure.storage.media import (
     delete_message_media,
 )
 from app.infrastructure.storage.message_metadata import encode_message_metadata
+from app.infrastructure.storage.uploads import store_panel_attachment
 from app.models import (
     PersonalConversation,
     PersonalMediaCleanup,
     PersonalMessage,
     User,
 )
+from app.modules.messaging.read_state import mark_personal_read
 from app.modules.notifications.content import PUSH_TITLE, push_body
 from app.modules.notifications.service import schedule_push
 from app.modules.personal_chat.service import (
@@ -30,9 +32,6 @@ from app.modules.personal_chat.service import (
     publish_personal_update,
 )
 from app.request_validation import message_payload, personal_conversation_payload
-
-from app.infrastructure.storage.uploads import store_panel_attachment
-from app.modules.messaging.read_state import mark_personal_read
 
 logger = logging.getLogger(__name__)
 

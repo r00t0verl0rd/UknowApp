@@ -1,11 +1,11 @@
 """Single Core gateway backed by NATS request/reply and JetStream."""
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
-from functools import partial
 import hashlib
 import json
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from hmac import compare_digest
 from pathlib import Path
 from uuid import uuid4
@@ -14,19 +14,38 @@ import nats
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
 from nats.errors import TimeoutError as NatsTimeout
-from nats.js.api import AckPolicy, ConsumerConfig, DiscardPolicy, RetentionPolicy, StorageType, StreamConfig
+from nats.js.api import (
+    AckPolicy,
+    ConsumerConfig,
+    DiscardPolicy,
+    RetentionPolicy,
+    StorageType,
+    StreamConfig,
+)
 from nats.js.errors import NotFoundError
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select
 
 from app.core.database import SessionLocal, begin_serialized_write
-from app.infrastructure.storage.media import MAX_ATTACHMENT_BYTES, MEDIA_DIR
-from app.models import ConnectorDeletion, ConnectorDelivery, Conversation, MessengerAccount
 from app.event_hub import subscribe_chat_updates, unsubscribe_chat_updates
+from app.infrastructure.storage.media import MAX_ATTACHMENT_BYTES, MEDIA_DIR
+from app.migrations.runtime_split import initialize_runtime_storage
+from app.models import (
+    ConnectorDeletion,
+    ConnectorDelivery,
+    Conversation,
+    MessengerAccount,
+)
+from app.modules.communication.outbox import (
+    PENDING,
+    authorized_job,
+    get_job,
+    now_utc,
+    record_result,
+)
+
+from . import transport
 from .contracts import PREFIX, STREAM, decode, encode, identifier, platforms
 from .operations import receive_message, rpc
-from app.modules.communication.outbox import PENDING, authorized_job, get_job, now_utc, record_result
-from . import transport
-from app.migrations.runtime_split import initialize_runtime_storage
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/internal/bots", include_in_schema=False)
@@ -262,19 +281,18 @@ class BotsGateway:
                 try:
                     # A retained backlog is not a lost queue. Check the exact previous
                     # broker sequence before attempting stale recovery.
-                    if status != "queued":
-                        if previous_seq is not None:
-                            try:
-                                previous = await self.js.get_msg(STREAM, seq=previous_seq)
-                            except NotFoundError:
-                                previous = None
-                            if previous and previous.subject == f"{PREFIX}.outbound.{platform}" and decode(previous.data).get("id") == job_id:
-                                acknowledgements.append((job_id, None))
-                                continue
+                    if status != "queued" and previous_seq is not None:
+                        try:
+                            previous = await self.js.get_msg(STREAM, seq=previous_seq)
+                        except NotFoundError:
+                            previous = None
+                        if previous and previous.subject == f"{PREFIX}.outbound.{platform}" and decode(previous.data).get("id") == job_id:
+                            acknowledgements.append((job_id, None))
+                            continue
                     ack = await self.js.publish(f"{PREFIX}.outbound.{platform}",
                         encode({"id": job_id, "route": [chat, thread], "heavy": heavy}),
                         headers={"Nats-Msg-Id": dedup})
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001 - broker retry boundary
                     # Backpressure or a transient publish failure must not stop
                     # inbound processing and the RPC server.
                     logger.warning("Outbox publication delayed: %s", type(exc).__name__)

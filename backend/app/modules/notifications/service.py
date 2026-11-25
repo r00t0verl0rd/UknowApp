@@ -2,18 +2,18 @@
 
 import json
 import logging
-from threading import BoundedSemaphore
-from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
-from datetime import UTC, datetime
 from collections.abc import Iterable
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from datetime import UTC, datetime
+from threading import BoundedSemaphore
 from urllib.parse import parse_qs, urlsplit
 
 from pywebpush import WebPushException, webpush
 from sqlalchemy import or_, select, update
 from sqlalchemy.exc import SQLAlchemyError
-from app.core import database, runtime_database
 from sqlalchemy.orm import Session
 
+from app.core import database, runtime_database
 from app.core import config
 from app.models import PanelSession, PushSubscription
 from app.modules.notifications import vapid
@@ -140,7 +140,7 @@ def _send_one(target, payload, admin_payload):
     except WebPushException as exc:
         status = getattr(getattr(exc, "response", None), "status_code", None)
         state = "expired" if status in {404, 410} else "failed"
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - isolate each provider attempt
         # One malformed subscription or provider outage cannot cancel another.
         logger.warning("Web Push attempt failed id=%s type=%s", target["id"], type(exc).__name__)
     if state != "accepted":
@@ -163,7 +163,7 @@ def _collect(futures):
                     for future in ready[offset:offset+16]:
                         _record_result(db, future)
                     db.commit()
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - isolate background result failures
                 logger.warning("Web Push diagnostics update failed (%s)", type(exc).__name__)
 
 

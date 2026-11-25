@@ -1,23 +1,46 @@
 """School business operations exposed through a provider-neutral authenticated transport."""
-import json
 
 from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
-from app.infrastructure.storage.media import safe_media_type
 from app.core.database import begin_serialized_write
+from app.infrastructure.storage.media import safe_media_type
 from app.infrastructure.storage.message_metadata import encode_message_metadata
-from app.models import Assignment, BotEventReceipt, ConnectorDelivery, Conversation, ExternalEndpoint, Message
-from app.modules.communication.accounts import claim_messenger_connection_code, get_messenger_user
-from app.modules.conversations.service import message_preview, unread_condition, conversation_dicts, publish_conversation_update
+from app.models import (
+    Assignment,
+    BotEventReceipt,
+    Conversation,
+    ExternalEndpoint,
+    Message,
+)
+from app.modules.communication.accounts import (
+    claim_messenger_connection_code,
+    get_messenger_user,
+)
+from app.modules.communication.outbox import (
+    PENDING,
+    claim_is_recent,
+    earlier_send_pending,
+    enqueue_web_delivery,
+    get_job,
+    job_payload,
+    now_utc,
+    record_result,
+)
+from app.modules.conversations.service import (
+    conversation_dicts,
+    message_preview,
+    publish_conversation_update,
+    unread_condition,
+)
 from app.modules.messaging.moderation import text_contains_contact_data
+from app.modules.messaging.read_state import mark_conversation_read
 from app.modules.notifications.content import PUSH_TITLE, push_body
 from app.modules.notifications.service import schedule_push
-from app.modules.messaging.read_state import mark_conversation_read
 from app.rate_limit import SlidingWindowLimiter
+
 from .contracts import encode, identifier
-from app.modules.communication.outbox import PENDING, claim_is_recent, earlier_send_pending, enqueue_web_delivery, get_job, job_payload, now_utc, record_result
 
 _bind_limit = SlidingWindowLimiter()
 KINDS = frozenset(("text", "photo", "video", "audio", "voice", "document", "animation",
@@ -42,7 +65,7 @@ def available(db, user):
 
 def visible(db, user, conversation_id):
     if not isinstance(conversation_id, int) or isinstance(conversation_id, bool):
-        raise ValueError("conversation id required")
+        raise TypeError("conversation id required")
     row = db.get(Conversation, conversation_id)
     if (row is None or row.status != "active" or not row.assignment or not row.assignment.active or
         (user.role == "teacher" and row.teacher_id != user.id) or

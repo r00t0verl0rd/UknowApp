@@ -1,21 +1,22 @@
 """One-way compatibility migration of historical provider records (not runtime models)."""
 import json
+
 from sqlalchemy import MetaData, Table, inspect, select, text
 from sqlalchemy.orm import Session
 
 from app.core.database import engine
+from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.migrations.delivery_recovery import upgrade_delivery_recovery
 from app.models import ExternalEndpoint, Message, MessengerAccount
-from app.bots_gateway.outbox import enqueue_web_delivery
-from app.infrastructure.storage.message_metadata import encode_message_metadata
-from app.modules.communication.service import record_messenger_delivery
 from app.modules.communication.accounts import sync_messenger_account
+from app.modules.communication.outbox import enqueue_web_delivery
+from app.modules.communication.service import record_messenger_delivery
 
 
 def migrate_provider_channels(connection=None):
     if connection is None:
-        with engine.begin() as connection:
-            migrate_provider_channels(connection)
+        with engine.begin() as owned_connection:
+            migrate_provider_channels(owned_connection)
         return
     upgrade_delivery_recovery(connection)
     inspector = inspect(connection)

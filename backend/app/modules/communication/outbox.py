@@ -6,8 +6,18 @@ from uuid import uuid4
 
 from sqlalchemy import and_, or_, select, update
 
-from app.infrastructure.storage.message_metadata import encode_message_metadata, metadata_with_field
-from app.models import ConnectorDeletion, ConnectorDelivery, Conversation, ExternalEndpoint, Message, MessengerAccount
+from app.infrastructure.storage.message_metadata import (
+    encode_message_metadata,
+    metadata_with_field,
+)
+from app.models import (
+    ConnectorDeletion,
+    ConnectorDelivery,
+    Conversation,
+    ExternalEndpoint,
+    Message,
+    MessengerAccount,
+)
 from app.modules.communication.service import record_messenger_delivery
 from app.modules.conversations.service import publish_conversation_update
 

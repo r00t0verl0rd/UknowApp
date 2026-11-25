@@ -1,9 +1,9 @@
 """HTTP API веб-панели и обмена сообщениями."""
 
 import logging
-from uuid import uuid4
-from urllib.parse import urlsplit
 from datetime import UTC, datetime
+from urllib.parse import urlsplit
+from uuid import uuid4
 
 from fastapi import (
     APIRouter,
@@ -14,9 +14,9 @@ from fastapi import (
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
+from app.core import runtime_database
 from app.core.security import verify_request_origin
 from app.models import PanelSession, PushSubscription
-from app.core import runtime_database
 from app.modules.auth.service import (
     _request_token,
     _token_digest,
