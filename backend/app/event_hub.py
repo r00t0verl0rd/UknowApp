@@ -152,8 +152,7 @@ def publish_chat_update(
         return _latest_id
 
 
-def replay_chat_updates(
-    db: Session | None,
+def replay_ram_updates(
     principal: dict,
     after_event_id: int,
 ) -> list[tuple[int, str]]:
@@ -170,3 +169,8 @@ def replay_chat_updates(
             return []
         payload = {**latest, "event_id": latest_id}
         return [(latest_id, _payload_for_subscriber(payload, principal))]
+
+
+def replay_chat_updates(db: Session | None, principal: dict, after_event_id: int):
+    """Compatibility entry point for callers of the old SQL-backed API."""
+    return replay_ram_updates(principal, after_event_id)

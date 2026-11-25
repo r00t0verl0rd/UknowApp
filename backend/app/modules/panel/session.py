@@ -14,7 +14,7 @@ from fastapi.responses import StreamingResponse
 from app.core.database import SessionLocal
 from app.event_hub import (
     current_event_id,
-    replay_chat_updates,
+    replay_ram_updates,
     subscribe_chat_updates,
     unsubscribe_chat_updates,
 )
@@ -64,7 +64,7 @@ async def panel_events(request: Request, principal: PanelUser):
     # Subscribe before taking the RAM checkpoint; any overlap is harmless and
     # clients ignore duplicate event IDs.
     checkpoint = current_event_id()
-    replay = replay_chat_updates(None, principal, cursor)
+    replay = replay_ram_updates(principal, cursor)
 
     def authorized_payload(payload=None):
         current = _load_panel_identity(request)
