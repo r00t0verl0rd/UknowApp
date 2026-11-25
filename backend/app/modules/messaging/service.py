@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Assignment, Conversation, Message, User
+from app.models import Assignment, Conversation, Message
 from app.modules.auth.permissions import permits
 
 
@@ -33,7 +33,6 @@ def panel_visible_conversation(db: Session, principal: dict, conversation_id: in
             current_conversation_id = db.scalar(
                 select(Conversation.id)
                 .join(Assignment, Conversation.assignment_id == Assignment.id)
-                .join(User, Assignment.teacher_id == User.id)
                 .where(
                     Assignment.student_id == principal["user_id"],
                     Assignment.active.is_(True),

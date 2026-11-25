@@ -11,7 +11,7 @@ def test_transfer_and_startup_rollback(tmp_path):
     source = Path(__file__).resolve().parents[1] / "app"
     shutil.copytree(source, tmp_path / "backend/app", ignore=shutil.ignore_patterns("__pycache__"))
     env = dict(os.environ, PYTHONPATH=str(tmp_path / "backend"), DATABASE_URL="",
-               TELEGRAM_BOT_ENABLED="false", SEED_DEMO_DATA="true",
+               SEED_DEMO_DATA="true",
                UKNOWAPP_AUTO_RESTART_ON_RESTORE="false", ADMIN_USERNAME="test-admin",
                ADMIN_PASSWORD="local-restore-test-password")  # pragma: allowlist secret - fixed test-only credential
     subprocess.run([sys.executable, __file__], cwd=tmp_path, env=env, check=True, timeout=90)

@@ -25,9 +25,7 @@ from app.models import (
     Message,
 )
 from app.modules.communication.outbox import enqueue_web_delivery
-from app.modules.communication.contracts import (
-    MessageKind,
-)
+from app.modules.communication.contracts import MessageKind
 from app.modules.conversations.service import (
     publish_conversation_update,
 )

@@ -6,6 +6,9 @@ on:
     paths:
       - "backend/**"
       - "connectors/**"
+      - "frontend/**"
+      - ".env.example"
+      - ".dockerignore"
       - "infrastructure/nats/**"
       - "docker-compose.yml"
       - "compose*.yml"
