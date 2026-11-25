@@ -1,13 +1,12 @@
 """Отметки прочтения: помечают входящие сообщения прочитанными и публикуют событие."""
 
-import json
 from datetime import UTC, datetime
 
 from sqlalchemy import select, update
 
 from app.infrastructure.storage.message_metadata import (
-    encode_message_metadata,
     metadata_value,
+    metadata_with_field,
 )
 from app.models import Message, PersonalMessage
 from app.modules.conversations.service import publish_conversation_update
@@ -21,26 +20,23 @@ def mark_conversation_read(db, conversation, principal, after_id: int, visible_i
         return
     read_key = "teacher_read_at" if role == "teacher" else "student_read_at"
     sender_roles = ("student", "admin") if role == "teacher" else ("teacher", "admin")
-    unread = db.scalars(
-        select(Message).where(
-            Message.conversation_id == conversation.id,
-            Message.sender_role.in_(sender_roles),
-            metadata_value(db, Message.metadata_json, read_key).is_(None),
-            Message.id > after_id,
-            *([Message.id.in_(visible_ids)] if visible_ids is not None else []),
-        ),
-    ).all()
-    if not unread:
-        return
     read_at = datetime.now(UTC).isoformat()
-    for row in unread:
-        metadata = json.loads(row.metadata_json or "{}")
-        metadata[read_key] = read_at
-        row.metadata_json = encode_message_metadata(metadata)
+    # A single atomic update preserves delivery metadata written by the gateway.
+    ids = db.scalars(update(Message).where(
+        Message.conversation_id == conversation.id,
+        Message.sender_role.in_(sender_roles),
+        metadata_value(db, Message.metadata_json, read_key).is_(None),
+        Message.id > after_id,
+        *([Message.id.in_(visible_ids)] if visible_ids is not None else []),
+    ).values(metadata_json=metadata_with_field(db, Message.metadata_json, read_key, read_at))
+      .returning(Message.id), execution_options={"synchronize_session": "fetch"}).all()
+    if not ids:
+        db.rollback()
+        return
     db.commit()
     publish_conversation_update(
         db, conversation, action="read", actor_role=role,
-        message_ids=[row.id for row in unread], read_at=read_at,
+        message_ids=sorted(ids), read_at=read_at,
     )
 
 

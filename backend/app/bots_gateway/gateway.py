@@ -18,7 +18,7 @@ from nats.js.api import AckPolicy, ConsumerConfig, DiscardPolicy, RetentionPolic
 from nats.js.errors import NotFoundError
 from sqlalchemy import func, select, update
 
-from app.core.database import SessionLocal
+from app.core.database import SessionLocal, begin_serialized_write
 from app.infrastructure.storage.media import MAX_ATTACHMENT_BYTES, MEDIA_DIR
 from app.models import ConnectorDeletion, ConnectorDelivery, Conversation, MessengerAccount
 from app.event_hub import subscribe_chat_updates, unsubscribe_chat_updates
@@ -133,14 +133,18 @@ class BotsGateway:
     @staticmethod
     def _rpc(platform, operation, payload):
         with SessionLocal() as db:
+            db.info["gateway_runtime"] = True
+            if operation in {"endpoint.bind", "account.bind"}:
+                begin_serialized_write(db)
             return rpc(db, platform, operation, payload)
 
     def _consume_event(self, platform, direction, payload):
         with SessionLocal() as db:
+            begin_serialized_write(db)
             if direction == "inbound":
                 receive_message(db, platform, payload, self.platforms, media_path)
             else:
-                job = get_job(db, identifier(payload.get("id")))
+                job = get_job(db, identifier(payload.get("id")), for_update=True)
                 status = payload.get("status")
                 if not job or job.platform != platform:
                     return False
@@ -163,7 +167,8 @@ class BotsGateway:
     @staticmethod
     def _mark_published(job_id, seq=None):
         with SessionLocal() as db:
-            job = get_job(db, job_id)
+            begin_serialized_write(db)
+            job = get_job(db, job_id, for_update=True)
             if job and job.status in PENDING:
                 if job.status == "queued":
                     job.status = "published"

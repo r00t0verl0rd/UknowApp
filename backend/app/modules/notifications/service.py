@@ -2,7 +2,7 @@
 
 import json
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from datetime import UTC, datetime
 from collections.abc import Iterable
 from urllib.parse import parse_qs, urlsplit
@@ -116,31 +116,38 @@ def _submit(targets, payload, admin_payload):
 
 def _collect(futures):
     from app.core.database import SessionLocal
-    for future in as_completed(futures):
-        try:
-            target, attempted, state, status = future.result()
-            if "revision" not in target:
-                continue
-            # Do not overwrite a new registration, or a newer attempt, with
-            # a delayed result from an obsolete subscription.
-            conditions = (PushSubscription.id == target["id"],
-                          PushSubscription.endpoint == target["endpoint"],
-                          PushSubscription.revision == target["revision"],
-                          PushSubscription.p256dh == target["keys"]["p256dh"],
-                          PushSubscription.auth == target["keys"]["auth"])
-            with SessionLocal() as db:
-                values = {"last_attempt_at": attempted, "delivery_state": state, "last_http_status": status}
-                db.execute(update(PushSubscription).where(*conditions,
-                    or_(PushSubscription.last_attempt_at.is_(None), PushSubscription.last_attempt_at <= attempted),
-                    or_(PushSubscription.delivery_state.is_(None), PushSubscription.delivery_state != "expired")
-                ).values(**values))
-                if state == "accepted":
-                    db.execute(update(PushSubscription).where(*conditions,
-                        or_(PushSubscription.last_success_at.is_(None), PushSubscription.last_success_at <= attempted)
-                    ).values(last_success_at=attempted))
-                db.commit()
-        except Exception as exc:
-            logger.warning("Web Push diagnostics update failed (%s)", type(exc).__name__)
+    pending = set(futures)
+    while pending:
+        ready, pending = wait(pending, return_when=FIRST_COMPLETED)
+        ready = list(ready)
+        for offset in range(0, len(ready), 16):
+            try:
+                with SessionLocal() as db:
+                    for future in ready[offset:offset+16]:
+                        _record_result(db, future)
+                    db.commit()
+            except Exception as exc:
+                logger.warning("Web Push diagnostics update failed (%s)", type(exc).__name__)
+
+
+def _record_result(db, future):
+    target, attempted, state, status = future.result()
+    if "revision" not in target:
+        return
+    conditions = (PushSubscription.id == target["id"],
+                  PushSubscription.endpoint == target["endpoint"],
+                  PushSubscription.revision == target["revision"],
+                  PushSubscription.p256dh == target["keys"]["p256dh"],
+                  PushSubscription.auth == target["keys"]["auth"])
+    values = {"last_attempt_at": attempted, "delivery_state": state, "last_http_status": status}
+    db.execute(update(PushSubscription).where(*conditions,
+        or_(PushSubscription.last_attempt_at.is_(None), PushSubscription.last_attempt_at <= attempted),
+        or_(PushSubscription.delivery_state.is_(None), PushSubscription.delivery_state != "expired")
+    ).values(**values))
+    if state == "accepted":
+        db.execute(update(PushSubscription).where(*conditions,
+            or_(PushSubscription.last_success_at.is_(None), PushSubscription.last_success_at <= attempted)
+        ).values(last_success_at=attempted))
 
 
 def _deliver(targets: list[dict], payload: str, admin_payload: str | None = None) -> None:

@@ -252,7 +252,7 @@ export function createConversationSync(options) {
         const key = conversationKey(id, type);
         eventRevision.set(key, (eventRevision.get(key) || 0) + 1);
         if (payload.summary) applySummary(type, id, payload.summary);
-        else {
+        else if (payload.action !== "delivery") {
           requestRecovery();
         }
         const selected = options.selectedChat;

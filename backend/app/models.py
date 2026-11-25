@@ -48,6 +48,8 @@ def _refresh_login_lookup(_mapper, _connection, user: User) -> None:
 
 class PushSubscription(Base):
     __tablename__ = "push_subscriptions"
+    __table_args__ = (Index("ix_push_role_state", "role", "delivery_state"),
+                      Index("ix_push_session_hash", "session_hash"))
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
@@ -307,7 +309,9 @@ class ExternalEndpoint(Base):
 class ConnectorDelivery(Base):
     """Transactional outbox for one recipient/channel and one message."""
     __tablename__ = "connector_deliveries"
-    __table_args__ = (UniqueConstraint("message_id", "platform", "recipient_id", "chat_id", "thread_id", name="uq_connector_delivery_route"),)
+    __table_args__ = (UniqueConstraint("message_id", "platform", "recipient_id", "chat_id", "thread_id", name="uq_connector_delivery_route"),
+                      Index("ix_connector_delivery_queue", "platform", "status", "created_at", "id"),
+                      Index("ix_connector_delivery_route_order", "platform", "chat_id", "thread_id", "status", "created_at", "id"))
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     message_id: Mapped[int | None] = mapped_column(ForeignKey("messages.id", ondelete="CASCADE"), index=True, nullable=True)
@@ -328,6 +332,7 @@ class ConnectorDelivery(Base):
 class ConnectorDeletion(Base):
     """Durable external-copy deletion, independent of the deleted message row."""
     __tablename__ = "connector_deletions"
+    __table_args__ = (Index("ix_connector_deletion_queue", "platform", "status", "created_at", "id"),)
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     platform: Mapped[str] = mapped_column(String(32), nullable=False, index=True)

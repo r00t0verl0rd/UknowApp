@@ -12,6 +12,7 @@ from fastapi import (
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload, selectinload
 
+from app.core.database import begin_serialized_write
 from app.infrastructure.storage.media import (
     MEDIA_DIR,
     attachment_response,
@@ -174,6 +175,7 @@ def delete_panel_message(
     principal: PanelUser,
     db: Db,
 ):
+    begin_serialized_write(db)
     item = db.get(Message, message_id)
     if not item:
         raise HTTPException(status_code=404, detail="Сообщение не найдено")

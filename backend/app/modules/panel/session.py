@@ -59,7 +59,7 @@ def visible_payload(db, principal, payload):
 
 
 @router.get("/panel/events")
-async def panel_events(request: Request, principal: PanelUser, db: Db):
+async def panel_events(request: Request, principal: PanelUser):
     """Передавать события и восстанавливать пропущенные."""
     queue = subscribe_chat_updates(principal)
     try:
@@ -67,10 +67,10 @@ async def panel_events(request: Request, principal: PanelUser, db: Db):
     except ValueError:
         cursor = 0
     def load_replay():
-        try:
-            return replay_chat_updates(db, principal, cursor) if cursor else []
-        finally:
-            db.rollback()
+        if not cursor:
+            return []
+        with SessionLocal() as db:
+            return replay_chat_updates(db, principal, cursor)
 
     try:
         replay = await asyncio.to_thread(load_replay)

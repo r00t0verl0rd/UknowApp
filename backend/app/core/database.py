@@ -40,3 +40,9 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False
 def create_tables() -> None:
     """Создать таблицы зарегистрированных моделей."""
     Base.metadata.create_all(bind=engine)
+
+
+def begin_serialized_write(db):
+    """Acquire SQLite writer reservation before reading mutable delivery state."""
+    if db.get_bind().dialect.name == "sqlite":
+        db.connection().exec_driver_sql("BEGIN IMMEDIATE")

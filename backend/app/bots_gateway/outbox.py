@@ -4,9 +4,9 @@ import json
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, or_, select, update
 
-from app.infrastructure.storage.message_metadata import encode_message_metadata
+from app.infrastructure.storage.message_metadata import encode_message_metadata, metadata_with_field
 from app.models import ConnectorDeletion, ConnectorDelivery, Conversation, ExternalEndpoint, Message, MessengerAccount
 from app.modules.communication.service import record_messenger_delivery
 from app.modules.conversations.service import publish_conversation_update
@@ -148,8 +148,9 @@ def job_payload(db, job):
                       "mime_type": media.get("mime_type"), "key": media_key if media.get("local_path") else None} if media.get("archive_status") == "stored" else None}
 
 
-def get_job(db, job_id):
-    return db.get(ConnectorDelivery, job_id) or db.get(ConnectorDeletion, job_id)
+def get_job(db, job_id, *, for_update=False):
+    return (db.get(ConnectorDelivery, job_id, with_for_update=for_update)
+            or db.get(ConnectorDeletion, job_id, with_for_update=for_update))
 
 
 def enqueue_deletion(db, platform, chat_id, external_id):
@@ -173,7 +174,8 @@ def enqueue_message_deletions(db, row):
             ident = copy.get("external_message_id")
             if chat and ident:
                 copies.add((platform, str(chat), str(ident)))
-    jobs = db.scalars(select(ConnectorDelivery).where(ConnectorDelivery.message_id == row.id)).all()
+    jobs = db.scalars(select(ConnectorDelivery).where(ConnectorDelivery.message_id == row.id)
+                      .order_by(ConnectorDelivery.id).with_for_update()).all()
     inflight = 0
     unknown = 0
     for job in jobs:
@@ -224,7 +226,10 @@ def record_result(db, job, status, external_id=None):
               "unknown" if "unknown" in states else "failed")
     metadata = json.loads(row.metadata_json or "{}")
     record_messenger_delivery(metadata, job.platform, delivered, errors, status)
-    row.metadata_json = encode_message_metadata(metadata)
+    db.execute(update(Message).where(Message.id == row.id).values(
+        metadata_json=metadata_with_field(db, Message.metadata_json, "messenger_deliveries", metadata["messenger_deliveries"])
+    ), execution_options={"synchronize_session": False})
+    db.expire(row, ["metadata_json"])
     db.commit()
     conversation = db.get(Conversation, row.conversation_id)
     if conversation:

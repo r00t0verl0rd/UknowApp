@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
 from app.infrastructure.storage.media import safe_media_type
+from app.core.database import begin_serialized_write
 from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.models import Assignment, BotEventReceipt, ConnectorDelivery, Conversation, ExternalEndpoint, Message
 from app.modules.communication.accounts import claim_messenger_connection_code, get_messenger_user
@@ -101,7 +102,9 @@ def chat_view(db, user, conversation, read=False):
 def authorize_delivery(db, platform, job_id, claim=None):
     if claim is not None and (not isinstance(claim, str) or len(claim) != 32 or not all(c in "0123456789abcdef" for c in claim)):
         raise HTTPException(400, "invalid claim")
-    job = get_job(db, identifier(job_id))
+    if db.info.get("gateway_runtime"):
+        begin_serialized_write(db)
+    job = get_job(db, identifier(job_id), for_update=True)
     if not job or job.platform != platform or job.status not in PENDING:
         raise HTTPException(404, "job unavailable")
     same_claim = bool(claim and job.claim_id == claim)
@@ -141,6 +144,8 @@ def rpc(db, platform, operation, payload):
             try:
                 result[job_id] = {"ok": True, "result": authorize_delivery(db, platform, job_id, item.get("claim"))}
             except HTTPException as exc:
+                # A failed item may still hold a writer reservation.
+                db.rollback()
                 result[job_id] = {"ok": False, "code": exc.status_code}
         return result
 
