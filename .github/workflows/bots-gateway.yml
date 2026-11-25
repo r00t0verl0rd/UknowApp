@@ -36,13 +36,14 @@ jobs:
           cp .env.example .env
           docker compose --profile gateway --profile bots config --quiet
           docker compose --profile gateway --profile bots build backend tgbot
-      - name: Validate actual NATS config and protocol
+      - name: Exercise authenticated NATS RPC and JetStream
         env:
           BOTS_NATS_CORE_PASSWORD: ci-core-password-12345678901234567890 # pragma: allowlist secret
           BOTS_NATS_TELEGRAM_PASSWORD: ci-connector-password-12345678901234567890 # pragma: allowlist secret
           BOTS_MEDIA_SECRET_TELEGRAM: ci-media-secret-12345678901234567890 # pragma: allowlist secret
         run: |
-          docker compose --profile gateway up -d nats
-          docker compose --profile gateway logs nats
-          docker compose --profile gateway exec -T nats nats-server -t -c /etc/nats/nats.conf
-          docker compose --profile gateway stop nats
+          docker run -d --rm --name gateway-ci -p 127.0.0.1:4222:4222 \
+            -e CORE_PASSWORD="$BOTS_NATS_CORE_PASSWORD" -e TELEGRAM_PASSWORD="$BOTS_NATS_TELEGRAM_PASSWORD" \
+            -v "$PWD/infrastructure/nats/nats.conf:/etc/nats/nats.conf:ro" nats:2.11-alpine -c /etc/nats/nats.conf
+          trap 'docker logs gateway-ci; docker rm -f gateway-ci' EXIT
+          BOTS_PLATFORMS=telegram BOTS_NATS_URL=nats://127.0.0.1:4222 BOTS_NATS_USER=core BOTS_NATS_PASSWORD="$BOTS_NATS_CORE_PASSWORD" python backend/tests/nats_smoke.py
