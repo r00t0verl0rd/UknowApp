@@ -165,3 +165,135 @@ test("notification permission messages are gentle and actionable", () => {
   assert.match(state, /Уведомления отключены в настройках браузера/);
   assert.match(source, /В этом браузере уведомления пока недоступны/);
 });
+
+
+// Real subscription controller, fake browser and Core. Each import has its own
+// device-local state, like separate installed PWAs.
+let deviceModule = 0;
+async function mockDevice(t, {existing = true, expired = false, oldKey = false, permission = "granted"} = {}) {
+  const names = ["window", "navigator", "Notification", "localStorage", "fetch"];
+  const originals = Object.fromEntries(names.map(name => [name, Object.getOwnPropertyDescriptor(globalThis, name)]));
+  const define = (name, value) => Object.defineProperty(globalThis, name, { configurable:true, writable:true, value });
+  t.after(() => {
+    for (const name of names) {
+      if (originals[name]) Object.defineProperty(globalThis, name, originals[name]);
+      else delete globalThis[name];
+    }
+  });
+  const calls = [];
+  const server = new Set();
+  const storage = new Map();
+  const key = Uint8Array.from([1,2,3]);
+  let current = null;
+  let next = 1;
+  let dead = expired;
+  let fail = false;
+  let prompts = 0;
+  function makeSubscription(endpoint, applicationServerKey = key) {
+    return {
+      endpoint, options: { applicationServerKey: applicationServerKey.buffer }, expirationTime:null,
+      toJSON() { return { endpoint, keys: { p256dh:"key", auth:"auth" } }; },
+      async unsubscribe() { calls.push(["unsubscribe", endpoint]); if (current === this) current = null; return true; },
+    };
+  }
+  if (existing) current = makeSubscription("old", oldKey ? Uint8Array.from([4,5,6]) : key);
+  const registration = { active:true, pushManager:{
+    async getSubscription() { return current; },
+    async subscribe() { current = makeSubscription("new-" + next++); calls.push(["create",current.endpoint]); return current; },
+  } };
+  define("window", { isSecureContext:true, PushManager:class {}, Notification:class {}, matchMedia:()=>({matches:false}) });
+  define("navigator", { userAgent:"test", platform:"test", serviceWorker:{
+    async getRegistration() { return registration; },
+  } });
+  define("Notification", { permission, async requestPermission() { prompts++; return "granted"; } });
+  define("localStorage", {getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)});
+  const json = (body, status=200) => new Response(JSON.stringify(body), { status });
+  define("fetch", async (url, options) => {
+    if (url === "/api/push/public-key") return json({enabled:true,public_key:"AQID"});
+    assert.equal(url, "/api/push/subscribe");
+    const endpoint = JSON.parse(options.body).endpoint;
+    calls.push([options.method, endpoint]);
+    if (fail) return json({detail:"unavailable"},503);
+    if (options.method === "DELETE") { server.delete(endpoint); return json({ok:true}); }
+    if (dead && endpoint === "old") return json({},410);
+    server.add(endpoint);
+    return json({ok:true});
+  });
+  const module = await import("../src/features/notifications/pushNotifications.js?device=" + (++deviceModule));
+  return { module,calls,server,storage,get prompts(){return prompts;}, setFailure(value){fail=value;}, get current(){return current;} };
+}
+
+test("opening app registers an existing local subscription even if Core lost it", async t => {
+  const d = await mockDevice(t);
+  assert.equal((await d.module.getPushNotificationState()).enabled,false);
+  await d.module.syncPushNotifications();
+  assert.deepEqual([...d.server],["old"]);
+  assert.equal((await d.module.getPushNotificationState()).enabled,true);
+  d.server.clear();
+  await d.module.syncPushNotifications();
+  assert.deepEqual([...d.server],["old"]);
+  assert.equal(d.calls.filter(c=>c[0]==="create").length,0);
+});
+
+test("expired provider subscription is recreated and confirmed", async t => {
+  const d = await mockDevice(t,{expired:true});
+  await d.module.syncPushNotifications();
+  assert.deepEqual(d.calls,[["POST","old"],["unsubscribe","old"],["create","new-1"],["POST","new-1"],["DELETE","old"]]);
+  assert.equal((await d.module.getPushNotificationState()).enabled,true);
+});
+
+test("changed VAPID key replaces the old subscription", async t => {
+  const d = await mockDevice(t,{oldKey:true});
+  await d.module.syncPushNotifications();
+  assert.deepEqual(d.calls,[["unsubscribe","old"],["create","new-1"],["POST","new-1"],["DELETE","old"]]);
+});
+
+test("missing local subscription is recreated when permission is granted", async t => {
+  const d = await mockDevice(t,{existing:false});
+  await d.module.syncPushNotifications();
+  assert.deepEqual(d.calls,[["create","new-1"],["POST","new-1"]]);
+  assert.equal(d.prompts,0);
+});
+
+test("automatic sync does not prompt or undo a manual opt-out", async t => {
+  const d = await mockDevice(t,{permission:"default"});
+  await d.module.syncPushNotifications();
+  assert.equal(d.prompts,0);
+  Notification.permission = "granted";
+  await d.module.syncPushNotifications();
+  await d.module.disablePushNotifications();
+  const count = d.calls.length;
+  await d.module.syncPushNotifications({login:true,requestPermission:true});
+  assert.equal(d.calls.length,count);
+  assert.equal((await d.module.getPushNotificationState()).enabled,false);
+  await d.module.enablePushNotifications();
+  assert.equal((await d.module.getPushNotificationState()).enabled,true);
+});
+
+test("a failed server sync never claims enabled; next foreground can repair it", async t => {
+  const d = await mockDevice(t);
+  d.setFailure(true);
+  await assert.rejects(d.module.syncPushNotifications(),/unavailable/);
+  assert.equal((await d.module.getPushNotificationState()).enabled,false);
+  d.setFailure(false);
+  await d.module.syncPushNotifications();
+  assert.equal((await d.module.getPushNotificationState()).enabled,true);
+});
+
+test("logout detaches only the current endpoint even after a network failure", async t => {
+  const d = await mockDevice(t);
+  d.server.add("other-device");
+  await d.module.syncPushNotifications();
+  await d.module.detachPushSubscription();
+  assert.deepEqual([...d.server],["other-device"]);
+  assert.equal(d.current,null);
+  const count = d.calls.length;
+  await d.module.syncPushNotifications();
+  assert.equal(d.calls.length,count);
+  await d.module.syncPushNotifications({login:true});
+  assert.equal((await d.module.getPushNotificationState()).enabled,true);
+  d.setFailure(true);
+  await d.module.detachPushSubscription();
+  assert.equal(d.current,null);
+  assert.equal((await d.module.getPushNotificationState()).enabled,false);
+});
