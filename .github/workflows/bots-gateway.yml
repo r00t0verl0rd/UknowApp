@@ -1,0 +1,39 @@
+name: Bots Gateway checks
+on:
+  push:
+    branches: [test]
+    paths:
+      - "backend/**"
+      - "connectors/**"
+      - "docker-compose.yml"
+      - "compose*.yml"
+      - ".github/workflows/bots-gateway.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "connectors/**"
+      - "docker-compose.yml"
+      - "compose*.yml"
+      - ".github/workflows/bots-gateway.yml"
+permissions:
+  contents: read
+jobs:
+  gateway:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: backend:.
+      TELEGRAM_BOT_ENABLED: "false"
+      ADMIN_PASSWORD: ci-only-admin-password-123
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - run: pip install -r backend/requirements.txt -r connectors/telegram/requirements.txt pytest httpx
+      - run: python -m compileall -q backend/app connectors
+      - run: python -m pytest -q backend/tests/test_bots_gateway.py connectors/tests backend/tests/test_telegram_bot.py backend/tests/test_telegram_api_modes.py backend/tests/test_message_delivery.py backend/tests/test_realtime_events.py
+      - name: Validate local connector Compose configuration
+        run: |
+          cp .env.example .env
+          docker compose -f docker-compose.yml -f compose.connectors.yml --profile bots config --quiet
+          docker compose -f docker-compose.yml -f compose.connectors.yml --profile bots build backend tgbot

@@ -49,6 +49,37 @@ services:
       start_period: 20s
     # Не масштабировать backend: бот использует один polling-процесс.
 
+  # Enabled only when the connector override is loaded and profile bots is selected.
+  tgbot:
+    profiles: [bots]
+    build:
+      context: .
+      dockerfile: connectors/telegram/Dockerfile
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_API_MODE: ${TELEGRAM_API_MODE:-cloud}
+      TELEGRAM_API_URL: ${TELEGRAM_API_URL:-http://telegram-bot-api:8081}
+      TELEGRAM_FILES_DIR: /var/lib/telegram-bot-api
+      BOTS_GATEWAY_URL: ${BOTS_GATEWAY_URL:-http://backend:8000}
+      BOTS_GATEWAY_TELEGRAM_SECRET: ${BOTS_GATEWAY_TELEGRAM_SECRET:-}
+    volumes:
+      - tgbot_state:/app/state
+      - ${TELEGRAM_CACHE_HOST_DIR:-/srv/uknow-telegram}:/var/lib/telegram-bot-api:ro
+    networks: [app_net]
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import pathlib,time; p=pathlib.Path('/app/state/healthy'); assert p.is_file() and time.time()-p.stat().st_mtime < 20"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+
   postgres:
     image: postgres:17-alpine
     profiles: [postgres]
@@ -111,3 +142,4 @@ volumes:
   caddy_data:
   caddy_config:
   postgres_data:
+  tgbot_state:

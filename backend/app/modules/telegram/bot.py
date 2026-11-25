@@ -1,5 +1,7 @@
 """Фоновое получение событий Telegram."""
 
+from copy import deepcopy
+
 from aiogram import Dispatcher
 
 from .handlers import router
@@ -69,7 +71,7 @@ class ConflictAwareDispatcher(Dispatcher):
 
 def create_dispatcher() -> Dispatcher:
     dispatcher = ConflictAwareDispatcher()
-    dispatcher.include_router(router)
+    dispatcher.include_router(deepcopy(router))
     return dispatcher
 
 

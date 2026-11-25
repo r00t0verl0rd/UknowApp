@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 
 from .api import router
+from .bots_gateway.gateway import BotsGateway, router as bots_gateway_router
 from .core.config import (
     ALLOWED_ORIGINS,
     SEED_DEMO_DATA,
@@ -143,8 +144,25 @@ async def _start_services(app: FastAPI, restoring: bool):
     dispatcher = None
     cleanup_task = asyncio.create_task(_retry_media_cleanup())
     polling_lock_fd = None
+    gateway = None
+    outbox_task = None
+    app.state.bots_gateway = None
     try:
-        if TELEGRAM_BOT_ENABLED and TELEGRAM_BOT_TOKEN:
+        transport = os.getenv("TELEGRAM_TRANSPORT", "embedded").strip().lower()
+        if transport not in {"embedded", "connector"}:
+            raise ValueError("TELEGRAM_TRANSPORT must be embedded or connector")
+        if transport == "connector":
+            gateway = BotsGateway()
+            app.state.bots_gateway = gateway
+            app.state.telegram_bot = None
+            app.state.communication = CommunicationService()
+            if TELEGRAM_BOT_ENABLED:
+                from .bots_gateway.telegram import install_telegram
+                from .bots_gateway.outbox import run_outbox
+
+                bot = install_telegram(app, gateway, os.getenv("BOTS_GATEWAY_TELEGRAM_SECRET", ""))
+                outbox_task = asyncio.create_task(run_outbox(app, gateway), name="bots-gateway-outbox")
+        elif TELEGRAM_BOT_ENABLED and TELEGRAM_BOT_TOKEN:
             from .modules.telegram.bot import create_dispatcher
 
             bot = create_telegram_bot(TELEGRAM_BOT_TOKEN)
@@ -181,6 +199,11 @@ async def _start_services(app: FastAPI, restoring: bool):
                 logger.info("TELEGRAM_MODULE_DISABLED: no Telegram bot token is configured.")
         yield
     finally:
+        if outbox_task:
+            outbox_task.cancel()
+            await asyncio.gather(outbox_task, return_exceptions=True)
+        if gateway:
+            await gateway.close()
         cleanup_task.cancel()
         with suppress(asyncio.CancelledError):
             await cleanup_task
@@ -214,3 +237,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(router)
+
+app.include_router(bots_gateway_router)

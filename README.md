@@ -181,6 +181,13 @@ curl -fsS https://uknowschool.ru/api/health
 
 Для отдельного VPS с локальным Telegram Bot API, WireGuard и NFS см. [инструкцию по инфраструктуре](infrastructure/README.md) и [архитектуру Telegram API](docs/telegram-service-architecture.md). Не меняйте cloud/local на работающем боте без процедуры миграции. PostgreSQL описан ниже отдельно.
 
+## Независимые модули мессенджеров (ветка test)
+
+Экспериментальный режим: Gateway в Core, Telegram в отдельном контейнере,
+единый протокол WebSocket и потоковое медиа. Включение, локальное/удалённое
+размещение, миграция и ограничения: [Messenger Gateway](docs/bots-gateway.md).
+До явного включения сохраняется прежний embedded-режим.
+
 ## Обновление
 
 От пользователя `uknow`:

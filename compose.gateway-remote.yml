@@ -1,0 +1,6 @@
+# Optional Core override for a connector on another VPS.
+# Only publish on the existing private WireGuard interface. Restrict ingress to peer IPs.
+services:
+  backend:
+    ports:
+      - "${BOTS_GATEWAY_BIND_IP:?set private Core WireGuard address}:8000:8000"

@@ -25,6 +25,7 @@ from app.infrastructure.storage.message_metadata import (
 from app.models import (
     Message,
 )
+from app.bots_gateway.outbox import enqueue_web_delivery, uses_outbox
 from app.modules.communication.contracts import (
     MessageKind,
     MessengerPlatform,
@@ -74,10 +75,13 @@ def _find_sent_message(db, principal, conversation, sender, client_message_id, *
     )
 
 
-def _commit_message(db, row, principal, conversation, sender, client_message_id, on_conflict=None):
+def _commit_message(db, row, principal, conversation, sender, client_message_id, on_conflict=None, *, queue_delivery=False):
     """Сохраняет сообщение. При гонке по client_message_id возвращает уже существующее, иначе None."""
     db.add(row)
     try:
+        if queue_delivery:
+            db.flush()
+            enqueue_web_delivery(db, row)
         db.commit()
     except IntegrityError:
         db.rollback()
@@ -116,6 +120,10 @@ async def _publish_and_deliver(
             ) if role != "admin" else None
         ),
     )
+
+    if uses_outbox(request.app):
+        request.app.state.bots_gateway.outbox_wakeup.set()
+        return
 
     bot = getattr(request.app.state, "telegram_bot", None)
     communication = getattr(request.app.state, "communication", None)
@@ -171,7 +179,10 @@ async def send_panel_message(
         client_message_id=client_message_id,
         delivery_status="delivered",
     )
-    existing = _commit_message(db, row, principal, conversation, sender, client_message_id)
+    existing = _commit_message(
+        db, row, principal, conversation, sender, client_message_id,
+        queue_delivery=uses_outbox(request.app),
+    )
     if existing:
         return _message_response(existing, principal)
     await _publish_and_deliver(
@@ -236,6 +247,7 @@ async def send_panel_attachment(
     existing = _commit_message(
         db, row, principal, conversation, sender, client_message_id,
         on_conflict=lambda: delete_message_media(encode_message_metadata({"media": media})),
+        queue_delivery=uses_outbox(request.app),
     )
     if existing:
         return _message_response(existing, principal)

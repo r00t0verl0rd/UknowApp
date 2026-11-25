@@ -308,3 +308,25 @@ class RealtimeEvent(Base):
     conversation_type: Mapped[str] = mapped_column(String(20), nullable=False, default="conversation")
     payload_json: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+
+class BotEventReceipt(Base):
+    """Receipt for a completed connector event; survives Core restart."""
+
+    __tablename__ = "bot_event_receipts"
+
+    platform: Mapped[str] = mapped_column(String(32), primary_key=True)
+    event_id: Mapped[str] = mapped_column(String(200), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+
+class BotDeliveryJob(Base):
+    """Durable web-to-messenger outbox. Unknown outcomes are never blindly retried."""
+
+    __tablename__ = "bot_delivery_jobs"
+
+    message_id: Mapped[int] = mapped_column(
+        ForeignKey("messages.id", ondelete="CASCADE"), primary_key=True,
+    )
+    status: Mapped[str] = mapped_column(String(20), default="queued", nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)

@@ -62,6 +62,9 @@ uknowschool.ru, www.uknowschool.ru {
         max_size 22MB
     }
 
+    # Internal connector API must never be exposed via the public website.
+    respond /internal/bots/* 404
+
     @backend path /api/* /docs /docs/* /openapi.json /redoc
 
     handle @backend {
