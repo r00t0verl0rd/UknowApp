@@ -3,7 +3,7 @@ from sqlalchemy import insert
 
 from app.models import Message, PersonalConversation, PersonalMessage
 from test_message_delivery import login
-from test_telegram_bot import create_conversation
+from helpers import create_conversation
 
 
 @pytest.mark.parametrize("personal", [False, True])

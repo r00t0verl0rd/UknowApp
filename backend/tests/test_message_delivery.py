@@ -1,28 +1,13 @@
-import asyncio
+"""Web messaging and provider-independent delivery tests."""
 import json
-
 import pytest
-
-"""Тесты доставки и статусов прочтения UknowApp."""
-
-from app.models import Assignment, Conversation, Message, User
+from app.models import Message, ConnectorDelivery
 from app.modules.communication.accounts import get_messenger_pair, sync_messenger_account
-from app.modules.communication.contracts import (
-    DeliveryResult,
-    InboundMessage,
-    MessageKind,
-    MessengerCapabilities,
-    MessengerPlatform,
-    OutboundMedia,
-    OutboundMessage,
-)
-from app.modules.messaging.inbound import process_inbound_message, set_teacher_session
-from app.modules.panel.delivery import deliver_panel_message, save_panel_messenger_results
-from app.modules.communication.service import (
-    CommunicationService,
-    record_messenger_delivery,
-)
-
+from app.modules.communication.contracts import MessengerPlatform
+from app.bots_gateway.outbox import enqueue_web_delivery, record_result, job_payload
+from app.bots_gateway.operations import receive_message
+from app.bots_gateway.gateway import media_path
+from helpers import create_conversation
 
 def login(client, username, password):
     response = client.post(
@@ -269,105 +254,6 @@ def test_personal_attachments_are_private_downloadable_and_idempotent(api):
 
 
 
-class FakeMessengerAdapter:
-    def __init__(self, platform):
-        self.platform = platform
-        self.capabilities = MessengerCapabilities(text=True, attachments=True)
-        self.sent = []
-
-    async def send(self, message: OutboundMessage) -> DeliveryResult:
-        self.sent.append(message)
-        return DeliveryResult(
-            platform=self.platform,
-            external_chat_id=message.external_chat_id,
-            external_message_id=f"{self.platform.value}-message",
-        )
-
-
-def test_communication_service_registers_multiple_independent_channels():
-    import asyncio
-
-    telegram = FakeMessengerAdapter(MessengerPlatform.TELEGRAM)
-    max_adapter = FakeMessengerAdapter(MessengerPlatform.MAX)
-    communication = CommunicationService([telegram, max_adapter])
-
-    assert communication.platforms == (
-        MessengerPlatform.TELEGRAM,
-        MessengerPlatform.MAX,
-    )
-
-    for platform, adapter in (
-        (MessengerPlatform.TELEGRAM, telegram),
-        (MessengerPlatform.MAX, max_adapter),
-    ):
-        result = asyncio.run(communication.send(OutboundMessage(
-            platform=platform,
-            external_chat_id="recipient",
-            content_type=MessageKind.TEXT,
-            text="Independent transport",
-        )))
-        assert result.platform == platform
-        assert len(adapter.sent) == 1
-
-
-def test_messenger_delivery_ledger_does_not_change_uknowapp_message_state():
-    metadata = {"source_mode": "web"}
-    record_messenger_delivery(
-        metadata,
-        MessengerPlatform.TELEGRAM,
-        errors=[{
-            "name": "Student One",
-            "role": "student",
-            "reason": "Telegram не подключён",
-        }],
-        status="not_connected",
-    )
-    record_messenger_delivery(
-        metadata,
-        MessengerPlatform.MAX,
-        delivered=[{
-            "user_id": 7,
-            "external_message_id": "max-message-1",
-            "external_chat_id": "max-chat-1",
-        }],
-    )
-
-    channels = metadata["messenger_deliveries"]
-    assert channels["telegram"]["status"] == "not_connected"
-    assert channels["max"]["status"] == "delivered"
-    assert metadata["messenger_deliveries"]["telegram"]["errors"][0]["reason"] == "Telegram не подключён"
-    assert "telegram_deliveries" not in metadata
-    assert "telegram_delivery_errors" not in metadata
-
-
-class FakeInboundGateway:
-    platform = MessengerPlatform.TELEGRAM
-
-    def __init__(self):
-        self.sent_texts = []
-        self.deleted_messages = []
-
-    async def send_text(self, external_chat_id, text, thread_id=None):
-        self.sent_texts.append((external_chat_id, text, thread_id))
-        return "confirmation-message"
-
-    async def copy_message(
-        self,
-        source_chat_id,
-        source_message_id,
-        target_chat_id,
-        target_thread_id=None,
-        caption=None,
-    ):
-        raise AssertionError("No Telegram copy should be attempted for an unlinked student")
-
-    async def archive_media(self, inbound, row):
-        return None
-
-    async def delete_message(self, external_chat_id, external_message_id):
-        self.deleted_messages.append((external_chat_id, external_message_id))
-
-
 def test_messenger_pair_requires_both_participants_on_same_platform(api):
     _, users, sessions = api
     with sessions() as db:
@@ -400,257 +286,6 @@ def test_messenger_pair_requires_both_participants_on_same_platform(api):
         ) == (None, None)
 
 
-def test_teacher_telegram_reply_without_student_telegram_is_delivered_in_uknowapp(api):
-    _, users, sessions = api
-    gateway = FakeInboundGateway()
-
-    with sessions() as db:
-        teacher = db.get(User, users["teacher-one"])
-        student = db.get(User, users["student-one"])
-        assignment = Assignment(
-            teacher_id=teacher.id,
-            student_id=student.id,
-            active=True,
-        )
-        db.add(assignment)
-        db.flush()
-        conversation = Conversation(
-            assignment_id=assignment.id,
-            teacher_id=teacher.id,
-            student_id=student.id,
-            status="active",
-        )
-        db.add(conversation)
-        db.commit()
-        db.refresh(conversation)
-
-        # Telegram подключён только у преподавателя.
-        sync_messenger_account(
-            db,
-            teacher.id,
-            MessengerPlatform.TELEGRAM,
-            external_user_id="teacher-telegram-user",
-            external_chat_id="teacher-telegram-chat",
-        )
-        db.commit()
-        set_teacher_session(db, teacher, conversation)
-
-        inbound = InboundMessage(
-            platform=MessengerPlatform.TELEGRAM,
-            event_id="telegram:teacher:101",
-            external_user_id="teacher-telegram-user",
-            external_chat_id="teacher-telegram-chat",
-            external_message_id="101",
-            content_type=MessageKind.TEXT,
-            text="Ответ преподавателя без Telegram у ученика",
-        )
-        result = asyncio.run(
-            process_inbound_message(db, inbound, gateway),
-        )
-        duplicate_result = asyncio.run(
-            process_inbound_message(db, inbound, gateway),
-        )
-
-        row = db.query(Message).filter(
-            Message.conversation_id == conversation.id,
-        ).one()
-        metadata = json.loads(row.metadata_json or "{}")
-
-        assert result.refresh_teacher_id == teacher.id
-        assert duplicate_result.refresh_teacher_id == teacher.id
-        assert db.query(Message).filter(
-            Message.conversation_id == conversation.id,
-        ).count() == 1
-        assert row.delivery_status == "delivered"
-        assert row.text == inbound.text
-        assert metadata["messenger_deliveries"]["telegram"]["status"] == "not_connected"
-        assert metadata["messenger_deliveries"]["telegram"]["errors"][0]["reason"] == (
-            "Аккаунт получателя не подключён к TELEGRAM"
-        )
-        # Если получатель не подключён, во внешний чат ничего не отправляется.
-        assert gateway.sent_texts == []
-        assert gateway.deleted_messages == []
-
-
-
-@pytest.mark.parametrize(
-    ("sender_role", "linked_roles", "expected_chats", "expected_status"),
-    [
-        ("teacher", ("student",), ["student-chat"], "delivered"),
-        ("student", ("teacher",), ["teacher-chat"], "delivered"),
-        ("admin", ("student",), ["student-chat"], "partial"),
-        ("admin", ("teacher",), ["teacher-chat"], "partial"),
-        ("admin", ("student", "teacher"), ["student-chat", "teacher-chat"], "delivered"),
-        ("teacher", ("teacher",), [], "not_connected"),
-        ("student", ("student",), [], "not_connected"),
-        ("admin", (), [], "not_connected"),
-    ],
-)
-def test_panel_delivery_uses_recipient_connection_only(
-    api, sender_role, linked_roles, expected_chats, expected_status,
-):
-    _, users, sessions = api
-    adapter = FakeMessengerAdapter(MessengerPlatform.TELEGRAM)
-    communication = CommunicationService([adapter])
-
-    with sessions() as db:
-        teacher = db.get(User, users["teacher-one"])
-        student = db.get(User, users["student-one"])
-        assignment = Assignment(
-            teacher_id=teacher.id, student_id=student.id, active=True,
-        )
-        db.add(assignment)
-        db.flush()
-        conversation = Conversation(
-            assignment_id=assignment.id,
-            teacher_id=teacher.id,
-            student_id=student.id,
-            status="active",
-        )
-        db.add(conversation)
-        db.flush()
-        for role, user, chat_id in (
-            ("teacher", teacher, "teacher-chat"),
-            ("student", student, "student-chat"),
-        ):
-            if role in linked_roles:
-                sync_messenger_account(
-                    db, user.id, MessengerPlatform.TELEGRAM,
-                    external_user_id=chat_id, external_chat_id=chat_id,
-                )
-
-        recipients = (
-            [(student, "student")] if sender_role == "teacher"
-            else [(teacher, "teacher")] if sender_role == "student"
-            else [(student, "student"), (teacher, "teacher")]
-        )
-        row = Message(
-            conversation_id=conversation.id,
-            sender_id=student.id if sender_role == "student" else teacher.id,
-            sender_role=sender_role,
-            text="Сообщение из приложения",
-            delivery_status="delivered",
-        )
-        db.add(row)
-        db.commit()
-
-        result = asyncio.run(deliver_panel_message(
-            db, communication, row, conversation, recipients,
-            sender_role, student, row.text, MessageKind.TEXT,
-        ))
-        save_panel_messenger_results(db, row, conversation, result)
-
-        assert [message.external_chat_id for message in adapter.sent] == expected_chats
-        assert all(message.text for message in adapter.sent)
-        sender_name = (
-            student.full_name if sender_role == "student"
-            else teacher.full_name if sender_role == "teacher"
-            else "Администратор"
-        )
-        assert [message.text for message in adapter.sent] == [
-            sender_name + "\nСообщение из приложения"
-        ] * len(expected_chats)
-        refreshed = db.get(Message, row.id)
-        ledger = json.loads(refreshed.metadata_json)["messenger_deliveries"]["telegram"]
-        assert ledger["status"] == expected_status
-        assert len(ledger["delivered"]) == len(expected_chats)
-        assert refreshed.delivery_status == "delivered"
-        assert all(entry["external_chat_id"] in expected_chats for entry in ledger["delivered"])
-
-
-def test_single_connected_student_receives_attachment_without_teacher_connection(api):
-    _, users, sessions = api
-    adapter = FakeMessengerAdapter(MessengerPlatform.TELEGRAM)
-    with sessions() as db:
-        teacher = db.get(User, users["teacher-one"])
-        student = db.get(User, users["student-one"])
-        assignment = Assignment(
-            teacher_id=teacher.id, student_id=student.id, active=True,
-        )
-        db.add(assignment)
-        db.flush()
-        conversation = Conversation(
-            assignment_id=assignment.id,
-            teacher_id=teacher.id,
-            student_id=student.id,
-            status="active",
-        )
-        db.add(conversation)
-        db.flush()
-        sync_messenger_account(
-            db, student.id, MessengerPlatform.TELEGRAM,
-            external_user_id="student-id", external_chat_id="student-chat",
-        )
-        row = Message(
-            conversation_id=conversation.id, sender_id=teacher.id,
-            sender_role="teacher", content_type="document",
-            text="Файл для ученика", delivery_status="delivered",
-        )
-        db.add(row)
-        db.commit()
-        media = OutboundMedia(
-            storage_key="documents/lesson.pdf",
-            file_name="lesson.pdf",
-            mime_type="application/pdf",
-        )
-        result = asyncio.run(deliver_panel_message(
-            db, CommunicationService([adapter]), row, conversation,
-            [(student, "student")], "teacher", student,
-            row.text, MessageKind.DOCUMENT, media=media,
-        ))
-        assert result["telegram"]["delivered"][0]["user_id"] == student.id
-        assert len(adapter.sent) == 1
-        assert adapter.sent[0].media == media
-        assert adapter.sent[0].external_chat_id == "student-chat"
-        assert adapter.sent[0].text == teacher.full_name + ": Файл для ученика"
-
-
-def test_independent_routing_across_multiple_messengers(api):
-    _, users, sessions = api
-    telegram = FakeMessengerAdapter(MessengerPlatform.TELEGRAM)
-    max_adapter = FakeMessengerAdapter(MessengerPlatform.MAX)
-    communication = CommunicationService([telegram, max_adapter])
-
-    with sessions() as db:
-        teacher = db.get(User, users["teacher-one"])
-        student = db.get(User, users["student-one"])
-        assignment = Assignment(
-            teacher_id=teacher.id, student_id=student.id, active=True,
-        )
-        db.add(assignment)
-        db.flush()
-        conversation = Conversation(
-            assignment_id=assignment.id, teacher_id=teacher.id,
-            student_id=student.id, status="active",
-        )
-        db.add(conversation)
-        db.flush()
-        sync_messenger_account(
-            db, student.id, MessengerPlatform.TELEGRAM,
-            external_user_id="student-telegram", external_chat_id="student-tg-chat",
-        )
-        sync_messenger_account(
-            db, teacher.id, MessengerPlatform.MAX,
-            external_user_id="teacher-max", external_chat_id="teacher-max-chat",
-        )
-        row = Message(
-            conversation_id=conversation.id, sender_id=teacher.id,
-            sender_role="admin", text="Сообщение всем", delivery_status="delivered",
-        )
-        db.add(row)
-        db.commit()
-        results = asyncio.run(deliver_panel_message(
-            db, communication, row, conversation,
-            [(student, "student"), (teacher, "teacher")],
-            "admin", student, row.text, MessageKind.TEXT,
-        ))
-        save_panel_messenger_results(db, row, conversation, results)
-        assert [m.external_chat_id for m in telegram.sent] == ["student-tg-chat"]
-        assert [m.external_chat_id for m in max_adapter.sent] == ["teacher-max-chat"]
-        metadata = json.loads(db.get(Message, row.id).metadata_json)
-        assert metadata["messenger_deliveries"]["telegram"]["status"] == "partial"
-        assert metadata["messenger_deliveries"]["max"]["status"] == "partial"
-
 def test_panel_message_client_id_prevents_duplicate_persistence(api):
     make_client, users, _ = api
     admin = make_client()
@@ -676,3 +311,45 @@ def test_panel_message_client_id_prevents_duplicate_persistence(api):
     assert first.json()["id"] == second.json()["id"]
     rows = teacher.get(f"/api/panel/conversations/{conversation_id}/messages")
     assert len(rows.json()) == 1
+
+
+@pytest.mark.parametrize("role,linked,targets", [
+    ("teacher", ("student",), {"student-chat"}),
+    ("student", ("teacher",), {"teacher-chat"}),
+    ("admin", ("student", "teacher"), {"student-chat", "teacher-chat"}),
+    ("admin", ("student",), {"student-chat"}),
+    ("teacher", ("teacher",), set()),
+    ("student", ("student",), set()),
+    ("admin", (), set()),
+])
+def test_panel_delivery_uses_recipient_connection_only(api, role, linked, targets):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = create_conversation(db, users["teacher-one"], users["student-one"])
+        for party in linked:
+            sync_messenger_account(db, users[party + "-one"], "alpha", party, party + "-chat")
+        db.commit()
+        row = Message(conversation_id=chat.id, sender_id=chat.student_id if role == "student" else chat.teacher_id,
+                      sender_role=role, text="Reply", delivery_status="delivered")
+        db.add(row)
+        db.flush()
+        enqueue_web_delivery(db, row, ("alpha",))
+        db.commit()
+        jobs = db.query(ConnectorDelivery).all()
+        assert {job.chat_id for job in jobs} == targets
+        for job in jobs:
+            assert job_payload(db, job)["text"].endswith("Reply")
+            record_result(db, job, "delivered", "provider-id")
+        assert row.delivery_status == "delivered"
+
+
+def test_reply_without_linked_student_is_still_saved(api):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = create_conversation(db, users["teacher-one"], users["student-one"])
+        sync_messenger_account(db, chat.teacher_id, "alpha", "teacher", "100")
+        db.commit()
+        receive_message(db, "alpha", {"id":"one", "actor":"teacher", "channel":"private",
+            "chat_id":"100", "conversation_id":chat.id, "kind":"text", "text":"Reply"}, ("alpha",), media_path)
+        assert db.query(Message).one().text == "Reply"
+        assert db.query(ConnectorDelivery).count() == 0
