@@ -30,7 +30,11 @@ def migrate_provider_channels(connection=None):
             db.flush()
         if "student_telegram_groups" in tables:
             for user_id, chat, thread in connection.execute(text("SELECT student_id, chat_id, thread_id FROM student_telegram_groups")):
-                if db.get(ExternalEndpoint, ("telegram", user_id)) is None and db.scalar(select(MessengerAccount).where(
+                if db.get(ExternalEndpoint, ("telegram", user_id)) is not None:
+                    continue
+                # Historical unlinked groups were not valid destinations. Preserve
+                # only bound accounts; do not revive a revoked account.
+                if db.scalar(select(MessengerAccount).where(
                     MessengerAccount.platform == "telegram", MessengerAccount.user_id == user_id)) is not None:
                     db.add(ExternalEndpoint(platform="telegram", user_id=user_id, chat_id=str(chat), thread_id=str(thread), preferred=True))
             db.flush()
@@ -60,10 +64,15 @@ def retire_legacy_schema(connection):
         try:
             metadata = json.loads(row["metadata_json"] or "{}")
         except (ValueError, TypeError):
-            continue
-        if not isinstance(metadata, dict):
-            continue
+            metadata = None
         changed = False
+        if not isinstance(metadata, dict):
+            # Preserve opaque legacy metadata if a historical identifier needs
+            # to be migrated; do not silently discard identifiers on DROP.
+            if not any(row[key] is not None for key in legacy_cols):
+                continue
+            metadata = {"legacy_metadata_raw": row["metadata_json"]}
+            changed = True
         if "telegram_deliveries" in metadata or "telegram_delivery_errors" in metadata:
             ledgers = metadata.setdefault("messenger_deliveries", {})
             if "telegram" not in ledgers:

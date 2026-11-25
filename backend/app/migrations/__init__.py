@@ -1,10 +1,10 @@
-"""Создание схемы и версионированные миграции БД."""
-
+"""Automatic, transactional schema upgrades on every startup (including restore)."""
+import logging
 from datetime import UTC, datetime
 
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 
-from app.core.database import create_tables, engine
+from app.core.database import Base, engine
 
 from .login_keys import migrate_login_keys
 from .maintenance import cleanup_expired_records
@@ -14,67 +14,66 @@ from .delivery_routes import upgrade_delivery_routes
 from .delivery_recovery import upgrade_delivery_recovery
 from .push_devices import upgrade_push_devices
 
-_LOGIN_VERSION = "2026-11-22-login-lookup"
-_BOARDS_REMOVAL_VERSION = "2026-11-22-remove-interactive-boards"
+logger = logging.getLogger(__name__)
+
+# Keep old identifiers permanently. New releases append explicit, tested steps.
+MIGRATIONS = (
+    ("2026-11-22-login-lookup", migrate_login_keys),
+    ("2026-11-22-remove-interactive-boards", remove_board_tables),
+    ("2026-11-26-delivery-routes", upgrade_delivery_routes),
+    ("2026-11-26-delivery-recovery", upgrade_delivery_recovery),
+    ("2026-11-26-provider-channels", migrate_provider_channels),
+    ("2026-11-26-retire-legacy-provider", retire_legacy_schema),
+    ("2026-11-26-push-devices", upgrade_push_devices),
+)
 
 
-def _is_applied(version: str) -> bool:
-    with engine.connect() as connection:
-        return connection.scalar(
-            text("SELECT 1 FROM schema_migrations WHERE version = :version"),
-            {"version": version},
-        ) is not None
+def validate_schema(connection):
+    inspector = inspect(connection)
+    for table in Base.metadata.sorted_tables:
+        if not inspector.has_table(table.name):
+            raise RuntimeError(f"Missing required table: {table.name}")
+        columns = {c["name"] for c in inspector.get_columns(table.name)}
+        missing = set(table.columns.keys()) - columns
+        if missing:
+            raise RuntimeError(f"Unsupported schema: {table.name} missing {', '.join(sorted(missing))}")
+        connection.execute(table.select().limit(0)).close()
 
 
-def _mark_applied(version: str) -> None:
-    with engine.begin() as connection:
-        connection.execute(
-            text("INSERT INTO schema_migrations (version, applied_at) VALUES (:version, :now)"),
-            {"version": version, "now": datetime.now(UTC)},
-        )
-
-
-def initialize_database() -> None:
-    # Регистрируем модели до создания таблиц.
+def upgrade_schema(connection):
+    """Run on a caller-owned transaction. No nested commits or external I/O."""
     from app import models  # noqa: F401
 
-    create_tables()
-    with engine.begin() as connection:
+    existing = set(inspect(connection).get_table_names())
+    # Do not create a blank school over a partially copied business schema.
+    required = {"users", "messages", "conversations", "assignments"}
+    if existing & required and not required <= existing:
+        raise RuntimeError("Incomplete UknowApp database: missing core tables")
+    Base.metadata.create_all(bind=connection)
+    connection.execute(text(
+        "CREATE TABLE IF NOT EXISTS schema_migrations ("
+        "version VARCHAR(100) PRIMARY KEY, applied_at TIMESTAMP NOT NULL)"
+    ))
+    applied = set(connection.scalars(text("SELECT version FROM schema_migrations")))
+    for version, migrate in MIGRATIONS:
+        if version in applied:
+            continue
+        logger.info("Applying database migration %s", version)
+        migrate(connection)
         connection.execute(text(
-            "CREATE TABLE IF NOT EXISTS schema_migrations ("
-            "version VARCHAR(100) PRIMARY KEY, applied_at TIMESTAMP NOT NULL)"
-        ))
+            "INSERT INTO schema_migrations (version, applied_at) VALUES (:version, :now)"
+        ), {"version": version, "now": datetime.now(UTC)})
+    validate_schema(connection)
 
-    if not _is_applied(_LOGIN_VERSION):
-        migrate_login_keys()
-        _mark_applied(_LOGIN_VERSION)
 
-    if not _is_applied(_BOARDS_REMOVAL_VERSION):
-        remove_board_tables()
-        _mark_applied(_BOARDS_REMOVAL_VERSION)
-
-    if not _is_applied("2026-11-26-delivery-routes"):
-        with engine.begin() as connection:
-            upgrade_delivery_routes(connection)
-        _mark_applied("2026-11-26-delivery-routes")
-
-    if not _is_applied("2026-11-26-delivery-recovery"):
-        with engine.begin() as connection:
-            upgrade_delivery_recovery(connection)
-        _mark_applied("2026-11-26-delivery-recovery")
-
-    if not _is_applied("2026-11-26-provider-channels"):
-        migrate_provider_channels()
-        _mark_applied("2026-11-26-provider-channels")
-
-    if not _is_applied("2026-11-26-retire-legacy-provider"):
-        with engine.begin() as connection:
-            retire_legacy_schema(connection)
-        _mark_applied("2026-11-26-retire-legacy-provider")
-
-    if not _is_applied("2026-11-26-push-devices"):
-        with engine.begin() as connection:
-            upgrade_push_devices(connection)
-        _mark_applied("2026-11-26-push-devices")
-
+def initialize_database():
+    # SQLite's legacy driver does not start a transaction for DDL. BEGIN
+    # IMMEDIATE ensures schema changes and markers roll back together.
+    # PostgreSQL advisory lock serializes concurrent Core startups.
+    with engine.begin() as connection:
+        if connection.dialect.name == "sqlite":
+            connection.exec_driver_sql("BEGIN IMMEDIATE")
+        elif connection.dialect.name == "postgresql":
+            connection.execute(text("SELECT pg_advisory_xact_lock(672612026)"))
+        upgrade_schema(connection)
     cleanup_expired_records()
