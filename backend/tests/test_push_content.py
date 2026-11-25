@@ -37,7 +37,7 @@ def test_optional_previews_can_be_switched_on(monkeypatch):
     assert message.endswith("…")
 
 
-def test_push_delivery_selects_admin_specific_payload(monkeypatch):
+def test_push_delivery_selects_admin_specific_payload(api, monkeypatch):
     sent = []
     monkeypatch.setattr(push_service, "is_safe_push_endpoint", lambda endpoint: True)
     monkeypatch.setattr(

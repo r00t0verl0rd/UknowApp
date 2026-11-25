@@ -147,16 +147,20 @@ def remove_push_subscription(payload: dict, request: Request, principal: PanelUs
     endpoint = payload.get("endpoint")
     if not isinstance(endpoint, str) or len(endpoint) > 2048:
         raise HTTPException(status_code=400, detail="Некорректная подписка")
-    with runtime_database.RuntimeSessionLocal() as runtime:
-        subscription = runtime.scalar(select(PushSubscription).where(PushSubscription.endpoint == endpoint))
-        session_hash = _token_digest(_request_token(request))
-        if subscription and (subscription.session_hash is None or subscription.session_hash == session_hash) and (
-            (principal["role"] == "admin" and subscription.role == "admin")
-            or (principal["role"] in {"teacher", "student"} and subscription.user_id == principal["user_id"])
-        ):
-            runtime.delete(subscription)
-            runtime.commit()
-        return {"ok": True}
+    try:
+        with runtime_database.RuntimeSessionLocal() as runtime:
+            subscription = runtime.scalar(select(PushSubscription).where(PushSubscription.endpoint == endpoint))
+            session_hash = _token_digest(_request_token(request))
+            if subscription and (subscription.session_hash is None or subscription.session_hash == session_hash) and (
+                (principal["role"] == "admin" and subscription.role == "admin")
+                or (principal["role"] in {"teacher", "student"} and subscription.user_id == principal["user_id"])
+            ):
+                runtime.delete(subscription)
+                runtime.commit()
+            return {"ok": True}
+
+    except SQLAlchemyError as exc:
+        raise HTTPException(503, "Push registry unavailable") from exc
 
 
 @router.get("/admin/push/diagnostics")
@@ -167,10 +171,10 @@ def push_diagnostics(_: Admin, db: Db):
     except SQLAlchemyError as exc:
         raise HTTPException(503, "Push registry unavailable") from exc
     now = datetime.now(UTC)
-    active_sessions = set(db.scalars(select(PanelSession.token_hash).where(PanelSession.expires_at > now,
-        PanelSession.token_hash.in_({row.session_hash for row in rows if row.session_hash}))).all())
+    active_sessions = {item.token_hash: (item.role, item.user_id) for item in db.scalars(select(PanelSession).where(PanelSession.expires_at > now,
+        PanelSession.token_hash.in_({row.session_hash for row in rows if row.session_hash})))}
     def device(row):
-        session_active = row.session_hash in active_sessions if row.session_hash else None
+        session_active = active_sessions.get(row.session_hash) == (row.role, row.user_id) if row.session_hash else None
         return {"id": row.id, "role": row.role, "user_id": row.user_id,
                 "provider": urlsplit(row.endpoint).hostname,
                 "created_at": row.created_at, "synced_at": row.synced_at,

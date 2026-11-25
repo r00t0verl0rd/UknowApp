@@ -79,7 +79,7 @@ def _dispatch_batch(ids, title, body, url, include_admin, admin_body):
             subscriptions = runtime.scalars(select(PushSubscription).where(or_(*conditions),
                 or_(PushSubscription.delivery_state.is_(None), PushSubscription.delivery_state != "expired"))).all()
             targets = [{
-                "id": item.id, "role": item.role, "revision": item.revision,
+                "id": item.id, "role": item.role, "user_id": item.user_id, "revision": item.revision,
                 "session_hash": item.session_hash, "endpoint": item.endpoint,
                 "keys": {"p256dh": item.p256dh, "auth": item.auth},
             } for item in subscriptions if item.session_hash]
@@ -90,7 +90,7 @@ def _dispatch_batch(ids, title, body, url, include_admin, admin_body):
             hashes = {item["session_hash"] for item in targets}
             active = {row.token_hash: (row.role, row.user_id) for row in main.scalars(select(PanelSession).where(
                 PanelSession.token_hash.in_(hashes), PanelSession.expires_at > datetime.now(UTC)))}
-        targets = [item for item in targets if item["session_hash"] in active and active[item["session_hash"]][0] == item["role"]]
+        targets = [item for item in targets if item["session_hash"] in active and active[item["session_hash"]] == (item["role"], item["user_id"])]
     except (SQLAlchemyError, OSError) as exc:
         logger.warning("Push registry unavailable: %s", type(exc).__name__)
         return

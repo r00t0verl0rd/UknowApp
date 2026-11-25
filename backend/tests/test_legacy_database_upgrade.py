@@ -12,6 +12,8 @@ from app.infrastructure.storage.message_metadata import metadata_with_field
 from sqlalchemy.orm import Session
 
 from app import migrations
+from app.core import runtime_database
+from app.migrations.runtime_split import migrate_push_subscriptions, migrate_transport_state
 from app.core.security import hash_web_password, verify_web_password
 from app.models import (Assignment, ConnectorDelivery, Conversation, ExternalEndpoint,
                         Message, MessengerAccount, PersonalMessage, PushSubscription, User)
@@ -127,6 +129,21 @@ def assert_preserved(connection, name):
     assert "telegram_id" not in {c["name"] for c in inspector.get_columns("users")}
     assert "source_message_id" not in {c["name"] for c in inspector.get_columns("messages")}
     assert set(connection.scalars(text("SELECT version FROM schema_migrations"))) >= {v for v,_ in migrations.MIGRATIONS}
+    # Exercise the physical split after the historical upgrade, for both dialects.
+    runtime = create_engine("sqlite://")
+    try:
+        runtime_database.RuntimeBase.metadata.create_all(runtime)
+        migrate_push_subscriptions(connection, runtime)
+        migrate_transport_state(connection, runtime)
+        migrate_push_subscriptions(connection, runtime)
+        migrate_transport_state(connection, runtime)
+        assert not inspect(connection).has_table("push_subscriptions")
+        with Session(runtime) as db:
+            assert {row.endpoint for row in db.scalars(select(PushSubscription))} == {
+                "https://web.push.apple.com/legacy-81", "https://web.push.apple.com/legacy-82"}
+        migrations.validate_schema(connection)
+    finally:
+        runtime.dispose()
 
 
 @pytest.mark.parametrize("name", VERSIONS)
@@ -139,7 +156,7 @@ def test_sqlite_previous_release_startup(tmp_path, monkeypatch, name):
     monkeypatch.setattr(migrations, "cleanup_expired_records", lambda: None)
     migrations.initialize_database()
     migrations.initialize_database()  # all migrations must be idempotent
-    with engine.connect() as c:
+    with engine.begin() as c:
         assert_preserved(c, name)
         assert c.exec_driver_sql("PRAGMA foreign_key_check").fetchall() == []
         assert c.exec_driver_sql("PRAGMA integrity_check").scalar() == "ok"

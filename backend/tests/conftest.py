@@ -27,14 +27,14 @@ def _shared_fixture_password_hash(password: str) -> str:
 
 
 @pytest.fixture
-def api(monkeypatch):
+def api(monkeypatch, tmp_path):
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
     Base.metadata.create_all(engine)
-    runtime_engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    runtime_engine = create_engine("sqlite:///" + str(tmp_path / "runtime.db"), connect_args={"check_same_thread": False})
     runtime_database.RuntimeBase.metadata.create_all(runtime_engine)
     monkeypatch.setattr(runtime_database, "RuntimeSessionLocal", sessionmaker(bind=runtime_engine, autoflush=False, expire_on_commit=False))
     test_sessions = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
