@@ -11,14 +11,15 @@ from app.core.security import normalize_login
 from app.models import User
 
 
-def user_dict(user: User, include_telegram_id: bool = True, include_additional_info: bool = False) -> dict:
+def user_dict(user: User, include_messenger_accounts: bool = True, include_additional_info: bool = False) -> dict:
     return {
         "id": user.id,
         "full_name": user.full_name,
         **({"additional_info": user.additional_info} if include_additional_info and user.role == "student" else {}),
         "web_username": (user.web_username or user.full_name) if user.role in {"teacher", "student"} else None,
         "role": user.role,
-        "telegram_id": user.telegram_id if include_telegram_id else None,
+        "messenger_accounts": [{"platform": a.platform, "external_user_id": a.external_user_id}
+                               for a in user.messenger_accounts if a.status == "linked"] if include_messenger_accounts else [],
         "created_at": user.created_at.isoformat() if user.created_at else None,
         "has_access_code": bool(user.web_password_hash),
     }

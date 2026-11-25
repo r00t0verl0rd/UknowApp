@@ -67,7 +67,7 @@ def bind_endpoint(db, platform, user, chat, thread):
 
 
 def summaries(db, user):
-    items = conversation_dicts(db, available(db, user), include_telegram_ids=False, viewer_role=user.role)
+    items = conversation_dicts(db, available(db, user), include_messenger_accounts=False, viewer_role=user.role)
     previews = {}
     if items:
         ranked = select(Message.id.label("id"), Message.conversation_id,

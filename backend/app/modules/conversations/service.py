@@ -14,7 +14,7 @@ from app.modules.users.service import user_dict
 def conversation_dicts(
     db: Session,
     conversations: list[Conversation],
-    include_telegram_ids: bool = True,
+    include_messenger_accounts: bool = True,
     viewer_role: str = "teacher",
 ) -> list[dict]:
     if not conversations:
@@ -60,8 +60,8 @@ def conversation_dicts(
             "id": conversation.id,
             "status": conversation.status,
             "created_at": conversation.created_at.isoformat(),
-            "teacher": user_dict(conversation.teacher, include_telegram_id=include_telegram_ids),
-            "student": user_dict(conversation.student, include_telegram_id=include_telegram_ids),
+            "teacher": user_dict(conversation.teacher, include_messenger_accounts=include_messenger_accounts),
+            "student": user_dict(conversation.student, include_messenger_accounts=include_messenger_accounts),
             "last_message": _message_preview(last_message),
             "last_message_at": last_message.created_at.isoformat() if last_message else None,
             "message_count": message_count,
@@ -71,9 +71,9 @@ def conversation_dicts(
 
 
 def conversation_dict(
-    db: Session, conversation: Conversation, include_telegram_ids: bool = True,
+    db: Session, conversation: Conversation, include_messenger_accounts: bool = True,
 ) -> dict:
-    return conversation_dicts(db, [conversation], include_telegram_ids)[0]
+    return conversation_dicts(db, [conversation], include_messenger_accounts)[0]
 
 
 
@@ -134,8 +134,8 @@ def conversation_event_summaries(db: Session, conversation: Conversation) -> dic
         "id": conversation.id,
         "status": conversation.status,
         "created_at": conversation.created_at.isoformat(),
-        "teacher": user_dict(conversation.teacher, include_telegram_id=False),
-        "student": user_dict(conversation.student, include_telegram_id=False),
+        "teacher": user_dict(conversation.teacher, include_messenger_accounts=False),
+        "student": user_dict(conversation.student, include_messenger_accounts=False),
         "last_message": last_message_preview,
         "last_message_at": last_message.created_at.isoformat() if last_message else None,
         "message_count": int(stats[0] or 0),

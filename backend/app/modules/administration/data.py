@@ -29,14 +29,13 @@ from app.infrastructure.storage.media import MEDIA_DIR, delete_message_media
 from app.models import (
     Assignment,
     ConnectionCode,
+    ExternalEndpoint,
+    MessengerAccount,
     Conversation,
     Message,
     PanelSession,
     PersonalConversation,
     PersonalMessage,
-    StudentTelegramGroup,
-    TeacherPanel,
-    TeacherSession,
     User,
 )
 from app.modules.auth.service import require_admin
@@ -829,9 +828,8 @@ def data_stats(_: Admin):
             "messages": message_count,
             "personal_messages": personal_message_count,
             "total_messages": message_count + personal_message_count,
-            "telegram_groups": db.query(StudentTelegramGroup).count(),
-            "teacher_panels": db.query(TeacherPanel).count(),
-            "teacher_sessions": db.query(TeacherSession).count(),
+            "external_endpoints": db.query(ExternalEndpoint).count(),
+            "messenger_accounts": db.query(MessengerAccount).count(),
             "panel_sessions": db.query(PanelSession).count(),
             "connection_codes": db.query(func.count(func.distinct(ConnectionCode.user_id))).join(
                 User, ConnectionCode.user_id == User.id,
@@ -971,11 +969,11 @@ async def _stage_upload(file: UploadFile, kind: str):
 
         automatic_restart = _automatic_restart_enabled()
         message = (
-            "Архив проверен. Backend будет перезапущен и применит все данные до запуска Telegram."
+            "Архив проверен. Backend будет перезапущен и применит все данные до запуска коннекторов."
             if automatic_restart
             else (
                 "Архив проверен и подготовлен. Перезапустите backend: при следующем запуске "
-                "данные будут заменены до запуска Telegram."
+                "данные будут заменены до запуска коннекторов."
             )
         )
         return JSONResponse(

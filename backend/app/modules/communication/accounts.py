@@ -134,6 +134,8 @@ def sync_messenger_account(
     else:
         account.user_id = user_id
         account.platform = platform_value
+        if account.external_user_id != normalized_user_id:
+            account.external_chat_id = None
         account.external_user_id = normalized_user_id
         if account.linked_at is None:
             account.linked_at = datetime.now(UTC)
@@ -196,14 +198,6 @@ def claim_messenger_connection_code(
     if existing_account and existing_account.external_user_id != str(external_user_id):
         return None, "account_already_linked"
 
-    if platform == MessengerPlatform.TELEGRAM:
-        try:
-            telegram_id = int(external_user_id)
-        except (TypeError, ValueError):
-            return None, "invalid"
-        # Сохраняем поле старого API для совместимости.
-        user.telegram_id = telegram_id
-
     try:
         sync_messenger_account(
             db, user.id, platform, external_user_id, external_chat_id, username,
@@ -217,4 +211,5 @@ def claim_messenger_connection_code(
 
 
 def delete_user_messenger_accounts(db: Session, user_id: int) -> None:
+    db.execute(delete(ExternalEndpoint).where(ExternalEndpoint.user_id == user_id))
     db.execute(delete(MessengerAccount).where(MessengerAccount.user_id == user_id))

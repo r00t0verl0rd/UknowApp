@@ -34,7 +34,7 @@ class User(Base):
     web_username: Mapped[str | None] = mapped_column(String(160), nullable=True)
     web_login_key: Mapped[str | None] = mapped_column(String(320), nullable=True, index=True)
     role: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
-    telegram_id: Mapped[int | None] = mapped_column(BigInteger, unique=True, nullable=True, index=True)
+    messenger_accounts: Mapped[list["MessengerAccount"]] = relationship(lazy="selectin", cascade="all, delete-orphan", passive_deletes=True, back_populates="user")
     web_password_hash: Mapped[str | None] = mapped_column(String(160), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
@@ -165,13 +165,6 @@ class PersonalMessage(Base):
 
     sender: Mapped[User | None] = relationship()
 
-class TeacherSession(Base):
-    __tablename__ = "teacher_sessions"
-
-    teacher_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
-    conversation_id: Mapped[int] = mapped_column(ForeignKey("conversations.id"), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
-
 
 class Message(Base):
     __tablename__ = "messages"
@@ -204,10 +197,8 @@ class Message(Base):
     metadata_json: Mapped[str] = mapped_column(Text, default="{}", nullable=False)
     client_message_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     delivery_status: Mapped[str] = mapped_column(String(30), default="received", nullable=False)
-    source_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     source_platform: Mapped[str | None] = mapped_column(String(32), nullable=True)
     source_event_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    destination_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
     sender: Mapped[User] = relationship()
@@ -225,34 +216,6 @@ class ConnectionCode(Base):
 
     user: Mapped[User] = relationship()
 
-
-class TeacherPanel(Base):
-    __tablename__ = "teacher_panels"
-
-    teacher_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
-    message_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    keyboard_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    keyboard_signature: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    page_index: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
-
-
-class StudentTelegramGroup(Base):
-    """Тема Telegram, привязанная к переписке ученика."""
-
-    __tablename__ = "student_telegram_groups"
-    __table_args__ = (
-        UniqueConstraint("chat_id", "thread_id", name="uq_student_telegram_group_topic"),
-    )
-
-    student_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
-    chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
-    thread_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    group_title: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    bound_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
-
-    student: Mapped[User] = relationship()
 
 
 
@@ -291,7 +254,7 @@ class MessengerAccount(Base):
         DateTime(timezone=True), nullable=True,
     )
 
-    user: Mapped[User] = relationship()
+    user: Mapped[User] = relationship(back_populates="messenger_accounts")
 
 
 class RealtimeEvent(Base):
@@ -319,17 +282,6 @@ class BotEventReceipt(Base):
     event_id: Mapped[str] = mapped_column(String(200), primary_key=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
-
-class BotDeliveryJob(Base):
-    """Durable web-to-messenger outbox. Unknown outcomes are never blindly retried."""
-
-    __tablename__ = "bot_delivery_jobs"
-
-    message_id: Mapped[int] = mapped_column(
-        ForeignKey("messages.id", ondelete="CASCADE"), primary_key=True,
-    )
-    status: Mapped[str] = mapped_column(String(20), default="queued", nullable=False, index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
 
 class ExternalEndpoint(Base):

@@ -66,7 +66,7 @@ def panel_conversations(principal: PanelUser, db: Db):
     return conversation_dicts(
         db,
         conversations,
-        include_telegram_ids=(principal["role"] == "admin"),
+        include_messenger_accounts=(principal["role"] == "admin"),
         viewer_role=principal["role"],
     )
 
@@ -75,7 +75,7 @@ def panel_conversations(principal: PanelUser, db: Db):
 def panel_conversation_summary(conversation_id: int, principal: PanelUser, db: Db):
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     return conversation_dicts(
-        db, [conversation], include_telegram_ids=(principal["role"] == "admin"),
+        db, [conversation], include_messenger_accounts=(principal["role"] == "admin"),
         viewer_role=principal["role"],
     )[0]
 

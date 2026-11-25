@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.event_hub import publish_chat_update
-from app.models import Assignment, Conversation, TeacherSession, User
+from app.models import Assignment, Conversation, User
 from app.modules.conversations.service import conversation_dict
 
 
@@ -47,9 +47,6 @@ def assign_student(payload, db: Session) -> dict:
             conversation.status = "closed"
             conversation.assignment_id = None
             closed_conversation_ids.append((conversation.id, conversation.teacher_id))
-            db.query(TeacherSession).filter(
-                TeacherSession.conversation_id == conversation.id,
-            ).delete(synchronize_session=False)
         db.delete(assignment)
 
     # Сохраняем изменения до поиска прежней переписки.
@@ -116,9 +113,6 @@ def unassign_student(student_id: int, db: Session) -> dict:
             conversation.status = "closed"
             conversation.assignment_id = None
             conversation_ids.append((conversation.id, conversation.teacher_id))
-            db.query(TeacherSession).filter(
-                TeacherSession.conversation_id == conversation.id,
-            ).delete(synchronize_session=False)
 
     db.commit()
     for conversation_id, teacher_id in conversation_ids:

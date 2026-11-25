@@ -9,7 +9,7 @@ from app.core.database import create_tables, engine
 from .login_keys import migrate_login_keys
 from .maintenance import cleanup_expired_records
 from .remove_boards import remove_board_tables
-from .provider_channels import migrate_provider_channels
+from .provider_channels import migrate_provider_channels, retire_legacy_schema
 from .delivery_routes import upgrade_delivery_routes
 
 _LOGIN_VERSION = "2026-11-22-login-lookup"
@@ -59,5 +59,10 @@ def initialize_database() -> None:
     if not _is_applied("2026-11-26-provider-channels"):
         migrate_provider_channels()
         _mark_applied("2026-11-26-provider-channels")
+
+    if not _is_applied("2026-11-26-retire-legacy-provider"):
+        with engine.begin() as connection:
+            retire_legacy_schema(connection)
+        _mark_applied("2026-11-26-retire-legacy-provider")
 
     cleanup_expired_records()

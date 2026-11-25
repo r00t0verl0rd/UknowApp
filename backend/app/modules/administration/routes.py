@@ -19,18 +19,15 @@ from app.models import (
     PanelSession,
     PersonalConversation,
     PersonalMessage,
-    StudentTelegramGroup,
-    TeacherPanel,
-    TeacherSession,
     User,
 )
 from app.modules.assignments.service import assign_student, unassign_student
 from app.modules.communication.accounts import (
     MessengerAccountConflict,
+    get_messenger_account,
     delete_user_messenger_accounts,
     sync_messenger_account,
 )
-from app.modules.communication.contracts import MessengerPlatform
 from app.modules.dependencies import Db, SchoolStructure, UserManagement
 from app.modules.users.service import (
     generate_panel_access_code,
@@ -104,17 +101,14 @@ def create_user(payload: dict, _: UserManagement, db: Db):
         additional_info=((payload.get("additional_info") or "").strip() or None) if payload.get("role") == "student" else None,
         web_username=web_username,
         role=payload.get("role"),
-        telegram_id=payload.get("telegram_id"),
         web_password_hash=hash_web_password(issued_access_code) if issued_access_code else None,
     )
     db.add(user)
     try:
         db.flush()
-        if user.telegram_id is not None:
-            sync_messenger_account(
-                db, user.id, MessengerPlatform.TELEGRAM,
-                str(user.telegram_id), external_chat_id=str(user.telegram_id),
-            )
+        if payload.get("messenger_account"):
+            account = payload["messenger_account"]
+            sync_messenger_account(db, user.id, account["platform"], account["external_user_id"])
         if issued_access_code:
             now = datetime.now(UTC)
             db.add(ConnectionCode(
@@ -127,7 +121,7 @@ def create_user(payload: dict, _: UserManagement, db: Db):
         db.refresh(user)
     except (IntegrityError, MessengerAccountConflict) as exc:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Этот Telegram ID уже используется") from exc
+        raise HTTPException(status_code=409, detail="Этот аккаунт мессенджера уже используется") from exc
     result = user_dict(user)
     if issued_access_code:
         result["issued_access_code"] = issued_access_code
@@ -141,6 +135,7 @@ def update_user(user_id: int, payload: dict, _: UserManagement, db: Db):
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     changes = payload
+    account = changes.pop("messenger_account", None)
     requested_web_username = changes.pop("web_username", None)
     # Создаём коды на сервере, в БД храним хеши.
     target_role = changes.get("role", user.role)
@@ -167,7 +162,6 @@ def update_user(user_id: int, payload: dict, _: UserManagement, db: Db):
         user.web_password_hash = None
 
     if role_changed:
-        db.query(TeacherPanel).filter(TeacherPanel.teacher_id == user.id).delete(synchronize_session=False)
         assignments = db.scalars(select(Assignment).where(Assignment.active.is_(True), (Assignment.teacher_id == user.id) | (Assignment.student_id == user.id))).all()
         now = datetime.now(UTC)
         for assignment in assignments:
@@ -175,7 +169,6 @@ def update_user(user_id: int, payload: dict, _: UserManagement, db: Db):
             assignment.closed_at = now
             if assignment.conversation:
                 assignment.conversation.status = "closed"
-        db.query(TeacherSession).filter(TeacherSession.teacher_id == user.id).delete(synchronize_session=False)
     if target_role != "student":
         user.additional_info = None
     for field, value in changes.items():
@@ -198,19 +191,13 @@ def update_user(user_id: int, payload: dict, _: UserManagement, db: Db):
     elif not has_web_panel:
         db.query(ConnectionCode).filter(ConnectionCode.user_id == user.id).delete(synchronize_session=False)
     try:
-        if "telegram_id" in changes:
-            sync_messenger_account(
-                db,
-                user.id,
-                MessengerPlatform.TELEGRAM,
-                str(user.telegram_id) if user.telegram_id is not None else None,
-                external_chat_id=str(user.telegram_id) if user.telegram_id is not None else None,
-            )
+        if account is not None:
+            sync_messenger_account(db, user.id, account["platform"], account["external_user_id"])
         db.commit()
         db.refresh(user)
     except (MessengerAccountConflict, IntegrityError) as exc:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Этот Telegram ID уже используется") from exc
+        raise HTTPException(status_code=409, detail="Этот аккаунт мессенджера уже используется") from exc
     result = user_dict(user)
     if issued_access_code:
         result["issued_access_code"] = issued_access_code
@@ -244,35 +231,19 @@ def regenerate_panel_access_code(user_id: int, _: UserManagement, db: Db):
     }
 
 
-@router.post("/admin/users/{user_id}/disconnect-telegram")
-def disconnect_telegram(user_id: int, _: UserManagement, db: Db):
+@router.post("/admin/users/{user_id}/messengers/{platform}/disconnect")
+def disconnect_messenger(user_id: int, platform: str, _: UserManagement, db: Db):
     user = db.get(User, user_id)
     if not user or user.role not in {"teacher", "student"}:
         raise HTTPException(status_code=404, detail="Учитель или ученик не найден")
-    if not user.telegram_id:
-        raise HTTPException(status_code=409, detail="Telegram уже отключён")
-
-    disconnected_telegram_id = user.telegram_id
-
-    # Удаляем только привязку Telegram, код доступа остаётся.
-    user.telegram_id = None
-    sync_messenger_account(
-        db, user.id, MessengerPlatform.TELEGRAM, None,
-    )
-
-    # После переподключения преподаватель выбирает диалог заново.
-    if user.role == "teacher":
-        db.query(TeacherSession).filter(
-            TeacherSession.teacher_id == user.id,
-        ).delete(synchronize_session=False)
-
+    account = get_messenger_account(db, user_id, platform)
+    if account is None:
+        raise HTTPException(status_code=409, detail="Мессенджер уже отключён")
+    external_id = account.external_user_id
+    sync_messenger_account(db, user.id, platform, None)
     db.commit()
     db.refresh(user)
-    return {
-        "ok": True,
-        "user": user_dict(user),
-        "disconnected_telegram_id": disconnected_telegram_id,
-    }
+    return {"ok": True, "user": user_dict(user), "disconnected_external_user_id": external_id}
 
 
 @router.delete("/admin/users/{user_id}")
@@ -297,9 +268,6 @@ def delete_user(user_id: int, _: UserManagement, db: Db):
         media_rows = db.scalars(select(Message).where(Message.conversation_id.in_(conversation_ids))).all()
         for media_row in media_rows:
             delete_message_media(media_row.metadata_json)
-        db.query(TeacherSession).filter(
-            TeacherSession.conversation_id.in_(conversation_ids),
-        ).delete(synchronize_session=False)
         db.query(Message).filter(
             Message.conversation_id.in_(conversation_ids),
         ).delete(synchronize_session=False)
@@ -309,13 +277,6 @@ def delete_user(user_id: int, _: UserManagement, db: Db):
 
     # Удаляем все служебные ссылки до пользователя: SQLite теперь проверяет внешние ключи.
     db.query(PanelSession).filter(PanelSession.user_id == user.id).delete(synchronize_session=False)
-    db.query(StudentTelegramGroup).filter(
-        StudentTelegramGroup.student_id == user.id,
-    ).delete(synchronize_session=False)
-    db.query(TeacherSession).filter(
-        TeacherSession.teacher_id == user.id,
-    ).delete(synchronize_session=False)
-    db.query(TeacherPanel).filter(TeacherPanel.teacher_id == user.id).delete(synchronize_session=False)
     if assignments:
         db.query(Assignment).filter(
             Assignment.id.in_([item.id for item in assignments]),

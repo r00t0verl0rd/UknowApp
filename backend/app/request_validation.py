@@ -1,5 +1,6 @@
 """Проверки входных данных HTTP API."""
 
+import re
 from collections.abc import Mapping
 from typing import Any
 
@@ -52,6 +53,19 @@ def login_payload(payload: Any) -> dict:
     return {key: data[key] for key in ("username", "password")}
 
 
+def _messenger_account(data):
+    if "messenger_account" not in data:
+        return
+    account = _object(data["messenger_account"])
+    platform = account.get("platform")
+    ident = account.get("external_user_id")
+    if not isinstance(platform, str) or not re.fullmatch(r"[a-z][a-z0-9_-]{0,31}", platform):
+        _invalid("messenger_account", "Invalid platform")
+    if ident is not None and (not isinstance(ident, str) or not ident.strip() or len(ident) > 255):
+        _invalid("messenger_account", "Invalid external user ID")
+    data["messenger_account"] = {"platform": platform, "external_user_id": ident}
+
+
 def user_create_payload(payload: Any) -> dict:
     data = _object(payload)
     _string(data, "full_name", required=True, minimum=2, maximum=160)
@@ -59,8 +73,8 @@ def user_create_payload(payload: Any) -> dict:
     if data.get("role") not in {"teacher", "student"}:
         _invalid("role", "Input should be 'teacher' or 'student'")
     _string(data, "web_username", minimum=2, maximum=160)
-    _integer(data, "telegram_id", minimum=1)
-    fields = ("full_name", "additional_info", "role", "web_username", "telegram_id")
+    _messenger_account(data)
+    fields = ("full_name", "additional_info", "role", "web_username", "messenger_account")
     return {key: data[key] for key in fields if key in data}
 
 
@@ -71,8 +85,8 @@ def user_update_payload(payload: Any) -> dict:
     if data.get("role") is not None and data["role"] not in {"teacher", "student"}:
         _invalid("role", "Input should be 'teacher' or 'student'")
     _string(data, "web_username", minimum=2, maximum=160)
-    _integer(data, "telegram_id", minimum=1)
-    fields = ("full_name", "additional_info", "role", "web_username", "telegram_id")
+    _messenger_account(data)
+    fields = ("full_name", "additional_info", "role", "web_username", "messenger_account")
     return {key: data[key] for key in fields if key in data}
 
 
