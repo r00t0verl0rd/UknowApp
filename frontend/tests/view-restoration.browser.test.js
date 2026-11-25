@@ -27,7 +27,7 @@ test("remembers current page, list filters and scroll after asynchronous reload"
         if (routeName === "/api/admin/users") {
           usersFetches++;
           if (usersFetches > 1) await new Promise(done => setTimeout(done, 320));
-          return route.fulfill({ json: users });
+          return route.fulfill({ json: [...users, { id: 8, role: "teacher", full_name: "Анна" }] });
         }
         if (routeName === "/api/admin/overview") return route.fulfill({
           json: { counts: { teachers: 0, students: users.length }, teachers: [] },
@@ -108,6 +108,11 @@ test("remembers current page, list filters and scroll after asynchronous reload"
         savedPosition,
         { timeout: 12000 },
       );
+      await page.getByRole("button", { name: "Структура", exact: true }).click();
+      await page.getByRole("button", { name: "Скрыть учеников", exact: true }).click();
+      await page.addInitScript(() => sessionStorage.clear());
+      await page.reload();
+      await page.getByRole("button", { name: "Показать учеников", exact: true }).waitFor();
       await page.close();
     }
   } finally {
@@ -132,6 +137,9 @@ test("restores the selected conversation and the same message after loading olde
     content_type: "text", text: `Chat message ${String(i + 1).padStart(3, "0")}`,
     metadata: {}, can_delete: false, delivery_status: "delivered",
   }));
+  for (const i of [72, 119]) {
+    messages[i].metadata.media = { kind: "voice", archive_status: "stored", mime_type: "audio/ogg" };
+  }
   let role = "admin";
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
@@ -139,7 +147,7 @@ test("restores the selected conversation and the same message after loading olde
       const url = new URL(route.request().url());
       const name = url.pathname;
       if (name === "/api/panel/me") return route.fulfill({ json: {
-        id: 1, full_name: "Пользователь", role,
+        id: role === "admin" ? 1 : 9, full_name: "Пользователь", role,
         permissions: ["structure.view", "dialogs.own", "users.manage", "dialogs.observe"],
       } });
       if (name === "/api/panel/conversations") return route.fulfill({ json: [chat] });
@@ -157,6 +165,8 @@ test("restores the selected conversation and the same message after loading olde
     await page.goto("http://127.0.0.1:22240/dialogs");
     await page.locator(".chat-item").first().click();
     await page.getByText("Chat message 120").waitFor({ state: "visible" });
+    await page.locator('[data-view-anchor="message:120"] audio').waitFor({ state: "attached" });
+    assert.equal(await page.locator('[data-view-anchor="message:73"] audio').count(), 0);
     await page.getByRole("button", { name: "Показать предыдущие сообщения" }).click();
     await page.getByText("Chat message 021").waitFor({ state: "visible" });
 
@@ -172,12 +182,19 @@ test("restores the selected conversation and the same message after loading olde
       Math.abs(document.querySelector(".messages")?.scrollTop - expected) < 14,
     original, { timeout: 14000 });
     assert.equal(await page.locator(".chat-item.selected").count(), 1);
-    // Start a new student session with the oldest unread outside the latest page.
+    // Closing a tab removes its session state. A manual reopen still finds the same row.
+    await page.goto("about:blank");
+    await page.addInitScript(() => sessionStorage.clear());
+    await page.goto("http://127.0.0.1:22240/dialogs");
+    await page.locator(".chat-item").first().click();
+    await page.waitForFunction(expected =>
+      Math.abs(document.querySelector(".messages")?.scrollTop - expected) < 14,
+    original, { timeout: 14000 });
+    // A different account opens at its first unread message.
     role = "student";
     chat.unread_count = 61;
     messages.forEach(row => { row.panel_read_at = row.id < 60 ? row.created_at : null; });
     await page.goto("about:blank");
-    await page.addInitScript(() => sessionStorage.clear());
     await page.goto("http://127.0.0.1:22240/dialogs");
     await page.locator(".chat-item").first().click();
     await page.waitForFunction(() => {

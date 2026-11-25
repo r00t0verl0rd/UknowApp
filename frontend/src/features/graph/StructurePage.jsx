@@ -12,7 +12,7 @@ import EmptyState from "../../shared/components/EmptyState.jsx";
 import CountBadge from "../../shared/components/CountBadge.jsx";
 import Button from "../../shared/components/Button.jsx";
 import IconButton from "../../shared/components/IconButton.jsx";
-import { viewPreference, saveViewPreference } from "../../shared/services/viewSession.js";
+import { viewPreference, persistentViewValue, savePersistentViewValue } from "../../shared/services/viewSession.js";
 function StudentPerson(options) {
   return (
     <div class="person-main">
@@ -44,11 +44,11 @@ function EditStudentButton(options) {
 
 export default function StructurePage(options) {
   const [collapsedTeacherIds, setCollapsedTeacherIdsState] = createSignal(new Set(
-    viewPreference(options.userId, "graph.collapsed", []),
+    persistentViewValue(options.userId, "graph.collapsed", viewPreference(options.userId, "graph.collapsed", [])),
   ));
   const setCollapsedTeacherIds = value => setCollapsedTeacherIdsState(previous => {
     const next = typeof value === "function" ? value(previous) : value;
-    saveViewPreference(options.userId, "graph.collapsed", [...next]);
+    savePersistentViewValue(options.userId, "graph.collapsed", [...next]);
     return next;
   });
   return (

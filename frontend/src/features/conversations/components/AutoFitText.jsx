@@ -1,51 +1,75 @@
 import { createEffect } from "solid-js";
 
-// Keep names on a single line at their regular font size whenever possible.
-// Resize only when needed; use gentle horizontal compression as the last
-// resort rather than an unreadably tiny font or a clipped surname.
+// Batch reads and writes across all names. Opening a long conversation should
+// trigger one layout per measurement phase rather than one per sender.
+const pending = new Set();
+const mounted = new Map();
+let frame = 0;
+let observer;
+
+function schedule(items) {
+  for (const item of items) pending.add(item);
+  if (frame || !pending.size) return;
+  frame = requestAnimationFrame(() => {
+    frame = 0;
+    const items = [...pending];
+    pending.clear();
+    const compact = window.matchMedia("(max-width: 760px)").matches;
+    for (const item of items) {
+      item.available = item.container.clientWidth;
+      item.base = compact ? item.mobileSize : item.baseSize;
+    }
+    const visible = items.filter(item => item.available > 0);
+    for (const item of visible) {
+      item.content.style.transform = "none";
+      item.content.style.fontSize = item.base + "px";
+    }
+    for (const item of visible) {
+      const natural = item.content.scrollWidth || 1;
+      item.size = Math.min(item.base, Math.max(item.minimum, item.base * (item.available - 1) / natural));
+    }
+    for (const item of visible) item.content.style.fontSize = item.size.toFixed(2) + "px";
+    for (const item of visible) item.fitted = item.content.scrollWidth;
+    for (const item of visible) {
+      if (item.fitted > item.available) {
+        const ratio = Math.max(0.01, (item.available - 1) / item.fitted);
+        item.content.style.transform = `scaleX(${ratio})`;
+      }
+    }
+  });
+}
+
+function onResize(entries) {
+  schedule(entries.map(entry => mounted.get(entry.target)).filter(Boolean));
+}
+const fitAll = () => schedule(mounted.values());
+
 export default function AutoFitText(options) {
   let container;
   let content;
-
-  const fit = () => {
-    if (!container || !content) return;
-    const available = container.clientWidth;
-    if (available <= 0) return;
-
-    const compact = window.matchMedia("(max-width: 760px)").matches;
-    const base = compact ? (options.mobileSize ?? options.baseSize ?? 14) : (options.baseSize ?? 14);
-    const minimum = options.minSize ?? 11;
-    content.style.transform = "none";
-    content.style.fontSize = base + "px";
-    const natural = content.scrollWidth;
-    if (!natural) return;
-
-    const size = Math.min(base, Math.max(minimum, base * (available - 1) / natural));
-    content.style.fontSize = size.toFixed(2) + "px";
-    const fitted = content.scrollWidth;
-    const ratio = fitted > available ? Math.max(0.01, (available - 1) / fitted) : 1;
-    content.style.transform = ratio < 1 ? `scaleX(${ratio})` : "none";
-  };
-
   createEffect(
     () => [options.text, options.baseSize, options.mobileSize, options.minSize],
-    () => {
-      fit();
-      const onResize = () => fit();
-      const observer = typeof ResizeObserver === "function"
-        ? new ResizeObserver(onResize) : null;
-      if (observer) observer.observe(container);
-      else window.addEventListener("resize", onResize);
-      document.fonts?.ready.then(() => {
-        if (container?.isConnected) fit();
-      });
+    ([, baseSize = 14, mobileSize = baseSize, minimum = 11]) => {
+      const item = { container, content, baseSize, mobileSize, minimum };
+      if (!mounted.size) {
+        if (typeof ResizeObserver === "function") observer = new ResizeObserver(onResize);
+        else window.addEventListener("resize", fitAll);
+        document.fonts?.ready.then(fitAll);
+      }
+      mounted.set(container, item);
+      observer?.observe(container);
+      schedule([item]);
       return () => {
-        observer?.disconnect();
-        window.removeEventListener("resize", onResize);
+        observer?.unobserve(container);
+        pending.delete(item);
+        mounted.delete(container);
+        if (!mounted.size) {
+          observer?.disconnect();
+          window.removeEventListener("resize", fitAll);
+        }
       };
     },
   );
-
   return (
     <span class={"chat-name-fit" + (options.class ? " " + options.class : "")}
       ref={container} title={options.text} aria-label={options.text}>

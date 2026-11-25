@@ -7,6 +7,25 @@ function key(userId) {
   return userId == null ? "" : `${VERSION}:${encodeURIComponent(String(userId))}`;
 }
 
+// Keep durable, non-content settings separate from tab-local searches and navigation.
+export function persistentViewValue(userId, name, fallback) {
+  if (userId == null) return fallback;
+  try {
+    return JSON.parse(localStorage.getItem(key(userId) + ":" + name)) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export function savePersistentViewValue(userId, name, value) {
+  if (userId == null) return;
+  try {
+    localStorage.setItem(key(userId) + ":" + name, JSON.stringify(value));
+  } catch {
+    // The current view remains usable when browser storage is unavailable.
+  }
+}
+
 export function readViewState(userId) {
   if (!key(userId)) return {};
   try {
@@ -72,7 +91,6 @@ const CONTAINERS = [
   [".structure-scroll", "structure"],
   [".user-list", "users"],
   [".chat-items", "chat-list"],
-  [".messages", "messages"],
   [".sidebar nav", "navigation"],
 ];
 
@@ -263,9 +281,9 @@ export function installViewRestoration({ root, userId, page }) {
   const startRestore = () => {
     userInteracted = new Set();
     const saved = readScrollPositions(userId, activePage);
-    const activeChatKey = viewPreference(userId, "chats.active", null);
+    // The chat controller restores message history after its rows are available.
     const relevant = Object.fromEntries(Object.entries(saved).filter(([name]) =>
-      !name.startsWith("messages:") || name === `messages:${activeChatKey}`,
+      !name.startsWith("messages:"),
     ));
     pendingRestore = Object.keys(relevant).length
       ? relevant

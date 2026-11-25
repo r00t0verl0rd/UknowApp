@@ -1,4 +1,4 @@
-import { createSignal, createEffect, createUniqueId } from "solid-js";
+import { createSignal, createEffect, createMemo, createUniqueId } from "solid-js";
 import {
   IconTrash2 as Trash2,
   IconInfo as Info,
@@ -27,6 +27,37 @@ function formatAudioTime(value) {
     .toString()
     .padStart(2, "0");
   return minutes + ":" + seconds;
+}
+// Mount expensive native players and waveform controls shortly before they enter view.
+const pendingPlayers = new WeakMap();
+let playerObserver;
+function DeferredAudioPlayer(options) {
+  let placeholder;
+  const [ready, setReady] = createSignal(false);
+  createEffect(() => [], () => {
+    if (typeof IntersectionObserver !== "function") {
+      setReady(true);
+      return;
+    }
+    playerObserver ??= new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        playerObserver.unobserve(entry.target);
+        pendingPlayers.get(entry.target)?.(true);
+        pendingPlayers.delete(entry.target);
+      }
+    }, { rootMargin: "400px", scrollMargin: "400px" });
+    const element = placeholder;
+    pendingPlayers.set(element, setReady);
+    playerObserver.observe(element);
+    return () => {
+      playerObserver.unobserve(element);
+      pendingPlayers.delete(element);
+    };
+  });
+  return () => ready()
+    ? <ChatAudioPlayer src={options.src} label={options.label} />
+    : <div ref={placeholder} class="chat-audio-player chat-audio-placeholder" />;
 }
 function ChatAudioPlayer(options) {
   let audioRef = null;
@@ -161,7 +192,8 @@ function MessageBubble(options) {
       video_sticker: "Видео-стикер",
       animation: "Анимация",
     })[sourceKind()] || "Вложение";
-  const deliveryDetails = () => getDeliveryDetails(options.message.metadata, true, options.deliveryRecipients || []);
+  const deliveryDetails = createMemo(() => options.viewerRole === "admin"
+    ? getDeliveryDetails(options.message.metadata, true, options.deliveryRecipients || []) : []);
   return (
     <div class={"message " + options.message.sender_role} data-view-anchor={"message:" + options.message.id}>
       <div class="message-content">
@@ -197,13 +229,14 @@ function MessageBubble(options) {
           </div>
         </div>
         {options.message.text && <p>{options.message.text}</p>}
-        {mediaUrl() && kind() === "photo" && <img loading="lazy" decoding="async" class="chat-media-image" src={mediaUrl()} alt={label()} />}
+        {mediaUrl() && kind() === "photo" && <img loading="lazy" decoding="async" width={media()?.width || undefined} height={media()?.height || undefined} class="chat-media-image" src={mediaUrl()} alt={label()} />}
         {mediaUrl() && ["voice", "audio"].includes(kind()) && (
-          <ChatAudioPlayer src={mediaUrl()} label={label()} />
+          <DeferredAudioPlayer src={mediaUrl()} label={label()} />
         )}
         {mediaUrl() && ["video", "video_note", "animation"].includes(kind()) && (
           <video
             class={"chat-media-video" + (kind() === "video_note" ? " chat-media-video-note" : "")}
+            loading="lazy"
             controls
             playsInline
             preload="none"

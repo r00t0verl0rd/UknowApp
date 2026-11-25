@@ -20,6 +20,7 @@ export default function ChatsModule(options) {
     get inboxLoading() { return options.inboxLoading; },
   });
   const clearSelectedChat = () => {
+    state.capturePosition();
     saveViewPreference(options.profile?.id, "chats.active", null);
     options.chatState.setSelectedChat(null);
   };
@@ -51,6 +52,7 @@ export default function ChatsModule(options) {
         setMessageFilter={options.chatState.setMessageFilter}
         messagesViewportRef={options.chatState.messagesViewportRef}
         visibleMessages={state.visibleMessages}
+        positionReady={state.positionReady}
         acknowledgeVisible={options.acknowledgeVisible}
         messages={options.chatState.messages}
         messagesLoading={options.chatState.messagesLoading}

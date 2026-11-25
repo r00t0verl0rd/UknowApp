@@ -263,7 +263,7 @@ export default function AdditionalPage(options) {
           </div>
           <div class="data-cleanup-actions">
             <div class="data-retention-field">
-              <label for="data-retention-days">Удалять старше</label>
+              <label for="data-retention-days">Удалить старше</label>
               <div class="data-retention-select">
                 <Clock3 size={16} aria-hidden="true" />
                 <select

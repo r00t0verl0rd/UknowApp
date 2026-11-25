@@ -160,7 +160,7 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
         `${width}px: both controls are convenient to tap`);
       if (width > 760) assert.ok(cleanupGeometry.controlGap <= 2,
         `${width}px: button and retention field align along the bottom`);
-      const picker = page.getByLabel("Удалять старше");
+      const picker = page.getByLabel("Удалить старше");
       await picker.selectOption("60");
       assert.equal(await picker.inputValue(), "60");
       const selectRect = await picker.evaluate(el => {

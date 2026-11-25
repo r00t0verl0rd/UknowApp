@@ -489,6 +489,9 @@
   background:var(--surface);
   box-sizing:border-box;
 }
+.chat-audio-placeholder {
+  min-height:56px;
+}
 .chat-audio-native {
   display:none;
 }

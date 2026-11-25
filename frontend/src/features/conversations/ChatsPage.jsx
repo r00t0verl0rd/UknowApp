@@ -38,12 +38,12 @@ export default function ChatsPage(options) {
   const [messageNowMs, setMessageNowMs] = createSignal(Date.now());
 
   createEffect(
-    () => [options.selectedChat?.id, options.selectedChat?.type, options.profile?.role, options.visibleMessages],
+    () => [options.selectedChat?.id, options.selectedChat?.type, options.profile?.role, options.visibleMessages, options.positionReady],
     () => {
       const chat = options.selectedChat;
       const viewport = options.messagesViewportRef.current;
       const role = options.profile?.role;
-      if (!chat || !viewport || !role || (role === "admin" && chat.type !== "personal")) return;
+      if (!options.positionReady || !chat || !viewport || !role || (role === "admin" && chat.type !== "personal")) return;
       const unread = new Set(options.visibleMessages
         .filter(message => isUnreadIncoming(message, chat, role))
         .map(message => Number(message.id))

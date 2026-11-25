@@ -1,6 +1,6 @@
 import { createSignal, createMemo, createEffect } from "solid-js";
 import { createChatActionState } from "./createChatActionState.js";
-import { readScrollPositions, saveViewPreference, viewPreference } from "../../../shared/services/viewSession.js";
+import { persistentViewValue, savePersistentViewValue, readScrollPositions, saveViewPreference, viewPreference } from "../../../shared/services/viewSession.js";
 import { isUnreadIncoming, markConversationMessageDeleted, mergeConversationMessages } from "../services/messageState.js";
 import {
   createPersonalConversation,
@@ -22,7 +22,7 @@ export function createChatsController(options) {
   let pendingClientMessage = null;
   let openingChatRequest = null;
   let attemptedRestoreForUser = null;
-  let restoredChatScrollKey = "";
+  const [positionedKey, setPositionedKey] = createSignal("");
   // Только память текущей вкладки. Недавние чаты показываем сразу, затем
   // проверяем сервер; не сохраняем приватные сообщения в localStorage.
   const recentChats = new Map();
@@ -156,9 +156,14 @@ export function createChatsController(options) {
     );
   });
   let unreadAnchor = null;
+  let capturePosition = () => {};
+  let schedulePosition = () => {};
   let requestLatestScroll = () => {};
-  const preservingScroll = key => key && restoredChatScrollKey === key &&
-    Object.hasOwn(readScrollPositions(options.profile?.id, "chats"), `messages:${key}`);
+  const positionName = (key, filter) => `messages:${key}${filter === "all" ? "" : ":" + filter}`;
+  const savedPosition = (key, filter) => {
+    const name = positionName(key, filter);
+    return persistentViewValue(options.profile?.id, name, readScrollPositions(options.profile?.id, "chats")[name]);
+  };
   createEffect(
     () => [
       options.chatState.selectedChat?.id,
@@ -169,13 +174,58 @@ export function createChatsController(options) {
       const history = options.chatState.messagesViewportRef.current;
       if (!history) return undefined;
       let frame = 0;
-      let followBottom = !preservingScroll(activeChatKey());
+      const key = activeChatKey();
+      if (!key) return;
+      const filter = options.chatState.messageFilter;
+      const name = positionName(key, filter);
+      const userId = options.profile?.id;
+      const saved = savedPosition(key, filter);
+      let initialized = false;
+      let followBottom = false;
+      let captureTimer = 0;
+      const capture = () => {
+        if (!initialized || !history.isConnected || !history.clientHeight || history.dataset.viewScrollKey !== key) return;
+        const bounds = history.getBoundingClientRect();
+        // Message rows are ordered vertically. Find the first visible row without
+        // measuring every bubble during scrolling.
+        const rows = history.children;
+        let low = 0;
+        let high = rows.length;
+        while (low < high) {
+          const mid = (low + high) >>> 1;
+          if (rows[mid].getBoundingClientRect().bottom <= bounds.top) low = mid + 1;
+          else high = mid;
+        }
+        const row = rows[low]?.dataset.viewAnchor ? rows[low] : rows[low + 1];
+        if (!row?.dataset.viewAnchor) return;
+        savePersistentViewValue(userId, name, {
+          top: history.scrollTop,
+          anchor: { id: row.dataset.viewAnchor, offset: row.getBoundingClientRect().top - bounds.top },
+        });
+      };
       let forced = false;
       let lastObserved = null;
       const distanceToLatest = () =>
         history.scrollHeight - history.scrollTop - history.clientHeight;
       const scrollToLatest = () => {
         frame = 0;
+        if (!initialized) {
+          const id = saved?.anchor?.id;
+          const row = /^message:\d+$/.test(id || "") && history.querySelector(`[data-view-anchor="${id}"]`);
+          if (!row && openingChatRequest?.key === key) return;
+          if (saved) {
+            history.scrollTop = row ? history.scrollTop + row.getBoundingClientRect().top -
+              history.getBoundingClientRect().top - (saved.anchor.offset || 0) : saved.top;
+          } else {
+            followBottom = true;
+          }
+          initialized = true;
+          setPositionedKey(name);
+          if (saved) {
+            followBottom = distanceToLatest() <= 2;
+            return;
+          }
+        }
         if (unreadAnchor?.key === activeChatKey()) {
           const row = history.querySelector(`[data-view-anchor="message:${unreadAnchor.id}"]`);
           if (!row) return;
@@ -199,7 +249,12 @@ export function createChatsController(options) {
         if (!frame) frame = window.requestAnimationFrame(scrollToLatest);
       };
       const handleScroll = () => {
-        if (!forced) followBottom = distanceToLatest() < 80;
+        if (!initialized) return;
+        if (!forced) followBottom = distanceToLatest() <= 2;
+        if (!captureTimer) captureTimer = window.setTimeout(() => {
+          captureTimer = 0;
+          capture();
+        }, 100);
       };
       const resizeObserver = typeof ResizeObserver === "function"
         ? new ResizeObserver(() => scheduleLatest())
@@ -221,24 +276,38 @@ export function createChatsController(options) {
       resizeObserver?.observe(history);
       mutationObserver?.observe(history, { childList: true });
       observeLastMessage();
+      capturePosition = capture;
+      schedulePosition = scheduleLatest;
       requestLatestScroll = () => scheduleLatest(true);
-      if (!preservingScroll(activeChatKey())) scheduleLatest(true);
+      const onVisibilityChange = () => {
+        if (document.hidden) capture();
+      };
+      document.addEventListener("visibilitychange", onVisibilityChange);
+      window.addEventListener("pagehide", capture);
+      scheduleLatest();
       return () => {
         if (frame) window.cancelAnimationFrame(frame);
+        window.clearTimeout(captureTimer);
+        capture();
+        setPositionedKey("");
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+        window.removeEventListener("pagehide", capture);
         history.removeEventListener("scroll", handleScroll);
         resizeObserver?.disconnect();
         mutationObserver?.disconnect();
+        capturePosition = () => {};
+        schedulePosition = () => {};
         if (requestLatestScroll) requestLatestScroll = () => {};
       };
     },
   );
   const openChat = async (chat, { restoring = false } = {}) => {
     const chatKey = (chat.type === "personal" ? "personal:" : "conversation:") + chat.id;
-    restoredChatScrollKey = restoring ? chatKey : "";
     saveViewPreference(options.profile?.id, "chats.active", chatKey);
     const previousRequest = openingChatRequest;
     if (activeChatKey() === chatKey && (previousRequest?.key === chatKey ||
       !options.chatState.messagesLoading)) return;
+    capturePosition();
     unreadAnchor = null;
     previousRequest?.controller.abort();
     olderRequest?.abort();
@@ -249,7 +318,8 @@ export function createChatsController(options) {
       cacheChat(previousKey, options.chatState.messages);
     }
     const role = options.profile?.role;
-    const unreadCount = (!restoring || !preservingScroll(chatKey)) &&
+    const position = savedPosition(chatKey, restoring ? options.chatState.messageFilter : "all");
+    const unreadCount = !position &&
       (role !== "admin" || chat.type === "personal") ? Number(chat.unread_count) || 0 : 0;
     const cachedMessages = unreadCount ? null : getCachedChat(chatKey);
     const cachedById = new Map((cachedMessages || []).map((item) => [String(item.id), item]));
@@ -270,23 +340,18 @@ export function createChatsController(options) {
       if (controller.signal.aborted || activeChatKey() !== chatKey) return;
       // A view restored in the middle of a long conversation can be older than
       // the last 50 messages. Load preceding pages only for that specific chat.
-      const anchor = restoring
-        ? readScrollPositions(options.profile?.id, "chats")[`messages:${chatKey}`]?.anchor?.id
-        : null;
+      const anchor = position?.anchor?.id;
       const targetId = /^message:\d+$/.test(anchor || "") ? Number(anchor.slice(8)) : 0;
-      if (targetId && loadedMessages.length) {
-        let pages = 0;
-        while (loadedMessages.length >= HISTORY_PAGE_SIZE &&
-          Number(loadedMessages[0].id) > targetId && pages < 16) {
-          const previousOldest = Number(loadedMessages[0].id);
-          const older = await getChatMessages(options.request, chat, controller.signal, previousOldest);
-          if (controller.signal.aborted || activeChatKey() !== chatKey) return;
-          if (!older.length || Number(older[0].id) >= previousOldest) break;
-          loadedMessages = mergeConversationMessages(older, loadedMessages, chatKey);
-          pages++;
-          if (older.length < HISTORY_PAGE_SIZE) break;
-        }
+      let page = loadedMessages;
+      const olderPages = [];
+      while (targetId && page.length >= HISTORY_PAGE_SIZE && page[0].id > targetId) {
+        const before = Number(page[0].id);
+        page = await getChatMessages(options.request, chat, controller.signal, before);
+        if (controller.signal.aborted || activeChatKey() !== chatKey) return;
+        if (!page.length || Number(page[page.length - 1].id) >= before) break;
+        olderPages.push(page);
       }
+      if (olderPages.length) loadedMessages = olderPages.reverse().flat().concat(loadedMessages);
       if (unreadCount && options.chatState.messageFilter === "all") {
         const unread = message => isUnreadIncoming(message, chat, role);
         let page = loadedMessages;
@@ -323,6 +388,7 @@ export function createChatsController(options) {
     } finally {
       if (!controller.signal.aborted && activeChatKey() === chatKey) {
         options.chatState.setMessagesLoading(false);
+        schedulePosition();
       }
       if (openingChatRequest?.controller === controller) openingChatRequest = null;
     }
@@ -556,6 +622,8 @@ export function createChatsController(options) {
     get visibleMessages() {
       return visibleMessages();
     },
+    capturePosition: () => capturePosition(),
+    get positionReady() { return positionedKey() === positionName(activeChatKey(), options.chatState.messageFilter); },
     get hasOlder() { return olderCursor() > 0; },
     get loadingOlder() { return loadingOlder(); },
     loadOlder,
