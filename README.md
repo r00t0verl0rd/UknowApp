@@ -66,15 +66,15 @@ systemctl enable --now docker
   trap 'rm -rf -- "$tmp"' EXIT
   cd "$tmp"
 
-  curl -fsSL https://github.com/docker/compose/releases/download/v5.8.0/docker-compose-linux-x86_64 \\
+  curl -fsSL https://github.com/docker/compose/releases/download/v5.8.0/docker-compose-linux-x86_64 \
     -o docker-compose-linux-x86_64
-  curl -fsSL https://github.com/docker/compose/releases/download/v5.8.0/checksums.txt \\
+  curl -fsSL https://github.com/docker/compose/releases/download/v5.8.0/checksums.txt \
     -o compose-checksums.txt
   grep -E '[[:space:]]\*?docker-compose-linux-x86_64$' compose-checksums.txt | sha256sum -c -
 
-  curl -fsSL https://github.com/docker/buildx/releases/download/v0.17.1/buildx-v0.17.1.linux-amd64 \\
+  curl -fsSL https://github.com/docker/buildx/releases/download/v0.17.1/buildx-v0.17.1.linux-amd64 \
     -o buildx-v0.17.1.linux-amd64
-  curl -fsSL https://github.com/docker/buildx/releases/download/v0.17.1/checksums.txt \\
+  curl -fsSL https://github.com/docker/buildx/releases/download/v0.17.1/checksums.txt \
     -o buildx-checksums.txt
   grep -E '[[:space:]]\*?buildx-v0\.17\.1\.linux-amd64$' buildx-checksums.txt | sha256sum -c -
 
