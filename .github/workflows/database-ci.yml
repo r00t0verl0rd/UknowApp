@@ -1,17 +1,22 @@
 name: Database compatibility
 
 on:
-  push:
-    branches: [test]
-    paths:
-      - "backend/**"
-      - "docker-compose.yml"
-      - ".github/workflows/database-ci.yml"
+  workflow_call:
   pull_request:
+  push:
+    branches: [main, test]
     paths:
       - "backend/**"
       - "docker-compose.yml"
+      - "compose*.yml"
       - ".github/workflows/database-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: database-checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   sqlite:
@@ -21,7 +26,11 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
-      - run: pip install -r backend/requirements.txt pytest httpx httpx2
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/requirements.txt
+      - run: uv pip install --system -r backend/requirements.txt pytest httpx httpx2
       - name: Canonical startup migrations on temporary SQLite
         env:
           PYTHONPATH: backend
@@ -51,7 +60,11 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
-      - run: pip install -r backend/requirements.txt pytest httpx httpx2
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/requirements.txt
+      - run: uv pip install --system -r backend/requirements.txt pytest httpx httpx2
       - name: Canonical startup migrations on temporary PostgreSQL
         env:
           PYTHONPATH: backend

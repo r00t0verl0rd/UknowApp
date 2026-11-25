@@ -1,12 +1,16 @@
 name: NATS Gateway checks
 on:
-  push:
-    branches: [test]
+  workflow_call:
+    inputs:
+      full_validation:
+        type: boolean
+        default: false
   pull_request:
+  push:
+    branches: [main, test]
     paths:
       - "backend/**"
       - "connectors/**"
-      - "frontend/**"
       - ".env.example"
       - ".dockerignore"
       - "infrastructure/nats/**"
@@ -15,6 +19,9 @@ on:
       - ".github/workflows/bots-gateway.yml"
 permissions:
   contents: read
+concurrency:
+  group: gateway-checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   gateway:
     runs-on: ubuntu-latest
@@ -27,29 +34,20 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
-      - run: pip install -r backend/requirements.txt pytest httpx httpx2
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/requirements.txt
+      - run: uv pip install --system -r backend/requirements.txt pytest httpx httpx2
       - run: python -m compileall -q backend/app connectors
       - name: Verify Core does not require aiogram
         run: python -c "import importlib.util; assert importlib.util.find_spec('aiogram') is None; from app.main import app"
-      - run: python -m pytest -q backend/tests
-      - name: Synthetic Core benchmark (100k messages)
-        run: python backend/tests/benchmark_core.py --messages 100000 --clients 10 50 100 --rounds 1
-      - run: pip install -r connectors/telegram/requirements.txt
+      - run: uv pip install --system -r connectors/telegram/requirements.txt
       - run: python -m pytest -q connectors/tests
-      - uses: actions/setup-node@v7
-        with:
-          node-version: "22"
-      - name: Frontend unit tests and build
-        working-directory: frontend
-        run: |
-          npm ci
-          npm run build
-          npm test
-      - name: Validate and build Compose configuration
+      - name: Validate Compose configuration
         run: |
           cp .env.example .env
           docker compose --profile gateway --profile bots config --quiet
-          docker compose --profile gateway --profile bots build backend tgbot
       - name: Exercise authenticated NATS RPC and JetStream
         env:
           BOTS_NATS_CORE_PASSWORD: ci-core-password-12345678901234567890 # pragma: allowlist secret
@@ -61,3 +59,37 @@ jobs:
             -v "$PWD/infrastructure/nats/nats.conf:/etc/nats/nats.conf:ro" nats:2.11-alpine -c /etc/nats/nats.conf
           trap 'docker logs gateway-ci; docker rm -f gateway-ci' EXIT
           BOTS_PLATFORMS=telegram BOTS_NATS_URL=nats://127.0.0.1:4222 BOTS_NATS_USER=core BOTS_NATS_PASSWORD="$BOTS_NATS_CORE_PASSWORD" python backend/tests/nats_smoke.py
+
+  performance:
+    if: ${{ github.event_name != 'push' || inputs.full_validation }}
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: backend:.
+      BOTS_PLATFORMS: ""
+      ADMIN_PASSWORD: ci-only-admin-password-123 # pragma: allowlist secret
+      UKNOWAPP_FULL_PERFORMANCE: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/requirements.txt
+      - run: uv pip install --system -r backend/requirements.txt pytest httpx httpx2
+      - name: Verify 100k-message query invariant
+        run: python -m pytest -q backend/tests/test_conversation_counters.py -k summary_no_history_scan
+      - name: Synthetic Core benchmark (100k messages)
+        run: python backend/tests/benchmark_core.py --messages 100000 --clients 10 50 100 --rounds 1
+
+  images:
+    if: ${{ github.event_name != 'push' || inputs.full_validation }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build release images
+        run: |
+          cp .env.example .env
+          docker compose --profile gateway --profile bots config --quiet
+          docker compose --profile gateway --profile bots build backend frontend tgbot

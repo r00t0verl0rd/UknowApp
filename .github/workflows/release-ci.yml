@@ -1,0 +1,23 @@
+name: Release validation
+
+# This workflow validates the exact ref without deploying or modifying servers.
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "release-check-*"
+
+permissions:
+  contents: read
+
+jobs:
+  project:
+    uses: ./.github/workflows/frontend.yml
+  browser:
+    uses: ./.github/workflows/browser-ci.yml
+  database:
+    uses: ./.github/workflows/database-ci.yml
+  gateway:
+    uses: ./.github/workflows/bots-gateway.yml
+    with:
+      full_validation: true

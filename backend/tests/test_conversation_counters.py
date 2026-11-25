@@ -101,14 +101,17 @@ def test_admin_delivery_hint_does_not_reach_participants(api):
         assert not replay_chat_updates(db,{"role":"student","user_id":chat.student_id},cursor)
 
 
-def test_summary_no_history_scan_even_with_100k_messages(api):
+def test_summary_no_history_scan(api):
+    import os
+
+    total = 100_000 if os.getenv("UKNOWAPP_FULL_PERFORMANCE") == "1" else 2_000
     _, users, sessions = api
     with sessions() as db:
         chat = create_conversation(db,users["teacher-one"],users["student-one"])
-        for start in range(0,100000,2000):
+        for start in range(0, total, 2000):
             db.execute(insert(Message),[dict(conversation_id=chat.id,sender_id=chat.student_id,
-                sender_role="student",text=str(i),teacher_read_at="2026-01-01" if i<99999 else None)
-                for i in range(start,start+2000)])
+                sender_role="student",text=str(i),teacher_read_at="2026-01-01" if i < total - 1 else None)
+                for i in range(start, min(start + 2000, total))])
         db.commit()
         statements=[]
         def capture(*args):
@@ -117,9 +120,9 @@ def test_summary_no_history_scan_even_with_100k_messages(api):
         try:
             for _ in range(5):
                 summary=conversation_event_summaries(db,chat)
-                assert summary["teacher"]["message_count"]==100000
+                assert summary["teacher"]["message_count"] == total
                 assert summary["teacher"]["unread_count"]==1
-                assert summary["teacher"]["last_message"]=="99999"
+                assert summary["teacher"]["last_message"] == str(total - 1)
             assert not any("group by" in q.lower() or "count(" in q.lower() or "json_extract" in q.lower() or "sum(" in q.lower() for q in statements)
         finally:
             event.remove(db.get_bind(),"before_cursor_execute",capture)

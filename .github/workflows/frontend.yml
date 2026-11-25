@@ -2,13 +2,14 @@ name: Project checks
 
 # Only the newest run for a branch matters; never cancel a different PR or main.
 concurrency:
-  group: project-checks-${{ github.ref }}
+  group: project-checks-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 on:
+  workflow_call:
   pull_request:
   push:
     branches: [main, test]
@@ -33,35 +34,6 @@ jobs:
         run: npx --yes stylelint@16 'src/shared/styles/*.scss' --config ../.stylelintrc.json
       - name: Audit CSS selectors against SolidJS sources
         run: node scripts/audit-css.mjs
-
-  frontend-browser:
-    runs-on: ubuntu-24.04
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      # Serve the compiled app in browser tests instead of transforming modules on every request.
-      - run: npm run build
-      - name: Install browser test runtime
-        run: npm install --no-save playwright@1.56.1
-      - name: Restore cached Chromium headless shell
-        id: browser-cache
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/ms-playwright
-          key: chromium-headless-shell-1.56.1-${{ runner.os }}
-      - name: Install Chromium headless shell on cache miss
-        if: steps.browser-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --only-shell chromium
-      - name: Run UI and realtime browser integration tests
-        run: npm run test:browser
 
   backup-function:
     name: backup-function
@@ -113,8 +85,8 @@ jobs:
         if: ${{ !cancelled() && steps.backend_dependencies.outcome == 'success' }}
         run: git ls-files -z -- ':!.secrets.baseline' | xargs -0 detect-secrets-hook --baseline .secrets.baseline
         working-directory: .
-      # Backup tests run once in the dedicated backup-function job.
-      - run: python -m pytest -q tests --ignore=tests/test_admin_data_backup.py --ignore=tests/test_restore_startup.py
+      # Backup and database-specific suites have dedicated workflows; do not run them twice.
+      - run: python -m pytest -q --durations=10 tests --ignore=tests/test_admin_data_backup.py --ignore=tests/test_restore_startup.py --ignore=tests/test_database_storage_info.py --ignore=tests/test_admin_stats.py --ignore=tests/test_database_dialects.py --ignore=tests/test_legacy_database_upgrade.py
         if: ${{ !cancelled() && steps.backend_dependencies.outcome == 'success' }}
       - run: python -m compileall -q app
         if: ${{ !cancelled() && steps.backend_dependencies.outcome == 'success' }}
