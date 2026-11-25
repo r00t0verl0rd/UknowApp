@@ -28,6 +28,7 @@ from app.modules.auth.permissions import permits
 from app.bots_gateway.outbox import enqueue_message_deletions
 from app.modules.conversations.service import (
     _unread_condition,
+    read_cursor,
     conversation_dicts,
     publish_conversation_update,
 )
@@ -98,7 +99,7 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
     if first_unread and around_id is None and principal["role"] != "admin":
         around_id = db.scalar(select(Message.id).where(
             Message.conversation_id == conversation.id,
-            Message.sender_role != principal["role"],
+            Message.id > read_cursor(conversation.id, principal["role"]),
             _unread_condition(db, principal["role"]),
         ).order_by(Message.id).limit(1))
     if around_id is not None:

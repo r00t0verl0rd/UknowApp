@@ -25,12 +25,12 @@ MIGRATIONS = (
     ("2026-11-22-remove-interactive-boards", remove_board_tables),
     ("2026-11-26-delivery-routes", upgrade_delivery_routes),
     ("2026-11-26-delivery-recovery", upgrade_delivery_recovery),
+    ("2026-11-26-conversation-counters", upgrade_conversation_counters),
     ("2026-11-26-provider-channels", migrate_provider_channels),
     ("2026-11-26-retire-legacy-provider", retire_legacy_schema),
     ("2026-11-26-push-devices", upgrade_push_devices),
     ("2026-11-26-performance-indexes", upgrade_performance_indexes),
     ("2026-11-26-volatile-events", retire_realtime_events),
-    ("2026-11-26-conversation-counters", upgrade_conversation_counters),
 )
 
 

@@ -2,11 +2,10 @@
 
 import json
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, literal_column, or_, select
 from sqlalchemy.orm import Session
 
 from app.event_hub import publish_chat_update
-from app.infrastructure.storage.message_metadata import metadata_value
 from app.models import Conversation, Message
 from app.modules.users.service import user_dict
 
@@ -70,16 +69,21 @@ def _message_preview(item: Message | None) -> str:
 
 def _unread_condition(db, role: str):
     teacher_unread = and_(
-        Message.sender_role.in_(("student", "admin")),
-        metadata_value(db, Message.metadata_json, "teacher_read_at").is_(None),
+        Message.sender_role.in_((literal_column("'student'"), literal_column("'admin'"))),
+        Message.teacher_read_at.is_(None),
     )
     student_unread = and_(
-        Message.sender_role.in_(("teacher", "admin")),
-        metadata_value(db, Message.metadata_json, "student_read_at").is_(None),
+        Message.sender_role.in_((literal_column("'teacher'"), literal_column("'admin'"))),
+        Message.student_read_at.is_(None),
     )
     if role == "admin":
         return and_(Message.sender_role.in_(("teacher", "student")), or_(teacher_unread, student_unread))
     return student_unread if role == "student" else teacher_unread
+
+
+def read_cursor(conversation_id, role):
+    column = Conversation.student_last_read_id if role == "student" else Conversation.teacher_last_read_id
+    return select(column).where(Conversation.id == conversation_id).scalar_subquery()
 
 
 def _summary_rows(db, conversation_ids):

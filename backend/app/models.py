@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    Computed,
     DateTime,
     ForeignKey,
     Index,
@@ -20,6 +21,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .core.database import Base
 from .core.runtime_database import RuntimeBase
 from .core.security import normalize_login
+from app.infrastructure.storage.conversation_counters import (
+    ReadField, install_on_create, install_read_function_on_create,
+    TEACHER_UNREAD, STUDENT_UNREAD,
+)
 
 
 def utcnow() -> datetime:
@@ -112,6 +117,8 @@ class Conversation(Base):
     student_unread_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default=text("0"))
     admin_unread_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default=text("0"))
     last_message_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    teacher_last_read_id: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
+    student_last_read_id: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
 
     assignment: Mapped[Assignment | None] = relationship(back_populates="conversation")
     teacher: Mapped[User] = relationship(foreign_keys=[teacher_id])
@@ -190,6 +197,8 @@ class Message(Base):
     __table_args__ = (
         Index("ix_messages_conversation_created_id", "conversation_id", "created_at", "id"),
         Index("ix_messages_conversation_id_id", "conversation_id", "id"),
+        Index("ix_messages_teacher_unread", "conversation_id", "id", sqlite_where=text(TEACHER_UNREAD), postgresql_where=text(TEACHER_UNREAD)),
+        Index("ix_messages_student_unread", "conversation_id", "id", sqlite_where=text(STUDENT_UNREAD), postgresql_where=text(STUDENT_UNREAD)),
         Index(
             "uq_messages_client_message_id",
             "conversation_id",
@@ -213,6 +222,9 @@ class Message(Base):
     content_type: Mapped[str] = mapped_column(String(40), default="text", nullable=False)
     text: Mapped[str] = mapped_column(Text, default="", nullable=False)
     metadata_json: Mapped[str] = mapped_column(Text, default="{}", nullable=False)
+    # Indexed projections of legacy receipt metadata; no duplicate source of truth.
+    teacher_read_at: Mapped[str | None] = mapped_column(Text, Computed(ReadField("teacher_read_at")), nullable=True)
+    student_read_at: Mapped[str | None] = mapped_column(Text, Computed(ReadField("student_read_at")), nullable=True)
     client_message_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     delivery_status: Mapped[str] = mapped_column(String(30), default="received", nullable=False)
     source_platform: Mapped[str | None] = mapped_column(String(32), nullable=True)
@@ -351,5 +363,5 @@ class TransportJob(RuntimeBase):
 
 
 # Also install on fresh/test schemas created directly via metadata.create_all.
-from app.infrastructure.storage.conversation_counters import install_on_create
+event.listen(Message.__table__, "before_create", install_read_function_on_create)
 event.listen(Message.__table__, "after_create", install_on_create)
