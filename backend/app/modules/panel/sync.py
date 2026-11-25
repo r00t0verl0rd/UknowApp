@@ -8,11 +8,12 @@ from fastapi import (
 )
 from pydantic import BaseModel, Field, PositiveInt
 from sqlalchemy import select
-from sqlalchemy.orm import load_only, selectinload
+from sqlalchemy.orm import joinedload, load_only
 
 from app.models import (
     Message,
     PersonalMessage,
+    User,
 )
 from app.modules.conversations.service import (
     conversation_dicts,
@@ -66,7 +67,7 @@ def sync_conversation_state(
     after_id, known_ids = _sync_request_fields(payload)
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     bounded = payload.get("paged") is True
-    query = select(Message).options(selectinload(Message.sender)).where(
+    query = select(Message).options(joinedload(Message.sender).lazyload(User.messenger_accounts)).where(
         Message.conversation_id == conversation.id, Message.id > after_id,
     )
     if bounded:
@@ -134,7 +135,7 @@ def sync_personal_conversation_state(
     after_id, known_ids = _sync_request_fields(payload)
     item = _personal_conversation(db, principal, conversation_id)
     bounded = payload.get("paged") is True
-    query = select(PersonalMessage).options(selectinload(PersonalMessage.sender)).where(
+    query = select(PersonalMessage).options(joinedload(PersonalMessage.sender).lazyload(User.messenger_accounts)).where(
         PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id,
     )
     if bounded:

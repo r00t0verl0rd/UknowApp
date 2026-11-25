@@ -16,7 +16,7 @@ from fastapi import (
 )
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, joinedload, selectinload
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.database import SessionLocal
 from app.event_hub import publish_chat_update
@@ -52,7 +52,7 @@ router = APIRouter()
 @router.get("/panel/personal-conversations")
 def personal_conversations(principal: PanelUser, db: Db):
     statement = select(PersonalConversation).options(
-        joinedload(PersonalConversation.participant),
+        joinedload(PersonalConversation.participant).lazyload(User.messenger_accounts),
     ).order_by(PersonalConversation.created_at.desc(), PersonalConversation.id.desc())
     if principal["role"] != "admin":
         statement = statement.where(PersonalConversation.participant_id == principal["user_id"])
@@ -194,7 +194,7 @@ def personal_messages(conversation_id: int, principal: PanelUser, db: Db, after_
                    mark_read: bool = True, forward: bool = False,
                    around_id: int | None = Query(None, ge=1), first_unread: bool = False):
     item = _personal_conversation(db, principal, conversation_id)
-    query = select(PersonalMessage).options(selectinload(PersonalMessage.sender)).where(
+    query = select(PersonalMessage).options(joinedload(PersonalMessage.sender).lazyload(User.messenger_accounts)).where(
         PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id,
     )
     if first_unread and around_id is None:

@@ -89,7 +89,7 @@ def _commit_message(db, row, principal, conversation, sender, client_message_id,
         if existing:
             return existing
         raise
-    db.refresh(row)
+    # expire_on_commit=False; flush/commit populate PK and Python defaults.
     return None
 
 

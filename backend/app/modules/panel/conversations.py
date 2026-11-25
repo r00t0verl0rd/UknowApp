@@ -10,7 +10,7 @@ from fastapi import (
     Request,
 )
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import joinedload
 
 from app.core.database import begin_serialized_write
 from app.infrastructure.storage.media import (
@@ -22,6 +22,7 @@ from app.models import (
     Assignment,
     Conversation,
     Message,
+    User,
 )
 from app.modules.auth.permissions import permits
 from app.bots_gateway.outbox import enqueue_message_deletions
@@ -44,12 +45,14 @@ router = APIRouter()
 
 @router.get("/panel/conversations")
 def panel_conversations(principal: PanelUser, db: Db):
+    teacher = joinedload(Conversation.teacher)
+    student = joinedload(Conversation.student)
+    if principal["role"] != "admin":
+        teacher = teacher.lazyload(User.messenger_accounts)
+        student = student.lazyload(User.messenger_accounts)
     statement = (
         select(Conversation)
-        .options(
-            joinedload(Conversation.teacher),
-            joinedload(Conversation.student),
-        )
+        .options(teacher, student)
         .join(Assignment, Conversation.assignment_id == Assignment.id)
         .where(
             Assignment.active.is_(True),
@@ -89,7 +92,7 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     if permits(principal, "dialogs.observe"):
         logger.info("Admin read conversation id=%s", conversation.id)
-    query = select(Message).options(selectinload(Message.sender)).where(
+    query = select(Message).options(joinedload(Message.sender).lazyload(User.messenger_accounts)).where(
         Message.conversation_id == conversation.id, Message.id > after_id,
     )
     if first_unread and around_id is None and principal["role"] != "admin":

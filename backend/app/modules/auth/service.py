@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, Request, Response, status
 from sqlalchemy import select
+from sqlalchemy.orm import lazyload
 
 from app.core import security
 from app.core.database import SessionLocal
@@ -33,7 +34,7 @@ def authenticate_panel_user(username: str, password: str) -> dict | None:
         return None
     with SessionLocal() as db:
         matches = db.scalars(
-            select(User).where(
+            select(User).options(lazyload(User.messenger_accounts)).where(
                 User.role.in_(["teacher", "student"]),
                 User.web_login_key == normalized_username,
             ),
@@ -82,7 +83,7 @@ def _credential_fingerprint(db, role: str, user_id: int | None) -> str | None:
     if role == "admin":
         value = security.ADMIN_USERNAME + "\0" + security.ADMIN_PASSWORD
     elif role in {"teacher", "student"} and user_id is not None:
-        user = db.get(User, user_id)
+        user = db.get(User, user_id, options=[lazyload(User.messenger_accounts)])
         if not user or user.role != role or not user.web_password_hash:
             return None
         value = user.web_password_hash
@@ -202,9 +203,14 @@ def _load_panel_identity(request: Request) -> dict | None:
     if not token_hash:
         return None
     with SessionLocal() as db:
-        session = db.scalar(select(PanelSession).where(PanelSession.token_hash == token_hash))
-        if not session:
+        result = db.execute(
+            select(PanelSession, User.role, User.full_name, User.web_password_hash)
+            .outerjoin(User, User.id == PanelSession.user_id)
+            .where(PanelSession.token_hash == token_hash)
+        ).one_or_none()
+        if result is None:
             return None
+        session, user_role, full_name, password_hash = result
 
         expires_at = session.expires_at
         if expires_at.tzinfo is None:
@@ -218,20 +224,17 @@ def _load_panel_identity(request: Request) -> dict | None:
             )
             identity = {"role": "admin", "user_id": None, "full_name": "Администратор"}
         elif session.role in {"teacher", "student"} and session.user_id is not None:
-            user = db.get(User, session.user_id)
-            expected_fingerprint = _credential_fingerprint(db, session.role, session.user_id)
+            expected_fingerprint = (
+                hashlib.sha256(password_hash.encode("utf-8")).hexdigest()
+                if user_role == session.role and password_hash else None
+            )
             valid = (
-                valid
-                and user is not None
-                and user.role == session.role
-                and expected_fingerprint is not None
-                and secrets.compare_digest(
-                    session.credential_fingerprint, expected_fingerprint or "",
-                )
+                valid and expected_fingerprint is not None
+                and secrets.compare_digest(session.credential_fingerprint, expected_fingerprint)
             )
             identity = (
-                {"role": user.role, "user_id": user.id, "full_name": user.full_name}
-                if valid and user else None
+                {"role": user_role, "user_id": session.user_id, "full_name": full_name}
+                if valid else None
             )
         else:
             valid = False
