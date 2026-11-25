@@ -16,7 +16,7 @@ from app.modules.system import routes
 from app.migrations.push_devices import upgrade_push_devices
 
 
-def login(client, username="test-admin", password="a-long-test-password-123"):
+def login(client, username="test-admin", password="a-long-test-password-123"):  # pragma: allowlist secret
     assert client.post("/api/auth/login", json={"username": username, "password": password}).status_code == 200
 
 

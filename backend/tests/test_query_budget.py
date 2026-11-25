@@ -21,7 +21,7 @@ def test_authenticated_profile_and_history_query_budget(api):
         db.commit()
         engine = db.get_bind()
     client = make_client()
-    assert client.post("/api/auth/login", json={"username":"teacher-one","password":"teacher-password-1"}).status_code == 200
+    assert client.post("/api/auth/login", json={"username":"teacher-one","password":"teacher-password-1"}).status_code == 200  # pragma: allowlist secret
     statements = []
     def count(*args):
         statements.append(args[2])

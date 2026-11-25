@@ -36,7 +36,7 @@ def run(messages, clients, rounds):
             connection.execute("PRAGMA busy_timeout=5000")
         Base.metadata.create_all(engine)
         sessions = sessionmaker(bind=engine, expire_on_commit=False)
-        password_hash = "synthetic-credential-fingerprint-only"  # No usable account password.
+        password_hash = "synthetic-credential-fingerprint-only"  # No usable account password.  # pragma: allowlist secret
         token = "isolated-benchmark-session"
         with sessions() as db:
             teacher = User(full_name="Benchmark Teacher", role="teacher", web_password_hash=password_hash)

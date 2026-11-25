@@ -111,7 +111,7 @@ def test_web_send_and_logout_survive_runtime_failure(api, monkeypatch):
         db.commit()
     monkeypatch.setattr(app.state,"bots_gateway",SimpleNamespace(platforms=("telegram",),wake_outbox=lambda:None),raising=False)
     client = make_client()
-    assert client.post("/api/auth/login",json={"username":"teacher-one","password":"teacher-password-1"}).status_code == 200
+    assert client.post("/api/auth/login",json={"username":"teacher-one","password":"teacher-password-1"}).status_code == 200  # pragma: allowlist secret
     sent = client.post(f"/api/panel/conversations/{chat_id}/messages",json={"text":"saved during outage"})
     assert sent.status_code == 201, sent.text
     with sessions() as db:

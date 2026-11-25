@@ -31,12 +31,12 @@ def field_sql(name, dialect):
 
 
 @compiles(ReadField, "sqlite")
-def compile_sqlite(element, compiler, **kwargs):
+def compile_sqlite(element, _compiler, **_kwargs):
     return field_sql(element.name, "sqlite")
 
 
 @compiles(ReadField, "postgresql")
-def compile_postgresql(element, compiler, **kwargs):
+def compile_postgresql(element, _compiler, **_kwargs):
     return field_sql(element.name, "postgresql")
 
 
@@ -62,13 +62,16 @@ def unread_expressions(prefix, dialect):
 
 
 def cursor_assignments(conversation):
+    if conversation not in {"NEW.conversation_id", "OLD.conversation_id", "conversations.id"}:
+        raise ValueError("Unknown SQL conversation reference")
     # Greatest existing ID in the contiguous read prefix. Own messages do not
     # count as unread; sparse receipts beyond the prefix remain intact.
     parts = []
     for role, predicate in (("teacher", TEACHER_UNREAD), ("student", STUDENT_UNREAD)):
-        first_unread = (f"SELECT id FROM messages WHERE conversation_id = {conversation} "
+        # Fixed SQL identifiers and predicates, never request data.
+        first_unread = (f"SELECT id FROM messages WHERE conversation_id = {conversation} "  # nosec B608
                         f"AND {predicate} ORDER BY id LIMIT 1")
-        prefix = (f"SELECT id FROM messages WHERE conversation_id = {conversation} "
+        prefix = (f"SELECT id FROM messages WHERE conversation_id = {conversation} "  # nosec B608
                   f"AND id < COALESCE(({first_unread}), 9223372036854775807) "
                   "ORDER BY id DESC LIMIT 1")
         parts.append(f"{role}_last_read_id = COALESCE(({prefix}), 0)")
@@ -76,7 +79,9 @@ def cursor_assignments(conversation):
 
 
 def latest_id(conversation):
-    return ("(SELECT id FROM messages WHERE conversation_id = " + conversation +
+    if conversation not in {"NEW.conversation_id", "OLD.conversation_id", "conversations.id"}:
+        raise ValueError("Unknown SQL conversation reference")
+    return ("(SELECT id FROM messages WHERE conversation_id = " + conversation +  # nosec B608
             " ORDER BY created_at DESC, id DESC LIMIT 1)")
 
 
@@ -93,12 +98,13 @@ def install_triggers(connection):
     changed = " OR ".join(f"({n}) <> ({o})" for n, o in zip(new, old))
     moved = "OLD.conversation_id <> NEW.conversation_id"
     reordered = "OLD.created_at <> NEW.created_at OR OLD.id <> NEW.id"
-    insert_sql = (f"UPDATE conversations SET message_count = message_count + 1, {add}, "
+    # Trigger DDL uses only fixed columns and generated internal expressions.
+    insert_sql = (f"UPDATE conversations SET message_count = message_count + 1, {add}, "  # nosec B608
                   f"last_message_id = {latest_id('NEW.conversation_id')}, {cursor_assignments('NEW.conversation_id')} WHERE id = NEW.conversation_id")
-    delete_sql = (f"UPDATE conversations SET message_count = message_count - 1, {subtract}, "
+    delete_sql = (f"UPDATE conversations SET message_count = message_count - 1, {subtract}, "  # nosec B608
                   f"last_message_id = CASE WHEN last_message_id = OLD.id THEN "
                   f"{latest_id('OLD.conversation_id')} ELSE last_message_id END, {cursor_assignments('OLD.conversation_id')} WHERE id = OLD.conversation_id")
-    update_sql = (f"UPDATE conversations SET {delta}, last_message_id = CASE WHEN {reordered} "
+    update_sql = (f"UPDATE conversations SET {delta}, last_message_id = CASE WHEN {reordered} "  # nosec B608
                   f"THEN {latest_id('NEW.conversation_id')} ELSE last_message_id END, "
                   f"{cursor_assignments('NEW.conversation_id')} WHERE id = NEW.conversation_id")
     execute = connection.exec_driver_sql
@@ -174,11 +180,12 @@ def rebuild_counters(connection):
     assignments = ", ".join(f"{name} = stats.{name}" for name in ("message_count", *COUNTERS))
     connection.exec_driver_sql("UPDATE conversations SET message_count=0, teacher_unread_count=0, "
                                "student_unread_count=0, admin_unread_count=0, last_message_id=NULL, teacher_last_read_id=0, student_last_read_id=0")
+    # All aggregate/assignment expressions above use fixed schema columns.
     connection.exec_driver_sql(f"""UPDATE conversations SET {assignments},
         last_message_id = {latest_id('conversations.id')}, {cursor_assignments('conversations.id')}
         FROM (SELECT conversation_id, COUNT(*) AS message_count, {aggregates}
               FROM messages GROUP BY conversation_id) AS stats
-        WHERE conversations.id = stats.conversation_id""")
+        WHERE conversations.id = stats.conversation_id""")  # nosec B608
 
 
 
@@ -215,10 +222,13 @@ def upgrade_physical_receipts(connection):
     # Bounded keyset scan once at upgrade, never on the request hot path.
     cursor = None
     while True:
-        where = "" if cursor is None else " WHERE id > :cursor"
-        rows = connection.execute(text(
-            "SELECT id, metadata_json, teacher_read_at, student_read_at FROM messages" +
-            where + " ORDER BY id LIMIT 1000"), {} if cursor is None else {"cursor": cursor}).mappings().all()
+        if cursor is None:
+            query = text("SELECT id, metadata_json, teacher_read_at, student_read_at FROM messages ORDER BY id LIMIT 1000")
+            params = {}
+        else:
+            query = text("SELECT id, metadata_json, teacher_read_at, student_read_at FROM messages WHERE id > :cursor ORDER BY id LIMIT 1000")
+            params = {"cursor": cursor}
+        rows = connection.execute(query, params).mappings().all()
         if not rows:
             break
         updates = []

@@ -12,7 +12,7 @@ from app.modules.communication.outbox import enqueue_message_deletions, enqueue_
 from app.models import Assignment, BotEventReceipt, ConnectorDeletion, ConnectorDelivery, Conversation, ExternalEndpoint, Message, User
 from app.modules.communication.accounts import sync_messenger_account
 
-SECRET = "test-media-" + "x" * 40
+SECRET = "test-media-" + "x" * 40  # pragma: allowlist secret
 
 
 def prepare(db, users):
@@ -267,9 +267,9 @@ def test_additive_recovery_migration(tmp_path):
     with engine.begin() as c:
         for table in ("connector_deliveries", "connector_deletions"):
             c.execute(text("CREATE TABLE " + table + " (id VARCHAR(64) PRIMARY KEY)"))
-            c.execute(text("INSERT INTO " + table + " VALUES ('old')"))
+            c.execute(text("INSERT INTO " + table + " VALUES (:value)"), {"value": "old"})  # nosec B608 - fixed test table names
         upgrade_delivery_recovery(c)
         upgrade_delivery_recovery(c)
         for table in ("connector_deliveries", "connector_deletions"):
             assert {"claim_id","started_at","published_at","broker_seq"} <= {col["name"] for col in inspect(c).get_columns(table)}
-            assert c.scalar(text("SELECT id FROM " + table)) == "old"
+            assert c.scalar(text("SELECT id FROM " + table)) == "old"  # nosec B608 - fixed test table names

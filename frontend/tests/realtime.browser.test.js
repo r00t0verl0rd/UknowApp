@@ -37,14 +37,14 @@ function historyResponse(rows, params, unreadIds = new Set()) {
     : page;
 }
 
-function waitFor(check, timeout = 12000) {
+function waitFor(check, timeout = 12000, description = "browser integration condition") {
   const started = Date.now();
   return new Promise((resolve, reject) => {
     const poll = async () => {
       try {
         if (await check()) return resolve();
       } catch { /* Ожидаем готовности браузера или сервера. */ }
-      if (Date.now() - started > timeout) return reject(new Error("Timed out waiting for browser integration condition"));
+      if (Date.now() - started > timeout) return reject(new Error(`Timed out waiting for ${description}`));
       setTimeout(poll, 40);
     };
     void poll();
@@ -2444,7 +2444,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     await page.setViewportSize(originalViewport);
 
     markPhase("UI fixtures and layout");
-    await waitFor(() => pendingPersonalResponses.length === 1);
+    await waitFor(() => pendingPersonalResponses.length === 1, 12000, "initial pending personal inbox response");
     assert.equal(pendingPersonalResponses.length, 1,
       "the workspace shell must render before the personal inbox request finishes");
     await page.getByRole("button", { name: "Диалоги" }).click();
@@ -2456,7 +2456,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
       response.end(JSON.stringify([personalChat]));
     }
 
-        await waitFor(() => streams.size === 1 && inboxRequests > 0 && personalRequests > 0);
+        await waitFor(() => streams.size === 1 && inboxRequests > 0 && personalRequests > 0, 12000, "initial SSE connection and inbox requests");
     await delay(300);
     assert.equal(inboxRequests, 1, "initial conversation list must be requested once");
     assert.equal(personalRequests, 1, "initial personal list must be requested once");
@@ -2557,9 +2557,9 @@ test("global SSE updates real counters across tabs and replays missed events", {
     assert.equal(syncRequests, 0, "read receipts should not request a redundant message sync");
 
     await page.getByRole("button", { name: "Доски" }).click();
-    await waitFor(() => streams.size === 1);
+    await waitFor(() => streams.size === 1, 12000, "single SSE connection before disconnect");
     for (const response of [...streams]) response.end();
-    await waitFor(() => streams.size === 0);
+    await waitFor(() => streams.size === 0, 12000, "SSE connection closed");
     publish({
       event_id: 103,
       conversation_id: 5,
@@ -2568,8 +2568,8 @@ test("global SSE updates real counters across tabs and replays missed events", {
       summary: summary(2),
     });
 
-    await waitFor(() => lastEventIds.includes(102), 10000);
-    await waitFor(() => streams.size === 1, 10000);
+    await waitFor(() => lastEventIds.includes(102), 10000, "SSE replay cursor 102");
+    await waitFor(() => streams.size === 1, 10000, "SSE reconnection");
     assert.equal(maxActiveStreams, 1, "reconnect must not create parallel SSE connections");
 
     await page.getByRole("button", { name: "Диалоги" }).click();
@@ -2629,31 +2629,32 @@ test("global SSE updates real counters across tabs and replays missed events", {
     // Мобильное «Назад» не должно выбрасывать уже прочитанную историю.
     // Сразу показываем сообщения из короткого кэша, параллельно запрашивая сервер.
     await page.setViewportSize({ width: 390, height: 800 });
-    const delayedMessageResponses = [];
-    await page.route("**/api/panel/personal-conversations/5/messages*", route => {
-      delayedMessageResponses.push(route);
+    const delayedSyncResponses = [];
+    await page.route("**/api/panel/personal-conversations/5/sync", route => {
+      delayedSyncResponses.push(route);
     });
     await page.getByRole("button", { name: "Назад к списку диалогов" }).click();
     await page.getByRole("button", { name: /Учитель/ }).click();
     await page.getByText("Новое сообщение для автопрокрутки").waitFor({ state: "visible" });
-    await waitFor(() => delayedMessageResponses.length === 1);
-    await delayedMessageResponses[0].fulfill({
+    await waitFor(() => delayedSyncResponses.length >= 1, 12000, "cached dialog reconciliation POST /sync");
+    assert.equal(delayedSyncResponses.length, 1, "one reconciliation for reopening a cached dialog");
+    const reconciliation = delayedSyncResponses[0];
+    assert.equal(reconciliation.request().method(), "POST");
+    const known = reconciliation.request().postDataJSON();
+    assert.ok(known.known_message_ids.includes(109), "cached latest message is reconciled with the server");
+    await reconciliation.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([{
-        id: 77,
-        sender: "Администратор",
-        sender_role: "admin",
-        can_delete: false,
-        content_type: "text",
-        text: "Проверка адресной синхронизации",
-        metadata: {},
-        delivery_status: "delivered",
-        panel_read_at: null,
-        created_at: "2026-11-21T10:00:00+00:00",
-      }, ...syncNewMessages]),
+      body: JSON.stringify({
+        messages: [],
+        updated_messages: [],
+        deleted_message_ids: [],
+        has_more: false,
+        summary: { ...personalChat, unread_count: latestUnread },
+      }),
     });
     await page.getByText("Новое сообщение для автопрокрутки").waitFor({ state: "visible" });
+    await page.unroute("**/api/panel/personal-conversations/5/sync");
     markPhase("SSE interactions");
 
   } finally {
