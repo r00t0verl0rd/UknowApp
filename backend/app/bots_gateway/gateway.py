@@ -164,8 +164,7 @@ class BotsGateway:
                     db, self.platforms, self._projection_cursors)
             return transport.candidates(db, self.platforms)
 
-    _previous_sequence = staticmethod(transport.previous_sequence)
-    _mark_published = staticmethod(transport.mark_published)
+    _mark_published_batch = staticmethod(transport.mark_published_batch)
 
     def _queue_stats(self):
         stats = {}
@@ -255,23 +254,22 @@ class BotsGateway:
                 last_scan = loop.time()
             entries = await self.run_db(self._candidates, project)
             project = False
-            for job_id, platform, chat, thread, status, heavy in entries:
+            acknowledgements = []
+            for job_id, platform, chat, thread, status, heavy, previous_seq in entries:
                 # Stable IDs for normal publish, separate time-bucket ID for stale recovery.
                 # A connector's durable receipt and Core claim prevent duplicate sends.
                 dedup = job_id if status == "queued" else f"{job_id}:recover:{int(now_utc().timestamp()) // 60}"
                 try:
                     # A retained backlog is not a lost queue. Check the exact previous
                     # broker sequence before attempting stale recovery.
-                    previous_seq = None
                     if status != "queued":
-                        previous_seq = await self.run_db(self._previous_sequence, job_id)
                         if previous_seq is not None:
                             try:
                                 previous = await self.js.get_msg(STREAM, seq=previous_seq)
                             except NotFoundError:
                                 previous = None
                             if previous and previous.subject == f"{PREFIX}.outbound.{platform}" and decode(previous.data).get("id") == job_id:
-                                await self.run_db(self._mark_published, job_id)
+                                acknowledgements.append((job_id, None))
                                 continue
                     ack = await self.js.publish(f"{PREFIX}.outbound.{platform}",
                         encode({"id": job_id, "route": [chat, thread], "heavy": heavy}),
@@ -282,9 +280,11 @@ class BotsGateway:
                     logger.warning("Outbox publication delayed: %s", type(exc).__name__)
                     await asyncio.sleep(5)
                     break
-                await self.run_db(self._mark_published, job_id, ack.seq)
+                acknowledgements.append((job_id, ack.seq))
                 if status != "queued":
                     logger.info("Republished stale connector job platform=%s status=%s", platform, status)
+            if acknowledgements:
+                await self.run_db(self._mark_published_batch, acknowledgements)
             if not entries and self._projection_more:
                 await asyncio.sleep(.05)
             elif not entries:

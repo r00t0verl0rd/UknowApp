@@ -67,7 +67,12 @@ def test_projection_recovery_and_no_main_sql_for_empty_queue(api):
         job_id = db.query(ConnectorDelivery).one().id
         transport.project_pending(db,("telegram",),{})
         assert transport.candidates(db,("telegram",))[0][0] == job_id
-        transport.mark_published(job_id, 42)
+        transport.mark_published_batch([(job_id, 42)])
+        with runtime_database.RuntimeSessionLocal() as runtime:
+            assert runtime.get(TransportJob, job_id).broker_seq == 42
+        transport.mark_published_batch([(job_id, None)])
+        with runtime_database.RuntimeSessionLocal() as runtime:
+            assert runtime.get(TransportJob, job_id).broker_seq == 42
         queries = []
         def count(*args):
             queries.append(args[2])

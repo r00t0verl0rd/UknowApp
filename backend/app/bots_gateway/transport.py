@@ -1,5 +1,5 @@
 """Runtime queue projection. Main commits are independent of this cache."""
-from sqlalchemy import delete, or_, select, update
+from sqlalchemy import bindparam, delete, func, or_, select, update
 from sqlalchemy.dialects.sqlite import insert
 
 from app.core import runtime_database
@@ -66,26 +66,30 @@ def candidates(main, platforms, now=None, limit=50):
             if job.id not in live:
                 stale.append(job.id)
             else:
-                entries.append((job.id, job.platform, job.chat_id, job.thread_id, job.state, job.heavy))
+                entries.append((job.id, job.platform, job.chat_id, job.thread_id, job.state, job.heavy, job.broker_seq))
         if stale:
             runtime.execute(delete(TransportJob).where(TransportJob.id.in_(stale)))
             runtime.commit()
         return entries
 
 
-def previous_sequence(job_id):
+def mark_published_batch(acknowledgements):
+    """Flush successful broker acknowledgements in one short runtime transaction."""
+    if not acknowledgements:
+        return
+    table = TransportJob.__table__
+    stamp = now_utc()
+    statement = table.update().where(table.c.id == bindparam("job_ident")).values(
+        state="published", published_at=stamp,
+        broker_seq=func.coalesce(bindparam("sequence", type_=table.c.broker_seq.type), table.c.broker_seq))
     with runtime_database.RuntimeSessionLocal() as runtime:
-        job = runtime.get(TransportJob, job_id)
-        return job.broker_seq if job else None
+        runtime.execute(statement, [{"job_ident": ident, "sequence": sequence}
+                                    for ident, sequence in acknowledgements])
+        runtime.commit()
 
 
 def mark_published(job_id, seq=None):
-    values = {"state": "published", "published_at": now_utc()}
-    if seq is not None:
-        values["broker_seq"] = seq
-    with runtime_database.RuntimeSessionLocal() as runtime:
-        runtime.execute(update(TransportJob).where(TransportJob.id == job_id).values(**values))
-        runtime.commit()
+    mark_published_batch([(job_id, seq)])
 
 
 def forget(job_id):
