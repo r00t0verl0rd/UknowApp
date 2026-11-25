@@ -1,11 +1,12 @@
-"""Repeated web and bot sends must reuse realtime journal pages."""
+"""Repeated sends persist business messages without a SQL SSE journal."""
 
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 
-from app.models import Message, PersonalMessage, RealtimeEvent, User
+from app.models import Message, PersonalMessage, User
+from app.event_hub import current_event_id
 from app.modules.communication.accounts import sync_messenger_account
 from app.models import ConnectorDelivery
 from app.bots_gateway.operations import receive_message
@@ -59,7 +60,7 @@ def test_repeated_one_character_sends(api, monkeypatch, source):
         if source.startswith("telegram_"):
             assert db.query(ConnectorDelivery).count() == 60
         assert db.query(model).count() == 60
-        assert db.query(RealtimeEvent).count() == 1
+        assert not inspect(db.get_bind()).has_table("realtime_events")
         assert sizes[-1] - sizes[0] < 59 * 4096
 
 
@@ -85,7 +86,7 @@ def test_reopening_read_messages_does_not_grow_database(api, collection):
 
     def snapshot():
         with sessions() as db:
-            return db.scalar(text("PRAGMA page_count")), db.query(RealtimeEvent).one().id
+            return db.scalar(text("PRAGMA page_count")), current_event_id()
 
     original = snapshot()
     for _ in range(20):
