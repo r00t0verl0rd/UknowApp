@@ -109,11 +109,6 @@ def install_triggers(connection):
         execute(f"""CREATE TRIGGER uknow_message_stats_move AFTER UPDATE OF conversation_id ON messages
             WHEN {moved} BEGIN {delete_sql}; {insert_sql}; END""")
     elif dialect == "postgresql":
-        execute("""CREATE OR REPLACE FUNCTION uknow_read_field(value text, field text)
-            RETURNS text LANGUAGE plpgsql IMMUTABLE AS $$
-            BEGIN RETURN value::jsonb ->> field;
-            EXCEPTION WHEN invalid_text_representation THEN RETURN NULL;
-            END; $$""")
         # FOR NO KEY UPDATE avoids lock upgrade deadlocks with FK key-share locks.
         execute(f"""CREATE OR REPLACE FUNCTION uknow_message_stats() RETURNS trigger
             LANGUAGE plpgsql AS $$
@@ -172,56 +167,6 @@ def upgrade_conversation_counters(connection):
                                "student_unread_count=0, admin_unread_count=0, last_message_id=NULL, teacher_last_read_id=0, student_last_read_id=0")
     connection.exec_driver_sql(f"""UPDATE conversations SET {assignments},
         last_message_id = {latest_id('conversations.id')}, {cursor_assignments('conversations.id')}
-        FROM (SELECT conversation_id, COUNT(*) AS message_count, {aggregates}
-              FROM messages GROUP BY conversation_id) AS stats
-        WHERE conversations.id = stats.conversation_id""")        # FOR NO KEY UPDATE avoids lock upgrade deadlocks with FK key-share locks.
-        execute(f"""CREATE OR REPLACE FUNCTION uknow_message_stats() RETURNS trigger
-            LANGUAGE plpgsql AS $$
-            BEGIN
-                IF TG_OP = 'INSERT' THEN
-                    PERFORM id FROM conversations WHERE id = NEW.conversation_id FOR NO KEY UPDATE;
-                    {insert_sql};
-                ELSIF TG_OP = 'DELETE' THEN
-                    PERFORM id FROM conversations WHERE id = OLD.conversation_id FOR NO KEY UPDATE;
-                    {delete_sql};
-                ELSIF {moved} THEN
-                    PERFORM id FROM conversations WHERE id IN (OLD.conversation_id, NEW.conversation_id)
-                        ORDER BY id FOR NO KEY UPDATE;
-                    {delete_sql}; {insert_sql};
-                ELSIF ({changed}) OR ({reordered}) THEN
-                    PERFORM id FROM conversations WHERE id = NEW.conversation_id FOR NO KEY UPDATE;
-                    {update_sql};
-                END IF;
-                RETURN NULL;
-            END; $$""")
-        execute("DROP TRIGGER IF EXISTS uknow_message_stats ON messages")
-        execute("""CREATE TRIGGER uknow_message_stats AFTER INSERT OR DELETE OR
-            UPDATE OF metadata_json, sender_role, created_at, id, conversation_id ON messages
-            FOR EACH ROW EXECUTE FUNCTION uknow_message_stats()""")
-    else:
-        raise RuntimeError("Unsupported database dialect for conversation counters")
-
-
-def install_on_create(_table, connection, **_kwargs):
-    install_triggers(connection)
-
-
-def upgrade_conversation_counters(connection):
-    """Backfill once, in the caller's migration transaction."""
-    columns = {c["name"] for c in inspect(connection).get_columns("conversations")}
-    for name in ("message_count", *COUNTERS):
-        if name not in columns:
-            connection.exec_driver_sql(f"ALTER TABLE conversations ADD COLUMN {name} BIGINT NOT NULL DEFAULT 0")
-    if "last_message_id" not in columns:
-        connection.exec_driver_sql("ALTER TABLE conversations ADD COLUMN last_message_id INTEGER")
-    install_triggers(connection)
-    expressions = unread_expressions("", connection.dialect.name)
-    aggregates = ", ".join(f"SUM({expr}) AS {name}" for name, expr in zip(COUNTERS, expressions))
-    assignments = ", ".join(f"{name} = stats.{name}" for name in ("message_count", *COUNTERS))
-    connection.exec_driver_sql("UPDATE conversations SET message_count=0, teacher_unread_count=0, "
-                               "student_unread_count=0, admin_unread_count=0, last_message_id=NULL")
-    connection.exec_driver_sql(f"""UPDATE conversations SET {assignments},
-        last_message_id = {latest_id('conversations.id')}
         FROM (SELECT conversation_id, COUNT(*) AS message_count, {aggregates}
               FROM messages GROUP BY conversation_id) AS stats
         WHERE conversations.id = stats.conversation_id""")
