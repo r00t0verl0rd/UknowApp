@@ -105,7 +105,8 @@ def test_health_checks_database_connection(api):
     response = make_client().get("/api/health")
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["components"]["database"] == "ok"
-    assert response.json()["status"] == "degraded"
+    assert response.json()["components"]["bots_gateway"] == "disabled"
+    assert response.json()["status"] == "ok"
 
 
 def test_admin_can_unassign_student_without_deleting_conversation_history(api):
