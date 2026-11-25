@@ -1,7 +1,7 @@
 import ChatsPage from "./ChatsPage.jsx";
 import ChatDialogs from "./components/ChatDialogs.jsx";
 import { createChatsController } from "./state/createChatsController.js";
-import { saveViewPreference } from "../../shared/services/viewSession.js";
+import { viewAccountKey, saveViewPreference } from "../../shared/services/viewSession.js";
 export default function ChatsModule(options) {
   const state = createChatsController({
     get auth() {
@@ -21,7 +21,7 @@ export default function ChatsModule(options) {
   });
   const clearSelectedChat = () => {
     state.capturePosition();
-    saveViewPreference(options.profile?.id, "chats.active", null);
+    saveViewPreference(viewAccountKey(options.profile), "chats.active", null);
     options.chatState.setSelectedChat(null);
   };
   return (

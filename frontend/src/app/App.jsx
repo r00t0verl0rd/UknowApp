@@ -11,7 +11,7 @@ import { createPersonalChatState } from "../features/conversations/state/createP
 import { createConversationSync } from "../features/conversations/state/createConversationSync.js";
 import AppToast from "../shared/components/AppToast.jsx";
 import { installViewportEnvironment } from "../shared/services/viewportEnvironment.js";
-import { viewPreference, saveViewPreference } from "../shared/services/viewSession.js";
+import { viewAccountKey, viewPreference, saveViewPreference } from "../shared/services/viewSession.js";
 import { readUserSortPreference, saveUserSortPreference } from "../shared/services/userSortPreference.js";
 import IconButton from "../shared/components/IconButton.jsx";
 import LoginPage from "./authentication/LoginPage.jsx";
@@ -89,7 +89,7 @@ function Application(options) {
   ];
   let preferencesReadyFor = null;
   createEffect(
-    () => [authState.profile?.id],
+    () => [viewAccountKey(authState.profile)],
     ([id]) => {
       preferencesReadyFor = null;
       if (id == null) return;
@@ -104,7 +104,7 @@ function Application(options) {
     },
   );
   createEffect(
-    () => [authState.profile?.id, ...viewPreferences.map(([, read]) => read())],
+    () => [viewAccountKey(authState.profile), ...viewPreferences.map(([, read]) => read())],
     ([id, ...values]) => {
       if (id == null || preferencesReadyFor !== id) return;
       for (let i = 0; i < viewPreferences.length; i++) {

@@ -1,3 +1,4 @@
+import { viewAccountKey } from "../../shared/services/viewSession.js";
 import UsersPage from "./UsersPage.jsx";
 import UserDialogs from "./components/UserDialogs.jsx";
 import StructurePage from "../graph/StructurePage.jsx";
@@ -39,7 +40,7 @@ export default function UsersModule(options) {
       )}
       {options.page === "graph" && (
         <StructurePage
-          userId={options.profile?.id}
+          userId={viewAccountKey(options.profile)}
           overview={state.overview}
           loading={options.adminDataLoading}
           openCreate={state.openCreate}

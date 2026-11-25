@@ -21,7 +21,7 @@ test("remembers current page, list filters and scroll after asynchronous reload"
       await page.route("**/api/**", async route => {
         const routeName = new URL(route.request().url()).pathname;
         if (routeName === "/api/panel/me") return route.fulfill({
-          json: { id: 1, full_name: "Администратор", role: "admin",
+          json: { full_name: "Администратор", role: "admin",
             permissions: ["structure.view", "users.manage", "dialogs.own", "school.manage", "dialogs.observe"] },
         });
         if (routeName === "/api/admin/users") {
@@ -30,7 +30,7 @@ test("remembers current page, list filters and scroll after asynchronous reload"
           return route.fulfill({ json: [...users, { id: 8, role: "teacher", full_name: "Анна" }] });
         }
         if (routeName === "/api/admin/overview") return route.fulfill({
-          json: { counts: { teachers: 0, students: users.length }, teachers: [] },
+          json: { counts: { teachers: 1, students: users.length }, teachers: [{ id: 8, students: [users[0]] }] },
         });
         if (routeName === "/api/panel/conversations" || routeName === "/api/panel/personal-conversations") {
           return route.fulfill({ json: [] });
@@ -70,7 +70,7 @@ test("remembers current page, list filters and scroll after asynchronous reload"
           if (Math.abs(y - pos.y) <= 8) return true;
           // On mobile a sticky header may move in the layout. Restoring the
           // same visible row is the invariant, not an arbitrary pixel offset.
-          const snapshot = JSON.parse(sessionStorage.getItem("uknowapp-view-v1:1") || "{}");
+          const snapshot = JSON.parse(sessionStorage.getItem("uknowapp-view-v1:admin") || "{}");
           const anchor = snapshot.pages?.users?.scroll?.[pos.kind]?.anchor;
           const row = [...(container?.querySelectorAll("[data-view-anchor]") || [])]
             .find(el => el.getAttribute("data-view-anchor") === anchor?.id);
@@ -96,7 +96,7 @@ test("remembers current page, list filters and scroll after asynchronous reload"
           if (Math.abs(y - pos.y) <= 8) return true;
           // On mobile a sticky header may move in the layout. Restoring the
           // same visible row is the invariant, not an arbitrary pixel offset.
-          const snapshot = JSON.parse(sessionStorage.getItem("uknowapp-view-v1:1") || "{}");
+          const snapshot = JSON.parse(sessionStorage.getItem("uknowapp-view-v1:admin") || "{}");
           const anchor = snapshot.pages?.users?.scroll?.[pos.kind]?.anchor;
           const row = [...(container?.querySelectorAll("[data-view-anchor]") || [])]
             .find(el => el.getAttribute("data-view-anchor") === anchor?.id);
@@ -112,7 +112,12 @@ test("remembers current page, list filters and scroll after asynchronous reload"
       await page.getByRole("button", { name: "Скрыть учеников", exact: true }).click();
       await page.addInitScript(() => sessionStorage.clear());
       await page.reload();
-      await page.getByRole("button", { name: "Показать учеников", exact: true }).waitFor();
+      const showStudents = page.getByRole("button", { name: "Показать учеников", exact: true });
+      await showStudents.waitFor();
+      assert.equal(await page.locator(".teacher-branch .student-card").count(), 0);
+      await showStudents.click();
+      await page.reload();
+      await page.locator(".teacher-branch .student-card").getByText("Ученик 001", { exact: true }).waitFor();
       await page.close();
     }
   } finally {
@@ -127,7 +132,7 @@ test("restores the selected conversation and the same message after loading olde
   });
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH });
   const chat = {
-    id: 7, type: "conversation", teacher: { id: 8, full_name: "Преподаватель" },
+    id: 7, teacher: { id: 8, full_name: "Преподаватель" },
     student: { id: 9, full_name: "Ученик" }, status: "active",
     message_count: 120, unread_count: 0, created_at: "2026-10-01T10:00:00Z",
   };
@@ -151,11 +156,14 @@ test("restores the selected conversation and the same message after loading olde
       const url = new URL(route.request().url());
       const name = url.pathname;
       if (name === "/api/panel/me") return route.fulfill({ json: {
-        id: role === "admin" ? 1 : 9, full_name: "Пользователь", role,
+        ...(role === "admin" ? {} : { id: 9 }), full_name: "Пользователь", role,
         permissions: ["structure.view", "dialogs.own", "users.manage", "dialogs.observe"],
       } });
       if (name === "/api/panel/conversations") return route.fulfill({ json: [chat] });
-      if (name === "/api/panel/personal-conversations") return route.fulfill({ json: [] });
+      if (name === "/api/panel/personal-conversations") {
+        if (delayNewerPages) await newerGate;
+        return route.fulfill({ json: [] });
+      }
       if (name === "/api/panel/conversations/7/messages") {
         const before = Number(url.searchParams.get("before_id")) || Infinity;
         if (url.searchParams.get("forward") === "true") {
@@ -172,6 +180,7 @@ test("restores the selected conversation and the same message after loading olde
     await page.goto("http://127.0.0.1:22240");
     await page.evaluate(() => localStorage.setItem("uknowapp-auth", "1"));
     await page.goto("http://127.0.0.1:22240/dialogs");
+    await page.getByRole("button", { name: "Участники", exact: true }).click();
     await page.locator(".chat-item").first().click();
     await page.getByText("Chat message 120").waitFor({ state: "visible" });
     await page.locator('[data-view-anchor="message:120"] audio').waitFor({ state: "attached" });
@@ -219,6 +228,12 @@ test("restores the selected conversation and the same message after loading olde
     delayNewerPages = false;
     resumeNewer();
     await page.getByText("Chat message 120").waitFor({ state: "attached" });
+    // Appending the rest of the history must also preserve the observed row.
+    await page.waitForFunction(expected => {
+      const history = document.querySelector(".messages");
+      const row = history?.querySelector(`[data-view-anchor="${expected.id}"]`);
+      return row && Math.abs(row.getBoundingClientRect().top - history.getBoundingClientRect().top - expected.offset) < 3;
+    }, anchor);
     assert.equal(await page.locator(".chat-item.selected").count(), 1);
     // Closing a tab removes its session state. A manual reopen still finds the same row.
     await page.goto("about:blank");

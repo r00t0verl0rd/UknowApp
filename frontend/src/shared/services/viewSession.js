@@ -3,6 +3,11 @@ const VERSION = "uknowapp-view-v1";
 const MAX_STORED_PAGES = 12;
 const MAX_SCROLL = 10_000_000;
 
+// The built-in administrator has no User row or numeric id in /panel/me.
+export function viewAccountKey(profile) {
+  return profile?.id ?? (profile?.role === "admin" ? "admin" : null);
+}
+
 function key(userId) {
   return userId == null ? "" : `${VERSION}:${encodeURIComponent(String(userId))}`;
 }

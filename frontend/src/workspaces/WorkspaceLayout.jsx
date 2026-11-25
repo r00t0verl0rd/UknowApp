@@ -10,7 +10,7 @@ import {
 import Button from "../shared/components/Button.jsx";
 import ConfirmDialog from "../shared/components/ConfirmDialog.jsx";
 import IconButton from "../shared/components/IconButton.jsx";
-import { installViewRestoration } from "../shared/services/viewSession.js";
+import { viewAccountKey, installViewRestoration } from "../shared/services/viewSession.js";
 
 // Одна разметка и один источник состояния для всех пунктов меню.
 function SidebarControl(options) {
@@ -39,7 +39,7 @@ export default function WorkspaceLayout(options) {
   // One owner for document, workspace and nested scrolling on every page.
   // The saved position survives reloads, navigation and asynchronous rendering.
   createEffect(
-    () => [options.profile?.id],
+    () => [viewAccountKey(options.profile)],
     ([id]) => {
       viewMemory?.dispose();
       viewMemory = id == null ? null : installViewRestoration({

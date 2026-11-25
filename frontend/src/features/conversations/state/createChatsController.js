@@ -1,6 +1,6 @@
 import { createSignal, createMemo, createEffect } from "solid-js";
 import { createChatActionState } from "./createChatActionState.js";
-import { persistentViewValue, savePersistentViewValue, readScrollPositions, saveViewPreference, viewPreference } from "../../../shared/services/viewSession.js";
+import { viewAccountKey, persistentViewValue, savePersistentViewValue, readScrollPositions, saveViewPreference, viewPreference } from "../../../shared/services/viewSession.js";
 import { isUnreadIncoming, markConversationMessageDeleted, mergeConversationMessages } from "../services/messageState.js";
 import {
   createPersonalConversation,
@@ -162,7 +162,7 @@ export function createChatsController(options) {
   const positionName = (key, filter) => `messages:${key}${filter === "all" ? "" : ":" + filter}`;
   const savedPosition = (key, filter) => {
     const name = positionName(key, filter);
-    return persistentViewValue(options.profile?.id, name, readScrollPositions(options.profile?.id, "chats")[name]);
+    return persistentViewValue(viewAccountKey(options.profile), name, readScrollPositions(viewAccountKey(options.profile), "chats")[name]);
   };
   createEffect(
     () => [
@@ -178,7 +178,7 @@ export function createChatsController(options) {
       if (!key) return;
       const filter = options.chatState.messageFilter;
       const name = positionName(key, filter);
-      const userId = options.profile?.id;
+      const userId = viewAccountKey(options.profile);
       const saved = savedPosition(key, filter);
       let initialized = false;
       let followBottom = false;
@@ -303,7 +303,7 @@ export function createChatsController(options) {
   );
   const openChat = async (chat, { restoring = false } = {}) => {
     const chatKey = (chat.type === "personal" ? "personal:" : "conversation:") + chat.id;
-    saveViewPreference(options.profile?.id, "chats.active", chatKey);
+    saveViewPreference(viewAccountKey(options.profile), "chats.active", chatKey);
     const previousRequest = openingChatRequest;
     if (activeChatKey() === chatKey && (previousRequest?.key === chatKey ||
       !options.chatState.messagesLoading)) return;
@@ -410,16 +410,16 @@ export function createChatsController(options) {
   // Reopen the same conversation once its list has been loaded.
   createEffect(
     () => [
-      options.profile?.id,
+      viewAccountKey(options.profile),
       options.inboxLoading,
       options.chatState.chats,
       options.personalState.personalChats,
     ],
     ([userId, loading, conversations, personals]) => {
-      if (userId == null || loading || attemptedRestoreForUser === userId) return;
-      attemptedRestoreForUser = userId;
+      if (userId == null || attemptedRestoreForUser === userId) return;
       const selected = options.chatState.selectedChat;
       if (selected) {
+        attemptedRestoreForUser = userId;
         if (options.chatState.messagesLoading) void openChat(selected, { restoring: true });
         return;
       }
@@ -428,6 +428,10 @@ export function createChatsController(options) {
       const [type, idText] = key.split(":");
       const chat = (type === "personal" ? personals : conversations)
         .find(item => String(item.id) === idText);
+      // Participant and personal inboxes arrive independently. Open as soon as
+      // the selected conversation is available, even if the other list is slow.
+      if (!chat && loading) return;
+      attemptedRestoreForUser = userId;
       if (!chat) {
         saveViewPreference(userId, "chats.active", null);
         return;
@@ -493,8 +497,8 @@ export function createChatsController(options) {
       const result = await deletePersonalConversation(options.request, chat.id);
       recentChats.delete(key);
       options.personalState.setPersonalChats((current) => current.filter((row) => row.id !== chat.id));
-      if (viewPreference(options.profile?.id, "chats.active", "") === key) {
-        saveViewPreference(options.profile?.id, "chats.active", null);
+      if (viewPreference(viewAccountKey(options.profile), "chats.active", "") === key) {
+        saveViewPreference(viewAccountKey(options.profile), "chats.active", null);
       }
       if (activeChatKey() === key) {
         openingChatRequest?.controller.abort();
