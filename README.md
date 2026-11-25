@@ -4,9 +4,23 @@
 
 ## Запуск на сервере
 
-Нужны Git, [Docker с Compose и Buildx](https://docs.docker.com/engine/install/debian/) и домен, направленный на VPS. Откройте TCP-порты 80 и 443.
+Подключитесь к серверу Debian по SSH. Если Docker ещё не установлен, выполните от `root`:
 
-Подключитесь к серверу по SSH и выполните:
+```bash
+apt update
+apt install -y ca-certificates curl git nano
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+chmod a+r /etc/apt/keyrings/docker.asc
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" > /etc/apt/sources.list.d/docker.list
+apt update
+apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+systemctl enable --now docker
+```
+
+Если Docker уже установлен, достаточно Git и nano. Направьте домен на VPS и откройте TCP-порты 80 и 443.
+
+Скачайте проект:
 
 ```bash
 git clone https://github.com/r00t0verl0rd/UknowApp.git
