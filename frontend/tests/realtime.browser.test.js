@@ -18,6 +18,25 @@ const personalChat = {
   unread_count: 1,
 };
 
+function historyResponse(rows, params, unreadIds = new Set()) {
+  const limit = Number(params.get("limit")) || 50;
+  const around = Number(params.get("around_id")) ||
+    (params.get("first_unread") === "true"
+      ? rows.find(row => unreadIds.has(row.id))?.id : null);
+  if (around) {
+    const before = rows.filter(row => row.id < around).slice(-limit);
+    const following = rows.filter(row => row.id >= around).slice(0, limit);
+    return { messages: before.concat(following), anchor_id: around,
+      has_older: before.length === limit, has_newer: following.length === limit };
+  }
+  const page = params.get("forward") === "true"
+    ? rows.filter(row => row.id > Number(params.get("after_id"))).slice(0, limit)
+    : rows.filter(row => row.id < (Number(params.get("before_id")) || Infinity)).slice(-limit);
+  return params.get("first_unread") === "true"
+    ? { messages: page, anchor_id: null, has_older: page.length === limit, has_newer: false }
+    : page;
+}
+
 function waitFor(check, timeout = 12000) {
   const started = Date.now();
   return new Promise((resolve, reject) => {
@@ -66,7 +85,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
   };
 
   apiServer = createServer((request, response) => {
-    const path = new URL(request.url, "http://localhost").pathname;
+    const { pathname: path, searchParams } = new URL(request.url, "http://localhost");
     apiPaths.push(path);
     if (path === "/api/panel/events") {
       const lastEventId = Number(request.headers["last-event-id"] || 0);
@@ -103,7 +122,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     } else if (path === "/api/admin/boards/objects") {
       body = [];
     } else if (path === "/api/panel/personal-conversations/5/messages") {
-      body = [{
+      body = historyResponse([{
         id: 77,
         sender: "Администратор",
         sender_role: "admin",
@@ -116,7 +135,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
         delivery_status: "delivered",
         panel_read_at: null,
         created_at: "2026-11-21T10:00:00+00:00",
-      }];
+      }, ...syncNewMessages], searchParams, new Set(syncNewMessages.map(row => row.id)));
     } else if (path === "/api/panel/personal-conversations/5/sync") {
       syncRequests += 1;
       body = {
@@ -2708,12 +2727,13 @@ test("read receipts and push suppression follow the visible dialog", { timeout: 
         json = [summary()];
       } else if (pathname === openPath + "/messages") {
         assert.equal(searchParams.get("mark_read"), "false");
-        json = history;
+        json = historyResponse(history, searchParams, unread);
       } else if (pathname === openPath + "/sync") {
         syncRequests++;
         const { after_id, mark_read } = request.postDataJSON();
         assert.equal(mark_read, false);
-        json = { messages: history.filter(message => message.id > after_id), summary: summary() };
+        json = { messages: history.filter(message => message.id > after_id), updated_messages: [],
+          deleted_message_ids: [], has_more: false, summary: summary() };
       } else if (pathname === openPath + "/read") {
         const { message_ids } = request.postDataJSON();
         receipts.push(...message_ids);

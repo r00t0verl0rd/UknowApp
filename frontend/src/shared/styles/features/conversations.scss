@@ -146,7 +146,7 @@
   background:var(--surface);
 }
 .messages {
-  // The controller preserves a message anchor on all browsers, including Safari.
+  /* The controller preserves a message anchor on all browsers, including Safari. */
   overflow-anchor:none;
   display:flex;
   flex:1 0 auto;
@@ -157,8 +157,8 @@
   background:transparent;
 }
 .message {
-  content-visibility:auto;
-  contain-intrinsic-size:auto 300px auto 72px;
+  /* A message must have its real height before scroll restoration. Keep
+     images lazy and audio deferred instead of estimating whole row heights. */
   width:fit-content;
   max-width:min(92%, 760px);
   min-width:0;

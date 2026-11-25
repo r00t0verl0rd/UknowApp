@@ -28,8 +28,8 @@ from app.modules.communication.contracts import (
     MessengerPlatform,
 )
 from app.modules.conversations.service import (
-    conversation_dicts,
     _unread_condition,
+    conversation_dicts,
     publish_conversation_update,
 )
 from app.modules.dependencies import Db, PanelUser
@@ -94,13 +94,12 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
     query = select(Message).options(selectinload(Message.sender)).where(
         Message.conversation_id == conversation.id, Message.id > after_id,
     )
-    if first_unread and around_id is None:
-        if principal["role"] != "admin":
-            around_id = db.scalar(select(Message.id).where(
-                Message.conversation_id == conversation.id,
-                Message.sender_role != principal["role"],
-                _unread_condition(db, principal["role"]),
-            ).order_by(Message.id).limit(1))
+    if first_unread and around_id is None and principal["role"] != "admin":
+        around_id = db.scalar(select(Message.id).where(
+            Message.conversation_id == conversation.id,
+            Message.sender_role != principal["role"],
+            _unread_condition(db, principal["role"]),
+        ).order_by(Message.id).limit(1))
     if around_id is not None:
         # A single response carries the adjacent pages, including the anchor.
         size = limit or 50

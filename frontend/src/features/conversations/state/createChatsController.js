@@ -176,7 +176,7 @@ export function createChatsController(options) {
     () => {
       const history = options.chatState.messagesViewportRef.current;
       const key = activeChatKey();
-      if (!history || !key || history.dataset.viewScrollKey !== key) return;
+      if (!history || !key) return;
       const filter = options.chatState.messageFilter;
       const name = positionName(key, filter);
       const userId = viewAccountKey(options.profile);
@@ -233,12 +233,16 @@ export function createChatsController(options) {
         frame = 0;
         if (!current()) return;
         if (!initialized) {
-          // Wait for the authoritative window, not the old DOM or a partial cache.
-          if (openingChatRequest?.key === key && !openingChatRequest.windowReady) return;
-          if (options.chatState.messagesLoading && openingChatRequest?.key !== key) return;
+          const request = openingChatRequest?.key === key ? openingChatRequest : null;
+          const row = findRow(saved?.anchor?.id);
+          // A validated cache containing the saved anchor (or the latest page)
+          // may render immediately. Otherwise wait for the requested window.
+          const cachedPositionReady = request?.hasCache &&
+            (saved?.bottom === true ? history.querySelector("[data-view-anchor]") : row);
+          if (request && !request.windowReady && !cachedPositionReady) return;
+          if (options.chatState.messagesLoading && !request) return;
           const unreadRow = unreadAnchor?.key === key &&
             findRow("message:" + unreadAnchor.id);
-          const row = findRow(saved?.anchor?.id);
           if (forced || saved?.bottom === true || (!saved && !unreadRow)) {
             followBottom = true;
             history.scrollTop = history.scrollHeight;
@@ -255,7 +259,9 @@ export function createChatsController(options) {
           initialized = true;
           forced = false;
           appliedTop = history.scrollTop;
-          position = readPosition() || position;
+          position = !followBottom && row && saved?.anchor
+            ? { ...saved, top: history.scrollTop, bottom: false }
+            : readPosition() || position;
           setPositionedKey(name);
         } else if (forced || followBottom) {
           history.scrollTop = history.scrollHeight;
@@ -376,7 +382,7 @@ export function createChatsController(options) {
     const cachedMessages = unreadCount ? null : getCachedChat(chatKey);
     const cachedById = new Map((cachedMessages || []).map((item) => [String(item.id), item]));
     const controller = new AbortController();
-    openingChatRequest = { key: chatKey, controller };
+    openingChatRequest = { key: chatKey, controller, hasCache: Boolean(cachedMessages) };
     // Блокируем запись старой истории под ключом нового чата на время
     // синхронного переключения сигналов.
     options.chatState.setMessagesLoading(true);
