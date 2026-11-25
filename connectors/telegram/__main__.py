@@ -1,6 +1,7 @@
 """Durable Telegram polling; Core never receives a provider token or SDK objects."""
 import asyncio
 import logging
+import fcntl
 import os
 from pathlib import Path
 
@@ -41,7 +42,7 @@ async def forward(adapter, gateway, spool):
     while True:
         item = spool.first()
         if item is None:
-            await asyncio.sleep(.25)
+            await spool.wait_for_event()
             continue
         event_id, update = item
         try:
@@ -64,6 +65,13 @@ async def main():
     STATE.mkdir(parents=True, exist_ok=True)
     health = STATE / "healthy"
     health.unlink(missing_ok=True)
+    # Do not allow concurrent workers on the same local durable spool.
+    lock = (STATE / "worker.lock").open("a")
+    try:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        lock.close()
+        raise RuntimeError("connector state already in use") from None
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=300)) as http:
         adapter = TelegramAdapter(http, os.environ["TELEGRAM_BOT_TOKEN"])
         spool = gateway = None
@@ -97,6 +105,7 @@ async def main():
                 spool.close()
             await adapter.close()
             health.unlink(missing_ok=True)
+            lock.close()
 
 
 if __name__ == "__main__":

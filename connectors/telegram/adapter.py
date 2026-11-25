@@ -2,19 +2,20 @@
 import asyncio
 import logging
 import os
+from collections import OrderedDict
 from pathlib import Path
 from urllib.parse import quote
 
 import aiohttp
 from aiogram import Bot
-from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramNotFound
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramNotFound, TelegramRetryAfter
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram.types import URLInputFile
 from .teacher_panel import TeacherPanel
 
 from connectors.common.commands import Commands
-from connectors.common.client import DeliveryRejected, RpcError
+from connectors.common.client import DeliveryRejected, RetryLater, RpcError
 
 logger = logging.getLogger(__name__)
 MAX_BYTES = 1024 ** 3
@@ -33,6 +34,8 @@ class TelegramAdapter:
         self.files = Path(os.getenv("TELEGRAM_FILES_DIR", "/var/lib/telegram-bot-api")).resolve()
         self.bot = Bot(token, session=AiohttpSession(api=TelegramAPIServer.from_base(self.base, is_local=self.local)))
         self.teacher_panel = TeacherPanel(self.bot)
+        self.file_ids = OrderedDict()
+        self.media_locks = {}
 
     async def close(self):
         await self.bot.session.close()
@@ -61,6 +64,8 @@ class TelegramAdapter:
     async def delete(self, job):
         try:
             await self.bot.delete_message(chat_id=int(job["chat_id"]), message_id=int(job["external_message_id"]))
+        except TelegramRetryAfter as exc:
+            raise RetryLater(exc.retry_after) from exc
         except TelegramBadRequest as exc:
             if "message to delete not found" not in str(exc).lower():
                 raise DeliveryRejected("provider refused deletion") from exc
@@ -70,6 +75,8 @@ class TelegramAdapter:
     async def send(self, job, gateway):
         try:
             return await self._send(job, gateway)
+        except TelegramRetryAfter as exc:
+            raise RetryLater(exc.retry_after) from exc
         except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound) as exc:
             raise DeliveryRejected("provider refused delivery") from exc
 
@@ -84,8 +91,6 @@ class TelegramAdapter:
             sent = await self.bot.send_message(text=text[:4096], **kwargs)
             return sent.message_id
         media = job["media"]
-        file = URLInputFile(gateway.media_url(job["id"]), headers=gateway.headers,
-                            filename=media["file_name"], timeout=300)
         kind = job.get("kind")
         method, field = {"photo": (self.bot.send_photo, "photo"),
                          "video": (self.bot.send_video, "video"),
@@ -93,8 +98,50 @@ class TelegramAdapter:
                          "audio": (self.bot.send_audio, "audio"),
                          "animation": (self.bot.send_animation, "animation")}.get(
                             kind, (self.bot.send_document, "document"))
-        sent = await method(**kwargs, **{field: file}, caption=text[:1024], request_timeout=300)
-        return sent.message_id
+
+        async def send_file(file):
+            return await method(**kwargs, **{field: file}, caption=text[:1024], request_timeout=300)
+
+        def upload():
+            return URLInputFile(gateway.media_url(job["id"]), headers=gateway.headers,
+                                filename=media["file_name"], timeout=300)
+
+        key = (media.get("key"), field)
+        if not key[0]:
+            return (await send_file(upload())).message_id
+        # Cache only provider IDs, never duplicate the permanent Core archive.
+        # One in-flight upload per immutable archive key and media type.
+        entry = self.media_locks.setdefault(key, [asyncio.Lock(), 0])
+        entry[1] += 1
+        try:
+            async with entry[0]:
+                cached = self.file_ids.get(key)
+                if cached:
+                    try:
+                        sent = await send_file(cached)
+                        self.file_ids.move_to_end(key)
+                        return sent.message_id
+                    except TelegramBadRequest as exc:
+                        error = str(exc).lower()
+                        if not any(s in error for s in ("wrong file identifier", "file reference", "file_id")):
+                            raise
+                        self.file_ids.pop(key, None)
+                sent = await send_file(upload())
+                value = getattr(sent, field, None)
+                if isinstance(value, list):
+                    value = value[-1] if value else None
+                file_id = getattr(value, "file_id", None)
+                if file_id:
+                    self.file_ids[key] = file_id
+                    self.file_ids.move_to_end(key)
+                    while len(self.file_ids) > 1024:
+                        self.file_ids.popitem(last=False)
+                return sent.message_id
+        finally:
+            entry[1] -= 1
+            if entry[1] == 0:
+                self.media_locks.pop(key, None)
+
 
     async def show_menu(self, chat, view, gateway, spool, page=0, force=False):
         account = view.get("account")

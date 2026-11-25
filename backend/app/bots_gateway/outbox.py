@@ -1,9 +1,10 @@
 """Provider-neutral transactional outbox, one job per permitted external address."""
 import hashlib
 import json
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 
 from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.models import ConnectorDeletion, ConnectorDelivery, Conversation, ExternalEndpoint, Message, MessengerAccount
@@ -12,6 +13,48 @@ from app.modules.conversations.service import publish_conversation_update
 
 PENDING = {"queued", "published", "sending"}
 TERMINAL = {"delivered", "failed", "unknown", "cancelled"}
+RECOVERY_AFTER = timedelta(minutes=15)
+
+
+def now_utc():
+    return datetime.now(UTC)
+
+
+def as_utc(value):
+    return value if value.tzinfo else value.replace(tzinfo=UTC)
+
+
+def claim_is_recent(job, now=None):
+    return bool(job.started_at and as_utc(job.started_at) > (now or now_utc()) - RECOVERY_AFTER)
+
+
+def earlier_send_pending(db, job):
+    if not isinstance(job, ConnectorDelivery) or job.status == "sending":
+        return False
+    # Preserve ordering at each external address even after a delayed NAK or reconnect.
+    return db.scalar(select(ConnectorDelivery.id).where(
+        ConnectorDelivery.platform == job.platform,
+        ConnectorDelivery.chat_id == job.chat_id,
+        ConnectorDelivery.thread_id == job.thread_id,
+        ConnectorDelivery.status.in_(PENDING),
+        ConnectorDelivery.id != job.id,
+        or_(ConnectorDelivery.created_at < job.created_at,
+            and_(ConnectorDelivery.created_at == job.created_at, ConnectorDelivery.id < job.id)),
+    ).limit(1)) is not None
+
+
+def publication_candidates(db, platforms, now=None, limit=50):
+    cutoff = (now or now_utc()) - RECOVERY_AFTER
+    entries = []
+    for model in (ConnectorDeletion, ConnectorDelivery):
+        jobs = db.scalars(select(model).where(model.platform.in_(platforms), or_(
+            model.status == "queued", and_(model.status.in_(("published", "sending")),
+                or_(model.published_at.is_(None), model.published_at <= cutoff),
+                or_(model.started_at.is_(None), model.started_at <= cutoff))))
+            .order_by(model.created_at, model.id).limit(limit)).all()
+        entries.extend((j.id, j.platform, j.chat_id, getattr(j, "thread_id", ""), j.status) for j in jobs)
+    return entries
+
 
 
 def uses_outbox(app):
@@ -94,11 +137,12 @@ def job_payload(db, job):
         return None
     media = (json.loads(row.metadata_json or "{}").get("media") or {})
     sender = row.sender.full_name if row.sender_role != "admin" else "Администратор"
+    media_key = hashlib.sha256(str(media.get("local_path", "")).encode()).hexdigest()
     return {"id": job.id, "operation": "send", "chat_id": job.chat_id, "thread_id": job.thread_id or None,
             "recipient": job.external_user_id, "kind": row.content_type,
             "text": sender + ("\n" + row.text if row.text else ""),
             "media": {"file_name": media.get("file_name") or "attachment",
-                      "mime_type": media.get("mime_type")} if media.get("archive_status") == "stored" else None}
+                      "mime_type": media.get("mime_type"), "key": media_key if media.get("local_path") else None} if media.get("archive_status") == "stored" else None}
 
 
 def get_job(db, job_id):

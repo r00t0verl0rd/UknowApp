@@ -22,7 +22,7 @@ from app.modules.auth.service import (
     record_failed_login,
     revoke_panel_session,
 )
-from app.modules.dependencies import Db, PanelUser
+from app.modules.dependencies import Admin, Db, PanelUser
 from app.modules.notifications import vapid
 from app.modules.notifications.endpoints import is_safe_push_endpoint
 from app.request_validation import login_payload
@@ -113,3 +113,10 @@ def remove_push_subscription(payload: dict, principal: PanelUser, db: Db):
         db.delete(subscription)
         db.commit()
     return {"ok": True}
+
+
+@router.get("/admin/bots/diagnostics")
+def bots_diagnostics(request: Request, _: Admin):
+    gateway = getattr(request.app.state, "bots_gateway", None)
+    return {"broker_connected": bool(gateway and gateway.ready and gateway.nc and gateway.nc.is_connected),
+            "platforms": gateway.diagnostics if gateway else {}}

@@ -1,4 +1,5 @@
 """Durable, connector-local transport inbox (not the UknowApp database)."""
+import asyncio
 import json
 import sqlite3
 from pathlib import Path
@@ -21,6 +22,7 @@ class EventSpool:
         self.db.execute("CREATE TABLE IF NOT EXISTS panels (namespace TEXT NOT NULL, actor TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(namespace,actor))")
         self.db.commit()
         self.namespace = namespace
+        self.changed = asyncio.Event()
 
     def cursor(self):
         row = self.db.execute("SELECT cursor FROM state WHERE namespace=?", (self.namespace,)).fetchone()
@@ -38,6 +40,12 @@ class EventSpool:
             ])
             self.db.execute("""INSERT INTO state(namespace,cursor) VALUES (?,?)
                 ON CONFLICT(namespace) DO UPDATE SET cursor=excluded.cursor""", (self.namespace, cursor))
+        self.changed.set()
+
+    async def wait_for_event(self):
+        self.changed.clear()
+        if self.first() is None:
+            await self.changed.wait()
 
     def first(self):
         row = self.db.execute(

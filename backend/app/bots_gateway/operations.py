@@ -16,7 +16,7 @@ from app.modules.notifications.service import schedule_push
 from app.modules.panel.read_state import mark_conversation_read
 from app.rate_limit import SlidingWindowLimiter
 from .contracts import identifier
-from .outbox import PENDING, enqueue_web_delivery, get_job, job_payload, record_result
+from .outbox import PENDING, claim_is_recent, earlier_send_pending, enqueue_web_delivery, get_job, job_payload, now_utc, record_result
 
 _bind_limit = SlidingWindowLimiter()
 KINDS = frozenset(("text", "photo", "video", "audio", "voice", "document", "animation",
@@ -98,18 +98,39 @@ def chat_view(db, user, conversation, read=False):
                           "kind": r.content_type} for r in rows]}
 
 
+def authorize_delivery(db, platform, job_id):
+    job = get_job(db, identifier(job_id))
+    if not job or job.platform != platform or job.status not in PENDING:
+        raise HTTPException(404, "job unavailable")
+    if job.status == "sending":
+        # No second external attempt if a receipt was lost with the connector volume.
+        # Recent claims may still be executing; let them finish.
+        raise HTTPException(425 if claim_is_recent(job) else 409, "delivery already claimed")
+    if earlier_send_pending(db, job):
+        raise HTTPException(425, "earlier delivery pending")
+    result = job_payload(db, job)
+    if result is None:
+        record_result(db, job, "cancelled")
+        raise HTTPException(403, "job no longer authorized")
+    job.status = "sending"
+    job.started_at = now_utc()
+    db.commit()
+    return result
+
+
 def rpc(db, platform, operation, payload):
     if operation == "delivery.authorize":
-        job = get_job(db, identifier(payload.get("id")))
-        if not job or job.platform != platform or job.status not in PENDING:
-            raise HTTPException(404, "job unavailable")
-        result = job_payload(db, job)
-        if result is None:
-            record_result(db, job, "cancelled")
-            raise HTTPException(403, "job no longer authorized")
-        # Persist the start before releasing the job to the connector.
-        job.status = "sending"
-        db.commit()
+        return authorize_delivery(db, platform, payload.get("id"))
+    if operation == "delivery.authorize_batch":
+        ids = payload.get("ids")
+        if not isinstance(ids, list) or not 1 <= len(ids) <= 16 or len(set(ids)) != len(ids):
+            raise HTTPException(400, "invalid batch")
+        result = {}
+        for job_id in ids:
+            try:
+                result[identifier(job_id)] = {"ok": True, "result": authorize_delivery(db, platform, job_id)}
+            except HTTPException as exc:
+                result[job_id] = {"ok": False, "code": exc.status_code}
         return result
 
     actor = identifier(payload.get("actor"))

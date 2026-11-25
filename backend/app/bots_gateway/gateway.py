@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse
 from nats.errors import TimeoutError as NatsTimeout
 from nats.js.api import AckPolicy, ConsumerConfig, DiscardPolicy, RetentionPolicy, StorageType, StreamConfig
 from nats.js.errors import NotFoundError
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.core.database import SessionLocal
 from app.infrastructure.storage.media import MAX_ATTACHMENT_BYTES, MEDIA_DIR
@@ -22,7 +22,7 @@ from app.models import ConnectorDeletion, ConnectorDelivery, Conversation, Messe
 from app.event_hub import subscribe_chat_updates, unsubscribe_chat_updates
 from .contracts import PREFIX, STREAM, decode, encode, identifier, platforms
 from .operations import receive_message, rpc
-from .outbox import PENDING, authorized_job, get_job, job_payload, record_result
+from .outbox import PENDING, authorized_job, get_job, now_utc, publication_candidates, record_result
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/internal/bots", include_in_schema=False)
@@ -41,6 +41,7 @@ class BotsGateway:
         self.task = None
         self.ready = False
         self.outbox_wakeup = asyncio.Event()
+        self.diagnostics = {}
 
     async def start(self):
         if self.platforms:
@@ -79,10 +80,13 @@ class BotsGateway:
                 except NotFoundError:
                     await self.js.add_consumer(STREAM, config=ConsumerConfig(
                         durable_name=name, filter_subject=subject, ack_policy=AckPolicy.EXPLICIT,
-                        ack_wait=120, max_ack_pending=1))
+                        ack_wait=120, max_ack_pending=16 if direction == "outbound" else 1))
                 else:
                     if info.config.filter_subject != subject:
                         raise RuntimeError("existing consumer filter incompatible")
+                    if direction == "outbound" and info.config.max_ack_pending != 16:
+                        info.config.max_ack_pending = 16
+                        await self.js.add_consumer(STREAM, config=info.config)
             await self.nc.subscribe(f"{PREFIX}.rpc.{platform}.>", cb=self.handle_rpc)
         await self.nc.flush()
 
@@ -140,32 +144,45 @@ class BotsGateway:
         while True:
             self.outbox_wakeup.clear()
             with SessionLocal() as db:
-                entries = []
-                for model in (ConnectorDeletion, ConnectorDelivery):
-                    queued = db.scalars(select(model).where(
-                        model.status == "queued", model.platform.in_(self.platforms))
-                        .order_by(model.created_at, model.id).limit(50)).all()
-                    entries.extend((job.id, job.platform) for job in queued)
-            for job_id, platform in entries:
+                entries = publication_candidates(db, self.platforms)
+            for job_id, platform, chat, thread, status in entries:
+                # Stable IDs for normal publish, separate time-bucket ID for stale recovery.
+                # A connector's durable receipt and Core claim prevent duplicate sends.
+                dedup = job_id if status == "queued" else f"{job_id}:recover:{int(now_utc().timestamp()) // 60}"
+                await self.js.publish(f"{PREFIX}.outbound.{platform}",
+                    encode({"id": job_id, "route": [chat, thread]}),
+                    headers={"Nats-Msg-Id": dedup})
                 with SessionLocal() as db:
                     job = get_job(db, job_id)
-                    if not job or job.status != "queued":
-                        continue
-                    if job_payload(db, job) is None:
-                        record_result(db, job, "cancelled")
-                        continue
-                await self.js.publish(f"{PREFIX}.outbound.{platform}", encode({"id": job_id}),
-                                      headers={"Nats-Msg-Id": job_id})
-                with SessionLocal() as db:
-                    job = get_job(db, job_id)
-                    if job and job.status == "queued":
-                        job.status = "published"
+                    if job and job.status in PENDING:
+                        if job.status == "queued":
+                            job.status = "published"
+                        job.published_at = now_utc()
                         db.commit()
+                if status != "queued":
+                    logger.info("Republished stale connector job platform=%s status=%s", platform, status)
             if not entries:
                 try:
-                    await asyncio.wait_for(self.outbox_wakeup.wait(), 2)
+                    await asyncio.wait_for(self.outbox_wakeup.wait(), 5)
                 except TimeoutError:
                     pass
+
+    async def collect_diagnostics(self):
+        while True:
+            stats = {}
+            with SessionLocal() as db:
+                for model, name in ((ConnectorDelivery, "send"), (ConnectorDeletion, "delete")):
+                    rows = db.execute(select(model.platform, model.status, func.count(), func.min(model.created_at))
+                        .where(model.platform.in_(self.platforms)).group_by(model.platform, model.status)).all()
+                    for platform, status, count, oldest in rows:
+                        data = stats.setdefault(platform, {}).setdefault(name, {})
+                        data[status] = {"count": count, "oldest": oldest.isoformat() if oldest else None}
+            self.diagnostics = stats
+            for platform in self.platforms:
+                pending = sum(v["count"] for d in stats.get(platform, {}).values() for k, v in d.items() if k in PENDING)
+                if pending:
+                    logger.info("Connector queue platform=%s pending=%d", platform, pending)
+            await asyncio.sleep(30)
 
     async def refresh_panels(self):
         # Best-effort UI invalidations only. Messages remain durable in JetStream.
@@ -198,6 +215,7 @@ class BotsGateway:
                            for p in self.platforms for direction in ("inbound", "delivery")]
                 workers.append(asyncio.create_task(self.publish_outbox()))
                 workers.append(asyncio.create_task(self.refresh_panels()))
+                workers.append(asyncio.create_task(self.collect_diagnostics()))
                 self.ready = True
                 done, _ = await asyncio.wait(workers, return_when=asyncio.FIRST_COMPLETED)
                 for task in done:
