@@ -27,7 +27,7 @@ def configure(connection, _):
     try:
         cursor.execute("PRAGMA busy_timeout=250")
         cursor.execute("PRAGMA journal_mode=WAL")
-        cursor.execute("PRAGMA synchronous=FULL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
     finally:
         cursor.close()
 

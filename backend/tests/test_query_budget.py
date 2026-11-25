@@ -46,7 +46,7 @@ def test_authenticated_profile_and_history_query_budget(api):
         result = client.get("/api/panel/conversations")
         assert result.status_code == 200
         assert result.json()[0]["message_count"] == 1000
-        assert len(statements) <= 4, statements
-        assert not any("messenger_accounts" in s for s in statements)
+        assert len(statements) <= 3, statements
+        assert not any("messenger_accounts" in s or "count(" in s.lower() or "json_extract" in s.lower() for s in statements)
     finally:
         event.remove(engine, "before_cursor_execute", count)

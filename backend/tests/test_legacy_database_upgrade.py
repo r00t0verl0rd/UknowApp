@@ -115,6 +115,8 @@ def assert_preserved(connection, name):
             assert db.get(ConnectorDelivery,"previous-delivery").external_message_id == "555"
             assert db.get(ConnectorDelivery,"previous-delivery").thread_id == ""
         assert db.query(Message).count() == 2
+        chat = db.get(Conversation, 41)
+        assert (chat.message_count, chat.teacher_unread_count, chat.student_unread_count, chat.admin_unread_count) == (2, 0, 2, 2)
     with Session(bind=connection) as db:
         db.execute(update(Message).where(Message.id == 51).values(metadata_json=metadata_with_field(
             db, Message.metadata_json, "student_read_at", "2026-02-01T00:00:00Z")))
@@ -122,6 +124,8 @@ def assert_preserved(connection, name):
         updated = json.loads(db.scalar(select(Message.metadata_json).where(Message.id == 51)))
         assert updated["student_read_at"] == "2026-02-01T00:00:00Z"
         assert updated["messenger_deliveries"]["telegram"]["status"] == "delivered"
+        counts = db.execute(select(Conversation.message_count, Conversation.student_unread_count, Conversation.admin_unread_count).where(Conversation.id == 41)).one()
+        assert counts == (2, 1, 1)
     inspector = inspect(connection)
     assert {"ix_connector_delivery_queue", "ix_connector_delivery_route_order"} <= {i["name"] for i in inspector.get_indexes("connector_deliveries")}
     assert {"ix_push_role_state", "ix_push_session_hash"} <= {i["name"] for i in inspector.get_indexes("push_subscriptions")}

@@ -2,7 +2,7 @@
 
 import json
 
-from sqlalchemy import and_, case, func, or_, select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
 from app.event_hub import publish_chat_update
@@ -21,41 +21,12 @@ def conversation_dicts(
         return []
 
     conversation_ids = [item.id for item in conversations]
-    latest_id = (
-        select(Message.id)
-        .where(Message.conversation_id == Conversation.id)
-        .order_by(Message.created_at.desc(), Message.id.desc())
-        .limit(1)
-        .correlate(Conversation)
-        .scalar_subquery()
-    )
-    latest_messages = db.scalars(
-        select(Message)
-        .select_from(Conversation)
-        .join(Message, Message.id == latest_id)
-        .where(Conversation.id.in_(conversation_ids)),
-    ).all()
-    latest_by_conversation = {item.conversation_id: item for item in latest_messages}
-
-    unread_condition = _unread_condition(db, viewer_role)
-    statistics = db.execute(
-        select(
-            Message.conversation_id,
-            func.count(Message.id),
-            func.coalesce(func.sum(case((unread_condition, 1), else_=0)), 0),
-        )
-        .where(Message.conversation_id.in_(conversation_ids))
-        .group_by(Message.conversation_id),
-    ).all()
-    stats_by_conversation = {
-        conversation_id: (message_count, unread_count)
-        for conversation_id, message_count, unread_count in statistics
-    }
+    summaries = _summary_rows(db, conversation_ids)
 
     result = []
     for conversation in conversations:
-        last_message = latest_by_conversation.get(conversation.id)
-        message_count, unread_count = stats_by_conversation.get(conversation.id, (0, 0))
+        _, message_count, teacher_unread, student_unread, admin_unread, last_message = summaries[conversation.id]
+        unread_count = {"teacher": teacher_unread, "student": student_unread, "admin": admin_unread}.get(viewer_role, teacher_unread)
         result.append({
             "id": conversation.id,
             "status": conversation.status,
@@ -111,22 +82,21 @@ def _unread_condition(db, role: str):
     return student_unread if role == "student" else teacher_unread
 
 
+def _summary_rows(db, conversation_ids):
+    # Read scalar columns rather than ORM attributes: triggers may have changed
+    # a Conversation already in the session identity map.
+    rows = db.execute(
+        select(Conversation.id, Conversation.message_count, Conversation.teacher_unread_count,
+               Conversation.student_unread_count, Conversation.admin_unread_count, Message)
+        .outerjoin(Message, Message.id == Conversation.last_message_id)
+        .where(Conversation.id.in_(conversation_ids))
+    ).all()
+    return {row[0]: row for row in rows}
+
+
 def conversation_event_summaries(db: Session, conversation: Conversation) -> dict[str, dict]:
-    """Сформировать счётчики и превью для роли."""
-    stats = db.execute(
-        select(
-            func.count(Message.id),
-            func.coalesce(func.sum(case((_unread_condition(db, "teacher"), 1), else_=0)), 0),
-            func.coalesce(func.sum(case((_unread_condition(db, "student"), 1), else_=0)), 0),
-            func.coalesce(func.sum(case((_unread_condition(db, "admin"), 1), else_=0)), 0),
-        ).where(Message.conversation_id == conversation.id),
-    ).one()
-    last_message = db.scalar(
-        select(Message)
-        .where(Message.conversation_id == conversation.id)
-        .order_by(Message.created_at.desc(), Message.id.desc())
-        .limit(1),
-    )
+    """Constant-size indexed summary for all roles."""
+    _, total, teacher_unread, student_unread, admin_unread, last_message = _summary_rows(db, [conversation.id])[conversation.id]
     last_message_preview = _message_preview(last_message)
     if len(last_message_preview) > 240:
         last_message_preview = last_message_preview[:237] + "…"
@@ -138,12 +108,12 @@ def conversation_event_summaries(db: Session, conversation: Conversation) -> dic
         "student": user_dict(conversation.student, include_messenger_accounts=False),
         "last_message": last_message_preview,
         "last_message_at": last_message.created_at.isoformat() if last_message else None,
-        "message_count": int(stats[0] or 0),
+        "message_count": int(total),
     }
     return {
-        "teacher": {**common, "unread_count": int(stats[1] or 0)},
-        "student": {**common, "unread_count": int(stats[2] or 0)},
-        "admin": {**common, "unread_count": int(stats[3] or 0)},
+        "teacher": {**common, "unread_count": int(teacher_unread)},
+        "student": {**common, "unread_count": int(student_unread)},
+        "admin": {**common, "unread_count": int(admin_unread)},
     }
 
 

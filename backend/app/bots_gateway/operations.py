@@ -91,7 +91,7 @@ def chat_view(db, user, conversation, read=False):
         Message.conversation_id == conversation.id).order_by(Message.id.desc()).limit(12)).all()))
     if read:
         mark_conversation_read(db, conversation, {"role": user.role, "user_id": user.id}, 0, [r.id for r in rows])
-    total = db.scalar(select(func.count(Message.id)).where(Message.conversation_id == conversation.id))
+    total = db.scalar(select(Conversation.message_count).where(Conversation.id == conversation.id))
     return {"id": conversation.id, "name": (conversation.student if user.role == "teacher" else conversation.teacher).full_name,
             "total": total,
             "messages": [{"id": r.id, "name": "Вы" if r.sender_id == user.id else r.sender.full_name,

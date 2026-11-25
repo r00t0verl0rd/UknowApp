@@ -106,6 +106,13 @@ class Conversation(Base):
     status: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
+    # Exact business aggregates, maintained transactionally by message triggers.
+    message_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default=text("0"))
+    teacher_unread_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default=text("0"))
+    student_unread_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default=text("0"))
+    admin_unread_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default=text("0"))
+    last_message_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     assignment: Mapped[Assignment | None] = relationship(back_populates="conversation")
     teacher: Mapped[User] = relationship(foreign_keys=[teacher_id])
     student: Mapped[User] = relationship(foreign_keys=[student_id])
@@ -341,3 +348,8 @@ class TransportJob(RuntimeBase):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     broker_seq: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+
+
+# Also install on fresh/test schemas created directly via metadata.create_all.
+from app.infrastructure.storage.conversation_counters import install_on_create
+event.listen(Message.__table__, "after_create", install_on_create)
