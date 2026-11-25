@@ -249,7 +249,48 @@ test("restores the selected conversation and the same message after loading olde
     await page.goto("http://127.0.0.1:22240/dialogs");
     await page.locator(".chat-item").first().click();
     await checkFirstFrame();
+    // On a touch-sized viewport, going back to the list must preserve the anchor.
+    await page.setViewportSize({ width: 390, height: 760 });
+    await page.locator(".messages").evaluate(history => { history.scrollTop = 420; });
+    await page.waitForTimeout(200);
+    const mobileAnchor = await page.locator(".messages").evaluate(history => {
+      const top = history.getBoundingClientRect().top;
+      const row = [...history.querySelectorAll("[data-view-anchor]")]
+        .find(el => el.getBoundingClientRect().bottom > top);
+      return { id: row.dataset.viewAnchor, offset: row.getBoundingClientRect().top - top };
+    });
+    const expectMobileAnchor = () => page.waitForFunction(expected => {
+      const history = document.querySelector(".messages");
+      const row = history?.querySelector(`[data-view-anchor="${expected.id}"]`);
+      return history && getComputedStyle(history).visibility === "visible" && row &&
+        Math.abs(row.getBoundingClientRect().top - history.getBoundingClientRect().top - expected.offset) < 3;
+    }, mobileAnchor);
+    await page.getByRole("button", { name: "Назад к списку диалогов" }).click();
+    await page.locator(".chat-item").first().click();
+    await expectMobileAnchor();
+    // Simulate an attachment above the visible row gaining height after loading.
+    await page.locator(".messages").evaluate((history, expected) => {
+      const row = history.querySelector(`[data-view-anchor="${expected.id}"]`);
+      const previous = row.previousElementSibling;
+      if (!previous?.dataset.viewAnchor) throw new Error("Expected an earlier message");
+      previous.style.minHeight = (previous.getBoundingClientRect().height + 180) + "px";
+    }, mobileAnchor);
+    await expectMobileAnchor();
+    await page.getByRole("button", { name: "К последнему сообщению" }).click();
+    await page.waitForFunction(() => {
+      const history = document.querySelector(".messages");
+      return history.scrollHeight - history.scrollTop - history.clientHeight <= 2;
+    });
+    await page.getByRole("button", { name: "Назад к списку диалогов" }).click();
+    await page.locator(".chat-item").first().click();
+    await page.waitForFunction(() => {
+      const history = document.querySelector(".messages");
+      return history && getComputedStyle(history).visibility === "visible" &&
+        history.querySelector('[data-view-anchor="message:120"]') &&
+        history.scrollHeight - history.scrollTop - history.clientHeight <= 2;
+    });
     // A different account opens at its first unread message.
+    await page.setViewportSize({ width: 1280, height: 720 });
     role = "student";
     chat.unread_count = 61;
     messages.forEach(row => { row.panel_read_at = row.id < 60 ? row.created_at : null; });

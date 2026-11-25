@@ -53,6 +53,8 @@ export default function ChatsModule(options) {
         messagesViewportRef={options.chatState.messagesViewportRef}
         visibleMessages={state.visibleMessages}
         positionReady={state.positionReady}
+        showLatest={state.showLatest}
+        scrollToLatest={state.scrollToLatest}
         acknowledgeVisible={options.acknowledgeVisible}
         messages={options.chatState.messages}
         messagesLoading={options.chatState.messagesLoading}

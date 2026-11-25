@@ -431,6 +431,20 @@ export default function ChatsPage(options) {
               )}
             </div>
 
+            <div class="chat-latest-control">
+              <Show when={options.positionReady && options.showLatest}>
+                <button type="button" class="btn chat-latest-button"
+                  onClick={options.scrollToLatest}
+                  aria-label="К последнему сообщению" title="К последнему сообщению">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 5v14m-6-6 6 6 6-6" />
+                  </svg>
+                </button>
+              </Show>
+            </div>
+
             {(options.selectedChat.type === "personal" || options.selectedChat.status === "active") && (
               <form class="chat-composer" onSubmit={options.sendChatMessage}>
                 <textarea

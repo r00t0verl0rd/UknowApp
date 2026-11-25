@@ -124,7 +124,30 @@
 .mobile-chat-back {
   display:none;
 }
+.chat-latest-control {
+  position:relative;
+  flex:0 0 0;
+  height:0;
+  align-self:stretch;
+  z-index:2;
+}
+.chat-latest-button {
+  position:absolute;
+  right:12px;
+  bottom:12px;
+  width:44px;
+  height:44px;
+  min-width:44px;
+  min-height:44px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:var(--surface);
+}
 .messages {
+  // The controller preserves a message anchor on all browsers, including Safari.
+  overflow-anchor:none;
   display:flex;
   flex:1 0 auto;
   flex-direction:column;

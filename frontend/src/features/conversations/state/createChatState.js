@@ -6,8 +6,10 @@ export function createChatState() {
   const [selectedChat, setSelectedChat] = createSignal(null);
   const [messages, setMessages] = createSignal([]);
   const [messagesLoading, setMessagesLoading] = createSignal(false);
+  const [messagesViewport, setMessagesViewport] = createSignal(null);
   const messagesViewportRef = {
-    current: null,
+    get current() { return messagesViewport(); },
+    set current(element) { setMessagesViewport(element); },
   };
   const [chatSearch, setChatSearch] = createSignal("");
   const [chatFilter, setChatFilter] = createSignal("all");

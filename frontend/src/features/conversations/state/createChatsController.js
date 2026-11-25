@@ -24,6 +24,7 @@ export function createChatsController(options) {
   let openingChatRequest = null;
   let attemptedRestoreForUser = null;
   const [positionedKey, setPositionedKey] = createSignal("");
+  const [showLatest, setShowLatest] = createSignal(false);
   // Только память текущей вкладки. Недавние чаты показываем сразу, затем
   // проверяем сервер; не сохраняем приватные сообщения в localStorage.
   const recentChats = new Map();
@@ -170,25 +171,32 @@ export function createChatsController(options) {
       options.chatState.selectedChat?.id,
       options.chatState.selectedChat?.type,
       options.chatState.messageFilter,
+      options.chatState.messagesViewportRef.current,
     ],
     () => {
       const history = options.chatState.messagesViewportRef.current;
-      if (!history) return undefined;
-      let frame = 0;
       const key = activeChatKey();
-      if (!key) return;
+      if (!history || !key || history.dataset.viewScrollKey !== key) return;
       const filter = options.chatState.messageFilter;
       const name = positionName(key, filter);
       const userId = viewAccountKey(options.profile);
       const saved = savedPosition(key, filter);
+      let position = saved;
       let initialized = false;
       let followBottom = false;
+      let forced = false;
+      let frame = 0;
       let captureTimer = 0;
-      const capture = () => {
-        if (!initialized || !history.isConnected || !history.clientHeight || history.dataset.viewScrollKey !== key) return;
+      let appliedTop = null;
+      const current = () => history.isConnected && history.clientHeight > 0 &&
+        history.dataset.viewScrollKey === key && activeChatKey() === key &&
+        options.chatState.messageFilter === filter;
+      const distanceToLatest = () => Math.max(0,
+        history.scrollHeight - history.scrollTop - history.clientHeight);
+      const findRow = id => /^message:\d+$/.test(id || "") &&
+        history.querySelector(`[data-view-anchor="${id}"]`);
+      const readPosition = () => {
         const bounds = history.getBoundingClientRect();
-        // Message rows are ordered vertically. Find the first visible row without
-        // measuring every bubble during scrolling.
         const rows = history.children;
         let low = 0;
         let high = rows.length;
@@ -198,85 +206,127 @@ export function createChatsController(options) {
           else high = mid;
         }
         const row = rows[low]?.dataset.viewAnchor ? rows[low] : rows[low + 1];
-        if (!row?.dataset.viewAnchor) return;
-        savePersistentViewValue(userId, name, {
-          top: history.scrollTop,
-          anchor: { id: row.dataset.viewAnchor, offset: row.getBoundingClientRect().top - bounds.top },
-        });
+        const id = row?.dataset.viewAnchor;
+        if (!/^message:\d+$/.test(id || "")) return null;
+        return {
+          top: Math.max(0, history.scrollTop),
+          bottom: followBottom,
+          anchor: { id, offset: row.getBoundingClientRect().top - bounds.top },
+        };
       };
-      let forced = false;
-      let lastObserved = null;
-      const distanceToLatest = () =>
-        history.scrollHeight - history.scrollTop - history.clientHeight;
-      const scrollToLatest = () => {
+      const persist = () => {
+        if (initialized && position) savePersistentViewValue(userId, name, position);
+      };
+      const capture = () => {
+        if (initialized && current()) {
+          // Do not replace the stable anchor with a temporary geometry change.
+          // Scroll events update it when the user actually moves.
+          if (appliedTop === null || Math.abs(history.scrollTop - appliedTop) > 1) {
+            followBottom = distanceToLatest() <= 24;
+            position = readPosition() || position;
+            appliedTop = history.scrollTop;
+          }
+        }
+        persist();
+      };
+      const apply = () => {
         frame = 0;
+        if (!current()) return;
         if (!initialized) {
-          const id = saved?.anchor?.id;
-          const row = /^message:\d+$/.test(id || "") && history.querySelector(`[data-view-anchor="${id}"]`);
-          if (!row && openingChatRequest?.key === key && !openingChatRequest.windowReady) return;
-          if (saved) {
+          // Wait for the authoritative window, not the old DOM or a partial cache.
+          if (openingChatRequest?.key === key && !openingChatRequest.windowReady) return;
+          if (options.chatState.messagesLoading && openingChatRequest?.key !== key) return;
+          const unreadRow = unreadAnchor?.key === key &&
+            findRow("message:" + unreadAnchor.id);
+          const row = findRow(saved?.anchor?.id);
+          if (forced || saved?.bottom === true || (!saved && !unreadRow)) {
+            followBottom = true;
+            history.scrollTop = history.scrollHeight;
+          } else if (saved) {
             history.scrollTop = row ? history.scrollTop + row.getBoundingClientRect().top -
               history.getBoundingClientRect().top - (saved.anchor.offset || 0) : saved.top;
-          } else {
-            followBottom = true;
+            // Older persisted positions did not have an explicit bottom flag.
+            followBottom = saved.bottom == null && distanceToLatest() <= 2;
+          } else if (unreadRow) {
+            history.scrollTop += unreadRow.getBoundingClientRect().top -
+              history.getBoundingClientRect().top;
           }
+          if (unreadAnchor?.key === key) unreadAnchor = null;
           initialized = true;
-          setPositionedKey(name);
-          if (saved) {
-            followBottom = distanceToLatest() <= 2;
-            return;
-          }
-        }
-        if (unreadAnchor?.key === activeChatKey()) {
-          const row = history.querySelector(`[data-view-anchor="message:${unreadAnchor.id}"]`);
-          if (!row) return;
-          history.scrollTop += row.getBoundingClientRect().top - history.getBoundingClientRect().top;
-          unreadAnchor = null;
           forced = false;
-          followBottom = distanceToLatest() < 80;
-          return;
-        }
-        if (forced || followBottom) {
+          appliedTop = history.scrollTop;
+          position = readPosition() || position;
+          setPositionedKey(name);
+        } else if (forced || followBottom) {
           history.scrollTop = history.scrollHeight;
           followBottom = true;
+          forced = false;
+          appliedTop = history.scrollTop;
+          position = readPosition() || position;
+        } else {
+          const row = findRow(position?.anchor?.id);
+          if (row) {
+            const delta = row.getBoundingClientRect().top -
+              history.getBoundingClientRect().top - position.anchor.offset;
+            if (Math.abs(delta) > 0.5) history.scrollTop += delta;
+          } else {
+            position = readPosition() || position;
+          }
+          appliedTop = history.scrollTop;
         }
-        forced = false;
+        setShowLatest(distanceToLatest() > 24);
       };
       const scheduleLatest = (force = false) => {
         if (force) {
           forced = true;
           followBottom = true;
         }
-        if (!frame) frame = window.requestAnimationFrame(scrollToLatest);
+        if (!frame) frame = window.requestAnimationFrame(apply);
       };
       const handleScroll = () => {
-        if (!initialized) return;
-        if (!forced) followBottom = distanceToLatest() <= 2;
+        if (!initialized || !current()) return;
+        if (!forced && (appliedTop === null || Math.abs(history.scrollTop - appliedTop) > 1)) {
+          followBottom = distanceToLatest() <= 24;
+          position = readPosition() || position;
+          appliedTop = history.scrollTop;
+        }
+        setShowLatest(distanceToLatest() > 24);
         if (!captureTimer) captureTimer = window.setTimeout(() => {
           captureTimer = 0;
-          capture();
+          persist();
         }, 100);
       };
+      // Every message can resize after an image loads or content-visibility
+      // reveals it. Observe all rows, not just the last one.
       const resizeObserver = typeof ResizeObserver === "function"
         ? new ResizeObserver(() => scheduleLatest())
         : null;
-      const observeLastMessage = () => {
-        const latest = history.lastElementChild;
-        if (latest === lastObserved) return;
-        if (lastObserved) resizeObserver?.unobserve(lastObserved);
-        lastObserved = latest;
-        if (latest) resizeObserver?.observe(latest);
+      const observed = new Set();
+      const observeRows = () => {
+        const rows = new Set(history.children);
+        for (const row of observed) {
+          if (!rows.has(row)) {
+            resizeObserver?.unobserve(row);
+            observed.delete(row);
+          }
+        }
+        for (const row of rows) {
+          if (!observed.has(row)) {
+            resizeObserver?.observe(row);
+            observed.add(row);
+          }
+        }
       };
       const mutationObserver = typeof MutationObserver === "function"
         ? new MutationObserver(() => {
-            observeLastMessage();
+            observeRows();
             scheduleLatest();
           })
         : null;
       history.addEventListener("scroll", handleScroll, { passive: true });
       resizeObserver?.observe(history);
       mutationObserver?.observe(history, { childList: true });
-      observeLastMessage();
+      observeRows();
       capturePosition = capture;
       schedulePosition = scheduleLatest;
       requestLatestScroll = () => scheduleLatest(true);
@@ -291,6 +341,7 @@ export function createChatsController(options) {
         window.clearTimeout(captureTimer);
         capture();
         setPositionedKey("");
+        setShowLatest(false);
         document.removeEventListener("visibilitychange", onVisibilityChange);
         window.removeEventListener("pagehide", capture);
         history.removeEventListener("scroll", handleScroll);
@@ -298,7 +349,7 @@ export function createChatsController(options) {
         mutationObserver?.disconnect();
         capturePosition = () => {};
         schedulePosition = () => {};
-        if (requestLatestScroll) requestLatestScroll = () => {};
+        requestLatestScroll = () => {};
       };
     },
   );
@@ -338,7 +389,7 @@ export function createChatsController(options) {
     if (!restoring) options.chatState.setMessageFilter("all");
     try {
       const anchor = position?.anchor?.id;
-      const targetId = /^message:\d+$/.test(anchor || "") ? Number(anchor.slice(8)) : 0;
+      const targetId = position?.bottom !== true && /^message:\d+$/.test(anchor || "") ? Number(anchor.slice(8)) : 0;
       let loadedMessages;
       let newerPage;
       let hasOlder;
@@ -430,14 +481,10 @@ export function createChatsController(options) {
     try {
       const page = await getChatMessages(options.request, chat, controller.signal, olderCursor());
       if (controller.signal.aborted || key !== activeChatKey()) return;
-      const viewport = options.chatState.messagesViewportRef.current;
-      const height = viewport?.scrollHeight;
-      const scrollTop = viewport?.scrollTop;
+      capturePosition();
       options.chatState.setMessages(rows => mergeConversationMessages(page, rows, key));
       setOlderCursor(page.length >= HISTORY_PAGE_SIZE ? page[0].id : 0);
-      requestAnimationFrame(() => {
-        if (viewport && key === activeChatKey()) viewport.scrollTop = scrollTop + viewport.scrollHeight - height;
-      });
+      schedulePosition();
     } catch (error) {
       if (!controller.signal.aborted && key === activeChatKey()) options.setError(error.message);
     } finally {
@@ -621,6 +668,8 @@ export function createChatsController(options) {
       return visibleMessages();
     },
     capturePosition: () => capturePosition(),
+    get showLatest() { return showLatest(); },
+    scrollToLatest: () => requestLatestScroll(),
     get positionReady() { return positionedKey() === positionName(activeChatKey(), options.chatState.messageFilter); },
     get hasOlder() { return olderCursor() > 0; },
     get loadingOlder() { return loadingOlder(); },
