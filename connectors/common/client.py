@@ -203,7 +203,7 @@ class GatewayClient:
             if receipt is None:
                 if not authorized.get("ok"):
                     code = authorized.get("code")
-                    if code in {403, 404}:
+                    if code in {400, 403, 404, 413}:
                         self.spool.forget_claim(job_id)
                         await msg.ack_sync()
                         return

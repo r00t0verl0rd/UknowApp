@@ -220,3 +220,55 @@ def test_late_receipt_after_deletion(api):
         assert db.query(ConnectorDeletion).one().chat_id == "group"
         record_result(db, group, "delivered", "late-id")
         assert db.query(ConnectorDeletion).count() == 1
+
+
+
+def test_batch_claim_retry_and_route_order(api):
+    from datetime import timedelta
+    from app.bots_gateway.outbox import now_utc, publication_candidates
+
+    _, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        rpc(db, "beta", "endpoint.bind", {"actor":"student","chat_id":"group","thread_id":"topic"})
+        first = reply(db, chat)
+        second = reply(db, chat)
+        jobs = db.query(ConnectorDelivery).order_by(ConnectorDelivery.created_at, ConnectorDelivery.id).all()
+        first_private = next(j for j in jobs if j.message_id == first.id and not j.thread_id)
+        first_group = next(j for j in jobs if j.message_id == first.id and j.thread_id)
+        second_private = next(j for j in jobs if j.message_id == second.id and not j.thread_id)
+        claim = "a" * 32
+        batch = rpc(db, "beta", "delivery.authorize_batch", {"jobs":[
+            {"id":first_private.id,"claim":claim}, {"id":first_group.id,"claim":"b"*32},
+            {"id":second_private.id,"claim":"c"*32}]})
+        assert batch[first_private.id]["ok"] and batch[first_group.id]["ok"]
+        assert batch[second_private.id] == {"ok":False,"code":425}
+        assert rpc(db, "beta", "delivery.authorize", {"id":first_private.id,"claim":claim})["id"] == first_private.id
+        with pytest.raises(HTTPException) as error:
+            rpc(db, "beta", "delivery.authorize", {"id":first_private.id,"claim":"d"*32})
+        assert error.value.status_code == 425
+        first_private.started_at = first_private.published_at = now_utc() - timedelta(minutes=20)
+        first_group.published_at = now_utc()
+        db.commit()
+        assert first_private.id in {e[0] for e in publication_candidates(db, ("beta",))}
+        with pytest.raises(HTTPException) as error:
+            rpc(db, "beta", "delivery.authorize", {"id":first_private.id,"claim":"d"*32})
+        assert error.value.status_code == 409
+        record_result(db, first_private, "delivered", "receipt")
+        assert rpc(db, "beta", "delivery.authorize", {"id":second_private.id,"claim":"c"*32})["id"] == second_private.id
+
+
+def test_additive_recovery_migration(tmp_path):
+    from sqlalchemy import create_engine, inspect, text
+    from app.migrations.delivery_recovery import upgrade_delivery_recovery
+
+    engine = create_engine("sqlite:///" + str(tmp_path / "legacy.sqlite"))
+    with engine.begin() as c:
+        for table in ("connector_deliveries", "connector_deletions"):
+            c.execute(text("CREATE TABLE " + table + " (id VARCHAR(64) PRIMARY KEY)"))
+            c.execute(text("INSERT INTO " + table + " VALUES ('old')"))
+        upgrade_delivery_recovery(c)
+        upgrade_delivery_recovery(c)
+        for table in ("connector_deliveries", "connector_deletions"):
+            assert {"claim_id","started_at","published_at","broker_seq"} <= {col["name"] for col in inspect(c).get_columns(table)}
+            assert c.scalar(text("SELECT id FROM " + table)) == "old"

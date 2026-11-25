@@ -15,7 +15,7 @@ from app.modules.notifications.content import PUSH_TITLE, push_body
 from app.modules.notifications.service import schedule_push
 from app.modules.panel.read_state import mark_conversation_read
 from app.rate_limit import SlidingWindowLimiter
-from .contracts import identifier
+from .contracts import encode, identifier
 from .outbox import PENDING, claim_is_recent, earlier_send_pending, enqueue_web_delivery, get_job, job_payload, now_utc, record_result
 
 _bind_limit = SlidingWindowLimiter()
@@ -115,6 +115,10 @@ def authorize_delivery(db, platform, job_id, claim=None):
     if result is None:
         record_result(db, job, "cancelled")
         raise HTTPException(403, "job no longer authorized")
+    # The four-job batch must fit inside the wire frame even with legacy rows.
+    if len(encode(result)) > 60 * 1024:
+        record_result(db, job, "failed")
+        raise HTTPException(413, "delivery payload too large")
     job.status = "sending"
     job.started_at = now_utc()
     job.claim_id = claim

@@ -73,3 +73,30 @@ def test_teacher_panel_edits_background_without_extra_message(tmp_path):
         finally:
             spool.close()
     asyncio.run(run())
+
+
+
+def test_parallel_fanout_reuses_file_id():
+    from collections import OrderedDict
+    from aiogram.types import URLInputFile
+
+    async def run():
+        bot = SimpleNamespace(
+            send_photo=AsyncMock(return_value=SimpleNamespace(message_id=123, photo=[SimpleNamespace(file_id="cached-photo")])),
+            send_video=AsyncMock(), send_voice=AsyncMock(), send_audio=AsyncMock(),
+            send_animation=AsyncMock(), send_document=AsyncMock())
+        adapter = object.__new__(TelegramAdapter)
+        adapter.bot = bot
+        adapter.file_ids = OrderedDict()
+        adapter.media_locks = {}
+        gateway = SimpleNamespace(media_url=lambda job_id: "http://backend/media/" + job_id, headers={})
+        media = {"file_name":"one.jpg", "key":"immutable"}
+        a = {"id":"a","chat_id":"10","kind":"photo","text":"hi","media":media}
+        b = {**a,"id":"b","chat_id":"20"}
+        assert await asyncio.gather(adapter.send(a, gateway), adapter.send(b, gateway)) == [123,123]
+        calls = bot.send_photo.await_args_list
+        assert isinstance(calls[0].kwargs["photo"], URLInputFile)
+        assert calls[1].kwargs["photo"] == "cached-photo"
+        assert not adapter.media_locks
+
+    asyncio.run(run())

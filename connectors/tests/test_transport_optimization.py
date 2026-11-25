@@ -1,0 +1,92 @@
+import asyncio
+from collections import deque
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
+from connectors.common.client import GatewayClient, select_heads
+from connectors.common.spool import EventSpool
+from connectors.common.ingress import forward
+
+
+def test_scheduler_reserves_light_slots_and_does_not_skip_route_head():
+    queue = deque([(None,"media1",("a",""),True), (None,"text1",("a",""),False),
+                   (None,"text2",("b",""),False), (None,"media2",("c",""),True)])
+    active = [(("d",""),None,True), (("e",""),None,True)]
+    chosen = select_heads(queue, active)
+    assert [item[1] for item in chosen] == ["text2"]
+    assert [item[1] for item in queue] == ["media1","text1","media2"]
+
+
+def test_claim_and_normalized_inbound_survive_restart(tmp_path):
+    path = tmp_path / "spool.db"
+    spool = EventSpool(path,"bot")
+    claim = spool.prepare_delivery("job")
+    spool.remember_inbound({"id":"incoming","text":"hello"})
+    spool.mark_published("incoming")
+    spool.close()
+    spool = EventSpool(path,"bot")
+    assert spool.prepare_delivery("job") == claim
+    assert spool.delivery("job") is None
+    assert spool.inbound_count() == 1
+    assert not spool.pending_inbound()
+    assert spool.pending_inbound(age=0)[0][0] == "incoming"
+    spool.begin_delivery("job")
+    spool.close()
+    spool = EventSpool(path,"bot")
+    assert spool.delivery("job")["status"] == "unknown"
+    spool.accept_inbound("incoming")
+    assert spool.inbound_count() == 0
+    spool.close()
+
+
+def test_ingress_light_actor_can_pass_slow_media_but_same_actor_keeps_order(tmp_path):
+    async def run():
+        spool = EventSpool(tmp_path / "spool.db","bot")
+        hold = asyncio.Event()
+        processed = []
+        async def handle(ident, update, gateway, store):
+            if ident == "media":
+                await hold.wait()
+            processed.append(ident)
+        adapter = SimpleNamespace(inbound_route=lambda x:(x["actor"],x["heavy"]), handle=handle)
+        task = asyncio.create_task(forward(adapter,None,spool))
+        try:
+            await asyncio.sleep(0)
+            spool.append([("media",{"actor":"a","heavy":True}),
+                          ("same",{"actor":"a","heavy":False}),
+                          ("other",{"actor":"b","heavy":False})],4)
+            async def wait_for(predicate):
+                for _ in range(100):
+                    if predicate():
+                        return
+                    await asyncio.sleep(.01)
+                raise AssertionError("timed out")
+            await wait_for(lambda:"other" in processed)
+            assert processed == ["other"]
+            hold.set()
+            await wait_for(lambda:spool.count() == 0)
+            assert processed == ["other","media","same"]
+        finally:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+            spool.close()
+    asyncio.run(run())
+
+
+def test_recovered_receipt_is_republished_without_external_send(tmp_path,monkeypatch):
+    monkeypatch.setenv("BOTS_MEDIA_URL","http://backend")
+    monkeypatch.setenv("BOTS_MEDIA_SECRET","test")
+    async def run():
+        spool = EventSpool(tmp_path / "spool.db","bot")
+        spool.begin_delivery("job")
+        spool.finish_delivery("job",{"id":"job","status":"delivered","external_message_id":"x"})
+        client = GatewayClient("alpha",None,spool)
+        client.js = SimpleNamespace(publish=AsyncMock())
+        msg = SimpleNamespace(ack_sync=AsyncMock(),nak=AsyncMock())
+        adapter = SimpleNamespace(send=AsyncMock())
+        await client.complete(adapter,msg,"job",{})
+        adapter.send.assert_not_awaited()
+        msg.ack_sync.assert_awaited_once()
+        client.js.publish.assert_awaited_once()
+        spool.close()
+    asyncio.run(run())
