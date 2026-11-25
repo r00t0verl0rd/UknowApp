@@ -1,23 +1,22 @@
-"""События переписок с хранением и проверкой доступа."""
+"""Bounded in-process SSE recovery hints; business messages remain in Main DB."""
 
 import asyncio
 import json
 import logging
-from datetime import UTC, datetime
-from itertools import count
+from time import time_ns
 from threading import Lock
 from typing import Any
 
-from sqlalchemy import delete, select, text
 from sqlalchemy.orm import Session
-
-from app.models import RealtimeEvent
 
 logger = logging.getLogger(__name__)
 
 _subscribers: dict[asyncio.Queue[str], tuple[asyncio.AbstractEventLoop, dict | None]] = {}
 _subscribers_lock = Lock()
-_fallback_event_ids = count(1)
+_event_lock = Lock()
+# Microseconds fit a JS safe integer. A new process gets a new cursor range.
+_latest_id = time_ns() // 1000
+_latest_payload: dict | None = None
 _MAX_REPLAY_PAYLOAD_BYTES = 4096
 _QUEUE_SIZE = 128
 
@@ -74,7 +73,7 @@ def _enqueue(queue: asyncio.Queue[str], payload: str, event_id: int | None) -> N
                 queue.get_nowait()
             except asyncio.QueueEmpty:
                 break
-        # Журнал БД позволяет восстановить события после переполнения очереди.
+        # A fresh snapshot restores state after queue overflow.
         resync_payload = {"resync": True}
         if event_id is not None:
             resync_payload["event_id"] = event_id
@@ -83,31 +82,17 @@ def _enqueue(queue: asyncio.Queue[str], payload: str, event_id: int | None) -> N
     queue.put_nowait(payload)
 
 
-def _persist_event(db: Session, conversation_id: int, conversation_type: str, payload: dict) -> int:
-    # SQLite serializes writers. Serialize replacement on PostgreSQL as well,
-    # before allocating the next event id.
-    if db.get_bind().dialect.name == "postgresql":
-        db.execute(text("LOCK TABLE realtime_events IN SHARE ROW EXCLUSIVE MODE"))
-    db.execute(delete(RealtimeEvent))
-    # Live subscribers still receive the precise delta. A reconnect can
-    # reload current state without persisting an arbitrarily large ID list.
-    recovery = {"audience": payload.get("audience"), "resync": True}
-    stored = recovery if len(payload.get("message_ids") or []) > 512 else payload
-    encoded = json.dumps(stored, ensure_ascii=False, separators=(",", ":"))
-    if len(encoded.encode("utf-8")) > _MAX_REPLAY_PAYLOAD_BYTES:
-        encoded = json.dumps(recovery, separators=(",", ":"))
-    event = RealtimeEvent(
-        conversation_id=int(conversation_id),
-        conversation_type=conversation_type,
-        payload_json=encoded,
-        created_at=datetime.now(UTC),
-    )
-    db.add(event)
-    db.flush()
-    event_id = event.id
-    db.commit()
+def reset_replay():
+    """Drop old hints on startup/restore; never reuse a cursor in this process."""
+    global _latest_id, _latest_payload
+    with _event_lock:
+        _latest_id = max(_latest_id + 2, time_ns() // 1000)
+        _latest_payload = None
 
-    return event_id
+
+def current_event_id():
+    with _event_lock:
+        return _latest_id
 
 
 def _dispatch(payload: dict, event_id: int | None) -> None:
@@ -139,8 +124,8 @@ def publish_chat_update(
     audience: dict | None = None,
     summary_by_role: dict[str, dict] | None = None,
     db: Session | None = None,
-) -> None:
-    """Сохранить событие до оповещения подписчиков."""
+) -> int:
+    """Publish a hint after the caller commits its business transaction (no SQL)."""
     payload = {
         "conversation_id": int(conversation_id),
         "conversation_type": conversation_type,
@@ -153,43 +138,35 @@ def publish_chat_update(
         "audience": audience,
         "summary_by_role": summary_by_role or {},
     }
-    event_id: int
-    if db is not None:
-        try:
-            event_id = _persist_event(db, conversation_id, conversation_type, payload)
-        except Exception:
-            db.rollback()
-            logger.exception(
-                "Realtime event persistence failed (conversation_id=%s action=%s)",
-                conversation_id,
-                action,
-            )
-            event_id = None
-            payload["resync"] = True
-    else:
-        # Используется в тестах и внутренних сигналах без БД.
-        event_id = next(_fallback_event_ids)
-
-    _dispatch(payload, event_id)
+    global _latest_id, _latest_payload
+    # One bounded recovery hint, not a second message history. Serialize dispatch
+    # across HTTP and gateway threads so live cursors arrive in order.
+    with _event_lock:
+        _latest_id += 1
+        recovery = {"audience": audience, "resync": True}
+        encoded = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+        _latest_payload = (recovery if len(payload["message_ids"]) > 512 or
+                           len(encoded.encode("utf-8")) > _MAX_REPLAY_PAYLOAD_BYTES
+                           else json.loads(encoded))
+        _dispatch(payload, _latest_id)
+        return _latest_id
 
 
 def replay_chat_updates(
-    db: Session,
+    db: Session | None,
     principal: dict,
     after_event_id: int,
 ) -> list[tuple[int, str]]:
-    """Восстановить доступные события после переподключения."""
+    """Replay one hint or request a fresh snapshot. No database access."""
     if after_event_id <= 0:
         return []
-
-    latest = db.scalar(select(RealtimeEvent).order_by(RealtimeEvent.id.desc()).limit(1))
-    if latest is None or after_event_id == latest.id:
-        return []
-    if after_event_id != latest.id - 1:
-        return [(latest.id, json.dumps({"event_id": latest.id, "resync": True}))]
-
-    payload = json.loads(latest.payload_json)
-    if not _can_receive(principal, payload.get("audience")):
-        return []
-    payload["event_id"] = latest.id
-    return [(latest.id, _payload_for_subscriber(payload, principal))]
+    with _event_lock:
+        latest_id, latest = _latest_id, _latest_payload
+        if after_event_id == latest_id:
+            return []
+        if latest is None or after_event_id != latest_id - 1:
+            return [(latest_id, json.dumps({"event_id": latest_id, "resync": True}))]
+        if not _can_receive(principal, latest.get("audience")):
+            return []
+        payload = {**latest, "event_id": latest_id}
+        return [(latest_id, _payload_for_subscriber(payload, principal))]

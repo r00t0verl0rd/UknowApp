@@ -13,6 +13,7 @@ from fastapi.responses import StreamingResponse
 
 from app.core.database import SessionLocal
 from app.event_hub import (
+    current_event_id,
     replay_chat_updates,
     subscribe_chat_updates,
     unsubscribe_chat_updates,
@@ -66,17 +67,10 @@ async def panel_events(request: Request, principal: PanelUser):
         cursor = int(request.headers.get("last-event-id", "0") or 0)
     except ValueError:
         cursor = 0
-    def load_replay():
-        if not cursor:
-            return []
-        with SessionLocal() as db:
-            return replay_chat_updates(db, principal, cursor)
-
-    try:
-        replay = await asyncio.to_thread(load_replay)
-    except BaseException:
-        unsubscribe_chat_updates(queue)
-        raise
+    # Subscribe before taking the RAM checkpoint; any overlap is harmless and
+    # clients ignore duplicate event IDs.
+    checkpoint = current_event_id()
+    replay = replay_chat_updates(None, principal, cursor)
 
     def filter_event(payload):
         with SessionLocal() as session:
@@ -89,6 +83,8 @@ async def panel_events(request: Request, principal: PanelUser):
     async def event_stream():
         try:
             yield "retry: 1500\n\n"
+            if not cursor:
+                yield f"id: {checkpoint}\nevent: checkpoint\ndata: {{}}\n\n"
             for event_id, payload in replay:
                 if not await still_authorized():
                     return

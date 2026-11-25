@@ -268,22 +268,6 @@ class MessengerAccount(Base):
     user: Mapped[User] = relationship(back_populates="messenger_accounts")
 
 
-class RealtimeEvent(Base):
-    """Журнал событий сообщений и прочтения."""
-
-    __tablename__ = "realtime_events"
-    __table_args__ = (
-        Index("ix_realtime_events_created_at", "created_at"),
-        {"sqlite_autoincrement": True},
-    )
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    conversation_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    conversation_type: Mapped[str] = mapped_column(String(20), nullable=False, default="conversation")
-    payload_json: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
-
-
 class BotEventReceipt(Base):
     """Receipt for a completed connector event; survives Core restart."""
 

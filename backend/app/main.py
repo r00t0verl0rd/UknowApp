@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 
 from .api import router
+from .event_hub import reset_replay
 from .bots_gateway.gateway import BotsGateway, router as bots_gateway_router
 from .core.config import (
     ALLOWED_ORIGINS,
@@ -102,6 +103,7 @@ def runtime_probe():
 @asynccontextmanager
 async def _start_services(app: FastAPI, restoring: bool):
     await asyncio.to_thread(_initialize_core, restoring)
+    reset_replay()
     try:
         await asyncio.to_thread(initialize_runtime_storage)
         app.state.runtime_status = "ok"

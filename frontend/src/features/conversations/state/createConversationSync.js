@@ -230,7 +230,9 @@ export function createConversationSync(options) {
         }
         const eventId = Number(payload.event_id || event.lastEventId || 0);
         if (Number.isSafeInteger(eventId) && eventId > 0) {
-          if (eventId <= lastEventId) return;
+          // A restart/restore can replace the server cursor range (clock rollback).
+          // Explicit resync is always authoritative, even for a smaller cursor.
+          if (!payload.resync && eventId <= lastEventId) return;
           lastEventId = eventId;
         }
         if (payload.resync) {

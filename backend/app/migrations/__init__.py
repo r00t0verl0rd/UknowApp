@@ -14,6 +14,7 @@ from .delivery_routes import upgrade_delivery_routes
 from .delivery_recovery import upgrade_delivery_recovery
 from .push_devices import upgrade_push_devices
 from .performance_indexes import upgrade_performance_indexes
+from .volatile_events import retire_realtime_events
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ MIGRATIONS = (
     ("2026-11-26-retire-legacy-provider", retire_legacy_schema),
     ("2026-11-26-push-devices", upgrade_push_devices),
     ("2026-11-26-performance-indexes", upgrade_performance_indexes),
+    ("2026-11-26-volatile-events", retire_realtime_events),
 )
 
 
