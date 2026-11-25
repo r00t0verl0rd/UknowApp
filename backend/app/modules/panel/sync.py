@@ -111,7 +111,7 @@ def sync_conversation_state(
         return [_panel_message_status_dict(row, principal) for row in rows]
 
     summary = conversation_dicts(
-        db, [conversation], include_telegram_ids=(principal["role"] == "admin"),
+        db, [conversation], include_messenger_accounts=(principal["role"] == "admin"),
         viewer_role=principal["role"],
     )[0]
     return {
@@ -182,7 +182,7 @@ def read_conversation(conversation_id: int, payload: ReadReceipt, principal: Pan
     conversation = _panel_visible_conversation(db, principal, conversation_id)
     mark_conversation_read(db, conversation, principal, 0, payload.message_ids)
     return conversation_dicts(
-        db, [conversation], include_telegram_ids=(principal["role"] == "admin"),
+        db, [conversation], include_messenger_accounts=(principal["role"] == "admin"),
         viewer_role=principal["role"],
     )[0]
 
