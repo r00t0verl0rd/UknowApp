@@ -18,14 +18,46 @@ CI: статическая проверка прямых синхронных в
 
 Остаются отдельные задачи: измерение p50/p95/p99 запросов, RAM/CPU/IO на одинаковых данных и ресурсах, оптимизация полных подсчётов непрочитанных, контроль общего размера фоновых очередей и безопасная политика хранения технических журналов. Без данных замеров не заявляем проценты ускорения.
 
-## Main DB / Runtime DB
+## Main DB и Runtime DB
+
 Производительность является обязательным критерием: избегаем повторного чтения, промежуточные вычисления — код/RAM, персистентное техническое состояние — Runtime. Main сохраняет только данные школы и минимальные гарантии целостности. Подробности: runtime-storage.md. PubAck пакетируется, ожидание пустой очереди не выполняет Main SQL до очередного сигнала или сверки.
 
-## SSE and query budgets
-SSE recovery journal is now bounded RAM (one replay hint <= 4 KiB, per-subscriber queue 128). No SQL writes for publishing or SQL reads for replay. Migration 20261126_07 removes only realtime_events, never message history. Lost cursor/restart or overflow triggers full reconciliation. Core runs one process; multiple independent Core processes would need a shared event transport. Authorization and conversation visibility are still checked against Main DB. A session is validated by a single joined SELECT, `/panel/me` uses that identity; history loads the sender via JOIN, not separate queries for messenger accounts. Query-budget regression tests enforce <=4 SQL statements for 100 messages in a teacher chat, <=3 for personal, exactly one for profile. Run `PYTHONPATH=backend python backend/tests/benchmark_core.py --messages 100000 --clients 10 50 100` for isolated ASGI measurements. CI reports p50/p95/p99 and SQL/request. This is synthetic read-only concurrency, not an external-network or VPS load test. Full-history count and unread aggregate remain potential bottlenecks.
+## SSE и бюджет SQL-запросов
 
-## Exact conversation counters and read cursors (20261126_08)
-The migration backfills message_count, last_message_id, teacher/student last_read_id and exact unread counters (teacher/student/admin). A cursor is the last existing message in the contiguous read prefix, not the largest individually acknowledged message. Sparse visible-page receipts are preserved. Unread queries use indexed generated receipt columns, the cursor and exact role predicates; mark_read updates existing receipt metadata atomically, without JSON extraction in its filter. Counts and latest preview are read via one join without history scans; counts are updated transactionally on insert, delete and receipt changes, including bulk SQL. SQLite generated fields are virtual, PostgreSQL stored. This deliberately trades one short indexed parent update per message/receipt for avoiding repeated scans of the entire history. Runtime WAL synchronous=NORMAL for reconstructible auxiliary state. 
+Журнал SSE ограничен RAM: один replay hint до 4 КиБ, очередь подписчика — 128. Публикация и replay не обращаются к SQL. Миграция `20261126_07` удаляет только `realtime_events`, не историю сообщений. Потеря курсора, рестарт или переполнение вызывают полную синхронизацию. Core работает одним процессом; для нескольких нужен общий транспорт событий. Права и видимость диалогов проверяются в Main DB.
 
-## Physical receipts and delivery hints (20261126_09)
-Migration 09 converts generated receipt columns from 08 to writable scalar timestamps, moves both legacy JSON keys to those columns once, and rebuilds counters/indexes transactionally. On SQLite a read changes only the necessary receipt column (SQLite still writes affected pages to WAL). A contiguous cursor alone cannot represent sparse reads; exact incremental unread counters make list/sync summary O(number of chats), independent of the total history and the number of unread messages. Read filters use the cursor, indexed unread predicate and visible IDs. The API still exposes receipt timestamps in its old JSON response shape. External delivery events are admin-only and include the updated delivery ledger; no participant SSE rights check or full sync per delivery. An overlapping in-flight admin sync may still require reconciliation. Old clients/servers and reconnect retain fallback synchronization. Personal chat summaries are not yet converted to the new counter model. Tests verify no JSON writes on read, migration from 08, authorization filtering, and no history aggregation even with 100k messages.
+Сессия проверяется одним SELECT с JOIN; `/panel/me` использует эту идентификацию. История загружает отправителя через JOIN, без отдельных запросов к аккаунтам мессенджеров.
+
+| Запрос | Бюджет SQL |
+| --- | ---: |
+| 100 сообщений в чате преподавателя | До 4 |
+| 100 сообщений в личном чате | До 3 |
+| Профиль | 1 |
+
+Изолированный ASGI benchmark:
+
+```bash
+PYTHONPATH=backend python backend/tests/benchmark_core.py --messages 100000 --clients 10 50 100
+```
+
+CI показывает p50/p95/p99 и SQL на запрос. Это синтетическая параллельная нагрузка на чтение, не сетевой тест VPS. Полные подсчёты истории и непрочитанных остаются потенциальными узкими местами.
+
+## Счётчики диалогов и курсоры прочтения (20261126_08)
+
+Миграция заполняет `message_count`, `last_message_id`, `last_read_id` учителя и ученика и точные счётчики непрочитанных (teacher/student/admin). Курсор — последнее существующее сообщение непрерывного прочитанного префикса, а не максимальный ID отдельной отметки. Разрозненные прочтения видимых страниц сохраняются.
+
+Запросы непрочитанных используют индексированные генерируемые колонки, курсор и точные условия роли. `mark_read` атомарно обновляет метаданные без извлечения JSON в фильтре. Счётчики и превью читаются одним JOIN без сканирования истории; обновляются транзакционно при вставке, удалении и прочтении, включая bulk SQL.
+
+В SQLite генерируемые поля виртуальные, в PostgreSQL — хранимые. Вместо повторных сканирований истории выполняется короткое индексированное обновление родительской записи. Для восстанавливаемого Runtime используется WAL `synchronous=NORMAL`. 
+
+## Отметки прочтения и события доставки (20261126_09)
+
+Миграция 09 превращает генерируемые колонки версии 08 в записываемые скалярные отметки времени, один раз переносит оба старых JSON-ключа и транзакционно перестраивает индексы и счётчики. В SQLite при прочтении меняется нужная колонка (затронутые страницы всё равно записываются в WAL).
+
+Точные инкрементальные счётчики позволяют получать list/sync за O(число чатов), независимо от объёма истории и количества непрочитанных. Фильтры используют курсор, индексированный признак непрочтения и видимые ID. API сохраняет прежний JSON-формат отметок.
+
+Внешние события доставки получает только администратор, вместе с обновлённым реестром доставки; нет проверки прав участника SSE или полной синхронизации на каждую доставку. Пересекающаяся по времени синхронизация администратора может потребовать сверки. Для старых клиентов/серверов и reconnect остаётся fallback. Личные чаты пока не переведены на новую модель счётчиков.
+
+Тесты проверяют отсутствие записи JSON при прочтении, переход с 08, фильтрацию прав и отсутствие агрегации истории даже при 100 тыс. сообщений.
+
+[Main DB / Runtime DB](runtime-storage.md) · [Тестирование](ci-testing.md)

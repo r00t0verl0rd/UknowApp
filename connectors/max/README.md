@@ -1,6 +1,5 @@
-# MAX connector
+# Коннектор MAX
 
-Reserved for a future MAX provider implementation. Use `connectors.common.GatewayClient`
-and the versioned protocol in `docs/bots-gateway.md`. Implement authentication,
-provider events, messaging capabilities, media and delivery results. No MAX
-service is enabled in Compose until these are implemented and tested.
+Заготовка для будущей интеграции MAX. Пока готового адаптера нет; сервис не включён в Docker Compose.
+
+Для реализации используйте `connectors.common.GatewayClient` и [протокол Bots Gateway](../../docs/bots-gateway.md). Нужно реализовать авторизацию, обработку событий провайдера, сообщения, медиа и результаты доставки, затем проверить их тестами.
