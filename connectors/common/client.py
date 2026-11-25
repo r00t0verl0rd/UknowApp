@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import time
+from typing import Protocol
 from collections import deque
 from urllib.parse import quote
 
@@ -13,6 +14,14 @@ from nats.errors import TimeoutError as NatsTimeout
 from .contracts import PREFIX, STREAM, encode
 
 logger = logging.getLogger(__name__)
+
+
+class ProviderAdapter(Protocol):
+    async def send(self, job, gateway): ...
+    async def delete(self, job): ...
+    def inbound_route(self, update): ...
+    async def handle(self, event_id, update, gateway, spool): ...
+    async def refresh_panel(self, actor, gateway, spool, background=False): ...
 
 
 class RetryLater(Exception):
@@ -219,7 +228,7 @@ class GatewayClient:
             except Exception:
                 logger.warning("Delivery NAK unavailable; broker will redeliver")
 
-    async def deliveries(self, adapter):
+    async def deliveries(self, adapter: ProviderAdapter):
         # UI invalidations are best effort, coalesced per actor, and separate from sends.
         async def refresh(msg):
             try:

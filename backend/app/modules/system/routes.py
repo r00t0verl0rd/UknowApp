@@ -1,6 +1,7 @@
 """HTTP API веб-панели и обмена сообщениями."""
 
 import logging
+from datetime import UTC, datetime
 
 from fastapi import (
     APIRouter,
@@ -118,6 +119,13 @@ def remove_push_subscription(payload: dict, principal: PanelUser, db: Db):
 @router.get("/admin/bots/diagnostics")
 def bots_diagnostics(request: Request, _: Admin):
     gateway = getattr(request.app.state, "bots_gateway", None)
+    connectors = {}
+    if gateway:
+        for platform in gateway.platforms:
+            data = dict(gateway.connectors.get(platform, {}))
+            age = (datetime.now(UTC) - datetime.fromisoformat(data["seen"])).total_seconds() if data.get("seen") else None
+            connectors[platform] = {**data, "online": age is not None and age <= 45,
+                                    "age_seconds": round(age) if age is not None else None}
     return {"broker_connected": bool(gateway and gateway.ready and gateway.nc and gateway.nc.is_connected),
             "platforms": gateway.diagnostics if gateway else {},
-            "connectors": gateway.connectors if gateway else {}}
+            "connectors": connectors}

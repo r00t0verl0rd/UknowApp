@@ -4,6 +4,7 @@ from sqlalchemy import MetaData, Table, inspect, select, text
 from sqlalchemy.orm import Session
 
 from app.core.database import engine
+from app.migrations.delivery_recovery import upgrade_delivery_recovery
 from app.models import ExternalEndpoint, Message, MessengerAccount
 from app.bots_gateway.outbox import enqueue_web_delivery
 from app.infrastructure.storage.message_metadata import encode_message_metadata
@@ -16,6 +17,7 @@ def migrate_provider_channels(connection=None):
         with engine.begin() as connection:
             migrate_provider_channels(connection)
         return
+    upgrade_delivery_recovery(connection)
     inspector = inspect(connection)
     tables = set(inspector.get_table_names())
     cols = {col["name"] for col in inspector.get_columns("users")}

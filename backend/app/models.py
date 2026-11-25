@@ -314,6 +314,7 @@ class ConnectorDelivery(Base):
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     claim_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    broker_seq: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
 
 
 class ConnectorDeletion(Base):
@@ -329,3 +330,4 @@ class ConnectorDeletion(Base):
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     claim_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    broker_seq: Mapped[int | None] = mapped_column(BigInteger, nullable=True)

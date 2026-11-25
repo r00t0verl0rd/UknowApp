@@ -69,7 +69,7 @@ class EventSpool:
                             (time.time(), self.namespace, ident))
 
     def pending_inbound(self, age=900, limit=50):
-        rows = self.db.execute("SELECT id,payload,published FROM inbound_pending WHERE namespace=? AND (published IS NULL OR published<=?) ORDER BY published LIMIT ?",
+        rows = self.db.execute("SELECT id,payload,published FROM inbound_pending WHERE namespace=? AND (published IS NULL OR published<=?) ORDER BY rowid LIMIT ?",
                                (self.namespace, time.time() - age, limit)).fetchall()
         return [(ident, json.loads(payload), published) for ident, payload, published in rows]
 

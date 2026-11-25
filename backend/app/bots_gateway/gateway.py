@@ -98,7 +98,7 @@ class BotsGateway:
             with SessionLocal() as db:
                 for model in (ConnectorDelivery, ConnectorDeletion):
                     db.execute(update(model).where(model.platform.in_(self.platforms),
-                        model.status.in_(("published", "sending"))).values(published_at=None))
+                        model.status.in_(("published", "sending"))).values(published_at=None, broker_seq=None))
                 db.commit()
         await self.nc.flush()
 
@@ -178,7 +178,26 @@ class BotsGateway:
                 # A connector's durable receipt and Core claim prevent duplicate sends.
                 dedup = job_id if status == "queued" else f"{job_id}:recover:{int(now_utc().timestamp()) // 60}"
                 try:
-                    await self.js.publish(f"{PREFIX}.outbound.{platform}",
+                    # A retained backlog is not a lost queue. Check the exact previous
+                    # broker sequence before attempting stale recovery.
+                    previous_seq = None
+                    if status != "queued":
+                        with SessionLocal() as db:
+                            job = get_job(db, job_id)
+                            previous_seq = job.broker_seq if job and job.status in PENDING else None
+                        if previous_seq is not None:
+                            try:
+                                previous = await self.js.get_msg(STREAM, seq=previous_seq)
+                            except NotFoundError:
+                                previous = None
+                            if previous and previous.subject == f"{PREFIX}.outbound.{platform}" and decode(previous.data).get("id") == job_id:
+                                with SessionLocal() as db:
+                                    job = get_job(db, job_id)
+                                    if job and job.status in PENDING:
+                                        job.published_at = now_utc()
+                                        db.commit()
+                                continue
+                    ack = await self.js.publish(f"{PREFIX}.outbound.{platform}",
                         encode({"id": job_id, "route": [chat, thread], "heavy": heavy}),
                         headers={"Nats-Msg-Id": dedup})
                 except Exception as exc:
@@ -193,6 +212,7 @@ class BotsGateway:
                         if job.status == "queued":
                             job.status = "published"
                         job.published_at = now_utc()
+                        job.broker_seq = ack.seq
                         db.commit()
                 if status != "queued":
                     logger.info("Republished stale connector job platform=%s status=%s", platform, status)
