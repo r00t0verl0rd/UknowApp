@@ -1,7 +1,5 @@
 """School business operations exposed through a provider-neutral authenticated transport."""
 import json
-from datetime import UTC, datetime
-from pathlib import Path
 
 from fastapi import HTTPException
 from sqlalchemy import select
@@ -151,6 +149,15 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
             endpoint.preferred = False
     else:
         raise ValueError("unknown channel type")
+    external_message_id = identifier(payload.get("external_message_id", event_id))
+    source_event = f"{platform}:{chat}:{external_message_id}"
+    if len(source_event) > 255:
+        raise ValueError("source event too long")
+    if db.scalar(select(Message.id).where(Message.sender_id == user.id,
+                 Message.source_platform == platform, Message.source_event_id == source_event)):
+        db.add(BotEventReceipt(platform=platform, event_id=event_id))
+        db.commit()
+        return
     kind = payload.get("kind", "text")
     if kind not in KINDS:
         raise ValueError("unknown message kind")
@@ -171,6 +178,11 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
         metadata["media"] = {"kind": kind, "file_name": filename[:180],
             "mime_type": safe_media_type(media.get("mime_type")), "file_size": path.stat().st_size,
             "local_path": storage_key, "archive_status": "stored"}
+    if payload.get("media_unavailable") and not blocked:
+        metadata["media"] = {"kind": kind, "archive_status": "download_failed"}
+    if blocked and media:
+        path, _ = media_path(platform, event_id)
+        path.unlink(missing_ok=True)
     if kind == "location" and isinstance(payload.get("location"), dict):
         metadata["location"] = payload["location"]
     if kind == "poll" and isinstance(payload.get("poll"), dict):
@@ -178,7 +190,7 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
     row = Message(conversation_id=conversation.id, sender_id=user.id, sender_role=user.role,
         content_type=kind, text="[Контактные данные скрыты системой]" if blocked else text,
         metadata_json=encode_message_metadata(metadata), delivery_status="blocked_contact" if blocked else "delivered",
-        source_platform=platform, source_event_id=event_id)
+        source_platform=platform, source_event_id=source_event)
     db.add(row)
     db.add(BotEventReceipt(platform=platform, event_id=event_id))
     try:

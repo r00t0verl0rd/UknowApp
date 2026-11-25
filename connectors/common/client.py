@@ -60,6 +60,12 @@ class GatewayClient:
     def media_url(self, job):
         return f"{self.base}/internal/bots/media/{self.platform}/outbound/{job}"
 
+    @staticmethod
+    async def extend_ack(msg):
+        while True:
+            await asyncio.sleep(30)
+            await msg.in_progress()
+
     async def deliveries(self, adapter):
         sub = await self.js.pull_subscribe_bind(
             consumer="outbound-" + self.platform, stream=STREAM,
@@ -70,6 +76,7 @@ class GatewayClient:
             except NatsTimeout:
                 continue
             for msg in msgs:
+                heartbeat = asyncio.create_task(self.extend_ack(msg))
                 try:
                     job_id = json.loads(msg.data)["id"]
                     receipt = self.spool.delivery(job_id)
@@ -100,3 +107,6 @@ class GatewayClient:
                 except Exception as exc:
                     logger.warning("Delivery will retry transport: %s", type(exc).__name__)
                     await msg.nak(delay=5)
+                finally:
+                    heartbeat.cancel()
+                    await asyncio.gather(heartbeat, return_exceptions=True)

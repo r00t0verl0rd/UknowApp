@@ -192,7 +192,7 @@ class TelegramAdapter:
         if account["role"] == "student" and not view["conversations"]:
             await self.bot.send_message(int(chat), "Пока нет назначенного преподавателя.", message_thread_id=int(thread) if thread else None)
             return
-        event = {"id": event_id, "actor": actor, "chat_id": chat, "thread_id": thread,
+        event = {"id": event_id, "external_message_id": str(message["message_id"]), "actor": actor, "chat_id": chat, "thread_id": thread,
                  "channel": "group" if group else "private", "conversation_id": selection,
                  "text": text, "kind": "text"}
         for kind in ("photo", "document", "audio", "video", "voice", "video_note", "sticker", "animation"):
@@ -202,10 +202,13 @@ class TelegramAdapter:
             if isinstance(value, list):
                 value = value[-1]
             event["kind"] = kind
+            if (value.get("file_size") or 0) > MAX_BYTES or (not self.local and (value.get("file_size") or 0) > 20 * 1024 ** 2):
+                event["media_unavailable"] = True
+                break
             remote = await self.bot.get_file(value["file_id"])
             if remote.file_size is None or remote.file_size > MAX_BYTES or not remote.file_path:
-                await self.bot.send_message(int(chat), "Вложение недоступно или превышает допустимый размер.")
-                return
+                event["media_unavailable"] = True
+                break
             name = value.get("file_name") or {"photo":"photo.jpg","video":"video.mp4","voice":"voice.ogg",
                     "audio":"audio.mp3","animation":"animation.mp4","video_note":"video.mp4","sticker":"sticker.webp"}.get(kind,"attachment")
             mime = value.get("mime_type") or {"photo":"image/jpeg","video":"video/mp4","voice":"audio/ogg",

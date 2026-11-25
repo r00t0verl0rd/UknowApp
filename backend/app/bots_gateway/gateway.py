@@ -1,6 +1,7 @@
 """Single Core gateway backed by NATS request/reply and JetStream."""
 import asyncio
 import hashlib
+import json
 import logging
 import os
 from hmac import compare_digest
@@ -203,8 +204,7 @@ def require_connector(request, platform):
 @router.put("/media/{platform}/inbound/{event_id}")
 async def upload_media(request: Request, platform: str, event_id: str):
     require_connector(request, platform)
-    identifier(event_id)
-    if len(event_id) > 200:
+    if not event_id or len(event_id) > 200:
         raise HTTPException(400)
     target, _ = media_path(platform, event_id)
     if target.is_file():
@@ -234,7 +234,6 @@ async def upload_media(request: Request, platform: str, event_id: str):
 @router.get("/media/{platform}/outbound/{job_id}")
 async def download_media(request: Request, platform: str, job_id: str):
     require_connector(request, platform)
-    import json
     with SessionLocal() as db:
         job = db.get(ConnectorDelivery, job_id)
         if not job or job.platform != platform or job.status not in {"queued", "published"}:

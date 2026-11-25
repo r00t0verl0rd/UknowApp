@@ -119,6 +119,9 @@ def sync_messenger_account(
     if existing and existing.user_id != user_id:
         raise MessengerAccountConflict(f"{platform_value} identity is already linked")
 
+    if account is not None and account.external_user_id != normalized_user_id:
+        db.execute(delete(ExternalEndpoint).where(ExternalEndpoint.platform == platform_value,
+                                                 ExternalEndpoint.user_id == user_id))
     account = account or existing
     if account is None:
         account = MessengerAccount(
