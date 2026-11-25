@@ -12,8 +12,6 @@ apt install -y git nano docker.io docker-compose docker-buildx
 systemctl enable --now docker
 ```
 
-Если Docker уже установлен, достаточно Git и nano. Направьте домен на VPS и откройте TCP-порты 80 и 443.
-
 Скачайте проект:
 
 ```bash
