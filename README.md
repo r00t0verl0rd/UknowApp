@@ -46,65 +46,28 @@ ssh root@VPS_IP
 
 ### Шаг 2. Установите Docker
 
-Docker запускает приложение и его компоненты, поэтому отдельно устанавливать Python, Node.js или базу данных не придётся.
+На сервере нужны Docker Engine, Docker Compose и Buildx.
 
-Скопируйте в терминал:
+Если Docker ещё не установлен, установите его по [официальной инструкции для Debian](https://docs.docker.com/engine/install/debian/#install-using-the-apt-repository). Используйте комплект из официального APT-репозитория Docker. Если Docker уже работает, переустанавливать его не нужно.
+
+Установите инструменты, которые понадобятся дальше:
 
 ```bash
 apt-get update
-apt-get install -y ca-certificates curl git nano docker.io docker-compose
+apt-get install -y git nano curl
 systemctl enable --now docker
 ```
 
-На Debian 13 штатные версии Compose и Buildx могут быть слишком старыми. Установите проверенные версии этих двух дополнений. Скопируйте **весь следующий блок целиком**, включая круглые скобки. Он сам скачает файлы, проверит их контрольные суммы и установит их.
-
-```bash
-(
-  set -eu
-  tmp=$(mktemp -d)
-  trap 'rm -rf -- "$tmp"' EXIT
-  cd "$tmp"
-
-  curl -fsSL https://github.com/docker/compose/releases/download/v5.8.0/docker-compose-linux-x86_64 \
-    -o docker-compose-linux-x86_64
-  curl -fsSL https://github.com/docker/compose/releases/download/v5.8.0/checksums.txt \
-    -o compose-checksums.txt
-  grep -E '[[:space:]]\*?docker-compose-linux-x86_64$' compose-checksums.txt | sha256sum -c -
-
-  curl -fsSL https://github.com/docker/buildx/releases/download/v0.17.1/buildx-v0.17.1.linux-amd64 \
-    -o buildx-v0.17.1.linux-amd64
-  curl -fsSL https://github.com/docker/buildx/releases/download/v0.17.1/checksums.txt \
-    -o buildx-checksums.txt
-  grep -E '[[:space:]]\*?buildx-v0\.17\.1\.linux-amd64$' buildx-checksums.txt | sha256sum -c -
-
-  install -d -m 0755 /usr/local/lib/docker/cli-plugins
-  install -m 0755 docker-compose-linux-x86_64 /usr/local/lib/docker/cli-plugins/docker-compose
-  install -m 0755 buildx-v0.17.1.linux-amd64 /usr/local/lib/docker/cli-plugins/docker-buildx
-)
-```
-
-Проверьте, что Docker работает:
+Проверьте, что всё работает:
 
 ```bash
 docker --version
 docker compose version
 docker buildx version
-docker buildx ls
 docker run --rm hello-world
 ```
 
-Должны отображаться Compose `v5.8.0` и Buildx `v0.17.1`. В конце тестовый контейнер выведет сообщение `Hello from Docker!`.
-
-<details>
-<summary>Подробнее о версиях Docker (необязательно)</summary>
-
-Эта комбинация проверена на действующем VPS 25 ноября 2026 года: Docker Engine из Debian 26.1.5+dfsg1, Compose v5.8.0, Buildx v0.17.1. Engine устанавливается из Debian без фиксации версии; дополнения — из официальных GitHub Releases в системный каталог `/usr/local/lib/docker/cli-plugins`.
-
-Старый Compose из Debian может некорректно отображать прогресс сборки в SSH, а Compose 5.8.0 требует Buildx не ниже 0.17.0. Именно поэтому обновляем оба дополнения. Если версии отличаются, проверьте пути в `docker info`, в том числе `~/.docker/cli-plugins`. Перезапуск Engine после установки дополнений не требуется.
-
-Вручную установленные дополнения не обновляются через APT — следите за их обновлениями отдельно. Вместо этого способа можно установить полный официальный комплект [Docker CE](https://docs.docker.com/engine/install/debian/), но не смешивайте два варианта установки Engine.
-
-</details>
+Если команды показывают версии, а тестовый контейнер выводит `Hello from Docker!`, переходите к следующему шагу.
 
 ### Шаг 3. Создайте пользователя для приложения
 
@@ -276,7 +239,7 @@ docker compose logs --tail=40 backend
 | --- | --- |
 | `no configuration file provided` | Выполните `cd ~/UknowApp` и повторите команду. |
 | Docker сообщает об отсутствии прав | Проверьте, что вы вошли как `uknow` после добавления в группу docker. |
-| `compose build requires buildx 0.17.0 or later` | Проверьте `docker buildx version` и повторите установку дополнений из шага 2. |
+| Compose требует более новый Buildx | Обновите Compose и Buildx совместимыми пакетами из того же репозитория Docker. |
 | Сборка мигает или строки накладываются | Проверьте `docker compose version`, `docker buildx version`, `echo "$TERM"` и `stty size`. Не удаляйте Docker или его данные. |
 | Сайт не открывается или HTTPS не работает | Проверьте DNS, порты 80/443 и `docker compose logs --tail=100 frontend`. |
 | Backend не становится healthy | Посмотрите `docker compose logs --tail=100 backend` и проверьте настройки `.env`. |
