@@ -5,7 +5,6 @@ from typing import Annotated
 
 from fastapi import (
     APIRouter,
-    BackgroundTasks,
     File,
     Form,
     HTTPException,
@@ -25,10 +24,9 @@ from app.infrastructure.storage.message_metadata import (
 from app.models import (
     Message,
 )
-from app.bots_gateway.outbox import enqueue_web_delivery, uses_outbox
+from app.modules.communication.outbox import enqueue_web_delivery
 from app.modules.communication.contracts import (
     MessageKind,
-    OutboundMedia,
 )
 from app.modules.conversations.service import (
     publish_conversation_update,
@@ -36,8 +34,8 @@ from app.modules.conversations.service import (
 from app.modules.dependencies import Db, PanelUser
 from app.modules.messaging.moderation import text_contains_contact_data
 from app.modules.messaging.service import (
-    _panel_message_dict,
-    _panel_visible_conversation,
+    panel_message_dict,
+    panel_visible_conversation,
 )
 from app.modules.notifications.content import PUSH_TITLE, push_body
 from app.modules.notifications.service import schedule_push
@@ -53,7 +51,7 @@ router = APIRouter()
 
 
 def _message_response(row: Message, principal: dict) -> dict:
-    return _panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"), principal=principal)
+    return panel_message_dict(row, expose_internal_metadata=(principal["role"] == "admin"), principal=principal)
 
 
 def _find_sent_message(db, principal, conversation, sender, client_message_id, *, legacy_metadata=False):
@@ -93,10 +91,10 @@ def _commit_message(db, row, principal, conversation, sender, client_message_id,
     return None
 
 
-def _publish_and_deliver(
-    request, background_tasks, db, principal, conversation, parties, row, *, preview, kind, media=None,
+def _publish_message_update(
+    request, db, principal, conversation, parties, row, *, preview, kind,
 ):
-    """Публикует событие и пуш, затем доставляет сообщение в мессенджеры."""
+    """Публикует событие и пуш, затем будит очередь доставки."""
     sender, recipients, student, teacher = parties
     role = principal["role"]
     if role == "admin":
@@ -117,8 +115,9 @@ def _publish_and_deliver(
         ),
     )
 
-    if uses_outbox(request.app):
-        request.app.state.bots_gateway.wake_outbox()
+    gateway = getattr(request.app.state, "bots_gateway", None)
+    if gateway is not None and gateway.platforms:
+        gateway.wake_outbox()
 
 
 @router.post("/panel/conversations/{conversation_id}/messages", status_code=201)
@@ -128,11 +127,10 @@ def send_panel_message(
     request: Request,
     principal: PanelUser,
     db: Db,
-    background_tasks: BackgroundTasks,
 ):
     payload = message_payload(payload)
     # Сначала сохраняем сообщение в БД, затем отправляем его адресатам через Gateway.
-    conversation = _panel_visible_conversation(db, principal, conversation_id)
+    conversation = panel_visible_conversation(db, principal, conversation_id)
     body = payload["text"].strip()
     if text_contains_contact_data(body):
         raise HTTPException(status_code=400, detail="Контактные данные нельзя отправлять через чат UknowApp")
@@ -168,8 +166,8 @@ def send_panel_message(
     )
     if existing:
         return _message_response(existing, principal)
-    _publish_and_deliver(
-        request, background_tasks, db, principal, conversation, parties, row,
+    _publish_message_update(
+        request, db, principal, conversation, parties, row,
         preview=body, kind=MessageKind.TEXT,
     )
     return _message_response(row, principal)
@@ -181,13 +179,12 @@ def send_panel_attachment(
     request: Request,
     principal: PanelUser,
     db: Db,
-    background_tasks: BackgroundTasks,
     file: Annotated[UploadFile, File()],
     text: Annotated[str, Form()] = "",
     client_message_id: Annotated[str | None, Form()] = None,
 ):
     # Ограничиваем размер до чтения файла целиком и сохраняем локальную копию для веб-панели.
-    conversation = _panel_visible_conversation(db, principal, conversation_id)
+    conversation = panel_visible_conversation(db, principal, conversation_id)
     if len(text or "") > 3900:
         raise HTTPException(status_code=400, detail="Текст к вложению слишком длинный")
     parties = panel_sender_and_recipients(db, principal, conversation)
@@ -234,14 +231,9 @@ def send_panel_attachment(
     )
     if existing:
         return _message_response(existing, principal)
-    _publish_and_deliver(
-        request, background_tasks, db, principal, conversation, parties, row,
+    _publish_message_update(
+        request, db, principal, conversation, parties, row,
         preview=row.text,
         kind=MessageKind(kind),
-        media=OutboundMedia(
-            storage_key=relative.as_posix(),
-            file_name=original_name,
-            mime_type=mime_type,
-        ),
     )
     return _message_response(row, principal)

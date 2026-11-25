@@ -24,7 +24,7 @@ from app.models import ConnectorDeletion, ConnectorDelivery, Conversation, Messe
 from app.event_hub import subscribe_chat_updates, unsubscribe_chat_updates
 from .contracts import PREFIX, STREAM, decode, encode, identifier, platforms
 from .operations import receive_message, rpc
-from .outbox import PENDING, authorized_job, get_job, now_utc, record_result
+from app.modules.communication.outbox import PENDING, authorized_job, get_job, now_utc, record_result
 from . import transport
 from app.migrations.runtime_split import initialize_runtime_storage
 

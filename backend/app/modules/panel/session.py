@@ -19,10 +19,10 @@ from app.event_hub import (
     unsubscribe_chat_updates,
 )
 from app.modules.auth.permissions import ROLE_PERMISSIONS
-from app.modules.auth.service import _load_panel_identity
+from app.modules.auth.service import load_panel_identity
 from app.modules.dependencies import PanelUser
-from app.modules.messaging.service import _panel_visible_conversation
-from app.modules.personal_chat.service import _personal_conversation
+from app.modules.messaging.service import panel_visible_conversation
+from app.modules.personal_chat.service import personal_conversation
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -42,7 +42,7 @@ def visible_payload(db, principal, payload):
     event = json.loads(payload)
     if event.get("resync"):
         return json.dumps({"resync": True})
-    lookup = {"conversation": _panel_visible_conversation, "personal": _personal_conversation}.get(event.get("conversation_type"))
+    lookup = {"conversation": panel_visible_conversation, "personal": personal_conversation}.get(event.get("conversation_type"))
     if lookup:
         try:
             lookup(db, principal, event["conversation_id"])
@@ -67,7 +67,7 @@ async def panel_events(request: Request, principal: PanelUser):
     replay = replay_ram_updates(principal, cursor)
 
     def authorized_payload(payload=None):
-        current = _load_panel_identity(request)
+        current = load_panel_identity(request)
         if not current or (current["role"], current["user_id"]) != (principal["role"], principal["user_id"]):
             return None
         if payload is None:

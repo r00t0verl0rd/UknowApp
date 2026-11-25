@@ -25,20 +25,20 @@ from app.models import (
     User,
 )
 from app.modules.auth.permissions import permits
-from app.bots_gateway.outbox import enqueue_message_deletions
+from app.modules.communication.outbox import enqueue_message_deletions
 from app.modules.conversations.service import (
-    _unread_condition,
+    unread_condition,
     read_cursor,
     conversation_dicts,
     publish_conversation_update,
 )
 from app.modules.dependencies import Db, PanelUser
 from app.modules.messaging.service import (
-    _panel_message_dict,
-    _panel_visible_conversation,
+    panel_message_dict,
+    panel_visible_conversation,
 )
 
-from .read_state import mark_conversation_read
+from app.modules.messaging.read_state import mark_conversation_read
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -78,7 +78,7 @@ def panel_conversations(principal: PanelUser, db: Db):
 
 @router.get("/panel/conversations/{conversation_id}/summary")
 def panel_conversation_summary(conversation_id: int, principal: PanelUser, db: Db):
-    conversation = _panel_visible_conversation(db, principal, conversation_id)
+    conversation = panel_visible_conversation(db, principal, conversation_id)
     return conversation_dicts(
         db, [conversation], include_messenger_accounts=(principal["role"] == "admin"),
         viewer_role=principal["role"],
@@ -90,7 +90,7 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
                    limit: int | None = Query(None, ge=1, le=100), before_id: int | None = None,
                    mark_read: bool = True, forward: bool = False,
                    around_id: int | None = Query(None, ge=1), first_unread: bool = False):
-    conversation = _panel_visible_conversation(db, principal, conversation_id)
+    conversation = panel_visible_conversation(db, principal, conversation_id)
     if permits(principal, "dialogs.observe"):
         logger.info("Admin read conversation id=%s", conversation.id)
     query = select(Message).options(joinedload(Message.sender).lazyload(User.messenger_accounts)).where(
@@ -100,7 +100,7 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
         around_id = db.scalar(select(Message.id).where(
             Message.conversation_id == conversation.id,
             Message.id > read_cursor(conversation.id, principal["role"]),
-            _unread_condition(db, principal["role"]),
+            unread_condition(db, principal["role"]),
         ).order_by(Message.id).limit(1))
     if around_id is not None:
         # A single response carries the adjacent pages, including the anchor.
@@ -110,13 +110,13 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
         following = list(db.scalars(query.where(Message.id >= around_id)
                                     .order_by(Message.id).limit(size)).all())
         rows = list(reversed(before)) + following
-        return {"messages": [_panel_message_dict(row, expose_internal_metadata=principal["role"] == "admin", principal=principal) for row in rows],
+        return {"messages": [panel_message_dict(row, expose_internal_metadata=principal["role"] == "admin", principal=principal) for row in rows],
                 "anchor_id": around_id, "has_older": len(before) == size,
                 "has_newer": len(following) == size}
     if first_unread:
         size = limit or 50
         rows = list(reversed(db.scalars(query.order_by(Message.id.desc()).limit(size)).all()))
-        return {"messages": [_panel_message_dict(row, expose_internal_metadata=principal["role"] == "admin", principal=principal) for row in rows],
+        return {"messages": [panel_message_dict(row, expose_internal_metadata=principal["role"] == "admin", principal=principal) for row in rows],
                 "anchor_id": None, "has_older": len(rows) == size, "has_newer": False}
     if before_id is not None:
         query = query.where(Message.id < before_id)
@@ -132,7 +132,7 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
         if mark_read:
             mark_conversation_read(db, conversation, principal, after_id, [row.id for row in rows])
     return [
-        _panel_message_dict(
+        panel_message_dict(
             item,
             expose_internal_metadata=(principal["role"] == "admin"),
             principal=principal,
@@ -146,8 +146,8 @@ def panel_message(message_id: int, principal: PanelUser, db: Db):
     item = db.get(Message, message_id)
     if not item:
         raise HTTPException(status_code=404, detail="Сообщение не найдено")
-    _panel_visible_conversation(db, principal, item.conversation_id)
-    return _panel_message_dict(
+    panel_visible_conversation(db, principal, item.conversation_id)
+    return panel_message_dict(
         item,
         expose_internal_metadata=(principal["role"] == "admin"),
         principal=principal,
@@ -159,7 +159,7 @@ def panel_message_media(message_id: int, request: Request, principal: PanelUser,
     item = db.get(Message, message_id)
     if not item:
         raise HTTPException(status_code=404, detail="Сообщение не найдено")
-    _panel_visible_conversation(db, principal, item.conversation_id)
+    panel_visible_conversation(db, principal, item.conversation_id)
     metadata = json.loads(item.metadata_json or "{}")
     media = metadata.get("media") or {}
     relative = media.get("local_path")
@@ -184,7 +184,7 @@ def delete_panel_message(
     if not item:
         raise HTTPException(status_code=404, detail="Сообщение не найдено")
 
-    conversation = _panel_visible_conversation(db, principal, item.conversation_id)
+    conversation = panel_visible_conversation(db, principal, item.conversation_id)
     owns_message = (
         item.sender_role == principal["role"]
         and (

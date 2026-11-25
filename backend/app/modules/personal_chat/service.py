@@ -11,7 +11,7 @@ from app.event_hub import publish_chat_update
 from ...models import PersonalConversation, PersonalMessage
 
 
-def _personal_conversation(db: Session, principal: dict, conversation_id: int) -> PersonalConversation:
+def personal_conversation(db: Session, principal: dict, conversation_id: int) -> PersonalConversation:
     conversation = db.get(PersonalConversation, conversation_id)
     if not conversation:
         raise HTTPException(status_code=404, detail="Личный диалог не найден")
@@ -20,7 +20,7 @@ def _personal_conversation(db: Session, principal: dict, conversation_id: int) -
     return conversation
 
 
-def _personal_conversation_dict(
+def personal_conversation_dict(
     item: PersonalConversation, viewer_role: str, unread_count: int = 0,
     last_message_at: datetime | None = None,
 ) -> dict:
@@ -55,8 +55,8 @@ def personal_event_summaries(db: Session, item: PersonalConversation) -> dict[st
     ).one()
     participant_role = item.participant.role
     return {
-        "admin": _personal_conversation_dict(item, "admin", int(counts[0] or 0), counts[2]),
-        participant_role: _personal_conversation_dict(
+        "admin": personal_conversation_dict(item, "admin", int(counts[0] or 0), counts[2]),
+        participant_role: personal_conversation_dict(
             item, participant_role, int(counts[1] or 0), counts[2],
         ),
     }

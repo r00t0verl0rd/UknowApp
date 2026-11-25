@@ -33,11 +33,12 @@ UknowApp хранит пользователей, роли, назначения
 
 | Компонент | Путь |
 | --- | --- |
-| Унифицированные типы сообщений | `backend/app/modules/communication/contracts.py` |
-| Отправка во внешние каналы | `backend/app/modules/communication/service.py` |
+| Общие типы сообщений | `backend/app/modules/communication/contracts.py` |
+| Транзакционная очередь внешней доставки | `backend/app/modules/communication/outbox.py` |
+| NATS-транспорт и приём событий | `backend/app/bots_gateway/` |
 | Привязка аккаунтов | `backend/app/modules/communication/accounts.py` |
-| Приём и проверка сообщений | `backend/app/modules/messaging/inbound.py` |
+| Приём и проверка сообщений | `backend/app/bots_gateway/operations.py` |
 | Проверка контактных данных | `backend/app/modules/messaging/moderation.py` |
-| Интеграция Telegram | `backend/app/modules/telegram/` |
+| Интеграция Telegram | `connectors/telegram/` |
 
-Изменения бизнес-логики сообщений выполняются в общих модулях. Код Telegram отвечает за получение обновлений и работу с Bot API.
+Изменения бизнес-логики сообщений выполняются в общих модулях. Отдельный Telegram-коннектор отвечает за получение обновлений и работу с Bot API; Core управляет очередью доставки.

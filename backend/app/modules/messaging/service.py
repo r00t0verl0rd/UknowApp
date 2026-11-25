@@ -10,7 +10,7 @@ from app.models import Assignment, Conversation, Message, User
 from app.modules.auth.permissions import permits
 
 
-def _panel_visible_conversation(db: Session, principal: dict, conversation_id: int) -> Conversation:
+def panel_visible_conversation(db: Session, principal: dict, conversation_id: int) -> Conversation:
     # Проверяем доступ к диалогу на сервере, даже если клиент подменит его ID.
     conversation = db.get(Conversation, conversation_id)
     if not conversation:
@@ -47,7 +47,7 @@ def _panel_visible_conversation(db: Session, principal: dict, conversation_id: i
     return conversation
 
 
-def _panel_message_dict(
+def panel_message_dict(
     item: Message,
     expose_internal_metadata: bool = True,
     principal: dict | None = None,
@@ -114,7 +114,7 @@ def _panel_message_dict(
 
 
 
-def _panel_message_status_dict(item: Message, principal: dict) -> dict:
+def panel_message_status_dict(item: Message, principal: dict) -> dict:
     """Вернуть изменённые статусы загруженных сообщений."""
     metadata = json.loads(item.metadata_json or "{}")
     if item.sender_role == "teacher":

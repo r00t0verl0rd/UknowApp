@@ -32,7 +32,7 @@ def conversation_dicts(
             "created_at": conversation.created_at.isoformat(),
             "teacher": user_dict(conversation.teacher, include_messenger_accounts=include_messenger_accounts),
             "student": user_dict(conversation.student, include_messenger_accounts=include_messenger_accounts),
-            "last_message": _message_preview(last_message),
+            "last_message": message_preview(last_message),
             "last_message_at": last_message.created_at.isoformat() if last_message else None,
             "message_count": message_count,
             "unread_count": unread_count,
@@ -47,7 +47,7 @@ def conversation_dict(
 
 
 
-def _message_preview(item: Message | None) -> str:
+def message_preview(item: Message | None) -> str:
     if item is None:
         return "Переписка пока пуста"
     if item.content_type == "text":
@@ -67,7 +67,7 @@ def _message_preview(item: Message | None) -> str:
     return (media_name or label) + ((": " + item.text) if item.text else "")
 
 
-def _unread_condition(db, role: str):
+def unread_condition(db, role: str):
     teacher_unread = and_(
         Message.sender_role.in_((literal_column("'student'"), literal_column("'admin'"))),
         Message.teacher_read_at.is_(None),
@@ -101,7 +101,7 @@ def _summary_rows(db, conversation_ids):
 def conversation_event_summaries(db: Session, conversation: Conversation) -> dict[str, dict]:
     """Constant-size indexed summary for all roles."""
     _, total, teacher_unread, student_unread, admin_unread, last_message = _summary_rows(db, [conversation.id])[conversation.id]
-    last_message_preview = _message_preview(last_message)
+    last_message_preview = message_preview(last_message)
     if len(last_message_preview) > 240:
         last_message_preview = last_message_preview[:237] + "…"
     common = {

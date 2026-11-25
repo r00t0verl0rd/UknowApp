@@ -198,7 +198,7 @@ def clear_panel_cookies(request: Request, response: Response) -> None:
         )
 
 
-def _load_panel_identity(request: Request) -> dict | None:
+def load_panel_identity(request: Request) -> dict | None:
     token_hash = _token_digest(_request_token(request))
     if not token_hash:
         return None
@@ -249,7 +249,7 @@ def _load_panel_identity(request: Request) -> dict | None:
 
 def require_panel_user(request: Request) -> dict:
     security.verify_request_origin(request)
-    identity = _load_panel_identity(request)
+    identity = load_panel_identity(request)
     if not identity:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -260,7 +260,7 @@ def require_panel_user(request: Request) -> dict:
 
 def require_admin(request: Request) -> str:
     security.verify_request_origin(request)
-    identity = _load_panel_identity(request)
+    identity = load_panel_identity(request)
     if not permits(identity, "school.manage"):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

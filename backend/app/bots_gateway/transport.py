@@ -4,7 +4,7 @@ from sqlalchemy.dialects.sqlite import insert
 
 from app.core import runtime_database
 from app.models import ConnectorDeletion, ConnectorDelivery, Message, TransportJob
-from .outbox import PENDING, RECOVERY_AFTER, now_utc
+from app.modules.communication.outbox import PENDING, RECOVERY_AFTER, now_utc
 
 MODELS = (ConnectorDeletion, ConnectorDelivery)
 PAGE = 200

@@ -36,14 +36,14 @@ from app.modules.dependencies import Db, PanelUser
 from app.modules.notifications.content import PUSH_TITLE, push_body
 from app.modules.notifications.service import schedule_push
 from app.modules.personal_chat.service import (
-    _personal_conversation,
-    _personal_conversation_dict,
+    personal_conversation,
+    personal_conversation_dict,
     publish_personal_update,
 )
 from app.request_validation import message_payload, personal_conversation_payload
 
 from .delivery import store_panel_attachment
-from .read_state import mark_personal_read
+from app.modules.messaging.read_state import mark_personal_read
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -71,7 +71,7 @@ def personal_summaries(db: Session, items: list[PersonalConversation], role: str
         .group_by(PersonalMessage.conversation_id),
     )
     stats = {chat_id: (count, latest) for chat_id, count, latest in rows}
-    return [_personal_conversation_dict(item, role, *stats.get(item.id, (0, None))) for item in items]
+    return [personal_conversation_dict(item, role, *stats.get(item.id, (0, None))) for item in items]
 
 
 @router.post("/panel/personal-conversations", status_code=201)
@@ -95,7 +95,7 @@ def create_personal_conversation(payload: dict, principal: PanelUser, db: Db):
                 raise
         else:
             publish_personal_update(db, item)
-            return _personal_conversation_dict(item, principal["role"])
+            return personal_conversation_dict(item, principal["role"])
     return personal_summaries(db, [item], principal["role"])[0]
 
 
@@ -104,7 +104,7 @@ def delete_personal_conversation(conversation_id: int, principal: PanelUser, db:
     """Навсегда удалить личный чат, его сообщения и локальные вложения."""
     if principal["role"] != "admin":
         raise HTTPException(status_code=403, detail="Удалять личные диалоги может только администратор")
-    item = _personal_conversation(db, principal, conversation_id)
+    item = personal_conversation(db, principal, conversation_id)
     participant_id = item.participant_id
 
     # Сначала убираем все дочерние записи в одной транзакции (внешний ключ
@@ -151,7 +151,7 @@ def retry_personal_media_cleanup():
 
 @router.get("/panel/personal-conversations/{conversation_id}/summary")
 def personal_conversation_summary(conversation_id: int, principal: PanelUser, db: Db):
-    item = _personal_conversation(db, principal, conversation_id)
+    item = personal_conversation(db, principal, conversation_id)
     return personal_summaries(db, [item], principal["role"])[0]
 
 
@@ -193,7 +193,7 @@ def personal_messages(conversation_id: int, principal: PanelUser, db: Db, after_
                    limit: int | None = Query(None, ge=1, le=100), before_id: int | None = None,
                    mark_read: bool = True, forward: bool = False,
                    around_id: int | None = Query(None, ge=1), first_unread: bool = False):
-    item = _personal_conversation(db, principal, conversation_id)
+    item = personal_conversation(db, principal, conversation_id)
     query = select(PersonalMessage).options(joinedload(PersonalMessage.sender).lazyload(User.messenger_accounts)).where(
         PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id,
     )
@@ -240,7 +240,7 @@ def personal_message(message_id: int, principal: PanelUser, db: Db):
     row = db.get(PersonalMessage, message_id)
     if not row:
         raise HTTPException(status_code=404, detail="Сообщение не найдено")
-    _personal_conversation(db, principal, row.conversation_id)
+    personal_conversation(db, principal, row.conversation_id)
     return personal_message_dict(row, principal)
 
 
@@ -310,7 +310,7 @@ def send_personal_message(
     db: Db,
 ):
     payload = message_payload(payload)
-    item = _personal_conversation(db, principal, conversation_id)
+    item = personal_conversation(db, principal, conversation_id)
     if principal["role"] not in {"admin", "teacher", "student"}:
         raise HTTPException(status_code=403, detail="Недостаточно прав")
     sender_id = _personal_sender_id(db, principal, item)
@@ -342,7 +342,7 @@ def personal_message_media(message_id: int, request: Request, principal: PanelUs
     row = db.get(PersonalMessage, message_id)
     if not row:
         raise HTTPException(status_code=404, detail="Сообщение не найдено")
-    _personal_conversation(db, principal, row.conversation_id)
+    personal_conversation(db, principal, row.conversation_id)
     media = json.loads(row.metadata_json or "{}").get("media") or {}
     if media.get("archive_status") != "stored" or not media.get("local_path"):
         raise HTTPException(status_code=404, detail="Вложение недоступно")
@@ -362,7 +362,7 @@ def send_personal_attachment(
     text: Annotated[str, Form()] = "",
     client_message_id: Annotated[str | None, Form()] = None,
 ):
-    item = _personal_conversation(db, principal, conversation_id)
+    item = personal_conversation(db, principal, conversation_id)
     if principal["role"] not in {"admin", "teacher", "student"}:
         raise HTTPException(status_code=403, detail="Недостаточно прав")
     if len(text or "") > 3900:
@@ -411,7 +411,7 @@ def delete_personal_message(message_id: int, principal: PanelUser, db: Db):
     row = db.get(PersonalMessage, message_id)
     if not row:
         raise HTTPException(status_code=404, detail="Сообщение не найдено")
-    item = _personal_conversation(db, principal, row.conversation_id)
+    item = personal_conversation(db, principal, row.conversation_id)
     if row.sender_role != principal["role"] or (
         principal["role"] != "admin" and row.sender_id != principal.get("user_id")
     ):

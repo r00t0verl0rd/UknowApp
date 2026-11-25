@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from app.bots_gateway import gateway
 from app.bots_gateway.operations import receive_message, rpc
-from app.bots_gateway.outbox import enqueue_message_deletions, enqueue_web_delivery, record_result
+from app.modules.communication.outbox import enqueue_message_deletions, enqueue_web_delivery, record_result
 from app.models import Assignment, BotEventReceipt, ConnectorDeletion, ConnectorDelivery, Conversation, ExternalEndpoint, Message, User
 from app.modules.communication.accounts import sync_messenger_account
 
@@ -225,7 +225,7 @@ def test_late_receipt_after_deletion(api):
 
 def test_batch_claim_retry_and_route_order(api):
     from datetime import timedelta
-    from app.bots_gateway.outbox import now_utc
+    from app.modules.communication.outbox import now_utc
     from app.bots_gateway import transport
 
     _, users, sessions = api

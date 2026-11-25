@@ -10,17 +10,21 @@
 
 | Путь | Назначение |
 | --- | --- |
-| `main.py`, `api.py` | Запуск приложения, подключение HTTP-маршрутов и фонового Telegram polling |
+| `main.py`, `api.py` | Запуск Core, HTTP-маршрутов и опционального NATS Gateway |
 | `core/` | Настройки, подключение к базе, функции безопасности |
 | `models.py`, `migrations/` | Таблицы SQLAlchemy и обновление схемы при запуске |
 | `modules/auth/`, `modules/users/` | Вход, сессии и учётные записи |
 | `modules/assignments/`, `modules/conversations/` | Назначения и переписки |
 | `modules/communication/`, `modules/messaging/` | Общая обработка и доставка сообщений |
-| `modules/telegram/` | Подключаемый Telegram-бот и его обработчики |
+| `bots_gateway/` | NATS Gateway Core: транспорт, RPC и события коннекторов |
+| `modules/communication/outbox.py` | Доменная очередь внешней доставки |
+| `modules/messaging/read_state.py` | Отметки прочтения для панели и Gateway |
 | `modules/administration/` | Управление школой и резервные копии |
 | `modules/notifications/` | Web Push-уведомления |
 | `infrastructure/storage/` | Сохранение вложений |
 | `event_hub.py` | События для обновления веб-панели |
+
+Telegram-коннектор расположен в `connectors/telegram/` в корне репозитория и работает отдельным процессом.
 
 ## Веб-интерфейс
 
@@ -45,7 +49,7 @@
 
 ## Развёртывание и данные
 
-`docker-compose.yml` запускает backend и frontend (Caddy). Собственный Telegram Bot API — отдельный необязательный сервис с профилем `telegram`.
+`docker-compose.yml` запускает backend и frontend (Caddy); NATS (`gateway`) и Telegram-коннектор (`bots`) подключаются отдельными профилями. Собственный Telegram Bot API — отдельный необязательный сервис с профилем `telegram`.
 
 Данные SQLite, вложения и ключ Web Push сохраняются в томе `app_data`. Тома `caddy_data` и `caddy_config` нужны Caddy для HTTPS. Миграции запускаются при старте backend.
 

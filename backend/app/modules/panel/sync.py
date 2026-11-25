@@ -20,12 +20,12 @@ from app.modules.conversations.service import (
 )
 from app.modules.dependencies import Db, PanelUser
 from app.modules.messaging.service import (
-    _panel_message_dict,
-    _panel_message_status_dict,
-    _panel_visible_conversation,
+    panel_message_dict,
+    panel_message_status_dict,
+    panel_visible_conversation,
 )
 from app.modules.personal_chat.service import (
-    _personal_conversation,
+    personal_conversation,
 )
 
 from .personal import (
@@ -33,7 +33,7 @@ from .personal import (
     personal_message_status_dict,
     personal_summaries,
 )
-from .read_state import mark_conversation_read, mark_personal_read
+from app.modules.messaging.read_state import mark_conversation_read, mark_personal_read
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -65,7 +65,7 @@ def sync_conversation_state(
 ):
     """Обновить изменения сообщений без полной загрузки истории."""
     after_id, known_ids = _sync_request_fields(payload)
-    conversation = _panel_visible_conversation(db, principal, conversation_id)
+    conversation = panel_visible_conversation(db, principal, conversation_id)
     bounded = payload.get("paged") is True
     query = select(Message).options(joinedload(Message.sender).lazyload(User.messenger_accounts)).where(
         Message.conversation_id == conversation.id, Message.id > after_id,
@@ -100,7 +100,7 @@ def sync_conversation_state(
 
     def serialize(rows):
         return [
-            _panel_message_dict(
+            panel_message_dict(
                 row,
                 expose_internal_metadata=(principal["role"] == "admin"),
                 principal=principal,
@@ -109,7 +109,7 @@ def sync_conversation_state(
         ]
 
     def serialize_statuses(rows):
-        return [_panel_message_status_dict(row, principal) for row in rows]
+        return [panel_message_status_dict(row, principal) for row in rows]
 
     summary = conversation_dicts(
         db, [conversation], include_messenger_accounts=(principal["role"] == "admin"),
@@ -133,7 +133,7 @@ def sync_personal_conversation_state(
 ):
     """Обновить личные сообщения и отметки прочтения."""
     after_id, known_ids = _sync_request_fields(payload)
-    item = _personal_conversation(db, principal, conversation_id)
+    item = personal_conversation(db, principal, conversation_id)
     bounded = payload.get("paged") is True
     query = select(PersonalMessage).options(joinedload(PersonalMessage.sender).lazyload(User.messenger_accounts)).where(
         PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id,
@@ -180,7 +180,7 @@ class ReadReceipt(BaseModel):
 
 @router.post("/panel/conversations/{conversation_id}/read")
 def read_conversation(conversation_id: int, payload: ReadReceipt, principal: PanelUser, db: Db):
-    conversation = _panel_visible_conversation(db, principal, conversation_id)
+    conversation = panel_visible_conversation(db, principal, conversation_id)
     mark_conversation_read(db, conversation, principal, 0, payload.message_ids)
     return conversation_dicts(
         db, [conversation], include_messenger_accounts=(principal["role"] == "admin"),
@@ -190,6 +190,6 @@ def read_conversation(conversation_id: int, payload: ReadReceipt, principal: Pan
 
 @router.post("/panel/personal-conversations/{conversation_id}/read")
 def read_personal_conversation(conversation_id: int, payload: ReadReceipt, principal: PanelUser, db: Db):
-    item = _personal_conversation(db, principal, conversation_id)
+    item = personal_conversation(db, principal, conversation_id)
     mark_personal_read(db, item, principal, 0, payload.message_ids)
     return personal_summaries(db, [item], principal["role"])[0]
