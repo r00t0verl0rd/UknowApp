@@ -1376,7 +1376,11 @@ test("global SSE updates real counters across tabs and replays missed events", {
             <button class="btn primary composer-send" type="submit"><span>Отправить</span></button>
           </div>
         </form>`;
-      content.append(list, detail);
+      const shell = content.closest(".workspace-shell");
+      const previousPage = shell.getAttribute("data-workspace-page");
+      const previousChildren = [...content.childNodes];
+      shell.setAttribute("data-workspace-page", "chats");
+      content.replaceChildren(list, detail);
       try {
         return {
           layoutHeight: content.getBoundingClientRect().height,
@@ -1393,14 +1397,15 @@ test("global SSE updates real counters across tabs and replays missed events", {
           shellPosition: getComputedStyle(document.querySelector(".workspace-shell")).position,
         };
       } finally {
-        list.remove();
-        detail.remove();
+        content.replaceChildren(...previousChildren);
+          if (previousPage === null) shell.removeAttribute("data-workspace-page");
+          else shell.setAttribute("data-workspace-page", previousPage);
         if (before) root.style.setProperty("--workspace-viewport-height", before);
         else root.style.removeProperty("--workspace-viewport-height");
       }
     });
     assert.ok(chatUnderlay.layoutHeight <= 570 - chatUnderlay.sidebarHeight + 2,
-      "chat scrollport fits inside visible Safari viewport");
+      `chat scrollport fits inside visible Safari viewport: ${JSON.stringify(chatUnderlay)}`);
     assert.ok(chatUnderlay.messagesScrollable,
       "messages scroll within the available chat viewport");
     assert.ok(chatUnderlay.sendBottom <= 572,
@@ -1446,7 +1451,11 @@ test("global SSE updates real counters across tabs and replays missed events", {
               <button class="btn primary composer-send" type="submit"><span>Отправить</span></button>
             </div>
           </form>`;
-        content.append(list, detail);
+        const shell = content.closest(".workspace-shell");
+        const previousPage = shell.getAttribute("data-workspace-page");
+        const previousChildren = [...content.childNodes];
+        shell.setAttribute("data-workspace-page", "chats");
+        content.replaceChildren(list, detail);
         try {
           const vv = window.visualViewport;
           const limit = (vv?.offsetTop || 0) + (vv?.height || window.innerHeight);
@@ -1480,8 +1489,9 @@ test("global SSE updates real counters across tabs and replays missed events", {
             declaredSidebarHeight: getComputedStyle(document.querySelector(".workspace-shell")).getPropertyValue("--workspace-sidebar-height"),
           };
         } finally {
-          detail.remove();
-          list.remove();
+          content.replaceChildren(...previousChildren);
+          if (previousPage === null) shell.removeAttribute("data-workspace-page");
+          else shell.setAttribute("data-workspace-page", previousPage);
         }
       });
       assert.equal(state.inputHeight, 84,

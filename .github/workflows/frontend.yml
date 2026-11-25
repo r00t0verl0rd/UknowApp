@@ -10,24 +10,8 @@ permissions:
 
 on:
   pull_request:
-    paths:
-      - "frontend/**"
-      - "backend/**"
-      - "docker-compose.yml"
-      - ".env.example"
-      - ".github/workflows/database-ci.yml"
-      - ".stylelintrc.json"
-      - ".github/workflows/frontend.yml"
   push:
-    branches: [main]
-    paths:
-      - "frontend/**"
-      - "backend/**"
-      - "docker-compose.yml"
-      - ".env.example"
-      - ".github/workflows/database-ci.yml"
-      - ".stylelintrc.json"
-      - ".github/workflows/frontend.yml"
+    branches: [main, test]
 
 jobs:
   frontend:

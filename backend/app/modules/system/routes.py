@@ -74,6 +74,15 @@ def health(request: Request, db: Db):
             "service": "uknowapp", "components": {"database": "ok", "bots_gateway": broker_status,
                                                   "runtime_database": runtime_status}}
 
+@router.get("/ready")
+def readiness(request: Request, response: Response, db: Db):
+    """Strict readiness, separate from Core liveness during a broker outage."""
+    result = health(request, db)
+    if result["status"] != "ok" or result["components"]["runtime_database"] != "ok":
+        response.status_code = 503
+    return result
+
+
 @router.get("/push/public-key")
 def push_public_key():
     return {"enabled": bool(vapid.VAPID_PUBLIC_KEY), "public_key": vapid.VAPID_PUBLIC_KEY or None}

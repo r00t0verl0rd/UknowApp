@@ -22,7 +22,7 @@ COMPOSE_PROFILES=postgres
 POSTGRES_DB=uknowapp
 POSTGRES_USER=uknowapp
 POSTGRES_PASSWORD=YOUR_PASSWORD
-DATABASE_URL=postgresql+psycopg://uknowapp:YOUR_PASSWORD@postgres:5432/uknowapp
+DATABASE_URL=postgresql+psycopg://uknowapp:YOUR_PASSWORD@postgres:5432/uknowapp # pragma: allowlist secret
 ```
 
 Замените пароль; специальные символы в URL должны быть URL-кодированы. Для коннекторов добавьте нужные профили, не удаляя `postgres`.
@@ -62,6 +62,8 @@ Alembic остаётся библиотекой DDL, отдельного рее
 
 > [!WARNING]
 > После удаления колонок откат на старый код требует восстановления резервной копии.
+> До запуска миграций зафиксируйте SHA старого кода и сохраните согласованный снимок Main DB, Runtime, медиа, NATS, коннектора и защищённого `.env`. Проверьте восстановление на отдельной установке.
+> При неудаче остановите Core и коннекторы, восстановите весь согласованный снимок, затем запустите прежнюю ревизию. Не запускайте старый код поверх мигрированной базы.
 
 ## Регрессионные проверки
 

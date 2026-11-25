@@ -54,11 +54,14 @@ TELEGRAM_API_MODE=cloud
 
 ```bash
 chmod 600 .env
-docker compose config --quiet
+bash infrastructure/deploy.sh --check
 docker compose up -d --build
 docker compose ps
 docker compose logs --tail=80 backend nats tgbot
+docker compose exec -T backend python -c 'import urllib.request; print(urllib.request.urlopen("http://127.0.0.1:8000/api/ready", timeout=5).read().decode())'
 ```
+
+`/api/health` проверяет жизнеспособность Core и намеренно допускает деградацию NATS. `/api/ready` возвращает HTTP 503, если включённый Gateway или Runtime не готовы. Перед серверным тестом проверьте readiness и heartbeat коннектора в админ-диагностике; зелёный Docker healthcheck сам по себе недостаточен. Не запускайте старые NFS-скрипты.
 
 Для веб-панели без коннекторов оставьте BOTS_PLATFORMS и COMPOSE_PROFILES пустыми
 (сохраните профиль postgres, если он нужен). Остановите tgbot явно перед удалением

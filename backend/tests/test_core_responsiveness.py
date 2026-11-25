@@ -123,3 +123,20 @@ def test_gateway_db_worker_is_bounded():
         finally:
             await instance.close()
     asyncio.run(run())
+
+
+def test_readiness_distinguishes_degraded_gateway(api, monkeypatch):
+    make_client, _, _ = api
+    client = make_client()
+    monkeypatch.setattr(app.state, "runtime_status", "ok", raising=False)
+    monkeypatch.setattr(app.state, "bots_gateway", SimpleNamespace(platforms=()), raising=False)
+    assert client.get("/api/ready").status_code == 200
+    broker = SimpleNamespace(platforms=("telegram",), ready=False, nc=None)
+    monkeypatch.setattr(app.state, "bots_gateway", broker)
+    assert client.get("/api/health").status_code == 200
+    assert client.get("/api/ready").status_code == 503
+    broker.ready = True
+    broker.nc = SimpleNamespace(is_connected=True)
+    assert client.get("/api/ready").status_code == 200
+    monkeypatch.setattr(app.state, "runtime_status", "unavailable")
+    assert client.get("/api/ready").status_code == 503
