@@ -18,7 +18,8 @@ from sqlalchemy import select
 
 from app.core.database import SessionLocal
 from app.infrastructure.storage.media import MAX_ATTACHMENT_BYTES, MEDIA_DIR
-from app.models import ConnectorDeletion, ConnectorDelivery
+from app.models import ConnectorDeletion, ConnectorDelivery, Conversation, MessengerAccount
+from app.event_hub import subscribe_chat_updates, unsubscribe_chat_updates
 from .contracts import PREFIX, STREAM, decode, encode, identifier, platforms
 from .operations import receive_message, rpc
 from .outbox import PENDING, authorized_job, get_job, job_payload, record_result
@@ -166,6 +167,28 @@ class BotsGateway:
                 except TimeoutError:
                     pass
 
+    async def refresh_panels(self):
+        # Best-effort UI invalidations only. Messages remain durable in JetStream.
+        queue = subscribe_chat_updates({"role": "admin"})
+        try:
+            while True:
+                event = json.loads(await queue.get())
+                if event.get("conversation_type") != "conversation" or event.get("action") not in {"upsert", "delete", "read"}:
+                    continue
+                with SessionLocal() as db:
+                    chat = db.get(Conversation, event["conversation_id"])
+                    if not chat:
+                        continue
+                    actors = db.scalars(select(MessengerAccount).where(
+                        MessengerAccount.user_id == chat.teacher_id,
+                        MessengerAccount.status == "linked",
+                        MessengerAccount.platform.in_(self.platforms))).all()
+                    targets = [(account.platform, account.external_user_id) for account in actors]
+                for platform, actor in targets:
+                    await self.nc.publish(f"{PREFIX}.ui.{platform}", encode({"actor": actor}))
+        finally:
+            unsubscribe_chat_updates(queue)
+
     async def run(self):
         while True:
             workers = []
@@ -174,6 +197,7 @@ class BotsGateway:
                 workers = [asyncio.create_task(self.consume(p, direction))
                            for p in self.platforms for direction in ("inbound", "delivery")]
                 workers.append(asyncio.create_task(self.publish_outbox()))
+                workers.append(asyncio.create_task(self.refresh_panels()))
                 self.ready = True
                 done, _ = await asyncio.wait(workers, return_when=asyncio.FIRST_COMPLETED)
                 for task in done:

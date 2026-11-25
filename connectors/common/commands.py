@@ -28,3 +28,12 @@ class Commands:
 
     def selection(self, actor):
         return self.spool.selected_conversation(actor)
+
+    async def panel(self, actor):
+        return await self.gateway.rpc("panel.sync", actor=actor, conversation_id=self.selection(actor))
+
+    @staticmethod
+    def page(items, page, size=6):
+        total = max(1, (len(items) + size - 1) // size)
+        page = max(0, min(page, total - 1))
+        return items[page * size:(page + 1) * size], page, total

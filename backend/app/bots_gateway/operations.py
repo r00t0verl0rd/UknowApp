@@ -2,14 +2,14 @@
 import json
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
 from app.infrastructure.storage.media import safe_media_type
 from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.models import Assignment, BotEventReceipt, ConnectorDelivery, Conversation, ExternalEndpoint, Message
 from app.modules.communication.accounts import claim_messenger_connection_code, get_messenger_user
-from app.modules.conversations.service import conversation_dicts, publish_conversation_update
+from app.modules.conversations.service import _message_preview, _unread_condition, conversation_dicts, publish_conversation_update
 from app.modules.messaging.moderation import text_contains_contact_data
 from app.modules.notifications.content import PUSH_TITLE, push_body
 from app.modules.notifications.service import schedule_push
@@ -67,9 +67,35 @@ def bind_endpoint(db, platform, user, chat, thread):
 
 
 def summaries(db, user):
-    return [{"id": item["id"], "name": item["student" if user.role == "teacher" else "teacher"]["full_name"],
-             "unread": item["unread_count"], "last_message": item["last_message"]}
-            for item in conversation_dicts(db, available(db, user), include_telegram_ids=False, viewer_role=user.role)]
+    items = conversation_dicts(db, available(db, user), include_telegram_ids=False, viewer_role=user.role)
+    previews = {}
+    if items:
+        ranked = select(Message.id.label("id"), Message.conversation_id,
+            func.row_number().over(partition_by=Message.conversation_id, order_by=Message.id.desc()).label("rank")
+        ).where(Message.conversation_id.in_([i["id"] for i in items]),
+                Message.delivery_status != "blocked_contact", _unread_condition(db, user.role)).subquery()
+        rows = db.scalars(select(Message).join(ranked, Message.id == ranked.c.id)
+                          .where(ranked.c.rank <= 3).order_by(Message.id)).all()
+        for row in rows:
+            previews.setdefault(row.conversation_id, []).append(_message_preview(row)[:115])
+    result = [{"id": item["id"], "name": item["student" if user.role == "teacher" else "teacher"]["full_name"],
+               "unread": item["unread_count"], "last_message": item["last_message"][:115],
+               "last_at": item["last_message_at"] or item["created_at"],
+               "unread_previews": previews.get(item["id"], [])} for item in items]
+    return sorted(result, key=lambda i: (i["unread"] > 0, i["last_at"]), reverse=True)
+
+
+def chat_view(db, user, conversation, read=False):
+    rows = list(reversed(db.scalars(select(Message).where(
+        Message.conversation_id == conversation.id).order_by(Message.id.desc()).limit(12)).all()))
+    if read:
+        mark_conversation_read(db, conversation, {"role": user.role, "user_id": user.id}, 0, [r.id for r in rows])
+    total = db.scalar(select(func.count(Message.id)).where(Message.conversation_id == conversation.id))
+    return {"id": conversation.id, "name": (conversation.student if user.role == "teacher" else conversation.teacher).full_name,
+            "total": total,
+            "messages": [{"id": r.id, "name": "Вы" if r.sender_id == user.id else r.sender.full_name,
+                          "text": r.text[:1000], "preview": _message_preview(r)[:115],
+                          "kind": r.content_type} for r in rows]}
 
 
 def rpc(db, platform, operation, payload):
@@ -108,14 +134,15 @@ def rpc(db, platform, operation, payload):
                       identifier(payload["thread_id"]) if payload.get("thread_id") else "")
         db.commit()
         return {"bound": True}
-    if operation == "conversation.open":
+    if operation in {"conversation.open", "conversation.peek"}:
         conversation = visible(db, user, payload.get("conversation_id"))
-        rows = list(reversed(db.scalars(select(Message).where(
-            Message.conversation_id == conversation.id).order_by(Message.id.desc()).limit(12)).all()))
-        mark_conversation_read(db, conversation, {"role": user.role, "user_id": user.id}, 0, [r.id for r in rows])
-        return {"id": conversation.id, "name": (conversation.student if user.role == "teacher" else conversation.teacher).full_name,
-                "messages": [{"id": r.id, "name": r.sender.full_name, "text": r.text[:1000],
-                              "kind": r.content_type} for r in rows]}
+        return chat_view(db, user, conversation, read=operation == "conversation.open")
+    if operation == "panel.sync":
+        items = summaries(db, user)
+        selected = payload.get("conversation_id")
+        current = next((i for i in items if i["id"] == selected), None)
+        return {"account": identity(user), "conversations": items,
+                "chat": chat_view(db, user, visible(db, user, selected)) if current else None}
     raise HTTPException(404, "unknown operation")
 
 

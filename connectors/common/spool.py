@@ -18,6 +18,7 @@ class EventSpool:
             event_id TEXT NOT NULL UNIQUE, payload TEXT NOT NULL)""")
         self.db.execute("CREATE TABLE IF NOT EXISTS deliveries (namespace TEXT NOT NULL, id TEXT NOT NULL, result TEXT, PRIMARY KEY(namespace,id))")
         self.db.execute("CREATE TABLE IF NOT EXISTS selections (namespace TEXT NOT NULL, actor TEXT NOT NULL, conversation INTEGER, PRIMARY KEY(namespace,actor))")
+        self.db.execute("CREATE TABLE IF NOT EXISTS panels (namespace TEXT NOT NULL, actor TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(namespace,actor))")
         self.db.commit()
         self.namespace = namespace
 
@@ -79,3 +80,14 @@ class EventSpool:
         row = self.db.execute("SELECT conversation FROM selections WHERE namespace=? AND actor=?",
                               (self.namespace, actor)).fetchone()
         return row[0] if row else None
+
+    def panel(self, actor):
+        row = self.db.execute("SELECT payload FROM panels WHERE namespace=? AND actor=?",
+                              (self.namespace, actor)).fetchone()
+        return json.loads(row[0]) if row else {}
+
+    def save_panel(self, actor, panel):
+        with self.db:
+            self.db.execute("""INSERT INTO panels(namespace,actor,payload) VALUES (?,?,?)
+                ON CONFLICT(namespace,actor) DO UPDATE SET payload=excluded.payload""",
+                (self.namespace, actor, json.dumps(panel)))

@@ -71,6 +71,15 @@ class GatewayClient:
             await msg.in_progress()
 
     async def deliveries(self, adapter):
+        async def refresh(msg):
+            try:
+                actor = json.loads(msg.data)["actor"]
+                await adapter.refresh_panel(actor, self, self.spool, background=True)
+            except Exception as exc:
+                logger.debug("Panel refresh unavailable: %s", type(exc).__name__)
+
+        await self.nc.subscribe(f"{PREFIX}.ui.{self.platform}", cb=refresh)
+
         sub = await self.js.pull_subscribe_bind(
             consumer="outbound-" + self.platform, stream=STREAM,
             inbox_prefix=("_INBOX." + self.platform + ".").encode())

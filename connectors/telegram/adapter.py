@@ -10,7 +10,8 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramNotFound
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, URLInputFile
+from aiogram.types import URLInputFile
+from .teacher_panel import TeacherPanel
 
 from connectors.common.commands import Commands
 from connectors.common.client import DeliveryRejected, RpcError
@@ -31,6 +32,7 @@ class TelegramAdapter:
                      if self.local else "https://api.telegram.org").rstrip("/")
         self.files = Path(os.getenv("TELEGRAM_FILES_DIR", "/var/lib/telegram-bot-api")).resolve()
         self.bot = Bot(token, session=AiohttpSession(api=TelegramAPIServer.from_base(self.base, is_local=self.local)))
+        self.teacher_panel = TeacherPanel(self.bot)
 
     async def close(self):
         await self.bot.session.close()
@@ -94,40 +96,20 @@ class TelegramAdapter:
         sent = await method(**kwargs, **{field: file}, caption=text[:1024], request_timeout=300)
         return sent.message_id
 
-    async def show_menu(self, chat, view, page=0):
+    async def show_menu(self, chat, view, gateway, spool, page=0, force=False):
         account = view.get("account")
         if not account:
             await self.bot.send_message(chat, "Аккаунт ещё не подключён. Попросите администратора UknowSchool подключить Вас")
-            return
-        if account["role"] == "student":
+        elif account["role"] == "student":
             items = view["conversations"]
-            text = "Ваш преподаватель: " + items[0]["name"] if items else "Пока нет назначенного преподавателя."
-            await self.bot.send_message(chat, text)
-            return
-        if account["role"] != "teacher":
+            await self.bot.send_message(chat, "Ваш преподаватель: " + items[0]["name"] if items else "Пока нет назначенного преподавателя.")
+        elif account["role"] == "teacher":
+            await self.teacher_panel.refresh(str(chat), gateway, spool, page=page, force=force, view=view)
+        else:
             await self.bot.send_message(chat, "Управление доступно в веб-панели.")
-            return
-        items = view["conversations"]
-        page = min(max(0, page), max(0, (len(items) - 1) // 12))
-        buttons = [[InlineKeyboardButton(text=(f'{c["name"]} ({c["unread"]})')[:64],
-                                          callback_data=f'chat:{c["id"]}')]
-                   for c in items[page * 12:(page + 1) * 12]]
-        nav = []
-        if page:
-            nav.append(InlineKeyboardButton(text="←", callback_data=f"page:{page-1}"))
-        if (page + 1) * 12 < len(items):
-            nav.append(InlineKeyboardButton(text="→", callback_data=f"page:{page+1}"))
-        if nav:
-            buttons.append(nav)
-        await self.bot.send_message(chat, "Выберите диалог:" if buttons else "Нет активных диалогов.",
-                                    reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons) if buttons else None)
 
-    async def show_chat(self, chat, view):
-        lines = [view["name"]]
-        for m in view["messages"]:
-            lines.append(m["name"] + ": " + (m["text"] or "[" + m["kind"] + "]"))
-        await self.bot.send_message(chat, "\n".join(lines)[:3900] + "\n\nНапишите ответ.",
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="К списку", callback_data="menu")]]))
+    async def refresh_panel(self, actor, gateway, spool, background=False):
+        await self.teacher_panel.refresh(actor, gateway, spool, background=background)
 
     async def group_allowed(self, message):
         chat = message["chat"]
@@ -150,12 +132,12 @@ class TelegramAdapter:
             data = callback.get("data") or ""
             try:
                 if data.startswith(("chat:", "reply:", "ui:chat:", "ui:reply:")):
-                    view = await commands.open(actor, int(data.rsplit(":", 1)[1]))
-                    await self.show_chat(int(chat["id"]), view)
+                    await commands.open(actor, int(data.rsplit(":", 1)[1]))
+                    await self.teacher_panel.refresh(actor, gateway, spool)
                 else:
                     commands.clear(actor)
                     page = int(data.rsplit(":", 1)[1]) if "page:" in data else 0
-                    await self.show_menu(int(chat["id"]), await commands.menu(actor), page)
+                    await self.show_menu(int(chat["id"]), await commands.menu(actor), gateway, spool, page)
             except (ValueError, RpcError) as exc:
                 if isinstance(exc, RpcError) and exc.code >= 500:
                     raise
@@ -183,7 +165,7 @@ class TelegramAdapter:
             return
         if not group and command in {"/start", "/menu"}:
             commands.clear(actor)
-            await self.show_menu(int(chat), await commands.menu(actor))
+            await self.show_menu(int(chat), await commands.menu(actor), gateway, spool, force=True)
             return
         view = await gateway.rpc("account.resolve", actor=actor)
         account = view.get("account")
@@ -191,7 +173,7 @@ class TelegramAdapter:
             if group:
                 return
             result = await commands.bind(actor, chat, text, message["from"].get("username"))
-            await self.show_menu(int(chat), result or view)
+            await self.show_menu(int(chat), result or view, gateway, spool)
             return
         if command == "/bind_group":
             if group:
@@ -200,10 +182,13 @@ class TelegramAdapter:
             return
         if account["role"] not in {"teacher", "student"} or (group and account["role"] != "student"):
             return
+        if account["role"] == "teacher" and not group and message.get("text"):
+            if await self.teacher_panel.action(actor, message["message_id"], text, view, gateway, spool):
+                return
         selection = commands.selection(actor) if account["role"] == "teacher" else None
         if account["role"] == "teacher" and selection not in {c["id"] for c in view["conversations"]}:
             commands.clear(actor)
-            await self.show_menu(int(chat), view)
+            await self.show_menu(int(chat), view, gateway, spool)
             return
         if account["role"] == "student" and not view["conversations"]:
             await self.bot.send_message(int(chat), "Пока нет назначенного преподавателя.", message_thread_id=int(thread) if thread else None)
