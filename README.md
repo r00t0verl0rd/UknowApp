@@ -30,7 +30,7 @@ nano .env
 
 ```bash
 chmod 600 .env
-docker compose up -d --build
+bash deploy/up.sh
 docker compose ps
 docker compose logs --tail=40 backend
 ```
@@ -41,8 +41,10 @@ docker compose logs --tail=40 backend
 
 ```bash
 git pull --ff-only origin main
-docker compose up -d --build
+bash deploy/up.sh
 ```
+
+Скрипт `deploy/up.sh` отключает динамическую перерисовку прогресса Docker Compose (в том числе в SSH-терминале). Он запускает обычный `docker compose --ansi never --progress plain up -d --build` из корня проекта. Проверка готовности backend остаётся обязательной; frontend не запускается раньше неё.
 
 **Важно:** обновление `.env.example` не меняет действующий `.env`. Новые параметры при необходимости добавляйте в него вручную. Не заменяйте `.env` шаблоном и не выполняйте `docker compose down -v` при обычном обновлении.
 
@@ -69,7 +71,7 @@ DATABASE_URL=postgresql+psycopg://uknowapp:замените-на-надежны�
 docker compose --profile postgres up -d postgres
 docker compose build backend
 docker compose --profile postgres run --rm --no-deps backend alembic -c /app/alembic.ini upgrade head
-docker compose up -d --build
+bash deploy/up.sh
 ```
 
 Для существующей SQLite-инсталляции **не меняйте DATABASE_URL** без плана переноса данных.
