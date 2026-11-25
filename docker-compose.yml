@@ -162,7 +162,9 @@ networks:
   app_net:
     ipam:
       config:
+        # Keep dynamic allocations away from the fixed Caddy/Core addresses.
         - subnet: ${UKNOWAPP_DOCKER_SUBNET:-172.31.255.0/24}
+          ip_range: ${UKNOWAPP_DOCKER_IP_RANGE:-172.31.255.128/25}
 
 volumes:
   app_data:

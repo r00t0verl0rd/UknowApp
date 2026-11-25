@@ -67,6 +67,25 @@ docker compose exec -T backend python -c 'import urllib.request; print(urllib.re
 (сохраните профиль postgres, если он нужен). Остановите tgbot явно перед удалением
 профиля. Для независимой сборки бота: `docker compose up -d --build tgbot`.
 
+## Обновление сети Docker (устранение конфликта IP)
+
+Фиксированные адреса Caddy и Core (.2 и .3) находятся вне диапазона динамической
+выдачи IP (по умолчанию 172.31.255.128/25). При изменении подсети задайте
+`UKNOWAPP_DOCKER_IP_RANGE` и оба фиксированных IP согласованно с ней.
+
+Для существующего VPS после обновления кода и проверенного бэкапа пересоздайте
+сеть проекта: `docker compose up` сам по себе не меняет IPAM существующей сети.
+Будет кратковременная остановка всех сервисов. Не используйте `down -v`:
+именованные тома базы, медиа, NATS и коннектора должны сохраниться.
+
+```bash
+docker compose config --quiet
+docker compose down
+docker compose up -d --build
+docker compose ps
+docker compose logs --tail=80 backend nats tgbot
+```
+
 ## Разные VPS
 
 По умолчанию порты NATS и внутреннего API не опубликованы. Для удалённого
