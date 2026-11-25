@@ -14,6 +14,8 @@ on:
       - ".env.example"
       - ".dockerignore"
       - "infrastructure/nats/**"
+      - "infrastructure/telegram-mode.py"
+      - "infrastructure/tests/**"
       - "docker-compose.yml"
       - "compose*.yml"
       - ".github/workflows/bots-gateway.yml"
@@ -39,11 +41,11 @@ jobs:
           enable-cache: true
           cache-dependency-glob: backend/requirements.txt
       - run: uv pip install --system -r backend/requirements.txt pytest httpx httpx2
-      - run: python -m compileall -q backend/app connectors
+      - run: python -m compileall -q backend/app connectors infrastructure/telegram-mode.py
       - name: Verify Core does not require aiogram
         run: python -c "import importlib.util; assert importlib.util.find_spec('aiogram') is None; from app.main import app"
       - run: uv pip install --system -r connectors/telegram/requirements.txt
-      - run: python -m pytest -q connectors/tests backend/tests/test_attachment_limits.py
+      - run: python -m pytest -q connectors/tests backend/tests/test_attachment_limits.py infrastructure/tests/test_telegram_mode.py
       - name: Validate Compose configuration
         run: |
           cp .env.example .env
