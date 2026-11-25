@@ -28,7 +28,6 @@ from app.models import (
 from app.bots_gateway.outbox import enqueue_web_delivery, uses_outbox
 from app.modules.communication.contracts import (
     MessageKind,
-    MessengerPlatform,
     OutboundMedia,
 )
 from app.modules.conversations.service import (
@@ -45,10 +44,7 @@ from app.modules.notifications.service import schedule_push
 from app.request_validation import message_payload
 
 from .delivery import (
-    deliver_panel_message,
     panel_sender_and_recipients,
-    refresh_teacher_panel_after_web_delivery,
-    save_panel_messenger_results,
     store_panel_attachment,
 )
 
@@ -75,13 +71,13 @@ def _find_sent_message(db, principal, conversation, sender, client_message_id, *
     )
 
 
-def _commit_message(db, row, principal, conversation, sender, client_message_id, on_conflict=None, *, queue_delivery=False):
+def _commit_message(db, row, principal, conversation, sender, client_message_id, on_conflict=None, *, delivery_platforms=()):
     """Сохраняет сообщение. При гонке по client_message_id возвращает уже существующее, иначе None."""
     db.add(row)
     try:
-        if queue_delivery:
+        if delivery_platforms:
             db.flush()
-            enqueue_web_delivery(db, row)
+            enqueue_web_delivery(db, row, delivery_platforms)
         db.commit()
     except IntegrityError:
         db.rollback()
@@ -123,19 +119,6 @@ async def _publish_and_deliver(
 
     if uses_outbox(request.app):
         request.app.state.bots_gateway.outbox_wakeup.set()
-        return
-
-    bot = getattr(request.app.state, "telegram_bot", None)
-    communication = getattr(request.app.state, "communication", None)
-    messenger_results = await deliver_panel_message(
-        db, communication, row, conversation, recipients, role, student, row.text, kind, media=media,
-    )
-    save_panel_messenger_results(db, row, conversation, messenger_results)
-
-    if bot and MessengerPlatform.TELEGRAM.value in messenger_results:
-        background_tasks.add_task(
-            refresh_teacher_panel_after_web_delivery, bot, teacher.id, conversation.id,
-        )
 
 
 @router.post("/panel/conversations/{conversation_id}/messages", status_code=201)
@@ -181,7 +164,7 @@ async def send_panel_message(
     )
     existing = _commit_message(
         db, row, principal, conversation, sender, client_message_id,
-        queue_delivery=uses_outbox(request.app),
+        delivery_platforms=getattr(getattr(request.app.state, "bots_gateway", None), "platforms", ()),
     )
     if existing:
         return _message_response(existing, principal)
@@ -247,7 +230,7 @@ async def send_panel_attachment(
     existing = _commit_message(
         db, row, principal, conversation, sender, client_message_id,
         on_conflict=lambda: delete_message_media(encode_message_metadata({"media": media})),
-        queue_delivery=uses_outbox(request.app),
+        delivery_platforms=getattr(getattr(request.app.state, "bots_gateway", None), "platforms", ()),
     )
     if existing:
         return _message_response(existing, principal)

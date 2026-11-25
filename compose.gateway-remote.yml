@@ -4,3 +4,6 @@ services:
   backend:
     ports:
       - "${BOTS_GATEWAY_BIND_IP:?set private Core WireGuard address}:8000:8000"
+  nats:
+    ports:
+      - "${BOTS_GATEWAY_BIND_IP:?set private Core WireGuard address}:4222:4222"

@@ -330,3 +330,32 @@ class BotDeliveryJob(Base):
     )
     status: Mapped[str] = mapped_column(String(20), default="queued", nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+
+class ExternalEndpoint(Base):
+    """An optional conversation endpoint for an account, independent of provider."""
+    __tablename__ = "external_endpoints"
+    __table_args__ = (UniqueConstraint("platform", "chat_id", "thread_id"),)
+
+    platform: Mapped[str] = mapped_column(String(32), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    chat_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    thread_id: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    preferred: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class ConnectorDelivery(Base):
+    """Transactional outbox for one recipient/channel and one message."""
+    __tablename__ = "connector_deliveries"
+    __table_args__ = (UniqueConstraint("message_id", "platform", "recipient_id"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    message_id: Mapped[int] = mapped_column(ForeignKey("messages.id", ondelete="CASCADE"), index=True)
+    recipient_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    platform: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    external_user_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    chat_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    thread_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="queued", index=True)
+    external_message_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)

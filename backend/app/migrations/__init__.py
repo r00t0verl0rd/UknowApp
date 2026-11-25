@@ -9,6 +9,7 @@ from app.core.database import create_tables, engine
 from .login_keys import migrate_login_keys
 from .maintenance import cleanup_expired_records
 from .remove_boards import remove_board_tables
+from .provider_channels import migrate_provider_channels
 
 _LOGIN_VERSION = "2026-11-22-login-lookup"
 _BOARDS_REMOVAL_VERSION = "2026-11-22-remove-interactive-boards"
@@ -48,5 +49,9 @@ def initialize_database() -> None:
     if not _is_applied(_BOARDS_REMOVAL_VERSION):
         remove_board_tables()
         _mark_applied(_BOARDS_REMOVAL_VERSION)
+
+    if not _is_applied("2026-11-26-provider-channels"):
+        migrate_provider_channels()
+        _mark_applied("2026-11-26-provider-channels")
 
     cleanup_expired_records()

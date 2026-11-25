@@ -7,17 +7,14 @@ import re
 import uuid
 from pathlib import Path
 
-from aiogram.exceptions import TelegramAPIError
 from fastapi import (
     HTTPException,
     UploadFile,
 )
 from sqlalchemy import and_, or_, select
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
-from app.core.database import SessionLocal
 from app.infrastructure.storage.media import (
     ATTACHMENT_SIZE_ERROR,
     MAX_ATTACHMENT_BYTES,
@@ -381,28 +378,3 @@ async def store_panel_attachment(file: UploadFile, conversation_id: int, *, pers
     else:
         kind = "document"
     return size, original_name, relative, mime_type, kind
-
-
-async def refresh_teacher_panel_after_web_delivery(bot, teacher_id: int, conversation_id: int) -> None:
-    """Обновить панель преподавателя в фоне."""
-    if not bot:
-        return
-    try:
-        with SessionLocal() as db:
-            teacher = db.get(User, teacher_id)
-            conversation = db.get(Conversation, conversation_id)
-            if not teacher or not conversation:
-                return
-            if not get_messenger_account(db, teacher.id, MessengerPlatform.TELEGRAM):
-                return
-            from app.modules.telegram.teacher import update_teacher_panel
-            # A new Telegram message has already notified the teacher. Refresh
-            # only the existing panel: do not send another Telegram message
-            # merely because the keyboard changed or the panel is missing.
-            await update_teacher_panel(bot, db, teacher, background_refresh=True)
-    except (TelegramAPIError, SQLAlchemyError) as exc:
-        logger.warning(
-            "Could not refresh teacher panel after web delivery "
-            "(teacher_id=%s conversation_id=%s error_type=%s)",
-            teacher_id, conversation_id, type(exc).__name__,
-        )

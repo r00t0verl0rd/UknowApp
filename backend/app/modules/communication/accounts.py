@@ -11,7 +11,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models import ConnectionCode, MessengerAccount, User
+from app.models import ConnectionCode, ExternalEndpoint, MessengerAccount, User
 
 from .contracts import MessengerPlatform
 
@@ -104,6 +104,7 @@ def sync_messenger_account(
     if external_user_id is None:
         if account:
             db.delete(account)
+        db.execute(delete(ExternalEndpoint).where(ExternalEndpoint.platform == platform_value, ExternalEndpoint.user_id == user_id))
         return None
 
     normalized_user_id = str(external_user_id).strip()
@@ -186,7 +187,7 @@ def claim_messenger_connection_code(
     existing_account = db.scalar(
         select(MessengerAccount).where(
             MessengerAccount.user_id == user.id,
-            MessengerAccount.platform == platform.value,
+            MessengerAccount.platform == str(platform),
         ),
     )
     if existing_account and existing_account.external_user_id != str(external_user_id):

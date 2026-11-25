@@ -6,10 +6,6 @@ from dotenv import load_dotenv
 ROOT_DIR = Path(__file__).resolve().parents[3]
 load_dotenv(ROOT_DIR / ".env")
 
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
-TELEGRAM_BOT_ENABLED = os.getenv("TELEGRAM_BOT_ENABLED", "true").strip().lower() in {"1", "true", "yes", "on"}
-TELEGRAM_API_URL = os.getenv("TELEGRAM_API_URL", "http://telegram-bot-api:8081").strip()
-TELEGRAM_FILES_DIR = Path(os.getenv("TELEGRAM_FILES_DIR", "/var/lib/telegram-bot-api"))
 VAPID_SUBJECT = os.getenv("VAPID_SUBJECT", "mailto:admin@example.com").strip()
 # Push only shows the participants by default; short content previews are opt-in.
 PUSH_MESSAGE_PREVIEW_ENABLED = os.getenv("PUSH_MESSAGE_PREVIEW_ENABLED", "false").strip().lower() in {

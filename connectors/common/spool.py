@@ -16,6 +16,8 @@ class EventSpool:
         self.db.execute("""CREATE TABLE IF NOT EXISTS events (
             seq INTEGER PRIMARY KEY AUTOINCREMENT, namespace TEXT NOT NULL,
             event_id TEXT NOT NULL UNIQUE, payload TEXT NOT NULL)""")
+        self.db.execute("CREATE TABLE IF NOT EXISTS deliveries (namespace TEXT NOT NULL, id TEXT NOT NULL, result TEXT, PRIMARY KEY(namespace,id))")
+        self.db.execute("CREATE TABLE IF NOT EXISTS selections (namespace TEXT NOT NULL, actor TEXT NOT NULL, conversation INTEGER, PRIMARY KEY(namespace,actor))")
         self.db.commit()
         self.namespace = namespace
 
@@ -49,3 +51,31 @@ class EventSpool:
 
     def close(self):
         self.db.close()
+
+    def delivery(self, job_id):
+        row = self.db.execute("SELECT result FROM deliveries WHERE namespace=? AND id=?",
+                              (self.namespace, job_id)).fetchone()
+        if row is None:
+            return None
+        return json.loads(row[0]) if row[0] else {"id": job_id, "status": "unknown"}
+
+    def begin_delivery(self, job_id):
+        with self.db:
+            self.db.execute("INSERT INTO deliveries(namespace,id,result) VALUES (?,?,NULL)",
+                            (self.namespace, job_id))
+
+    def finish_delivery(self, job_id, receipt):
+        with self.db:
+            self.db.execute("UPDATE deliveries SET result=? WHERE namespace=? AND id=?",
+                            (json.dumps(receipt), self.namespace, job_id))
+
+    def select_conversation(self, actor, conversation):
+        with self.db:
+            self.db.execute("""INSERT INTO selections(namespace,actor,conversation) VALUES (?,?,?)
+                ON CONFLICT(namespace,actor) DO UPDATE SET conversation=excluded.conversation""",
+                (self.namespace, actor, conversation))
+
+    def selected_conversation(self, actor):
+        row = self.db.execute("SELECT conversation FROM selections WHERE namespace=? AND actor=?",
+                              (self.namespace, actor)).fetchone()
+        return row[0] if row else None

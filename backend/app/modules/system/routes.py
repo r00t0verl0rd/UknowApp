@@ -60,15 +60,11 @@ def health(request: Request, db: Db):
         logger.error("Database health check failed (%s)", type(exc).__name__)
         raise HTTPException(status_code=503, detail="Database unavailable") from exc
 
-    telegram_status = getattr(request.app.state, "telegram_status", "unknown")
-    return {
-        "status": "ok" if telegram_status in {"connected", "disabled"} else "degraded",
-        "service": "uknowapp",
-        "components": {
-            "database": "ok",
-            "telegram": telegram_status,
-        },
-    }
+    gateway = getattr(request.app.state, "bots_gateway", None)
+    broker_status = ("disabled" if not gateway or not gateway.platforms else
+                     "connected" if gateway.ready and gateway.nc and gateway.nc.is_connected else "unavailable")
+    return {"status": "ok" if broker_status != "unavailable" else "degraded",
+            "service": "uknowapp", "components": {"database": "ok", "bots_gateway": broker_status}}
 
 @router.get("/push/public-key")
 def push_public_key():

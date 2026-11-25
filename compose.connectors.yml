@@ -1,12 +1,2 @@
-# Opt-in override: COMPOSE_FILE=docker-compose.yml:compose.connectors.yml
-services:
-  backend:
-    environment:
-      TELEGRAM_TRANSPORT: connector
-      TELEGRAM_BOT_TOKEN: ""
-      TELEGRAM_API_ID: ""
-      TELEGRAM_API_HASH: ""
-      BOTS_GATEWAY_TELEGRAM_SECRET: ${BOTS_GATEWAY_TELEGRAM_SECRET:-}
-    # Core keeps the archive; only Telegram transport needs the provider cache.
-    volumes: !override
-      - app_data:/app/data
+# Compatibility for old Compose invocations only; NATS uses the base compose file.
+services: {}

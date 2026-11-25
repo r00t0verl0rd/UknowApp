@@ -23,5 +23,4 @@ EXPOSE 8000
 
 # Доверяем прокси-заголовкам только от Caddy.
 # Один worker: единый реестр коннекторов, SSE и очередь доставки.
-# В legacy-режиме также сохраняется один процесс Telegram polling.
-CMD ["python", "-m", "uvicorn", "app.main:app", "--app-dir", "/app/backend", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--ws-max-size", "1048576", "--timeout-graceful-shutdown", "20", "--proxy-headers", "--forwarded-allow-ips", "172.31.255.2"]
+CMD ["python", "-m", "uvicorn", "app.main:app", "--app-dir", "/app/backend", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--timeout-graceful-shutdown", "20", "--proxy-headers", "--forwarded-allow-ips", "172.31.255.2"]

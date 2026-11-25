@@ -1,12 +1,7 @@
 import asyncio
-import fcntl
-import hashlib
 import logging
-import os
-import tempfile
 from contextlib import AsyncExitStack, asynccontextmanager, suppress
 
-from aiogram.exceptions import TelegramAPIError, TelegramConflictError
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
@@ -16,8 +11,6 @@ from .bots_gateway.gateway import BotsGateway, router as bots_gateway_router
 from .core.config import (
     ALLOWED_ORIGINS,
     SEED_DEMO_DATA,
-    TELEGRAM_BOT_ENABLED,
-    TELEGRAM_BOT_TOKEN,
 )
 from .core.database import Base, SessionLocal, engine
 from .migrations import initialize_database
@@ -26,11 +19,8 @@ from .modules.administration.data import (
     apply_pending_data_restore,
     finish_startup_restore,
 )
-from .modules.communication.service import CommunicationService
 from .modules.notifications.vapid import reload_vapid_keys
 from .modules.panel.personal import retry_personal_media_cleanup
-from .modules.telegram.adapter import TelegramAdapter
-from .modules.telegram.transport import create_telegram_bot
 
 logger = logging.getLogger(__name__)
 
@@ -50,55 +40,6 @@ def seed_demo_data() -> None:
         db.commit()
 
 
-# Telegram работает в фоновой задаче: временная недоступность Telegram не должна останавливать API.
-async def run_telegram_bot(bot, dispatcher, app) -> None:
-    """Запускать Telegram в фоне, не блокируя веб-панель."""
-    retry_delay = 5
-    while True:
-        try:
-            # Не блокируем запуск API ожиданием Telegram.
-            bot_info = await bot.get_me()
-            app.state.telegram_status = "connected"
-            logger.warning(
-                "TELEGRAM_CONNECTED username=@%s id=%s privacy_disabled=%s",
-                bot_info.username, bot_info.id,
-                getattr(bot_info, "can_read_all_group_messages", None),
-            )
-            await bot.delete_webhook(drop_pending_updates=False)
-            logger.warning("TELEGRAM_POLLING_STARTED")
-            polling_started_at = asyncio.get_running_loop().time()
-            await dispatcher.start_polling(bot, handle_signals=False)
-            # Если polling завершился неожиданно, запускаем его снова.
-            logger.error("TELEGRAM_POLLING_STOPPED_UNEXPECTEDLY")
-            if asyncio.get_running_loop().time() - polling_started_at >= 60:
-                retry_delay = 5
-            await asyncio.sleep(retry_delay)
-            retry_delay = min(retry_delay * 2, 60)
-        except asyncio.CancelledError:
-            raise
-        except TelegramConflictError:
-            app.state.telegram_status = "conflict"
-            # При конфликте polling прекращаем повторы: бот уже запущен где-то ещё.
-            logger.critical(
-                "TELEGRAM_POLLING_CONFLICT: another process is already calling getUpdates "
-                "for this bot. Polling has been stopped; close the other bot instance "
-                "and restart UknowApp.",
-            )
-            return
-        except TelegramAPIError as exc:
-            app.state.telegram_status = "unavailable"
-            # Не пишем токен в логи: выводим только тип ошибки.
-            logger.error(
-                "Telegram bot could not connect (error_type=%s). Retrying in %s seconds; "
-                "the admin panel remains available.",
-                type(exc).__name__,
-                retry_delay,
-            )
-            await asyncio.sleep(retry_delay)
-            retry_delay = min(retry_delay * 2, 60)
-
-
-# Подготавливаем БД и запускаем один экземпляр фонового Telegram polling на время жизни API.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     restoring = apply_pending_data_restore()
@@ -138,89 +79,17 @@ async def _start_services(app: FastAPI, restoring: bool):
     if SEED_DEMO_DATA:
         seed_demo_data()
 
-    app.state.telegram_status = "disabled"
-    bot_task = None
-    bot = None
-    dispatcher = None
+    gateway = BotsGateway()
+    app.state.bots_gateway = gateway
     cleanup_task = asyncio.create_task(_retry_media_cleanup())
-    polling_lock_fd = None
-    gateway = None
-    outbox_task = None
-    app.state.bots_gateway = None
     try:
-        transport = os.getenv("TELEGRAM_TRANSPORT", "embedded").strip().lower()
-        if transport not in {"embedded", "connector"}:
-            raise ValueError("TELEGRAM_TRANSPORT must be embedded or connector")
-        if transport == "connector":
-            gateway = BotsGateway()
-            app.state.bots_gateway = gateway
-            app.state.telegram_bot = None
-            app.state.communication = CommunicationService()
-            if TELEGRAM_BOT_ENABLED:
-                from .bots_gateway.telegram import install_telegram
-                from .bots_gateway.outbox import run_outbox
-
-                bot = install_telegram(app, gateway, os.getenv("BOTS_GATEWAY_TELEGRAM_SECRET", ""))
-                outbox_task = asyncio.create_task(run_outbox(app, gateway), name="bots-gateway-outbox")
-        elif TELEGRAM_BOT_ENABLED and TELEGRAM_BOT_TOKEN:
-            from .modules.telegram.bot import create_dispatcher
-
-            bot = create_telegram_bot(TELEGRAM_BOT_TOKEN)
-            app.state.telegram_status = "connecting"
-            app.state.telegram_bot = bot
-            app.state.communication = CommunicationService([TelegramAdapter(bot)])
-
-            # Файловая блокировка не допускает второго polling в этом процессе.
-            token_fingerprint = hashlib.sha256(TELEGRAM_BOT_TOKEN.encode("utf-8")).hexdigest()[:20]
-            lock_path = os.path.join(tempfile.gettempdir(), f"uknowapp-telegram-{token_fingerprint}.lock")
-            polling_lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
-            try:
-                fcntl.flock(polling_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except BlockingIOError:
-                os.close(polling_lock_fd)
-                polling_lock_fd = None
-                app.state.telegram_status = "another_instance"
-                logger.warning(
-                    "TELEGRAM_POLLING_SKIPPED: another local UknowApp process already owns "
-                    "the polling lock. This process will keep the web API available without polling.",
-                )
-            else:
-                dispatcher = create_dispatcher()
-                bot_task = asyncio.create_task(
-                    run_telegram_bot(bot, dispatcher, app),
-                    name="uknowapp-telegram-polling",
-                )
-        else:
-            app.state.telegram_bot = None
-            app.state.communication = CommunicationService()
-            if not TELEGRAM_BOT_ENABLED:
-                logger.info("TELEGRAM_MODULE_DISABLED: UknowApp runs without the optional Telegram adapter.")
-            else:
-                logger.info("TELEGRAM_MODULE_DISABLED: no Telegram bot token is configured.")
+        await gateway.start()
         yield
     finally:
-        if outbox_task:
-            outbox_task.cancel()
-            await asyncio.gather(outbox_task, return_exceptions=True)
-        if gateway:
-            await gateway.close()
+        await gateway.close()
         cleanup_task.cancel()
         with suppress(asyncio.CancelledError):
             await cleanup_task
-        if dispatcher:
-            with suppress(Exception):
-                await dispatcher.stop_polling()
-        if bot_task:
-            bot_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await bot_task
-        if bot:
-            await bot.session.close()
-        if polling_lock_fd is not None:
-            with suppress(OSError):
-                fcntl.flock(polling_lock_fd, fcntl.LOCK_UN)
-            with suppress(OSError):
-                os.close(polling_lock_fd)
 
 
 app = FastAPI(

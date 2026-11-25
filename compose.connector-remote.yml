@@ -9,8 +9,11 @@ services:
       TELEGRAM_API_MODE: ${TELEGRAM_API_MODE:-cloud}
       TELEGRAM_API_URL: ${TELEGRAM_API_URL:-http://telegram-bot-api:8081}
       TELEGRAM_FILES_DIR: /var/lib/telegram-bot-api
-      BOTS_GATEWAY_URL: ${BOTS_GATEWAY_URL:?set private Core URL}
-      BOTS_GATEWAY_TELEGRAM_SECRET: ${BOTS_GATEWAY_TELEGRAM_SECRET:?set connector secret}
+      BOTS_NATS_URL: ${BOTS_NATS_URL:?set private NATS URL}
+      BOTS_NATS_USER: telegram
+      BOTS_NATS_PASSWORD: ${BOTS_NATS_TELEGRAM_PASSWORD:?set connector password}
+      BOTS_MEDIA_URL: ${BOTS_MEDIA_URL:?set private Core URL}
+      BOTS_MEDIA_SECRET: ${BOTS_MEDIA_SECRET_TELEGRAM:?set media secret}
     volumes:
       - tgbot_state:/app/state
       - ${TELEGRAM_CACHE_HOST_DIR:-/srv/uknow-telegram}:/var/lib/telegram-bot-api:ro
@@ -22,7 +25,7 @@ services:
     security_opt: [no-new-privileges:true]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import pathlib,time; p=pathlib.Path('/app/state/healthy'); assert p.is_file() and time.time()-p.stat().st_mtime < 20"]
+      test: ["CMD", "python", "-c", "import pathlib,time; p=pathlib.Path('/app/state/healthy'); assert p.is_file() and time.time()-p.stat().st_mtime < 75"]
       interval: 10s
       timeout: 3s
       retries: 3
