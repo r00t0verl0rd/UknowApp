@@ -4,9 +4,6 @@ from datetime import UTC, datetime
 
 from sqlalchemy import select, update
 
-from app.infrastructure.storage.message_metadata import (
-    metadata_with_field,
-)
 from app.models import Message, PersonalMessage
 from app.modules.conversations.service import publish_conversation_update, _unread_condition, read_cursor
 from app.modules.personal_chat.service import publish_personal_update
@@ -17,7 +14,7 @@ def mark_conversation_read(db, conversation, principal, after_id: int, visible_i
     role = principal["role"]
     if role not in {"teacher", "student"} or (visible_ids is not None and not visible_ids):
         return
-    read_key = "teacher_read_at" if role == "teacher" else "student_read_at"
+    read_column = Message.teacher_read_at if role == "teacher" else Message.student_read_at
     filters = (
         Message.conversation_id == conversation.id,
         _unread_condition(db, role),
@@ -30,7 +27,7 @@ def mark_conversation_read(db, conversation, principal, after_id: int, visible_i
         return
     read_at = datetime.now(UTC).isoformat()
     ids = db.scalars(update(Message).where(*filters)
-      .values(metadata_json=metadata_with_field(db, Message.metadata_json, read_key, read_at))
+      .values({read_column.key: read_at})
       .returning(Message.id), execution_options={"synchronize_session": "fetch"}).all()
     if not ids:
         db.rollback()
@@ -60,11 +57,13 @@ def mark_personal_read(db, item, principal, after_id: int, visible_ids=None) -> 
     if not read_ids:
         return
     read_at = datetime.now(UTC)
-    db.execute(
-        update(PersonalMessage)
-        .where(PersonalMessage.id.in_(read_ids))
-        .values({read_column.key: read_at}),
-    )
+    read_ids = db.scalars(update(PersonalMessage)
+        .where(PersonalMessage.id.in_(read_ids), read_column.is_(None))
+        .values({read_column.key: read_at})
+        .returning(PersonalMessage.id), execution_options={"synchronize_session": "fetch"}).all()
+    if not read_ids:
+        db.rollback()
+        return
     db.commit()
     publish_personal_update(
         db, item, action="read", actor_role=role,

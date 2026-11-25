@@ -15,7 +15,7 @@ from .delivery_recovery import upgrade_delivery_recovery
 from .push_devices import upgrade_push_devices
 from .performance_indexes import upgrade_performance_indexes
 from .volatile_events import retire_realtime_events
-from app.infrastructure.storage.conversation_counters import upgrade_conversation_counters
+from app.infrastructure.storage.conversation_counters import upgrade_conversation_counters, upgrade_physical_receipts
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ MIGRATIONS = (
     ("2026-11-26-push-devices", upgrade_push_devices),
     ("2026-11-26-performance-indexes", upgrade_performance_indexes),
     ("2026-11-26-volatile-events", retire_realtime_events),
+    ("2026-11-26-physical-receipts", upgrade_physical_receipts),
 )
 
 

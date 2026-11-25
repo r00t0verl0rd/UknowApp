@@ -3,7 +3,9 @@
 Keep per-message receipts (visible-window reads may leave holes). SQL triggers
 cover ORM, bulk SQL, imports and rollback. No process cache can become stale.
 """
-from sqlalchemy import inspect, Text
+import json
+
+from sqlalchemy import inspect, text, Text
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import ColumnElement
 
@@ -80,6 +82,9 @@ def latest_id(conversation):
 
 def install_triggers(connection):
     dialect = connection.dialect.name
+    generated = any(col.get("computed") for col in inspect(connection).get_columns("messages")
+                    if col["name"] in {"teacher_read_at", "student_read_at"})
+    receipt_fields = "metadata_json" if generated else "teacher_read_at, student_read_at"
     new = unread_expressions("NEW.", dialect)
     old = unread_expressions("OLD.", dialect)
     add = ", ".join(f"{name} = {name} + ({expr})" for name, expr in zip(COUNTERS, new))
@@ -103,7 +108,7 @@ def install_triggers(connection):
         execute(f"CREATE TRIGGER uknow_message_stats_insert AFTER INSERT ON messages BEGIN {insert_sql}; END")
         execute(f"CREATE TRIGGER uknow_message_stats_delete AFTER DELETE ON messages BEGIN {delete_sql}; END")
         execute(f"""CREATE TRIGGER uknow_message_stats_update
-            AFTER UPDATE OF metadata_json, sender_role, created_at, id, conversation_id ON messages
+            AFTER UPDATE OF {receipt_fields}, sender_role, created_at, id, conversation_id ON messages
             WHEN NOT ({moved}) AND (({changed}) OR ({reordered}))
             BEGIN {update_sql}; END""")
         execute(f"""CREATE TRIGGER uknow_message_stats_move AFTER UPDATE OF conversation_id ON messages
@@ -130,8 +135,8 @@ def install_triggers(connection):
                 RETURN NULL;
             END; $$""")
         execute("DROP TRIGGER IF EXISTS uknow_message_stats ON messages")
-        execute("""CREATE TRIGGER uknow_message_stats AFTER INSERT OR DELETE OR
-            UPDATE OF metadata_json, sender_role, created_at, id, conversation_id ON messages
+        execute(f"""CREATE TRIGGER uknow_message_stats AFTER INSERT OR DELETE OR
+            UPDATE OF {receipt_fields}, sender_role, created_at, id, conversation_id ON messages
             FOR EACH ROW EXECUTE FUNCTION uknow_message_stats()""")
     else:
         raise RuntimeError("Unsupported database dialect for conversation counters")
@@ -160,7 +165,11 @@ def upgrade_conversation_counters(connection):
     for role, predicate in (("teacher", TEACHER_UNREAD), ("student", STUDENT_UNREAD)):
         connection.exec_driver_sql(f"CREATE INDEX IF NOT EXISTS ix_messages_{role}_unread ON messages (conversation_id, id) WHERE {predicate}")
     install_triggers(connection)
-    expressions = unread_expressions("", dialect)
+    rebuild_counters(connection)
+
+
+def rebuild_counters(connection):
+    expressions = unread_expressions("", connection.dialect.name)
     aggregates = ", ".join(f"SUM({expr}) AS {name}" for name, expr in zip(COUNTERS, expressions))
     assignments = ", ".join(f"{name} = stats.{name}" for name in ("message_count", *COUNTERS))
     connection.exec_driver_sql("UPDATE conversations SET message_count=0, teacher_unread_count=0, "
@@ -170,3 +179,69 @@ def upgrade_conversation_counters(connection):
         FROM (SELECT conversation_id, COUNT(*) AS message_count, {aggregates}
               FROM messages GROUP BY conversation_id) AS stats
         WHERE conversations.id = stats.conversation_id""")
+
+
+
+def upgrade_physical_receipts(connection):
+    """Replace legacy/generated receipt fields with writable scalar columns.
+
+    The upgrade runs in the existing schema transaction. A failed migration
+    restores the old columns, indexes, triggers and JSON intact.
+    """
+    dialect = connection.dialect.name
+    execute = connection.exec_driver_sql
+    if dialect == "sqlite":
+        for name in ("insert", "delete", "update", "move"):
+            execute(f"DROP TRIGGER IF EXISTS uknow_message_stats_{name}")
+    elif dialect == "postgresql":
+        execute("DROP TRIGGER IF EXISTS uknow_message_stats ON messages")
+    else:
+        raise RuntimeError("Unsupported receipt migration dialect")
+    columns = {col["name"]: col for col in inspect(connection).get_columns("messages")}
+    for role in ("teacher", "student"):
+        name = role + "_read_at"
+        execute(f"DROP INDEX IF EXISTS ix_messages_{role}_unread")
+        if columns.get(name, {}).get("computed"):
+            if dialect == "postgresql":
+                # Stored generated values survive dropping the expression.
+                execute(f"ALTER TABLE messages ALTER COLUMN {name} DROP EXPRESSION")
+            else:
+                # The original JSON is still authoritative until copied below.
+                execute(f"ALTER TABLE messages DROP COLUMN {name}")
+                execute(f"ALTER TABLE messages ADD COLUMN {name} TEXT")
+        elif name not in columns:
+            execute(f"ALTER TABLE messages ADD COLUMN {name} TEXT")
+
+    # Bounded keyset scan once at upgrade, never on the request hot path.
+    cursor = None
+    while True:
+        where = "" if cursor is None else " WHERE id > :cursor"
+        rows = connection.execute(text(
+            "SELECT id, metadata_json, teacher_read_at, student_read_at FROM messages" +
+            where + " ORDER BY id LIMIT 1000"), {} if cursor is None else {"cursor": cursor}).mappings().all()
+        if not rows:
+            break
+        updates = []
+        for row in rows:
+            try:
+                metadata = json.loads(row["metadata_json"] or "{}")
+            except (ValueError, TypeError):
+                continue  # preserve malformed legacy metadata verbatim
+            if not isinstance(metadata, dict) or not any(
+                    key in metadata for key in ("teacher_read_at", "student_read_at")):
+                continue
+            values = {"id": row["id"]}
+            for key in ("teacher_read_at", "student_read_at"):
+                old = metadata.pop(key, None)
+                values[key] = row[key] if row[key] is not None else (str(old) if old is not None else None)
+            values["metadata_json"] = json.dumps(metadata, ensure_ascii=False, separators=(",", ":"))
+            updates.append(values)
+        if updates:
+            connection.execute(text("UPDATE messages SET teacher_read_at=:teacher_read_at, "
+                "student_read_at=:student_read_at, metadata_json=:metadata_json WHERE id=:id"), updates)
+        cursor = rows[-1]["id"]
+
+    for role, predicate in (("teacher", TEACHER_UNREAD), ("student", STUDENT_UNREAD)):
+        execute(f"CREATE INDEX IF NOT EXISTS ix_messages_{role}_unread ON messages (conversation_id, id) WHERE {predicate}")
+    rebuild_counters(connection)
+    install_triggers(connection)

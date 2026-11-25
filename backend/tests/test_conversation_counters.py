@@ -31,6 +31,9 @@ def test_counters_preserve_sparse_read_receipts_and_rollback(api):
         finally:
             event.remove(db.get_bind(), "before_cursor_execute", capture)
         assert not any("json_extract" in sql.lower() for sql in statements)
+        assert not any("metadata_json" in sql.lower().split("where")[0] for sql in statements if sql.lstrip().lower().startswith("update messages"))
+        assert db.scalar(select(Message.metadata_json).where(Message.id == ids[1])) == "{}"
+        assert db.scalar(select(Message.teacher_read_at).where(Message.id == ids[1])) is not None
         assert counts() == ((2, 2, 2), 4)
         assert db.scalar(select(Conversation.teacher_last_read_id).where(Conversation.id == chat.id)) == 0
         mark_conversation_read(db, chat, {"role":"teacher"}, 0, [ids[1]])
@@ -49,3 +52,33 @@ def test_counters_preserve_sparse_read_receipts_and_rollback(api):
         db.commit()
         assert counts() == ((0, 0, 0), 0)
         assert conversation_dicts(db,[chat])[0]["last_message_at"] is None
+
+
+def test_upgrade_generated_receipts_preserves_metadata_and_counters(tmp_path):
+    # Reproduce the schema that already exists in test after 20261126_08.
+    import json
+    from sqlalchemy import create_engine, inspect, text
+    from app.infrastructure.storage.conversation_counters import upgrade_conversation_counters, upgrade_physical_receipts
+    engine = create_engine("sqlite:///" + str(tmp_path / "old.db"))
+    with engine.begin() as connection:
+        connection.exec_driver_sql("BEGIN IMMEDIATE")
+        connection.exec_driver_sql("CREATE TABLE conversations (id INTEGER PRIMARY KEY)")
+        connection.exec_driver_sql("CREATE TABLE messages (id INTEGER PRIMARY KEY, conversation_id INTEGER, sender_role TEXT, created_at TEXT, metadata_json TEXT)")
+        connection.exec_driver_sql("CREATE INDEX ix_messages_conversation_id_id ON messages(conversation_id,id)")
+        connection.exec_driver_sql("CREATE INDEX ix_messages_conversation_created_id ON messages(conversation_id,created_at,id)")
+        connection.exec_driver_sql("INSERT INTO conversations VALUES (1)")
+        connection.execute(text("INSERT INTO messages VALUES (1,1,'student','2026-01-01',:metadata)"),
+                           {"metadata":json.dumps({"teacher_read_at":"2026-02-01","media":{"file":"keep"}})})
+        connection.execute(text("INSERT INTO messages VALUES (2,1,'student','2026-01-02',:metadata)"),
+                           {"metadata":json.dumps({"messenger_deliveries":{"telegram":{"status":"delivered"}}})})
+        upgrade_conversation_counters(connection)
+        assert any(col.get("computed") for col in inspect(connection).get_columns("messages"))
+        upgrade_physical_receipts(connection)
+        assert not any(col.get("computed") for col in inspect(connection).get_columns("messages"))
+        row=connection.execute(text("SELECT teacher_read_at,metadata_json FROM messages WHERE id=1")).one()
+        assert row[0]=="2026-02-01" and json.loads(row[1])=={"media":{"file":"keep"}}
+        assert connection.execute(text("SELECT message_count,teacher_unread_count,teacher_last_read_id,last_message_id FROM conversations")).one()==(2,1,1,2)
+        connection.exec_driver_sql("UPDATE messages SET teacher_read_at='2026-03-01' WHERE id=2")
+        assert connection.execute(text("SELECT teacher_unread_count,teacher_last_read_id FROM conversations")).one()==(0,2)
+        assert json.loads(connection.scalar(text("SELECT metadata_json FROM messages WHERE id=2")))["messenger_deliveries"]["telegram"]["status"]=="delivered"
+    engine.dispose()

@@ -54,7 +54,7 @@ def run(messages, clients, rounds):
                 db.execute(insert(Message), [
                     dict(conversation_id=chat_id, sender_id=student.id if i%2 else teacher.id,
                          sender_role="student" if i%2 else "teacher", text=f"Message {i}",
-                         metadata_json='{"teacher_read_at":"2026-01-01","student_read_at":"2026-01-01"}')
+                         teacher_read_at="2026-01-01", student_read_at="2026-01-01")
                     for i in range(start,min(start+2000,messages))
                 ])
             db.add(PanelSession(token_hash=hashlib.sha256(token.encode()).hexdigest(),

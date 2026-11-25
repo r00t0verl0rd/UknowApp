@@ -5,7 +5,6 @@ from datetime import UTC, datetime
 from sqlalchemy import (
     BigInteger,
     Boolean,
-    Computed,
     DateTime,
     ForeignKey,
     Index,
@@ -22,7 +21,7 @@ from .core.database import Base
 from .core.runtime_database import RuntimeBase
 from .core.security import normalize_login
 from app.infrastructure.storage.conversation_counters import (
-    ReadField, install_on_create, install_read_function_on_create,
+    install_on_create,
     TEACHER_UNREAD, STUDENT_UNREAD,
 )
 
@@ -222,9 +221,9 @@ class Message(Base):
     content_type: Mapped[str] = mapped_column(String(40), default="text", nullable=False)
     text: Mapped[str] = mapped_column(Text, default="", nullable=False)
     metadata_json: Mapped[str] = mapped_column(Text, default="{}", nullable=False)
-    # Indexed projections of legacy receipt metadata; no duplicate source of truth.
-    teacher_read_at: Mapped[str | None] = mapped_column(Text, Computed(ReadField("teacher_read_at")), nullable=True)
-    student_read_at: Mapped[str | None] = mapped_column(Text, Computed(ReadField("student_read_at")), nullable=True)
+    # Authoritative receipt timestamps. JSON contains only other metadata.
+    teacher_read_at: Mapped[str | None] = mapped_column(Text, nullable=True)
+    student_read_at: Mapped[str | None] = mapped_column(Text, nullable=True)
     client_message_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     delivery_status: Mapped[str] = mapped_column(String(30), default="received", nullable=False)
     source_platform: Mapped[str | None] = mapped_column(String(32), nullable=True)
@@ -363,5 +362,4 @@ class TransportJob(RuntimeBase):
 
 
 # Also install on fresh/test schemas created directly via metadata.create_all.
-event.listen(Message.__table__, "before_create", install_read_function_on_create)
 event.listen(Message.__table__, "after_create", install_on_create)

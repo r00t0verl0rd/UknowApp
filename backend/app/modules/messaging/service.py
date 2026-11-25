@@ -56,8 +56,9 @@ def _panel_message_dict(
     metadata = json.loads(item.metadata_json or "{}")
     if metadata.get("source_mode") == "web":
         metadata.setdefault("web_sender_role", item.sender_role)
-    if item.source_platform and item.sender_role == "student":
-        metadata.setdefault("teacher_read_at", None)
+    # Keep the old API shape for clients, not a second database source of truth.
+    metadata["teacher_read_at"] = item.teacher_read_at
+    metadata["student_read_at"] = item.student_read_at
     if item.client_message_id:
         metadata["client_message_id"] = item.client_message_id
     if expose_internal_metadata and item.source_platform:
@@ -117,11 +118,11 @@ def _panel_message_status_dict(item: Message, principal: dict) -> dict:
     """Вернуть изменённые статусы загруженных сообщений."""
     metadata = json.loads(item.metadata_json or "{}")
     if item.sender_role == "teacher":
-        read_at = metadata.get("student_read_at")
+        read_at = item.student_read_at
     elif item.sender_role == "student":
-        read_at = metadata.get("teacher_read_at")
+        read_at = item.teacher_read_at
     elif item.sender_role == "admin":
-        read_at = metadata.get("teacher_read_at") and metadata.get("student_read_at")
+        read_at = item.teacher_read_at and item.student_read_at
     else:
         read_at = None
     result = {
@@ -131,7 +132,7 @@ def _panel_message_status_dict(item: Message, principal: dict) -> dict:
         ),
         "panel_read_at": read_at,
     }
-    changed_metadata = {}
+    changed_metadata = {"teacher_read_at": item.teacher_read_at, "student_read_at": item.student_read_at}
     media = metadata.get("media")
     if isinstance(media, dict):
         changed_metadata["media"] = {

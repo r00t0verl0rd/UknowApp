@@ -98,7 +98,8 @@ def assert_preserved(connection, name):
         assert row.client_message_id == "legacy-client"
         metadata = json.loads(row.metadata_json)
         assert metadata["media"]["local_path"] == "media/example.txt"
-        assert metadata["teacher_read_at"] == "2026-01-01T10:00:00Z"
+        assert row.teacher_read_at == "2026-01-01T10:00:00Z"
+        assert "teacher_read_at" not in metadata
         assert metadata["messenger_deliveries"]["telegram"]["delivered"][0]["external_message_id"] == "555"
         if name != "pre_push":
             assert metadata["legacy_source_message_id"] == "777"
@@ -119,10 +120,12 @@ def assert_preserved(connection, name):
         assert (chat.message_count, chat.teacher_unread_count, chat.student_unread_count, chat.admin_unread_count) == (2, 0, 2, 2)
     with Session(bind=connection) as db:
         db.execute(update(Message).where(Message.id == 51).values(metadata_json=metadata_with_field(
-            db, Message.metadata_json, "student_read_at", "2026-02-01T00:00:00Z")))
+            db, Message.metadata_json, "migration_test_field", "2026-02-01T00:00:00Z")))
         db.flush()
         updated = json.loads(db.scalar(select(Message.metadata_json).where(Message.id == 51)))
-        assert updated["student_read_at"] == "2026-02-01T00:00:00Z"
+        assert updated["migration_test_field"] == "2026-02-01T00:00:00Z"
+        assert "student_read_at" not in updated
+        db.execute(update(Message).where(Message.id == 51).values(student_read_at="2026-02-01T00:00:00Z"))
         assert updated["messenger_deliveries"]["telegram"]["status"] == "delivered"
         counts = db.execute(select(Conversation.message_count, Conversation.student_unread_count, Conversation.admin_unread_count).where(Conversation.id == 41)).one()
         assert counts == (2, 1, 1)

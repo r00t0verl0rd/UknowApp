@@ -90,7 +90,7 @@ def sync_conversation_state(
         batch_ids = known_ids[start:start + 500]
         updated_rows.extend(db.scalars(
             select(Message)
-            .options(load_only(Message.id, Message.sender_role, Message.delivery_status, Message.metadata_json))
+            .options(load_only(Message.id, Message.sender_role, Message.delivery_status, Message.metadata_json, Message.teacher_read_at, Message.student_read_at))
             .where(
                 Message.conversation_id == conversation.id,
                 Message.id.in_(batch_ids),
