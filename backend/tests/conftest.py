@@ -45,6 +45,8 @@ def api(monkeypatch):
 
     app.dependency_overrides[get_db] = override_get_db
     monkeypatch.setattr(auth_service, "SessionLocal", test_sessions)
+    from app.core import database
+    monkeypatch.setattr(database, "SessionLocal", test_sessions)
     monkeypatch.setattr(security, "ADMIN_USERNAME", "test-admin")
     monkeypatch.setattr(security, "ADMIN_PASSWORD", "a-long-test-password-123")
 

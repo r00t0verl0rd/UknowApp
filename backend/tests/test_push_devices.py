@@ -39,6 +39,7 @@ def provider(api, monkeypatch):
     monkeypatch.setattr(vapid, "VAPID_PRIVATE_KEY", "fake-private-key")
     monkeypatch.setattr(vapid, "VAPID_PUBLIC_KEY", "fake-public-key")
     collections = []
+    monkeypatch.setattr(push, "_DISPATCH_POOL", SimpleNamespace(submit=lambda fn, *args: fn(*args)))
     monkeypatch.setattr(push, "_RESULT_POOL", SimpleNamespace(submit=lambda fn, args: collections.append((fn, args))))
     return collections
 

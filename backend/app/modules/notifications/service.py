@@ -2,6 +2,7 @@
 
 import json
 import logging
+from threading import BoundedSemaphore
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from datetime import UTC, datetime
 from collections.abc import Iterable
@@ -10,7 +11,7 @@ from urllib.parse import parse_qs, urlsplit
 from pywebpush import WebPushException, webpush
 from sqlalchemy import or_, select, update
 from sqlalchemy.exc import SQLAlchemyError
-from app.core import runtime_database
+from app.core import database, runtime_database
 from sqlalchemy.orm import Session
 
 from app.core import config
@@ -22,6 +23,8 @@ logger = logging.getLogger(__name__)
 # Shared bounded network pool; never use the web request/event-loop thread for I/O.
 _PUSH_POOL = ThreadPoolExecutor(max_workers=10, thread_name_prefix="web-push")
 _RESULT_POOL = ThreadPoolExecutor(max_workers=2, thread_name_prefix="push-results")
+_DISPATCH_POOL = ThreadPoolExecutor(max_workers=2, thread_name_prefix="push-dispatch")
+_NOTIFICATION_SLOTS = BoundedSemaphore(128)
 
 
 def schedule_push(
@@ -37,14 +40,41 @@ def schedule_push(
     if not vapid.VAPID_PRIVATE_KEY:
         return
     ids = {int(user_id) for user_id in user_ids if user_id}
+    if not ids and not include_admin:
+        return
+    if not _NOTIFICATION_SLOTS.acquire(blocking=False):
+        logger.warning("Push backlog full; notification skipped")
+        return
+    try:
+        _DISPATCH_POOL.submit(_dispatch, ids, title, body, url, include_admin, admin_body)
+    except Exception:
+        _NOTIFICATION_SLOTS.release()
+        logger.exception("Unable to schedule Push")
+
+
+def _dispatch(ids, title, body, url, include_admin, admin_body):
+    handed_off = False
+    try:
+        handed_off = _dispatch_batch(ids, title, body, url, include_admin, admin_body)
+    finally:
+        if not handed_off:
+            _NOTIFICATION_SLOTS.release()
+
+
+def _finish_notification(futures):
+    try:
+        _collect(futures)
+    finally:
+        _NOTIFICATION_SLOTS.release()
+
+
+def _dispatch_batch(ids, title, body, url, include_admin, admin_body):
     conditions = [PushSubscription.user_id.in_(ids)] if ids else []
     if include_admin:
         conditions.append(PushSubscription.role == "admin")
     if not conditions:
         return
     try:
-        active_sessions = set(db.scalars(select(PanelSession.token_hash).where(
-            PanelSession.expires_at > datetime.now(UTC))).all())
         with runtime_database.RuntimeSessionLocal() as runtime:
             subscriptions = runtime.scalars(select(PushSubscription).where(or_(*conditions),
                 or_(PushSubscription.delivery_state.is_(None), PushSubscription.delivery_state != "expired"))).all()
@@ -52,7 +82,15 @@ def schedule_push(
                 "id": item.id, "role": item.role, "revision": item.revision,
                 "session_hash": item.session_hash, "endpoint": item.endpoint,
                 "keys": {"p256dh": item.p256dh, "auth": item.auth},
-            } for item in subscriptions if item.session_hash is None or item.session_hash in active_sessions]
+            } for item in subscriptions if item.session_hash]
+        if not targets:
+            return False
+        # Query only sessions for actual recipients, not the entire session table.
+        with database.SessionLocal() as main:
+            hashes = {item["session_hash"] for item in targets}
+            active = {row.token_hash: (row.role, row.user_id) for row in main.scalars(select(PanelSession).where(
+                PanelSession.token_hash.in_(hashes), PanelSession.expires_at > datetime.now(UTC)))}
+        targets = [item for item in targets if item["session_hash"] in active and active[item["session_hash"]][0] == item["role"]]
     except (SQLAlchemyError, OSError) as exc:
         logger.warning("Push registry unavailable: %s", type(exc).__name__)
         return
@@ -79,7 +117,8 @@ def schedule_push(
     # Fan out immediately into one shared pool, rather than blocking a worker
     # per notification while waiting for every device.
     futures = _submit(targets, payload, admin_payload)
-    _RESULT_POOL.submit(_collect, futures)
+    _RESULT_POOL.submit(_finish_notification, futures)
+    return True
 
 
 def _send_one(target, payload, admin_payload):

@@ -71,11 +71,6 @@ async def _retry_media_cleanup():
 def _initialize_core(restoring):
     reload_vapid_keys()
     initialize_database()
-    # Auxiliary storage must not prevent school API startup.
-    try:
-        initialize_runtime_storage()
-    except (SQLAlchemyError, OSError):
-        logger.exception("Runtime DB unavailable; school data remains available")
     if restoring:
         # Compile a real projection for each ORM table after all migrations.
         with engine.connect() as connection:
@@ -84,20 +79,47 @@ def _initialize_core(restoring):
     if SEED_DEMO_DATA:
         seed_demo_data()
 
+async def _monitor_runtime(app):
+    while True:
+        await asyncio.sleep(30)
+        try:
+            if app.state.runtime_status == "unavailable":
+                await asyncio.to_thread(initialize_runtime_storage)
+            else:
+                await asyncio.to_thread(runtime_probe)
+            app.state.runtime_status = "ok"
+        except (SQLAlchemyError, OSError):
+            app.state.runtime_status = "unavailable"
+
+
+def runtime_probe():
+    from app.core import runtime_database
+    from sqlalchemy import text
+    with runtime_database.engine.connect() as conn:
+        conn.execute(text("SELECT 1 FROM transport_jobs LIMIT 1"))
+
+
 @asynccontextmanager
 async def _start_services(app: FastAPI, restoring: bool):
     await asyncio.to_thread(_initialize_core, restoring)
+    try:
+        await asyncio.to_thread(initialize_runtime_storage)
+        app.state.runtime_status = "ok"
+    except (SQLAlchemyError, OSError):
+        app.state.runtime_status = "unavailable"
+        logger.exception("Runtime DB unavailable; school data remains available")
     gateway = BotsGateway()
     app.state.bots_gateway = gateway
     cleanup_task = asyncio.create_task(_retry_media_cleanup())
+    runtime_task = asyncio.create_task(_monitor_runtime(app))
     try:
         await gateway.start()
         yield
     finally:
         await gateway.close()
         cleanup_task.cancel()
-        with suppress(asyncio.CancelledError):
-            await cleanup_task
+        runtime_task.cancel()
+        await asyncio.gather(cleanup_task, runtime_task, return_exceptions=True)
 
 
 app = FastAPI(

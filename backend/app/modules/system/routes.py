@@ -69,8 +69,10 @@ def health(request: Request, db: Db):
     gateway = getattr(request.app.state, "bots_gateway", None)
     broker_status = ("disabled" if not gateway or not gateway.platforms else
                      "connected" if gateway.ready and gateway.nc and gateway.nc.is_connected else "unavailable")
-    return {"status": "ok" if broker_status != "unavailable" else "degraded",
-            "service": "uknowapp", "components": {"database": "ok", "bots_gateway": broker_status}}
+    runtime_status = getattr(request.app.state, "runtime_status", "unknown")
+    return {"status": "ok" if broker_status != "unavailable" and runtime_status != "unavailable" else "degraded",
+            "service": "uknowapp", "components": {"database": "ok", "bots_gateway": broker_status,
+                                                  "runtime_database": runtime_status}}
 
 @router.get("/push/public-key")
 def push_public_key():
@@ -165,7 +167,8 @@ def push_diagnostics(_: Admin, db: Db):
     except SQLAlchemyError as exc:
         raise HTTPException(503, "Push registry unavailable") from exc
     now = datetime.now(UTC)
-    active_sessions = set(db.scalars(select(PanelSession.token_hash).where(PanelSession.expires_at > now)).all())
+    active_sessions = set(db.scalars(select(PanelSession.token_hash).where(PanelSession.expires_at > now,
+        PanelSession.token_hash.in_({row.session_hash for row in rows if row.session_hash}))).all())
     def device(row):
         session_active = row.session_hash in active_sessions if row.session_hash else None
         return {"id": row.id, "role": row.role, "user_id": row.user_id,
@@ -174,7 +177,7 @@ def push_diagnostics(_: Admin, db: Db):
                 "last_attempt_at": row.last_attempt_at, "last_success_at": row.last_success_at,
                 "state": row.delivery_state or "registered", "http_status": row.last_http_status,
                 "session_active": session_active,
-                "eligible": row.delivery_state != "expired" and session_active is not False}
+                "eligible": row.delivery_state != "expired" and session_active is True}
     devices = [device(row) for row in rows]
     return {"enabled": bool(vapid.VAPID_PRIVATE_KEY and vapid.VAPID_PUBLIC_KEY),
             "registered": len(devices), "eligible": sum(d["eligible"] for d in devices),

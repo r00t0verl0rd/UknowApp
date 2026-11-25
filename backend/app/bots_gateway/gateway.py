@@ -157,10 +157,11 @@ class BotsGateway:
             transport.forget(payload["id"])
         return True
 
-    def _candidates(self):
+    def _candidates(self, project):
         with SessionLocal() as db:
-            self._projection_cursors, self._projection_more = transport.project_pending(
-                db, self.platforms, self._projection_cursors)
+            if project:
+                self._projection_cursors, self._projection_more = transport.project_pending(
+                    db, self.platforms, self._projection_cursors)
             return transport.candidates(db, self.platforms)
 
     _previous_sequence = staticmethod(transport.previous_sequence)
@@ -244,9 +245,16 @@ class BotsGateway:
                     await msg.nak(delay=5)
 
     async def publish_outbox(self):
+        project = True
+        last_scan = 0.0
+        loop = asyncio.get_running_loop()
         while True:
+            project = project or self.outbox_wakeup.is_set() or self._projection_more or loop.time() - last_scan >= 60
             self.outbox_wakeup.clear()
-            entries = await self.run_db(self._candidates)
+            if project:
+                last_scan = loop.time()
+            entries = await self.run_db(self._candidates, project)
+            project = False
             for job_id, platform, chat, thread, status, heavy in entries:
                 # Stable IDs for normal publish, separate time-bucket ID for stale recovery.
                 # A connector's durable receipt and Core claim prevent duplicate sends.
@@ -281,7 +289,7 @@ class BotsGateway:
                 await asyncio.sleep(.05)
             elif not entries:
                 try:
-                    await asyncio.wait_for(self.outbox_wakeup.wait(), 5)
+                    await asyncio.wait_for(self.outbox_wakeup.wait(), 10)
                 except TimeoutError:
                     pass
 

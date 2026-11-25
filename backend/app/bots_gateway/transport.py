@@ -55,6 +55,8 @@ def candidates(main, platforms, now=None, limit=50):
         entries = []
         stale = []
         # Recheck existence and terminal status in Main before publishing.
+        if not jobs:
+            return []
         ids = [j.id for j in jobs]
         live = set()
         for model in MODELS:
