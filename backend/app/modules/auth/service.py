@@ -10,6 +10,8 @@ from sqlalchemy import select
 from app.core import security
 from app.core.database import SessionLocal
 from app.models import PanelSession, PushSubscription, User
+from app.core import runtime_database
+from sqlalchemy.exc import SQLAlchemyError
 from app.modules.auth.permissions import permits
 from app.rate_limit import SlidingWindowLimiter
 
@@ -156,6 +158,7 @@ def _token_digest(token: str | None) -> str | None:
 def revoke_panel_session(request: Request, db, *, detach_push: bool = True) -> None:
     # При выходе отзываем оба варианта cookie.
     revoked = False
+    detach = []
     tokens = {
         request.cookies.get(SECURE_SESSION_COOKIE),
         request.cookies.get(SESSION_COOKIE),
@@ -167,11 +170,19 @@ def revoke_panel_session(request: Request, db, *, detach_push: bool = True) -> N
         session = db.scalar(select(PanelSession).where(PanelSession.token_hash == token_hash))
         if session:
             if detach_push:
-                db.query(PushSubscription).filter(PushSubscription.session_hash == token_hash).delete(synchronize_session=False)
+                detach.append(token_hash)
             db.delete(session)
             revoked = True
     if revoked:
         db.commit()
+    if detach:
+        try:
+            with runtime_database.RuntimeSessionLocal() as runtime:
+                runtime.query(PushSubscription).filter(PushSubscription.session_hash.in_(detach)).delete(synchronize_session=False)
+                runtime.commit()
+        except SQLAlchemyError:
+            # Revoked main sessions are ineligible even if physical cleanup fails.
+            pass
 
 
 def clear_panel_cookies(request: Request, response: Response) -> None:

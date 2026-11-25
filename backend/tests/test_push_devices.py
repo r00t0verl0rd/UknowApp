@@ -9,6 +9,7 @@ import pytest
 from sqlalchemy import create_engine, inspect, text
 
 from app.models import PushSubscription
+from app.core import runtime_database
 from app.modules.notifications import service as push
 from app.modules.notifications import vapid
 from app.modules.system import routes
@@ -110,7 +111,7 @@ def test_one_expired_and_one_failed_device_do_not_block_others(api, provider, mo
     login(clients[0])
     assert clients[0].post("/api/push/subscribe", json=subscription(0)).status_code == 410
     register(clients[0], 99)
-    with sessions() as db:
+    with runtime_database.RuntimeSessionLocal() as db:
         db.query(PushSubscription).filter_by(endpoint=subscription(99)["endpoint"]).delete()
         db.commit()
     register(clients[0], 99)  # Core lost registration, local subscription is still valid.
@@ -122,7 +123,7 @@ def test_old_delivery_result_cannot_expire_new_registration(api, provider):
     client = make_client()
     login(client)
     register(client, 1)
-    with sessions() as db:
+    with runtime_database.RuntimeSessionLocal() as db:
         row = db.query(PushSubscription).one()
         target = {"id": row.id, "endpoint": row.endpoint, "revision": row.revision,
                   "keys": {"p256dh": row.p256dh, "auth": row.auth}}
@@ -132,7 +133,7 @@ def test_old_delivery_result_cannot_expire_new_registration(api, provider):
     future = Future()
     future.set_result((target, datetime.now(UTC), "expired", 410))
     push._collect([future])
-    with sessions() as db:
+    with runtime_database.RuntimeSessionLocal() as db:
         assert db.query(PushSubscription).one().delivery_state is None
 
 

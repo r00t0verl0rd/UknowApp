@@ -18,6 +18,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .core.database import Base
+from .core.runtime_database import RuntimeBase
 from .core.security import normalize_login
 
 
@@ -46,13 +47,13 @@ def _refresh_login_lookup(_mapper, _connection, user: User) -> None:
     user.web_login_key = normalize_login(user.web_username or user.full_name)
 
 
-class PushSubscription(Base):
+class PushSubscription(RuntimeBase):
     __tablename__ = "push_subscriptions"
     __table_args__ = (Index("ix_push_role_state", "role", "delivery_state"),
-                      Index("ix_push_session_hash", "session_hash"))
+                      Index("ix_push_session_hash", "session_hash"), {"sqlite_autoincrement": True})
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="teacher")
     endpoint: Mapped[str] = mapped_column(String(2048), unique=True, nullable=False)
     p256dh: Mapped[str] = mapped_column(String(256), nullable=False)
@@ -343,4 +344,20 @@ class ConnectorDeletion(Base):
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     claim_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    broker_seq: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+
+
+class TransportJob(RuntimeBase):
+    """Operational publication state, reconstructible from durable business intents."""
+    __tablename__ = "transport_jobs"
+    __table_args__ = (Index("ix_transport_jobs_pending", "platform", "state", "published_at"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    platform: Mapped[str] = mapped_column(String(32), nullable=False)
+    chat_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    thread_id: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    heavy: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    state: Mapped[str] = mapped_column(String(20), nullable=False, default="queued")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     broker_seq: Mapped[int | None] = mapped_column(BigInteger, nullable=True)

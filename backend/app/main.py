@@ -14,6 +14,7 @@ from .core.config import (
 )
 from .core.database import Base, SessionLocal, engine
 from .migrations import initialize_database
+from .migrations.runtime_split import initialize_runtime_storage
 from .models import Assignment, Conversation, User
 from .modules.administration.data import (
     apply_pending_data_restore,
@@ -70,6 +71,11 @@ async def _retry_media_cleanup():
 def _initialize_core(restoring):
     reload_vapid_keys()
     initialize_database()
+    # Auxiliary storage must not prevent school API startup.
+    try:
+        initialize_runtime_storage()
+    except (SQLAlchemyError, OSError):
+        logger.exception("Runtime DB unavailable; school data remains available")
     if restoring:
         # Compile a real projection for each ORM table after all migrations.
         with engine.connect() as connection:

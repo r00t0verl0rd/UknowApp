@@ -9,6 +9,8 @@ from urllib.parse import parse_qs, urlsplit
 
 from pywebpush import WebPushException, webpush
 from sqlalchemy import or_, select, update
+from sqlalchemy.exc import SQLAlchemyError
+from app.core import runtime_database
 from sqlalchemy.orm import Session
 
 from app.core import config
@@ -40,23 +42,20 @@ def schedule_push(
         conditions.append(PushSubscription.role == "admin")
     if not conditions:
         return
-    subscriptions = db.scalars(
-        select(PushSubscription).where(or_(*conditions),
-            or_(PushSubscription.delivery_state.is_(None), PushSubscription.delivery_state != "expired"),
-            or_(PushSubscription.session_hash.is_(None), PushSubscription.session_hash.in_(
-                select(PanelSession.token_hash).where(PanelSession.expires_at > datetime.now(UTC))))),
-    ).all()
-    targets = [
-        {
-            "id": item.id,
-            "role": item.role,
-            "revision": item.revision,
-            "session_hash": item.session_hash,
-            "endpoint": item.endpoint,
-            "keys": {"p256dh": item.p256dh, "auth": item.auth},
-        }
-        for item in subscriptions
-    ]
+    try:
+        active_sessions = set(db.scalars(select(PanelSession.token_hash).where(
+            PanelSession.expires_at > datetime.now(UTC))).all())
+        with runtime_database.RuntimeSessionLocal() as runtime:
+            subscriptions = runtime.scalars(select(PushSubscription).where(or_(*conditions),
+                or_(PushSubscription.delivery_state.is_(None), PushSubscription.delivery_state != "expired"))).all()
+            targets = [{
+                "id": item.id, "role": item.role, "revision": item.revision,
+                "session_hash": item.session_hash, "endpoint": item.endpoint,
+                "keys": {"p256dh": item.p256dh, "auth": item.auth},
+            } for item in subscriptions if item.session_hash is None or item.session_hash in active_sessions]
+    except (SQLAlchemyError, OSError) as exc:
+        logger.warning("Push registry unavailable: %s", type(exc).__name__)
+        return
     if not targets:
         return
     query = parse_qs(urlsplit(url).query)
@@ -115,14 +114,13 @@ def _submit(targets, payload, admin_payload):
 
 
 def _collect(futures):
-    from app.core.database import SessionLocal
     pending = set(futures)
     while pending:
         ready, pending = wait(pending, return_when=FIRST_COMPLETED)
         ready = list(ready)
         for offset in range(0, len(ready), 16):
             try:
-                with SessionLocal() as db:
+                with runtime_database.RuntimeSessionLocal() as db:
                     for future in ready[offset:offset+16]:
                         _record_result(db, future)
                     db.commit()

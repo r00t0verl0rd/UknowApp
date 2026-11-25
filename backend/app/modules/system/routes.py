@@ -16,6 +16,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from app.core.security import verify_request_origin
 from app.models import PanelSession, PushSubscription
+from app.core import runtime_database
 from app.modules.auth.service import (
     _request_token,
     _token_digest,
@@ -100,38 +101,43 @@ def save_push_subscription(payload: dict, request: Request, principal: PanelUser
     session = db.scalar(select(PanelSession).where(PanelSession.token_hash == session_hash))
     if not session or session.role != role or session.user_id != user_id:
         raise HTTPException(401, "Сессия истекла или недействительна. Войдите снова.")
-    for attempt in range(2):
-        subscription = db.scalar(select(PushSubscription).where(PushSubscription.endpoint == endpoint))
-        if subscription and subscription.delivery_state == "expired" and subscription.p256dh == p256dh and subscription.auth == auth:
-            # A 404/410 from the provider requires a new browser subscription,
-            # not just another INSERT of the same dead endpoint.
-            raise HTTPException(410, "Подписка устарела. Необходимо обновить её.")
-        if subscription is None:
-            subscription = PushSubscription(endpoint=endpoint, p256dh=p256dh, auth=auth, user_id=user_id, role=role)
-            db.add(subscription)
-        changed = (subscription.p256dh != p256dh or subscription.auth != auth or
-                   subscription.user_id != user_id or subscription.role != role or
-                   subscription.session_hash != session_hash or not subscription.revision)
-        if changed:
-            subscription.revision = uuid4().hex
-            subscription.delivery_state = None
-            subscription.last_http_status = None
-            subscription.last_attempt_at = None
-            subscription.last_success_at = None
-        subscription.p256dh = p256dh
-        subscription.auth = auth
-        subscription.user_id = user_id
-        subscription.role = role
-        subscription.session_hash = session_hash
-        subscription.synced_at = datetime.now(UTC)
-        try:
-            db.commit()
-            break
-        except IntegrityError:
-            db.rollback()
-            if attempt:
-                raise
-    return {"ok": True}
+    try:
+        with runtime_database.RuntimeSessionLocal() as runtime:
+            for attempt in range(2):
+                subscription = runtime.scalar(select(PushSubscription).where(PushSubscription.endpoint == endpoint))
+                if subscription and subscription.delivery_state == "expired" and subscription.p256dh == p256dh and subscription.auth == auth:
+                    # A 404/410 from the provider requires a new browser subscription,
+                    # not just another INSERT of the same dead endpoint.
+                    raise HTTPException(410, "Подписка устарела. Необходимо обновить её.")
+                if subscription is None:
+                    subscription = PushSubscription(endpoint=endpoint, p256dh=p256dh, auth=auth, user_id=user_id, role=role)
+                    runtime.add(subscription)
+                changed = (subscription.p256dh != p256dh or subscription.auth != auth or
+                           subscription.user_id != user_id or subscription.role != role or
+                           subscription.session_hash != session_hash or not subscription.revision)
+                if changed:
+                    subscription.revision = uuid4().hex
+                    subscription.delivery_state = None
+                    subscription.last_http_status = None
+                    subscription.last_attempt_at = None
+                    subscription.last_success_at = None
+                subscription.p256dh = p256dh
+                subscription.auth = auth
+                subscription.user_id = user_id
+                subscription.role = role
+                subscription.session_hash = session_hash
+                subscription.synced_at = datetime.now(UTC)
+                try:
+                    runtime.commit()
+                    break
+                except IntegrityError:
+                    runtime.rollback()
+                    if attempt:
+                        raise
+            return {"ok": True}
+
+    except SQLAlchemyError as exc:
+        raise HTTPException(503, "Push registry unavailable") from exc
 
 
 @router.delete("/push/subscribe")
@@ -139,20 +145,25 @@ def remove_push_subscription(payload: dict, request: Request, principal: PanelUs
     endpoint = payload.get("endpoint")
     if not isinstance(endpoint, str) or len(endpoint) > 2048:
         raise HTTPException(status_code=400, detail="Некорректная подписка")
-    subscription = db.scalar(select(PushSubscription).where(PushSubscription.endpoint == endpoint))
-    session_hash = _token_digest(_request_token(request))
-    if subscription and (subscription.session_hash is None or subscription.session_hash == session_hash) and (
-        (principal["role"] == "admin" and subscription.role == "admin")
-        or (principal["role"] in {"teacher", "student"} and subscription.user_id == principal["user_id"])
-    ):
-        db.delete(subscription)
-        db.commit()
-    return {"ok": True}
+    with runtime_database.RuntimeSessionLocal() as runtime:
+        subscription = runtime.scalar(select(PushSubscription).where(PushSubscription.endpoint == endpoint))
+        session_hash = _token_digest(_request_token(request))
+        if subscription and (subscription.session_hash is None or subscription.session_hash == session_hash) and (
+            (principal["role"] == "admin" and subscription.role == "admin")
+            or (principal["role"] in {"teacher", "student"} and subscription.user_id == principal["user_id"])
+        ):
+            runtime.delete(subscription)
+            runtime.commit()
+        return {"ok": True}
 
 
 @router.get("/admin/push/diagnostics")
 def push_diagnostics(_: Admin, db: Db):
-    rows = db.scalars(select(PushSubscription).order_by(PushSubscription.id)).all()
+    try:
+        with runtime_database.RuntimeSessionLocal() as runtime:
+            rows = runtime.scalars(select(PushSubscription).order_by(PushSubscription.id)).all()
+    except SQLAlchemyError as exc:
+        raise HTTPException(503, "Push registry unavailable") from exc
     now = datetime.now(UTC)
     active_sessions = set(db.scalars(select(PanelSession.token_hash).where(PanelSession.expires_at > now)).all())
     def device(row):

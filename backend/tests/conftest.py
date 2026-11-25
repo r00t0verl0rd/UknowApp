@@ -11,6 +11,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import Base
+from app.core import runtime_database
 from app.core.security import hash_web_password
 from app.main import app
 from app.models import User
@@ -33,6 +34,9 @@ def api(monkeypatch):
         poolclass=StaticPool,
     )
     Base.metadata.create_all(engine)
+    runtime_engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    runtime_database.RuntimeBase.metadata.create_all(runtime_engine)
+    monkeypatch.setattr(runtime_database, "RuntimeSessionLocal", sessionmaker(bind=runtime_engine, autoflush=False, expire_on_commit=False))
     test_sessions = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
     def override_get_db():
@@ -71,6 +75,7 @@ def api(monkeypatch):
         client.close()
     app.dependency_overrides.clear()
     engine.dispose()
+    runtime_engine.dispose()
 
 
 @pytest.fixture(autouse=True)
