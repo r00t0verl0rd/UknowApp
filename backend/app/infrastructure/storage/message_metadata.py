@@ -2,7 +2,7 @@
 
 import json
 
-from sqlalchemy import JSON, Text, cast, func
+from sqlalchemy import JSON, Text, cast, func, literal
 from sqlalchemy.dialects.postgresql import JSONB
 
 
@@ -20,5 +20,5 @@ def metadata_value(db, column, key):
 def metadata_with_field(db, column, key, value):
     """Update one top-level JSON field atomically, retaining concurrent read/delivery updates."""
     if db.get_bind().dialect.name == "postgresql":
-        return cast(cast(column, JSONB).op("||")(cast(encode_message_metadata({key: value}), JSONB)), Text)
+        return cast(cast(column, JSONB).op("||")(cast(literal(encode_message_metadata({key: value}), type_=Text), JSONB)), Text)
     return func.json_set(column, "$." + key, func.json(json.dumps(value, ensure_ascii=False)))
