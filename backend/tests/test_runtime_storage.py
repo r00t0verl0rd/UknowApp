@@ -10,7 +10,7 @@ from app.migrations.runtime_split import migrate_push_subscriptions, migrate_tra
 from app.migrations.delivery_recovery import upgrade_delivery_recovery
 from app.models import PushSubscription, TransportJob, ConnectorDelivery, Message
 from app.bots_gateway import transport
-from app.bots_gateway.outbox import enqueue_web_delivery, record_result
+from app.modules.communication.outbox import enqueue_web_delivery, record_result
 from app.modules.notifications import vapid, service as push
 from app.main import app
 from helpers import create_conversation

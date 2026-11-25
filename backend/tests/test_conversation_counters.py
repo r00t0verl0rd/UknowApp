@@ -2,7 +2,7 @@
 from sqlalchemy import delete, event, insert, select, update
 from app.models import Conversation, Message
 from app.modules.conversations.service import conversation_dicts, conversation_event_summaries
-from app.modules.panel.read_state import mark_conversation_read
+from app.modules.messaging.read_state import mark_conversation_read
 from helpers import create_conversation
 
 

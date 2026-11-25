@@ -7,7 +7,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from app.bots_gateway.gateway import BotsGateway
-from app.bots_gateway.outbox import enqueue_web_delivery
+from app.modules.communication.outbox import enqueue_web_delivery
 from app.core.database import SessionLocal
 from app.migrations import initialize_database
 from app.models import Assignment, BotEventReceipt, ConnectorDelivery, Conversation, Message, User, TransportJob
