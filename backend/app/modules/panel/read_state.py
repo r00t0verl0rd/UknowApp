@@ -16,7 +16,7 @@ from app.modules.personal_chat.service import publish_personal_update
 def mark_conversation_read(db, conversation, principal, after_id: int, visible_ids=None) -> None:
     """Учитель и ученик помечают прочитанными новые сообщения собеседников; администратор ничего не помечает."""
     role = principal["role"]
-    if role not in {"teacher", "student"}:
+    if role not in {"teacher", "student"} or (visible_ids is not None and not visible_ids):
         return
     read_key = "teacher_read_at" if role == "teacher" else "student_read_at"
     sender_roles = ("student", "admin") if role == "teacher" else ("teacher", "admin")
@@ -47,6 +47,8 @@ def mark_conversation_read(db, conversation, principal, after_id: int, visible_i
 def mark_personal_read(db, item, principal, after_id: int, visible_ids=None) -> None:
     """Помечает прочитанными новые сообщения собеседника в личном диалоге."""
     role = principal["role"]
+    if visible_ids is not None and not visible_ids:
+        return
     read_column = PersonalMessage.admin_read_at if role == "admin" else PersonalMessage.participant_read_at
     read_ids = db.scalars(
         select(PersonalMessage.id).where(

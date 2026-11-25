@@ -29,6 +29,8 @@ jobs:
       - name: Verify Core does not require aiogram
         run: python -c "import importlib.util; assert importlib.util.find_spec('aiogram') is None; from app.main import app"
       - run: python -m pytest -q backend/tests
+      - name: Synthetic Core benchmark (100k messages)
+        run: python backend/tests/benchmark_core.py --messages 100000 --clients 10 50 100 --rounds 1
       - run: pip install -r connectors/telegram/requirements.txt
       - run: python -m pytest -q connectors/tests
       - uses: actions/setup-node@v5

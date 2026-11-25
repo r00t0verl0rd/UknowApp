@@ -125,7 +125,7 @@ def assert_preserved(connection, name):
     inspector = inspect(connection)
     assert {"ix_connector_delivery_queue", "ix_connector_delivery_route_order"} <= {i["name"] for i in inspector.get_indexes("connector_deliveries")}
     assert {"ix_push_role_state", "ix_push_session_hash"} <= {i["name"] for i in inspector.get_indexes("push_subscriptions")}
-    assert not {"teacher_panels","teacher_sessions","student_telegram_groups","bot_delivery_jobs"} & set(inspector.get_table_names())
+    assert not {"teacher_panels","teacher_sessions","student_telegram_groups","bot_delivery_jobs","realtime_events"} & set(inspector.get_table_names())
     assert "telegram_id" not in {c["name"] for c in inspector.get_columns("users")}
     assert "source_message_id" not in {c["name"] for c in inspector.get_columns("messages")}
     assert set(connection.scalars(text("SELECT version FROM schema_migrations"))) >= {v for v,_ in migrations.MIGRATIONS}

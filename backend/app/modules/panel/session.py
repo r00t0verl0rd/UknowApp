@@ -18,10 +18,9 @@ from app.event_hub import (
     subscribe_chat_updates,
     unsubscribe_chat_updates,
 )
-from app.models import User
 from app.modules.auth.permissions import ROLE_PERMISSIONS
 from app.modules.auth.service import _load_panel_identity
-from app.modules.dependencies import Db, PanelUser
+from app.modules.dependencies import PanelUser
 from app.modules.messaging.service import _panel_visible_conversation
 from app.modules.personal_chat.service import _personal_conversation
 
@@ -30,18 +29,13 @@ router = APIRouter()
 
 
 @router.get("/panel/me")
-def panel_me(principal: PanelUser, db: Db):
+def panel_me(principal: PanelUser):
     permissions = sorted(ROLE_PERMISSIONS[principal["role"]])
     if principal["role"] == "admin":
         return {"permissions": permissions, "role": "admin", "full_name": "Администратор"}
-    user = db.get(User, principal["user_id"])
-    if (
-        not user
-        or user.role != principal["role"]
-        or user.role not in {"teacher", "student"}
-    ):
-        raise HTTPException(status_code=401, detail="Учётная запись недоступна")
-    return {"permissions": permissions, "role": user.role, "id": user.id, "full_name": user.full_name}
+    # Authentication already checked the current role, password fingerprint and name.
+    return {"permissions": permissions, "role": principal["role"],
+            "id": principal["user_id"], "full_name": principal["full_name"]}
 
 
 def visible_payload(db, principal, payload):
@@ -72,13 +66,16 @@ async def panel_events(request: Request, principal: PanelUser):
     checkpoint = current_event_id()
     replay = replay_chat_updates(None, principal, cursor)
 
-    def filter_event(payload):
+    def authorized_payload(payload=None):
+        current = _load_panel_identity(request)
+        if not current or (current["role"], current["user_id"]) != (principal["role"], principal["user_id"]):
+            return None
+        if payload is None:
+            return True
+        if json.loads(payload).get("resync"):
+            return json.dumps({"resync": True})
         with SessionLocal() as session:
             return visible_payload(session, principal, payload)
-
-    async def still_authorized():
-        current = await asyncio.to_thread(_load_panel_identity, request)
-        return current and (current["role"], current["user_id"]) == (principal["role"], principal["user_id"])
 
     async def event_stream():
         try:
@@ -86,27 +83,27 @@ async def panel_events(request: Request, principal: PanelUser):
             if not cursor:
                 yield f"id: {checkpoint}\nevent: checkpoint\ndata: {{}}\n\n"
             for event_id, payload in replay:
-                if not await still_authorized():
+                payload = await asyncio.to_thread(authorized_payload, payload)
+                if payload is None:
                     return
-                payload = await asyncio.to_thread(filter_event, payload)
                 yield f"id: {event_id}\nevent: update\ndata: {payload}\n\n"
             while not await request.is_disconnected():
                 try:
                     payload = await asyncio.wait_for(queue.get(), timeout=15)
                 except TimeoutError:
-                    if not await still_authorized():
+                    if not await asyncio.to_thread(authorized_payload):
                         return
                     yield ": keep-alive\n\n"
                     continue
-                if not await still_authorized():
-                    return
                 try:
                     event_id = json.loads(payload).get("event_id")
                 except (TypeError, ValueError):
                     event_id = None
+                payload = await asyncio.to_thread(authorized_payload, payload)
+                if payload is None:
+                    return
                 if event_id is not None:
                     yield f"id: {event_id}\n"
-                payload = await asyncio.to_thread(filter_event, payload)
                 yield "event: update\ndata: " + payload + "\n\n"
         finally:
             unsubscribe_chat_updates(queue)
