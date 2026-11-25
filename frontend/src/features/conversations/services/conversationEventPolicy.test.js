@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { hasSummaryChanges, requiresMessageSync } from "./conversationEventPolicy.js";
+import { applyDeliveryStatus, hasSummaryChanges, requiresMessageSync } from "./conversationEventPolicy.js";
 
 test("read receipts do not refetch the teacher's open conversation", () => {
   assert.equal(requiresMessageSync("read", "teacher", "conversation"), false);
@@ -10,10 +10,22 @@ test("read receipts do not refetch the teacher's open conversation", () => {
   assert.equal(requiresMessageSync("read", "admin", "conversation"), true);
 });
 
-test("incoming messages, deletions and delivery updates still synchronize", () => {
-  for (const action of ["upsert", "delete", "delivery"]) {
+test("delivery hints avoid full synchronization for all viewers on new Core", () => {
+  for (const action of ["upsert", "delete"]) {
     assert.equal(requiresMessageSync(action, "teacher", "conversation"), true);
   }
+  assert.equal(requiresMessageSync("delivery", "teacher", "conversation"), false);
+  assert.equal(requiresMessageSync("delivery", "student", "conversation"), false);
+  assert.equal(requiresMessageSync("delivery", "admin", "conversation", {id: 1}), false);
+  assert.equal(requiresMessageSync("delivery", "admin", "conversation"), true);
+});
+
+test("a partial delivery hint updates only an already loaded message", () => {
+  const rows = [{id: 1, text: "hello"}];
+  const merge = (previous, updates) => [{...previous[0], ...updates[0]}];
+  assert.equal(applyDeliveryStatus(rows, {id: 2}, merge), rows);
+  const status = {id: 1, metadata: {messenger_deliveries: {telegram: {status: "delivered"}}}};
+  assert.deepEqual(applyDeliveryStatus(rows, status, merge), [{...rows[0], ...status}]);
 });
 
 test("unchanged SSE summaries preserve the existing chat data", () => {

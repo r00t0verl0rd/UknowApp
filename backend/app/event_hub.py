@@ -56,8 +56,10 @@ def _can_receive(principal: dict | None, audience: dict | None) -> bool:
 def _payload_for_subscriber(payload: dict[str, Any], principal: dict | None) -> str:
     visible = {
         key: value for key, value in payload.items()
-        if key not in {"audience", "summary_by_role"}
+        if key not in {"audience", "summary_by_role", "admin_message_status"}
     }
+    if principal and principal.get("role") == "admin" and payload.get("admin_message_status") is not None:
+        visible["message_status"] = payload["admin_message_status"]
     summaries = payload.get("summary_by_role") or {}
     if principal:
         summary = summaries.get(principal.get("role"))
@@ -124,6 +126,7 @@ def publish_chat_update(
     audience: dict | None = None,
     summary_by_role: dict[str, dict] | None = None,
     db: Session | None = None,
+    admin_message_status: dict | None = None,
 ) -> int:
     """Publish a hint after the caller commits its business transaction (no SQL)."""
     payload = {
@@ -137,6 +140,7 @@ def publish_chat_update(
         "read_at": read_at,
         "audience": audience,
         "summary_by_role": summary_by_role or {},
+        "admin_message_status": admin_message_status,
     }
     global _latest_id, _latest_payload
     # One bounded recovery hint, not a second message history. Serialize dispatch

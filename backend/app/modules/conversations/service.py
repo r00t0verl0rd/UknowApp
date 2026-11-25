@@ -131,6 +131,7 @@ def publish_conversation_update(
     message_ids: list[int] | None = None,
     sender_role: str | None = None,
     read_at: str | None = None,
+    admin_message_status: dict | None = None,
 ) -> None:
     """Передать событие чата с актуальными счётчиками."""
     publish_chat_update(
@@ -141,11 +142,14 @@ def publish_conversation_update(
         message_ids=message_ids,
         sender_role=sender_role,
         read_at=read_at,
-        audience={
+        # Only admins can see external delivery details. No participant SSE
+        # authorization queries or sync requests are needed for these events.
+        audience=None if action == "delivery" else {
             "teacher_id": conversation.teacher_id,
             "student_id": conversation.student_id,
         },
         # Delivery metadata does not change message counts, unread counts or preview.
         summary_by_role=None if action == "delivery" else conversation_event_summaries(db, conversation),
         db=db,
+        admin_message_status=admin_message_status,
     )

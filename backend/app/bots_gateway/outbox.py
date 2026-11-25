@@ -218,4 +218,5 @@ def record_result(db, job, status, external_id=None):
     db.commit()
     conversation = db.get(Conversation, row.conversation_id)
     if conversation:
-        publish_conversation_update(db, conversation, message_id=row.id, action="delivery", sender_role=row.sender_role)
+        publish_conversation_update(db, conversation, message_id=row.id, action="delivery", sender_role=row.sender_role,
+            admin_message_status={"id": row.id, "metadata": {"messenger_deliveries": metadata["messenger_deliveries"]}})

@@ -4,7 +4,7 @@ import { subscribePanelEvents } from "../../../shared/services/panelEventStream.
 import { acknowledgeChatMessages, syncChatState } from "../services/conversationsApi.js";
 import { markConversationMessageDeleted, mergeConversationMessages } from "../services/messageState.js";
 import { mergeInboxSnapshot } from "../../../shared/services/inboxState.js";
-import { hasSummaryChanges, requiresMessageSync } from "../services/conversationEventPolicy.js";
+import { applyDeliveryStatus, hasSummaryChanges, requiresMessageSync } from "../services/conversationEventPolicy.js";
 const maxMessageId = (rows) => rows.reduce((max, row) => Math.max(max, Number(row.id) || 0), 0);
 const isSameChat = (chat, id, type) =>
   Number(chat?.id) === Number(id) && (chat?.type === "personal") === (type === "personal");
@@ -252,6 +252,8 @@ export function createConversationSync(options) {
         const id = Number(payload.conversation_id);
         const type = payload.conversation_type || "conversation";
         const key = conversationKey(id, type);
+        // Non-admin delivery is invisible and must not invalidate an in-flight sync.
+        if (payload.action === "delivery" && options.role !== "admin") return;
         eventRevision.set(key, (eventRevision.get(key) || 0) + 1);
         if (payload.summary) applySummary(type, id, payload.summary);
         else if (payload.action !== "delivery") {
@@ -298,7 +300,11 @@ export function createConversationSync(options) {
           markConversationMessageDeleted(key, Number(payload.message_id));
           options.cache.removeMessage(key, Number(payload.message_id));
         }
-        if (!isSameChat(selected, id, type) || !requiresMessageSync(payload.action, viewerRole, type)) return;
+        if (payload.action === "delivery" && payload.message_status && isSameChat(selected, id, type)) {
+          options.setMessages(rows => applyDeliveryStatus(rows, payload.message_status,
+            (previous, updates) => mergeConversationMessages(previous, updates, key)));
+        }
+        if (!isSameChat(selected, id, type) || !requiresMessageSync(payload.action, viewerRole, type, payload.message_status)) return;
         const state = pending.get(key) || {
           conversation_id: id,
           conversation_type: type,

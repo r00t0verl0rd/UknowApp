@@ -47,6 +47,11 @@ def test_authenticated_profile_and_history_query_budget(api):
         assert result.status_code == 200
         assert result.json()[0]["message_count"] == 1000
         assert len(statements) <= 3, statements
-        assert not any("messenger_accounts" in s or "count(" in s.lower() or "json_extract" in s.lower() for s in statements)
+        assert not any("messenger_accounts" in s or "count(" in s.lower() or "json_extract" in s.lower() or "group by" in s.lower() for s in statements)
+        statements.clear()
+        sync = client.post(f"/api/panel/conversations/{chat_id}/sync",json={"after_id":1000000,"paged":True,"mark_read":False})
+        assert sync.status_code == 200, sync.text
+        assert sync.json()["summary"]["message_count"] == 1000
+        assert not any("json_extract" in s.lower() or "group by" in s.lower() or "count(" in s.lower() for s in statements)
     finally:
         event.remove(engine, "before_cursor_execute", count)

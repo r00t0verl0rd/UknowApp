@@ -82,3 +82,44 @@ def test_upgrade_generated_receipts_preserves_metadata_and_counters(tmp_path):
         assert connection.execute(text("SELECT teacher_unread_count,teacher_last_read_id FROM conversations")).one()==(0,2)
         assert json.loads(connection.scalar(text("SELECT metadata_json FROM messages WHERE id=2")))["messenger_deliveries"]["telegram"]["status"]=="delivered"
     engine.dispose()
+
+
+def test_admin_delivery_hint_does_not_reach_participants(api):
+    import json
+    from app.event_hub import current_event_id, replay_chat_updates
+    from app.modules.conversations.service import publish_conversation_update
+    _, users, sessions = api
+    with sessions() as db:
+        chat = create_conversation(db,users["teacher-one"],users["student-one"])
+        cursor = current_event_id()
+        status = {"id":123,"metadata":{"messenger_deliveries":{"telegram":{"status":"delivered","external_chat_id":"internal"}}}}
+        publish_conversation_update(db,chat,action="delivery",message_id=123,admin_message_status=status)
+        admin = json.loads(replay_chat_updates(db,{"role":"admin"},cursor)[0][1])
+        assert admin["message_status"] == status
+        assert "summary" not in admin
+        assert not replay_chat_updates(db,{"role":"teacher","user_id":chat.teacher_id},cursor)
+        assert not replay_chat_updates(db,{"role":"student","user_id":chat.student_id},cursor)
+
+
+def test_summary_no_history_scan_even_with_100k_messages(api):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = create_conversation(db,users["teacher-one"],users["student-one"])
+        for start in range(0,100000,2000):
+            db.execute(insert(Message),[dict(conversation_id=chat.id,sender_id=chat.student_id,
+                sender_role="student",text=str(i),teacher_read_at="2026-01-01" if i<99999 else None)
+                for i in range(start,start+2000)])
+        db.commit()
+        statements=[]
+        def capture(*args):
+            statements.append(args[2])
+        event.listen(db.get_bind(),"before_cursor_execute",capture)
+        try:
+            for _ in range(5):
+                summary=conversation_event_summaries(db,chat)
+                assert summary["teacher"]["message_count"]==100000
+                assert summary["teacher"]["unread_count"]==1
+                assert summary["teacher"]["last_message"]=="99999"
+            assert not any("group by" in q.lower() or "count(" in q.lower() or "json_extract" in q.lower() or "sum(" in q.lower() for q in statements)
+        finally:
+            event.remove(db.get_bind(),"before_cursor_execute",capture)
