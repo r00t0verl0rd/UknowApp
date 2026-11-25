@@ -3,7 +3,7 @@
 import sqlite3
 
 from app.models import Conversation, Message, User
-from app.modules.administration import data as admin_data
+from app.modules.administration import common as admin_data, restore
 
 
 def test_stats_tolerates_legacy_message_metadata(api, monkeypatch, tmp_path):
@@ -20,7 +20,7 @@ def test_stats_tolerates_legacy_message_metadata(api, monkeypatch, tmp_path):
     monkeypatch.setattr(admin_data, "DATA_DIR", data_root)
     monkeypatch.setattr(admin_data, "MEDIA_DIR", media_dir)
     monkeypatch.setattr(admin_data, "SessionLocal", test_sessions)
-    monkeypatch.setattr(admin_data, "_database_path", lambda: database_path)
+    monkeypatch.setattr(admin_data, "database_path", lambda: database_path)
 
     legacy_values = [
         "[]", "null", '"legacy text"', '{"media": []}',

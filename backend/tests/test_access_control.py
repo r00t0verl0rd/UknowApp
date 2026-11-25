@@ -151,7 +151,7 @@ def test_admin_can_unassign_student_without_deleting_conversation_history(api):
 
 
 def test_admin_dialogue_cleanup_accepts_all_retention_options(api, monkeypatch, tmp_path):
-    from app.modules.administration import data as admin_data
+    from app.modules.administration import common as admin_data, restore
 
     make_client, _, sessions = api
     monkeypatch.setattr(admin_data, "SessionLocal", sessions)

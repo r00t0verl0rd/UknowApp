@@ -21,7 +21,7 @@ def exercise_transfer():
     import sqlite3
     from fastapi.testclient import TestClient
     from app.main import app
-    from app.modules.administration import data
+    from app.modules.administration import common as data
 
     def login(client):
         client.post("/api/auth/login", json={

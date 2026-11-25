@@ -8,7 +8,7 @@ import zipfile
 
 from fastapi import status
 
-from app.modules.administration import data as admin_data
+from app.modules.administration import common as admin_data, restore
 
 
 def login_admin(client):
@@ -63,7 +63,7 @@ def setup_data_root(monkeypatch, root):
     root.mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(admin_data, "DATA_DIR", root)
     monkeypatch.setattr(admin_data, "MEDIA_DIR", root / "media")
-    monkeypatch.setattr(admin_data, "_database_path", lambda: root / "uknowapp.db")
+    monkeypatch.setattr(admin_data, "database_path", lambda: root / "uknowapp.db")
 
 
 def test_full_backup_contains_complete_data_directory_and_checksums(api, monkeypatch, tmp_path):
@@ -236,9 +236,9 @@ def test_full_restore_is_staged_then_applied_before_app_start(api, monkeypatch, 
     with sqlite3.connect(data_root / "uknowapp.db") as connection:
         assert connection.execute("SELECT role FROM users WHERE id = 1").fetchone()[0] == "changed"
 
-    assert admin_data.apply_pending_data_restore() is True
+    assert restore.apply_pending_data_restore() is True
     assert admin.get("/api/admin/data/restore-status").json()["restore"]["status"] == "pending"
-    admin_data.finish_startup_restore(True)
+    restore.finish_startup_restore(True)
 
     with sqlite3.connect(data_root / "uknowapp.db") as connection:
         assert connection.execute("SELECT role FROM users WHERE id = 1").fetchone()[0] == "admin"
@@ -298,10 +298,10 @@ def test_interrupted_full_restore_returns_original_directory(api, monkeypatch, t
     assert backup.status_code == 200
     (root / "original-only").write_text("before")
     assert admin.post("/api/admin/data/full", files={"file": ("full.zip", backup.content)}).status_code == 202
-    assert admin_data.apply_pending_data_restore()
+    assert restore.apply_pending_data_restore()
     assert not (root / "original-only").exists()
     # Simulate a new process before startup confirmed the replacement.
-    assert not admin_data.apply_pending_data_restore()
+    assert not restore.apply_pending_data_restore()
     assert (root / "original-only").read_text() == "before"
     assert admin.get("/api/admin/data/restore-status").json()["restore"]["status"] == "failed"
 
@@ -326,9 +326,9 @@ def test_transfer_to_new_sqlite_path_and_checksum_failure(api, monkeypatch, tmp_
     assert not (root / admin_data.PENDING_RESTORE_NAME).exists()
 
     destination = root / "new" / "school.sqlite3"
-    monkeypatch.setattr(admin_data, "_database_path", lambda: destination)
+    monkeypatch.setattr(admin_data, "database_path", lambda: destination)
     assert admin.post("/api/admin/data/full", files={"file": ("copy.zip", archive.content)}).status_code == 202
-    assert admin_data.apply_pending_data_restore()
+    assert restore.apply_pending_data_restore()
     with sqlite3.connect(destination) as db:
         assert db.execute("SELECT role FROM users").fetchone() == ("admin",)
-    admin_data.finish_startup_restore(True)
+    restore.finish_startup_restore(True)

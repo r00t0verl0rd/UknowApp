@@ -17,7 +17,7 @@ from .core.database import Base, SessionLocal, engine
 from .migrations import initialize_database
 from .migrations.runtime_split import initialize_runtime_storage
 from .models import Assignment, Conversation, User
-from .modules.administration.data import (
+from .modules.administration.restore import (
     apply_pending_data_restore,
     finish_startup_restore,
 )
