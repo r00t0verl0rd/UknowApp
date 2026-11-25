@@ -31,7 +31,7 @@ nano .env
 
 Остальные настройки можно оставить по умолчанию: SQLite и обычный Telegram API.
 
-Если домен отличается от `uknowschool.ru`, замените имена сайтов также в [frontend/Caddyfile](frontend/Caddyfile).
+Укажите свой домен также в [frontend/Caddyfile](frontend/Caddyfile).
 
 Запустите приложение:
 
@@ -40,7 +40,7 @@ docker compose up -d --build
 docker compose ps
 ```
 
-Откройте https://uknowschool.ru (или свой домен). HTTPS настроится автоматически. Логин по умолчанию — `admin`, пароль — из `.env`.
+Откройте свой сайт по HTTPS. HTTPS настроится автоматически. Логин по умолчанию — `admin`, пароль — из `.env`.
 
 ## Локальный запуск
 
