@@ -27,7 +27,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
-      - run: pip install -r backend/requirements.txt pytest httpx
+      - run: pip install -r backend/requirements.txt pytest httpx httpx2
       - run: python -m compileall -q backend/app connectors
       - name: Verify Core does not require aiogram
         run: python -c "import importlib.util; assert importlib.util.find_spec('aiogram') is None; from app.main import app"
@@ -36,7 +36,7 @@ jobs:
         run: python backend/tests/benchmark_core.py --messages 100000 --clients 10 50 100 --rounds 1
       - run: pip install -r connectors/telegram/requirements.txt
       - run: python -m pytest -q connectors/tests
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
       - name: Frontend unit tests and build

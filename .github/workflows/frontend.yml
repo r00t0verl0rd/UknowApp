@@ -53,7 +53,7 @@ jobs:
         run: npm install --no-save playwright@1.56.1
       - name: Restore cached Chromium headless shell
         id: browser-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: chromium-headless-shell-1.56.1-${{ runner.os }}
@@ -66,6 +66,8 @@ jobs:
   backup-function:
     name: backup-function
     runs-on: ubuntu-latest
+    env:
+      ADMIN_PASSWORD: ci-only-admin-password-123 # pragma: allowlist secret
     timeout-minutes: 5
     defaults:
       run:
@@ -80,12 +82,14 @@ jobs:
           enable-cache: true
           cache-dependency-glob: backend/requirements.txt
       - name: Install backup test dependencies
-        run: uv pip install --system -r requirements.txt pytest httpx
+        run: uv pip install --system -r requirements.txt pytest httpx httpx2
       - name: Verify backup export, restore and rollback
         run: python -m pytest -q tests/test_admin_data_backup.py tests/test_restore_startup.py
 
   backend:
     runs-on: ubuntu-latest
+    env:
+      ADMIN_PASSWORD: ci-only-admin-password-123 # pragma: allowlist secret
     defaults:
       run:
         working-directory: backend
@@ -98,7 +102,7 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: backend/requirements.txt
-      - run: uv pip install --system -r requirements.txt ruff vulture bandit detect-secrets pytest httpx
+      - run: uv pip install --system -r requirements.txt ruff vulture bandit detect-secrets pytest httpx httpx2
         id: backend_dependencies
       - run: ruff check app --extend-select BLE001,SIM115,B008
       - run: vulture app --min-confidence 80

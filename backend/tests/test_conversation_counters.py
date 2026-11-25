@@ -123,3 +123,14 @@ def test_summary_no_history_scan_even_with_100k_messages(api):
             assert not any("group by" in q.lower() or "count(" in q.lower() or "json_extract" in q.lower() or "sum(" in q.lower() for q in statements)
         finally:
             event.remove(db.get_bind(),"before_cursor_execute",capture)
+
+
+def test_sql_trigger_references_reject_arbitrary_expressions():
+    import pytest
+    from app.infrastructure.storage.conversation_counters import cursor_assignments, latest_id
+
+    for generator in (cursor_assignments, latest_id):
+        for reference in ("NEW.conversation_id", "OLD.conversation_id", "conversations.id"):
+            assert reference in generator(reference)
+        with pytest.raises(ValueError, match="Unknown SQL conversation reference"):
+            generator("untrusted_expression")

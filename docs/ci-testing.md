@@ -48,7 +48,7 @@ npm run test:browser
 ```bash
 cd backend
 python -m pip install -r requirements.txt
-python -m pip install ruff vulture bandit detect-secrets pytest httpx
+python -m pip install ruff vulture bandit detect-secrets pytest httpx httpx2
 ruff check app --extend-select BLE001,SIM115,B008
 python -m pytest -q tests
 ```
@@ -78,7 +78,7 @@ python -m pytest -q tests/test_admin_data_backup.py tests/test_restore_startup.p
 - Повторный импорт `app.main` и прежний Compose/browser-тест переноса убраны: их покрывают pytest и backup-function.
 - Новый push или PR отменяет устаревший прогон той же ветки, не затрагивая другие ветки.
 
-Покрытие и проверки безопасности сохранены. Ускорять CI за счёт отключения тестов не нужно.
+Покрытие и проверки безопасности сохранены. Для тестового клиента Starlette используется `httpx2`, а `httpx` остаётся для существующих прямых HTTP-тестов. Демонстрационный пароль задаётся только в изолированном CI; предупреждение о слабом пароле в рабочем приложении сохранено. Локальные исключения Bandit B608 относятся к статическим SQL-триггерам и фиксированным именам таблиц в тестах; произвольные ссылки в генераторе SQL отклоняются регрессионным тестом. Ускорять CI за счёт отключения тестов не нужно.
 
 ## Оптимизации приложения
 
