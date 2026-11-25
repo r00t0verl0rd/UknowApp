@@ -18,7 +18,7 @@ from connectors.common.commands import Commands
 from connectors.common.client import DeliveryRejected, RetryLater, RpcError
 
 logger = logging.getLogger(__name__)
-MAX_BYTES = 1024 ** 3
+ATTACHMENT_LIMITS = {"cloud": 20 * 1024 ** 2, "local": 888 * 1024 ** 2}
 
 
 class TelegramAdapter:
@@ -26,9 +26,10 @@ class TelegramAdapter:
         self.http = http
         self.token = token
         mode = os.getenv("TELEGRAM_API_MODE", "cloud")
-        if mode not in {"cloud", "local"}:
+        if mode not in ATTACHMENT_LIMITS:
             raise ValueError("invalid Telegram API mode")
         self.local = mode == "local"
+        self.max_attachment_bytes = ATTACHMENT_LIMITS[mode]
         self.base = (os.getenv("TELEGRAM_API_URL", "http://telegram-bot-api:8081")
                      if self.local else "https://api.telegram.org").rstrip("/")
         self.files = Path(os.getenv("TELEGRAM_FILES_DIR", "/var/lib/telegram-bot-api")).resolve()
@@ -45,7 +46,7 @@ class TelegramAdapter:
             raise ValueError("invalid provider path")
         if self.local:
             source = (self.files / path).resolve()
-            if not source.is_relative_to(self.files) or not source.is_file() or source.stat().st_size > MAX_BYTES:
+            if not source.is_relative_to(self.files) or not source.is_file() or source.stat().st_size > self.max_attachment_bytes:
                 raise ValueError("invalid local media")
             with source.open("rb") as stream:
                 while chunk := await asyncio.to_thread(stream.read, 65536):
@@ -57,7 +58,7 @@ class TelegramAdapter:
                 total = 0
                 async for chunk in response.content.iter_chunked(65536):
                     total += len(chunk)
-                    if total > MAX_BYTES:
+                    if total > self.max_attachment_bytes:
                         raise ValueError("media too large")
                     yield chunk
 
@@ -91,6 +92,9 @@ class TelegramAdapter:
             sent = await self.bot.send_message(text=text[:4096], **kwargs)
             return sent.message_id
         media = job["media"]
+        size = media.get("file_size")
+        if isinstance(size, int) and size > self.max_attachment_bytes:
+            raise DeliveryRejected("attachment exceeds Telegram mode limit")
         kind = job.get("kind")
         method, field = {"photo": (self.bot.send_photo, "photo"),
                          "video": (self.bot.send_video, "video"),
@@ -257,11 +261,11 @@ class TelegramAdapter:
             if isinstance(value, list):
                 value = value[-1]
             event["kind"] = kind
-            if (value.get("file_size") or 0) > MAX_BYTES or (not self.local and (value.get("file_size") or 0) > 20 * 1024 ** 2):
+            if (value.get("file_size") or 0) > self.max_attachment_bytes:
                 event["media_unavailable"] = True
                 break
             remote = await self.bot.get_file(value["file_id"])
-            if remote.file_size is None or remote.file_size > MAX_BYTES or not remote.file_path:
+            if remote.file_size is None or remote.file_size > self.max_attachment_bytes or not remote.file_path:
                 event["media_unavailable"] = True
                 break
             name = value.get("file_name") or {"photo":"photo.jpg","video":"video.mp4","voice":"voice.ogg",

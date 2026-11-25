@@ -482,7 +482,17 @@ export default function ChatsPage(options) {
                         type="file"
                         aria-label="Выбрать файл для сообщения"
                         accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
-                        onInput={(event) => options.setAttachment(event.target.files?.[0] || null)}
+                        onInput={(event) => {
+                          const file = event.target.files?.[0];
+                          const limit = options.profile?.max_attachment_bytes;
+                          if (file && limit && file.size > limit) {
+                            event.target.value = "";
+                            options.setAttachment(null);
+                            options.setError("Максимальный размер вложения — " + limit / 1024 ** 2 + " МиБ");
+                            return;
+                          }
+                          options.setAttachment(file || null);
+                        }}
                       />
                     </label>
                     {options.attachment && (

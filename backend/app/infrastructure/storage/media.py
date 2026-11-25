@@ -4,6 +4,7 @@ import contextlib
 import hashlib
 import json
 import logging
+import os
 from pathlib import Path
 
 from fastapi import Request, Response
@@ -16,6 +17,27 @@ MEDIA_DIR = ROOT_DIR / "data" / "media"
 
 MAX_ATTACHMENT_BYTES = 1024 ** 3
 ATTACHMENT_SIZE_ERROR = "Максимальный размер вложения — 1024 МиБ"
+
+TELEGRAM_ATTACHMENT_LIMITS = {"cloud": 20 * 1024 ** 2, "local": 888 * 1024 ** 2}
+
+
+def provider_attachment_limit(platform: str) -> int:
+    if platform != "telegram":
+        return MAX_ATTACHMENT_BYTES
+    mode = os.getenv("TELEGRAM_API_MODE", "cloud")
+    if mode not in TELEGRAM_ATTACHMENT_LIMITS:
+        raise ValueError("invalid Telegram API mode")
+    return TELEGRAM_ATTACHMENT_LIMITS[mode]
+
+
+def panel_attachment_limit() -> int:
+    # Web-only installations retain the existing storage limit.
+    enabled = {item.strip() for item in os.getenv("BOTS_PLATFORMS", "").split(",")}
+    return min((provider_attachment_limit(p) for p in enabled), default=MAX_ATTACHMENT_BYTES)
+
+
+def attachment_size_error(limit: int) -> str:
+    return f"Максимальный размер вложения — {limit // 1024 ** 2} МиБ"
 
 SAFE_MEDIA_TYPES = {
     "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp",

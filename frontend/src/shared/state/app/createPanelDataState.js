@@ -27,7 +27,10 @@ export function createPanelDataState(options) {
       const current = await getCurrentProfile(request);
       if (profile !== options.profile) return;
       if (current.id === profile.id && current.role === profile.role &&
-          JSON.stringify(current.permissions) === JSON.stringify(profile.permissions)) return;
+          JSON.stringify(current.permissions) === JSON.stringify(profile.permissions)) {
+        if (current.max_attachment_bytes !== profile.max_attachment_bytes) options.setProfile(current);
+        return;
+      }
     } catch (error) {
       if (profile !== options.profile) return;
       if (error.status !== 401 && error.status !== 403) return;

@@ -7,8 +7,8 @@ from pathlib import Path
 from fastapi import HTTPException, UploadFile
 
 from app.infrastructure.storage.media import (
-    ATTACHMENT_SIZE_ERROR,
-    MAX_ATTACHMENT_BYTES,
+    attachment_size_error,
+    panel_attachment_limit,
     MEDIA_DIR,
     safe_media_type,
 )
@@ -16,8 +16,9 @@ from app.infrastructure.storage.media import (
 
 def store_panel_attachment(file: UploadFile, conversation_id: int, *, personal: bool = False):
     """Проверить и сохранить вложение."""
-    if file.size is not None and file.size > MAX_ATTACHMENT_BYTES:
-        raise HTTPException(status_code=413, detail=ATTACHMENT_SIZE_ERROR)
+    limit = panel_attachment_limit()
+    if file.size is not None and file.size > limit:
+        raise HTTPException(status_code=413, detail=attachment_size_error(limit))
     original_name = (file.filename or "attachment").replace("\\", "/").rsplit("/", 1)[-1]
     original_name = "".join(
         char for char in original_name
@@ -36,8 +37,8 @@ def store_panel_attachment(file: UploadFile, conversation_id: int, *, personal: 
     def copy_upload():
         with target_path.open("xb") as target:
             while chunk := file.file.read(1024 * 1024):
-                if target.tell() + len(chunk) > MAX_ATTACHMENT_BYTES:
-                    raise HTTPException(status_code=413, detail=ATTACHMENT_SIZE_ERROR)
+                if target.tell() + len(chunk) > limit:
+                    raise HTTPException(status_code=413, detail=attachment_size_error(limit))
                 target.write(chunk)
             return target.tell()
 

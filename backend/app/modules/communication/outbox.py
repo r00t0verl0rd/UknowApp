@@ -135,7 +135,7 @@ def job_payload(db, job):
             "recipient": job.external_user_id, "kind": row.content_type,
             "text": sender + ("\n" + row.text if row.text else ""),
             "media": {"file_name": media.get("file_name") or "attachment",
-                      "mime_type": media.get("mime_type"), "key": media_key if media.get("local_path") else None} if media.get("archive_status") == "stored" else None}
+                      "mime_type": media.get("mime_type"), "file_size": media.get("file_size"), "key": media_key if media.get("local_path") else None} if media.get("archive_status") == "stored" else None}
 
 
 def get_job(db, job_id, *, for_update=False):

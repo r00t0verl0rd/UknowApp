@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
 from app.core.database import begin_serialized_write
-from app.infrastructure.storage.media import safe_media_type
+from app.infrastructure.storage.media import safe_media_type, provider_attachment_limit
 from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.models import (
     Assignment,
@@ -141,6 +141,10 @@ def authorize_delivery(db, platform, job_id, claim=None):
     if result is None:
         record_result(db, job, "cancelled")
         raise HTTPException(403, "job no longer authorized")
+    size = (result.get("media") or {}).get("file_size")
+    if isinstance(size, int) and size > provider_attachment_limit(platform):
+        record_result(db, job, "failed")
+        raise HTTPException(413, "attachment exceeds provider limit")
     # The four-job batch must fit inside the wire frame even with legacy rows.
     if len(encode(result)) > 60 * 1024:
         record_result(db, job, "failed")

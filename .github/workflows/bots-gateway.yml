@@ -43,7 +43,7 @@ jobs:
       - name: Verify Core does not require aiogram
         run: python -c "import importlib.util; assert importlib.util.find_spec('aiogram') is None; from app.main import app"
       - run: uv pip install --system -r connectors/telegram/requirements.txt
-      - run: python -m pytest -q connectors/tests
+      - run: python -m pytest -q connectors/tests backend/tests/test_attachment_limits.py
       - name: Validate Compose configuration
         run: |
           cp .env.example .env

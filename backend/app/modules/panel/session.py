@@ -18,6 +18,7 @@ from app.event_hub import (
     subscribe_chat_updates,
     unsubscribe_chat_updates,
 )
+from app.infrastructure.storage.media import panel_attachment_limit
 from app.modules.auth.permissions import ROLE_PERMISSIONS
 from app.modules.auth.service import load_panel_identity
 from app.modules.dependencies import PanelUser
@@ -31,11 +32,14 @@ router = APIRouter()
 @router.get("/panel/me")
 def panel_me(principal: PanelUser):
     permissions = sorted(ROLE_PERMISSIONS[principal["role"]])
+    max_attachment_bytes = panel_attachment_limit()
     if principal["role"] == "admin":
-        return {"permissions": permissions, "role": "admin", "full_name": "Администратор"}
+        return {"permissions": permissions, "role": "admin", "full_name": "Администратор",
+                "max_attachment_bytes": max_attachment_bytes}
     # Authentication already checked the current role, password fingerprint and name.
     return {"permissions": permissions, "role": principal["role"],
-            "id": principal["user_id"], "full_name": principal["full_name"]}
+            "id": principal["user_id"], "full_name": principal["full_name"],
+            "max_attachment_bytes": max_attachment_bytes}
 
 
 def visible_payload(db, principal, payload):

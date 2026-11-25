@@ -590,6 +590,11 @@ export function createChatsController(options) {
     const text = options.chatState.draft.trim();
     const file = options.chatState.attachment;
     if (!chat || (!text && !file) || sendingMessage) return;
+    const limit = options.profile?.max_attachment_bytes;
+    if (file && limit && file.size > limit) {
+      options.setError("Максимальный размер вложения — " + limit / 1024 ** 2 + " МиБ");
+      return;
+    }
     sendingMessage = true;
     const optimistic = chat.type !== "personal" && !file && Boolean(text);
     const signature = [

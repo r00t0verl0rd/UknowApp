@@ -14,6 +14,7 @@ def test_api_modes(mode, base, monkeypatch):
     monkeypatch.setenv("TELEGRAM_API_URL", "http://local-api:8081")
     adapter = TelegramAdapter(None, "123:" + "a" * 32)
     try:
+        assert adapter.max_attachment_bytes == (20 if mode == "cloud" else 888) * 1024 ** 2
         assert adapter.base == base
         assert adapter.bot.session.api.is_local == (mode == "local")
     finally:
@@ -99,4 +100,65 @@ def test_parallel_fanout_reuses_file_id():
         assert calls[1].kwargs["photo"] == "cached-photo"
         assert not adapter.media_locks
 
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("mode,mib", [("cloud", 20), ("local", 888)])
+def test_oversize_outbound_rejected_before_provider_call(mode, mib, monkeypatch):
+    from connectors.common.client import DeliveryRejected
+    monkeypatch.setenv("TELEGRAM_API_MODE", mode)
+    async def run():
+        adapter = TelegramAdapter(None, "123:" + "a" * 32)
+        try:
+            job = {"chat_id": "10", "text": "", "kind": "document",
+                   "media": {"file_size": mib * 1024 ** 2 + 1}}
+            with pytest.raises(DeliveryRejected):
+                await adapter.send(job, None)
+        finally:
+            await adapter.close()
+    asyncio.run(run())
+
+
+def test_local_oversize_rejected_before_read(tmp_path, monkeypatch):
+    monkeypatch.setenv("TELEGRAM_API_MODE", "local")
+    monkeypatch.setenv("TELEGRAM_FILES_DIR", str(tmp_path))
+    source = tmp_path / "big.bin"
+    with source.open("wb") as f:
+        f.truncate(888 * 1024 ** 2 + 1)
+    async def run():
+        adapter = TelegramAdapter(None, "123:" + "a" * 32)
+        try:
+            with pytest.raises(ValueError, match="invalid local media"):
+                async for _ in adapter.chunks(str(source)):
+                    pytest.fail("oversized file read")
+        finally:
+            await adapter.close()
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("mode,mib", [("cloud", 20), ("local", 888)])
+@pytest.mark.parametrize("declared_size", [True, False])
+def test_inbound_oversize_marked_unavailable(mode, mib, declared_size, monkeypatch):
+    monkeypatch.setenv("TELEGRAM_API_MODE", mode)
+    limit = mib * 1024 ** 2
+    async def run():
+        adapter = TelegramAdapter(None, "123:" + "a" * 32)
+        original_bot = adapter.bot
+        adapter.bot = SimpleNamespace(
+            get_file=AsyncMock(return_value=SimpleNamespace(file_size=limit + 1, file_path="file.bin")))
+        gateway = SimpleNamespace(
+            rpc=AsyncMock(return_value={"account": {"role": "student"}, "conversations": [{"id": 1}]}),
+            upload=AsyncMock(), inbound=AsyncMock())
+        try:
+            document = {"file_id": "x"}
+            if declared_size:
+                document["file_size"] = limit + 1
+            update = {"message": {"from": {"id": 10}, "chat": {"id": 10, "type": "private"},
+                                  "message_id": 1, "document": document}}
+            await adapter.handle("event", update, gateway, None)
+            gateway.upload.assert_not_awaited()
+            assert gateway.inbound.await_args.args[0]["media_unavailable"] is True
+            assert adapter.bot.get_file.await_count == (0 if declared_size else 1)
+        finally:
+            await original_bot.session.close()
     asyncio.run(run())

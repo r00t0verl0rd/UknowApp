@@ -48,15 +48,15 @@ uknowschool.ru, www.uknowschool.ru {
 
     @chatUpload {
         method POST
-        path /api/panel/conversations/*/attachments
+        path /api/panel/conversations/*/attachments /api/panel/personal-conversations/*/attachments
     }
-    # Учитываем заголовки при загрузке вложения до 1 ГиБ.
+    # Верхний транспортный предел с запасом на multipart. Точный лимит режима проверяет Core.
     request_body @chatUpload {
         max_size 1074790400
     }
     @ordinaryApi {
         path /api/*
-        not path /api/admin/data/full /api/admin/data/database /api/panel/conversations/*/attachments
+        not path /api/admin/data/full /api/admin/data/database /api/panel/conversations/*/attachments /api/panel/personal-conversations/*/attachments
     }
     request_body @ordinaryApi {
         max_size 22MB

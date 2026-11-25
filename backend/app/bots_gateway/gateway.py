@@ -27,7 +27,7 @@ from sqlalchemy import func, select
 
 from app.core.database import SessionLocal, begin_serialized_write
 from app.event_hub import subscribe_chat_updates, unsubscribe_chat_updates
-from app.infrastructure.storage.media import MAX_ATTACHMENT_BYTES, MEDIA_DIR
+from app.infrastructure.storage.media import MAX_ATTACHMENT_BYTES, MEDIA_DIR, provider_attachment_limit
 from app.migrations.runtime_split import initialize_runtime_storage
 from app.models import (
     ConnectorDeletion,
@@ -385,11 +385,12 @@ async def upload_media(request: Request, platform: str, event_id: str):
     target.parent.mkdir(parents=True, exist_ok=True)
     staging = target.with_name(target.name + "." + uuid4().hex + ".part")
     count = 0
+    limit = provider_attachment_limit(platform)
     try:
         with staging.open("xb") as stream:
             async for chunk in request.stream():
                 count += len(chunk)
-                if count > MAX_ATTACHMENT_BYTES:
+                if count > limit:
                     raise HTTPException(413)
                 await asyncio.to_thread(stream.write, chunk)
         if count == 0:
@@ -419,6 +420,8 @@ def _download_media(platform, job_id):
     path = (root / key).resolve()
     if root not in path.parents or not path.is_file() or path.stat().st_size > MAX_ATTACHMENT_BYTES:
         raise HTTPException(404)
+    if path.stat().st_size > provider_attachment_limit(platform):
+        raise HTTPException(413, "attachment exceeds provider limit")
     return FileResponse(path, media_type="application/octet-stream")
 
 
