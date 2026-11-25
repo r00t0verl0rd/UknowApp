@@ -414,8 +414,7 @@ async def _handle_unlinked_sender(
 
     normalized = re.sub(r"[\s-]", "", inbound.text.strip()).upper()
     prompt = (
-        "Аккаунт ещё не подключён. Попросите администратора сгенерировать код доступа "
-        "в UknowApp, затем отправьте сюда код."
+        "Аккаунт ещё не подключён. Попросите администратора UknowSchool подключить Вас"
     )
     if not CONNECTION_CODE_RE.fullmatch(normalized):
         await gateway.send_text(
