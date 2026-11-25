@@ -4,7 +4,7 @@ import pytest
 from app.models import Message, ConnectorDelivery
 from app.modules.communication.accounts import get_messenger_pair, sync_messenger_account
 from app.modules.communication.contracts import MessengerPlatform
-from app.bots_gateway.outbox import enqueue_web_delivery, record_result, job_payload
+from app.modules.communication.outbox import enqueue_web_delivery, record_result, job_payload
 from app.bots_gateway.operations import receive_message
 from app.bots_gateway.gateway import media_path
 from helpers import create_conversation

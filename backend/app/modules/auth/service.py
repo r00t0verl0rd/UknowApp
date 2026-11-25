@@ -6,7 +6,6 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, Request, Response, status
 from sqlalchemy import select
-from sqlalchemy.orm import lazyload
 
 from app.core import security
 from app.core.database import SessionLocal
@@ -34,7 +33,7 @@ def authenticate_panel_user(username: str, password: str) -> dict | None:
         return None
     with SessionLocal() as db:
         matches = db.scalars(
-            select(User).options(lazyload(User.messenger_accounts)).where(
+            select(User).where(
                 User.role.in_(["teacher", "student"]),
                 User.web_login_key == normalized_username,
             ),
@@ -83,7 +82,7 @@ def _credential_fingerprint(db, role: str, user_id: int | None) -> str | None:
     if role == "admin":
         value = security.ADMIN_USERNAME + "\0" + security.ADMIN_PASSWORD
     elif role in {"teacher", "student"} and user_id is not None:
-        user = db.get(User, user_id, options=[lazyload(User.messenger_accounts)])
+        user = db.get(User, user_id)
         if not user or user.role != role or not user.web_password_hash:
             return None
         value = user.web_password_hash

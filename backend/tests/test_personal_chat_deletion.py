@@ -5,7 +5,7 @@ import json
 from app.infrastructure.storage import media
 from app.models import PersonalConversation, PersonalMessage
 from app.event_hub import current_event_id, replay_chat_updates
-from app.modules.panel import personal
+from app.modules.personal_chat import operations as personal
 from app.modules.panel.session import visible_payload
 from test_access_control import login
 

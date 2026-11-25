@@ -39,7 +39,7 @@ class User(Base):
     web_username: Mapped[str | None] = mapped_column(String(160), nullable=True)
     web_login_key: Mapped[str | None] = mapped_column(String(320), nullable=True, index=True)
     role: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
-    messenger_accounts: Mapped[list["MessengerAccount"]] = relationship(lazy="selectin", cascade="all, delete-orphan", passive_deletes=True, back_populates="user")
+    messenger_accounts: Mapped[list["MessengerAccount"]] = relationship(lazy="select", cascade="all, delete-orphan", passive_deletes=True, back_populates="user")
     web_password_hash: Mapped[str | None] = mapped_column(String(160), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 

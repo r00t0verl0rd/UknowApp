@@ -41,10 +41,8 @@ from app.modules.notifications.content import PUSH_TITLE, push_body
 from app.modules.notifications.service import schedule_push
 from app.request_validation import message_payload
 
-from .delivery import (
-    panel_sender_and_recipients,
-    store_panel_attachment,
-)
+from app.infrastructure.storage.uploads import store_panel_attachment
+from .delivery import panel_sender_and_recipients
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

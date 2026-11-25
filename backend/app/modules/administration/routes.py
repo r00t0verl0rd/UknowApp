@@ -45,7 +45,7 @@ router = APIRouter(prefix="/api")
 
 @router.get("/admin/overview")
 def overview(_: SchoolStructure, db: Db):
-    users = db.scalars(select(User).order_by(User.full_name)).all()
+    users = db.scalars(select(User).options(selectinload(User.messenger_accounts)).order_by(User.full_name)).all()
     assignments = db.scalars(
         select(Assignment)
         .options(
@@ -83,7 +83,7 @@ def overview(_: SchoolStructure, db: Db):
 
 @router.get("/admin/users")
 def list_users(_: UserManagement, db: Db):
-    users = db.scalars(select(User).where(User.role.in_(["teacher", "student"])).order_by(User.role, User.full_name)).all()
+    users = db.scalars(select(User).options(selectinload(User.messenger_accounts)).where(User.role.in_(["teacher", "student"])).order_by(User.role, User.full_name)).all()
     return [user_dict(user, include_additional_info=True) for user in users]
 
 

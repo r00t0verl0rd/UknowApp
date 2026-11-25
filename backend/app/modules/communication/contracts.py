@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
-from typing import Protocol
 
 
 class MessengerError(Exception):
@@ -111,48 +109,3 @@ class OutboundMessage:
     media: OutboundMedia | None = None
     reply_to_external_message_id: str | None = None
     idempotency_key: str | None = None
-
-
-@dataclass(frozen=True, slots=True)
-class DeliveryResult:
-    """Идентификаторы сообщения и время отправки."""
-
-    platform: MessengerPlatform
-    external_chat_id: str
-    external_message_id: str
-    delivered_at: datetime | None = None
-
-
-@dataclass(frozen=True, slots=True)
-class MessengerCapabilities:
-    """Возможности подключённого мессенджера."""
-
-    text: bool = True
-    attachments: bool = False
-    edit_messages: bool = False
-    delete_messages: bool = False
-    interactive_messages: bool = False
-    group_chats: bool = False
-    threaded_chats: bool = False
-
-
-class MessengerAdapter(Protocol):
-    """Интерфейс адаптера мессенджера."""
-
-    @property
-    def platform(self) -> MessengerPlatform:
-        ...
-
-    @property
-    def capabilities(self) -> MessengerCapabilities:
-        ...
-
-    def normalize_event(
-        self, payload: Mapping[str, object],
-    ) -> Sequence[InboundMessage]:
-        """Преобразовать внешнее событие в сообщения UknowApp."""
-        ...
-
-    async def send(self, message: OutboundMessage) -> DeliveryResult:
-        """Отправить сообщение и вернуть внешние идентификаторы."""
-        ...

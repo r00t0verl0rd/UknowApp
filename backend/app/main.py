@@ -22,7 +22,7 @@ from .modules.administration.data import (
     finish_startup_restore,
 )
 from .modules.notifications.vapid import reload_vapid_keys
-from .modules.panel.personal import retry_personal_media_cleanup
+from .modules.personal_chat.operations import retry_personal_media_cleanup
 
 logger = logging.getLogger(__name__)
 

@@ -48,9 +48,9 @@ router = APIRouter()
 def panel_conversations(principal: PanelUser, db: Db):
     teacher = joinedload(Conversation.teacher)
     student = joinedload(Conversation.student)
-    if principal["role"] != "admin":
-        teacher = teacher.lazyload(User.messenger_accounts)
-        student = student.lazyload(User.messenger_accounts)
+    if principal["role"] == "admin":
+        teacher = teacher.selectinload(User.messenger_accounts)
+        student = student.selectinload(User.messenger_accounts)
     statement = (
         select(Conversation)
         .options(teacher, student)
@@ -93,7 +93,7 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
     conversation = panel_visible_conversation(db, principal, conversation_id)
     if permits(principal, "dialogs.observe"):
         logger.info("Admin read conversation id=%s", conversation.id)
-    query = select(Message).options(joinedload(Message.sender).lazyload(User.messenger_accounts)).where(
+    query = select(Message).options(joinedload(Message.sender)).where(
         Message.conversation_id == conversation.id, Message.id > after_id,
     )
     if first_unread and around_id is None and principal["role"] != "admin":
