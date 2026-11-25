@@ -7,7 +7,6 @@ from pathlib import Path
 from fastapi import HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from starlette.concurrency import run_in_threadpool
 
 from app.infrastructure.storage.media import ATTACHMENT_SIZE_ERROR, MAX_ATTACHMENT_BYTES, MEDIA_DIR, safe_media_type
 from app.models import Conversation, User
@@ -35,7 +34,7 @@ def panel_sender_and_recipients(db: Session, principal: dict, conversation: Conv
     return sender, recipients, student, teacher
 
 
-async def store_panel_attachment(file: UploadFile, conversation_id: int, *, personal: bool = False):
+def store_panel_attachment(file: UploadFile, conversation_id: int, *, personal: bool = False):
     """Проверить и сохранить вложение."""
     if file.size is not None and file.size > MAX_ATTACHMENT_BYTES:
         raise HTTPException(status_code=413, detail=ATTACHMENT_SIZE_ERROR)
@@ -63,7 +62,7 @@ async def store_panel_attachment(file: UploadFile, conversation_id: int, *, pers
             return target.tell()
 
     try:
-        size = await run_in_threadpool(copy_upload)
+        size = copy_upload()
         if not size:
             raise HTTPException(status_code=400, detail="Файл пустой")
     except BaseException:

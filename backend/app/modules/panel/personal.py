@@ -354,7 +354,7 @@ def personal_message_media(message_id: int, request: Request, principal: PanelUs
 
 
 @router.post("/panel/personal-conversations/{conversation_id}/attachments", status_code=201)
-async def send_personal_attachment(
+def send_personal_attachment(
     conversation_id: int,
     principal: PanelUser,
     db: Db,
@@ -376,7 +376,7 @@ async def send_personal_attachment(
         if existing:
             return personal_message_dict(existing, principal)
 
-    size, name, relative, mime_type, kind = await store_panel_attachment(
+    size, name, relative, mime_type, kind = store_panel_attachment(
         file, conversation_id, personal=True,
     )
     media = {

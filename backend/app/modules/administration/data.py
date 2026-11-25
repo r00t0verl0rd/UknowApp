@@ -909,15 +909,15 @@ def download_media_archive(_: Admin):
 
 
 @router.post("/full")
-async def restore_full_backup(_: Admin, file: Annotated[UploadFile, File()]):
+def restore_full_backup(_: Admin, file: Annotated[UploadFile, File()]):
     _database_path()  # Never apply an SQLite archive to PostgreSQL.
     if not (file.filename or "").lower().endswith(".zip"):
         raise HTTPException(status_code=400, detail="Загрузите ZIP-файл полной резервной копии")
 
-    return await _stage_upload(file, "full")
+    return _stage_upload(file, "full")
 
 
-async def _stage_upload(file: UploadFile, kind: str):
+def _stage_upload(file: UploadFile, kind: str):
     _database_path()
     data_dir = DATA_DIR.resolve()
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -942,7 +942,7 @@ async def _stage_upload(file: UploadFile, kind: str):
             raise HTTPException(409, "Восстановление уже подготовлено")
         archive_path = stage_dir / ("backup.zip" if kind == "full" else "database.sqlite3")
         with archive_path.open("wb") as target:
-            while chunk := await file.read(1024 * 1024):
+            while chunk := file.file.read(1024 * 1024):
                 _require_backup_space(Path(target.name).parent, len(chunk))
                 target.write(chunk)
 
@@ -994,15 +994,15 @@ async def _stage_upload(file: UploadFile, kind: str):
         raise
     finally:
         lock_path.unlink(missing_ok=True)
-        await file.close()
+        file.file.close()
 
 
 @router.post("/database")
-async def restore_database(_: Admin, file: Annotated[UploadFile, File()]):
+def restore_database(_: Admin, file: Annotated[UploadFile, File()]):
     _database_path()
     if not (file.filename or "").lower().endswith((".db", ".sqlite", ".sqlite3")):
         raise HTTPException(status_code=400, detail="Загрузите файл SQLite (.db, .sqlite или .sqlite3)")
-    return await _stage_upload(file, "database")
+    return _stage_upload(file, "database")
 
 
 @router.delete("/dialogues")

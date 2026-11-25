@@ -93,7 +93,7 @@ def _commit_message(db, row, principal, conversation, sender, client_message_id,
     return None
 
 
-async def _publish_and_deliver(
+def _publish_and_deliver(
     request, background_tasks, db, principal, conversation, parties, row, *, preview, kind, media=None,
 ):
     """Публикует событие и пуш, затем доставляет сообщение в мессенджеры."""
@@ -118,11 +118,11 @@ async def _publish_and_deliver(
     )
 
     if uses_outbox(request.app):
-        request.app.state.bots_gateway.outbox_wakeup.set()
+        request.app.state.bots_gateway.wake_outbox()
 
 
 @router.post("/panel/conversations/{conversation_id}/messages", status_code=201)
-async def send_panel_message(
+def send_panel_message(
     conversation_id: int,
     payload: dict,
     request: Request,
@@ -168,7 +168,7 @@ async def send_panel_message(
     )
     if existing:
         return _message_response(existing, principal)
-    await _publish_and_deliver(
+    _publish_and_deliver(
         request, background_tasks, db, principal, conversation, parties, row,
         preview=body, kind=MessageKind.TEXT,
     )
@@ -176,7 +176,7 @@ async def send_panel_message(
 
 
 @router.post("/panel/conversations/{conversation_id}/attachments", status_code=201)
-async def send_panel_attachment(
+def send_panel_attachment(
     conversation_id: int,
     request: Request,
     principal: PanelUser,
@@ -202,7 +202,7 @@ async def send_panel_attachment(
 
     if text_contains_contact_data((text or "").strip()):
         raise HTTPException(status_code=400, detail="Контактные данные нельзя отправлять через чат UknowApp")
-    size, original_name, relative, mime_type, kind = await store_panel_attachment(
+    size, original_name, relative, mime_type, kind = store_panel_attachment(
         file, conversation.id,
     )
 
@@ -234,7 +234,7 @@ async def send_panel_attachment(
     )
     if existing:
         return _message_response(existing, principal)
-    await _publish_and_deliver(
+    _publish_and_deliver(
         request, background_tasks, db, principal, conversation, parties, row,
         preview=row.text,
         kind=MessageKind(kind),

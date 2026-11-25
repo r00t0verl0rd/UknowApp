@@ -171,6 +171,7 @@ def publish_conversation_update(
             "teacher_id": conversation.teacher_id,
             "student_id": conversation.student_id,
         },
-        summary_by_role=conversation_event_summaries(db, conversation),
+        # Delivery metadata does not change message counts, unread counts or preview.
+        summary_by_role=None if action == "delivery" else conversation_event_summaries(db, conversation),
         db=db,
     )

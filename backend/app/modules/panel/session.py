@@ -66,9 +66,17 @@ async def panel_events(request: Request, principal: PanelUser, db: Db):
         cursor = int(request.headers.get("last-event-id", "0") or 0)
     except ValueError:
         cursor = 0
-    replay = replay_chat_updates(db, principal, cursor) if cursor else []
-    # Не удерживаем соединение с БД во время SSE-подписки.
-    db.rollback()
+    def load_replay():
+        try:
+            return replay_chat_updates(db, principal, cursor) if cursor else []
+        finally:
+            db.rollback()
+
+    try:
+        replay = await asyncio.to_thread(load_replay)
+    except BaseException:
+        unsubscribe_chat_updates(queue)
+        raise
 
     def filter_event(payload):
         with SessionLocal() as session:

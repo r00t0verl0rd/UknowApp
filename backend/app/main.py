@@ -42,7 +42,7 @@ def seed_demo_data() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    restoring = apply_pending_data_restore()
+    restoring = await asyncio.to_thread(apply_pending_data_restore)
     async with AsyncExitStack() as stack:
         try:
             await stack.enter_async_context(_start_services(app, restoring))
@@ -50,11 +50,11 @@ async def lifespan(app: FastAPI):
             if not restoring:
                 raise
             logger.exception("Ошибка запуска после восстановления; возвращаем исходные данные")
-            finish_startup_restore(False)
+            await asyncio.to_thread(finish_startup_restore, False)
             await stack.enter_async_context(_start_services(app, False))
         else:
             if restoring:
-                finish_startup_restore(True)
+                await asyncio.to_thread(finish_startup_restore, True)
         yield
 
 
@@ -67,8 +67,7 @@ async def _retry_media_cleanup():
         await asyncio.sleep(30)
 
 
-@asynccontextmanager
-async def _start_services(app: FastAPI, restoring: bool):
+def _initialize_core(restoring):
     reload_vapid_keys()
     initialize_database()
     if restoring:
@@ -79,6 +78,9 @@ async def _start_services(app: FastAPI, restoring: bool):
     if SEED_DEMO_DATA:
         seed_demo_data()
 
+@asynccontextmanager
+async def _start_services(app: FastAPI, restoring: bool):
+    await asyncio.to_thread(_initialize_core, restoring)
     gateway = BotsGateway()
     app.state.bots_gateway = gateway
     cleanup_task = asyncio.create_task(_retry_media_cleanup())

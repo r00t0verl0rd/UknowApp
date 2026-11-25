@@ -168,7 +168,7 @@ def panel_message_media(message_id: int, request: Request, principal: PanelUser,
 
 
 @router.delete("/panel/messages/{message_id}")
-async def delete_panel_message(
+def delete_panel_message(
     message_id: int,
     request: Request,
     principal: PanelUser,
@@ -197,7 +197,7 @@ async def delete_panel_message(
     publish_conversation_update(db, conversation, message_id=message_id, action="delete")
     gateway = getattr(request.app.state, "bots_gateway", None)
     if gateway:
-        gateway.outbox_wakeup.set()
+        gateway.wake_outbox()
     return {
         "ok": True,
         "deleted_message_id": message_id,

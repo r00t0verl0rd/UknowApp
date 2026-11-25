@@ -1,5 +1,7 @@
 """Single Core gateway backed by NATS request/reply and JetStream."""
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 import hashlib
 import json
 import logging
@@ -43,8 +45,29 @@ class BotsGateway:
         self.outbox_wakeup = asyncio.Event()
         self.diagnostics = {}
         self.connectors = {}
+        self._db_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="bots-db")
+        self._db_slot = asyncio.Semaphore(1)
+        self._loop = None
+
+    def wake_outbox(self):
+        if self._loop and not self._loop.is_closed():
+            self._loop.call_soon_threadsafe(self.outbox_wakeup.set)
+
+    async def run_db(self, work, *args):
+        # Dedicated, bounded worker; no ORM objects cross the thread boundary.
+        async with self._db_slot:
+            future = asyncio.get_running_loop().run_in_executor(self._db_executor, partial(work, *args))
+            try:
+                return await asyncio.shield(future)
+            except asyncio.CancelledError:
+                try:
+                    await future
+                except Exception:
+                    logger.exception("Gateway DB operation failed during shutdown")
+                raise
 
     async def start(self):
+        self._loop = asyncio.get_running_loop()
         if self.platforms:
             self.task = asyncio.create_task(self.run(), name="bots-nats")
 
@@ -52,8 +75,10 @@ class BotsGateway:
         if self.task:
             self.task.cancel()
             await asyncio.gather(self.task, return_exceptions=True)
+        await asyncio.to_thread(self._db_executor.shutdown, wait=True, cancel_futures=True)
 
     async def setup(self):
+        self._loop = asyncio.get_running_loop()
         self.nc = await nats.connect(
             servers=[os.environ["BOTS_NATS_URL"]],
             user=os.environ["BOTS_NATS_USER"], password=os.environ["BOTS_NATS_PASSWORD"],
@@ -95,12 +120,79 @@ class BotsGateway:
         if recreated:
             # A newly created stream has lost all old jobs. Recover immediately,
             # including sending jobs whose local receipt is still available.
-            with SessionLocal() as db:
-                for model in (ConnectorDelivery, ConnectorDeletion):
-                    db.execute(update(model).where(model.platform.in_(self.platforms),
-                        model.status.in_(("published", "sending"))).values(published_at=None, broker_seq=None))
-                db.commit()
+            await self.run_db(self._reset_broker_sequences)
         await self.nc.flush()
+
+    def _reset_broker_sequences(self):
+        with SessionLocal() as db:
+            for model in (ConnectorDelivery, ConnectorDeletion):
+                db.execute(update(model).where(model.platform.in_(self.platforms),
+                    model.status.in_(("published", "sending"))).values(published_at=None, broker_seq=None))
+            db.commit()
+
+    @staticmethod
+    def _rpc(platform, operation, payload):
+        with SessionLocal() as db:
+            return rpc(db, platform, operation, payload)
+
+    def _consume_event(self, platform, direction, payload):
+        with SessionLocal() as db:
+            if direction == "inbound":
+                receive_message(db, platform, payload, self.platforms, media_path)
+            else:
+                job = get_job(db, identifier(payload.get("id")))
+                status = payload.get("status")
+                if not job or job.platform != platform:
+                    return False
+                if status not in {"delivered", "failed", "unknown", "cancelled"}:
+                    raise ValueError("invalid result")
+                external_id = identifier(payload.get("external_message_id")) if status == "delivered" else None
+                record_result(db, job, status, external_id)
+        return True
+
+    def _candidates(self):
+        with SessionLocal() as db:
+            return publication_candidates(db, self.platforms)
+
+    @staticmethod
+    def _previous_sequence(job_id):
+        with SessionLocal() as db:
+            job = get_job(db, job_id)
+            return job.broker_seq if job and job.status in PENDING else None
+
+    @staticmethod
+    def _mark_published(job_id, seq=None):
+        with SessionLocal() as db:
+            job = get_job(db, job_id)
+            if job and job.status in PENDING:
+                if job.status == "queued":
+                    job.status = "published"
+                job.published_at = now_utc()
+                if seq is not None:
+                    job.broker_seq = seq
+                db.commit()
+
+    def _queue_stats(self):
+        stats = {}
+        with SessionLocal() as db:
+            for model, name in ((ConnectorDelivery, "send"), (ConnectorDeletion, "delete")):
+                rows = db.execute(select(model.platform, model.status, func.count(), func.min(model.created_at))
+                    .where(model.platform.in_(self.platforms)).group_by(model.platform, model.status)).all()
+                for platform, status, count, oldest in rows:
+                    data = stats.setdefault(platform, {}).setdefault(name, {})
+                    data[status] = {"count": count, "oldest": oldest.isoformat() if oldest else None}
+        return stats
+
+    def _panel_targets(self, conversation_id):
+        with SessionLocal() as db:
+            chat = db.get(Conversation, conversation_id)
+            if not chat:
+                return []
+            actors = db.scalars(select(MessengerAccount).where(
+                MessengerAccount.user_id == chat.teacher_id,
+                MessengerAccount.status == "linked",
+                MessengerAccount.platform.in_(self.platforms))).all()
+            return [(account.platform, account.external_user_id) for account in actors]
 
     async def handle_health(self, msg):
         try:
@@ -117,8 +209,7 @@ class BotsGateway:
         parts = msg.subject.split(".")
         platform, operation = parts[3], ".".join(parts[4:])
         try:
-            with SessionLocal() as db:
-                result = rpc(db, platform, operation, decode(msg.data))
+            result = await self.run_db(self._rpc, platform, operation, decode(msg.data))
             response = {"ok": True, "result": result}
             data = encode(response)
         except HTTPException as exc:
@@ -142,19 +233,9 @@ class BotsGateway:
                 payload = {}
                 try:
                     payload = decode(msg.data)
-                    with SessionLocal() as db:
-                        if direction == "inbound":
-                            receive_message(db, platform, payload, self.platforms, media_path)
-                        else:
-                            job = get_job(db, identifier(payload.get("id")))
-                            status = payload.get("status")
-                            if not job or job.platform != platform:
-                                await msg.term()
-                                continue
-                            if status not in {"delivered", "failed", "unknown", "cancelled"}:
-                                raise ValueError("invalid result")
-                            external_id = identifier(payload.get("external_message_id")) if status == "delivered" else None
-                            record_result(db, job, status, external_id)
+                    if not await self.run_db(self._consume_event, platform, direction, payload):
+                        await msg.term()
+                        continue
                     self.outbox_wakeup.set()
                     if direction == "inbound":
                         await self.nc.publish(f"{PREFIX}.accepted.{platform}", encode({"id": payload["id"], "ok": True}))
@@ -171,8 +252,7 @@ class BotsGateway:
     async def publish_outbox(self):
         while True:
             self.outbox_wakeup.clear()
-            with SessionLocal() as db:
-                entries = publication_candidates(db, self.platforms)
+            entries = await self.run_db(self._candidates)
             for job_id, platform, chat, thread, status, heavy in entries:
                 # Stable IDs for normal publish, separate time-bucket ID for stale recovery.
                 # A connector's durable receipt and Core claim prevent duplicate sends.
@@ -182,20 +262,14 @@ class BotsGateway:
                     # broker sequence before attempting stale recovery.
                     previous_seq = None
                     if status != "queued":
-                        with SessionLocal() as db:
-                            job = get_job(db, job_id)
-                            previous_seq = job.broker_seq if job and job.status in PENDING else None
+                        previous_seq = await self.run_db(self._previous_sequence, job_id)
                         if previous_seq is not None:
                             try:
                                 previous = await self.js.get_msg(STREAM, seq=previous_seq)
                             except NotFoundError:
                                 previous = None
                             if previous and previous.subject == f"{PREFIX}.outbound.{platform}" and decode(previous.data).get("id") == job_id:
-                                with SessionLocal() as db:
-                                    job = get_job(db, job_id)
-                                    if job and job.status in PENDING:
-                                        job.published_at = now_utc()
-                                        db.commit()
+                                await self.run_db(self._mark_published, job_id)
                                 continue
                     ack = await self.js.publish(f"{PREFIX}.outbound.{platform}",
                         encode({"id": job_id, "route": [chat, thread], "heavy": heavy}),
@@ -206,14 +280,7 @@ class BotsGateway:
                     logger.warning("Outbox publication delayed: %s", type(exc).__name__)
                     await asyncio.sleep(5)
                     break
-                with SessionLocal() as db:
-                    job = get_job(db, job_id)
-                    if job and job.status in PENDING:
-                        if job.status == "queued":
-                            job.status = "published"
-                        job.published_at = now_utc()
-                        job.broker_seq = ack.seq
-                        db.commit()
+                await self.run_db(self._mark_published, job_id, ack.seq)
                 if status != "queued":
                     logger.info("Republished stale connector job platform=%s status=%s", platform, status)
             if not entries:
@@ -224,20 +291,13 @@ class BotsGateway:
 
     async def collect_diagnostics(self):
         while True:
-            stats = {}
-            with SessionLocal() as db:
-                for model, name in ((ConnectorDelivery, "send"), (ConnectorDeletion, "delete")):
-                    rows = db.execute(select(model.platform, model.status, func.count(), func.min(model.created_at))
-                        .where(model.platform.in_(self.platforms)).group_by(model.platform, model.status)).all()
-                    for platform, status, count, oldest in rows:
-                        data = stats.setdefault(platform, {}).setdefault(name, {})
-                        data[status] = {"count": count, "oldest": oldest.isoformat() if oldest else None}
+            stats = await self.run_db(self._queue_stats)
             self.diagnostics = stats
             for platform in self.platforms:
                 pending = sum(v["count"] for d in stats.get(platform, {}).values() for k, v in d.items() if k in PENDING)
                 if pending:
                     logger.info("Connector queue platform=%s pending=%d", platform, pending)
-            await asyncio.sleep(30)
+            await asyncio.sleep(60)
 
     async def refresh_panels(self):
         # Best-effort UI invalidations only. Messages remain durable in JetStream.
@@ -247,15 +307,7 @@ class BotsGateway:
                 event = json.loads(await queue.get())
                 if event.get("conversation_type") != "conversation" or event.get("action") not in {"upsert", "delete", "read"}:
                     continue
-                with SessionLocal() as db:
-                    chat = db.get(Conversation, event["conversation_id"])
-                    if not chat:
-                        continue
-                    actors = db.scalars(select(MessengerAccount).where(
-                        MessengerAccount.user_id == chat.teacher_id,
-                        MessengerAccount.status == "linked",
-                        MessengerAccount.platform.in_(self.platforms))).all()
-                    targets = [(account.platform, account.external_user_id) for account in actors]
+                targets = await self.run_db(self._panel_targets, event["conversation_id"])
                 for platform, actor in targets:
                     await self.nc.publish(f"{PREFIX}.ui.{platform}", encode({"actor": actor}))
         finally:
@@ -330,9 +382,7 @@ async def upload_media(request: Request, platform: str, event_id: str):
         staging.unlink(missing_ok=True)
 
 
-@router.get("/media/{platform}/outbound/{job_id}")
-async def download_media(request: Request, platform: str, job_id: str):
-    require_connector(request, platform)
+def _download_media(platform, job_id):
     with SessionLocal() as db:
         job = db.get(ConnectorDelivery, job_id)
         if not job or job.platform != platform or job.status not in PENDING:
@@ -348,3 +398,9 @@ async def download_media(request: Request, platform: str, job_id: str):
     if root not in path.parents or not path.is_file() or path.stat().st_size > MAX_ATTACHMENT_BYTES:
         raise HTTPException(404)
     return FileResponse(path, media_type="application/octet-stream")
+
+
+@router.get("/media/{platform}/outbound/{job_id}")
+async def download_media(request: Request, platform: str, job_id: str):
+    require_connector(request, platform)
+    return await request.app.state.bots_gateway.run_db(_download_media, platform, job_id)
