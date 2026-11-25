@@ -29,18 +29,12 @@ nano .env
 - `VAPID_SUBJECT` — контактный email в формате `mailto:you@example.com`.
 - `TELEGRAM_BOT_ENABLED=false` — если бот не нужен. Для подключения бота установите `true` и заполните `TELEGRAM_BOT_TOKEN` токеном от [BotFather](https://t.me/BotFather).
 
-Остальные настройки можно оставить по умолчанию: SQLite и обычный Telegram API.
-
-Укажите свой домен также в [frontend/Caddyfile](frontend/Caddyfile).
-
 Запустите приложение:
 
 ```bash
 docker compose up -d --build
 docker compose ps
 ```
-
-Откройте свой сайт по HTTPS. HTTPS настроится автоматически. Логин по умолчанию — `admin`, пароль — из `.env`.
 
 ## Локальный запуск
 
@@ -63,10 +57,10 @@ pip install -r backend/requirements.txt
 python -m uvicorn app.main:app --app-dir backend --reload
 ```
 
-**Frontend** (в другом терминале):
+**Frontend** (в другом терминале, из папки проекта):
 
 ```bash
-cd UknowApp/frontend
+cd frontend
 npm ci
 npm run dev
 ```
