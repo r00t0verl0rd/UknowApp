@@ -57,6 +57,14 @@ class PushSubscription(Base):
     auth: Mapped[str] = mapped_column(String(128), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
+    session_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    revision: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_success_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    delivery_state: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    last_http_status: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
 
 class PanelSession(Base):
     __tablename__ = "panel_sessions"

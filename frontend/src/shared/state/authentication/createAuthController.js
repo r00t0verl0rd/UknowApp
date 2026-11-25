@@ -1,6 +1,6 @@
 import {
   detachPushSubscription,
-  enablePushNotifications,
+  syncPushNotifications,
   getPushNotificationState,
 } from "../../../features/notifications/pushNotifications.js";
 import { signInRequest, signOutRequest } from "../../../app/authentication/services/authApi.js";
@@ -29,7 +29,7 @@ export function createAuthController(options) {
       options.authState.setPassword("");
       void (async () => {
         try {
-          await enablePushNotifications();
+          await syncPushNotifications({ requestPermission: true, login: true });
           const state = await getPushNotificationState();
           if (options.authState.auth) options.setPushState(state);
         } catch {
@@ -49,6 +49,7 @@ export function createAuthController(options) {
   const signOut = async () => {
     const userId = viewAccountKey(options.authState.profile);
     options.authState.setProfile(null);
+    options.setPushBusy(true);
     try {
       await detachPushSubscription().catch(() => {});
       await signOutRequest();

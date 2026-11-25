@@ -29,97 +29,162 @@ function decodeApplicationServerKey(value) {
   return Uint8Array.from(raw, character => character.charCodeAt(0));
 }
 
+// Device-local opt-out is independent of the account and all other devices.
+const OPT_OUT = "uknowapp-push-disabled";
+let synchronizedEndpoint = null;
+let operation = Promise.resolve();
+let detached = false;
+
+function optedOut() {
+  return localStorage.getItem(OPT_OUT) === "1";
+}
+
+function exclusive(work) {
+  const result = operation.then(work);
+  operation = result.catch(() => {});
+  return result;
+}
+
 async function getRegistration() {
   const existing = await navigator.serviceWorker.getRegistration("/");
-  return existing || navigator.serviceWorker.register("/sw.js");
+  const registration = existing || await navigator.serviceWorker.register("/sw.js");
+  return registration.active ? registration : navigator.serviceWorker.ready || registration;
+}
+
+function matchesKey(subscription, key) {
+  const current = subscription.options?.applicationServerKey;
+  if (!current) return true; // Some browsers do not expose the key.
+  const bytes = new Uint8Array(current);
+  return bytes.length === key.length && bytes.every((byte, index) => byte === key[index]);
+}
+
+async function removeServerSubscription(endpoint) {
+  const response = await fetchApi("/api/push/subscribe", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ endpoint }),
+  });
+  if (!response.ok) throw new Error("Пока не получилось отключить уведомления. Попробуйте ещё раз.");
+}
+
+async function saveSubscription(subscription) {
+  const response = await fetchApi("/api/push/subscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(subscription.toJSON()),
+  });
+  if (response.status === 410) return false;
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.detail || "Пока не получилось включить уведомления. Попробуйте ещё раз.");
+  return true;
 }
 
 async function subscribeToPush(registration) {
-  const keyResponse = await fetchApi("/api/push/public-key", { credentials: "include" });
+  synchronizedEndpoint = null;
+  const keyResponse = await fetchApi("/api/push/public-key");
   const keyData = await keyResponse.json().catch(() => ({}));
   if (!keyResponse.ok || !keyData.enabled || !keyData.public_key) {
     throw new Error(keyData.detail || "Уведомления пока не настроены в UknowApp. Попробуйте чуть позже.");
   }
-
+  const key = decodeApplicationServerKey(keyData.public_key);
   let subscription = await registration.pushManager.getSubscription();
-  if (!subscription) {
-    subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: decodeApplicationServerKey(keyData.public_key),
-    });
+  const obsolete = new Set();
+  async function discard() {
+    obsolete.add(subscription.endpoint);
+    await subscription.unsubscribe();
+    subscription = null;
   }
-  const response = await fetchApi("/api/push/subscribe", {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(subscription.toJSON()),
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.detail || "Пока не получилось включить уведомления. Попробуйте ещё раз.");
-  return subscription;
+  if (subscription && (!matchesKey(subscription, key) ||
+      (subscription.expirationTime != null && subscription.expirationTime <= Date.now()))) {
+    await discard();
+  }
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (detached || optedOut()) return;
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true, applicationServerKey: key,
+      });
+    }
+    if (detached || optedOut()) return;
+    if (await saveSubscription(subscription)) {
+      synchronizedEndpoint = subscription.endpoint;
+      for (const endpoint of obsolete) {
+        if (endpoint !== subscription.endpoint) await removeServerSubscription(endpoint).catch(() => {});
+      }
+      return;
+    }
+    await discard();
+  }
+  throw new Error("Не удалось обновить устаревшую подписку. Попробуйте ещё раз.");
 }
 
 export async function getPushNotificationState() {
   const support = getPushSupport();
-  if (!support.supported) {
-    return { supported: false, enabled: false, permission: "default", reason: support.reason };
-  }
-
+  if (!support.supported) return { supported: false, enabled: false, permission: "default", reason: support.reason };
   const permission = Notification.permission;
   if (permission === "denied") {
-    return {
-      supported: true,
-      enabled: false,
-      permission,
-      reason: "Уведомления отключены в настройках браузера",
-    };
+    return { supported: true, enabled: false, permission, reason: "Уведомления отключены в настройках браузера" };
   }
   const registration = await navigator.serviceWorker.getRegistration("/");
   const subscription = await registration?.pushManager.getSubscription();
   return {
     supported: true,
-    enabled: Boolean(subscription && permission === "granted"),
+    enabled: Boolean(!detached && !optedOut() && subscription && subscription.endpoint === synchronizedEndpoint && permission === "granted"),
     permission,
-    reason: "",
+    reason: subscription && subscription.endpoint !== synchronizedEndpoint && !optedOut()
+      ? "Подписка ещё не подтверждена сервером" : "",
   };
 }
 
-export async function enablePushNotifications() {
-  const support = getPushSupport();
-  if (!support.supported) throw new Error(support.reason);
-
-  let permission = Notification.permission;
-  if (permission === "default") permission = await Notification.requestPermission();
-  if (permission !== "granted") {
-    throw new Error(permission === "denied"
-      ? "Уведомления отключены в настройках устройства. Разрешите их для UknowApp и попробуйте снова."
-      : "Уведомления пока не включены. Попробуйте ещё раз, когда будет удобно.");
-  }
-
-  const registration = await getRegistration();
-  await subscribeToPush(registration);
+export function syncPushNotifications({ requestPermission = false, login = false } = {}) {
+  if (login) detached = false;
+  return exclusive(async () => {
+    if (detached || optedOut()) return;
+    const support = getPushSupport();
+    if (!support.supported) {
+      if (requestPermission) throw new Error(support.reason);
+      return;
+    }
+    let permission = Notification.permission;
+    if (permission === "default" && requestPermission) permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      synchronizedEndpoint = null;
+      if (!requestPermission) return;
+      throw new Error(permission === "denied"
+        ? "Уведомления отключены в настройках устройства. Разрешите их для UknowApp и попробуйте снова."
+        : "Уведомления пока не включены. Попробуйте ещё раз, когда будет удобно.");
+    }
+    if (!detached && !optedOut()) await subscribeToPush(await getRegistration());
+  });
 }
 
-export async function disablePushNotifications() {
+export function enablePushNotifications() {
+  localStorage.removeItem(OPT_OUT);
+  return syncPushNotifications({ requestPermission: true });
+}
+
+async function removeCurrentSubscription() {
+  synchronizedEndpoint = null;
   const registration = await navigator.serviceWorker.getRegistration("/");
   const subscription = await registration?.pushManager.getSubscription();
   if (!subscription) return;
-
-  const response = await fetchApi("/api/push/subscribe", {
-    method: "DELETE",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ endpoint: subscription.endpoint }),
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.detail || "Пока не получилось отключить уведомления. Попробуйте ещё раз.");
-  await subscription.unsubscribe();
+  // Even if the network request fails, detach this browser's subscription.
+  try {
+    await removeServerSubscription(subscription.endpoint);
+  } finally {
+    await subscription.unsubscribe();
+  }
 }
 
-export async function detachPushSubscription() {
-  try {
-    await disablePushNotifications();
-  } catch (error) {
+export function disablePushNotifications() {
+  localStorage.setItem(OPT_OUT, "1");
+  return exclusive(removeCurrentSubscription);
+}
+
+export function detachPushSubscription() {
+  detached = true;
+  // Logging out is not a permanent notification opt-out.
+  return exclusive(removeCurrentSubscription).catch(error => {
     console.warn("UknowApp push detach failed:", error);
-  }
+  });
 }

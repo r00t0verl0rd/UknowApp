@@ -1,6 +1,8 @@
 """HTTP API веб-панели и обмена сообщениями."""
 
 import logging
+from uuid import uuid4
+from urllib.parse import urlsplit
 from datetime import UTC, datetime
 
 from fastapi import (
@@ -10,11 +12,13 @@ from fastapi import (
     Response,
 )
 from sqlalchemy import select, text
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from app.core.security import verify_request_origin
-from app.models import PushSubscription
+from app.models import PanelSession, PushSubscription
 from app.modules.auth.service import (
+    _request_token,
+    _token_digest,
     authenticate_panel_user,
     check_login_rate_limit,
     clear_panel_cookies,
@@ -73,9 +77,11 @@ def push_public_key():
 
 
 @router.post("/push/subscribe")
-def save_push_subscription(payload: dict, principal: PanelUser, db: Db):
+def save_push_subscription(payload: dict, request: Request, principal: PanelUser, db: Db):
     endpoint = payload.get("endpoint")
     keys = payload.get("keys") or {}
+    if not isinstance(keys, dict):
+        raise HTTPException(400, "Некорректная подписка на уведомления")
     p256dh = keys.get("p256dh")
     auth = keys.get("auth")
     if (
@@ -88,32 +94,82 @@ def save_push_subscription(payload: dict, principal: PanelUser, db: Db):
         raise HTTPException(status_code=400, detail="Некорректная подписка на уведомления")
     role = principal["role"]
     user_id = principal.get("user_id") if role in {"teacher", "student"} else None
-    subscription = db.scalar(select(PushSubscription).where(PushSubscription.endpoint == endpoint))
-    if subscription is None:
-        subscription = PushSubscription(endpoint=endpoint, p256dh=p256dh, auth=auth, user_id=user_id, role=role)
-        db.add(subscription)
-    else:
+    session_hash = _token_digest(_request_token(request))
+    # Recheck the actual session before writing; a concurrent logout must not
+    # silently attach a device to a different user's session.
+    session = db.scalar(select(PanelSession).where(PanelSession.token_hash == session_hash))
+    if not session or session.role != role or session.user_id != user_id:
+        raise HTTPException(401, "Сессия истекла или недействительна. Войдите снова.")
+    for attempt in range(2):
+        subscription = db.scalar(select(PushSubscription).where(PushSubscription.endpoint == endpoint))
+        if subscription and subscription.delivery_state == "expired" and subscription.p256dh == p256dh and subscription.auth == auth:
+            # A 404/410 from the provider requires a new browser subscription,
+            # not just another INSERT of the same dead endpoint.
+            raise HTTPException(410, "Подписка устарела. Необходимо обновить её.")
+        if subscription is None:
+            subscription = PushSubscription(endpoint=endpoint, p256dh=p256dh, auth=auth, user_id=user_id, role=role)
+            db.add(subscription)
+        changed = (subscription.p256dh != p256dh or subscription.auth != auth or
+                   subscription.user_id != user_id or subscription.role != role or
+                   subscription.session_hash != session_hash or not subscription.revision)
+        if changed:
+            subscription.revision = uuid4().hex
+            subscription.delivery_state = None
+            subscription.last_http_status = None
+            subscription.last_attempt_at = None
+            subscription.last_success_at = None
         subscription.p256dh = p256dh
         subscription.auth = auth
         subscription.user_id = user_id
         subscription.role = role
-    db.commit()
+        subscription.session_hash = session_hash
+        subscription.synced_at = datetime.now(UTC)
+        try:
+            db.commit()
+            break
+        except IntegrityError:
+            db.rollback()
+            if attempt:
+                raise
     return {"ok": True}
 
 
 @router.delete("/push/subscribe")
-def remove_push_subscription(payload: dict, principal: PanelUser, db: Db):
+def remove_push_subscription(payload: dict, request: Request, principal: PanelUser, db: Db):
     endpoint = payload.get("endpoint")
     if not isinstance(endpoint, str) or len(endpoint) > 2048:
         raise HTTPException(status_code=400, detail="Некорректная подписка")
     subscription = db.scalar(select(PushSubscription).where(PushSubscription.endpoint == endpoint))
-    if subscription and (
+    session_hash = _token_digest(_request_token(request))
+    if subscription and (subscription.session_hash is None or subscription.session_hash == session_hash) and (
         (principal["role"] == "admin" and subscription.role == "admin")
         or (principal["role"] in {"teacher", "student"} and subscription.user_id == principal["user_id"])
     ):
         db.delete(subscription)
         db.commit()
     return {"ok": True}
+
+
+@router.get("/admin/push/diagnostics")
+def push_diagnostics(_: Admin, db: Db):
+    rows = db.scalars(select(PushSubscription).order_by(PushSubscription.id)).all()
+    now = datetime.now(UTC)
+    active_sessions = set(db.scalars(select(PanelSession.token_hash).where(PanelSession.expires_at > now)).all())
+    def device(row):
+        session_active = row.session_hash in active_sessions if row.session_hash else None
+        return {"id": row.id, "role": row.role, "user_id": row.user_id,
+                "provider": urlsplit(row.endpoint).hostname,
+                "created_at": row.created_at, "synced_at": row.synced_at,
+                "last_attempt_at": row.last_attempt_at, "last_success_at": row.last_success_at,
+                "state": row.delivery_state or "registered", "http_status": row.last_http_status,
+                "session_active": session_active,
+                "eligible": row.delivery_state != "expired" and session_active is not False}
+    devices = [device(row) for row in rows]
+    return {"enabled": bool(vapid.VAPID_PRIVATE_KEY and vapid.VAPID_PUBLIC_KEY),
+            "registered": len(devices), "eligible": sum(d["eligible"] for d in devices),
+            "admin_devices": sum(d["role"] == "admin" for d in devices),
+            "admin_eligible": sum(d["role"] == "admin" and d["eligible"] for d in devices),
+            "devices": devices}
 
 
 @router.get("/admin/bots/diagnostics")

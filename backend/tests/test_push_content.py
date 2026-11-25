@@ -53,6 +53,6 @@ def test_push_delivery_selects_admin_specific_payload(monkeypatch):
         targets, json.dumps({"body": "Анна: Привет"}),
         json.dumps({"body": "Анна → Иван: Привет"}),
     )
-    assert [item["body"] for item in sent] == [
+    assert sorted(item["body"] for item in sent) == sorted([
         "Анна: Привет", "Анна → Иван: Привет",
-    ]
+    ])

@@ -12,6 +12,7 @@ from .remove_boards import remove_board_tables
 from .provider_channels import migrate_provider_channels, retire_legacy_schema
 from .delivery_routes import upgrade_delivery_routes
 from .delivery_recovery import upgrade_delivery_recovery
+from .push_devices import upgrade_push_devices
 
 _LOGIN_VERSION = "2026-11-22-login-lookup"
 _BOARDS_REMOVAL_VERSION = "2026-11-22-remove-interactive-boards"
@@ -70,5 +71,10 @@ def initialize_database() -> None:
         with engine.begin() as connection:
             retire_legacy_schema(connection)
         _mark_applied("2026-11-26-retire-legacy-provider")
+
+    if not _is_applied("2026-11-26-push-devices"):
+        with engine.begin() as connection:
+            upgrade_push_devices(connection)
+        _mark_applied("2026-11-26-push-devices")
 
     cleanup_expired_records()

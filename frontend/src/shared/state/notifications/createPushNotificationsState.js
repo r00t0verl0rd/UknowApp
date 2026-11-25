@@ -3,6 +3,7 @@ import {
   disablePushNotifications,
   enablePushNotifications,
   getPushNotificationState,
+  syncPushNotifications,
 } from "../../../features/notifications/pushNotifications.js";
 const INITIAL_STATE = {
   supported: false,
@@ -24,24 +25,38 @@ export function createPushNotificationsState(options) {
         return undefined;
       }
       let active = true;
-      getPushNotificationState()
-        .then(async (state) => {
-          if (state.supported && state.permission === "granted" && !state.enabled && !pushBusy()) {
-            await enablePushNotifications();
-            state = await getPushNotificationState();
+      let lastAttempt = 0;
+      const synchronize = async (force = false) => {
+        if (!active || !options.auth || pushBusy() || (!force && Date.now() - lastAttempt < 30000)) return;
+        lastAttempt = Date.now();
+        setPushBusy(true);
+        try {
+          await syncPushNotifications();
+        } catch {
+          // No false positive: the client state requires a successful Core registration.
+        } finally {
+          try {
+            const state = await getPushNotificationState();
+            if (active) setPushState(state);
+          } catch {
+            if (active) setPushState({ ...INITIAL_STATE, reason: "Не удалось проверить подписку" });
           }
-          if (active) setPushState(state);
-        })
-        .catch(() => {
-          if (active)
-            getPushNotificationState()
-              .then((state) => {
-                if (active) setPushState(state);
-              })
-              .catch(() => {});
-        });
+          if (active) setPushBusy(false);
+        }
+      };
+      const onVisible = () => {
+        if (document.visibilityState === "visible") void synchronize();
+      };
+      const onOnline = () => { void synchronize(true); };
+      document.addEventListener("visibilitychange", onVisible);
+      window.addEventListener("pageshow", onVisible);
+      window.addEventListener("online", onOnline);
+      void synchronize(true);
       return () => {
         active = false;
+        document.removeEventListener("visibilitychange", onVisible);
+        window.removeEventListener("pageshow", onVisible);
+        window.removeEventListener("online", onOnline);
       };
     },
   );

@@ -9,7 +9,7 @@ from sqlalchemy import select
 
 from app.core import security
 from app.core.database import SessionLocal
-from app.models import PanelSession, User
+from app.models import PanelSession, PushSubscription, User
 from app.modules.auth.permissions import permits
 from app.rate_limit import SlidingWindowLimiter
 
@@ -102,7 +102,7 @@ def create_panel_session(
         raise HTTPException(status_code=401, detail="Учётная запись недоступна")
 
     # Новый вход отзывает предыдущую браузерную сессию.
-    revoke_panel_session(request, db)
+    revoke_panel_session(request, db, detach_push=False)
     now = datetime.now(UTC)
     db.query(PanelSession).filter(PanelSession.expires_at < now).delete(synchronize_session=False)
     token = secrets.token_urlsafe(32)
@@ -153,7 +153,7 @@ def _token_digest(token: str | None) -> str | None:
     return hashlib.sha256(token_bytes).hexdigest()
 
 
-def revoke_panel_session(request: Request, db) -> None:
+def revoke_panel_session(request: Request, db, *, detach_push: bool = True) -> None:
     # При выходе отзываем оба варианта cookie.
     revoked = False
     tokens = {
@@ -166,6 +166,8 @@ def revoke_panel_session(request: Request, db) -> None:
             continue
         session = db.scalar(select(PanelSession).where(PanelSession.token_hash == token_hash))
         if session:
+            if detach_push:
+                db.query(PushSubscription).filter(PushSubscription.session_hash == token_hash).delete(synchronize_session=False)
             db.delete(session)
             revoked = True
     if revoked:

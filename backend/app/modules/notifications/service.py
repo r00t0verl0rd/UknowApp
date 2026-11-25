@@ -1,23 +1,25 @@
 """Web Push для авторизованных пользователей."""
 
-import asyncio
 import json
 import logging
-import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import UTC, datetime
 from collections.abc import Iterable
 from urllib.parse import parse_qs, urlsplit
 
 from pywebpush import WebPushException, webpush
-from requests.exceptions import RequestException
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, update
 from sqlalchemy.orm import Session
 
 from app.core import config
-from app.models import PushSubscription
+from app.models import PanelSession, PushSubscription
 from app.modules.notifications import vapid
 from app.modules.notifications.endpoints import is_safe_push_endpoint
 
 logger = logging.getLogger(__name__)
+# Shared bounded network pool; never use the web request/event-loop thread for I/O.
+_PUSH_POOL = ThreadPoolExecutor(max_workers=10, thread_name_prefix="web-push")
+_RESULT_POOL = ThreadPoolExecutor(max_workers=2, thread_name_prefix="push-results")
 
 
 def schedule_push(
@@ -39,12 +41,17 @@ def schedule_push(
     if not conditions:
         return
     subscriptions = db.scalars(
-        select(PushSubscription).where(or_(*conditions)),
+        select(PushSubscription).where(or_(*conditions),
+            or_(PushSubscription.delivery_state.is_(None), PushSubscription.delivery_state != "expired"),
+            or_(PushSubscription.session_hash.is_(None), PushSubscription.session_hash.in_(
+                select(PanelSession.token_hash).where(PanelSession.expires_at > datetime.now(UTC))))),
     ).all()
     targets = [
         {
             "id": item.id,
             "role": item.role,
+            "revision": item.revision,
+            "session_hash": item.session_hash,
             "endpoint": item.endpoint,
             "keys": {"p256dh": item.p256dh, "auth": item.auth},
         }
@@ -70,43 +77,72 @@ def schedule_push(
         json.dumps({**data, "body": admin_body[:160]}, ensure_ascii=False)
         if admin_body is not None else None
     )
+    # Fan out immediately into one shared pool, rather than blocking a worker
+    # per notification while waiting for every device.
+    futures = _submit(targets, payload, admin_payload)
+    _RESULT_POOL.submit(_collect, futures)
+
+
+def _send_one(target, payload, admin_payload):
+    attempt_at = datetime.now(UTC)
+    state, status = "failed", None
     try:
-        asyncio.get_running_loop().create_task(asyncio.to_thread(_deliver, targets, payload, admin_payload))
-    except RuntimeError:
-        threading.Thread(target=_deliver, args=(targets, payload, admin_payload), daemon=True).start()
-
-
-def _deliver(targets: list[dict], payload: str, admin_payload: str | None = None) -> None:
-    from app.core.database import SessionLocal
-
-    expired_ids = []
-    for target in targets:
         if not is_safe_push_endpoint(target["endpoint"]):
-            logger.warning("Web Push delivery skipped: endpoint failed destination validation")
-            continue
-        try:
-            webpush(
-                subscription_info={
-                    "endpoint": target["endpoint"],
-                    "keys": target["keys"],
-                },
+            state = "invalid_endpoint"
+        else:
+            response = webpush(
+                subscription_info={"endpoint": target["endpoint"], "keys": target["keys"]},
                 data=(admin_payload if target["role"] == "admin" and admin_payload is not None else payload),
                 vapid_private_key=vapid.VAPID_PRIVATE_KEY,
                 vapid_claims={"sub": config.VAPID_SUBJECT},
-                ttl=86400,
-                timeout=8,
+                ttl=86400, timeout=8,
             )
-        except WebPushException as exc:
-            status = getattr(getattr(exc, "response", None), "status_code", None)
-            if status in {404, 410}:
-                expired_ids.append(target["id"])
-            else:
-                logger.warning("Web Push delivery failed (status=%s)", status)
-        except RequestException as exc:
-            logger.warning("Web Push delivery failed (%s)", type(exc).__name__)
-    if expired_ids:
-        with SessionLocal() as db:
-            db.query(PushSubscription).filter(
-                PushSubscription.id.in_(expired_ids),
-            ).delete(synchronize_session=False)
-            db.commit()
+            status = getattr(response, "status_code", None)
+            state = "accepted" if status is None or 200 <= status < 300 else "failed"
+    except WebPushException as exc:
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        state = "expired" if status in {404, 410} else "failed"
+    except Exception as exc:
+        # One malformed subscription or provider outage cannot cancel another.
+        logger.warning("Web Push attempt failed id=%s type=%s", target["id"], type(exc).__name__)
+    if state != "accepted":
+        logger.warning("Web Push id=%s state=%s status=%s", target["id"], state, status)
+    return target, attempt_at, state, status
+
+
+def _submit(targets, payload, admin_payload):
+    return [_PUSH_POOL.submit(_send_one, target, payload, admin_payload) for target in targets]
+
+
+def _collect(futures):
+    from app.core.database import SessionLocal
+    for future in as_completed(futures):
+        try:
+            target, attempted, state, status = future.result()
+            if "revision" not in target:
+                continue
+            # Do not overwrite a new registration, or a newer attempt, with
+            # a delayed result from an obsolete subscription.
+            conditions = (PushSubscription.id == target["id"],
+                          PushSubscription.endpoint == target["endpoint"],
+                          PushSubscription.revision == target["revision"],
+                          PushSubscription.p256dh == target["keys"]["p256dh"],
+                          PushSubscription.auth == target["keys"]["auth"])
+            with SessionLocal() as db:
+                values = {"last_attempt_at": attempted, "delivery_state": state, "last_http_status": status}
+                db.execute(update(PushSubscription).where(*conditions,
+                    or_(PushSubscription.last_attempt_at.is_(None), PushSubscription.last_attempt_at <= attempted),
+                    or_(PushSubscription.delivery_state.is_(None), PushSubscription.delivery_state != "expired")
+                ).values(**values))
+                if state == "accepted":
+                    db.execute(update(PushSubscription).where(*conditions,
+                        or_(PushSubscription.last_success_at.is_(None), PushSubscription.last_success_at <= attempted)
+                    ).values(last_success_at=attempted))
+                db.commit()
+        except Exception as exc:
+            logger.warning("Web Push diagnostics update failed (%s)", type(exc).__name__)
+
+
+def _deliver(targets: list[dict], payload: str, admin_payload: str | None = None) -> None:
+    """Synchronous test/maintenance entrypoint; network attempts run in parallel."""
+    _collect(_submit(targets, payload, admin_payload))
