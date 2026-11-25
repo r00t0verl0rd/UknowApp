@@ -168,6 +168,13 @@ class TelegramAdapter:
         member = await self.bot.get_chat_member(chat["id"], info.id)
         return str(member.status) in {"administrator", "creator"}
 
+    @staticmethod
+    def inbound_route(update):
+        message = update.get("message") or update.get("callback_query") or {}
+        actor = str((message.get("from") or {}).get("id") or "unknown")
+        heavy = any(message.get(k) for k in ("photo", "document", "audio", "video", "voice", "video_note", "sticker", "animation"))
+        return actor, heavy
+
     async def handle(self, event_id, update, gateway, spool):
         commands = Commands(gateway, spool)
         callback = update.get("callback_query")

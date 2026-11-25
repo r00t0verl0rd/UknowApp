@@ -3,6 +3,7 @@ import asyncio
 import json
 import logging
 import os
+import time
 from collections import deque
 from urllib.parse import quote
 
@@ -62,6 +63,9 @@ class GatewayClient:
         self.js = None
         self.media_slots = asyncio.Semaphore(2)
         self.ui_pending = set()
+        self.active_count = 0
+        self.buffered_count = 0
+        self.inbound_subscription = None
         self.base = os.environ["BOTS_MEDIA_URL"].rstrip("/")
         self.headers = {"Authorization": "Bearer " + os.environ["BOTS_MEDIA_SECRET"]}
 
@@ -72,6 +76,8 @@ class GatewayClient:
             inbox_prefix=("_INBOX." + self.platform).encode(),
             max_reconnect_attempts=-1, connect_timeout=3)
         self.js = self.nc.jetstream(timeout=10)
+        self.inbound_subscription = await self.nc.subscribe(f"{PREFIX}.accepted.{self.platform}", cb=self.accepted)
+        await self.nc.flush()
 
     async def close(self):
         if self.nc:
@@ -84,9 +90,56 @@ class GatewayClient:
             raise RpcError(response.get("code", 503), response.get("error", "Core unavailable"))
         return response["result"]
 
+    async def accepted(self, msg):
+        try:
+            receipt = json.loads(msg.data)
+            ident = receipt["id"]
+            if not isinstance(ident, str) or not isinstance(receipt.get("ok"), bool):
+                return
+            self.spool.accept_inbound(ident)
+            if not receipt["ok"]:
+                logger.warning("Core rejected normalized inbound event")
+        except (ValueError, KeyError, TypeError):
+            logger.warning("Invalid inbound acknowledgement")
+
     async def inbound(self, event):
-        await self.js.publish(f"{PREFIX}.inbound.{self.platform}", encode(event),
-                              headers={"Nats-Msg-Id": self.platform + ":" + event["id"]})
+        # Commit normalized payload before raw provider update can be acknowledged.
+        # Core confirms after its DB commit; a PubAck alone is not sufficient.
+        self.spool.remember_inbound(event)
+
+    async def publish_inbound(self):
+        while True:
+            self.spool.inbound_changed.clear()
+            items = self.spool.pending_inbound()
+            for ident, event, previous in items:
+                dedup = self.platform + ":" + ident
+                if previous is not None:
+                    dedup += ":recover:" + str(int(time.time()) // 60)
+                try:
+                    await self.js.publish(f"{PREFIX}.inbound.{self.platform}", encode(event),
+                                          headers={"Nats-Msg-Id": dedup})
+                    self.spool.mark_published(ident)
+                except asyncio.CancelledError:
+                    raise
+                except Exception as exc:
+                    logger.warning("Inbound publication delayed: %s", type(exc).__name__)
+                    await asyncio.sleep(5)
+                    break
+            if not items:
+                try:
+                    await asyncio.wait_for(self.spool.inbound_changed.wait(), 30)
+                except TimeoutError:
+                    pass
+
+    async def report_health(self):
+        while True:
+            try:
+                await self.nc.publish(f"{PREFIX}.health.{self.platform}", encode({
+                    "raw_pending": self.spool.count(), "inbound_pending": self.spool.inbound_count(),
+                    "active": self.active_count, "buffered": self.buffered_count}))
+            except Exception as exc:
+                logger.debug("Connector diagnostics unavailable: %s", type(exc).__name__)
+            await asyncio.sleep(15)
 
     async def upload(self, event_id, chunks):
         async with self.http.put(f"{self.base}/internal/bots/media/{self.platform}/inbound/{quote(event_id, safe='')}",
@@ -219,6 +272,8 @@ class GatewayClient:
                     for msg, job_id, route, heavy in heads:
                         task = asyncio.create_task(self.complete(adapter, msg, job_id, results.get(job_id, {})))
                         active[task] = (route, msg, heavy)
+                self.active_count = len(active)
+                self.buffered_count = len(pending)
                 capacity = 16 - len(pending) - len(active)
                 if capacity > 0:
                     try:

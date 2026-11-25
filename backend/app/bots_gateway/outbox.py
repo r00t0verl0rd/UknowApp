@@ -50,7 +50,7 @@ def publication_candidates(db, platforms, now=None, limit=50):
         jobs = db.scalars(select(model).where(model.platform.in_(platforms), or_(
             model.status == "queued", and_(model.status.in_(("published", "sending")),
                 or_(model.published_at.is_(None), model.published_at <= cutoff),
-                or_(model.started_at.is_(None), model.started_at <= cutoff))))
+                or_(model.published_at.is_(None), model.started_at.is_(None), model.started_at <= cutoff))))
             .order_by(model.created_at, model.id).limit(limit)).all()
         message_ids = [j.message_id for j in jobs if isinstance(j, ConnectorDelivery) and j.message_id is not None]
         kinds = dict(db.execute(select(Message.id, Message.content_type).where(Message.id.in_(message_ids))).all()) if message_ids else {}

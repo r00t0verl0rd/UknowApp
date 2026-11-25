@@ -2,6 +2,7 @@
 import asyncio
 import json
 import sqlite3
+import time
 from pathlib import Path
 from uuid import uuid4
 
@@ -20,11 +21,13 @@ class EventSpool:
             event_id TEXT NOT NULL UNIQUE, payload TEXT NOT NULL)""")
         self.db.execute("CREATE TABLE IF NOT EXISTS deliveries (namespace TEXT NOT NULL, id TEXT NOT NULL, result TEXT, PRIMARY KEY(namespace,id))")
         self.db.execute("CREATE TABLE IF NOT EXISTS selections (namespace TEXT NOT NULL, actor TEXT NOT NULL, conversation INTEGER, PRIMARY KEY(namespace,actor))")
+        self.db.execute("CREATE TABLE IF NOT EXISTS inbound_pending (namespace TEXT NOT NULL, id TEXT NOT NULL, payload TEXT NOT NULL, published REAL, PRIMARY KEY(namespace,id))")
         self.db.execute("CREATE TABLE IF NOT EXISTS delivery_claims (namespace TEXT NOT NULL, id TEXT NOT NULL, claim TEXT NOT NULL, PRIMARY KEY(namespace,id))")
         self.db.execute("CREATE TABLE IF NOT EXISTS panels (namespace TEXT NOT NULL, actor TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(namespace,actor))")
         self.db.commit()
         self.namespace = namespace
         self.changed = asyncio.Event()
+        self.inbound_changed = asyncio.Event()
 
     def cursor(self):
         row = self.db.execute("SELECT cursor FROM state WHERE namespace=?", (self.namespace,)).fetchone()
@@ -49,6 +52,34 @@ class EventSpool:
         if self.first() is None:
             await self.changed.wait()
 
+    def batch(self, limit=64):
+        rows = self.db.execute("SELECT event_id,payload FROM events WHERE namespace=? ORDER BY seq LIMIT ?",
+                               (self.namespace, limit)).fetchall()
+        return [(ident, json.loads(payload)) for ident, payload in rows]
+
+    def remember_inbound(self, event):
+        with self.db:
+            self.db.execute("INSERT OR IGNORE INTO inbound_pending(namespace,id,payload) VALUES (?,?,?)",
+                            (self.namespace, event["id"], json.dumps(event, ensure_ascii=False)))
+        self.inbound_changed.set()
+
+    def mark_published(self, ident):
+        with self.db:
+            self.db.execute("UPDATE inbound_pending SET published=? WHERE namespace=? AND id=?",
+                            (time.time(), self.namespace, ident))
+
+    def pending_inbound(self, age=900, limit=50):
+        rows = self.db.execute("SELECT id,payload,published FROM inbound_pending WHERE namespace=? AND (published IS NULL OR published<=?) ORDER BY published LIMIT ?",
+                               (self.namespace, time.time() - age, limit)).fetchall()
+        return [(ident, json.loads(payload), published) for ident, payload, published in rows]
+
+    def inbound_count(self):
+        return self.db.execute("SELECT count(*) FROM inbound_pending WHERE namespace=?", (self.namespace,)).fetchone()[0]
+
+    def accept_inbound(self, ident):
+        with self.db:
+            self.db.execute("DELETE FROM inbound_pending WHERE namespace=? AND id=?", (self.namespace, ident))
+
     def first(self):
         row = self.db.execute(
             "SELECT event_id,payload FROM events WHERE namespace=? ORDER BY seq LIMIT 1",
@@ -59,6 +90,7 @@ class EventSpool:
     def ack(self, event_id):
         with self.db:
             self.db.execute("DELETE FROM events WHERE namespace=? AND event_id=?", (self.namespace, event_id))
+        self.changed.set()
 
     def close(self):
         self.db.close()

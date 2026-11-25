@@ -119,4 +119,5 @@ def remove_push_subscription(payload: dict, principal: PanelUser, db: Db):
 def bots_diagnostics(request: Request, _: Admin):
     gateway = getattr(request.app.state, "bots_gateway", None)
     return {"broker_connected": bool(gateway and gateway.ready and gateway.nc and gateway.nc.is_connected),
-            "platforms": gateway.diagnostics if gateway else {}}
+            "platforms": gateway.diagnostics if gateway else {},
+            "connectors": gateway.connectors if gateway else {}}

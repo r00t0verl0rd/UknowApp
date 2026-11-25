@@ -8,7 +8,8 @@ from pathlib import Path
 import aiohttp
 from aiogram.exceptions import TelegramConflictError
 
-from connectors.common.client import GatewayClient, RpcError
+from connectors.common.client import GatewayClient
+from connectors.common.ingress import forward
 from connectors.common.spool import EventSpool, MAX_EVENTS
 from .adapter import TelegramAdapter
 
@@ -18,12 +19,13 @@ STATE = Path(os.getenv("CONNECTOR_STATE_DIR", "/app/state"))
 
 async def poll(adapter, spool, bot_id, health):
     while True:
-        if spool.count() >= MAX_EVENTS:
+        remaining = MAX_EVENTS - spool.count() - spool.inbound_count()
+        if remaining <= 0:
             await asyncio.sleep(2)
             continue
         try:
             updates = await adapter.bot.get_updates(offset=spool.cursor(), timeout=30,
-                limit=min(100, MAX_EVENTS - spool.count()), allowed_updates=["message", "callback_query"],
+                limit=min(100, remaining), allowed_updates=["message", "callback_query"],
                 request_timeout=45)
             if updates:
                 spool.append([(f"{bot_id}:{u.update_id}", u.model_dump(mode="json", by_alias=True, exclude_none=True)) for u in updates],
@@ -36,29 +38,6 @@ async def poll(adapter, spool, bot_id, health):
         except Exception as exc:
             logger.warning("Provider polling unavailable: %s", type(exc).__name__)
             await asyncio.sleep(5)
-
-
-async def forward(adapter, gateway, spool):
-    while True:
-        item = spool.first()
-        if item is None:
-            await spool.wait_for_event()
-            continue
-        event_id, update = item
-        try:
-            await adapter.handle(event_id, update, gateway, spool)
-        except RpcError as exc:
-            if exc.code >= 500:
-                await asyncio.sleep(5)
-                continue
-            logger.warning("Core rejected provider event: %s", exc.code)
-        except asyncio.CancelledError:
-            raise
-        except Exception as exc:
-            logger.warning("Provider event will retry: %s", type(exc).__name__)
-            await asyncio.sleep(5)
-            continue
-        spool.ack(event_id)
 
 
 async def main():
@@ -86,7 +65,9 @@ async def main():
             logger.info("TELEGRAM_CONNECTED id=%s; TELEGRAM_POLLING_STARTED", info.id)
             tasks = [asyncio.create_task(poll(adapter, spool, info.id, health)),
                      asyncio.create_task(forward(adapter, gateway, spool)),
-                     asyncio.create_task(gateway.deliveries(adapter))]
+                     asyncio.create_task(gateway.deliveries(adapter)),
+                     asyncio.create_task(gateway.publish_inbound()),
+                     asyncio.create_task(gateway.report_health())]
             done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
             for task in done:
                 task.result()
