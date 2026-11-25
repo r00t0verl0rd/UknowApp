@@ -140,7 +140,10 @@ export function createConversationSync(options) {
             }
             if (result.deleted_message_ids?.length) {
               const deleted = new Set(result.deleted_message_ids);
-              for (const id of deleted) markConversationMessageDeleted(chatKey, id);
+              for (const id of deleted) {
+                markConversationMessageDeleted(chatKey, id);
+                options.cache.removeMessage(chatKey, id);
+              }
               options.setMessages(rows => rows.filter(row => !deleted.has(Number(row.id))));
             }
             const updated = [...(result.updated_messages || []), ...(result.messages || [])];
@@ -232,6 +235,7 @@ export function createConversationSync(options) {
         }
         if (payload.resync) {
           const selectedChat = options.selectedChat;
+          options.cache.clearInactiveHistories(selectedChat ? conversationKey(selectedChat.id, selectedChat.type) : "");
           if (selectedChat) {
             const key = conversationKey(selectedChat.id, selectedChat.type);
             eventRevision.set(key, (eventRevision.get(key) || 0) + 1);
@@ -290,6 +294,7 @@ export function createConversationSync(options) {
         // Only the admin participant view needs a full status refresh.
         if (payload.action === "delete" && payload.message_id) {
           markConversationMessageDeleted(key, Number(payload.message_id));
+          options.cache.removeMessage(key, Number(payload.message_id));
         }
         if (!isSameChat(selected, id, type) || !requiresMessageSync(payload.action, viewerRole, type)) return;
         const state = pending.get(key) || {

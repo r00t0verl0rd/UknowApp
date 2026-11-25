@@ -21,7 +21,7 @@ export function getChatWindow(request, chat, signal, anchorId) {
   return request(base + chat.id + "/messages?" + params, { signal });
 }
 
-export async function syncChatState(request, chat, afterId, knownMessageIds) {
+export async function syncChatState(request, chat, afterId, knownMessageIds, signal) {
   const base = chat.type === "personal" ? "/api/panel/personal-conversations/" : "/api/panel/conversations/";
   const result = { messages: [], updated_messages: [], deleted_message_ids: [] };
   let cursor = Math.max(0, Number(afterId) || 0);
@@ -29,6 +29,7 @@ export async function syncChatState(request, chat, afterId, knownMessageIds) {
   do {
     const batch = await request(base + chat.id + "/sync", {
       method: "POST",
+      signal,
       body: JSON.stringify({ paged: true, mark_read: false, after_id: cursor, known_message_ids: knownMessageIds.slice(start, start + 5000) }),
     });
     for (const message of batch.messages || []) {

@@ -1,4 +1,5 @@
 import { createSignal } from "solid-js";
+import { createConversationCache } from "../services/conversationCache.js";
 export function createChatState() {
   const [draft, setDraft] = createSignal("");
   const [attachment, setAttachment] = createSignal(null);
@@ -15,6 +16,7 @@ export function createChatState() {
   const [chatFilter, setChatFilter] = createSignal("all");
   const [messageFilter, setMessageFilter] = createSignal("all");
   return {
+    cache: createConversationCache(),
     get draft() {
       return draft();
     },

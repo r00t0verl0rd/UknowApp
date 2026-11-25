@@ -164,6 +164,15 @@ test("restores the selected conversation and the same message after loading olde
         if (delayNewerPages) await newerGate;
         return route.fulfill({ json: [] });
       }
+      if (name === "/api/panel/conversations/7/sync") {
+        const { after_id, known_message_ids } = route.request().postDataJSON();
+        const known = new Set(known_message_ids);
+        return route.fulfill({ json: {
+          messages: messages.filter(row => row.id > after_id),
+          updated_messages: messages.filter(row => known.has(row.id)),
+          deleted_message_ids: [], has_more: false, summary: chat,
+        } });
+      }
       if (name === "/api/panel/conversations/7/messages") {
         const anchor = Number(url.searchParams.get("around_id")) ||
           (url.searchParams.get("first_unread") === "true" ? 60 : 0);

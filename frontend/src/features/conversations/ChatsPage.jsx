@@ -413,6 +413,8 @@ export default function ChatsPage(options) {
                   <MessageBubble
                     onError={options.setError}
                     message={message()}
+                    cache={options.cache}
+                    chatKey={selectedChatKey()}
                     onDelete={options.setDeleteMessageCandidate}
                     viewerRole={options.profile?.role}
                     personalChat={options.selectedChat.type === "personal"}

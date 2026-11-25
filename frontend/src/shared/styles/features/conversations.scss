@@ -462,13 +462,24 @@
   font-size:10px;
   font-weight:500;
 }
+.chat-media-frame {
+  position:relative;
+  display:block;
+  max-width:100%;
+  margin-top:10px;
+  overflow:hidden;
+  border-radius:var(--ui-radius-md);
+}
 .chat-media-image {
   display:block;
-  max-width:min(100%, 420px);
-  max-height:420px;
-  margin-top:10px;
-  border-radius:var(--ui-radius-md);
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
   object-fit:contain;
+}
+.chat-media-image:not([src]) {
+  visibility:hidden;
 }
 .chat-media-video {
   display:block;

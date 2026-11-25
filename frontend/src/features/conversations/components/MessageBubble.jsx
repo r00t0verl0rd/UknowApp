@@ -14,6 +14,7 @@ import { getDeliveryDetails } from "../services/deliveryPresentation.js";
 import AutoFitText from "./AutoFitText.jsx";
 import IconButton from "../../../shared/components/IconButton.jsx";
 import { messageMediaUrl } from "../services/conversationsApi.js";
+import CachedChatImage from "./CachedChatImage.jsx";
 
 // Высоты декоративной звуковой волны общие для всех плееров — не создаём массив при каждом рендере.
 const AUDIO_WAVE_BARS = [
@@ -229,7 +230,10 @@ function MessageBubble(options) {
           </div>
         </div>
         {options.message.text && <p>{options.message.text}</p>}
-        {mediaUrl() && kind() === "photo" && <img loading="lazy" decoding="async" width={media()?.width || undefined} height={media()?.height || undefined} class="chat-media-image" src={mediaUrl()} alt={label()} />}
+        {mediaUrl() && kind() === "photo" && (
+          <CachedChatImage cache={options.cache} chatKey={options.chatKey} messageId={options.message.id}
+            src={mediaUrl()} alt={label()} width={media()?.width} height={media()?.height} />
+        )}
         {mediaUrl() && ["voice", "audio"].includes(kind()) && (
           <DeferredAudioPlayer src={mediaUrl()} label={label()} />
         )}

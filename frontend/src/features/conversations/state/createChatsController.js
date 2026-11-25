@@ -12,11 +12,15 @@ import {
   sendConversationAttachment,
   sendConversationText,
   sendPersonalMessage,
+  syncChatState,
 } from "../services/conversationsApi.js";
 export function createChatsController(options) {
   const actions = createChatActionState();
   const [creating, setCreating] = createSignal(false);
-  const [olderCursor, setOlderCursor] = createSignal(0);
+  const cache = options.chatState.cache;
+  const selected = options.chatState.selectedChat;
+  const initialKey = selected ? (selected.type === "personal" ? "personal:" : "conversation:") + selected.id : "";
+  const [olderCursor, setOlderCursor] = createSignal(cache.getHistory(initialKey)?.olderCursor || 0);
   const [loadingOlder, setLoadingOlder] = createSignal(false);
   let olderRequest;
   let sendingMessage = false;
@@ -25,42 +29,6 @@ export function createChatsController(options) {
   let attemptedRestoreForUser = null;
   const [positionedKey, setPositionedKey] = createSignal("");
   const [showLatest, setShowLatest] = createSignal(false);
-  // Только память текущей вкладки. Недавние чаты показываем сразу, затем
-  // проверяем сервер; не сохраняем приватные сообщения в localStorage.
-  const recentChats = new Map();
-  const MAX_CACHED_CHATS = 6;
-  const CACHE_TTL_MS = 60000;
-  const cacheChat = (key, messages) => {
-    if (!key || !messages?.length || messages.length > 1200) return;
-    recentChats.delete(key);
-    recentChats.set(key, { messages, at: Date.now() });
-    while (recentChats.size > MAX_CACHED_CHATS) recentChats.delete(recentChats.keys().next().value);
-  };
-  const getCachedChat = (key) => {
-    const cache = recentChats.get(key);
-    if (!cache) return null;
-    if (Date.now() - cache.at > CACHE_TTL_MS) {
-      recentChats.delete(key);
-      return null;
-    }
-    return cache.messages;
-  };
-  // Отзыв доступа к личному чату удаляет и локально закэшированную историю.
-  createEffect(
-    () => options.personalState.personalChats.map(chat => "personal:" + chat.id),
-    keys => {
-      const existing = new Set(keys);
-      for (const key of recentChats.keys()) {
-        if (key.startsWith("personal:") && !existing.has(key)) recentChats.delete(key);
-      }
-    },
-  );
-  createEffect(
-    () => [options.auth],
-    () => {
-      if (!options.auth) recentChats.clear();
-    },
-  );
   createEffect(
     () => [],
     () => () => openingChatRequest?.controller.abort(),
@@ -96,9 +64,9 @@ export function createChatsController(options) {
   // Это важно на телефоне: кнопка «Назад» очищает открытый чат, но
   // возвращение к нему не должно ждать повторной загрузки истории.
   createEffect(
-    () => [activeChatKey(), options.chatState.messages, options.chatState.messagesLoading],
-    ([key, messages, loading]) => {
-      if (key && !loading && Array.isArray(messages)) cacheChat(key, messages);
+    () => [activeChatKey(), options.chatState.messages, options.chatState.messagesLoading, olderCursor()],
+    ([key, messages, loading, cursor]) => {
+      if (key && !loading) cache.saveHistory(key, messages, cursor);
     },
   );
   const visibleMessages = createMemo(() => {
@@ -238,7 +206,7 @@ export function createChatsController(options) {
           // A validated cache containing the saved anchor (or the latest page)
           // may render immediately. Otherwise wait for the requested window.
           const cachedPositionReady = request?.hasCache &&
-            (saved?.bottom === true ? history.querySelector("[data-view-anchor]") : row);
+            (!saved || saved.bottom === true || row);
           if (request && !request.windowReady && !cachedPositionReady) return;
           if (options.chatState.messagesLoading && !request) return;
           const unreadRow = unreadAnchor?.key === key &&
@@ -369,23 +337,25 @@ export function createChatsController(options) {
     unreadAnchor = null;
     previousRequest?.controller.abort();
     olderRequest?.abort();
-    setOlderCursor(0);
     setLoadingOlder(false);
     const previousKey = activeChatKey();
     if (previousKey && previousKey !== chatKey && !options.chatState.messagesLoading) {
-      cacheChat(previousKey, options.chatState.messages);
+      cache.saveHistory(previousKey, options.chatState.messages, olderCursor());
     }
     const role = options.profile?.role;
     const position = savedPosition(chatKey, restoring ? options.chatState.messageFilter : "all");
     const unreadCount = !position &&
       (role !== "admin" || chat.type === "personal") ? Number(chat.unread_count) || 0 : 0;
-    const cachedMessages = unreadCount ? null : getCachedChat(chatKey);
-    const cachedById = new Map((cachedMessages || []).map((item) => [String(item.id), item]));
+    const candidate = unreadCount ? null : cache.getHistory(chatKey);
+    const cached = candidate && (!position?.anchor || position.bottom === true ||
+      candidate.messages.some(item => "message:" + item.id === position.anchor.id)) ? candidate : null;
+    const cachedMessages = cached?.messages || null;
     const controller = new AbortController();
     openingChatRequest = { key: chatKey, controller, hasCache: Boolean(cachedMessages) };
     // Блокируем запись старой истории под ключом нового чата на время
     // синхронного переключения сигналов.
     options.chatState.setMessagesLoading(true);
+    setOlderCursor(cached?.olderCursor || 0);
     options.chatState.setSelectedChat(chat);
     options.chatState.setMessages(cachedMessages || []);
     options.chatState.setMessagesLoading(!cachedMessages);
@@ -394,6 +364,31 @@ export function createChatsController(options) {
     options.chatState.setAttachment(null);
     if (!restoring) options.chatState.setMessageFilter("all");
     try {
+      if (cached) {
+        // A warm chat is rendered from its complete cached window. Reconcile
+        // known IDs and append new messages without replacing its scroll geometry.
+        let afterId = cachedMessages.reduce((max, row) => Math.max(max, Number(row.id) || 0), 0);
+        let knownIds = cachedMessages.map(row => Number(row.id)).filter(id => Number.isSafeInteger(id) && id > 0);
+        for (;;) {
+          const result = await syncChatState(options.request, chat, afterId, knownIds, controller.signal);
+          if (controller.signal.aborted || activeChatKey() !== chatKey) return;
+          const deleted = new Set(result.deleted_message_ids.map(Number));
+          for (const id of deleted) {
+            markConversationMessageDeleted(chatKey, id);
+            cache.removeMessage(chatKey, id);
+          }
+          options.chatState.setMessages(previous => mergeConversationMessages(
+            previous.filter(row => !deleted.has(Number(row.id))),
+            [...result.updated_messages, ...result.messages], chatKey));
+          const next = result.messages.reduce((max, row) => Math.max(max, Number(row.id) || 0), afterId);
+          if (!result.has_more || next <= afterId) break;
+          afterId = next;
+          knownIds = [];
+        }
+        openingChatRequest.windowReady = true;
+        schedulePosition();
+        return;
+      }
       const anchor = position?.anchor?.id;
       const targetId = position?.bottom !== true && /^message:\d+$/.test(anchor || "") ? Number(anchor.slice(8)) : 0;
       let loadedMessages;
@@ -414,12 +409,7 @@ export function createChatsController(options) {
       // Сервер — источник истины: удалённые в другом окне сообщения не
       // остаются в кэше. Одновременно сохраняем изменения SSE за время запроса.
       options.chatState.setMessages((previous) => {
-        const receivedDuringLoad = cachedMessages
-          ? previous.filter((item) => cachedById.get(String(item.id)) !== item)
-          : previous;
-        const merged = mergeConversationMessages(loadedMessages, receivedDuringLoad, chatKey);
-        cacheChat(chatKey, merged);
-        return merged;
+        return mergeConversationMessages(loadedMessages, previous, chatKey);
       });
       openingChatRequest.windowReady = true;
       schedulePosition();
@@ -434,6 +424,12 @@ export function createChatsController(options) {
     } catch (error) {
       if (!controller.signal.aborted && activeChatKey() === chatKey) {
         openingChatRequest = null;
+        if ([401, 403, 404].includes(error.status)) {
+          cache.removeChat(chatKey);
+          options.chatState.setSelectedChat(null);
+          options.chatState.setMessages([]);
+          options.chatState.setMessagesLoading(false);
+        }
         options.setError(error.message);
       }
     } finally {
@@ -528,7 +524,7 @@ export function createChatsController(options) {
     const key = "personal:" + chat.id;
     try {
       const result = await deletePersonalConversation(options.request, chat.id);
-      recentChats.delete(key);
+      cache.removeChat(key);
       options.personalState.setPersonalChats((current) => current.filter((row) => row.id !== chat.id));
       if (viewPreference(viewAccountKey(options.profile), "chats.active", "") === key) {
         saveViewPreference(viewAccountKey(options.profile), "chats.active", null);
@@ -564,6 +560,7 @@ export function createChatsController(options) {
     try {
       const result = await deleteChatMessage(options.request, message, chat.type === "personal");
       markConversationMessageDeleted(chatKey, message.id);
+      cache.removeMessage(chatKey, message.id);
       if (activeChatKey() === chatKey) {
         options.chatState.setMessages((current) => current.filter((item) => item.id !== message.id));
       }

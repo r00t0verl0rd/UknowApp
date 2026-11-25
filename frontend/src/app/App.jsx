@@ -75,6 +75,17 @@ function Application(options) {
   const settings = createSettingsState();
   const chatState = createChatState();
   const personalState = createPersonalChatState();
+  // The cache belongs to the authenticated application, not a mounted workspace page.
+  createEffect(
+    () => [authState.auth, authState.profile, chatState.chats, personalState.personalChats],
+    ([auth, profile, chats, personalChats]) => {
+      const id = viewAccountKey(profile);
+      chatState.cache.setScope(auth && id != null ? profile.role + ":" + id : null, [
+        ...chats.map(chat => "conversation:" + chat.id),
+        ...personalChats.map(chat => "personal:" + chat.id),
+      ]);
+    },
+  );
   const navigation = createUiState();
   const directory = createDirectoryState();
   // Restore view-only preferences after the authenticated user has been identified.
@@ -144,6 +155,7 @@ function Application(options) {
   const activeChat = () =>
     chatState.messagesViewportRef.current?.isConnected ? foregroundChat() : null;
   const acknowledgeVisible = createConversationSync({
+    cache: chatState.cache,
     get auth() {
       return workspace() && authState.auth;
     },

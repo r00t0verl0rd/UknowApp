@@ -28,6 +28,7 @@ export default function ChatsModule(options) {
     <>
       <ChatsPage
         setError={options.setError}
+        cache={options.chatState.cache}
         profile={options.profile}
         inboxLoading={options.inboxLoading}
         chatSection={options.personalState.chatSection}
