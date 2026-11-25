@@ -347,15 +347,27 @@ class ExternalEndpoint(Base):
 class ConnectorDelivery(Base):
     """Transactional outbox for one recipient/channel and one message."""
     __tablename__ = "connector_deliveries"
-    __table_args__ = (UniqueConstraint("message_id", "platform", "recipient_id"),)
+    __table_args__ = (UniqueConstraint("message_id", "platform", "recipient_id", "chat_id", "thread_id", name="uq_connector_delivery_route"),)
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    message_id: Mapped[int] = mapped_column(ForeignKey("messages.id", ondelete="CASCADE"), index=True)
+    message_id: Mapped[int | None] = mapped_column(ForeignKey("messages.id", ondelete="CASCADE"), index=True, nullable=True)
     recipient_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     platform: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     external_user_id: Mapped[str] = mapped_column(String(255), nullable=False)
     chat_id: Mapped[str] = mapped_column(String(255), nullable=False)
-    thread_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    thread_id: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="queued", index=True)
     external_message_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+
+class ConnectorDeletion(Base):
+    """Durable external-copy deletion, independent of the deleted message row."""
+    __tablename__ = "connector_deletions"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    platform: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    chat_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    external_message_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="queued", index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)

@@ -8,8 +8,8 @@ from fastapi.testclient import TestClient
 
 from app.bots_gateway import gateway
 from app.bots_gateway.operations import receive_message, rpc
-from app.bots_gateway.outbox import enqueue_web_delivery, record_result
-from app.models import Assignment, BotEventReceipt, ConnectorDelivery, Conversation, Message, User
+from app.bots_gateway.outbox import enqueue_message_deletions, enqueue_web_delivery, record_result
+from app.models import Assignment, BotEventReceipt, ConnectorDeletion, ConnectorDelivery, Conversation, ExternalEndpoint, Message, User
 from app.modules.communication.accounts import sync_messenger_account
 
 SECRET = "test-media-" + "x" * 40
@@ -116,3 +116,107 @@ def test_revoked_binding_cancels_pending_job(api):
             rpc(db, "beta", "delivery.authorize", {"id":job.id})
         assert err.value.status_code == 403
         assert job.status == "cancelled"
+
+
+def reply(db, chat, kind="text"):
+    row = Message(conversation_id=chat.id, sender_id=chat.teacher_id, sender_role="teacher",
+                  text="reply", content_type=kind, metadata_json=json.dumps(
+                      {"media": {"archive_status": "stored", "file_name": "photo.jpg", "mime_type": "image/jpeg"}}
+                      if kind == "photo" else {}))
+    db.add(row)
+    db.flush()
+    enqueue_web_delivery(db, row, ("alpha", "beta"))
+    db.commit()
+    return row
+
+
+@pytest.mark.parametrize("kind", ["text", "photo"])
+def test_private_and_group_fanout_and_partial_delivery(api, kind):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        db.add(ExternalEndpoint(platform="beta", user_id=chat.student_id,
+                                chat_id="group", thread_id="topic", preferred=False))
+        db.commit()
+        receive_message(db, "beta", {"id":"private-1", "actor":"student", "chat_id":"200",
+                        "channel":"private", "kind":"text", "text":"hello"}, ("alpha", "beta"), gateway.media_path)
+        row = reply(db, chat, kind)
+        jobs = db.query(ConnectorDelivery).filter_by(message_id=row.id).all()
+        assert {(j.chat_id, j.thread_id) for j in jobs} == {("200", ""), ("group", "topic")}
+        group = next(j for j in jobs if j.thread_id)
+        private = next(j for j in jobs if not j.thread_id)
+        payload = rpc(db, "beta", "delivery.authorize", {"id":group.id})
+        assert payload["thread_id"] == "topic"
+        assert bool(payload["media"]) == (kind == "photo")
+        record_result(db, group, "failed")
+        assert json.loads(row.metadata_json)["messenger_deliveries"]["beta"]["status"] == "queued"
+        assert rpc(db, "beta", "delivery.authorize", {"id":private.id})["thread_id"] is None
+        record_result(db, private, "delivered", "1000")
+        ledger = json.loads(row.metadata_json)["messenger_deliveries"]["beta"]
+        assert ledger["status"] == "partial"
+        assert ledger["delivered"][0]["endpoint_type"] == "private"
+        assert ledger["errors"][0]["endpoint_type"] == "group"
+        assert db.query(Message).count() == 2
+
+
+def test_bot_reply_fanout_and_rebind(api):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        rpc(db, "beta", "endpoint.bind", {"actor":"student","chat_id":"group","thread_id":"topic"})
+        receive_message(db, "alpha", {"id":"teacher-1","actor":"teacher","chat_id":"100",
+                        "channel":"private","conversation_id":chat.id,"kind":"text","text":"hello"},
+                        ("alpha","beta"), gateway.media_path)
+        assert db.query(Message).count() == 1
+        jobs = db.query(ConnectorDelivery).all()
+        assert len(jobs) == 2
+        group = next(j for j in jobs if j.thread_id)
+        private = next(j for j in jobs if not j.thread_id)
+        rpc(db, "beta", "endpoint.bind", {"actor":"student","chat_id":"new-group","thread_id":"new-topic"})
+        with pytest.raises(HTTPException) as err:
+            rpc(db, "beta", "delivery.authorize", {"id":group.id})
+        assert err.value.status_code == 403
+        assert group.status == "cancelled"
+        assert rpc(db, "beta", "delivery.authorize", {"id":private.id})["chat_id"] == "200"
+
+
+def test_delete_copies_in_both_chats(api):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        rpc(db, "beta", "endpoint.bind", {"actor":"student","chat_id":"group","thread_id":"topic"})
+        row = reply(db, chat)
+        for job in db.query(ConnectorDelivery).all():
+            record_result(db, job, "delivered", "123")
+        assert len(json.loads(row.metadata_json)["messenger_deliveries"]["beta"]["delivered"]) == 2
+        assert enqueue_message_deletions(db, row) == (2, 0)
+        db.delete(row)
+        db.commit()
+        assert db.query(Message).count() == 0
+        deletes = db.query(ConnectorDeletion).all()
+        assert {d.chat_id for d in deletes} == {"group", "200"}
+        for deletion in deletes:
+            assert rpc(db, "beta", "delivery.authorize", {"id":deletion.id})["operation"] == "delete"
+            record_result(db, deletion, "delivered", "123")
+        assert all(d.status == "delivered" for d in deletes)
+
+
+def test_late_receipt_after_deletion(api):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        rpc(db, "beta", "endpoint.bind", {"actor":"student","chat_id":"group","thread_id":"topic"})
+        row = reply(db, chat)
+        jobs = db.query(ConnectorDelivery).all()
+        group = next(j for j in jobs if j.thread_id)
+        private = next(j for j in jobs if not j.thread_id)
+        rpc(db, "beta", "delivery.authorize", {"id":group.id})
+        assert enqueue_message_deletions(db, row) == (1, 0)
+        db.delete(row)
+        db.commit()
+        assert private.status == "cancelled"
+        assert group.message_id is None
+        record_result(db, group, "delivered", "late-id")
+        assert db.query(ConnectorDeletion).one().chat_id == "group"
+        record_result(db, group, "delivered", "late-id")
+        assert db.query(ConnectorDeletion).count() == 1

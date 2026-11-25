@@ -23,10 +23,7 @@ from app.models import (
     Message,
 )
 from app.modules.auth.permissions import permits
-from app.modules.communication.contracts import (
-    MessengerError,
-    MessengerPlatform,
-)
+from app.bots_gateway.outbox import enqueue_message_deletions
 from app.modules.conversations.service import (
     _unread_condition,
     conversation_dicts,
@@ -192,73 +189,21 @@ async def delete_panel_message(
     if not owns_message:
         raise HTTPException(status_code=403, detail="Можно удалить только собственное сообщение")
 
-    metadata = json.loads(item.metadata_json or "{}")
-    deliveries_by_platform = metadata.get("messenger_deliveries") or {}
-    if not deliveries_by_platform and metadata.get("telegram_deliveries"):
-        # Поддерживаем сообщения без общего журнала внешних доставок.
-        deliveries_by_platform = {
-            MessengerPlatform.TELEGRAM.value: {
-                "delivered": metadata["telegram_deliveries"],
-            },
-        }
-
-    communication = getattr(request.app.state, "communication", None)
-    messenger_deleted = 0
-    messenger_failed = 0
-    telegram_deleted = 0
-    telegram_failed = 0
-
-    # Удаляем внешние копии через адаптеры; UknowApp остаётся источником данных.
-    for platform_value, result in deliveries_by_platform.items():
-        try:
-            platform = MessengerPlatform(platform_value)
-        except ValueError:
-            continue
-        for delivery in result.get("delivered", []):
-            external_chat_id = (
-                delivery.get("external_chat_id") or delivery.get("chat_id")
-            )
-            external_message_id = (
-                delivery.get("external_message_id")
-                or delivery.get("telegram_message_id")
-            )
-            if not external_chat_id or not external_message_id:
-                messenger_failed += 1
-                if platform == MessengerPlatform.TELEGRAM:
-                    telegram_failed += 1
-                continue
-            try:
-                if not communication or not communication.has_adapter(platform):
-                    raise RuntimeError("Messenger adapter is disabled")
-                await communication.delete_message(
-                    platform=platform,
-                    external_chat_id=str(external_chat_id),
-                    external_message_id=str(external_message_id),
-                )
-                messenger_deleted += 1
-                if platform == MessengerPlatform.TELEGRAM:
-                    telegram_deleted += 1
-            except (MessengerError, RuntimeError, NotImplementedError) as exc:
-                messenger_failed += 1
-                if platform == MessengerPlatform.TELEGRAM:
-                    telegram_failed += 1
-                logger.warning(
-                    "Could not delete messenger copy (platform=%s message_id=%s error_type=%s)",
-                    platform.value,
-                    item.id,
-                    type(exc).__name__,
-                )
-
-    delete_message_media(item.metadata_json)
+    queued, unknown = enqueue_message_deletions(db, item)
+    metadata_json = item.metadata_json
     db.delete(item)
     db.commit()
+    delete_message_media(metadata_json)
     publish_conversation_update(db, conversation, message_id=message_id, action="delete")
-
+    gateway = getattr(request.app.state, "bots_gateway", None)
+    if gateway:
+        gateway.outbox_wakeup.set()
     return {
         "ok": True,
         "deleted_message_id": message_id,
-        "messenger_deleted": messenger_deleted,
-        "messenger_failed": messenger_failed,
-        "telegram_deleted": telegram_deleted,
-        "telegram_failed": telegram_failed,
+        "messenger_delete_queued": queued,
+        "messenger_deleted": 0,
+        "messenger_failed": unknown,
+        "telegram_deleted": 0,
+        "telegram_failed": unknown,
     }

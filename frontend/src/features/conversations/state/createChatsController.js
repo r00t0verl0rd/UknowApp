@@ -566,13 +566,16 @@ export function createChatsController(options) {
       }
       actions.setDeleteMessageCandidate(null);
       const messengerFailed = Number(result.messenger_failed ?? result.telegram_failed ?? 0);
-      if (messengerFailed > 0) {
+      const messengerQueued = Number(result.messenger_delete_queued ?? 0);
+      if (messengerQueued > 0) {
+        options.notify("Сообщение удалено из UknowApp. Внешние копии поставлены в очередь удаления (" + messengerQueued + ")." + (messengerFailed ? " Неизвестных результатов отправки: " + messengerFailed + "." : ""));
+      } else if (messengerFailed > 0) {
         options.notify(
           "Сообщение удалено из UknowApp. " +
             "Часть копий в мессенджерах удалить не удалось (" + messengerFailed + ").",
         );
       } else {
-        options.notify("Сообщение удалено из UknowApp и подключённых мессенджеров");
+        options.notify("Сообщение удалено из UknowApp");
       }
     } catch (error) {
       options.setError(error.message || "Не удалось удалить сообщение");

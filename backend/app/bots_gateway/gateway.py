@@ -18,10 +18,10 @@ from sqlalchemy import select
 
 from app.core.database import SessionLocal
 from app.infrastructure.storage.media import MAX_ATTACHMENT_BYTES, MEDIA_DIR
-from app.models import ConnectorDelivery
+from app.models import ConnectorDeletion, ConnectorDelivery
 from .contracts import PREFIX, STREAM, decode, encode, identifier, platforms
 from .operations import receive_message, rpc
-from .outbox import authorized_job, job_payload, record_result
+from .outbox import PENDING, authorized_job, get_job, job_payload, record_result
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/internal/bots", include_in_schema=False)
@@ -117,7 +117,7 @@ class BotsGateway:
                         if direction == "inbound":
                             receive_message(db, platform, payload, self.platforms, media_path)
                         else:
-                            job = db.get(ConnectorDelivery, identifier(payload.get("id")))
+                            job = get_job(db, identifier(payload.get("id")))
                             status = payload.get("status")
                             if not job or job.platform != platform:
                                 await msg.term()
@@ -139,13 +139,15 @@ class BotsGateway:
         while True:
             self.outbox_wakeup.clear()
             with SessionLocal() as db:
-                queued = db.scalars(select(ConnectorDelivery).where(
-                    ConnectorDelivery.status == "queued", ConnectorDelivery.platform.in_(self.platforms))
-                    .order_by(ConnectorDelivery.created_at, ConnectorDelivery.id).limit(50)).all()
-                entries = [(job.id, job.platform) for job in queued]
+                entries = []
+                for model in (ConnectorDeletion, ConnectorDelivery):
+                    queued = db.scalars(select(model).where(
+                        model.status == "queued", model.platform.in_(self.platforms))
+                        .order_by(model.created_at, model.id).limit(50)).all()
+                    entries.extend((job.id, job.platform) for job in queued)
             for job_id, platform in entries:
                 with SessionLocal() as db:
-                    job = db.get(ConnectorDelivery, job_id)
+                    job = get_job(db, job_id)
                     if not job or job.status != "queued":
                         continue
                     if job_payload(db, job) is None:
@@ -154,7 +156,7 @@ class BotsGateway:
                 await self.js.publish(f"{PREFIX}.outbound.{platform}", encode({"id": job_id}),
                                       headers={"Nats-Msg-Id": job_id})
                 with SessionLocal() as db:
-                    job = db.get(ConnectorDelivery, job_id)
+                    job = get_job(db, job_id)
                     if job and job.status == "queued":
                         job.status = "published"
                         db.commit()
@@ -236,7 +238,7 @@ async def download_media(request: Request, platform: str, job_id: str):
     require_connector(request, platform)
     with SessionLocal() as db:
         job = db.get(ConnectorDelivery, job_id)
-        if not job or job.platform != platform or job.status not in {"queued", "published"}:
+        if not job or job.platform != platform or job.status not in PENDING:
             raise HTTPException(404)
         row = authorized_job(db, job)
         if row is None:

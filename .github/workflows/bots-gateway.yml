@@ -28,7 +28,7 @@ jobs:
       - run: python -m compileall -q backend/app connectors
       - name: Verify Core does not require aiogram
         run: python -c "import importlib.util; assert importlib.util.find_spec('aiogram') is None; from app.main import app"
-      - run: python -m pytest -q backend/tests/test_bots_gateway.py backend/tests/test_access_control.py backend/tests/test_realtime_events.py backend/tests/test_admin_data_backup.py backend/tests/test_restore_startup.py
+      - run: python -m pytest -q backend/tests/test_bots_gateway.py backend/tests/test_delivery_routes_migration.py backend/tests/test_access_control.py backend/tests/test_realtime_events.py backend/tests/test_admin_data_backup.py backend/tests/test_restore_startup.py
       - run: pip install -r connectors/telegram/requirements.txt
       - run: python -m pytest -q connectors/tests
       - name: Validate and build Compose configuration

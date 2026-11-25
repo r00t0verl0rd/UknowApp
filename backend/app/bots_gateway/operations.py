@@ -16,7 +16,7 @@ from app.modules.notifications.service import schedule_push
 from app.modules.panel.read_state import mark_conversation_read
 from app.rate_limit import SlidingWindowLimiter
 from .contracts import identifier
-from .outbox import enqueue_web_delivery, job_payload, record_result
+from .outbox import PENDING, enqueue_web_delivery, get_job, job_payload, record_result
 
 _bind_limit = SlidingWindowLimiter()
 KINDS = frozenset(("text", "photo", "video", "audio", "voice", "document", "animation",
@@ -74,13 +74,16 @@ def summaries(db, user):
 
 def rpc(db, platform, operation, payload):
     if operation == "delivery.authorize":
-        job = db.get(ConnectorDelivery, identifier(payload.get("id")))
-        if not job or job.platform != platform or job.status not in {"queued", "published"}:
+        job = get_job(db, identifier(payload.get("id")))
+        if not job or job.platform != platform or job.status not in PENDING:
             raise HTTPException(404, "job unavailable")
         result = job_payload(db, job)
         if result is None:
             record_result(db, job, "cancelled")
             raise HTTPException(403, "job no longer authorized")
+        # Persist the start before releasing the job to the connector.
+        job.status = "sending"
+        db.commit()
         return result
 
     actor = identifier(payload.get("actor"))
@@ -143,10 +146,9 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
             endpoint = bind_endpoint(db, platform, user, chat, thread)
         if endpoint.chat_id != chat or endpoint.thread_id != thread:
             raise HTTPException(403, "group not linked")
-        endpoint.preferred = True
     elif payload.get("channel") == "private":
-        if endpoint:
-            endpoint.preferred = False
+        # Private activity must never disable a bound group.
+        pass
     else:
         raise ValueError("unknown channel type")
     external_message_id = identifier(payload.get("external_message_id", event_id))

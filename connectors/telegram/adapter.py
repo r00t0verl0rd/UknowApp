@@ -7,12 +7,13 @@ from urllib.parse import quote
 
 import aiohttp
 from aiogram import Bot
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramNotFound
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, URLInputFile
 
 from connectors.common.commands import Commands
-from connectors.common.client import RpcError
+from connectors.common.client import DeliveryRejected, RpcError
 
 logger = logging.getLogger(__name__)
 MAX_BYTES = 1024 ** 3
@@ -55,7 +56,22 @@ class TelegramAdapter:
                         raise ValueError("media too large")
                     yield chunk
 
+    async def delete(self, job):
+        try:
+            await self.bot.delete_message(chat_id=int(job["chat_id"]), message_id=int(job["external_message_id"]))
+        except TelegramBadRequest as exc:
+            if "message to delete not found" not in str(exc).lower():
+                raise DeliveryRejected("provider refused deletion") from exc
+        except (TelegramForbiddenError, TelegramNotFound) as exc:
+            raise DeliveryRejected("provider refused deletion") from exc
+
     async def send(self, job, gateway):
+        try:
+            return await self._send(job, gateway)
+        except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound) as exc:
+            raise DeliveryRejected("provider refused delivery") from exc
+
+    async def _send(self, job, gateway):
         kwargs = {"chat_id": int(job["chat_id"])}
         if job.get("thread_id"):
             kwargs["message_thread_id"] = int(job["thread_id"])
@@ -180,7 +196,7 @@ class TelegramAdapter:
         if command == "/bind_group":
             if group:
                 await gateway.rpc("endpoint.bind", actor=actor, chat_id=chat, thread_id=thread)
-                await self.bot.send_message(int(chat), "Тема привязана.", message_thread_id=int(thread))
+                await self.bot.send_message(int(chat), "Тема привязана. Сообщения будут приходить сюда и в личный чат с ботом.", message_thread_id=int(thread))
             return
         if account["role"] not in {"teacher", "student"} or (group and account["role"] != "student"):
             return

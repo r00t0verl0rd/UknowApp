@@ -13,6 +13,10 @@ from .contracts import PREFIX, STREAM, encode
 logger = logging.getLogger(__name__)
 
 
+class DeliveryRejected(Exception):
+    """Provider definitively refused the requested operation."""
+
+
 class RpcError(Exception):
     def __init__(self, code, message):
         super().__init__(message)
@@ -91,10 +95,16 @@ class GatewayClient:
                         # Record before any externally visible operation; a crash means unknown.
                         self.spool.begin_delivery(job_id)
                         try:
-                            external_id = await adapter.send(job, self)
+                            if job.get("operation") == "delete":
+                                await adapter.delete(job)
+                                external_id = job["external_message_id"]
+                            else:
+                                external_id = await adapter.send(job, self)
                             receipt = {"id": job_id, "status": "delivered", "external_message_id": str(external_id)}
                         except asyncio.CancelledError:
                             raise
+                        except DeliveryRejected:
+                            receipt = {"id": job_id, "status": "failed"}
                         except Exception as exc:
                             logger.warning("External delivery outcome uncertain: %s", type(exc).__name__)
                             receipt = {"id": job_id, "status": "unknown"}
