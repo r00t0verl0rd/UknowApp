@@ -31,6 +31,28 @@ class RpcError(Exception):
         self.code = code
 
 
+def select_heads(pending, active):
+    """Choose up to four independent routes, reserve worker slots for light work."""
+    active = list(active)
+    busy = {item[0] for item in active}
+    heavy_count = sum(item[2] for item in active)
+    heads = []
+    for item in list(pending):
+        if len(active) + len(heads) >= 8 or len(heads) >= 4:
+            break
+        _, _, route, heavy = item
+        if route in busy:
+            continue
+        # Do not let later messages jump a waiting heavy message on the same route.
+        busy.add(route)
+        if heavy and heavy_count >= 2:
+            continue
+        heavy_count += bool(heavy)
+        heads.append(item)
+        pending.remove(item)
+    return heads
+
+
 class GatewayClient:
     def __init__(self, platform, http, spool):
         self.platform = platform
@@ -39,7 +61,6 @@ class GatewayClient:
         self.nc = None
         self.js = None
         self.media_slots = asyncio.Semaphore(2)
-        self.worker_slots = asyncio.Semaphore(8)
         self.ui_pending = set()
         self.base = os.environ["BOTS_MEDIA_URL"].rstrip("/")
         self.headers = {"Authorization": "Bearer " + os.environ["BOTS_MEDIA_SECRET"]}
@@ -121,11 +142,13 @@ class GatewayClient:
                 if not authorized.get("ok"):
                     code = authorized.get("code")
                     if code in {403, 404}:
+                        self.spool.forget_claim(job_id)
                         await msg.ack_sync()
                         return
                     if code == 409:
                         # Core already released this job, but no durable local receipt remains.
                         receipt = {"id": job_id, "status": "unknown"}
+                        self.spool.forget_claim(job_id)
                     else:
                         await msg.nak(delay=5)
                         return
@@ -177,38 +200,25 @@ class GatewayClient:
                 consumer="outbound-" + self.platform, stream=STREAM,
                 inbox_prefix=("_INBOX." + self.platform + ".").encode())
             while True:
-                for task, (route, msg) in list(active.items()):
+                for task, (route, msg, heavy) in list(active.items()):
                     if task.done():
                         active.pop(task)
                         heartbeat = heartbeats.pop(id(msg))
                         heartbeat.cancel()
                         await asyncio.gather(heartbeat, return_exceptions=True)
                         task.result()
-                busy = {item[0] for item in active.values()}
-                # Keep only one active job per route. Core also checks older pending jobs
-                # when a delayed NAK or reconnect changes broker order.
-                heads = []
-                for item in list(pending):
-                    if len(active) + len(heads) >= 8:
-                        break
-                    msg, job_id, route = item
-                    if route in busy:
-                        continue
-                    busy.add(route)
-                    heads.append(item)
-                    pending.remove(item)
-                    if len(heads) >= min(4, 8 - len(active)):
-                        break
+                heads = select_heads(pending, active.values())
                 if heads:
-                    ids = [job_id for _, job_id, _ in heads if self.spool.delivery(job_id) is None]
+                    jobs = [{"id": job_id, "claim": self.spool.prepare_delivery(job_id)}
+                            for _, job_id, _, _ in heads if self.spool.delivery(job_id) is None]
                     try:
-                        results = await self.rpc("delivery.authorize_batch", ids=ids) if ids else {}
+                        results = await self.rpc("delivery.authorize_batch", jobs=jobs) if jobs else {}
                     except Exception as exc:
                         logger.warning("Batch authorization unavailable: %s", type(exc).__name__)
                         results = {}
-                    for msg, job_id, route in heads:
+                    for msg, job_id, route, heavy in heads:
                         task = asyncio.create_task(self.complete(adapter, msg, job_id, results.get(job_id, {})))
-                        active[task] = (route, msg)
+                        active[task] = (route, msg, heavy)
                 capacity = 16 - len(pending) - len(active)
                 if capacity > 0:
                     try:
@@ -228,7 +238,7 @@ class GatewayClient:
                             await msg.term()
                             continue
                         heartbeats[id(msg)] = asyncio.create_task(self.extend_ack(msg))
-                        pending.append((msg, job_id, route))
+                        pending.append((msg, job_id, route, envelope.get("heavy") is True))
                 elif active:
                     await asyncio.wait(active, return_when=asyncio.FIRST_COMPLETED)
                 else:

@@ -8,6 +8,6 @@ def upgrade_delivery_recovery(connection):
         if not inspector.has_table(table):
             continue
         columns = {c["name"] for c in inspector.get_columns(table)}
-        for column in ("published_at", "started_at"):
+        for column, typ in (("published_at", "TIMESTAMP"), ("started_at", "TIMESTAMP"), ("claim_id", "VARCHAR(64)")):
             if column not in columns:
-                connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} TIMESTAMP"))
+                connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {typ}"))

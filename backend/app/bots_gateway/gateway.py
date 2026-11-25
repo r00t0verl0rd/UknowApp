@@ -145,12 +145,12 @@ class BotsGateway:
             self.outbox_wakeup.clear()
             with SessionLocal() as db:
                 entries = publication_candidates(db, self.platforms)
-            for job_id, platform, chat, thread, status in entries:
+            for job_id, platform, chat, thread, status, heavy in entries:
                 # Stable IDs for normal publish, separate time-bucket ID for stale recovery.
                 # A connector's durable receipt and Core claim prevent duplicate sends.
                 dedup = job_id if status == "queued" else f"{job_id}:recover:{int(now_utc().timestamp()) // 60}"
                 await self.js.publish(f"{PREFIX}.outbound.{platform}",
-                    encode({"id": job_id, "route": [chat, thread]}),
+                    encode({"id": job_id, "route": [chat, thread], "heavy": heavy}),
                     headers={"Nats-Msg-Id": dedup})
                 with SessionLocal() as db:
                     job = get_job(db, job_id)

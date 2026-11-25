@@ -98,11 +98,14 @@ def chat_view(db, user, conversation, read=False):
                           "kind": r.content_type} for r in rows]}
 
 
-def authorize_delivery(db, platform, job_id):
+def authorize_delivery(db, platform, job_id, claim=None):
+    if claim is not None and (not isinstance(claim, str) or len(claim) != 32 or not all(c in "0123456789abcdef" for c in claim)):
+        raise HTTPException(400, "invalid claim")
     job = get_job(db, identifier(job_id))
     if not job or job.platform != platform or job.status not in PENDING:
         raise HTTPException(404, "job unavailable")
-    if job.status == "sending":
+    same_claim = bool(claim and job.claim_id == claim)
+    if job.status == "sending" and not same_claim:
         # No second external attempt if a receipt was lost with the connector volume.
         # Recent claims may still be executing; let them finish.
         raise HTTPException(425 if claim_is_recent(job) else 409, "delivery already claimed")
@@ -114,21 +117,25 @@ def authorize_delivery(db, platform, job_id):
         raise HTTPException(403, "job no longer authorized")
     job.status = "sending"
     job.started_at = now_utc()
+    job.claim_id = claim
     db.commit()
     return result
 
 
 def rpc(db, platform, operation, payload):
     if operation == "delivery.authorize":
-        return authorize_delivery(db, platform, payload.get("id"))
+        return authorize_delivery(db, platform, payload.get("id"), payload.get("claim"))
     if operation == "delivery.authorize_batch":
-        ids = payload.get("ids")
-        if not isinstance(ids, list) or not 1 <= len(ids) <= 16 or len(set(ids)) != len(ids):
+        items = payload.get("jobs")
+        if not isinstance(items, list) or not 1 <= len(items) <= 4:
             raise HTTPException(400, "invalid batch")
         result = {}
-        for job_id in ids:
+        for item in items:
+            if not isinstance(item, dict):
+                raise HTTPException(400, "invalid batch item")
+            job_id = identifier(item.get("id"))
             try:
-                result[identifier(job_id)] = {"ok": True, "result": authorize_delivery(db, platform, job_id)}
+                result[job_id] = {"ok": True, "result": authorize_delivery(db, platform, job_id, item.get("claim"))}
             except HTTPException as exc:
                 result[job_id] = {"ok": False, "code": exc.status_code}
         return result

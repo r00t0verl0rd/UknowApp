@@ -313,6 +313,7 @@ class ConnectorDelivery(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    claim_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
 
 class ConnectorDeletion(Base):
@@ -327,3 +328,4 @@ class ConnectorDeletion(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    claim_id: Mapped[str | None] = mapped_column(String(64), nullable=True)

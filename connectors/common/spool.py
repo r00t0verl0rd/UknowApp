@@ -3,6 +3,7 @@ import asyncio
 import json
 import sqlite3
 from pathlib import Path
+from uuid import uuid4
 
 MAX_EVENTS = 10000
 
@@ -19,6 +20,7 @@ class EventSpool:
             event_id TEXT NOT NULL UNIQUE, payload TEXT NOT NULL)""")
         self.db.execute("CREATE TABLE IF NOT EXISTS deliveries (namespace TEXT NOT NULL, id TEXT NOT NULL, result TEXT, PRIMARY KEY(namespace,id))")
         self.db.execute("CREATE TABLE IF NOT EXISTS selections (namespace TEXT NOT NULL, actor TEXT NOT NULL, conversation INTEGER, PRIMARY KEY(namespace,actor))")
+        self.db.execute("CREATE TABLE IF NOT EXISTS delivery_claims (namespace TEXT NOT NULL, id TEXT NOT NULL, claim TEXT NOT NULL, PRIMARY KEY(namespace,id))")
         self.db.execute("CREATE TABLE IF NOT EXISTS panels (namespace TEXT NOT NULL, actor TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(namespace,actor))")
         self.db.commit()
         self.namespace = namespace
@@ -68,6 +70,19 @@ class EventSpool:
             return None
         return json.loads(row[0]) if row[0] else {"id": job_id, "status": "unknown"}
 
+    def prepare_delivery(self, job_id):
+        # Persist the claim before RPC. A lost RPC reply can safely be requested again
+        # with this claim as long as no external attempt was started.
+        with self.db:
+            self.db.execute("INSERT OR IGNORE INTO delivery_claims(namespace,id,claim) VALUES (?,?,?)",
+                            (self.namespace, job_id, uuid4().hex))
+        return self.db.execute("SELECT claim FROM delivery_claims WHERE namespace=? AND id=?",
+                               (self.namespace, job_id)).fetchone()[0]
+
+    def forget_claim(self, job_id):
+        with self.db:
+            self.db.execute("DELETE FROM delivery_claims WHERE namespace=? AND id=?", (self.namespace, job_id))
+
     def begin_delivery(self, job_id):
         with self.db:
             self.db.execute("INSERT INTO deliveries(namespace,id,result) VALUES (?,?,NULL)",
@@ -77,6 +92,7 @@ class EventSpool:
         with self.db:
             self.db.execute("UPDATE deliveries SET result=? WHERE namespace=? AND id=?",
                             (json.dumps(receipt), self.namespace, job_id))
+            self.db.execute("DELETE FROM delivery_claims WHERE namespace=? AND id=?", (self.namespace, job_id))
 
     def select_conversation(self, actor, conversation):
         with self.db:
