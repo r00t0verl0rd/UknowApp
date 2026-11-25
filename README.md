@@ -239,7 +239,6 @@ DATABASE_URL=postgresql+psycopg://uknowapp:замените-на-надежны�
 ```bash
 docker compose --profile postgres up -d postgres
 docker compose build backend
-docker compose --profile postgres run --rm --no-deps backend alembic -c /app/alembic.ini upgrade head
 docker compose up -d --build
 ```
 
@@ -247,10 +246,7 @@ docker compose up -d --build
 Само изменение URL **не переносит** пользователей, переписки, медиа и другие записи.
 Перед работой со схемой скачайте полную резервную копию, проверьте миграцию и её эффект на копии данных.
 
-В проект добавлен Alembic для **ручного управления будущими миграциями**. `revision --autogenerate`
-создаёт только черновик; запуск `upgrade head` требует отдельного решения.
-Чтобы не ломать существующие установки, прежняя стартовая инициализация схемы пока сохранена
-как переходная совместимость. Подробности и ограничения: [миграции и СУБД](docs/database-migrations.md).
+Единственный механизм миграций — `backend/app/migrations/`: Core автоматически обновляет схему при запуске, используя `schema_migrations`. Отдельный запуск миграций не требуется. Подробности и ограничения: [миграции и СУБД](docs/database-migrations.md).
 
 Встроенные **полный ZIP** и **экспорт/импорт базы** предназначены только для SQLite.
 Для PostgreSQL используйте `pg_dump` и `pg_restore`, а файлы медиа и ключ Web Push сохраняйте отдельно.

@@ -32,18 +32,6 @@ def get_db():
     with SessionLocal() as db:
         yield db
 
-DATA_DIR = MEDIA_DIR.parent.resolve()
-PENDING_RESTORE_NAME = ".uknowapp-restore-pending.json"
-RESTORE_RESULT_NAME = ".uknowapp-restore-result.json"
-RESTORE_STAGE_PREFIX = ".uknowapp-restore-stage-"
-RESTORE_BACKUP_PREFIX = ".uknowapp-restore-backup-"
-RESTORE_UPLOAD_LOCK = ".uknowapp-restore-upload.lock"
-INTERNAL_PREFIX = ".uknowapp-"
-
-MAX_ARCHIVE_ENTRIES = 100000
-FULL_BACKUP_FORMAT = "uknowapp-full-backup-v2"
-
-
 def database_path() -> Path:
     if engine.dialect.name != "sqlite" or not engine.url.database:
         raise HTTPException(status_code=501, detail="Резервное копирование доступно для SQLite")

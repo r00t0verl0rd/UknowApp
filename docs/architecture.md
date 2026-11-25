@@ -19,7 +19,8 @@
 | `bots_gateway/` | NATS Gateway Core: транспорт, RPC и события коннекторов |
 | `modules/communication/outbox.py` | Доменная очередь внешней доставки |
 | `modules/messaging/read_state.py` | Отметки прочтения для панели и Gateway |
-| `modules/administration/` | Управление школой и резервные копии |
+| `modules/administration/` | Управление школой; `backup.py`, `restore.py`, `stats.py` — администрирование данных |
+| `modules/personal_chat/` | Операции личных диалогов; HTTP-маршруты находятся в `modules/panel/` |
 | `modules/notifications/` | Web Push-уведомления |
 | `infrastructure/storage/` | Сохранение вложений |
 | `event_hub.py` | События для обновления веб-панели |

@@ -15,7 +15,6 @@ RUN groupadd --system app \
     && chown app:app /app /app/data
 
 COPY --chown=app:app backend /app/backend
-COPY --chown=app:app alembic.ini /app/alembic.ini
 
 USER app
 

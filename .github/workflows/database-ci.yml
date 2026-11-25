@@ -5,13 +5,11 @@ on:
     branches: [test]
     paths:
       - "backend/**"
-      - "alembic.ini"
       - "docker-compose.yml"
       - ".github/workflows/database-ci.yml"
   pull_request:
     paths:
       - "backend/**"
-      - "alembic.ini"
       - "docker-compose.yml"
       - ".github/workflows/database-ci.yml"
 
@@ -24,15 +22,14 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r backend/requirements.txt pytest httpx
-      - name: Reviewable baseline on temporary SQLite
+      - name: Canonical startup migrations on temporary SQLite
         env:
           PYTHONPATH: backend
           DATABASE_URL: sqlite:///./ci-test.sqlite3
           TELEGRAM_BOT_ENABLED: "false"
           ADMIN_PASSWORD: ci-only-admin-password-123 # pragma: allowlist secret
         run: |
-          alembic -c alembic.ini upgrade head
-          python -c 'from app.migrations import initialize_database; initialize_database()'
+          python -c 'from app.migrations import initialize_database; initialize_database(); initialize_database()'
           pytest -q backend/tests/test_database_storage_info.py backend/tests/test_admin_stats.py backend/tests/test_database_dialects.py backend/tests/test_legacy_database_upgrade.py
 
   postgres:
@@ -56,7 +53,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r backend/requirements.txt pytest httpx
-      - name: Reviewable baseline on temporary PostgreSQL
+      - name: Canonical startup migrations on temporary PostgreSQL
         env:
           PYTHONPATH: backend
           DATABASE_URL: postgresql+psycopg://uknowapp_ci:ci-only-db-password@127.0.0.1:5432/uknowapp_ci # pragma: allowlist secret
@@ -64,6 +61,5 @@ jobs:
           TELEGRAM_BOT_ENABLED: "false"
           ADMIN_PASSWORD: ci-only-admin-password-123 # pragma: allowlist secret
         run: |
-          alembic -c alembic.ini upgrade head
-          python -c 'from app.migrations import initialize_database; initialize_database()'
+          python -c 'from app.migrations import initialize_database; initialize_database(); initialize_database()'
           pytest -q backend/tests/test_database_storage_info.py backend/tests/test_database_dialects.py backend/tests/test_legacy_database_upgrade.py

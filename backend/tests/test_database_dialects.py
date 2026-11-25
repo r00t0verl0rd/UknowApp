@@ -9,9 +9,9 @@ from app.models import User
 
 @pytest.fixture(scope="module", autouse=True)
 def require_prepared_test_database():
-    # Never migrate a database implicitly from tests. CI explicitly runs Alembic
+    # Never migrate a database implicitly from tests. CI explicitly runs initialize_database
     # on isolated databases; the general test suite has no prepared DB.
-    if not inspect(engine).has_table("alembic_version"):
+    if not inspect(engine).has_table("schema_migrations"):
         pytest.skip("Dialect smoke tests require a manually migrated test DB")
 
 
@@ -20,7 +20,12 @@ def test_tables_exist_after_manual_migration():
     assert inspector.has_table("users")
     assert inspector.has_table("messages")
     assert inspector.has_table("conversations")
-    assert inspector.has_table("alembic_version")
+    assert inspector.has_table("schema_migrations")
+    from app.migrations import MIGRATIONS
+    from sqlalchemy import text
+    with engine.connect() as connection:
+        applied = set(connection.scalars(text("SELECT version FROM schema_migrations")))
+    assert {version for version, _ in MIGRATIONS} <= applied
 
 
 def test_user_round_trip_with_rollback():
