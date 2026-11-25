@@ -7,7 +7,8 @@ import sys
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import create_engine, inspect, select, text
+from sqlalchemy import create_engine, inspect, select, text, update
+from app.infrastructure.storage.message_metadata import metadata_with_field
 from sqlalchemy.orm import Session
 
 from app import migrations
@@ -112,7 +113,16 @@ def assert_preserved(connection, name):
             assert db.get(ConnectorDelivery,"previous-delivery").external_message_id == "555"
             assert db.get(ConnectorDelivery,"previous-delivery").thread_id == ""
         assert db.query(Message).count() == 2
+    with Session(bind=connection) as db:
+        db.execute(update(Message).where(Message.id == 51).values(metadata_json=metadata_with_field(
+            db, Message.metadata_json, "student_read_at", "2026-02-01T00:00:00Z")))
+        db.flush()
+        updated = json.loads(db.scalar(select(Message.metadata_json).where(Message.id == 51)))
+        assert updated["student_read_at"] == "2026-02-01T00:00:00Z"
+        assert updated["messenger_deliveries"]["telegram"]["status"] == "delivered"
     inspector = inspect(connection)
+    assert {"ix_connector_delivery_queue", "ix_connector_delivery_route_order"} <= {i["name"] for i in inspector.get_indexes("connector_deliveries")}
+    assert {"ix_push_role_state", "ix_push_session_hash"} <= {i["name"] for i in inspector.get_indexes("push_subscriptions")}
     assert not {"teacher_panels","teacher_sessions","student_telegram_groups","bot_delivery_jobs"} & set(inspector.get_table_names())
     assert "telegram_id" not in {c["name"] for c in inspector.get_columns("users")}
     assert "source_message_id" not in {c["name"] for c in inspector.get_columns("messages")}

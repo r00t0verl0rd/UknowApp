@@ -78,6 +78,7 @@ async def main():
         workers.clear()
         await gateway.js.delete_stream(STREAM)
         await gateway.nc.close()
+        await gateway.close()
         gateway = BotsGateway()
         await gateway.setup()
         os.environ["BOTS_NATS_USER"] = "telegram"
@@ -112,6 +113,7 @@ async def main():
             spool.close()
         if gateway.nc and not gateway.nc.is_closed:
             await gateway.nc.close()
+        await gateway.close()
         os.environ["BOTS_NATS_USER"]="core"
         os.environ["BOTS_NATS_PASSWORD"]=core_password
 

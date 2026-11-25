@@ -55,6 +55,7 @@ def test_durable_events_replay_only_for_conversation_members(api):
         publish_conversation_update(db, conversation, action="delivery")
         latest = db.query(RealtimeEvent).one()
         assert latest.id > second_id
+        assert not json.loads(latest.payload_json).get("summary_by_role")
         missed = replay_chat_updates(db, {"role": "admin"}, first_id)
         assert json.loads(missed[0][1]) == {"event_id": latest.id, "resync": True}
 
@@ -89,3 +90,19 @@ def test_bulk_read_stores_only_a_scoped_recovery_signal(api):
         assert len(event.payload_json.encode()) < 100
         assert json.loads(replay_chat_updates(db, teacher, cursor)[0][1]) == {"event_id": event.id, "resync": True}
         assert replay_chat_updates(db, {"role": "teacher", "user_id": users["teacher-two"]}, cursor) == []
+
+
+def test_delivery_event_skips_summary_recount(api, monkeypatch):
+    from app.modules.conversations import service
+    from helpers import create_conversation
+
+    _, users, sessions = api
+    with sessions() as db:
+        chat = create_conversation(db, users["teacher-one"], users["student-one"])
+        def unexpected(*args):
+            raise AssertionError("delivery event must not recompute conversation summary")
+        monkeypatch.setattr(service, "conversation_event_summaries", unexpected)
+        publish_conversation_update(db, chat, message_id=1, action="delivery")
+        payload = json.loads(db.query(RealtimeEvent).one().payload_json)
+        assert payload["action"] == "delivery"
+        assert payload["summary_by_role"] == {}

@@ -1,10 +1,12 @@
 """Изолированная база и API-клиент для тестов."""
 
+import asyncio
 from functools import lru_cache
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -69,3 +71,24 @@ def api(monkeypatch):
         client.close()
     app.dependency_overrides.clear()
     engine.dispose()
+
+
+@pytest.fixture(autouse=True)
+def forbid_sync_sql_in_event_loop():
+    """Fail regression tests when blocking SQL is executed on an asyncio thread."""
+    def check(*_args):
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        raise AssertionError("Synchronous SQLAlchemy executed on an active event loop")
+
+    # Catch checkout, execution and transaction boundaries, including raw SQL.
+    listeners = [(Engine, "before_cursor_execute"), (Engine, "commit"), (Engine, "rollback")]
+    for target, name in listeners:
+        event.listen(target, name, check)
+    try:
+        yield
+    finally:
+        for target, name in listeners:
+            event.remove(target, name, check)

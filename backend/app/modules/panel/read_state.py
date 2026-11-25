@@ -20,15 +20,19 @@ def mark_conversation_read(db, conversation, principal, after_id: int, visible_i
         return
     read_key = "teacher_read_at" if role == "teacher" else "student_read_at"
     sender_roles = ("student", "admin") if role == "teacher" else ("teacher", "admin")
-    read_at = datetime.now(UTC).isoformat()
-    # A single atomic update preserves delivery metadata written by the gateway.
-    ids = db.scalars(update(Message).where(
+    filters = (
         Message.conversation_id == conversation.id,
         Message.sender_role.in_(sender_roles),
         metadata_value(db, Message.metadata_json, read_key).is_(None),
         Message.id > after_id,
         *([Message.id.in_(visible_ids)] if visible_ids is not None else []),
-    ).values(metadata_json=metadata_with_field(db, Message.metadata_json, read_key, read_at))
+    )
+    # Do not take SQLite's writer lock just to open an already-read chat.
+    if db.scalar(select(Message.id).where(*filters).limit(1)) is None:
+        return
+    read_at = datetime.now(UTC).isoformat()
+    ids = db.scalars(update(Message).where(*filters)
+      .values(metadata_json=metadata_with_field(db, Message.metadata_json, read_key, read_at))
       .returning(Message.id), execution_options={"synchronize_session": "fetch"}).all()
     if not ids:
         db.rollback()
