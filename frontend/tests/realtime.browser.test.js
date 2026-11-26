@@ -643,13 +643,16 @@ test("global SSE updates real counters across tabs and replays missed events", {
 });
 
 test("read receipts and push suppression follow the visible dialog", { timeout: 30000 }, async () => {
+  // Keep this test independent of the preceding preview process shutting down.
+  const port = APP_PORT + 1;
+  const appUrl = `http://127.0.0.1:${port}`;
   const vite = spawn(process.execPath, [
     "node_modules/vite/bin/vite.js", "preview",
-    "--host", "127.0.0.1", "--port", String(APP_PORT), "--strictPort",
+    "--host", "127.0.0.1", "--port", String(port), "--strictPort",
   ], { env: { ...process.env, VITE_API_BASE_URL: "" }, stdio: "ignore" });
   let browser;
   try {
-    await waitFor(async () => (await fetch(APP_URL)).ok);
+    await waitFor(async () => (await fetch(appUrl)).ok);
     browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_PATH });
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -739,7 +742,7 @@ test("read receipts and push suppression follow the visible dialog", { timeout: 
     // Ссылка из уже отправленного push ведёт в нужный диалог даже с корневого URL.
     addMessage(1, "Первое уведомление");
     console.log("[read-receipts] open push link");
-    await page.goto(APP_URL + "/?openConversation=5&type=personal");
+    await page.goto(appUrl + "/?openConversation=5&type=personal");
     await page.getByText("Первое уведомление", { exact: true }).waitFor();
     console.log("[read-receipts] first message rendered");
     await waitFor(() => receipts.includes(1), 6000, "first visible receipt");

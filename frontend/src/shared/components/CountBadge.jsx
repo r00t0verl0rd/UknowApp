@@ -12,7 +12,7 @@ export default function CountBadge(props) {
         title={props.title}
         aria-label={props.label ? `${count()} ${props.label}` : undefined}
       >
-        {count()}
+        {props.prefix}{count()}
       </Badge>
     </Show>
   );

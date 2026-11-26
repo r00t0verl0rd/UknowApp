@@ -285,6 +285,7 @@ export default function ChatsPage(options) {
                   {showMessageCount() && adminUnreadCount() > 0 && (
                     <CountBadge
                       value={adminUnreadCount()}
+                      prefix="+"
                       unread
                       title="Непрочитанные администратором сообщения"
                       label="непрочитанных администратором сообщений"

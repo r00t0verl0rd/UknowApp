@@ -77,3 +77,10 @@ test("observation eye appears only for admin participant conversations", () => {
   assert.match(icons, /export const IconEye = icon\("eye"/);
   assert.match(chats, /const showMessageCount = \(\) =>\s*options\.profile\?\.role === "admin" && options\.chatSection === "participants" && !personal\(\)/);
 });
+
+test("only the admin participant unread badge adds a plus prefix", () => {
+  const chats = readFileSync(path.join(frontend, "src/features/conversations/ChatsPage.jsx"), "utf8");
+  assert.match(chats, /value=\{adminUnreadCount\(\)\}\s+prefix="\+"\s+unread/);
+  assert.equal((chats.match(/prefix="\+"/g) || []).length, 1);
+  assert.match(countBadge, /\{props\.prefix\}\{count\(\)\}/);
+});

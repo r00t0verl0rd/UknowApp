@@ -943,12 +943,13 @@ export async function checkWorkspaceLayout(page, browser, appUrl) {
                 <button class="chat-item student-card" type="button">
                   <div class="person-main"><span class="person-info"><b>Профессор</b></span></div>
                   <span class="chat-tab-count">12345</span>
+                  <span class="chat-tab-count chat-tab-count--unread">+3</span>
                 </button>
               </div>
               <div class="chat-section-tabs ui-toolbar-control ui-toolbar-segmented">
                 <button class="chat-section-tab ui-toolbar-tab" type="button">Участники</button>
                 <button class="chat-section-tab ui-toolbar-tab" type="button">Личные
-                  <span class="chat-tab-count">12345</span>
+                  <span class="chat-tab-count chat-tab-count--unread">12345</span>
                 </button>
               </div>
             </div>
@@ -964,11 +965,17 @@ export async function checkWorkspaceLayout(page, browser, appUrl) {
               clipped: element.scrollWidth > element.clientWidth,
               radius: getComputedStyle(element).borderRadius,
             });
+            const unread = host.querySelector(".chat-item .chat-tab-count--unread");
+            const colors = element => {
+              const style = getComputedStyle(element);
+              return [style.backgroundColor, style.borderColor, style.color, style.boxShadow];
+            };
+            const sameStyle = JSON.stringify(colors(unread)) === JSON.stringify(colors(tabBadge));
             const large = measure(badge);
             const tab = measure(tabBadge);
             badge.textContent = "8";
             const small = measure(badge);
-            return { large, tab, small };
+            return { large, tab, small, unread: measure(unread), sameStyle };
           } finally {
             host.remove();
             root.dataset.theme = previous;
@@ -976,6 +983,9 @@ export async function checkWorkspaceLayout(page, browser, appUrl) {
         }, theme);
         assert.equal(result.large.text, "12345");
         assert.equal(result.tab.text, "12345");
+        assert.equal(result.unread.text, "+3");
+        assert.ok(result.sameStyle, `${width}px ${theme}: participant and personal unread styles match`);
+        assert.ok(!result.unread.clipped, `${width}px ${theme}: plus sign and count are visible`);
         for (const value of [result.large, result.tab]) {
           assert.ok(value.width > value.height, `${width}px ${theme}: long number grows into a pill`);
           assert.ok(!value.clipped, `${width}px ${theme}: badge content is not clipped`);
