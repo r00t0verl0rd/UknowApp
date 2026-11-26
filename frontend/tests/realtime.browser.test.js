@@ -357,6 +357,17 @@ test("global SSE updates real counters across tabs and replays missed events", {
       assert.deepEqual(teacherSyncBodies.at(-1).known_message_ids, [],
         "ordinary upsert must not refetch existing message statuses");
       assert.equal(teacherSyncBodies.at(-1).mark_read, false);
+      const syncBeforeDirect = teacherSyncRequests;
+      const directMessage = { ...teacherSyncMessages[0], id: 13, text: "Сообщение прямо из SSE" };
+      await teacherPage.evaluate(message => window.__teacherTestStream.dispatchEvent(
+        new MessageEvent("update", { data: JSON.stringify({
+          event_id: 903, conversation_id: 15, conversation_type: "conversation",
+          action: "upsert", message_id: message.id, message,
+          summary: { id: 15, unread_count: 2 },
+        }) }),
+      ), directMessage);
+      await teacherPage.getByText("Сообщение прямо из SSE").waitFor({ state: "visible" });
+      assert.equal(teacherSyncRequests, syncBeforeDirect, "complete SSE message renders without /sync");
       await teacherPage.evaluate(() => {
         delete document.hasFocus;
         window.setTimeout = window.__teacherOriginalTimeout;
