@@ -8,6 +8,7 @@ from aiogram.methods import GetChatMember
 from connectors.telegram.adapter import TelegramAdapter
 from connectors.telegram.teacher_panel import TeacherPanel, render
 from connectors.common.spool import EventSpool
+from connectors.common.client import RpcError
 
 
 @pytest.mark.parametrize("mode,base", [("cloud","https://api.telegram.org"), ("local","http://local-api:8081")])
@@ -271,9 +272,7 @@ def test_pending_invited_topic_binds_when_student_joins(tmp_path, event_type):
         adapter.bot = SimpleNamespace(me=AsyncMock(), get_chat_member=AsyncMock(),
                                       send_message=AsyncMock())
         gateway = SimpleNamespace(rpc=AsyncMock(side_effect=[
-            {"account": None, "conversations": []},
-            {"account": {"role": "student"}, "conversations": [{"id": 1}]},
-            {"bound": True},
+            RpcError(403, "account unavailable"), {"bound": True},
         ]), inbound=AsyncMock())
         spool = EventSpool(tmp_path / "forum.db", "bot")
         try:
@@ -294,7 +293,9 @@ def test_pending_invited_topic_binds_when_student_joins(tmp_path, event_type):
             await adapter.handle("student", joined(10), gateway, spool)
             gateway.rpc.assert_any_await("endpoint.bind", actor="10", chat_id="-1001",
                                          thread_id="7")
-            assert gateway.rpc.await_count == 3
+            assert gateway.rpc.await_count == 2
+            gateway.rpc.assert_any_await("endpoint.bind", actor="11", chat_id="-1001",
+                                         thread_id="7")
             assert spool.forum_topic("-1001") is None
             adapter.bot.get_chat_member.assert_not_awaited()
             adapter.bot.me.assert_not_awaited()
@@ -418,6 +419,30 @@ def test_locked_topic_discards_pending_invitation(tmp_path):
             spool.remember_forum_topic("-1001", "99")
             await adapter.bind_invited_topic("-1001", "99", None, spool)
             assert spool.forum_topic("-1001") is None
+        finally:
+            spool.close()
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("second_role", ["student", "teacher", None])
+def test_join_batch_never_guesses_between_students(tmp_path, second_role):
+    async def run():
+        adapter = object.__new__(TelegramAdapter)
+        gateway = SimpleNamespace(rpc=AsyncMock(side_effect=[
+            {"account": {"role": "student"}}, {"account": {"role": second_role} if second_role else None},
+            {"bound": True},
+        ]))
+        spool = EventSpool(tmp_path / "forum.db", "bot")
+        try:
+            spool.remember_forum_topic("-1001", "7")
+            await adapter.bind_invited_topic("-1001", "7", gateway, spool,
+                                          members=[{"id": 10}, {"id": 11}])
+            if second_role == "student":
+                assert spool.forum_topic("-1001") == "7"
+                assert gateway.rpc.await_count == 2
+            else:
+                assert spool.forum_topic("-1001") is None
+                gateway.rpc.assert_any_await("endpoint.bind", actor="10", chat_id="-1001", thread_id="7")
         finally:
             spool.close()
     asyncio.run(run())
