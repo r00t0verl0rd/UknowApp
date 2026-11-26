@@ -13,6 +13,8 @@ from app.models import (
     Conversation,
     ExternalEndpoint,
     Message,
+    MessengerAccount,
+    User,
 )
 from app.modules.communication.accounts import (
     claim_messenger_connection_code,
@@ -175,6 +177,22 @@ def rpc(db, platform, operation, payload):
                 db.rollback()
                 result[job_id] = {"ok": False, "code": exc.status_code}
         return result
+
+    if operation == "endpoint.student_candidates":
+        # Only the authenticated Telegram connector needs IDs for getChatMember.
+        # Include already bound and inactive students to detect ambiguous groups.
+        if platform != "telegram":
+            raise HTTPException(403, "operation unavailable")
+        after = payload.get("after", 0)
+        if isinstance(after, bool) or not isinstance(after, int) or after < 0:
+            raise HTTPException(400, "invalid cursor")
+        rows = db.execute(select(MessengerAccount.id, MessengerAccount.external_user_id)
+                          .join(User, User.id == MessengerAccount.user_id)
+                          .where(MessengerAccount.platform == platform, MessengerAccount.status == "linked",
+                                 User.role == "student", MessengerAccount.id > after)
+                          .order_by(MessengerAccount.id).limit(201)).all()
+        return {"actors": [row[1] for row in rows[:200]],
+                "next": rows[199][0] if len(rows) > 200 else None}
 
     actor = identifier(payload.get("actor"))
     user = get_messenger_user(db, platform, actor)

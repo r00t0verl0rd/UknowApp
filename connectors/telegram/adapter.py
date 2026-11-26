@@ -186,9 +186,72 @@ class TelegramAdapter:
         return str(member.status) in {"administrator", "creator"}
 
     @staticmethod
+    def member_present(member):
+        return str(member.status) in {"member", "administrator", "creator"} or (
+            str(member.status) == "restricted" and bool(getattr(member, "is_member", False)))
+
+    async def forum_admin(self, chat, actor):
+        member = await self.bot.get_chat_member(int(chat), int(actor))
+        return str(member.status) in {"administrator", "creator"}
+
+    async def bind_forum_student(self, chat, thread, gateway):
+        # Bot API cannot enumerate group members. Check known linked IDs against
+        # Telegram membership, including students who did not send any message.
+        info = await self.bot.me()
+        if not await self.forum_admin(chat, info.id):
+            return "bot_admin_required"
+        matches = []
+        after = 0
+        while True:
+            page = await gateway.rpc("endpoint.student_candidates", after=after)
+            for actor in page["actors"]:
+                try:
+                    member = await self.bot.get_chat_member(int(chat), int(actor))
+                except TelegramBadRequest as exc:
+                    if "user not found" in str(exc).lower() or "user_not_participant" in str(exc).lower():
+                        continue
+                    raise
+                if self.member_present(member):
+                    matches.append(actor)
+                    if len(matches) > 1:
+                        return "ambiguous"
+            after = page.get("next")
+            if after is None:
+                break
+        if not matches:
+            return "no_student"
+        try:
+            result = await gateway.rpc("endpoint.bind", actor=matches[0], chat_id=chat,
+                                       thread_id=thread, initial_only=True)
+        except RpcError as exc:
+            if exc.code in {403, 409}:
+                return "unavailable"
+            raise
+        return "bound" if result.get("bound") else "unavailable"
+
+    async def setup_forum(self, chat, thread, gateway, spool, *, notify=False):
+        result = await self.bind_forum_student(chat, thread, gateway)
+        if result == "bound" and spool:
+            spool.remember_forum_topic(chat, thread)
+        if notify:
+            messages = {
+                "bound": "Тема привязана к ученику. Сообщения будут приходить сюда и в личный чат с ботом.",
+                "bot_admin_required": "Для автоматической привязки назначьте бота администратором группы.",
+                "no_student": "В группе пока нет ученика с подключённым Telegram-аккаунтом.",
+                "ambiguous": "В группе несколько подключённых учеников. Автоматическая привязка невозможна.",
+                "unavailable": "Тему нельзя привязать автоматически: проверьте назначение ученика и существующие привязки.",
+            }
+            await self.bot.send_message(int(chat), messages[result], message_thread_id=int(thread))
+        return result
+
+    @staticmethod
     def inbound_route(update):
-        message = update.get("message") or update.get("callback_query") or update.get("my_chat_member") or {}
+        message = update.get("message") or update.get("callback_query") or update.get("my_chat_member") or update.get("chat_member") or {}
         actor = str((message.get("from") or {}).get("id") or "unknown")
+        chat = message.get("chat") or {}
+        # Serialize setup and membership events in the same forum, regardless of inviter.
+        if chat.get("type") == "supergroup":
+            actor = "group:" + str(chat["id"])
         heavy = any(message.get(k) for k in ("photo", "document", "audio", "video", "voice", "video_note", "sticker", "animation"))
         return actor, heavy
 
@@ -199,16 +262,30 @@ class TelegramAdapter:
             chat = membership.get("chat") or {}
             old_status = (membership.get("old_chat_member") or {}).get("status")
             new_status = (membership.get("new_chat_member") or {}).get("status")
-            if (chat.get("type") == "supergroup" and old_status in {"left", "kicked"}
-                    and new_status in {"member", "administrator"}):
-                # Membership updates contain the group ID, not an existing topic ID.
-                # Never guess where a student's private conversation belongs.
-                try:
-                    await self.bot.send_message(chat["id"],
-                        "Если тема «🤖 Бот» уже создана, откройте её и отправьте /bind_group "
-                        "с подключённого аккаунта ученика. Дождитесь подтверждения привязки.")
-                except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound):
-                    logger.info("Telegram setup hint unavailable")
+            if chat.get("type") == "supergroup":
+                chat_id = str(chat["id"])
+                if new_status in {"left", "kicked"} and spool:
+                    spool.forget_forum_topic(chat_id)
+                if new_status == "administrator" and old_status != "administrator":
+                    thread = spool.forum_topic(chat_id) if spool else None
+                    if thread:
+                        await self.setup_forum(chat_id, thread, gateway, spool, notify=True)
+                    else:
+                        try:
+                            await self.bot.send_message(chat["id"],
+                                "Создайте тему «🤖 Бот» — она автоматически привяжется к ученику. "
+                                "Если тема уже существует, администратору группы достаточно отправить /bind_group в ней.")
+                        except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound):
+                            logger.info("Telegram setup hint unavailable")
+            return
+        membership = update.get("chat_member")
+        if membership:
+            chat = membership.get("chat") or {}
+            if chat.get("type") == "supergroup" and spool:
+                chat_id = str(chat["id"])
+                thread = spool.forum_topic(chat_id)
+                if thread:
+                    await self.setup_forum(chat_id, thread, gateway, spool)
             return
         callback = update.get("callback_query")
         if callback:
@@ -244,28 +321,29 @@ class TelegramAdapter:
         thread = str(message["message_thread_id"]) if message.get("message_thread_id") else None
         text = message.get("text") or message.get("caption") or ""
         command = text.split(maxsplit=1)[0].split("@")[0] if text else ""
-        # A newly created dedicated topic is a setup event, not a lesson message.
-        # Register it before any teacher sends the first message from the web.
-        if group and message.get("forum_topic_created"):
-            name = (message["forum_topic_created"].get("name") or "").replace("\ufe0f", "").strip().casefold()
-            if name not in {"бот", "🤖 бот"} or not thread or not await self.group_allowed(message):
-                return
-            view = await gateway.rpc("account.resolve", actor=actor)
-            if (view.get("account") or {}).get("role") != "student" or not view.get("conversations"):
-                return
-            try:
-                result = await gateway.rpc("endpoint.bind", actor=actor, chat_id=chat,
-                                           thread_id=thread, initial_only=True)
-            except RpcError as exc:
-                if exc.code not in {403, 409}:
-                    raise
-                return
-            if result.get("bound"):
-                await self.bot.send_message(int(chat), "Тема привязана. Сообщения будут приходить сюда и в личный чат с ботом.",
-                                            message_thread_id=int(thread))
+        # Topic setup is independent of who created it (school admin or student).
+        topic_event = message.get("forum_topic_created") or message.get("forum_topic_edited")
+        if group and topic_event:
+            name = (topic_event.get("name") or "").replace("\ufe0f", "").strip().casefold()
+            if name in {"бот", "🤖 бот"} and thread and message["chat"].get("is_forum"):
+                if spool:
+                    spool.remember_forum_topic(chat, thread)
+                await self.setup_forum(chat, thread, gateway, spool, notify=True)
             return
         if group and (message.get("new_chat_members") or message.get("left_chat_member")):
+            known = spool.forum_topic(chat) if spool else None
+            if known:
+                await self.setup_forum(chat, known, gateway, spool)
             return
+        # Telegram does not expose IDs of topics created before the bot joined.
+        # A group administrator can identify the existing topic without the student.
+        if group and command == "/bind_group" and thread and message["chat"].get("is_forum"):
+            if await self.forum_admin(chat, actor):
+                result = await self.setup_forum(chat, thread, gateway, spool, notify=True)
+                if result == "bound" and spool:
+                    spool.forget_forum_topic(chat)
+                    spool.remember_forum_topic(chat, thread)
+                return
         if group and not await self.group_allowed(message):
             if command == "/bind_group":
                 await self.bot.send_message(int(chat), "Откройте тему и проверьте Group Privacy.", message_thread_id=int(thread) if thread else None)
