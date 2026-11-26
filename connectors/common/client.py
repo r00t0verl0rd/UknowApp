@@ -176,7 +176,14 @@ class GatewayClient:
             receipt = {"id": job_id, "status": "delivered", "external_message_id": str(external_id)}
         except asyncio.CancelledError:
             raise
+        except RetryLater:
+            # A rate-limit response is an explicit refusal, not an unknown send.
+            # Persist the existing claim but clear the attempt before redelivery.
+            self.spool.retry_rejected_delivery(job_id)
+            raise
         except DeliveryRejected:
+            logger.warning("External delivery refused platform=%s endpoint=%s",
+                           self.platform, "group" if job.get("thread_id") else "private")
             receipt = {"id": job_id, "status": "failed"}
         except Exception as exc:
             logger.warning("External delivery outcome uncertain: %s", type(exc).__name__)
@@ -185,17 +192,10 @@ class GatewayClient:
         return receipt
 
     async def provider_call(self, adapter, job):
-        for attempt in range(3):
-            try:
-                if job.get("operation") == "delete":
-                    await adapter.delete(job)
-                    return job["external_message_id"]
-                return await adapter.send(job, self)
-            except RetryLater as exc:
-                if attempt == 2 or exc.seconds > 60:
-                    raise DeliveryRejected("provider rate limit exceeded") from exc
-                await asyncio.sleep(max(1, exc.seconds))
-        raise DeliveryRejected("provider rate limit exceeded")
+        if job.get("operation") == "delete":
+            await adapter.delete(job)
+            return job["external_message_id"]
+        return await adapter.send(job, self)
 
     async def complete(self, adapter, msg, job_id, authorized):
         try:
@@ -221,6 +221,12 @@ class GatewayClient:
             await msg.ack_sync()
         except asyncio.CancelledError:
             raise
+        except RetryLater as exc:
+            logger.info("Provider rate limited platform=%s; retrying route", self.platform)
+            try:
+                await msg.nak(delay=max(1, exc.seconds))
+            except Exception:
+                logger.warning("Rate-limit NAK unavailable; broker will redeliver")
         except Exception as exc:
             logger.warning("Delivery will retry transport: %s", type(exc).__name__)
             try:
