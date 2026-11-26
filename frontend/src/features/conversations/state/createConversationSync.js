@@ -257,7 +257,16 @@ export function createConversationSync(options) {
           options.setMessages(rows => applyDeliveryStatus(rows, payload.message_status,
             (previous, updates) => mergeConversationMessages(previous, updates, key)));
         }
-        if (!isSameChat(selected, id, type) || !requiresMessageSync(payload.action, viewerRole, type, payload.message_status)) return;
+        if (!isSameChat(selected, id, type)) return;
+        // A complete, authorized message can be rendered without a second HTTP
+        // request. During recovery keep the cursor unchanged and reconcile gaps.
+        const message = payload.message;
+        if (payload.action === "upsert" && message && Number(message.id) === Number(payload.message_id) &&
+            !syncing && !recovery && !recoveryPending) {
+          options.setMessages(rows => mergeConversationMessages(rows, [message], key));
+          return;
+        }
+        if (!requiresMessageSync(payload.action, viewerRole, type, payload.message_status)) return;
         // Start fetching in the SSE callback itself. Background-tab timer
         // throttling must never delay an incoming message. syncSelected already
         // serializes requests and coalesces events arriving during a fetch.
@@ -278,9 +287,16 @@ export function createConversationSync(options) {
       if (!unsubscribe) requestRecovery();
       // SSE remains the fast path. An infrequent reconciliation also covers
       // suspended browsers, missed events and intermediaries buffering the stream.
+      let lastReconciliation = Date.now();
       const fallback = setInterval(() => {
-        if (active && document.visibilityState === "visible") requestRecovery();
-      }, 60000);
+        if (!active) return;
+        // Recover quickly if streaming is unavailable, otherwise only perform
+        // an infrequent safety check. Reading remains independently gated.
+        if (recoveryPending || Date.now() - lastReconciliation >= 60000) {
+          lastReconciliation = Date.now();
+          requestRecovery();
+        }
+      }, 5000);
       resumeSelected = () => {
         if (document.visibilityState !== "visible") return;
         if (recoveryPending) requestRecovery();
