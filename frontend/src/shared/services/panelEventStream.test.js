@@ -43,3 +43,37 @@ test("shares one EventSource and closes it after the final subscriber leaves", a
     globalThis.EventSource = original;
   }
 });
+
+test("reopens a terminal EventSource failure rather than waiting for a page reload", async () => {
+  const original = globalThis.EventSource;
+  const instances = [];
+  class FakeEventSource {
+    constructor() {
+      this.readyState = 0;
+      this.listeners = {};
+      instances.push(this);
+    }
+    addEventListener(name, callback) { this.listeners[name] = callback; }
+    close() { this.readyState = 2; }
+  }
+  globalThis.EventSource = FakeEventSource;
+  let unsubscribe;
+  try {
+    const { subscribePanelEvents } = await import("./panelEventStream.js?test=reconnect");
+    const messages = [];
+    let errors = 0;
+    unsubscribe = subscribePanelEvents(event => messages.push(event), null, () => errors++);
+    instances[0].readyState = 2;
+    instances[0].onerror();
+    assert.equal(errors, 1);
+    await new Promise(resolve => setTimeout(resolve, 1650));
+    assert.equal(instances.length, 2);
+    const event = { data: '{"action":"upsert"}' };
+    instances[1].listeners.update(event);
+    assert.deepEqual(messages, [event]);
+  } finally {
+    unsubscribe?.();
+    await Promise.resolve();
+    globalThis.EventSource = original;
+  }
+});
