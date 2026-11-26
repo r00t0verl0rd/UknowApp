@@ -653,7 +653,7 @@ def test_admin_can_reset_only_selected_student_topic(api):
     student_client = make_client()
     assert student_client.post("/api/auth/login", json={"username": "student-one",
         "password": "student-password-1"}).status_code == 200  # pragma: allowlist secret
-    assert student_client.post(path).status_code == 403
+    assert student_client.post(path).status_code == 401  # shared permission policy
     client = make_client()
     assert client.post("/api/auth/login", json={"username": "test-admin",
         "password": "a-long-test-password-123"}).status_code == 200  # pragma: allowlist secret
