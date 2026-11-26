@@ -118,3 +118,29 @@ def test_web_send_and_logout_survive_runtime_failure(api, monkeypatch):
         assert db.query(Message).one().text == "saved during outage"
         assert db.query(ConnectorDelivery).one().status == "queued"
     assert client.post("/api/auth/logout").status_code == 200
+
+
+def test_projection_oldest_first_and_skips_stale_pages(api, monkeypatch):
+    from datetime import UTC, datetime, timedelta
+    from app.models import ConnectorDeletion
+    _, _, sessions = api
+    stamp = datetime.now(UTC)
+    monkeypatch.setattr(transport, "PAGE", 1)
+    with sessions() as db:
+        db.add_all([
+            ConnectorDeletion(id="z-oldest", platform="telegram", chat_id="private",
+                              external_message_id="1", status="queued", created_at=stamp),
+            ConnectorDeletion(id="a-newest", platform="telegram", chat_id="topic",
+                              external_message_id="2", status="queued", created_at=stamp + timedelta(seconds=1)),
+        ])
+        db.commit()
+        cursors, more = transport.project_pending(db, ("telegram",), {})
+        assert more
+        assert cursors["connector_deletions"][1] == "z-oldest"
+        assert [entry[0] for entry in transport.candidates(db, ("telegram",))] == ["z-oldest"]
+        transport.project_pending(db, ("telegram",), cursors)
+        with runtime_database.RuntimeSessionLocal() as runtime:
+            runtime.add(TransportJob(id="stale", platform="telegram", chat_id="private",
+                                     created_at=stamp - timedelta(seconds=1)))
+            runtime.commit()
+        assert transport.candidates(db, ("telegram",), limit=1)[0][0] == "z-oldest"
