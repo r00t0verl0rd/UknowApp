@@ -81,9 +81,6 @@ class TeacherPanel:
                         if background:
                             return
                         old_id = None
-                else:
-                    spool.save_panel(actor, {**previous, "text": text})
-                    return
                 if old_id:
                     spool.save_panel(actor, {**previous, "text": text})
                     return
@@ -102,8 +99,12 @@ class TeacherPanel:
         body = text.strip()
         page = spool.panel(actor).get("page", 0)
         visible, page, total = commands.page(view["conversations"], page)
-        if body in {BACK, REFRESH, PREVIOUS, NEXT} or body.startswith("Написать · "):
-            if body != REFRESH and not body.startswith("Написать · "):
+        if body.startswith("Написать · "):
+            # A stale reply keyboard must not send its label as homework.
+            await self.refresh(actor, gateway, spool, page=page, force=True)
+            return True
+        if body in {BACK, REFRESH, PREVIOUS, NEXT}:
+            if body != REFRESH:
                 commands.clear(actor)
             page += 1 if body == NEXT else -1 if body == PREVIOUS else 0
         else:

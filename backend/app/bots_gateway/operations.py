@@ -166,8 +166,6 @@ def authorize_delivery(db, platform, job_id, claim=None):
 
 
 def rpc(db, platform, operation, payload):
-    if operation == "delivery.authorize":
-        return authorize_delivery(db, platform, payload.get("id"), payload.get("claim"))
     if operation == "delivery.authorize_batch":
         items = payload.get("jobs")
         if not isinstance(items, list) or not 1 <= len(items) <= 4:
@@ -236,21 +234,18 @@ def rpc(db, platform, operation, payload):
         thread = identifier(payload["thread_id"]) if payload.get("thread_id") else ""
         if user.role != "student" or not available(db, user, limit=1):
             raise HTTPException(403, "endpoint unavailable")
-        initial_only = payload.get("initial_only") is True
-        if initial_only or platform == "telegram":
-            if not thread:
+        if platform == "telegram":
+            if not thread or thread == "1":
                 raise HTTPException(403, "endpoint unavailable")
             existing = db.get(ExternalEndpoint, (platform, user.id))
-            if initial_only and existing is not None:
-                return {"bound": (existing.chat_id, existing.thread_id) == (chat, thread)}
-            if platform == "telegram" and not telegram_route_allowed(existing, chat, thread):
+            if not telegram_route_allowed(existing, chat, thread):
                 return {"bound": False, "reason": "topic_locked"}
         bind_endpoint(db, platform, user, chat, thread)
         db.commit()
         return {"bound": True}
-    if operation in {"conversation.open", "conversation.peek"}:
+    if operation == "conversation.open":
         conversation = visible(db, user, payload.get("conversation_id"))
-        return chat_view(db, user, conversation, read=operation == "conversation.open")
+        return chat_view(db, user, conversation, read=True)
     if operation == "panel.sync":
         items = summaries(db, user)
         selected = payload.get("conversation_id")
@@ -280,7 +275,7 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
     thread = identifier(payload["thread_id"]) if payload.get("thread_id") else ""
     group = payload.get("channel") == "group"
     if group:
-        if user.role != "student" or (platform == "telegram" and not thread):
+        if user.role != "student" or (platform == "telegram" and (not thread or thread == "1")):
             raise HTTPException(403, "group sender unavailable")
     elif payload.get("channel") != "private":
         raise ValueError("unknown channel type")

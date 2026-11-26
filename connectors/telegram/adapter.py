@@ -21,6 +21,12 @@ logger = logging.getLogger(__name__)
 ATTACHMENT_LIMITS = {"cloud": 20 * 1024 ** 2, "local": 888 * 1024 ** 2}
 MEDIA_KINDS = ("photo", "document", "audio", "video", "voice", "video_note", "sticker", "animation")
 MESSAGE_KINDS = (*MEDIA_KINDS, "contact", "location", "poll")
+MEDIA_NAMES = {"photo": "photo.jpg", "video": "video.mp4", "voice": "voice.ogg",
+               "audio": "audio.mp3", "animation": "animation.mp4",
+               "video_note": "video.mp4", "sticker": "sticker.webp"}
+MEDIA_TYPES = {"photo": "image/jpeg", "video": "video/mp4", "voice": "audio/ogg",
+               "audio": "audio/mpeg", "animation": "video/mp4",
+               "video_note": "video/mp4", "sticker": "image/webp"}
 
 
 def split_text(text, limit):
@@ -354,30 +360,10 @@ class TelegramAdapter:
                                                   members=None if own else [new.get("user") or {}])
             return
         commands = Commands(gateway, spool)
-        callback = update.get("callback_query")
-        if callback:
-            actor = str(callback["from"]["id"])
-            chat = (callback.get("message") or {}).get("chat") or {}
-            if chat.get("type") != "private" or str(chat.get("id")) != actor:
-                return
-            data = callback.get("data") or ""
-            try:
-                if data.startswith(("chat:", "reply:", "ui:chat:", "ui:reply:")):
-                    await commands.open(actor, int(data.rsplit(":", 1)[1]))
-                    await self.teacher_panel.refresh(actor, gateway, spool)
-                else:
-                    commands.clear(actor)
-                    page = int(data.rsplit(":", 1)[1]) if "page:" in data else 0
-                    await self.show_menu(int(chat["id"]), await commands.menu(actor), gateway, spool, page)
-            except (ValueError, RpcError) as exc:
-                if isinstance(exc, RpcError) and exc.code >= 500:
-                    raise
-                await self.bot.send_message(int(chat["id"]), "Диалог недоступен.")
-            finally:
-                try:
-                    await self.bot.answer_callback_query(callback["id"])
-                except Exception as exc:
-                    logger.debug("Callback answer unavailable: %s", type(exc).__name__)
+        # Old inline keyboards are no longer produced. Acknowledge old clicks
+        # without interpreting their stale conversation IDs.
+        if callback := update.get("callback_query"):
+            await self.bot.answer_callback_query(callback["id"], text="Меню обновилось. Нажмите /start.")
             return
         message = update.get("message")
         if not message or not message.get("from") or message["from"].get("is_bot"):
@@ -461,7 +447,7 @@ class TelegramAdapter:
             await self.show_menu(int(chat), view, gateway, spool)
             return
         if account["role"] == "student" and not view["conversations"]:
-            await self.bot.send_message(int(chat), "Пока нет назначенного преподавателя.", message_thread_id=int(thread) if thread else None)
+            await self.bot.send_message(int(chat), "Пока нет назначенного преподавателя.")
             return
         event = {"id": event_id, "external_message_id": str(message["message_id"]), "actor": actor, "chat_id": chat, "thread_id": thread,
                  "channel": "group" if group else "private", "conversation_id": selection,
@@ -486,10 +472,8 @@ class TelegramAdapter:
             if remote.file_size is None or remote.file_size > self.max_attachment_bytes or not remote.file_path:
                 event["media_unavailable"] = True
                 break
-            name = value.get("file_name") or {"photo":"photo.jpg","video":"video.mp4","voice":"voice.ogg",
-                    "audio":"audio.mp3","animation":"animation.mp4","video_note":"video.mp4","sticker":"sticker.webp"}.get(kind,"attachment")
-            mime = value.get("mime_type") or {"photo":"image/jpeg","video":"video/mp4","voice":"audio/ogg",
-                    "audio":"audio/mpeg","animation":"video/mp4","video_note":"video/mp4","sticker":"image/webp"}.get(kind)
+            name = value.get("file_name") or MEDIA_NAMES.get(kind, "attachment")
+            mime = value.get("mime_type") or MEDIA_TYPES.get(kind)
             await gateway.upload(event_id, self.chunks(remote.file_path))
             event["media"] = {"file_name": name, "mime_type": mime}
             break

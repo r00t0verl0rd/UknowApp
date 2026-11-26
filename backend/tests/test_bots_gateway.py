@@ -16,6 +16,13 @@ from app.modules.communication.accounts import sync_messenger_account
 SECRET = "test-media-" + "x" * 40  # pragma: allowlist secret
 
 
+def authorize(db, platform, payload):
+    result = rpc(db, platform, "delivery.authorize_batch", {"jobs": [payload]})[payload["id"]]
+    if not result["ok"]:
+        raise HTTPException(result["code"])
+    return result["result"]
+
+
 def prepare(db, users):
     teacher = db.get(User, users["teacher-one"])
     student = db.get(User, users["student-one"])
@@ -63,9 +70,9 @@ def test_inbound_receipt_and_cross_provider_outbox(api):
         job = db.query(ConnectorDelivery).one()
         assert job.platform == "alpha" and job.chat_id == "100"
         assert job.status == "queued"
-        assert rpc(db, "alpha", "delivery.authorize", {"id":job.id})["text"].endswith("hello")
+        assert authorize(db, "alpha", {"id":job.id})["text"].endswith("hello")
         with pytest.raises(HTTPException):
-            rpc(db, "beta", "delivery.authorize", {"id":job.id})
+            authorize(db, "beta", {"id":job.id})
         view = rpc(db, "alpha", "conversation.open", {"actor":"teacher", "conversation_id":chat_id})
         assert view["messages"][0]["text"] == "hello"
         record_result(db, job, "delivered", "message-123")
@@ -114,7 +121,7 @@ def test_revoked_binding_cancels_pending_job(api):
         sync_messenger_account(db, chat.student_id, "beta", None)
         db.commit()
         with pytest.raises(HTTPException) as err:
-            rpc(db, "beta", "delivery.authorize", {"id":job.id})
+            authorize(db, "beta", {"id":job.id})
         assert err.value.status_code == 403
         assert job.status == "cancelled"
 
@@ -146,12 +153,12 @@ def test_private_and_group_fanout_and_partial_delivery(api, kind):
         assert {(j.chat_id, j.thread_id) for j in jobs} == {("200", ""), ("group", "topic")}
         group = next(j for j in jobs if j.thread_id)
         private = next(j for j in jobs if not j.thread_id)
-        payload = rpc(db, "beta", "delivery.authorize", {"id":group.id})
+        payload = authorize(db, "beta", {"id":group.id})
         assert payload["thread_id"] == "topic"
         assert bool(payload["media"]) == (kind == "photo")
         record_result(db, group, "failed")
         assert json.loads(row.metadata_json)["messenger_deliveries"]["beta"]["status"] == "queued"
-        assert rpc(db, "beta", "delivery.authorize", {"id":private.id})["thread_id"] is None
+        assert authorize(db, "beta", {"id":private.id})["thread_id"] is None
         record_result(db, private, "delivered", "1000")
         ledger = json.loads(row.metadata_json)["messenger_deliveries"]["beta"]
         assert ledger["status"] == "partial"
@@ -175,10 +182,10 @@ def test_bot_reply_fanout_and_rebind(api):
         private = next(j for j in jobs if not j.thread_id)
         rpc(db, "beta", "endpoint.bind", {"actor":"student","chat_id":"new-group","thread_id":"new-topic"})
         with pytest.raises(HTTPException) as err:
-            rpc(db, "beta", "delivery.authorize", {"id":group.id})
+            authorize(db, "beta", {"id":group.id})
         assert err.value.status_code == 403
         assert group.status == "cancelled"
-        assert rpc(db, "beta", "delivery.authorize", {"id":private.id})["chat_id"] == "200"
+        assert authorize(db, "beta", {"id":private.id})["chat_id"] == "200"
 
 
 def test_delete_copies_in_both_chats(api):
@@ -197,7 +204,7 @@ def test_delete_copies_in_both_chats(api):
         deletes = db.query(ConnectorDeletion).all()
         assert {d.chat_id for d in deletes} == {"group", "200"}
         for deletion in deletes:
-            assert rpc(db, "beta", "delivery.authorize", {"id":deletion.id})["operation"] == "delete"
+            assert authorize(db, "beta", {"id":deletion.id})["operation"] == "delete"
             record_result(db, deletion, "delivered", "123")
         assert all(d.status == "delivered" for d in deletes)
 
@@ -211,7 +218,7 @@ def test_late_receipt_after_deletion(api):
         jobs = db.query(ConnectorDelivery).all()
         group = next(j for j in jobs if j.thread_id)
         private = next(j for j in jobs if not j.thread_id)
-        rpc(db, "beta", "delivery.authorize", {"id":group.id})
+        authorize(db, "beta", {"id":group.id})
         assert enqueue_message_deletions(db, row) == (1, 0)
         db.delete(row)
         db.commit()
@@ -245,19 +252,19 @@ def test_batch_claim_retry_and_route_order(api):
             {"id":second_private.id,"claim":"c"*32}]})
         assert batch[first_private.id]["ok"] and batch[first_group.id]["ok"]
         assert batch[second_private.id] == {"ok":False,"code":425}
-        assert rpc(db, "beta", "delivery.authorize", {"id":first_private.id,"claim":claim})["id"] == first_private.id
+        assert authorize(db, "beta", {"id":first_private.id,"claim":claim})["id"] == first_private.id
         with pytest.raises(HTTPException) as error:
-            rpc(db, "beta", "delivery.authorize", {"id":first_private.id,"claim":"d"*32})
+            authorize(db, "beta", {"id":first_private.id,"claim":"d"*32})
         assert error.value.status_code == 425
         first_private.started_at = now_utc() - timedelta(minutes=20)
         db.commit()
         transport.project_pending(db, ("beta",), {})
         assert first_private.id in {e[0] for e in transport.candidates(db, ("beta",))}
         with pytest.raises(HTTPException) as error:
-            rpc(db, "beta", "delivery.authorize", {"id":first_private.id,"claim":"d"*32})
+            authorize(db, "beta", {"id":first_private.id,"claim":"d"*32})
         assert error.value.status_code == 409
         record_result(db, first_private, "delivered", "receipt")
-        assert rpc(db, "beta", "delivery.authorize", {"id":second_private.id,"claim":"c"*32})["id"] == second_private.id
+        assert authorize(db, "beta", {"id":second_private.id,"claim":"c"*32})["id"] == second_private.id
 
 
 def test_additive_recovery_migration(tmp_path):
@@ -330,13 +337,13 @@ def test_topic_and_private_keep_independent_order_for_ten_messages(api):
             private.append(next(j for j in jobs if not j.thread_id))
             group.append(next(j for j in jobs if j.thread_id))
         # A stalled private route must not block any message in the group.
-        rpc(db, "beta", "delivery.authorize", {"id":private[0].id})
+        authorize(db, "beta", {"id":private[0].id})
         for i, job in enumerate(group):
-            assert rpc(db, "beta", "delivery.authorize", {"id":job.id})["thread_id"] == "topic"
+            assert authorize(db, "beta", {"id":job.id})["thread_id"] == "topic"
             record_result(db, job, "delivered", str(i+1))
         record_result(db, private[0], "delivered", "1")
         for i, job in enumerate(private[1:], 2):
-            assert rpc(db, "beta", "delivery.authorize", {"id":job.id})["thread_id"] is None
+            assert authorize(db, "beta", {"id":job.id})["thread_id"] is None
             record_result(db, job, "delivered", str(i))
         for message in messages:
             ledger = json.loads(message.metadata_json)["messenger_deliveries"]["beta"]
@@ -349,16 +356,15 @@ def test_initial_topic_binding_routes_first_teacher_message_without_student_mess
     with sessions() as db:
         chat = prepare(db, users)
         assert not db.query(Message).count()
-        args = {"actor": "student", "chat_id": "group", "thread_id": "topic", "initial_only": True}
+        args = {"actor": "student", "chat_id": "group", "thread_id": "topic"}
         assert rpc(db, "beta", "endpoint.bind", args) == {"bound": True}
         assert rpc(db, "beta", "endpoint.bind", args) == {"bound": True}
-        assert rpc(db, "beta", "endpoint.bind", {**args, "thread_id": "another"}) == {"bound": False}
         first = reply(db, chat)
         jobs = db.query(ConnectorDelivery).filter_by(message_id=first.id).all()
         assert {(job.chat_id, job.thread_id) for job in jobs} == {("200", ""), ("group", "topic")}
         assert db.query(Message).count() == 1
         for job in jobs:
-            payload = rpc(db, "beta", "delivery.authorize", {"id": job.id})
+            payload = authorize(db, "beta", {"id": job.id})
             assert payload["chat_id"] == job.chat_id
             assert payload["thread_id"] == (job.thread_id or None)
 
@@ -413,7 +419,7 @@ def test_telegram_forum_moves_between_groups_but_not_topics(api):
         jobs = teacher_reply()
         assert {(job.chat_id, job.thread_id) for job in jobs} == {("123", ""), ("-1001", "47")}
         for job in jobs:
-            payload = rpc(db, "telegram", "delivery.authorize", {"id": job.id})
+            payload = authorize(db, "telegram", {"id": job.id})
             assert payload["chat_id"] == job.chat_id
             assert payload["thread_id"] == (job.thread_id or None)
             record_result(db, job, "delivered", "previous-copy")
@@ -468,7 +474,7 @@ def test_telegram_forum_moves_between_groups_but_not_topics(api):
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1002", "69")
         old_job = next(job for job in queued if job.thread_id)
         with pytest.raises(HTTPException) as exc:
-            rpc(db, "telegram", "delivery.authorize", {"id": old_job.id})
+            authorize(db, "telegram", {"id": old_job.id})
         assert exc.value.status_code == 403 and old_job.status == "cancelled"
         receive_message(db, "telegram", {**first, "id": "private", "external_message_id": "71",
                         "chat_id": "123", "thread_id": None, "channel": "private"},

@@ -86,13 +86,6 @@ class EventSpool:
                                         (self.namespace, event["chat_id"], event["thread_id"]))
             self.db.execute("DELETE FROM inbound_pending WHERE namespace=? AND id=?", (self.namespace, ident))
 
-    def first(self):
-        row = self.db.execute(
-            "SELECT event_id,payload FROM events WHERE namespace=? ORDER BY seq LIMIT 1",
-            (self.namespace,),
-        ).fetchone()
-        return (row[0], json.loads(row[1])) if row else None
-
     def ack(self, event_id):
         with self.db:
             self.db.execute("DELETE FROM events WHERE namespace=? AND event_id=?", (self.namespace, event_id))
