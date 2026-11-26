@@ -148,7 +148,7 @@ export function createConversationSync(options) {
               id: afterId,
             };
             const revisionAtStart = eventRevision.get(chatKey) || 0;
-            inFlight = { key: chatKey, revision: revisionAtStart, full: checkKnown };
+            inFlight = { key: chatKey, revision: revisionAtStart, full: checkKnown, afterId };
             const summaryRevision = options.inboxRowRevision.get(chatKey) || 0;
             const result = await syncChatState(options.request, chat, afterId, knownIds);
             if (!active) break;
@@ -189,11 +189,22 @@ export function createConversationSync(options) {
               lastMessageCursor.id = Math.max(afterId, maxMessageId(updated));
               options.setMessages((previous) => mergeConversationMessages(previous, updated, chatKey));
             }
-            if (result.has_more) syncQueued = true;
+            if (result.has_more) {
+              syncQueued = true;
+              const pageCursor = Math.max(afterId, maxMessageId(result.messages || []));
+              rewind = { key: chatKey, id: rewind?.key === chatKey ? Math.min(rewind.id, pageCursor) : pageCursor };
+            }
             if (summaryRevision === (options.inboxRowRevision.get(chatKey) || 0)) {
               applySummary(chat.type, chat.id, result.summary);
             }
           } while (syncQueued && active);
+        } catch (error) {
+          // Failed HTTP reconciliation must not lose a pending gap.
+          if (inFlight) {
+            const { key, afterId } = inFlight;
+            rewind = { key, id: rewind?.key === key ? Math.min(rewind.id, afterId) : afterId };
+          }
+          throw error;
         } finally {
           syncing = false;
           inFlight = null;
@@ -283,25 +294,23 @@ export function createConversationSync(options) {
             (previous, updates) => mergeConversationMessages(previous, updates, key)));
         }
         if (!isSameChat(selected, id, type)) return;
-        // A complete, authorized message can be rendered without a second HTTP
-        // request. During recovery keep the cursor unchanged and reconcile gaps.
+        // Rendering a complete, authorized message must never depend on the
+        // HTTP recovery path. Even a failed /sync cannot block live delivery.
         const message = payload.message;
-        let beforeGap = null;
-        if (payload.action === "upsert" && message && Number(message.id) === Number(payload.message_id)) {
+        if (payload.action === "upsert" && message && Number(message.id) === Number(payload.message_id) &&
+            isSameChat(options.selectedDialog, id, type)) {
           const previousId = Number(payload.previous_message_id) || 0;
           const rows = options.messages;
-          const hasPredecessor = !previousId || rows.some(row =>
-            Number(row.id) === previousId || Number(row.id) === Number(message.id));
-          if (hasPredecessor && !syncing && !recovery && !recoveryPending) {
-            options.setMessages(previous => mergeConversationMessages(previous, [message], key));
-            return;
+          const hasPredecessor = !previousId || rows.some(row => Number(row.id) === previousId);
+          const beforeGap = hasPredecessor ? null : rows.reduce((cursor, row) => {
+            const id = Number(row.id);
+            return id > 0 && id < previousId ? Math.max(cursor, id) : cursor;
+          }, 0);
+          options.setMessages(previous => mergeConversationMessages(previous, [message], key));
+          if (beforeGap !== null) {
+            void syncSelected({ full: false, beforeGap }).catch(requestRecovery);
           }
-          if (!hasPredecessor) {
-            beforeGap = rows.reduce((cursor, row) => {
-              const id = Number(row.id);
-              return id > 0 && id < previousId ? Math.max(cursor, id) : cursor;
-            }, 0);
-          }
+          return;
         }
         if (!requiresMessageSync(payload.action, viewerRole, type, payload.message_status)) return;
         // Start fetching in the SSE callback itself. Background-tab timer
@@ -309,7 +318,7 @@ export function createConversationSync(options) {
         // serializes requests and coalesces events arriving during a fetch.
         // Ordinary upserts only need messages after the cursor. Reconcile
         // existing statuses on recovery or a specific status invalidation.
-        void syncSelected({ full: payload.action !== "upsert", beforeGap }).catch(requestRecovery);
+        void syncSelected({ full: payload.action !== "upsert" }).catch(requestRecovery);
       };
       const reconcileSelected = () => {
         void syncSelected().catch(() => { recoveryPending = true; });
