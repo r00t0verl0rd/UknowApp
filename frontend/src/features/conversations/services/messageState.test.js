@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  isUnreadIncoming,
   markConversationMessageDeleted,
   mergeConversationMessages,
 } from "./messageState.js";
@@ -96,4 +97,15 @@ test("a repeated server echo with a client ID preserves confirmed read state", (
   const previous = [{ id: 9, metadata, panel_read_at: "2026-11-21T10:03:00Z" }];
   const updated = mergeConversationMessages(previous, [{ id: 9, metadata, panel_read_at: null }]);
   assert.equal(updated[0].panel_read_at, previous[0].panel_read_at);
+});
+
+test("admin observer unread state is independent of participant read receipts", () => {
+  const chat = { id: 5 };
+  const msg = { id: 1, sender_role: "teacher", admin_read_at: null, panel_read_at: "2026-11-26T10:00:00Z" };
+  assert.equal(isUnreadIncoming(msg, chat, "admin"), true);
+  assert.equal(isUnreadIncoming(msg, chat, "student"), false);
+  assert.equal(isUnreadIncoming({ ...msg, sender_role: "admin" }, chat, "admin"), false);
+  const read = { ...msg, admin_read_at: "2026-11-26T10:01:00Z" };
+  assert.equal(isUnreadIncoming(read, chat, "admin"), false);
+  assert.equal(mergeConversationMessages([read], [msg])[0].admin_read_at, read.admin_read_at);
 });

@@ -55,3 +55,17 @@ test("read receipts update the reader's other tabs and keep both admin receipts 
   const personal = [{ id: 3, sender_role: "admin", panel_read_at: null }];
   assert.equal(applyReadReceipt(personal, { ...second, message_ids: [3] }, "personal")[0].panel_read_at, second.read_at);
 });
+
+test("admin observer receipt does not change participants' checkmarks", () => {
+  const rows = [
+    { id: 1, sender_role: "teacher", admin_read_at: null, panel_read_at: null, metadata: {} },
+    { id: 2, sender_role: "student", admin_read_at: null, panel_read_at: null, metadata: {} },
+  ];
+  const payload = { actor_role: "admin", message_ids: [1], read_at: "2026-11-26T10:00:00Z" };
+  const read = applyReadReceipt(rows, payload, "conversation");
+  assert.equal(read[0].admin_read_at, payload.read_at);
+  assert.equal(read[0].panel_read_at, null);
+  assert.deepEqual(read[0].metadata, {});
+  assert.equal(read[1], rows[1]);
+  assert.equal(applyReadReceipt(read, payload, "conversation"), read);
+});

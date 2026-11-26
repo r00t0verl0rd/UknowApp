@@ -4,6 +4,7 @@ Keep per-message receipts (visible-window reads may leave holes). SQL triggers
 cover ORM, bulk SQL, imports and rollback. No process cache can become stale.
 """
 import json
+from datetime import UTC, datetime
 
 from sqlalchemy import Text, inspect, text
 from sqlalchemy.ext.compiler import compiles
@@ -273,6 +274,7 @@ def upgrade_physical_receipts(connection):
     rebuild_counters(connection)
     install_triggers(connection)
 
+
 def upgrade_admin_observer_receipts(connection):
     """Start independent admin receipts without treating old history as new."""
     message_columns = {col["name"] for col in inspect(connection).get_columns("messages")}
@@ -282,8 +284,9 @@ def upgrade_admin_observer_receipts(connection):
     if "admin_observer_unread_count" not in conversation_columns:
         connection.exec_driver_sql("ALTER TABLE conversations ADD COLUMN admin_observer_unread_count BIGINT NOT NULL DEFAULT 0")
     # There is no historical admin receipt data. Existing history is the baseline.
-    connection.exec_driver_sql("UPDATE messages SET admin_read_at = '2026-11-26T00:00:00+00:00' "
-                               "WHERE sender_role IN ('teacher','student') AND admin_read_at IS NULL")
+    connection.execute(text("UPDATE messages SET admin_read_at = :baseline "
+                            "WHERE sender_role IN ('teacher','student') AND admin_read_at IS NULL"),
+                       {"baseline": datetime.now(UTC).isoformat()})
     connection.exec_driver_sql("CREATE INDEX IF NOT EXISTS ix_messages_admin_observer_unread "
                                "ON messages (conversation_id, id) WHERE " + ADMIN_OBSERVER_UNREAD)
     install_triggers(connection)

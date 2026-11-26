@@ -194,9 +194,18 @@ def test_background_fetch_preserves_unread_until_explicit_receipt(api, personal)
     assert statuses[1]["panel_read_at"] is None
 
     if not personal:
-        # Наблюдатель видит, что одно сообщение уже прочитал получатель.
-        assert admin.get(collection).json()[0]["unread_count"] == 1
-        assert admin.post(f"{path}/read", json={"message_ids": [second_id]}).json()["unread_count"] == 1
+        # Observer receipts are independent from the participant's read state.
+        observed = admin.get(collection).json()[0]
+        assert observed["unread_count"] == 1
+        assert observed["admin_unread_count"] == 2
+        assert "admin_unread_count" not in reader.get(collection).json()[0]
+        history = admin.get(f"{path}/messages").json()
+        assert all(row["admin_read_at"] is None for row in history)
+        assert admin.post(f"{path}/sync", json={"paged": True}).json()["summary"]["admin_unread_count"] == 2
+        receipt = admin.post(f"{path}/read", json={"message_ids": [second_id]}).json()
+        assert receipt["unread_count"] == 1
+        assert receipt["admin_unread_count"] == 1
+        assert "admin_read_at" not in teacher.get(f"{path}/messages", params={"mark_read": "false"}).json()[0]
     assert reader.post(f"{path}/read", json={"message_ids": [second_id]}).json()["unread_count"] == 0
     assert admin.get(collection).json()[0]["unread_count"] == 0
 

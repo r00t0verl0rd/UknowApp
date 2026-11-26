@@ -18,6 +18,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.storage.conversation_counters import (
+    ADMIN_OBSERVER_UNREAD,
     STUDENT_UNREAD,
     TEACHER_UNREAD,
     install_on_create,
@@ -201,6 +202,7 @@ class Message(Base):
         Index("ix_messages_conversation_id_id", "conversation_id", "id"),
         Index("ix_messages_teacher_unread", "conversation_id", "id", sqlite_where=text(TEACHER_UNREAD), postgresql_where=text(TEACHER_UNREAD)),
         Index("ix_messages_student_unread", "conversation_id", "id", sqlite_where=text(STUDENT_UNREAD), postgresql_where=text(STUDENT_UNREAD)),
+        Index("ix_messages_admin_observer_unread", "conversation_id", "id", sqlite_where=text(ADMIN_OBSERVER_UNREAD), postgresql_where=text(ADMIN_OBSERVER_UNREAD)),
         Index(
             "uq_messages_client_message_id",
             "conversation_id",

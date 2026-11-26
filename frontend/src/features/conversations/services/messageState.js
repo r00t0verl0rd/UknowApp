@@ -105,7 +105,7 @@ export function mergeConversationMessages(previous, incoming, conversationKey = 
 export function isUnreadIncoming(message, chat, role) {
   if (!role || message.sender_role === role) return false;
   if (role === "admin" && chat.type !== "personal") {
-    return ["teacher", "student"].includes(message.sender_role) && !message.admin_read_at;
+    return ["teacher", "student"].includes(message.sender_role) && Object.hasOwn(message, "admin_read_at") && !message.admin_read_at;
   }
   return chat.type === "personal" || message.sender_role !== "admin"
     ? !message.panel_read_at
