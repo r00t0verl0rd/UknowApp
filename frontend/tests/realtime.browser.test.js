@@ -644,7 +644,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
 
 test("read receipts and push suppression follow the visible dialog", { timeout: 30000 }, async () => {
   // Keep this test independent of the preceding preview process shutting down.
-  const port = APP_PORT + 1;
+  const port = 22308;
   const appUrl = `http://127.0.0.1:${port}`;
   const vite = spawn(process.execPath, [
     "node_modules/vite/bin/vite.js", "preview",
