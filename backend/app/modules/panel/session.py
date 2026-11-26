@@ -22,7 +22,9 @@ from app.infrastructure.storage.media import panel_attachment_limit
 from app.modules.auth.permissions import ROLE_PERMISSIONS
 from app.modules.auth.service import load_panel_identity
 from app.modules.dependencies import PanelUser
-from app.modules.messaging.service import panel_visible_conversation
+from app.models import Message, PersonalMessage
+from app.modules.messaging.service import panel_message_dict, panel_visible_conversation
+from app.modules.personal_chat.operations import personal_message_dict
 from app.modules.personal_chat.service import personal_conversation
 
 logger = logging.getLogger(__name__)
@@ -50,6 +52,18 @@ def visible_payload(db, principal, payload):
     if lookup:
         try:
             lookup(db, principal, event["conversation_id"])
+            # Hydrate only after checking this subscriber's current access.
+            # RAM keeps small hints, not another copy of chat history.
+            if event.get("action") == "upsert" and event.get("message_id"):
+                model = PersonalMessage if event["conversation_type"] == "personal" else Message
+                row = db.get(model, event["message_id"])
+                if row is not None and row.conversation_id == event["conversation_id"]:
+                    event["message"] = (
+                        personal_message_dict(row, principal) if model is PersonalMessage else
+                        panel_message_dict(row, expose_internal_metadata=principal["role"] == "admin",
+                                           principal=principal)
+                    )
+                    return json.dumps(event, ensure_ascii=False, separators=(",", ":"))
             return payload
         except HTTPException as exc:
             if exc.status_code != 404:
@@ -106,9 +120,9 @@ async def panel_events(request: Request, principal: PanelUser):
                 payload = await asyncio.to_thread(authorized_payload, payload)
                 if payload is None:
                     return
-                if event_id is not None:
-                    yield f"id: {event_id}\n"
-                yield "event: update\ndata: " + payload + "\n\n"
+                # Send each complete SSE frame in a single transport write.
+                prefix = f"id: {event_id}\n" if event_id is not None else ""
+                yield prefix + "event: update\ndata: " + payload + "\n\n"
         finally:
             unsubscribe_chat_updates(queue)
 
@@ -116,7 +130,7 @@ async def panel_events(request: Request, principal: PanelUser):
         event_stream(),
         media_type="text/event-stream",
         headers={
-            "Cache-Control": "no-cache, no-transform",
+            "Cache-Control": "no-store, no-transform",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",
         },
