@@ -732,8 +732,18 @@ test("read receipts and push suppression follow the visible dialog", { timeout: 
           deleted_message_ids: [], has_more: false, summary: summary() };
       } else if (pathname === openPath + "/read") {
         const { message_ids } = request.postDataJSON();
+        if (message_ids.includes(3)) {
+          // A concurrent summary arrives before the receipt commits. It has
+          // unread_count=1 and invalidates the pending receipt's revision.
+          // The client must reconcile after confirmation even without read SSE.
+          await publish();
+        }
         receipts.push(...message_ids);
-        for (const id of message_ids) unread.delete(id);
+        for (const id of message_ids) {
+          unread.delete(id);
+          const row = history.find(message => message.id === id);
+          if (row) row.panel_read_at = new Date().toISOString();
+        }
         json = summary();
       }
       await route.fulfill({ json });
@@ -796,6 +806,7 @@ test("read receipts and push suppression follow the visible dialog", { timeout: 
     await waitFor(() => receipts.includes(3), 6000, "receipt after returning to foreground");
     assert.deepEqual(receipts, [1, 2, 3]);
     await page.getByLabel("1 непрочитанных личных сообщений").waitFor({ state: "hidden" });
+    assert.equal(unread.size, 0);
   } finally {
     await browser?.close();
     vite.kill();

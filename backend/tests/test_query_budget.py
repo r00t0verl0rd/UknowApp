@@ -56,7 +56,7 @@ def test_authenticated_profile_and_history_query_budget(api):
         statements.clear()
         result = client.get("/api/panel/personal-conversations")
         assert result.status_code == 200 and result.json()[0]["unread_count"] == 0
-        assert len(statements) <= 3, statements
+        assert len(statements) <= 2, statements
         assert not any("personal_messages" in sql.lower() for sql in statements)
         statements.clear()
         sync = client.post(f"/api/panel/personal-conversations/{personal_id}/sync",

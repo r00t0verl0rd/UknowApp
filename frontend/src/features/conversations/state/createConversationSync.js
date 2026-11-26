@@ -63,8 +63,25 @@ export function createConversationSync(options) {
         const revision = options.inboxRowRevision.get(key) || 0;
         try {
           const summary = await acknowledgeChatMessages(options.request, chat, ids);
-          if (revision === (options.inboxRowRevision.get(key) || 0) && summary?.id === chat.id) {
+          if (!active || summary?.id !== chat.id) return;
+          if (revision === (options.inboxRowRevision.get(key) || 0)) {
             applySummary(chat.type, chat.id, summary);
+          } else {
+            // A concurrent SSE or HTTP snapshot may be newer OR may have
+            // been read before this receipt committed. Never silently drop
+            // the confirmation or overwrite an intervening incoming message.
+            const current = options.selectedChat;
+            if (isSameChat(current, chat.id, chat.type)) {
+              if (hasSummaryChanges(current, summary)) {
+                if (isSameChat(options.selectedDialog, chat.id, chat.type)) {
+                  void syncSelected({ full: false, force: true }).catch(requestRecovery);
+                } else {
+                  requestRecovery();
+                }
+              }
+            } else {
+              requestRecovery();
+            }
           }
         } catch (error) {
           for (const id of ids) requested.delete(id);

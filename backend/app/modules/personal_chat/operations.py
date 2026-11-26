@@ -45,10 +45,18 @@ def personal_conversations(principal: dict, db: Session):
     ).order_by(PersonalConversation.created_at.desc(), PersonalConversation.id.desc())
     if principal["role"] != "admin":
         statement = statement.where(PersonalConversation.participant_id == principal["user_id"])
-    items = db.scalars(statement).all()
-    if not items:
-        return []
-    return personal_summaries(db, items, principal["role"])
+    # The list query already loads the counter columns and participant.
+    # No second query is needed in this read-only request.
+    items = db.scalars(statement.execution_options(populate_existing=True)).all()
+    role = principal["role"]
+    return [
+        personal_conversation_dict(
+            item, role,
+            item.admin_unread_count if role == "admin" else item.participant_unread_count,
+            item.last_message_at,
+        )
+        for item in items
+    ]
 
 
 def personal_summaries(db: Session, items: list[PersonalConversation], role: str) -> list[dict]:
