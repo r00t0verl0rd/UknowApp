@@ -353,3 +353,39 @@ def test_reply_without_linked_student_is_still_saved(api):
             "chat_id":"100", "conversation_id":chat.id, "kind":"text", "text":"Reply"}, ("alpha",), media_path)
         assert db.query(Message).one().text == "Reply"
         assert db.query(ConnectorDelivery).count() == 0
+
+
+@pytest.mark.parametrize("personal", [False, True])
+def test_deleted_last_message_id_cannot_be_reused(api, personal):
+    make_client, users, _ = api
+    admin = make_client()
+    login(admin, "test-admin", "a-long-test-password-123")
+    student = make_client()
+    login(student, "student-one", "student-password-1")
+    if personal:
+        created = admin.post("/api/panel/personal-conversations",
+                             json={"user_id": users["student-one"]})
+        reader = admin
+        collection = "personal-conversations"
+        resource = "personal-messages"
+    else:
+        created = admin.post("/api/admin/assignments", json={
+            "teacher_id": users["teacher-one"], "student_id": users["student-one"]})
+        reader = make_client()
+        login(reader, "teacher-one", "teacher-password-1")
+        collection = "conversations"
+        resource = "messages"
+    assert created.status_code == 201
+    path = f"/api/panel/{collection}/{created.json()['id']}"
+    sent = student.post(path + "/messages", json={"text": "first"})
+    assert sent.status_code == 201
+    old = sent.json()["id"]
+    assert student.delete(f"/api/panel/{resource}/{old}").status_code == 200
+    sent = student.post(path + "/messages", json={"text": "second"})
+    assert sent.status_code == 201
+    assert sent.json()["id"] > old
+    sync = reader.post(path + "/sync", json={
+        "after_id": old, "known_message_ids": [old], "paged": True, "mark_read": False})
+    assert sync.status_code == 200
+    assert sync.json()["deleted_message_ids"] == [old]
+    assert [row["text"] for row in sync.json()["messages"]] == ["second"]
