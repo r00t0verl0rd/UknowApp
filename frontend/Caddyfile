@@ -27,8 +27,7 @@ uknowschool.ru, www.uknowschool.ru {
 
     @api {
         path /api/*
-        not path /api/panel/events
-        not path_regexp ^/api/panel/(personal-messages|messages)/[0-9]+/media$
+        not path_regexp ^/api/panel/(events$|(personal-messages|messages)/[0-9]+/media$)
     }
     header @api Cache-Control "no-store"
 
