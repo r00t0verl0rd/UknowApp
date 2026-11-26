@@ -282,12 +282,11 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
         endpoint = db.get(ExternalEndpoint, (platform, user.id))
         same_route = endpoint is not None and endpoint.chat_id == chat and endpoint.thread_id == thread
         if not same_route:
-            if endpoint is not None and platform != "telegram":
+            # Telegram routes are established by a verified invitation, never
+            # by a message from an arbitrary topic.
+            if platform == "telegram" or endpoint is not None:
                 raise HTTPException(403, "group not linked")
-            # Bind only on a real, non-replayed inbound message from the linked
-            # student. A blocked message cannot change a Telegram delivery route.
-            if platform != "telegram" or not blocked:
-                bind_endpoint(db, platform, user, chat, thread)
+            bind_endpoint(db, platform, user, chat, thread)
     metadata = {"source_mode": "group_topic" if payload.get("channel") == "group" else "private",
                 "source_chat_id": chat, "source_thread_id": thread or None, "source_platform": platform}
     media = payload.get("media")

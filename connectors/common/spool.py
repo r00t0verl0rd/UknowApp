@@ -24,7 +24,7 @@ class EventSpool:
         self.db.execute("CREATE TABLE IF NOT EXISTS inbound_pending (namespace TEXT NOT NULL, id TEXT NOT NULL, payload TEXT NOT NULL, published REAL, PRIMARY KEY(namespace,id))")
         self.db.execute("CREATE TABLE IF NOT EXISTS delivery_claims (namespace TEXT NOT NULL, id TEXT NOT NULL, claim TEXT NOT NULL, PRIMARY KEY(namespace,id))")
         self.db.execute("CREATE TABLE IF NOT EXISTS panels (namespace TEXT NOT NULL, actor TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(namespace,actor))")
-        self.db.execute("""CREATE TABLE IF NOT EXISTS forum_setup (
+        self.db.execute("""CREATE TABLE IF NOT EXISTS forum_invitations (
             namespace TEXT NOT NULL, chat TEXT NOT NULL, thread TEXT NOT NULL,
             PRIMARY KEY(namespace,chat))""")
         self.db.commit()
@@ -158,18 +158,17 @@ class EventSpool:
                 (self.namespace, actor, json.dumps(panel)))
 
     def forum_topic(self, chat):
-        row = self.db.execute("SELECT thread FROM forum_setup WHERE namespace=? AND chat=?",
+        row = self.db.execute("SELECT thread FROM forum_invitations WHERE namespace=? AND chat=?",
                               (self.namespace, chat)).fetchone()
         return row[0] if row else None
 
     def remember_forum_topic(self, chat, thread):
         with self.db:
-            self.db.execute("""INSERT INTO forum_setup(namespace,chat,thread) VALUES (?,?,?)
-                ON CONFLICT(namespace,chat) DO UPDATE SET thread=CASE
-                    WHEN forum_setup.thread=excluded.thread THEN forum_setup.thread ELSE '' END""",
+            self.db.execute("""INSERT INTO forum_invitations(namespace,chat,thread) VALUES (?,?,?)
+                ON CONFLICT(namespace,chat) DO UPDATE SET thread=excluded.thread""",
                             (self.namespace, chat, thread))
 
     def forget_forum_topic(self, chat):
         with self.db:
-            self.db.execute("DELETE FROM forum_setup WHERE namespace=? AND chat=?",
+            self.db.execute("DELETE FROM forum_invitations WHERE namespace=? AND chat=?",
                             (self.namespace, chat))

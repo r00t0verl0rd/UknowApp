@@ -377,7 +377,7 @@ def test_telegram_candidate_discovery_is_platform_and_role_scoped(api):
         assert exc.value.status_code == 403
 
 
-def test_telegram_forum_is_bound_by_real_student_message_and_replies_use_actual_topic(api):
+def test_telegram_forum_requires_authorized_invitation_and_replies_use_actual_topic(api):
     _, users, sessions = api
     with sessions() as db:
         chat = prepare(db, users)
@@ -388,7 +388,12 @@ def test_telegram_forum_is_bound_by_real_student_message_and_replies_use_actual_
                  "chat_id": "-1001", "thread_id": "47", "channel": "group",
                  "kind": "text", "text": "Homework"}
         assert db.get(ExternalEndpoint, ("telegram", chat.student_id)) is None
-        receive_message(db, "telegram", first, ("telegram",), gateway.media_path)
+        with pytest.raises(HTTPException) as exc:
+            receive_message(db, "telegram", first, ("telegram",), gateway.media_path)
+        assert exc.value.status_code == 403
+        assert rpc(db, "telegram", "endpoint.bind", {
+            "actor": "123", "chat_id": "-1001", "thread_id": "47",
+        }) == {"bound": True}
         endpoint = db.get(ExternalEndpoint, ("telegram", chat.student_id))
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
         row = Message(conversation_id=chat.id, sender_id=chat.teacher_id, sender_role="teacher",
@@ -399,13 +404,24 @@ def test_telegram_forum_is_bound_by_real_student_message_and_replies_use_actual_
         db.commit()
         jobs = db.query(ConnectorDelivery).filter_by(message_id=row.id).all()
         assert {(job.chat_id, job.thread_id) for job in jobs} == {("123", ""), ("-1001", "47")}
-        receive_message(db, "telegram", {**first, "id": "forum-next", "external_message_id": "70",
-                        "chat_id": "-1002", "thread_id": "69"}, ("telegram",), gateway.media_path)
+        # First teacher message already has both destinations; no student
+        # message was necessary. Neither another topic nor another group may move it.
+        receive_message(db, "telegram", first, ("telegram",), gateway.media_path)
+        for group, thread in (("-1001", "69"), ("-1002", "69")):
+            with pytest.raises(HTTPException) as exc:
+                receive_message(db, "telegram", {**first, "id": "other-" + group,
+                                "external_message_id": "70", "chat_id": group, "thread_id": thread},
+                                ("telegram",), gateway.media_path)
+            assert exc.value.status_code == 403
+        assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
+        assert rpc(db, "telegram", "endpoint.bind", {
+            "actor": "123", "chat_id": "-1002", "thread_id": "69",
+        }) == {"bound": True}
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1002", "69")
         # A redelivery of an older message must not move the authorized route.
         receive_message(db, "telegram", {**first, "id": "forum-replay"}, ("telegram",), gateway.media_path)
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1002", "69")
-        assert db.query(Message).filter_by(sender_id=chat.student_id).count() == 2
+        assert db.query(Message).filter_by(sender_id=chat.student_id).count() == 1
         old_group = next(job for job in jobs if job.thread_id)
         with pytest.raises(HTTPException):
             rpc(db, "telegram", "delivery.authorize", {"id": old_group.id})

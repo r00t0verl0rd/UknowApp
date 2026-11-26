@@ -212,21 +212,17 @@ class TelegramAdapter:
             return "no_student"
         try:
             result = await gateway.rpc("endpoint.bind", actor=matches[0], chat_id=chat,
-                                       thread_id=thread, initial_only=True)
+                                       thread_id=thread)
         except RpcError as exc:
             if exc.code in {403, 409}:
                 return "unavailable"
             raise
         return "bound" if result.get("bound") else "unavailable"
 
-    async def discover_topic(self, chat, thread, gateway, spool):
-        # A newly created/edited topic carries its real ID, even without
-        # a student message. Never guess a topic or move an existing route.
-        if spool:
-            spool.remember_forum_topic(chat, thread)
-            if spool.forum_topic(chat) != thread:
-                return
-        await self.bind_forum_student(chat, thread, gateway)
+    async def bind_invited_topic(self, chat, thread, gateway, spool):
+        result = await self.bind_forum_student(chat, thread, gateway)
+        if result == "bound" and spool:
+            spool.forget_forum_topic(chat)
 
     @staticmethod
     def inbound_route(update):
@@ -248,10 +244,11 @@ class TelegramAdapter:
                 chat_id = str(chat["id"])
                 status = (membership.get("new_chat_member") or {}).get("status")
                 if update.get("my_chat_member") and status in {"left", "kicked"}:
+                    spool.forget_forum_topic(chat_id)
                     return
                 thread = spool.forum_topic(chat_id)
                 if thread and status in {"member", "administrator", "creator", "restricted"}:
-                    await self.bind_forum_student(chat_id, thread, gateway)
+                    await self.bind_invited_topic(chat_id, thread, gateway, spool)
             return
         callback = update.get("callback_query")
         if callback:
@@ -287,18 +284,28 @@ class TelegramAdapter:
         thread = str(message["message_thread_id"]) if message.get("message_thread_id") else None
         text = message.get("text") or message.get("caption") or ""
         command = text.split(maxsplit=1)[0].split("@")[0] if text else ""
-        if group and message["chat"].get("is_forum") and thread and (
-            message.get("forum_topic_created") or message.get("forum_topic_edited")
-        ):
-            await self.discover_topic(chat, thread, gateway, spool)
-            return
-        if group and message["chat"].get("is_forum") and message.get("new_chat_members") and spool:
-            known = spool.forum_topic(chat)
-            if known:
-                await self.bind_forum_student(chat, known, gateway)
-            return
-        # A delivered message identifies its actual forum topic and sender.
-        # Service events, anonymous senders and ordinary group chats never bind.
+        if group and message["chat"].get("is_forum"):
+            # A topic creation or edit does not mean this bot was invited there.
+            if message.get("forum_topic_created") or message.get("forum_topic_edited"):
+                return
+            members = message.get("new_chat_members")
+            if members:
+                if any(member.get("is_bot") for member in members):
+                    info = await self.bot.me()
+                    if any(member.get("id") == info.id for member in members):
+                        if (thread and thread != "1" and message.get("is_topic_message")
+                                and not message.get("sender_chat")
+                                and await self.forum_admin(chat, actor)):
+                            if spool:
+                                spool.remember_forum_topic(chat, thread)
+                            await self.bind_invited_topic(chat, thread, gateway, spool)
+                        return
+                known = spool.forum_topic(chat) if spool else None
+                if known:
+                    await self.bind_invited_topic(chat, known, gateway, spool)
+                return
+        # A delivered message identifies its actual sender. Core accepts it
+        # only from the authorized topic; messages never move that route.
         if group and (
             message["chat"]["type"] != "supergroup"
             or not message["chat"].get("is_forum")
