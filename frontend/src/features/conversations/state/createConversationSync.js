@@ -230,7 +230,7 @@ export function createConversationSync(options) {
         }
         const eventId = Number(payload.event_id || event.lastEventId || 0);
         if (Number.isSafeInteger(eventId) && eventId > 0) {
-          if (eventId <= lastEventId) return;
+          if (!payload.resync && eventId <= lastEventId) return;
           lastEventId = eventId;
         }
         if (payload.resync) {
@@ -275,14 +275,21 @@ export function createConversationSync(options) {
         ) {
           if (viewerRole === "admin" && type !== "personal") {
             // Администратор видит статусы обоих участников.
-          } else if (expectedReader === payload.actor_role) {
+          } else if (expectedReader === payload.actor_role || viewerRole === payload.actor_role) {
             const readIds = new Set(payload.message_ids.map(Number));
             const readAt = payload.read_at || new Date().toISOString();
             options.setMessages((rows) => {
               let changed = false;
               const next = rows.map((row) => {
-                if (!readIds.has(Number(row.id)) || row.sender_role !== viewerRole || row.panel_read_at)
-                  return row;
+                if (!readIds.has(Number(row.id))) return row;
+                if (type !== "personal" && row.sender_role === "admin") {
+                  const field = payload.actor_role + "_read_at";
+                  if (row.metadata?.[field]) return row;
+                  const metadata = { ...row.metadata, [field]: readAt };
+                  changed = true;
+                  return { ...row, metadata, panel_read_at: metadata.teacher_read_at && metadata.student_read_at || null };
+                }
+                if (row.panel_read_at) return row;
                 changed = true;
                 return { ...row, panel_read_at: readAt };
               });
@@ -322,13 +329,22 @@ export function createConversationSync(options) {
         } else {
           void syncSelected().catch(() => {});
         }
-      }, options.verifySession);
-      if (!unsubscribe) {
-        // Единичная сверка безопаснее постоянного polling.
-        void recover().catch(() => {});
-      }
+      }, () => {
+        recoveryPending = true;
+        void Promise.resolve(options.verifySession?.()).catch(() => {});
+      });
+      if (!unsubscribe) requestRecovery();
+      // Reconcile even if an apparently healthy stream silently loses a hint.
+      // No automatic read receipts; no full history reload.
+      let checking = false;
+      const fallback = setInterval(async () => {
+        if (!active || checking || document.visibilityState !== "visible") return;
+        checking = true;
+        try { await recover({ refreshInbox: true }); } catch { /* retry next interval */ }
+        finally { checking = false; }
+      }, 30000);
       resumeSelected = () => {
-        if (document.visibilityState !== "visible" || !document.hasFocus()) return;
+        if (document.visibilityState !== "visible") return;
         if (recoveryPending)
           void recover({
             refreshInbox: true,
@@ -341,6 +357,7 @@ export function createConversationSync(options) {
       return () => {
         active = false;
         clearTimeout(flushTimer);
+        clearInterval(fallback);
         pending.clear();
         unsubscribe?.();
         document.removeEventListener("visibilitychange", onForeground);
