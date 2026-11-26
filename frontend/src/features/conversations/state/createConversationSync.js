@@ -19,7 +19,7 @@ export function createConversationSync(options) {
       let active = true;
       let lastMessageCursor = { chatKey: "", id: 0 };
       let lastEventId = 0;
-      const pending = new Map();
+      const pending = new Set();
       let processing = false;
       let flushTimer = 0;
       let syncing = false;
@@ -201,29 +201,13 @@ export function createConversationSync(options) {
         processing = true;
         try {
           while (pending.size && active) {
-            const events = [...pending.values()];
+            const chat = options.selectedDialog;
+            const key = chat ? conversationKey(chat.id, chat.type) : "";
+            const refresh = pending.has(key);
             pending.clear();
-            await Promise.all(
-              events.map(async (event) => {
-                const {
-                  conversation_id: id,
-                  conversation_type: type,
-                  conversation_key: key,
-                  deleted_message_ids: deletedIds,
-                  refresh_messages: refreshMessages,
-                } = event;
-                const chat = options.selectedChat;
-                if (isSameChat(chat, id, type)) {
-                  if (deletedIds.size) {
-                    for (const messageId of deletedIds) markConversationMessageDeleted(key, messageId);
-                    options.setMessages((rows) => rows.filter((row) => !deletedIds.has(Number(row.id))));
-                  }
-                  if (refreshMessages && reconciledRevision.get(key) !== (eventRevision.get(key) || 0)) {
-                    await syncSelected();
-                  }
-                }
-              }),
-            );
+            if (refresh && reconciledRevision.get(key) !== (eventRevision.get(key) || 0)) {
+              await syncSelected();
+            }
           }
         } catch {
           // Курсор сдвинулся: запрашиваем сверку с сервером.
@@ -286,26 +270,20 @@ export function createConversationSync(options) {
           options.setMessages(rows => applyReadReceipt(rows, payload, type));
         }
         if (payload.action === "delete" && payload.message_id) {
-          markConversationMessageDeleted(key, Number(payload.message_id));
-          options.cache.removeMessage(key, Number(payload.message_id));
+          const messageId = Number(payload.message_id);
+          markConversationMessageDeleted(key, messageId);
+          options.cache.removeMessage(key, messageId);
+          if (isSameChat(selected, id, type)) {
+            options.setMessages(rows => rows.filter(row => Number(row.id) !== messageId));
+          }
+          return;
         }
         if (payload.action === "delivery" && payload.message_status && isSameChat(selected, id, type)) {
           options.setMessages(rows => applyDeliveryStatus(rows, payload.message_status,
             (previous, updates) => mergeConversationMessages(previous, updates, key)));
         }
         if (!isSameChat(selected, id, type) || !requiresMessageSync(payload.action, viewerRole, type, payload.message_status)) return;
-        const state = pending.get(key) || {
-          conversation_id: id,
-          conversation_type: type,
-          conversation_key: key,
-          deleted_message_ids: new Set(),
-          refresh_messages: false,
-        };
-        if (payload.action === "delete" && payload.message_id) {
-          state.deleted_message_ids.add(Number(payload.message_id));
-        }
-        if (payload.action !== "delete") state.refresh_messages = true;
-        pending.set(key, state);
+        pending.add(key);
         if (syncing && isSameChat(options.selectedChat, id, type)) {
           syncQueued = true;
         }
