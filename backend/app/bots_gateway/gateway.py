@@ -262,6 +262,44 @@ class BotsGateway:
                     logger.warning("Connector event processing will retry: %s", type(exc).__name__)
                     await msg.nak(delay=5)
 
+    async def publish_route_batch(self, entries):
+        """Publish independent destinations concurrently, in order within a route."""
+        routes = {}
+        for entry in entries:
+            _, platform, chat, thread, *_ = entry
+            routes.setdefault((platform, chat, thread), []).append(entry)
+        slots = asyncio.Semaphore(8)
+
+        async def publish_route(route_entries):
+            acknowledged = []
+            async with slots:
+                for job_id, platform, chat, thread, status, heavy, previous_seq in route_entries:
+                    dedup = job_id if status == "queued" else f"{job_id}:recover:{int(now_utc().timestamp()) // 60}"
+                    try:
+                        if status != "queued" and previous_seq is not None:
+                            try:
+                                previous = await self.js.get_msg(STREAM, seq=previous_seq)
+                            except NotFoundError:
+                                previous = None
+                            if previous and previous.subject == f"{PREFIX}.outbound.{platform}" and decode(previous.data).get("id") == job_id:
+                                acknowledged.append((job_id, None))
+                                continue
+                        ack = await self.js.publish(f"{PREFIX}.outbound.{platform}",
+                            encode({"id": job_id, "route": [chat, thread], "heavy": heavy}),
+                            headers={"Nats-Msg-Id": dedup})
+                    except asyncio.CancelledError:
+                        raise
+                    except Exception as exc:
+                        # Keep this route's head pending. Other routes still publish.
+                        logger.warning("Outbox publication delayed platform=%s endpoint=%s error=%s",
+                                       platform, "group" if thread else "private", type(exc).__name__)
+                        break
+                    acknowledged.append((job_id, ack.seq))
+            return acknowledged
+
+        batches = await asyncio.gather(*(publish_route(items) for items in routes.values()))
+        return [ack for batch in batches for ack in batch]
+
     async def publish_outbox(self):
         project = True
         last_scan = 0.0
@@ -273,37 +311,16 @@ class BotsGateway:
                 last_scan = loop.time()
             entries = await self.run_db(self._candidates, project)
             project = False
-            acknowledgements = []
-            for job_id, platform, chat, thread, status, heavy, previous_seq in entries:
-                # Stable IDs for normal publish, separate time-bucket ID for stale recovery.
-                # A connector's durable receipt and Core claim prevent duplicate sends.
-                dedup = job_id if status == "queued" else f"{job_id}:recover:{int(now_utc().timestamp()) // 60}"
-                try:
-                    # A retained backlog is not a lost queue. Check the exact previous
-                    # broker sequence before attempting stale recovery.
-                    if status != "queued" and previous_seq is not None:
-                        try:
-                            previous = await self.js.get_msg(STREAM, seq=previous_seq)
-                        except NotFoundError:
-                            previous = None
-                        if previous and previous.subject == f"{PREFIX}.outbound.{platform}" and decode(previous.data).get("id") == job_id:
-                            acknowledgements.append((job_id, None))
-                            continue
-                    ack = await self.js.publish(f"{PREFIX}.outbound.{platform}",
-                        encode({"id": job_id, "route": [chat, thread], "heavy": heavy}),
-                        headers={"Nats-Msg-Id": dedup})
-                except Exception as exc:  # noqa: BLE001 - broker retry boundary
-                    # Backpressure or a transient publish failure must not stop
-                    # inbound processing and the RPC server.
-                    logger.warning("Outbox publication delayed: %s", type(exc).__name__)
-                    await asyncio.sleep(5)
-                    break
-                acknowledgements.append((job_id, ack.seq))
-                if status != "queued":
-                    logger.info("Republished stale connector job platform=%s status=%s", platform, status)
+            acknowledgements = await self.publish_route_batch(entries)
             if acknowledgements:
                 await self.run_db(self._mark_published_batch, acknowledgements)
-            if not entries and self._projection_more:
+            if entries and len(acknowledgements) < len(entries):
+                # Avoid spinning on broker backpressure; successful routes are already committed.
+                try:
+                    await asyncio.wait_for(self.outbox_wakeup.wait(), 1)
+                except TimeoutError:
+                    pass
+            elif not entries and self._projection_more:
                 await asyncio.sleep(.05)
             elif not entries:
                 try:
