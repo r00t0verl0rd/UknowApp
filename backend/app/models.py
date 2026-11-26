@@ -235,6 +235,44 @@ class Message(Base):
     sender: Mapped[User] = relationship()
 
 
+class MessageIdCounter(Base):
+    """Durable SQLite high-water marks; normal message IDs must never be reused."""
+    __tablename__ = "message_id_counters"
+
+    table_name: Mapped[str] = mapped_column(String(32), primary_key=True)
+    last_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+
+@event.listens_for(Message, "before_insert")
+@event.listens_for(PersonalMessage, "before_insert")
+def _allocate_message_id(mapper, connection, message):
+    if connection.dialect.name != "sqlite":
+        return
+    table = mapper.local_table
+    # Fixed ORM table names only. The first allocation skips legacy IDs that
+    # might still be held by an older client, including recently deleted rows.
+    if table.name == "messages":
+        source = "messages"
+    elif table.name == "personal_messages":
+        source = "personal_messages"
+    else:
+        raise ValueError("Unknown message table")
+    if message.id is not None:
+        connection.execute(text("""
+            INSERT INTO message_id_counters (table_name, last_id)
+            VALUES (:table_name, :message_id)
+            ON CONFLICT (table_name) DO UPDATE SET last_id = max(last_id, excluded.last_id)
+        """), {"table_name": source, "message_id": message.id})
+        return
+    message.id = connection.scalar(text(f"""
+        INSERT INTO message_id_counters (table_name, last_id)
+        SELECT :table_name, max(1000000000, coalesce(max(id), 0) + 1)
+        FROM {source} WHERE true
+        ON CONFLICT (table_name) DO UPDATE SET last_id = max(last_id + 1, excluded.last_id)
+        RETURNING last_id
+    """), {"table_name": source})
+
+
 class ConnectionCode(Base):
     __tablename__ = "connection_codes"
 
