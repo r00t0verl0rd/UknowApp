@@ -120,6 +120,12 @@ class EventSpool:
             self.db.execute("INSERT INTO deliveries(namespace,id,result) VALUES (?,?,NULL)",
                             (self.namespace, job_id))
 
+    def retry_rejected_delivery(self, job_id):
+        """A definite provider rejection did not create an external message."""
+        with self.db:
+            self.db.execute("DELETE FROM deliveries WHERE namespace=? AND id=? AND result IS NULL",
+                            (self.namespace, job_id))
+
     def finish_delivery(self, job_id, receipt):
         with self.db:
             self.db.execute("UPDATE deliveries SET result=? WHERE namespace=? AND id=?",
