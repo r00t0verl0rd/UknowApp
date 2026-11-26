@@ -257,6 +257,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
       };
       let teacherSyncRequests = 0;
       let teacherSyncMessages = [];
+      const teacherSyncBodies = [];
       await teacherPage.route("**/api/panel/conversations", route => route.fulfill({
         status: 200, contentType: "application/json", body: JSON.stringify([teacherDialog]),
       }));
@@ -265,6 +266,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
       }));
       await teacherPage.route("**/api/panel/conversations/15/sync", route => {
         teacherSyncRequests += 1;
+        teacherSyncBodies.push(route.request().postDataJSON());
         return route.fulfill({
           status: 200, contentType: "application/json",
           body: JSON.stringify({
@@ -333,6 +335,13 @@ test("global SSE updates real counters across tabs and replays missed events", {
         panel_read_at: null,
         created_at: "2026-11-23T10:03:00+00:00",
       }];
+      // Simulate an unfocused browser with heavily throttled background timers.
+      await teacherPage.evaluate(() => {
+        Object.defineProperty(document, "hasFocus", { configurable: true, value: () => false });
+        window.__teacherOriginalTimeout = window.setTimeout;
+        window.setTimeout = (callback, ms, ...args) =>
+          window.__teacherOriginalTimeout(callback, ms === 35 ? 60000 : ms, ...args);
+      });
       await teacherPage.evaluate(() => window.__teacherTestStream.dispatchEvent(
         new MessageEvent("update", { data: JSON.stringify({
           event_id: 902,
@@ -344,7 +353,15 @@ test("global SSE updates real counters across tabs and replays missed events", {
         }) }),
       ));
       await teacherPage.getByText("Новое сообщение ученика").waitFor({ state: "visible" });
-      assert.ok(teacherSyncRequests > syncBeforeReceipt, "new student message must sync into teacher chat");
+      assert.ok(teacherSyncRequests > syncBeforeReceipt, "new student message must sync before browser focus returns");
+      assert.deepEqual(teacherSyncBodies.at(-1).known_message_ids, [],
+        "ordinary upsert must not refetch existing message statuses");
+      assert.equal(teacherSyncBodies.at(-1).mark_read, false);
+      await teacherPage.evaluate(() => {
+        delete document.hasFocus;
+        window.setTimeout = window.__teacherOriginalTimeout;
+        delete window.__teacherOriginalTimeout;
+      });
       assert.equal(await teacherNodesAreStable(), true, "incoming message must not remount teacher dialog");
       assert.equal(await teacherPage.locator(".chat-composer textarea").inputValue(), "Черновик преподавателя",
         "incoming message must preserve teacher draft");
@@ -726,6 +743,9 @@ test("read receipts and push suppression follow the visible dialog", { timeout: 
     // Headless Chromium keeps the page focused under automation.
     await page.evaluate(() => {
       Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+      window.__originalTimeout = window.setTimeout;
+      window.setTimeout = (callback, ms, ...args) =>
+        window.__originalTimeout(callback, ms === 35 ? 60000 : ms, ...args);
       document.dispatchEvent(new Event("visibilitychange"));
     });
     assert.equal(await checkPush(), false);
@@ -737,6 +757,8 @@ test("read receipts and push suppression follow the visible dialog", { timeout: 
 
     await page.evaluate(() => {
       delete document.visibilityState;
+      window.setTimeout = window.__originalTimeout;
+      delete window.__originalTimeout;
       document.dispatchEvent(new Event("visibilitychange"));
     });
     await page.getByText("Получено в другой вкладке", { exact: true }).waitFor();
