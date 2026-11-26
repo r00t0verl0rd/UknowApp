@@ -40,7 +40,7 @@ function friendlyReason(error, channel) {
   if (/не удалось определить адресата|chat not found|чат не найден/i.test(reason)) {
     return `Чат получателя в ${channel} пока не найден.`;
   }
-  return `Копию в ${channel} пока не удалось отправить.`;
+  return channel === "Telegram" ? "Telegram пока не подключен." : `Копию в ${channel} пока не удалось отправить.`;
 }
 export function getDeliveryDetails(metadata, includeRecipient = false, participants = []) {
   if (!metadata || typeof metadata !== "object") return [];
