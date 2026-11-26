@@ -68,15 +68,11 @@
     border-color:#665980;
     background:#39334c;
   }
-  & .user-info-line,
   & .user-info-login > span {
     color:#bbc4d3;
   }
   & .user-info-login {
     border-top-color:#414e62;
-  }
-  & .user-info-login > b {
-    color:var(--app-foreground);
   }
   & .user-row:hover {
     background:#262f3d;
@@ -201,11 +197,14 @@
   min-height:25px;
   color:var(--muted);
 }
+.user-info-line.is-connected {
+  color:var(--success);
+}
 .user-info-line > svg {
   width:14px;
   height:14px;
   flex:0 0 14px;
-  color:var(--muted);
+  color:inherit;
 }
 .user-info-login {
   display:grid;
@@ -221,6 +220,9 @@
     color:var(--ink);
     font-size:12px;
     overflow-wrap:anywhere;
+  }
+  > b.is-unconnected {
+    color:var(--muted);
   }
 }
 

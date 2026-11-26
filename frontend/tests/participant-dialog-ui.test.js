@@ -22,3 +22,21 @@ test("the participant access code is masked by default", () => {
   assert.match(dialogs, /<b>XXX-XXX<\/b>/);
   assert.doesNotMatch(dialogs, /<b>Скрыт<\/b>/);
 });
+
+
+test("connection status and feedback use shared theme colors and semantic icons", () => {
+  const page = readFileSync(new URL("../src/features/users/UsersPage.jsx", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../src/shared/styles/features/users.scss", import.meta.url), "utf8");
+  const toast = readFileSync(new URL("../src/shared/components/AppToast.jsx", import.meta.url), "utf8");
+  const feedback = readFileSync(new URL("../src/shared/styles/components/native-dialogs.scss", import.meta.url), "utf8");
+  assert.match(page, /telegramId\(user\) \? " is-connected" : ""/);
+  assert.match(page, /telegramId\(user\) \? <Check aria-hidden="true" \/> : <Link2/);
+  assert.match(page, /"Telegram подключён" : "Telegram не подключён"/);
+  assert.match(styles, /\.user-info-line\.is-connected\s*\{\s*color:var\(--success\)/);
+  assert.match(styles, /\.user-info-line\s*\{[^}]*color:var\(--muted\)/);
+  assert.match(styles, /\.user-info-line > svg\s*\{[^}]*color:inherit/);
+  assert.match(styles, /b\.is-unconnected\s*\{\s*color:var\(--muted\)/);
+  assert.match(toast, /<Check size=\{20\}/);
+  assert.match(feedback, /native-feedback-info \.native-feedback-copy h2\s*\{\s*color:var\(--muted\)/);
+  assert.match(feedback, /native-feedback-success \.native-feedback-copy h2\s*\{\s*color:var\(--success\)/);
+});

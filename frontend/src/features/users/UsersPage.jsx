@@ -1,6 +1,7 @@
 import { telegramId } from "./services/usersApi.js";
 import { For } from "solid-js";
 import {
+  IconCheck as Check,
   IconGraduationCap as GraduationCap,
   IconInfo as Info,
   IconLink2 as Link2,
@@ -121,13 +122,13 @@ export default function UsersPage(options) {
                           <X size={14} />
                         </IconButton>
                       </div>
-                      <div class="user-info-line">
-                        <Link2 size={14} />
+                      <div class={"user-info-line" + (telegramId(user) ? " is-connected" : "")}>
+                        {telegramId(user) ? <Check aria-hidden="true" /> : <Link2 aria-hidden="true" />}
                         <span>{telegramId(user) ? "Telegram подключён" : "Telegram не подключён"}</span>
                       </div>
                       <div class="user-info-login">
                         <span>Telegram ID</span>
-                        <b>{telegramId(user) || "Не подключён"}</b>
+                        <b class={telegramId(user) ? "" : "is-unconnected"}>{telegramId(user) || "Не подключён"}</b>
                       </div>
                       {["teacher", "student"].includes(user.role) && (
                         <div class="user-info-login">
