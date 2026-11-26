@@ -6,7 +6,8 @@
 }
 
 uknowschool.ru, www.uknowschool.ru {
-    encode zstd gzip
+    @compressible not path /api/panel/events
+    encode @compressible zstd gzip
 
     header {
         X-Content-Type-Options nosniff
@@ -26,6 +27,7 @@ uknowschool.ru, www.uknowschool.ru {
 
     @api {
         path /api/*
+        not path /api/panel/events
         not path_regexp ^/api/panel/(personal-messages|messages)/[0-9]+/media$
     }
     header @api Cache-Control "no-store"
@@ -66,6 +68,13 @@ uknowschool.ru, www.uknowschool.ru {
     respond /internal/bots/* 404
 
     @backend path /api/* /docs /docs/* /openapi.json /redoc
+
+    # SSE frames must not wait for compression or response buffering.
+    handle /api/panel/events {
+        reverse_proxy backend:8000 {
+            flush_interval -1
+        }
+    }
 
     handle @backend {
         reverse_proxy backend:8000
