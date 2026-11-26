@@ -90,3 +90,46 @@ def test_recovered_receipt_is_republished_without_external_send(tmp_path,monkeyp
         client.js.publish.assert_awaited_once()
         spool.close()
     asyncio.run(run())
+
+
+def test_rate_limit_defers_only_affected_route_and_preserves_claim(tmp_path, monkeypatch):
+    from connectors.common.client import RetryLater
+    monkeypatch.setenv("BOTS_MEDIA_URL", "http://backend")
+    monkeypatch.setenv("BOTS_MEDIA_SECRET", "test")
+
+    async def run():
+        spool = EventSpool(tmp_path / "spool.db", "telegram")
+        try:
+            client = GatewayClient("telegram", None, spool)
+            client.js = SimpleNamespace(publish=AsyncMock())
+            msg = SimpleNamespace(ack_sync=AsyncMock(), nak=AsyncMock())
+            other = SimpleNamespace(ack_sync=AsyncMock(), nak=AsyncMock())
+            claim = spool.prepare_delivery("topic")
+            count = 0
+
+            async def send(job, _gateway):
+                nonlocal count
+                if job["thread_id"]:
+                    count += 1
+                    if count == 1:
+                        raise RetryLater(120)
+                    return 11
+                return 22
+
+            adapter = SimpleNamespace(send=send)
+            topic = {"ok":True,"result":{"thread_id":"7"}}
+            private = {"ok":True,"result":{"thread_id":None}}
+            await asyncio.gather(client.complete(adapter,msg,"topic",topic),
+                                 client.complete(adapter,other,"private",private))
+            msg.nak.assert_awaited_once_with(delay=120)
+            msg.ack_sync.assert_not_awaited()
+            assert spool.delivery("topic") is None
+            assert spool.prepare_delivery("topic") == claim
+            assert spool.delivery("private")["status"] == "delivered"
+            await client.complete(adapter,msg,"topic",topic)
+            assert spool.delivery("topic")["external_message_id"] == "11"
+            msg.ack_sync.assert_awaited_once()
+        finally:
+            spool.close()
+
+    asyncio.run(run())
