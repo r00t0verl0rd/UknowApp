@@ -79,6 +79,19 @@ class TelegramAdapter:
         except TelegramRetryAfter as exc:
             raise RetryLater(exc.retry_after) from exc
         except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound) as exc:
+            # Do not log message text, recipient IDs, or credentials. Distinguish
+            # topic configuration failures from private-chat permission failures.
+            error = str(exc).lower()
+            reason = next((name for needle, name in (
+                ("message thread not found", "thread_not_found"),
+                ("topic_closed", "topic_closed"),
+                ("topic closed", "topic_closed"),
+                ("chat not found", "chat_not_found"),
+                ("bot was blocked", "bot_blocked"),
+                ("not enough rights", "insufficient_rights"),
+            ) if needle in error), type(exc).__name__)
+            logger.warning("Telegram delivery rejected endpoint=%s reason=%s",
+                           "group" if job.get("thread_id") else "private", reason)
             raise DeliveryRejected("provider refused delivery") from exc
 
     async def _send(self, job, gateway):
