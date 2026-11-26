@@ -4,7 +4,7 @@ import { subscribePanelEvents } from "../../../shared/services/panelEventStream.
 import { acknowledgeChatMessages, syncChatState } from "../services/conversationsApi.js";
 import { markConversationMessageDeleted, mergeConversationMessages } from "../services/messageState.js";
 import { mergeInboxSnapshot } from "../../../shared/services/inboxState.js";
-import { applyDeliveryStatus, hasSummaryChanges, requiresMessageSync } from "../services/conversationEventPolicy.js";
+import { applyDeliveryStatus, applyReadReceipt, hasSummaryChanges, requiresMessageSync } from "../services/conversationEventPolicy.js";
 const maxMessageId = (rows) => rows.reduce((max, row) => Math.max(max, Number(row.id) || 0), 0);
 const isSameChat = (chat, id, type) =>
   Number(chat?.id) === Number(id) && (chat?.type === "personal") === (type === "personal");
@@ -78,15 +78,16 @@ export function createConversationSync(options) {
         const [conversations, personal] = await getInboxData(options.request);
         if (!active || requestRevision !== inboxRequestRevision) return;
         const selected = options.selectedChat;
-        if (selected && !(selected.type === "personal" ? personal : conversations).some(row => row.id === selected.id)) {
-          options.setSelectedChat(null);
-          options.setMessages([]);
-        }
         const changedRows = new Set(
           [...options.inboxRowRevision]
             .filter(([key, revision]) => revision > (revisionsAtStart.get(key) || 0))
             .map(([key]) => key),
         );
+        if (selected && !changedRows.has(conversationKey(selected.id, selected.type)) &&
+            !(selected.type === "personal" ? personal : conversations).some(row => row.id === selected.id)) {
+          options.setSelectedChat(null);
+          options.setMessages([]);
+        }
         const changedConversations = new Set(
           [...changedRows]
             .filter((key) => key.startsWith("conversation:"))
@@ -101,7 +102,7 @@ export function createConversationSync(options) {
         options.setPersonalChats((items) => mergeInboxSnapshot(personal, items, changedPersonal));
       };
       const syncSelected = async () => {
-        const foreground = options.foregroundChat;
+        const foreground = options.selectedDialog;
         if (!foreground) return;
         const requestedKey = conversationKey(foreground.id, foreground.type);
         if (syncing) {
@@ -115,7 +116,7 @@ export function createConversationSync(options) {
         try {
           do {
             syncQueued = false;
-            const chat = options.foregroundChat;
+            const chat = options.selectedDialog;
             if (!chat) break;
             const chatKey = conversationKey(chat.id, chat.type);
             const knownIds = [];
@@ -136,7 +137,7 @@ export function createConversationSync(options) {
             const summaryRevision = options.inboxRowRevision.get(chatKey) || 0;
             const result = await syncChatState(options.request, chat, afterId, knownIds);
             if (!active) break;
-            if (!isSameChat(options.foregroundChat, chat.id, chat.type)) {
+            if (!isSameChat(options.selectedDialog, chat.id, chat.type)) {
               syncQueued = true;
               continue;
             }
@@ -168,25 +169,31 @@ export function createConversationSync(options) {
         } finally {
           syncing = false;
           inFlight = null;
-          if (syncQueued && active && options.foregroundChat) {
+          if (syncQueued && active && options.selectedDialog) {
             void syncSelected().catch(() => {});
           }
         }
       };
-      const recover = async ({ refreshInbox: refresh = false } = {}) => {
-        try {
-          if (refresh) await refreshInbox();
-          await syncSelected();
-          recoveryPending = false;
-        } catch (error) {
-          recoveryPending = true;
-          throw error;
-        }
-      };
-      const requestRecovery = () => {
+      let recovery = null;
+      const recover = () => {
+        if (!active) return Promise.resolve();
         recoveryPending = true;
-        void recover({ refreshInbox: true }).catch(() => {});
+        if (recovery) return recovery;
+        recovery = (async () => {
+          try {
+            recoveryPending = false;
+            await refreshInbox();
+            if (active) await syncSelected();
+          } catch (error) {
+            recoveryPending = true;
+            throw error;
+          } finally {
+            recovery = null;
+          }
+        })();
+        return recovery;
       };
+      const requestRecovery = () => { void recover().catch(() => {}); };
       const flush = async () => {
         if (processing || !active) return;
         processing = true;
@@ -273,41 +280,9 @@ export function createConversationSync(options) {
         }
         const selected = options.selectedChat;
         const viewerRole = options.role;
-        const expectedReader =
-          selected?.type === "personal"
-            ? viewerRole === "admin"
-              ? selected.participant?.role
-              : "admin"
-            : viewerRole === "teacher"
-              ? "student"
-              : viewerRole === "student"
-                ? "teacher"
-                : null;
-        if (
-          payload.action === "read" &&
-          isSameChat(selected, id, type) &&
-          Array.isArray(payload.message_ids) &&
-          payload.message_ids.length
-        ) {
-          if (viewerRole === "admin" && type !== "personal") {
-            // Администратор видит статусы обоих участников.
-          } else if (expectedReader === payload.actor_role) {
-            const readIds = new Set(payload.message_ids.map(Number));
-            const readAt = payload.read_at || new Date().toISOString();
-            options.setMessages((rows) => {
-              let changed = false;
-              const next = rows.map((row) => {
-                if (!readIds.has(Number(row.id)) || row.sender_role !== viewerRole || row.panel_read_at)
-                  return row;
-                changed = true;
-                return { ...row, panel_read_at: readAt };
-              });
-              return changed ? next : rows;
-            });
-          }
+        if (payload.action === "read" && isSameChat(selected, id, type)) {
+          options.setMessages(rows => applyReadReceipt(rows, payload, type));
         }
-        // Read receipts are already reflected in the summary and outgoing bubbles.
-        // Only the admin participant view needs a full status refresh.
         if (payload.action === "delete" && payload.message_id) {
           markConversationMessageDeleted(key, Number(payload.message_id));
           options.cache.removeMessage(key, Number(payload.message_id));
@@ -334,26 +309,26 @@ export function createConversationSync(options) {
         }
         scheduleFlush();
       };
+      const reconcileSelected = () => {
+        void syncSelected().catch(() => { recoveryPending = true; });
+      };
       const unsubscribe = subscribePanelEvents(handleEvent, () => {
-        if (recoveryPending) {
-          void recover({
-            refreshInbox: true,
-          }).catch(() => {});
-        } else {
-          void syncSelected().catch(() => {});
-        }
-      }, options.verifySession);
-      if (!unsubscribe) {
-        // Единичная сверка безопаснее постоянного polling.
-        void recover().catch(() => {});
-      }
+        if (recoveryPending) requestRecovery();
+        else reconcileSelected();
+      }, () => {
+        recoveryPending = true;
+        void Promise.resolve(options.verifySession?.()).catch(() => {});
+      });
+      if (!unsubscribe) requestRecovery();
+      // SSE remains the fast path. An infrequent reconciliation also covers
+      // suspended browsers, missed events and intermediaries buffering the stream.
+      const fallback = setInterval(() => {
+        if (active && document.visibilityState === "visible") requestRecovery();
+      }, 60000);
       resumeSelected = () => {
-        if (document.visibilityState !== "visible" || !document.hasFocus()) return;
-        if (recoveryPending)
-          void recover({
-            refreshInbox: true,
-          }).catch(() => {});
-        else void syncSelected().catch(() => {});
+        if (document.visibilityState !== "visible") return;
+        if (recoveryPending) requestRecovery();
+        else reconcileSelected();
       };
       const onForeground = () => resumeSelected();
       document.addEventListener("visibilitychange", onForeground);
@@ -361,6 +336,7 @@ export function createConversationSync(options) {
       return () => {
         active = false;
         clearTimeout(flushTimer);
+        clearInterval(fallback);
         pending.clear();
         unsubscribe?.();
         document.removeEventListener("visibilitychange", onForeground);
