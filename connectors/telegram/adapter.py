@@ -187,13 +187,29 @@ class TelegramAdapter:
 
     @staticmethod
     def inbound_route(update):
-        message = update.get("message") or update.get("callback_query") or {}
+        message = update.get("message") or update.get("callback_query") or update.get("my_chat_member") or {}
         actor = str((message.get("from") or {}).get("id") or "unknown")
         heavy = any(message.get(k) for k in ("photo", "document", "audio", "video", "voice", "video_note", "sticker", "animation"))
         return actor, heavy
 
     async def handle(self, event_id, update, gateway, spool):
         commands = Commands(gateway, spool)
+        membership = update.get("my_chat_member")
+        if membership:
+            chat = membership.get("chat") or {}
+            old_status = (membership.get("old_chat_member") or {}).get("status")
+            new_status = (membership.get("new_chat_member") or {}).get("status")
+            if (chat.get("type") == "supergroup" and old_status in {"left", "kicked"}
+                    and new_status in {"member", "administrator"}):
+                # Membership updates contain the group ID, not an existing topic ID.
+                # Never guess where a student's private conversation belongs.
+                try:
+                    await self.bot.send_message(chat["id"],
+                        "Если тема «🤖 Бот» уже создана, откройте её и отправьте /bind_group "
+                        "с подключённого аккаунта ученика. Дождитесь подтверждения привязки.")
+                except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound):
+                    logger.info("Telegram setup hint unavailable")
+            return
         callback = update.get("callback_query")
         if callback:
             actor = str(callback["from"]["id"])

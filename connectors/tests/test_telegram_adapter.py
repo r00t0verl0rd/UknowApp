@@ -193,3 +193,24 @@ def test_dedicated_topic_is_bound_before_first_inbound_message(name, bound):
             gateway.rpc.assert_not_awaited()
             adapter.bot.send_message.assert_not_awaited()
     asyncio.run(run())
+
+
+def test_group_join_prompts_for_binding_without_guessing_topic():
+    async def run():
+        adapter = object.__new__(TelegramAdapter)
+        adapter.bot = SimpleNamespace(send_message=AsyncMock())
+        gateway = SimpleNamespace(rpc=AsyncMock(), inbound=AsyncMock())
+        update = {"my_chat_member": {"from": {"id": 10},
+            "chat": {"id": -1001, "type": "supergroup", "is_forum": True},
+            "old_chat_member": {"status": "left"},
+            "new_chat_member": {"status": "administrator"}}}
+        assert adapter.inbound_route(update) == ("10", False)
+        await adapter.handle("joined", update, gateway, None)
+        assert "/bind_group" in adapter.bot.send_message.await_args.args[1]
+        gateway.rpc.assert_not_awaited()
+        gateway.inbound.assert_not_awaited()
+        adapter.bot.send_message.reset_mock()
+        update["my_chat_member"]["old_chat_member"]["status"] = "member"
+        await adapter.handle("promoted", update, gateway, None)
+        adapter.bot.send_message.assert_not_awaited()
+    asyncio.run(run())
