@@ -53,9 +53,9 @@ def earlier_send_pending(db, job):
     ).limit(1)) is not None
 
 
-
-
 def enqueue_web_delivery(db, row, platforms):
+    if not platforms:
+        return
     conversation = db.get(Conversation, row.conversation_id)
     if conversation is None or conversation.status != "active":
         return
@@ -64,34 +64,46 @@ def enqueue_web_delivery(db, row, platforms):
         recipients.append(conversation.student_id)
     if row.sender_role != "teacher":
         recipients.append(conversation.teacher_id)
-    accounts = db.scalars(select(MessengerAccount).where(
+    accounts = db.execute(select(
+        MessengerAccount.platform, MessengerAccount.user_id, MessengerAccount.external_user_id,
+        MessengerAccount.external_chat_id, ExternalEndpoint.chat_id, ExternalEndpoint.thread_id,
+    ).outerjoin(ExternalEndpoint, and_(
+        ExternalEndpoint.platform == MessengerAccount.platform,
+        ExternalEndpoint.user_id == MessengerAccount.user_id,
+    )).where(
         MessengerAccount.user_id.in_(recipients),
         MessengerAccount.platform.in_(platforms),
         MessengerAccount.status == "linked",
     )).all()
+    if not accounts:
+        return
     metadata = json.loads(row.metadata_json or "{}")
-    existing = {(j.platform, j.recipient_id, j.chat_id, j.thread_id or "") for j in
-                db.scalars(select(ConnectorDelivery).where(ConnectorDelivery.message_id == row.id)).all()}
-    for account in accounts:
-        # The private account and its bound group are independent authorized addresses.
-        # The old preferred flag is intentionally ignored.
-        routes = {(account.external_chat_id or account.external_user_id, "")}
-        endpoint = db.get(ExternalEndpoint, (account.platform, account.user_id))
-        if endpoint:
-            routes.add((endpoint.chat_id, endpoint.thread_id or ""))
+    existing = set(db.execute(select(
+        ConnectorDelivery.platform, ConnectorDelivery.recipient_id,
+        ConnectorDelivery.chat_id, ConnectorDelivery.thread_id,
+    ).where(ConnectorDelivery.message_id == row.id)).tuples())
+    existing.update(
+        (job.platform, job.recipient_id, job.chat_id, job.thread_id)
+        for job in db.new if isinstance(job, ConnectorDelivery) and job.message_id == row.id
+    )
+    for platform, user_id, external_id, private_chat, group_chat, thread in accounts:
+        # The private account and its bound group are independent addresses.
+        routes = {(private_chat or external_id, "")}
+        if group_chat:
+            routes.add((group_chat, thread or ""))
         added = False
         for chat_id, thread_id in sorted(routes):
-            key = (account.platform, account.user_id, chat_id, thread_id)
+            key = (platform, user_id, chat_id, thread_id)
             if key in existing:
                 continue
             existing.add(key)
             db.add(ConnectorDelivery(id=uuid4().hex, message_id=row.id,
-                recipient_id=account.user_id, platform=account.platform,
-                external_user_id=account.external_user_id, chat_id=chat_id,
+                recipient_id=user_id, platform=platform,
+                external_user_id=external_id, chat_id=chat_id,
                 thread_id=thread_id, status="queued"))
             added = True
         if added:
-            record_messenger_delivery(metadata, account.platform, status="queued")
+            record_messenger_delivery(metadata, platform, status="queued")
     row.metadata_json = encode_message_metadata(metadata)
 
 

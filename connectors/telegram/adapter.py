@@ -203,7 +203,7 @@ class TelegramAdapter:
             not is_admin and not getattr(info, "can_read_all_group_messages", False)
         ):
             return "group_access_unavailable"
-        matches = []
+        match = None
         after = 0
         while True:
             page = await gateway.rpc("endpoint.student_candidates", after=after)
@@ -217,19 +217,18 @@ class TelegramAdapter:
                         "user not found" in str(exc).lower() or "user_not_participant" in str(exc).lower()
                     ):
                         continue
-                    logger.info("Telegram automatic topic binding: membership lookup unavailable")
                     return "membership_unavailable"
                 if self.member_present(member):
-                    matches.append(actor)
-                    if len(matches) > 1:
+                    if match is not None:
                         return "ambiguous"
+                    match = actor
             after = page.get("next")
             if after is None:
                 break
-        if not matches:
+        if match is None:
             return "no_student"
         try:
-            result = await gateway.rpc("endpoint.bind", actor=matches[0], chat_id=chat,
+            result = await gateway.rpc("endpoint.bind", actor=match, chat_id=chat,
                                        thread_id=thread)
         except RpcError as exc:
             if exc.code in {403, 409}:
@@ -341,9 +340,7 @@ class TelegramAdapter:
             commands.clear(actor)
             await self.show_menu(int(chat), await commands.menu(actor), gateway, spool, force=True)
             return
-        view = await gateway.rpc("account.resolve", actor=actor, group=True) if group else (
-            await gateway.rpc("account.resolve", actor=actor)
-        )
+        view = await gateway.rpc("account.resolve", actor=actor, group=group)
         account = view.get("account")
         if account is None:
             if group:

@@ -479,3 +479,41 @@ def test_group_identity_lookup_does_not_read_message_history(api):
         view = rpc(db, "telegram", "account.resolve", {"actor": "456"})
         assert view["conversations"][0]["id"] == chat_id
         assert "unread_previews" in view["conversations"][0]
+
+
+def test_outbox_fanout_uses_two_selects_and_is_idempotent_before_flush(api):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        rpc(db, "beta", "endpoint.bind", {"actor": "student", "chat_id": "group", "thread_id": "topic"})
+        sync_messenger_account(db, chat.student_id, "alpha", "other-student", "300")
+        db.commit()
+        row = Message(conversation_id=chat.id, sender_id=chat.teacher_id, sender_role="teacher",
+                      text="Reply", metadata_json="{}")
+        db.add(row)
+        db.flush()
+        statements = []
+
+        def capture(*args):
+            if args[2].lstrip().upper().startswith("SELECT"):
+                statements.append(args[2])
+
+        engine = db.get_bind()
+        event.listen(engine, "before_cursor_execute", capture)
+        try:
+            enqueue_web_delivery(db, row, ())
+            assert not statements
+            enqueue_web_delivery(db, row, ("alpha", "beta"))
+            assert len(statements) == 2, statements
+            # Repeated enqueue in the same transaction also sees pending ORM rows.
+            enqueue_web_delivery(db, row, ("alpha", "beta"))
+        finally:
+            event.remove(engine, "before_cursor_execute", capture)
+        db.commit()
+        jobs = db.query(ConnectorDelivery).filter_by(message_id=row.id).all()
+        assert {(j.platform, j.chat_id, j.thread_id) for j in jobs} == {
+            ("alpha", "300", ""), ("beta", "200", ""), ("beta", "group", "topic"),
+        }
+        enqueue_web_delivery(db, row, ("alpha", "beta"))
+        db.commit()
+        assert db.query(ConnectorDelivery).filter_by(message_id=row.id).count() == 3
