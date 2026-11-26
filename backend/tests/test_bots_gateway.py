@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
+from sqlalchemy import event
 
 from app.bots_gateway import gateway
 from app.bots_gateway.operations import receive_message, rpc
@@ -439,3 +440,42 @@ def test_telegram_forum_restores_main_auto_binding_and_dual_delivery(api):
                 receive_message(db, "telegram", {**first, "id": "invalid-" + actor,
                                 "actor": actor, "conversation_id": chat.id}, ("telegram",), gateway.media_path)
             assert exc.value.status_code == 403
+
+
+def test_group_identity_lookup_does_not_read_message_history(api):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        sync_messenger_account(db, chat.student_id, "telegram", "123", "123")
+        sync_messenger_account(db, chat.teacher_id, "telegram", "456", "456")
+        sync_messenger_account(db, users["student-two"], "telegram", "789", "789")
+        db.commit()
+        chat_id = chat.id
+        db.expire_all()
+        statements = []
+
+        def capture(*args):
+            statements.append(args[2].lower())
+
+        engine = db.get_bind()
+        event.listen(engine, "before_cursor_execute", capture)
+        try:
+            for actor, role, conversations, budget in (
+                ("123", "student", [{"id": chat_id}], 2),
+                ("456", "teacher", [], 1),
+                ("789", "student", [], 2),
+                ("999", None, [], 1),
+            ):
+                statements.clear()
+                result = rpc(db, "telegram", "account.resolve", {"actor": actor, "group": True})
+                assert result["conversations"] == conversations
+                assert (result["account"]["role"] if result["account"] else None) == role
+                assert len(statements) <= budget, statements
+                assert not any(" from messages" in sql.replace("\n", " ") or
+                               "row_number(" in sql for sql in statements)
+        finally:
+            event.remove(engine, "before_cursor_execute", capture)
+        # Private teacher menus still receive complete summaries.
+        view = rpc(db, "telegram", "account.resolve", {"actor": "456"})
+        assert view["conversations"][0]["id"] == chat_id
+        assert "unread_previews" in view["conversations"][0]

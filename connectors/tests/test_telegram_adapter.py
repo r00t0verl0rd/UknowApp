@@ -179,7 +179,7 @@ def test_forum_message_uses_actual_sender_and_topic(role):
         message = {"from": {"id": 10}, "chat": {"id": -1001, "type": "supergroup", "is_forum": True},
                    "message_thread_id": 47, "message_id": 48, "text": "Домашнее задание"}
         await adapter.handle("message", {"message": message}, gateway, None)
-        gateway.rpc.assert_awaited_once_with("account.resolve", actor="10")
+        gateway.rpc.assert_awaited_once_with("account.resolve", actor="10", group=True)
         adapter.bot.get_chat_member.assert_not_awaited()
         adapter.bot.me.assert_not_awaited()
         adapter.bot.send_message.assert_not_awaited()

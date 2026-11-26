@@ -19,6 +19,8 @@ from connectors.common.client import DeliveryRejected, RetryLater, RpcError
 
 logger = logging.getLogger(__name__)
 ATTACHMENT_LIMITS = {"cloud": 20 * 1024 ** 2, "local": 888 * 1024 ** 2}
+MEDIA_KINDS = ("photo", "document", "audio", "video", "voice", "video_note", "sticker", "animation")
+MESSAGE_KINDS = (*MEDIA_KINDS, "contact", "location", "poll")
 
 
 class TelegramAdapter:
@@ -250,7 +252,7 @@ class TelegramAdapter:
         # Preserve the order of incoming messages in each forum.
         if chat.get("type") == "supergroup":
             actor = "group:" + str(chat["id"])
-        heavy = any(message.get(k) for k in ("photo", "document", "audio", "video", "voice", "video_note", "sticker", "animation"))
+        heavy = any(message.get(k) for k in MEDIA_KINDS)
         return actor, heavy
 
     async def handle(self, event_id, update, gateway, spool):
@@ -324,25 +326,24 @@ class TelegramAdapter:
                 return
         # Like main, a real message from a linked student identifies the
         # actual topic. Core checks ownership and establishes the route.
+        if command == "/bind_group":
+            return  # Ignore legacy commands; never forward them as homework.
         if group and (
             message["chat"]["type"] != "supergroup"
             or not message["chat"].get("is_forum")
             or not thread
             or message.get("sender_chat")
-            or command in {"/start", "/menu", "/bind_group"}
-            or not (text or any(message.get(kind) for kind in (
-                "photo", "document", "audio", "video", "voice", "video_note",
-                "sticker", "animation", "contact", "location", "poll",
-            )))
+            or command in {"/start", "/menu"}
+            or not (text or any(message.get(kind) for kind in MESSAGE_KINDS))
         ):
-            return
-        if command == "/bind_group":
             return
         if not group and command in {"/start", "/menu"}:
             commands.clear(actor)
             await self.show_menu(int(chat), await commands.menu(actor), gateway, spool, force=True)
             return
-        view = await gateway.rpc("account.resolve", actor=actor)
+        view = await gateway.rpc("account.resolve", actor=actor, group=True) if group else (
+            await gateway.rpc("account.resolve", actor=actor)
+        )
         account = view.get("account")
         if account is None:
             if group:
@@ -366,7 +367,7 @@ class TelegramAdapter:
         event = {"id": event_id, "external_message_id": str(message["message_id"]), "actor": actor, "chat_id": chat, "thread_id": thread,
                  "channel": "group" if group else "private", "conversation_id": selection,
                  "text": text, "kind": "text"}
-        for kind in ("photo", "document", "audio", "video", "voice", "video_note", "sticker", "animation"):
+        for kind in MEDIA_KINDS:
             value = message.get(kind)
             if not value:
                 continue

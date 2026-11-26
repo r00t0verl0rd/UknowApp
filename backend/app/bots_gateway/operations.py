@@ -53,7 +53,7 @@ def identity(user):
     return {"id": user.id, "name": user.full_name, "role": user.role}
 
 
-def available(db, user):
+def available(db, user, limit=None):
     query = select(Conversation).join(Assignment, Conversation.assignment_id == Assignment.id).where(
         Assignment.active.is_(True), Conversation.status == "active")
     if user.role == "teacher":
@@ -62,7 +62,7 @@ def available(db, user):
         query = query.where(Conversation.student_id == user.id)
     else:
         return []
-    return db.scalars(query.order_by(Conversation.id.desc())).all()
+    return db.scalars(query.order_by(Conversation.id.desc()).limit(limit)).all()
 
 
 def visible(db, user, conversation_id):
@@ -77,8 +77,7 @@ def visible(db, user, conversation_id):
 
 
 def bind_endpoint(db, platform, user, chat, thread):
-    if user.role != "student" or not available(db, user):
-        raise HTTPException(403, "endpoint unavailable")
+    # Both callers have already validated the student and active assignment.
     occupied = db.scalar(select(ExternalEndpoint).where(
         ExternalEndpoint.platform == platform, ExternalEndpoint.chat_id == chat,
         ExternalEndpoint.thread_id == thread))
@@ -207,15 +206,22 @@ def rpc(db, platform, operation, payload):
         if user is None:
             return {"account": None, "reason": result}
     if operation in {"account.resolve", "account.bind", "conversation.list"}:
-        return {"account": identity(user) if user else None,
-                "conversations": summaries(db, user) if user else []}
+        account = identity(user) if user else None
+        if operation == "account.resolve" and payload.get("group") is True:
+            # Forum ingress only needs identity and an active assignment.
+            # Do not build chat previews or calculate unread summaries.
+            items = available(db, user, limit=1) if user and user.role == "student" else []
+            return {"account": account, "conversations": [{"id": item.id} for item in items]}
+        return {"account": account, "conversations": summaries(db, user) if user else []}
     if user is None:
         raise HTTPException(403, "account not linked")
     if operation == "endpoint.bind":
         chat = identifier(payload.get("chat_id"))
         thread = identifier(payload["thread_id"]) if payload.get("thread_id") else ""
+        if user.role != "student" or not available(db, user, limit=1):
+            raise HTTPException(403, "endpoint unavailable")
         if payload.get("initial_only") is True:
-            if user.role != "student" or not available(db, user) or not thread:
+            if not thread:
                 raise HTTPException(403, "endpoint unavailable")
             existing = db.get(ExternalEndpoint, (platform, user.id))
             if existing is not None:
@@ -246,7 +252,7 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
     if not user or user.role not in {"teacher", "student"}:
         raise HTTPException(403, "account unavailable")
     if user.role == "student":
-        choices = available(db, user)
+        choices = available(db, user, limit=1)
         if not choices:
             raise HTTPException(403, "no assigned conversation")
         conversation = choices[0]
