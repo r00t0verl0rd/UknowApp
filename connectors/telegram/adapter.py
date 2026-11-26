@@ -348,8 +348,8 @@ class TelegramAdapter:
                 if known:
                     await self.bind_invited_topic(chat, known, gateway, spool)
                 return
-        # Like main, a real message from a linked student identifies the
-        # actual topic. Core checks ownership and establishes the route.
+        # A known invitation takes priority over an initial student message.
+        # Core enforces the stored route again before persisting any message.
         if command == "/bind_group":
             return  # Ignore legacy commands; never forward them as homework.
         if group:
@@ -359,11 +359,17 @@ class TelegramAdapter:
             if not thread:
                 logger.info("Telegram forum message ignored: missing topic ID")
                 return
+            invited = spool.forum_topic(chat) if spool else None
+            if invited and invited != thread:
+                return
         if not group and command in {"/start", "/menu"}:
             commands.clear(actor)
             await self.show_menu(int(chat), await commands.menu(actor), gateway, spool, force=True)
             return
-        view = await gateway.rpc("account.resolve", actor=actor, group=group)
+        route = {"chat_id": chat, "thread_id": thread} if group else {}
+        view = await gateway.rpc("account.resolve", actor=actor, group=group, **route)
+        if group and view.get("route_allowed") is False:
+            return
         account = view.get("account")
         if account is None:
             if group:

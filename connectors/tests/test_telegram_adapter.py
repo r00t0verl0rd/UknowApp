@@ -179,7 +179,7 @@ def test_forum_message_uses_actual_sender_and_topic(role):
         message = {"from": {"id": 10}, "chat": {"id": -1001, "type": "supergroup", "is_forum": True},
                    "message_thread_id": 47, "message_id": 48, "text": "Домашнее задание"}
         await adapter.handle("message", {"message": message}, gateway, None)
-        gateway.rpc.assert_awaited_once_with("account.resolve", actor="10", group=True)
+        gateway.rpc.assert_awaited_once_with("account.resolve", actor="10", group=True, chat_id="-1001", thread_id="47")
         adapter.bot.get_chat_member.assert_not_awaited()
         adapter.bot.me.assert_not_awaited()
         adapter.bot.send_message.assert_not_awaited()
@@ -352,10 +352,43 @@ def test_first_forum_text_needs_no_pin_and_never_guesses_topic(context, expected
         if expected:
             assert gateway.inbound.await_args.args[0]["thread_id"] == expected
             assert gateway.inbound.await_args.args[0]["text"] == "1"
-            gateway.rpc.assert_awaited_once_with("account.resolve", actor="10", group=True)
+            gateway.rpc.assert_awaited_once_with("account.resolve", actor="10", group=True, chat_id="-1001", thread_id="47")
         else:
             gateway.inbound.assert_not_awaited()
             gateway.rpc.assert_not_awaited()
         adapter.bot.get_chat_member.assert_not_awaited()
         adapter.bot.send_message.assert_not_awaited()
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("pending", [True, False])
+def test_unrelated_forum_topic_ignored_before_attachment_download(pending, tmp_path):
+    async def run():
+        adapter = object.__new__(TelegramAdapter)
+        adapter.bot = SimpleNamespace(get_file=AsyncMock(), send_message=AsyncMock())
+        gateway = SimpleNamespace(
+            rpc=AsyncMock(return_value={"account": {"role": "student"},
+                "conversations": [{"id": 1}], "route_allowed": False}),
+            inbound=AsyncMock(), upload=AsyncMock(),
+        )
+        spool = EventSpool(tmp_path / "forum.db", "bot")
+        try:
+            if pending:
+                spool.remember_forum_topic("-1001", "47")
+            message = {"from": {"id": 10},
+                       "chat": {"id": -1001, "type": "supergroup", "is_forum": True},
+                       "message_id": 50, "message_thread_id": 99,
+                       "document": {"file_id": "file", "file_size": 5}}
+            await adapter.handle("other", {"message": message}, gateway, spool)
+            if pending:
+                gateway.rpc.assert_not_awaited()
+            else:
+                gateway.rpc.assert_awaited_once_with("account.resolve", actor="10", group=True,
+                                                    chat_id="-1001", thread_id="99")
+            adapter.bot.get_file.assert_not_awaited()
+            adapter.bot.send_message.assert_not_awaited()
+            gateway.upload.assert_not_awaited()
+            gateway.inbound.assert_not_awaited()
+        finally:
+            spool.close()
     asyncio.run(run())

@@ -378,7 +378,7 @@ def test_telegram_candidate_discovery_is_platform_and_role_scoped(api):
         assert exc.value.status_code == 403
 
 
-def test_telegram_forum_restores_main_auto_binding_and_dual_delivery(api):
+def test_telegram_forum_keeps_initial_route_and_dual_delivery(api):
     _, users, sessions = api
     with sessions() as db:
         chat = prepare(db, users)
@@ -419,22 +419,31 @@ def test_telegram_forum_restores_main_auto_binding_and_dual_delivery(api):
         with pytest.raises(HTTPException) as exc:
             receive_message(db, "telegram", {**first, "id": "occupied", "external_message_id": "49",
                             "thread_id": "99"}, ("telegram",), gateway.media_path)
-        assert exc.value.status_code == 409
+        assert exc.value.status_code == 403
         db.rollback()
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
 
-        # A real message in a new unoccupied topic repairs an outdated binding.
-        receive_message(db, "telegram", {**first, "id": "forum-next", "external_message_id": "70",
-                        "chat_id": "-1002", "thread_id": "69"}, ("telegram",), gateway.media_path)
-        assert (endpoint.chat_id, endpoint.thread_id) == ("-1002", "69")
+        # Neither an unoccupied topic nor another group may move the binding.
+        for group, thread in (("-1001", "69"), ("-1002", "69")):
+            lookup = rpc(db, "telegram", "account.resolve", {"actor": "123", "group": True,
+                         "chat_id": group, "thread_id": thread})
+            assert lookup["route_allowed"] is False
+            with pytest.raises(HTTPException) as exc:
+                receive_message(db, "telegram", {**first, "id": "other-" + group,
+                                "external_message_id": "70", "chat_id": group, "thread_id": thread},
+                                ("telegram",), gateway.media_path)
+            assert exc.value.status_code == 403
+        assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
         receive_message(db, "telegram", {**first, "id": "forum-replay"}, ("telegram",), gateway.media_path)
-        assert (endpoint.chat_id, endpoint.thread_id) == ("-1002", "69")
+        assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
         receive_message(db, "telegram", {**first, "id": "private", "external_message_id": "71",
                         "chat_id": "123", "thread_id": None, "channel": "private"},
                         ("telegram",), gateway.media_path)
-        assert (endpoint.chat_id, endpoint.thread_id) == ("-1002", "69")
-        assert db.query(Message).filter_by(sender_id=chat.student_id).count() == 3
-        assert {(job.chat_id, job.thread_id) for job in teacher_reply()} == {("123", ""), ("-1002", "69")}
+        assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
+        assert db.query(Message).filter_by(sender_id=chat.student_id).count() == 2
+        assert {(job.chat_id, job.thread_id) for job in teacher_reply()} == {("123", ""), ("-1001", "47")}
+        assert rpc(db, "telegram", "account.resolve", {"actor": "123", "group": True,
+                   "chat_id": "-1001", "thread_id": "47"})["route_allowed"] is True
         for actor in ("456", "999"):
             with pytest.raises(HTTPException) as exc:
                 receive_message(db, "telegram", {**first, "id": "invalid-" + actor,
@@ -517,3 +526,32 @@ def test_outbox_fanout_uses_two_selects_and_is_idempotent_before_flush(api):
         enqueue_web_delivery(db, row, ("alpha", "beta"))
         db.commit()
         assert db.query(ConnectorDelivery).filter_by(message_id=row.id).count() == 3
+
+
+def test_telegram_explicit_invitation_takes_priority_before_student_message(api):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        sync_messenger_account(db, chat.student_id, "telegram", "123", "123")
+        db.commit()
+        assert rpc(db, "telegram", "endpoint.bind", {
+            "actor": "123", "chat_id": "-1001", "thread_id": "47",
+        }) == {"bound": True}
+        assert not db.query(Message).count()
+        event = {"id": "wrong-first", "external_message_id": "50", "actor": "123",
+                 "chat_id": "-1001", "thread_id": "99", "channel": "group",
+                 "kind": "text", "text": "Other topic"}
+        with pytest.raises(HTTPException) as exc:
+            receive_message(db, "telegram", event, ("telegram",), gateway.media_path)
+        assert exc.value.status_code == 403
+        assert not db.query(Message).count()
+        assert not db.query(ConnectorDelivery).count()
+        row = Message(conversation_id=chat.id, sender_id=chat.teacher_id, sender_role="teacher",
+                      text="First reply", metadata_json="{}", delivery_status="delivered")
+        db.add(row)
+        db.flush()
+        enqueue_web_delivery(db, row, ("telegram",))
+        db.commit()
+        assert {(job.chat_id, job.thread_id) for job in db.query(ConnectorDelivery).all()} == {
+            ("123", ""), ("-1001", "47"),
+        }
