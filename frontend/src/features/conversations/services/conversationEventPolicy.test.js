@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { applyDeliveryStatus, hasSummaryChanges, requiresMessageSync } from "./conversationEventPolicy.js";
+import { applyDeliveryStatus, applyReadReceipt, hasSummaryChanges, requiresMessageSync } from "./conversationEventPolicy.js";
 
 test("read receipts do not refetch the teacher's open conversation", () => {
   assert.equal(requiresMessageSync("read", "teacher", "conversation"), false);
@@ -34,4 +34,24 @@ test("unchanged SSE summaries preserve the existing chat data", () => {
   assert.equal(hasSummaryChanges(old, { unread_count: 1 }), true);
   assert.equal(hasSummaryChanges(old, { teacher: { id: 7, full_name: "Новое имя" } }), true);
   assert.equal(hasSummaryChanges(old, {}), false);
+});
+
+
+test("read receipts update the reader's other tabs and keep both admin receipts distinct", () => {
+  const rows = [
+    { id: 1, sender_role: "student", metadata: {}, panel_read_at: null },
+    { id: 2, sender_role: "admin", metadata: {}, panel_read_at: null },
+  ];
+  const first = { actor_role: "teacher", message_ids: [1, 2], read_at: "2026-11-26T10:00:00Z" };
+  const read = applyReadReceipt(rows, first, "conversation");
+  assert.equal(read[0].panel_read_at, first.read_at);
+  assert.equal(read[1].metadata.teacher_read_at, first.read_at);
+  assert.equal(read[1].panel_read_at, null);
+  assert.equal(applyReadReceipt(read, first, "conversation"), read);
+  const second = { actor_role: "student", message_ids: [2], read_at: "2026-11-26T10:01:00Z" };
+  const both = applyReadReceipt(read, second, "conversation");
+  assert.equal(both[1].panel_read_at, second.read_at);
+  assert.equal(both[1].metadata.teacher_read_at, first.read_at);
+  const personal = [{ id: 3, sender_role: "admin", panel_read_at: null }];
+  assert.equal(applyReadReceipt(personal, { ...second, message_ids: [3] }, "personal")[0].panel_read_at, second.read_at);
 });
