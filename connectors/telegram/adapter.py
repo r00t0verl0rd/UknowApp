@@ -238,9 +238,11 @@ class TelegramAdapter:
 
     async def bind_invited_topic(self, chat, thread, gateway, spool):
         result = await self.bind_forum_student(chat, thread, gateway)
-        if result in {"bound", "topic_locked"} and spool:
-            spool.forget_forum_topic(chat)
-        elif result != "bound":
+        if result in {"bound", "topic_locked"}:
+            if spool:
+                spool.forget_forum_topic(chat)
+            logger.info("Telegram automatic topic binding: %s", result)
+        else:
             logger.info("Telegram automatic topic binding deferred: %s", result)
 
     @staticmethod
@@ -278,6 +280,11 @@ class TelegramAdapter:
         membership = update.get("my_chat_member") or update.get("chat_member")
         if membership:
             chat = membership.get("chat") or {}
+            if update.get("my_chat_member") and chat.get("type") == "supergroup":
+                logger.info("Telegram bot membership: forum=%s old=%s new=%s",
+                            bool(chat.get("is_forum")),
+                            (membership.get("old_chat_member") or {}).get("status"),
+                            (membership.get("new_chat_member") or {}).get("status"))
             if chat.get("type") == "supergroup" and chat.get("is_forum") and spool:
                 chat_id = str(chat["id"])
                 status = (membership.get("new_chat_member") or {}).get("status")
@@ -337,11 +344,15 @@ class TelegramAdapter:
                 if any(member.get("is_bot") for member in members):
                     info = await self.bot.me()
                     if any(member.get("id") == info.id for member in members):
+                        logger.info("Telegram bot invitation: has_thread=%s general=%s topic=%s anonymous=%s",
+                                    bool(thread), thread == "1", bool(message.get("is_topic_message")),
+                                    bool(message.get("sender_chat")))
                         if (thread and thread != "1" and message.get("is_topic_message")
                                 and not message.get("sender_chat")
                                 and await self.forum_admin(chat, actor)):
                             if spool:
                                 spool.remember_forum_topic(chat, thread)
+                            logger.info("Telegram invitation topic verified; discovering student")
                             await self.bind_invited_topic(chat, thread, gateway, spool)
                         else:
                             logger.info("Telegram bot invitation has no verified topic")
