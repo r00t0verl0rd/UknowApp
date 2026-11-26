@@ -10,7 +10,6 @@ from app.infrastructure.storage.conversation_counters import (
     upgrade_conversation_counters,
     upgrade_physical_receipts,
 )
-
 from app.infrastructure.storage.personal_counters import upgrade_personal_counters
 
 from .delivery_recovery import upgrade_delivery_recovery

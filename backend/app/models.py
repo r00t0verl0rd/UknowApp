@@ -23,7 +23,6 @@ from app.infrastructure.storage.conversation_counters import (
     TEACHER_UNREAD,
     install_on_create,
 )
-
 from app.infrastructure.storage.personal_counters import install_personal_on_create
 
 from .core.database import Base
@@ -274,13 +273,15 @@ def _allocate_message_id(mapper, connection, message):
             ON CONFLICT (table_name) DO UPDATE SET last_id = max(last_id, excluded.last_id)
         """), {"table_name": source, "message_id": message.id})
         return
-    message.id = connection.scalar(text(f"""  # nosec B608 - source is restricted to fixed ORM table names
-        INSERT INTO message_id_counters (table_name, last_id)
-        SELECT :table_name, max(1000000000, coalesce(max(id), 0) + 1)
-        FROM {source} WHERE true
-        ON CONFLICT (table_name) DO UPDATE SET last_id = max(last_id + 1, excluded.last_id)
-        RETURNING last_id
-    """), {"table_name": source})
+    # The source identifier is restricted to the two ORM tables above.
+    sql = (  # nosec B608
+        "INSERT INTO message_id_counters (table_name, last_id) "
+        "SELECT :table_name, max(1000000000, coalesce(max(id), 0) + 1) "
+        f"FROM {source} WHERE true "
+        "ON CONFLICT (table_name) DO UPDATE SET last_id = max(last_id + 1, excluded.last_id) "
+        "RETURNING last_id"
+    )
+    message.id = connection.scalar(text(sql), {"table_name": source})
 
 
 class ConnectionCode(Base):
