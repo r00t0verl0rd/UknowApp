@@ -304,8 +304,8 @@ class TelegramAdapter:
                 if known:
                     await self.bind_invited_topic(chat, known, gateway, spool)
                 return
-        # A delivered message identifies its actual sender. Core accepts it
-        # only from the authorized topic; messages never move that route.
+        # Like main, a real message from a linked student identifies the
+        # actual topic. Core checks ownership and establishes the route.
         if group and (
             message["chat"]["type"] != "supergroup"
             or not message["chat"].get("is_forum")

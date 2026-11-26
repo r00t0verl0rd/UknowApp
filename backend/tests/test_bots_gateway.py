@@ -377,56 +377,63 @@ def test_telegram_candidate_discovery_is_platform_and_role_scoped(api):
         assert exc.value.status_code == 403
 
 
-def test_telegram_forum_requires_authorized_invitation_and_replies_use_actual_topic(api):
+def test_telegram_forum_restores_main_auto_binding_and_dual_delivery(api):
     _, users, sessions = api
     with sessions() as db:
         chat = prepare(db, users)
         sync_messenger_account(db, chat.student_id, "telegram", "123", "123")
         sync_messenger_account(db, chat.teacher_id, "telegram", "456", "456")
+        sync_messenger_account(db, users["student-two"], "telegram", "789", "789")
+        db.add(ExternalEndpoint(platform="telegram", user_id=users["student-two"],
+                                chat_id="-1001", thread_id="99"))
         db.commit()
         first = {"id": "forum-first", "external_message_id": "48", "actor": "123",
                  "chat_id": "-1001", "thread_id": "47", "channel": "group",
                  "kind": "text", "text": "Homework"}
         assert db.get(ExternalEndpoint, ("telegram", chat.student_id)) is None
-        with pytest.raises(HTTPException) as exc:
-            receive_message(db, "telegram", first, ("telegram",), gateway.media_path)
-        assert exc.value.status_code == 403
-        assert rpc(db, "telegram", "endpoint.bind", {
-            "actor": "123", "chat_id": "-1001", "thread_id": "47",
-        }) == {"bound": True}
+        # No invitation, command or topic name is necessary, as in main.
+        receive_message(db, "telegram", first, ("telegram",), gateway.media_path)
         endpoint = db.get(ExternalEndpoint, ("telegram", chat.student_id))
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
-        row = Message(conversation_id=chat.id, sender_id=chat.teacher_id, sender_role="teacher",
-                      text="Reply", metadata_json="{}", delivery_status="delivered")
-        db.add(row)
-        db.flush()
-        enqueue_web_delivery(db, row, ("telegram",))
-        db.commit()
-        jobs = db.query(ConnectorDelivery).filter_by(message_id=row.id).all()
+        incoming = db.query(Message).filter_by(sender_id=chat.student_id).one()
+        assert incoming.text == "Homework"
+        assert json.loads(incoming.metadata_json)["source_thread_id"] == "47"
+        assert db.query(ConnectorDelivery).filter_by(message_id=incoming.id).one().chat_id == "456"
+
+        def teacher_reply():
+            row = Message(conversation_id=chat.id, sender_id=chat.teacher_id, sender_role="teacher",
+                          text="Reply", metadata_json="{}", delivery_status="delivered")
+            db.add(row)
+            db.flush()
+            enqueue_web_delivery(db, row, ("telegram",))
+            db.commit()
+            return db.query(ConnectorDelivery).filter_by(message_id=row.id).all()
+
+        jobs = teacher_reply()
         assert {(job.chat_id, job.thread_id) for job in jobs} == {("123", ""), ("-1001", "47")}
-        # First teacher message already has both destinations; no student
-        # message was necessary. Neither another topic nor another group may move it.
-        receive_message(db, "telegram", first, ("telegram",), gateway.media_path)
-        for group, thread in (("-1001", "69"), ("-1002", "69")):
-            with pytest.raises(HTTPException) as exc:
-                receive_message(db, "telegram", {**first, "id": "other-" + group,
-                                "external_message_id": "70", "chat_id": group, "thread_id": thread},
-                                ("telegram",), gateway.media_path)
-            assert exc.value.status_code == 403
+        for job in jobs:
+            payload = rpc(db, "telegram", "delivery.authorize", {"id": job.id})
+            assert payload["chat_id"] == job.chat_id
+            assert payload["thread_id"] == (job.thread_id or None)
+        with pytest.raises(HTTPException) as exc:
+            receive_message(db, "telegram", {**first, "id": "occupied", "external_message_id": "49",
+                            "thread_id": "99"}, ("telegram",), gateway.media_path)
+        assert exc.value.status_code == 409
+        db.rollback()
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
-        assert rpc(db, "telegram", "endpoint.bind", {
-            "actor": "123", "chat_id": "-1002", "thread_id": "69",
-        }) == {"bound": True}
+
+        # A real message in a new unoccupied topic repairs an outdated binding.
+        receive_message(db, "telegram", {**first, "id": "forum-next", "external_message_id": "70",
+                        "chat_id": "-1002", "thread_id": "69"}, ("telegram",), gateway.media_path)
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1002", "69")
-        # A redelivery of an older message must not move the authorized route.
         receive_message(db, "telegram", {**first, "id": "forum-replay"}, ("telegram",), gateway.media_path)
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1002", "69")
-        assert db.query(Message).filter_by(sender_id=chat.student_id).count() == 1
-        old_group = next(job for job in jobs if job.thread_id)
-        with pytest.raises(HTTPException):
-            rpc(db, "telegram", "delivery.authorize", {"id": old_group.id})
-        private = next(job for job in jobs if not job.thread_id)
-        assert rpc(db, "telegram", "delivery.authorize", {"id": private.id})["chat_id"] == "123"
+        receive_message(db, "telegram", {**first, "id": "private", "external_message_id": "71",
+                        "chat_id": "123", "thread_id": None, "channel": "private"},
+                        ("telegram",), gateway.media_path)
+        assert (endpoint.chat_id, endpoint.thread_id) == ("-1002", "69")
+        assert db.query(Message).filter_by(sender_id=chat.student_id).count() == 3
+        assert {(job.chat_id, job.thread_id) for job in teacher_reply()} == {("123", ""), ("-1002", "69")}
         for actor in ("456", "999"):
             with pytest.raises(HTTPException) as exc:
                 receive_message(db, "telegram", {**first, "id": "invalid-" + actor,
