@@ -99,6 +99,7 @@ test("multiple picker and file drops send once, keep unsent files, and retry wit
         await textarea.fill("Общая подпись");
         await send.click();
         await page.getByText(/Не удалось отправить «drop-a.txt»/).waitFor();
+        await page.getByRole("button", { name: "Закрыть уведомление об ошибке" }).click();
         await page.waitForFunction(() => !document.querySelector(".composer-send").disabled);
         assert.deepEqual(await page.locator(".selected-file-name").allTextContents(), ["drop-a.txt", "drop-b.txt"]);
         assert.equal(await textarea.inputValue(), "");
@@ -114,6 +115,8 @@ test("multiple picker and file drops send once, keep unsent files, and retry wit
         assert.equal(await textarea.inputValue(), "");
         await input.setInputFiles([file("oversize.txt", 1025), file("valid.txt")]);
         await page.getByText("valid.txt", { exact: true }).waitFor();
+        await page.getByText(/Слишком большие файлы: oversize.txt/).waitFor();
+        await page.getByRole("button", { name: "Закрыть уведомление об ошибке" }).click();
         assert.deepEqual(await page.locator(".selected-file-name").allTextContents(), ["valid.txt"]);
         await page.getByRole("button", { name: "Убрать файл valid.txt" }).click();
         assert.equal(await send.isDisabled(), true);
