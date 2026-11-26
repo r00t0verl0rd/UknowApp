@@ -113,8 +113,11 @@ test("global SSE updates real counters across tabs and replays missed events", {
       body = [];
     } else if (path === "/api/panel/personal-conversations") {
       personalRequests += 1;
-      pendingPersonalResponses.push(response);
-      return;
+      if (personalRequests === 1) {
+        pendingPersonalResponses.push(response);
+        return;
+      }
+      body = [{ ...personalChat, unread_count: latestUnread }];
     } else if (path === "/api/admin/users") {
       body = [];
     } else if (path === "/api/admin/overview") {
@@ -729,6 +732,7 @@ test("read receipts and push suppression follow the visible dialog", { timeout: 
     addMessage(3, "Получено в другой вкладке");
     await publish();
     await page.getByLabel("1 непрочитанных личных сообщений").waitFor({ state: "visible" });
+    await page.getByText("Получено в другой вкладке", { exact: true }).waitFor();
     assert.deepEqual(receipts, [1, 2]);
 
     await page.evaluate(() => {
