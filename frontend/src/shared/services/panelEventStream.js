@@ -5,6 +5,8 @@ let source = null;
 const subscribers = new Set();
 let closeGeneration = 0;
 let retryTimer = null;
+let watchdog = null;
+let lastActivity = 0;
 
 function notify(name, event) {
   for (const subscriber of [...subscribers]) {
@@ -21,27 +23,48 @@ function openStream() {
   if (source || !subscribers.size || typeof EventSource === "undefined") return;
   const connection = new EventSource(apiUrl("/api/panel/events"), { withCredentials: true });
   source = connection;
+  lastActivity = Date.now();
+  const touch = () => { if (source === connection) lastActivity = Date.now(); };
+  connection.addEventListener("checkpoint", touch);
+  connection.addEventListener("heartbeat", touch);
   connection.addEventListener("update", event => {
-    if (source === connection) notify("onUpdate", event);
+    if (source !== connection) return;
+    touch();
+    notify("onUpdate", event);
   });
   connection.onopen = () => {
-    if (source === connection) notify("onOpen");
+    if (source !== connection) return;
+    touch();
+    notify("onOpen");
   };
   connection.onerror = () => {
     if (source !== connection) return;
     notify("onError");
     // EventSource retries network interruptions itself. For terminal failures
     // (e.g. proxy error or invalid response), explicitly create a new stream.
-    if (connection.readyState !== 2) return;
-    connection.close();
-    source = null;
-    if (subscribers.size && retryTimer === null) {
-      retryTimer = setTimeout(() => {
-        retryTimer = null;
-        openStream();
-      }, 1500);
-    }
+    if (connection.readyState === 2) restart(connection);
   };
+  if (watchdog === null) {
+    watchdog = setInterval(() => {
+      if (!source || Date.now() - lastActivity < 40000) return;
+      // An apparently open connection can be stalled by an intermediary.
+      // Reconnect and let the normal recovery path reconcile missed events.
+      notify("onError");
+      restart(source);
+    }, 5000);
+  }
+}
+
+function restart(connection) {
+  if (source !== connection) return;
+  connection.close();
+  source = null;
+  if (subscribers.size && retryTimer === null) {
+    retryTimer = setTimeout(() => {
+      retryTimer = null;
+      openStream();
+    }, 1500);
+  }
 }
 
 export function subscribePanelEvents(onUpdate, onOpen, onError) {
@@ -61,7 +84,9 @@ export function subscribePanelEvents(onUpdate, onOpen, onError) {
       queueMicrotask(() => {
         if (generation !== closeGeneration || subscribers.size) return;
         clearTimeout(retryTimer);
+        clearInterval(watchdog);
         retryTimer = null;
+        watchdog = null;
         source?.close();
         source = null;
       });
