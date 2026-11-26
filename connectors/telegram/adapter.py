@@ -227,8 +227,12 @@ class TelegramAdapter:
                 break
         if match is None:
             return "no_student"
+        return await self.bind_student(chat, thread, match, gateway)
+
+    @staticmethod
+    async def bind_student(chat, thread, actor, gateway):
         try:
-            result = await gateway.rpc("endpoint.bind", actor=match, chat_id=chat,
+            result = await gateway.rpc("endpoint.bind", actor=actor, chat_id=chat,
                                        thread_id=thread)
         except RpcError as exc:
             if exc.code in {403, 409}:
@@ -236,8 +240,22 @@ class TelegramAdapter:
             raise
         return "bound" if result.get("bound") else result.get("reason", "unavailable")
 
-    async def bind_invited_topic(self, chat, thread, gateway, spool):
-        result = await self.bind_forum_student(chat, thread, gateway)
+    async def bind_invited_topic(self, chat, thread, gateway, spool, members=None):
+        if members is None:
+            result = await self.bind_forum_student(chat, thread, gateway)
+        else:
+            # Join events establish group membership without getChatMember.
+            students = []
+            for member in members:
+                if member.get("is_bot") or not member.get("id"):
+                    continue
+                actor = str(member["id"])
+                view = await gateway.rpc("account.resolve", actor=actor, group=True)
+                if (view.get("account") or {}).get("role") == "student":
+                    students.append(actor)
+            if len(students) != 1:
+                return
+            result = await self.bind_student(chat, thread, students[0], gateway)
         if result in {"bound", "topic_locked"}:
             if spool:
                 spool.forget_forum_topic(chat)
@@ -287,13 +305,24 @@ class TelegramAdapter:
                             (membership.get("new_chat_member") or {}).get("status"))
             if chat.get("type") == "supergroup" and chat.get("is_forum") and spool:
                 chat_id = str(chat["id"])
-                status = (membership.get("new_chat_member") or {}).get("status")
+                new = membership.get("new_chat_member") or {}
+                status = new.get("status")
                 if update.get("my_chat_member") and status in {"left", "kicked"}:
                     spool.forget_forum_topic(chat_id)
                     return
                 thread = spool.forum_topic(chat_id)
-                if thread and status in {"member", "administrator", "creator", "restricted"}:
-                    await self.bind_invited_topic(chat_id, thread, gateway, spool)
+                if thread and (status in {"member", "administrator", "creator"}
+                               or (status == "restricted" and new.get("is_member"))):
+                    if update.get("my_chat_member"):
+                        await self.bind_invited_topic(chat_id, thread, gateway, spool)
+                    else:
+                        old = membership.get("old_chat_member") or {}
+                        if old.get("status") in {"member", "administrator", "creator"} or (
+                            old.get("status") == "restricted" and old.get("is_member")
+                        ):
+                            return
+                        await self.bind_invited_topic(chat_id, thread, gateway, spool,
+                                                      members=[new.get("user") or {}])
             return
         callback = update.get("callback_query")
         if callback:
@@ -359,7 +388,7 @@ class TelegramAdapter:
                         return
                 known = spool.forum_topic(chat) if spool else None
                 if known:
-                    await self.bind_invited_topic(chat, known, gateway, spool)
+                    await self.bind_invited_topic(chat, known, gateway, spool, members=members)
                 return
         # A known invitation takes priority over an initial student message.
         # Core enforces the stored route again before persisting any message.

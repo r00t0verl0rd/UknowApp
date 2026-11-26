@@ -264,25 +264,40 @@ def test_only_admin_invitation_of_this_bot_in_specific_topic_binds(thread, is_to
     asyncio.run(run())
 
 
-def test_pending_invited_topic_binds_when_student_joins(tmp_path):
+@pytest.mark.parametrize("event_type", ["chat_member", "new_chat_members"])
+def test_pending_invited_topic_binds_when_student_joins(tmp_path, event_type):
     async def run():
         adapter = object.__new__(TelegramAdapter)
-        adapter.bot = SimpleNamespace(me=AsyncMock(return_value=SimpleNamespace(id=99)),
-            get_chat_member=AsyncMock(side_effect=[
-                SimpleNamespace(status="administrator"), SimpleNamespace(status="member"),
-            ]), send_message=AsyncMock())
+        adapter.bot = SimpleNamespace(me=AsyncMock(), get_chat_member=AsyncMock(),
+                                      send_message=AsyncMock())
         gateway = SimpleNamespace(rpc=AsyncMock(side_effect=[
-            {"actors": ["10"], "next": None}, {"bound": True},
+            {"account": None, "conversations": []},
+            {"account": {"role": "student"}, "conversations": [{"id": 1}]},
+            {"bound": True},
         ]), inbound=AsyncMock())
         spool = EventSpool(tmp_path / "forum.db", "bot")
         try:
             spool.remember_forum_topic("-1001", "7")
-            await adapter.handle("member", {"chat_member": {"chat": {"id": -1001,
-                "type": "supergroup", "is_forum": True}, "new_chat_member": {
-                    "status": "member", "user": {"id": 10}}}}, gateway, spool)
+            chat = {"id": -1001, "type": "supergroup", "is_forum": True}
+            def joined(actor):
+                user = {"id": actor, "is_bot": False}
+                if event_type == "chat_member":
+                    return {"chat_member": {"chat": chat,
+                        "old_chat_member": {"status": "left", "user": user},
+                        "new_chat_member": {"status": "member", "user": user}}}
+                return {"message": {"chat": chat, "from": {"id": actor},
+                                    "message_id": actor, "new_chat_members": [user]}}
+            await adapter.handle("other", joined(11), gateway, spool)
+            assert spool.forum_topic("-1001") == "7"
+            spool.close()
+            spool = EventSpool(tmp_path / "forum.db", "bot")
+            await adapter.handle("student", joined(10), gateway, spool)
             gateway.rpc.assert_any_await("endpoint.bind", actor="10", chat_id="-1001",
                                          thread_id="7")
+            assert gateway.rpc.await_count == 3
             assert spool.forum_topic("-1001") is None
+            adapter.bot.get_chat_member.assert_not_awaited()
+            adapter.bot.me.assert_not_awaited()
             adapter.bot.send_message.assert_not_awaited()
             gateway.inbound.assert_not_awaited()
         finally:
