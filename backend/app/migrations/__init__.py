@@ -11,6 +11,8 @@ from app.infrastructure.storage.conversation_counters import (
     upgrade_physical_receipts,
 )
 
+from app.infrastructure.storage.personal_counters import upgrade_personal_counters
+
 from .delivery_recovery import upgrade_delivery_recovery
 from .delivery_routes import upgrade_delivery_routes
 from .login_keys import migrate_login_keys
@@ -37,6 +39,7 @@ MIGRATIONS = (
     ("2026-11-26-volatile-events", retire_realtime_events),
     ("2026-11-26-physical-receipts", upgrade_physical_receipts),
     ("2026-11-26-admin-observer-receipts", upgrade_admin_observer_receipts),
+    ("2026-11-26-personal-counters", upgrade_personal_counters),
 )
 
 

@@ -5,7 +5,7 @@ import logging
 import shutil
 
 from fastapi import HTTPException, UploadFile
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
@@ -29,6 +29,7 @@ from app.modules.notifications.service import schedule_push
 from app.modules.personal_chat.service import (
     personal_conversation,
     personal_conversation_dict,
+    personal_stats,
     publish_personal_update,
 )
 from app.request_validation import message_payload, personal_conversation_payload
@@ -49,15 +50,12 @@ def personal_conversations(principal: dict, db: Session):
 
 
 def personal_summaries(db: Session, items: list[PersonalConversation], role: str) -> list[dict]:
-    read_at = PersonalMessage.admin_read_at if role == "admin" else PersonalMessage.participant_read_at
-    unread = func.count(PersonalMessage.id).filter(PersonalMessage.sender_role != role, read_at.is_(None))
-    rows = db.execute(
-        select(PersonalMessage.conversation_id, unread, func.max(PersonalMessage.created_at))
-        .where(PersonalMessage.conversation_id.in_([item.id for item in items]))
-        .group_by(PersonalMessage.conversation_id),
-    )
-    stats = {chat_id: (count, latest) for chat_id, count, latest in rows}
-    return [personal_conversation_dict(item, role, *stats.get(item.id, (0, None))) for item in items]
+    if not items:
+        return []
+    stats = personal_stats(db, [item.id for item in items])
+    return [personal_conversation_dict(item, role,
+                stats[item.id].admin_unread_count if role == "admin" else stats[item.id].participant_unread_count,
+                stats[item.id].last_message_at) for item in items]
 
 
 def create_personal_conversation(payload: dict, principal: dict, db: Session):

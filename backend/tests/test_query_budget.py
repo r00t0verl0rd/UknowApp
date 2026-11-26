@@ -53,5 +53,16 @@ def test_authenticated_profile_and_history_query_budget(api):
         assert sync.status_code == 200, sync.text
         assert sync.json()["summary"]["message_count"] == 1000
         assert not any("json_extract" in s.lower() or "group by" in s.lower() or "count(" in s.lower() for s in statements)
+        statements.clear()
+        result = client.get("/api/panel/personal-conversations")
+        assert result.status_code == 200 and result.json()[0]["unread_count"] == 0
+        assert len(statements) <= 3, statements
+        assert not any("personal_messages" in sql.lower() for sql in statements)
+        statements.clear()
+        sync = client.post(f"/api/panel/personal-conversations/{personal_id}/sync",
+                           json={"after_id":1000000,"paged":True,"mark_read":False})
+        assert sync.status_code == 200, sync.text
+        assert not any("group by" in sql.lower() or "count(" in sql.lower() or "max(" in sql.lower()
+                       for sql in statements)
     finally:
         event.remove(engine, "before_cursor_execute", count)

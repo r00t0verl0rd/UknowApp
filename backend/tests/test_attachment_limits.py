@@ -55,7 +55,7 @@ def test_connector_upload_applies_mode_limit(mode, mib, monkeypatch, tmp_path):
     from app.bots_gateway import gateway
 
     monkeypatch.setenv("TELEGRAM_API_MODE", mode)
-    secret = "test-secret-" + "x" * 40
+    secret = "test-secret-" + "x" * 40  # pragma: allowlist secret
     monkeypatch.setenv("BOTS_MEDIA_SECRET_TELEGRAM", secret)
     monkeypatch.setattr(gateway, "MEDIA_DIR", tmp_path)
     real_limit = media.provider_attachment_limit("telegram")

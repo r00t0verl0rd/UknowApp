@@ -5,6 +5,7 @@ from sqlalchemy import MetaData, Table, inspect, select, text
 from sqlalchemy.orm import Session
 
 from app.core.database import engine
+from app.infrastructure.storage.conversation_counters import ensure_admin_observer_columns
 from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.migrations.delivery_recovery import upgrade_delivery_recovery
 from app.models import ExternalEndpoint, Message, MessengerAccount
@@ -19,6 +20,7 @@ def migrate_provider_channels(connection=None):
             migrate_provider_channels(owned_connection)
         return
     upgrade_delivery_recovery(connection)
+    ensure_admin_observer_columns(connection)
     inspector = inspect(connection)
     tables = set(inspector.get_table_names())
     cols = {col["name"] for col in inspector.get_columns("users")}

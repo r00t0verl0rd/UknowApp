@@ -7,9 +7,9 @@ from pathlib import Path
 from fastapi import HTTPException, UploadFile
 
 from app.infrastructure.storage.media import (
+    MEDIA_DIR,
     attachment_size_error,
     panel_attachment_limit,
-    MEDIA_DIR,
     safe_media_type,
 )
 

@@ -289,7 +289,7 @@ class BotsGateway:
                             headers={"Nats-Msg-Id": dedup})
                     except asyncio.CancelledError:
                         raise
-                    except Exception as exc:
+                    except Exception as exc:  # noqa: BLE001 - isolate route failures, retry durable outbox
                         # Keep this route's head pending. Other routes still publish.
                         logger.warning("Outbox publication delayed platform=%s endpoint=%s error=%s",
                                        platform, "group" if thread else "private", type(exc).__name__)

@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
 from app.core.database import begin_serialized_write
-from app.infrastructure.storage.media import safe_media_type, provider_attachment_limit
+from app.infrastructure.storage.media import provider_attachment_limit, safe_media_type
 from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.models import (
     Assignment,

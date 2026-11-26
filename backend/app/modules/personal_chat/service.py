@@ -3,12 +3,12 @@
 from datetime import datetime
 
 from fastapi import HTTPException
-from sqlalchemy import and_, case, func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.event_hub import publish_chat_update
 
-from ...models import PersonalConversation, PersonalMessage
+from ...models import PersonalConversation
 
 
 def personal_conversation(db: Session, principal: dict, conversation_id: int) -> PersonalConversation:
@@ -36,28 +36,22 @@ def personal_conversation_dict(
     }
 
 
+def personal_stats(db: Session, ids: list[int]) -> dict:
+    # Scalar columns bypass stale ORM identity-map values after SQL triggers.
+    rows = db.execute(select(PersonalConversation.id, PersonalConversation.admin_unread_count,
+                             PersonalConversation.participant_unread_count, PersonalConversation.last_message_at)
+                      .where(PersonalConversation.id.in_(ids))).all()
+    return {row.id: row for row in rows}
+
+
 def personal_event_summaries(db: Session, item: PersonalConversation) -> dict[str, dict]:
-    """Подсчитать непрочитанные сообщения участников."""
-    admin_unread = and_(
-        PersonalMessage.sender_role != "admin",
-        PersonalMessage.admin_read_at.is_(None),
-    )
-    participant_unread = and_(
-        PersonalMessage.sender_role == "admin",
-        PersonalMessage.participant_read_at.is_(None),
-    )
-    counts = db.execute(
-        select(
-            func.coalesce(func.sum(case((admin_unread, 1), else_=0)), 0),
-            func.coalesce(func.sum(case((participant_unread, 1), else_=0)), 0),
-            func.max(PersonalMessage.created_at),
-        ).where(PersonalMessage.conversation_id == item.id),
-    ).one()
+    """Read both roles' exact counters without scanning history."""
+    counts = personal_stats(db, [item.id])[item.id]
     participant_role = item.participant.role
     return {
-        "admin": personal_conversation_dict(item, "admin", int(counts[0] or 0), counts[2]),
+        "admin": personal_conversation_dict(item, "admin", counts.admin_unread_count, counts.last_message_at),
         participant_role: personal_conversation_dict(
-            item, participant_role, int(counts[1] or 0), counts[2],
+            item, participant_role, counts.participant_unread_count, counts.last_message_at,
         ),
     }
 

@@ -275,14 +275,19 @@ def upgrade_physical_receipts(connection):
     install_triggers(connection)
 
 
-def upgrade_admin_observer_receipts(connection):
-    """Start independent admin receipts without treating old history as new."""
+def ensure_admin_observer_columns(connection):
+    """Add columns before historical migrations use the current ORM."""
     message_columns = {col["name"] for col in inspect(connection).get_columns("messages")}
     conversation_columns = {col["name"] for col in inspect(connection).get_columns("conversations")}
     if "admin_read_at" not in message_columns:
         connection.exec_driver_sql("ALTER TABLE messages ADD COLUMN admin_read_at TEXT")
     if "admin_observer_unread_count" not in conversation_columns:
         connection.exec_driver_sql("ALTER TABLE conversations ADD COLUMN admin_observer_unread_count BIGINT NOT NULL DEFAULT 0")
+
+
+def upgrade_admin_observer_receipts(connection):
+    """Start independent admin receipts without treating old history as new."""
+    ensure_admin_observer_columns(connection)
     # There is no historical admin receipt data. Existing history is the baseline.
     connection.execute(text("UPDATE messages SET admin_read_at = :baseline "
                             "WHERE sender_role IN ('teacher','student') AND admin_read_at IS NULL"),

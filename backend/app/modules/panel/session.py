@@ -20,10 +20,10 @@ from app.event_hub import (
     unsubscribe_chat_updates,
 )
 from app.infrastructure.storage.media import panel_attachment_limit
+from app.models import Message, PersonalMessage
 from app.modules.auth.permissions import ROLE_PERMISSIONS
 from app.modules.auth.service import load_panel_identity
 from app.modules.dependencies import PanelUser
-from app.models import Message, PersonalMessage
 from app.modules.messaging.service import panel_message_dict, panel_visible_conversation
 from app.modules.personal_chat.operations import personal_message_dict
 from app.modules.personal_chat.service import personal_conversation
