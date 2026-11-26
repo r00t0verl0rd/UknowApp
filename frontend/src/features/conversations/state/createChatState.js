@@ -2,7 +2,8 @@ import { createSignal } from "solid-js";
 import { createConversationCache } from "../services/conversationCache.js";
 export function createChatState() {
   const [draft, setDraft] = createSignal("");
-  const [attachment, setAttachment] = createSignal(null);
+  const [attachments, setAttachments] = createSignal([]);
+  const [sendingAttachments, setSendingAttachments] = createSignal(false);
   const [chats, setChats] = createSignal([]);
   const [selectedChat, setSelectedChat] = createSignal(null);
   const [messages, setMessages] = createSignal([]);
@@ -21,10 +22,14 @@ export function createChatState() {
       return draft();
     },
     setDraft,
-    get attachment() {
-      return attachment();
+    get attachments() {
+      return attachments();
     },
-    setAttachment,
+    setAttachments,
+    get sendingAttachments() {
+      return sendingAttachments();
+    },
+    setSendingAttachments,
     get chats() {
       return chats();
     },

@@ -61,8 +61,9 @@ export default function ChatsModule(options) {
         messagesLoading={options.chatState.messagesLoading}
         setDeleteMessageCandidate={state.setDeleteMessageCandidate}
         setDeletePersonalChatCandidate={state.setDeletePersonalChatCandidate}
-        attachment={options.chatState.attachment}
-        setAttachment={options.chatState.setAttachment}
+        attachments={options.chatState.attachments}
+        setAttachments={options.chatState.setAttachments}
+        sendingAttachments={options.chatState.sendingAttachments}
         sendChatMessage={state.sendChatMessage}
       />
       <ChatDialogs

@@ -605,6 +605,10 @@
   border-color:var(--ui-border-strong);
   box-shadow:none;
 }
+.chat-composer.is-file-drag textarea {
+  border-color:var(--ui-selected-border);
+  background:var(--ui-control-hover);
+}
 .chat-composer textarea::placeholder {
   color:var(--muted);
   font-size:14px;
@@ -670,7 +674,17 @@
   white-space:nowrap;
   clip-path:inset(50%);
 }
+.composer-attachments {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:6px;
+  max-height:96px;
+  overflow:auto;
+  min-width:0;
+}
 .selected-file {
+  flex:0 1 auto;
   min-width:0;
   border:1px solid var(--button-border);
   line-height:1.3;

@@ -68,7 +68,7 @@ export function createAuthController(options) {
     options.setMessages([]);
     options.setSelectedChat(null);
     options.setDraft("");
-    options.setAttachment(null);
+    options.setAttachments([]);
     window.location.reload();
   };
   return {

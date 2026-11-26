@@ -211,7 +211,7 @@ function Application(options) {
     setMessages: chatState.setMessages,
     setSelectedChat: chatState.setSelectedChat,
     setDraft: chatState.setDraft,
-    setAttachment: chatState.setAttachment,
+    setAttachments: chatState.setAttachments,
     notify: options.notify,
   });
   const context = {

@@ -36,6 +36,30 @@ function ParticipantHeading(props) {
 
 export default function ChatsPage(options) {
   const [messageNowMs, setMessageNowMs] = createSignal(Date.now());
+  const [draggingFiles, setDraggingFiles] = createSignal(false);
+  const isFileDrag = event => Array.from(event.dataTransfer?.types || []).includes("Files");
+  const addAttachments = files => {
+    if (options.sendingAttachments) return;
+    const limit = options.profile?.max_attachment_bytes;
+    const accepted = [];
+    const rejected = [];
+    for (const file of files) {
+      if (limit && file.size > limit) {
+        rejected.push(file.name);
+        continue;
+      }
+      const id = globalThis.crypto?.randomUUID?.() ||
+        Date.now().toString(36) + Math.random().toString(36).slice(2);
+      accepted.push({ file, id });
+    }
+    if (accepted.length) options.setAttachments(current => [...current, ...accepted]);
+    if (rejected.length) options.setError("Слишком большие файлы: " + rejected.join(", ") +
+      ". Максимальный размер каждого вложения — " + limit / 1024 ** 2 + " МиБ");
+  };
+  createEffect(
+    () => [options.selectedChat?.id, options.selectedChat?.type],
+    () => setDraggingFiles(false),
+  );
 
   createEffect(
     () => [options.selectedChat?.id, options.selectedChat?.type, options.profile?.role, options.visibleMessages, options.positionReady],
@@ -459,9 +483,34 @@ export default function ChatsPage(options) {
             </div>
 
             {(options.selectedChat.type === "personal" || options.selectedChat.status === "active") && (
-              <form class="chat-composer" onSubmit={options.sendChatMessage}>
+              <form
+                class={"chat-composer" + (draggingFiles() ? " is-file-drag" : "")}
+                onSubmit={options.sendChatMessage}
+                onDragEnter={event => {
+                  if (!isFileDrag(event)) return;
+                  event.preventDefault();
+                  if (!options.sendingAttachments) setDraggingFiles(true);
+                }}
+                onDragOver={event => {
+                  if (!isFileDrag(event)) return;
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = options.sendingAttachments ? "none" : "copy";
+                  if (!options.sendingAttachments) setDraggingFiles(true);
+                }}
+                onDragLeave={event => {
+                  if (!event.currentTarget.contains(event.relatedTarget)) setDraggingFiles(false);
+                }}
+                onDrop={event => {
+                  const files = Array.from(event.dataTransfer?.files || []);
+                  if (!files.length && !isFileDrag(event)) return;
+                  event.preventDefault();
+                  setDraggingFiles(false);
+                  addAttachments(files);
+                }}
+              >
                 <textarea
                   value={options.draft}
+                  readOnly={options.sendingAttachments}
                   onInput={(event) => options.setDraft(event.target.value)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" && !event.shiftKey) {
@@ -481,53 +530,55 @@ export default function ChatsPage(options) {
                   rows={1}
                   maxLength={4000}
                 />
+                <Show when={options.attachments.length > 0}>
+                  <div class="composer-attachments" aria-label="Вложения к сообщению">
+                    <For each={options.attachments} keyed={entry => entry.id}>
+                      {entry => (
+                        <span class="selected-file">
+                          <span class="selected-file-name" title={entry().file.name}>{entry().file.name}</span>
+                          <IconButton
+                            size="compact"
+                            disabled={options.sendingAttachments}
+                            onClick={() => options.setAttachments(current => current.filter(item => item.id !== entry().id))}
+                            aria-label={"Убрать файл " + entry().file.name}
+                          >
+                            <X size={14} />
+                          </IconButton>
+                        </span>
+                      )}
+                    </For>
+                  </div>
+                </Show>
                 <div class="composer-footer">
                   <div class="composer-tools">
                     <label
                       class="attach-control ui-icon-button"
                       aria-label="Прикрепить файл"
-                      title="Прикрепить файл"
+                      title="Прикрепить файлы"
                     >
                       <Paperclip size={17} />
                       <input
                         type="file"
+                        multiple
+                        disabled={options.sendingAttachments}
                         aria-label="Выбрать файл для сообщения"
                         accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
-                        onInput={(event) => {
-                          const file = event.target.files?.[0];
-                          const limit = options.profile?.max_attachment_bytes;
-                          if (file && limit && file.size > limit) {
-                            event.target.value = "";
-                            options.setAttachment(null);
-                            options.setError("Максимальный размер вложения — " + limit / 1024 ** 2 + " МиБ");
-                            return;
-                          }
-                          options.setAttachment(file || null);
+                        onInput={event => {
+                          addAttachments(Array.from(event.currentTarget.files || []));
+                          event.currentTarget.value = "";
                         }}
                       />
                     </label>
-                    {options.attachment && (
-                      <span class="selected-file">
-                        <span class="selected-file-name">{options.attachment.name}</span>
-                        <IconButton
-                          size="compact"
-                          onClick={() => options.setAttachment(null)}
-                          aria-label="Убрать файл"
-                        >
-                          <X size={14} />
-                        </IconButton>
-                      </span>
-                    )}
                   </div>
                   <button
                     type="submit"
                     class="btn primary composer-send"
                     aria-label="Отправить сообщение"
                     title="Отправить сообщение"
-                    disabled={!options.draft.trim() && !options.attachment}
+                    disabled={options.sendingAttachments || (!options.draft.trim() && !options.attachments.length)}
                   >
                     <Send size={16} />
-                    <span>Отправить</span>
+                    <span>{options.sendingAttachments ? "Отправляем…" : "Отправить"}</span>
                   </button>
                 </div>
               </form>

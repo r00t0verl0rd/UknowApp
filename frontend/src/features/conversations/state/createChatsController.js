@@ -361,7 +361,7 @@ export function createChatsController(options) {
     options.chatState.setMessagesLoading(!cachedMessages);
     options.setPage("chats");
     options.chatState.setDraft("");
-    options.chatState.setAttachment(null);
+    options.chatState.setAttachments([]);
     if (!restoring) options.chatState.setMessageFilter("all");
     try {
       if (cached) {
@@ -538,7 +538,7 @@ export function createChatsController(options) {
         options.chatState.setMessages([]);
         options.chatState.setMessagesLoading(false);
         options.chatState.setDraft("");
-        options.chatState.setAttachment(null);
+        options.chatState.setAttachments([]);
       }
       actions.setDeletePersonalChatCandidate(null);
       options.notify(result.media_cleanup_pending
@@ -583,27 +583,61 @@ export function createChatsController(options) {
       actions.setDeletingMessage(false);
     }
   };
+  const sendAttachments = async (chat, chatKey, text, entries) => {
+    const senderAccount = viewAccountKey(options.profile);
+    options.chatState.setSendingAttachments(true);
+    let caption = text;
+    let sent = 0;
+    try {
+      for (const entry of entries) {
+        if (!options.auth || viewAccountKey(options.profile) !== senderAccount) break;
+        try {
+          const message = await sendConversationAttachment(
+            chat.id, entry.file, caption, entry.id, chat.type === "personal",
+          );
+          sent++;
+          if (activeChatKey() === chatKey) {
+            options.chatState.setMessages(current => mergeConversationMessages(current, [message], chatKey));
+            // Do not touch a new draft after navigating away and reopening.
+            if (options.chatState.attachments.some(item => item.id === entry.id)) {
+              options.chatState.setAttachments(current => current.filter(item => item.id !== entry.id));
+              if (caption) options.chatState.setDraft(current => current.trim() === caption ? "" : current);
+            }
+            requestLatestScroll();
+          }
+          caption = "";
+        } catch (error) {
+          options.setError(`Не удалось отправить «${entry.file.name}»: ${error.message || "Ошибка запроса"}. Отправлено ${sent} из ${entries.length}.`);
+          break;
+        }
+      }
+    } finally {
+      options.chatState.setSendingAttachments(false);
+    }
+  };
   const sendChatMessage = async (event) => {
     event.preventDefault();
     const chat = options.chatState.selectedChat;
     const chatKey = chat ? (chat.type === "personal" ? "personal:" : "conversation:") + chat.id : "";
     const text = options.chatState.draft.trim();
-    const file = options.chatState.attachment;
-    if (!chat || (!text && !file) || sendingMessage) return;
-    const limit = options.profile?.max_attachment_bytes;
-    if (file && limit && file.size > limit) {
-      options.setError("Максимальный размер вложения — " + limit / 1024 ** 2 + " МиБ");
+    const entries = options.chatState.attachments;
+    if (!chat || (!text && !entries.length) || sendingMessage || options.chatState.sendingAttachments) return;
+    if (entries.length) {
+      const limit = options.profile?.max_attachment_bytes;
+      const oversized = limit && entries.find(entry => entry.file.size > limit);
+      if (oversized) {
+        options.setError("«" + oversized.file.name + "»: максимальный размер вложения — " + limit / 1024 ** 2 + " МиБ");
+        return;
+      }
+      await sendAttachments(chat, chatKey, text, entries);
       return;
     }
     sendingMessage = true;
-    const optimistic = chat.type !== "personal" && !file && Boolean(text);
+    const optimistic = chat.type !== "personal" && Boolean(text);
     const signature = [
       chat.type,
       chat.id,
       text,
-      file?.name || "",
-      file?.size || 0,
-      file?.lastModified || 0,
     ].join(":");
     const pending = pendingClientMessage;
     const clientMessageId =
@@ -638,20 +672,13 @@ export function createChatsController(options) {
     try {
       let sentMessage;
       if (chat.type === "personal") {
-        sentMessage = file
-          ? await sendConversationAttachment(chat.id, file, text, clientMessageId, true)
-          : await sendPersonalMessage(options.request, chat.id, text, clientMessageId);
-      } else if (file) {
-        sentMessage = await sendConversationAttachment(chat.id, file, text, clientMessageId);
+        sentMessage = await sendPersonalMessage(options.request, chat.id, text, clientMessageId);
       } else {
         sentMessage = await sendConversationText(options.request, chat.id, text, clientMessageId);
       }
       pendingClientMessage = null;
       if (activeChatKey() !== chatKey) return;
-      if (!optimistic) {
-        options.chatState.setDraft("");
-        options.chatState.setAttachment(null);
-      }
+      if (!optimistic) options.chatState.setDraft(current => current.trim() === text ? "" : current);
       options.chatState.setMessages((current) => mergeConversationMessages(current, [sentMessage], chatKey));
       requestLatestScroll();
     } catch (error) {
