@@ -22,7 +22,7 @@ test("partial delivery leads with successful copies, never raw error codes", () 
     },
   }), [
     { title: "Telegram", description: "Копия отправлена.", delivered: true },
-    { title: "Telegram · Ученик", description: "Копию в Telegram пока не удалось отправить.", delivered: false },
+    { title: "Telegram · Ученик", description: "Telegram пока не подключен.", delivered: false },
   ]);
 });
 test("legacy Telegram logs still work and duplicate modern results are not shown", () => {
