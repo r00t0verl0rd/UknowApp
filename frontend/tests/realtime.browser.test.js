@@ -286,6 +286,13 @@ test("global SSE updates real counters across tabs and replays missed events", {
         .waitFor({ state: "visible" });
       assert.equal(await teacherPage.getByRole("button", { name: "Диалоги", exact: true }).count(), 1);
       await teacherPage.getByText("Мои ученики").waitFor({ state: "visible" });
+      const studentDot = await teacherPage.locator(".teacher-zen-count .student-dot").evaluate((dot) => {
+        const style = getComputedStyle(dot);
+        return { radius: style.borderRadius, color: style.backgroundColor,
+          dark: document.documentElement.dataset.theme === "dark-soft" };
+      });
+      assert.equal(studentDot.radius, "50%");
+      assert.equal(studentDot.color, studentDot.dark ? "rgb(196, 168, 121)" : "rgb(197, 170, 126)");
       await teacherPage.getByText("Тестовый ученик").waitFor({ state: "visible" });
       assert.equal(pendingTeacherPersonalInbox.length, 1,
         "teacher's assigned students render before the slower personal-inbox response");

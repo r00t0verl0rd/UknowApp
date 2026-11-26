@@ -53,10 +53,14 @@ a:focus-visible {
   background:var(--red-soft);
   color:var(--red);
 }
+:root:not([data-theme="dark-soft"]) .student-dot {
+  background:#c5aa7e;
+  box-shadow:none;
+}
 :root[data-theme="dark-soft"] {
   & .student-dot {
-    background:#e58c98;
-    box-shadow:0 0 7px rgba(229, 140, 152, 0.2);
+    background:#c4a879;
+    box-shadow:none;
   }
 
 }

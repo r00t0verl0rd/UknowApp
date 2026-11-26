@@ -112,7 +112,8 @@ button:not(.chat-item):disabled {
   align-items:center;
   gap:7px;
 }
-.legend span {
+.legend span,
+.student-dot {
   width:8px;
   height:8px;
   border-radius:50%;

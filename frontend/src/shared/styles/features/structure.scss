@@ -80,10 +80,6 @@
     background:#a99bc8;
     box-shadow:none;
   }
-  & .workspace-content:has(.admin-card) .student-dot {
-    background:#c4a879;
-    box-shadow:none;
-  }
 }
 :root:not([data-theme="dark-soft"]) {
   & .teacher-card {
@@ -108,10 +104,6 @@
   }
   & .workspace-content:has(.admin-card) .teacher-dot {
     background:#a99ac2;
-    box-shadow:none;
-  }
-  & .workspace-content:has(.admin-card) .student-dot {
-    background:#c5aa7e;
     box-shadow:none;
   }
 }
