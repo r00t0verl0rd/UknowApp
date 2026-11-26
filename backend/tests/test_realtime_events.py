@@ -132,3 +132,110 @@ def test_ram_replay_and_publish_do_not_touch_sql_and_restart_resyncs(api):
             assert not statements
         finally:
             event.remove(db.get_bind(), "before_cursor_execute", count)
+
+
+def test_live_sse_stream_delivers_bot_and_web_messages_to_all_roles(api, monkeypatch):
+    """Exercise the real gateway, database, event hub and SSE response iterator."""
+    import asyncio
+    from types import SimpleNamespace
+    from app.bots_gateway.operations import receive_message
+    from app.bots_gateway.gateway import media_path
+    from app.modules.communication.accounts import sync_messenger_account
+    from app.modules.panel import session as panel_session
+    from helpers import create_conversation
+
+    make_client, users, sessions = api
+    monkeypatch.setattr(panel_session, "SessionLocal", sessions)
+    with sessions() as db:
+        chat = create_conversation(db, users["teacher-one"], users["student-one"])
+        chat_id = chat.id
+        sync_messenger_account(db, users["student-one"], "telegram", "200", "200")
+        db.commit()
+
+    credentials = [
+        ("admin", None, "test-admin", "a-long-test-password-123"),
+        ("teacher", users["teacher-one"], "teacher-one", "teacher-password-1"),
+        ("student", users["student-one"], "student-one", "student-password-1"),
+    ]
+    clients = {}
+    for role, _, username, password in credentials:
+        client = make_client()
+        assert client.post("/api/auth/login", json={"username": username, "password": password}).status_code == 200
+        clients[role] = client
+
+    def incoming():
+        with sessions() as db:
+            receive_message(db, "telegram", {
+                "id": "sse-test-inbound", "external_message_id": "42", "actor": "200",
+                "chat_id": "200", "channel": "private", "kind": "text",
+                "text": "Telegram SSE",
+            }, (), media_path)
+
+    async def connected():
+        return False
+
+    async def read_message(iterator, expected):
+        frame = await asyncio.wait_for(anext(iterator), 3)
+        assert frame.startswith("id: ") and frame.endswith("\n\n")
+        assert "event: update\n" in frame
+        payload = json.loads(next(line[6:] for line in frame.splitlines() if line.startswith("data: ")))
+        assert payload["action"] == "upsert"
+        assert payload["message_id"] == payload["message"]["id"]
+        assert payload["message"]["text"] == expected
+        return payload
+
+    async def run():
+        streams = {}
+        try:
+            for role, user_id, _, _ in credentials:
+                request = SimpleNamespace(headers={}, cookies=dict(clients[role].cookies),
+                                          is_disconnected=connected)
+                response = await panel_session.panel_events(request, {"role": role, "user_id": user_id})
+                assert response.media_type == "text/event-stream"
+                iterator = response.body_iterator
+                streams[role] = iterator
+                assert (await anext(iterator)).startswith("retry:")
+                assert "event: checkpoint" in await anext(iterator)
+            await asyncio.to_thread(incoming)
+            for role, iterator in streams.items():
+                payload = await read_message(iterator, "Telegram SSE")
+                assert payload["message"]["can_delete"] == (role == "student")
+                assert payload["summary"]["unread_count"] == (0 if role == "student" else 1)
+                if role != "admin":
+                    assert "source_chat_id" not in payload["message"]["metadata"]
+                    assert "messenger_deliveries" not in payload["message"]["metadata"]
+            sent = await asyncio.to_thread(clients["teacher"].post,
+                f"/api/panel/conversations/{chat_id}/messages", json={"text": "Web SSE"})
+            assert sent.status_code == 201
+            for role, iterator in streams.items():
+                payload = await read_message(iterator, "Web SSE")
+                assert payload["message"]["id"] == sent.json()["id"]
+                assert payload["message"]["can_delete"] == (role == "teacher")
+        finally:
+            for iterator in streams.values():
+                await iterator.aclose()
+
+    asyncio.run(run())
+
+
+def test_sse_personal_message_is_hydrated_only_for_participants(api):
+    from app.models import PersonalConversation, PersonalMessage
+    from app.modules.panel.session import visible_payload
+    _, users, sessions = api
+    with sessions() as db:
+        chat = PersonalConversation(participant_id=users["student-one"])
+        db.add(chat)
+        db.flush()
+        message = PersonalMessage(conversation_id=chat.id, sender_id=None,
+                                  sender_role="admin", text="Private SSE")
+        db.add(message)
+        db.commit()
+        hint = json.dumps({"conversation_id": chat.id, "conversation_type": "personal",
+                           "action": "upsert", "message_id": message.id})
+        admin = json.loads(visible_payload(db, {"role": "admin", "user_id": None}, hint))
+        student = json.loads(visible_payload(db, {"role": "student", "user_id": users["student-one"]}, hint))
+        outsider = json.loads(visible_payload(db, {"role": "teacher", "user_id": users["teacher-one"]}, hint))
+        assert admin["message"]["can_delete"] is True
+        assert student["message"]["can_delete"] is False
+        assert student["message"]["text"] == "Private SSE"
+        assert outsider == {"resync": True}
