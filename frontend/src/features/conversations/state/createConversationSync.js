@@ -26,6 +26,7 @@ export function createConversationSync(options) {
       const eventRevision = new Map();
       let inboxRequestRevision = 0;
       let recoveryPending = false;
+      let streamUnavailable = false;
       const applySummary = (type, id, summary) => {
         if (!summary || !active) return;
         const rowKey = conversationKey(id, type);
@@ -278,13 +279,19 @@ export function createConversationSync(options) {
         void syncSelected().catch(() => { recoveryPending = true; });
       };
       const unsubscribe = subscribePanelEvents(handleEvent, () => {
-        if (recoveryPending) requestRecovery();
+        const needsRecovery = streamUnavailable || recoveryPending;
+        streamUnavailable = false;
+        if (needsRecovery) requestRecovery();
         else reconcileSelected();
       }, () => {
+        streamUnavailable = true;
         recoveryPending = true;
         void Promise.resolve(options.verifySession?.()).catch(() => {});
       });
-      if (!unsubscribe) requestRecovery();
+      if (!unsubscribe) {
+        streamUnavailable = true;
+        requestRecovery();
+      }
       // SSE remains the fast path. An infrequent reconciliation also covers
       // suspended browsers, missed events and intermediaries buffering the stream.
       let lastReconciliation = Date.now();
@@ -292,7 +299,7 @@ export function createConversationSync(options) {
         if (!active) return;
         // Recover quickly if streaming is unavailable, otherwise only perform
         // an infrequent safety check. Reading remains independently gated.
-        if (recoveryPending || Date.now() - lastReconciliation >= 60000) {
+        if (streamUnavailable || recoveryPending || Date.now() - lastReconciliation >= 60000) {
           lastReconciliation = Date.now();
           requestRecovery();
         }
