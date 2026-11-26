@@ -294,7 +294,10 @@ class GatewayClient:
                     try:
                         # A short fetch while workers are running allows new light tasks
                         # to enter without waiting for an earlier media upload.
-                        msgs = await sub.fetch(min(capacity, 4), timeout=.15 if active or pending else 2)
+                        # Do not wait for a full batch on the first message after idle.
+                        busy = bool(active or pending)
+                        msgs = await sub.fetch(min(capacity, 4) if busy else 1,
+                                               timeout=.15 if busy else 2)
                     except NatsTimeout:
                         msgs = []
                     for msg in msgs:
