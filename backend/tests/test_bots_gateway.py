@@ -360,3 +360,18 @@ def test_initial_topic_binding_routes_first_teacher_message_without_student_mess
             payload = rpc(db, "beta", "delivery.authorize", {"id": job.id})
             assert payload["chat_id"] == job.chat_id
             assert payload["thread_id"] == (job.thread_id or None)
+
+
+def test_telegram_candidate_discovery_is_platform_and_role_scoped(api):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        sync_messenger_account(db, chat.student_id, "telegram", "123", "123")
+        sync_messenger_account(db, chat.teacher_id, "telegram", "456", "456")
+        db.commit()
+        assert rpc(db, "telegram", "endpoint.student_candidates", {"after": 0}) == {
+            "actors": ["123"], "next": None,
+        }
+        with pytest.raises(HTTPException) as exc:
+            rpc(db, "alpha", "endpoint.student_candidates", {"after": 0})
+        assert exc.value.status_code == 403

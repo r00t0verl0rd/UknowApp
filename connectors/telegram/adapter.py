@@ -262,7 +262,7 @@ class TelegramAdapter:
             chat = membership.get("chat") or {}
             old_status = (membership.get("old_chat_member") or {}).get("status")
             new_status = (membership.get("new_chat_member") or {}).get("status")
-            if chat.get("type") == "supergroup":
+            if chat.get("type") == "supergroup" and chat.get("is_forum"):
                 chat_id = str(chat["id"])
                 if new_status in {"left", "kicked"} and spool:
                     spool.forget_forum_topic(chat_id)
@@ -281,7 +281,7 @@ class TelegramAdapter:
         membership = update.get("chat_member")
         if membership:
             chat = membership.get("chat") or {}
-            if chat.get("type") == "supergroup" and spool:
+            if chat.get("type") == "supergroup" and chat.get("is_forum") and spool:
                 chat_id = str(chat["id"])
                 thread = spool.forum_topic(chat_id)
                 if thread:
@@ -365,6 +365,9 @@ class TelegramAdapter:
         if command == "/bind_group":
             if group:
                 await gateway.rpc("endpoint.bind", actor=actor, chat_id=chat, thread_id=thread)
+                if spool:
+                    spool.forget_forum_topic(chat)
+                    spool.remember_forum_topic(chat, thread)
                 await self.bot.send_message(int(chat), "Тема привязана. Сообщения будут приходить сюда и в личный чат с ботом.", message_thread_id=int(thread))
             return
         if account["role"] not in {"teacher", "student"} or (group and account["role"] != "student"):
