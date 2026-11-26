@@ -220,7 +220,7 @@ def rpc(db, platform, operation, payload):
                 thread = identifier(payload["thread_id"])
                 endpoint = db.get(ExternalEndpoint, (platform, user.id)) if items else None
                 result["route_allowed"] = bool(items) and (
-                    endpoint is None or (endpoint.chat_id == chat and endpoint.thread_id == thread)
+                    endpoint is None or (endpoint.chat_id, endpoint.thread_id) == (chat, thread)
                 )
             return result
         return {"account": account, "conversations": summaries(db, user) if user else []}
@@ -298,15 +298,12 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
     route_changed = False
     if group:
         endpoint = db.get(ExternalEndpoint, (platform, user.id))
-        same_route = endpoint is not None and endpoint.chat_id == chat and endpoint.thread_id == thread
-        if not same_route:
-            # Ordinary messages must never move an established route.
-            # Only an explicit endpoint.bind can change it.
-            if endpoint is not None:
-                raise HTTPException(403, "group not linked")
+        if endpoint is None:
             if platform != "telegram" or not blocked:
                 bind_endpoint(db, platform, user, chat, thread)
                 route_changed = True
+        elif (endpoint.chat_id, endpoint.thread_id) != (chat, thread):
+            raise HTTPException(403, "group not linked")
     metadata = {"source_mode": "group_topic" if payload.get("channel") == "group" else "private",
                 "source_chat_id": chat, "source_thread_id": thread or None, "source_platform": platform}
     media = payload.get("media")
