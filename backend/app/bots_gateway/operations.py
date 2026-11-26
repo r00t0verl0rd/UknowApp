@@ -194,8 +194,16 @@ def rpc(db, platform, operation, payload):
     if user is None:
         raise HTTPException(403, "account not linked")
     if operation == "endpoint.bind":
-        bind_endpoint(db, platform, user, identifier(payload.get("chat_id")),
-                      identifier(payload["thread_id"]) if payload.get("thread_id") else "")
+        chat = identifier(payload.get("chat_id"))
+        thread = identifier(payload["thread_id"]) if payload.get("thread_id") else ""
+        if payload.get("initial_only") is True:
+            if user.role != "student" or not available(db, user) or not thread:
+                raise HTTPException(403, "endpoint unavailable")
+            existing = db.get(ExternalEndpoint, (platform, user.id))
+            if existing is not None:
+                # A service event must never move a previously authorized route.
+                return {"bound": existing.chat_id == chat and existing.thread_id == thread}
+        bind_endpoint(db, platform, user, chat, thread)
         db.commit()
         return {"bound": True}
     if operation in {"conversation.open", "conversation.peek"}:

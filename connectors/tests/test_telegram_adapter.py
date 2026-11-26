@@ -162,3 +162,34 @@ def test_inbound_oversize_marked_unavailable(mode, mib, declared_size, monkeypat
         finally:
             await original_bot.session.close()
     asyncio.run(run())
+
+
+@pytest.mark.parametrize("name,bound", [("🤖 Бот", True), ("Бот", True), ("Домашнее задание", False)])
+def test_dedicated_topic_is_bound_before_first_inbound_message(name, bound):
+    async def run():
+        adapter = object.__new__(TelegramAdapter)
+        adapter.bot = SimpleNamespace(
+            me=AsyncMock(return_value=SimpleNamespace(can_read_all_group_messages=True)),
+            send_message=AsyncMock(),
+        )
+        gateway = SimpleNamespace(
+            rpc=AsyncMock(side_effect=[
+                {"account": {"role": "student"}, "conversations": [{"id": 1}]},
+                {"bound": True},
+            ]),
+            inbound=AsyncMock(),
+        )
+        update = {"message": {"from": {"id": 10},
+                              "chat": {"id": -1001, "type": "supergroup", "is_forum": True},
+                              "message_id": 7, "message_thread_id": 7,
+                              "forum_topic_created": {"name": name}}}
+        await adapter.handle("topic-created", update, gateway, None)
+        gateway.inbound.assert_not_awaited()
+        if bound:
+            gateway.rpc.assert_any_await("endpoint.bind", actor="10", chat_id="-1001",
+                                         thread_id="7", initial_only=True)
+            adapter.bot.send_message.assert_awaited_once()
+        else:
+            gateway.rpc.assert_not_awaited()
+            adapter.bot.send_message.assert_not_awaited()
+    asyncio.run(run())

@@ -341,3 +341,22 @@ def test_topic_and_private_keep_independent_order_for_ten_messages(api):
             ledger = json.loads(message.metadata_json)["messenger_deliveries"]["beta"]
             assert ledger["status"] == "delivered"
             assert {item["endpoint_type"] for item in ledger["delivered"]} == {"private", "group"}
+
+
+def test_initial_topic_binding_routes_first_teacher_message_without_student_message(api):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        assert not db.query(Message).count()
+        args = {"actor": "student", "chat_id": "group", "thread_id": "topic", "initial_only": True}
+        assert rpc(db, "beta", "endpoint.bind", args) == {"bound": True}
+        assert rpc(db, "beta", "endpoint.bind", args) == {"bound": True}
+        assert rpc(db, "beta", "endpoint.bind", {**args, "thread_id": "another"}) == {"bound": False}
+        first = reply(db, chat)
+        jobs = db.query(ConnectorDelivery).filter_by(message_id=first.id).all()
+        assert {(job.chat_id, job.thread_id) for job in jobs} == {("200", ""), ("group", "topic")}
+        assert db.query(Message).count() == 1
+        for job in jobs:
+            payload = rpc(db, "beta", "delivery.authorize", {"id": job.id})
+            assert payload["chat_id"] == job.chat_id
+            assert payload["thread_id"] == (job.thread_id or None)

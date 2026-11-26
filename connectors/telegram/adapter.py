@@ -228,6 +228,28 @@ class TelegramAdapter:
         thread = str(message["message_thread_id"]) if message.get("message_thread_id") else None
         text = message.get("text") or message.get("caption") or ""
         command = text.split(maxsplit=1)[0].split("@")[0] if text else ""
+        # A newly created dedicated topic is a setup event, not a lesson message.
+        # Register it before any teacher sends the first message from the web.
+        if group and message.get("forum_topic_created"):
+            name = (message["forum_topic_created"].get("name") or "").replace("\ufe0f", "").strip().casefold()
+            if name not in {"бот", "🤖 бот"} or not thread or not await self.group_allowed(message):
+                return
+            view = await gateway.rpc("account.resolve", actor=actor)
+            if (view.get("account") or {}).get("role") != "student" or not view.get("conversations"):
+                return
+            try:
+                result = await gateway.rpc("endpoint.bind", actor=actor, chat_id=chat,
+                                           thread_id=thread, initial_only=True)
+            except RpcError as exc:
+                if exc.code not in {403, 409}:
+                    raise
+                return
+            if result.get("bound"):
+                await self.bot.send_message(int(chat), "Тема привязана. Сообщения будут приходить сюда и в личный чат с ботом.",
+                                            message_thread_id=int(thread))
+            return
+        if group and (message.get("new_chat_members") or message.get("left_chat_member")):
+            return
         if group and not await self.group_allowed(message):
             if command == "/bind_group":
                 await self.bot.send_message(int(chat), "Откройте тему и проверьте Group Privacy.", message_thread_id=int(thread) if thread else None)
