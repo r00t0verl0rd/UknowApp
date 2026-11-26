@@ -244,6 +244,25 @@ class TelegramAdapter:
             logger.info("Telegram automatic topic binding deferred: %s", result)
 
     @staticmethod
+    def forum_thread(message):
+        # The outer message is authoritative. When Telegram supplies only
+        # reply context, use it solely for an explicit topic message in the
+        # same chat. Never infer a topic from the last active or pinned one.
+        thread = message.get("message_thread_id")
+        if thread:
+            return str(thread)
+        if not message.get("is_topic_message"):
+            return None
+        reply = message.get("reply_to_message") or {}
+        if (reply.get("chat") or {}).get("id") != message["chat"]["id"]:
+            return None
+        if reply.get("is_topic_message") or reply.get("forum_topic_created"):
+            thread = reply.get("message_thread_id")
+            if thread:
+                return str(thread)
+        return None
+
+    @staticmethod
     def inbound_route(update):
         message = update.get("message") or update.get("callback_query") or update.get("my_chat_member") or update.get("chat_member") or {}
         actor = str((message.get("from") or {}).get("id") or "unknown")
@@ -300,12 +319,18 @@ class TelegramAdapter:
         actor = str(message["from"]["id"])
         chat = str(message["chat"]["id"])
         group = message["chat"]["type"] != "private"
-        thread = str(message["message_thread_id"]) if message.get("message_thread_id") else None
+        thread = self.forum_thread(message) if group else (
+            str(message["message_thread_id"]) if message.get("message_thread_id") else None
+        )
+        forum = group and message["chat"]["type"] == "supergroup" and (
+            message["chat"].get("is_forum") or message.get("is_topic_message")
+        )
         text = message.get("text") or message.get("caption") or ""
         command = text.split(maxsplit=1)[0].split("@")[0] if text else ""
-        if group and message["chat"].get("is_forum"):
+        if forum:
             # A topic creation or edit does not mean this bot was invited there.
-            if message.get("forum_topic_created") or message.get("forum_topic_edited"):
+            if (message.get("forum_topic_created") or message.get("forum_topic_edited")
+                    or message.get("pinned_message")):
                 return
             members = message.get("new_chat_members")
             if members:
@@ -327,15 +352,13 @@ class TelegramAdapter:
         # actual topic. Core checks ownership and establishes the route.
         if command == "/bind_group":
             return  # Ignore legacy commands; never forward them as homework.
-        if group and (
-            message["chat"]["type"] != "supergroup"
-            or not message["chat"].get("is_forum")
-            or not thread
-            or message.get("sender_chat")
-            or command in {"/start", "/menu"}
-            or not (text or any(message.get(kind) for kind in MESSAGE_KINDS))
-        ):
-            return
+        if group:
+            if (not forum or message.get("sender_chat") or command in {"/start", "/menu"}
+                    or not (text or any(message.get(kind) for kind in MESSAGE_KINDS))):
+                return
+            if not thread:
+                logger.info("Telegram forum message ignored: missing topic ID")
+                return
         if not group and command in {"/start", "/menu"}:
             commands.clear(actor)
             await self.show_menu(int(chat), await commands.menu(actor), gateway, spool, force=True)
@@ -344,11 +367,14 @@ class TelegramAdapter:
         account = view.get("account")
         if account is None:
             if group:
+                logger.debug("Telegram forum message ignored: account not linked")
                 return
             result = await commands.bind(actor, chat, text, message["from"].get("username"))
             await self.show_menu(int(chat), result or view, gateway, spool)
             return
         if account["role"] not in {"teacher", "student"} or (group and account["role"] != "student"):
+            if group:
+                logger.debug("Telegram forum message ignored: sender is not a student")
             return
         if account["role"] == "teacher" and not group and message.get("text"):
             if await self.teacher_panel.action(actor, message["message_id"], text, view, gateway, spool):

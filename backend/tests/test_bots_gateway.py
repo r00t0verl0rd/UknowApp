@@ -390,14 +390,14 @@ def test_telegram_forum_restores_main_auto_binding_and_dual_delivery(api):
         db.commit()
         first = {"id": "forum-first", "external_message_id": "48", "actor": "123",
                  "chat_id": "-1001", "thread_id": "47", "channel": "group",
-                 "kind": "text", "text": "Homework"}
+                 "kind": "text", "text": "1"}
         assert db.get(ExternalEndpoint, ("telegram", chat.student_id)) is None
         # No invitation, command or topic name is necessary, as in main.
         receive_message(db, "telegram", first, ("telegram",), gateway.media_path)
         endpoint = db.get(ExternalEndpoint, ("telegram", chat.student_id))
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
         incoming = db.query(Message).filter_by(sender_id=chat.student_id).one()
-        assert incoming.text == "Homework"
+        assert incoming.text == "1"
         assert json.loads(incoming.metadata_json)["source_thread_id"] == "47"
         assert db.query(ConnectorDelivery).filter_by(message_id=incoming.id).one().chat_id == "456"
 

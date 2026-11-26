@@ -322,3 +322,40 @@ def test_regular_bot_unavailable_membership_does_not_block_student_message(tmp_p
         finally:
             spool.close()
     asyncio.run(run())
+
+
+@pytest.mark.parametrize("context,expected", [
+    ({"message_thread_id": 47}, "47"),
+    ({"is_topic_message": True, "message_thread_id": 47}, "47"),
+    ({"is_topic_message": True, "reply_to_message": {
+        "chat": {"id": -1001}, "is_topic_message": True, "message_thread_id": 47,
+    }}, "47"),
+    ({"is_topic_message": True, "reply_to_message": {
+        "chat": {"id": -1002}, "is_topic_message": True, "message_thread_id": 47,
+    }}, None),
+    ({"is_topic_message": True}, None),
+    ({"pinned_message": {"message_thread_id": 47}}, None),
+])
+def test_first_forum_text_needs_no_pin_and_never_guesses_topic(context, expected):
+    async def run():
+        adapter = object.__new__(TelegramAdapter)
+        adapter.bot = SimpleNamespace(send_message=AsyncMock(), get_chat_member=AsyncMock())
+        gateway = SimpleNamespace(rpc=AsyncMock(return_value={
+            "account": {"role": "student"}, "conversations": [{"id": 1}],
+        }), inbound=AsyncMock())
+        chat = {"id": -1001, "type": "supergroup"}
+        if not context.get("is_topic_message"):
+            chat["is_forum"] = True
+        message = {"from": {"id": 10}, "chat": chat, "message_id": 48,
+                   "text": "1", **context}
+        await adapter.handle("first", {"message": message}, gateway, None)
+        if expected:
+            assert gateway.inbound.await_args.args[0]["thread_id"] == expected
+            assert gateway.inbound.await_args.args[0]["text"] == "1"
+            gateway.rpc.assert_awaited_once_with("account.resolve", actor="10", group=True)
+        else:
+            gateway.inbound.assert_not_awaited()
+            gateway.rpc.assert_not_awaited()
+        adapter.bot.get_chat_member.assert_not_awaited()
+        adapter.bot.send_message.assert_not_awaited()
+    asyncio.run(run())

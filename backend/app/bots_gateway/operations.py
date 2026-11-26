@@ -1,5 +1,7 @@
 """School business operations exposed through a provider-neutral authenticated transport."""
 
+import logging
+
 from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -44,6 +46,7 @@ from app.rate_limit import SlidingWindowLimiter
 
 from .contracts import encode, identifier
 
+logger = logging.getLogger(__name__)
 _bind_limit = SlidingWindowLimiter()
 KINDS = frozenset(("text", "photo", "video", "audio", "voice", "document", "animation",
                    "sticker", "location", "contact", "video_note", "poll", "unsupported"))
@@ -284,6 +287,7 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
     if kind == "text" and not text.strip():
         raise ValueError("empty text")
     blocked = kind == "contact" or text_contains_contact_data(text)
+    route_changed = False
     if group:
         endpoint = db.get(ExternalEndpoint, (platform, user.id))
         same_route = endpoint is not None and endpoint.chat_id == chat and endpoint.thread_id == thread
@@ -295,6 +299,7 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
                 raise HTTPException(403, "group not linked")
             if platform != "telegram" or not blocked:
                 bind_endpoint(db, platform, user, chat, thread)
+                route_changed = True
     metadata = {"source_mode": "group_topic" if payload.get("channel") == "group" else "private",
                 "source_chat_id": chat, "source_thread_id": thread or None, "source_platform": platform}
     media = payload.get("media")
@@ -331,6 +336,8 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
         if db.get(BotEventReceipt, (platform, event_id)):
             return
         raise
+    if route_changed:
+        logger.info("Connector forum route saved platform=%s conversation_id=%s", platform, conversation.id)
     publish_conversation_update(db, conversation, message_id=row.id, sender_role=user.role)
     receiver = conversation.teacher if user.role == "student" else conversation.student
     schedule_push(db, [receiver.id], PUSH_TITLE, push_body(user.full_name, row.text, kind=kind),
