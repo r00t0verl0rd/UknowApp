@@ -29,6 +29,8 @@ test("multiple picker and file drops send once, keep unsent files, and retry wit
         });
         const page = await context.newPage();
         page.setDefaultTimeout(10000);
+        const pageErrors = [];
+        page.on("pageerror", error => pageErrors.push(error.message));
         const attempts = [];
         const messages = [];
         let active = 0;
@@ -115,6 +117,7 @@ test("multiple picker and file drops send once, keep unsent files, and retry wit
         assert.deepEqual(await page.locator(".selected-file-name").allTextContents(), ["valid.txt"]);
         await page.getByRole("button", { name: "Убрать файл valid.txt" }).click();
         assert.equal(await send.isDisabled(), true);
+        assert.deepEqual(pageErrors, [], "opening a dialog and editing attachments must not throw");
       } finally { await context.close(); }
     }
   } finally {

@@ -58,7 +58,7 @@ export default function ChatsPage(options) {
   };
   createEffect(
     () => [options.selectedChat?.id, options.selectedChat?.type],
-    () => setDraggingFiles(false),
+    () => { setDraggingFiles(false); },
   );
 
   createEffect(
