@@ -181,15 +181,26 @@ class TelegramAdapter:
             str(member.status) == "restricted" and bool(getattr(member, "is_member", False)))
 
     async def forum_admin(self, chat, actor):
-        member = await self.bot.get_chat_member(int(chat), int(actor))
-        return str(member.status) in {"administrator", "creator"}
+        # Checking the inviter must not require administrator rights on the bot.
+        try:
+            admins = await self.bot.get_chat_administrators(int(chat))
+        except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound):
+            return False
+        return any(member.user.id == int(actor) for member in admins)
 
     async def bind_forum_student(self, chat, thread, gateway):
         # Bot API cannot enumerate group members. Check known linked IDs against
         # Telegram membership, including students who did not send any message.
         info = await self.bot.me()
-        if not await self.forum_admin(chat, info.id):
-            return "bot_admin_required"
+        try:
+            own_member = await self.bot.get_chat_member(int(chat), info.id)
+        except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound):
+            return "membership_unavailable"
+        is_admin = str(own_member.status) in {"administrator", "creator"}
+        if not self.member_present(own_member) or (
+            not is_admin and not getattr(info, "can_read_all_group_messages", False)
+        ):
+            return "group_access_unavailable"
         matches = []
         after = 0
         while True:
@@ -197,10 +208,15 @@ class TelegramAdapter:
             for actor in page["actors"]:
                 try:
                     member = await self.bot.get_chat_member(int(chat), int(actor))
-                except TelegramBadRequest as exc:
-                    if "user not found" in str(exc).lower() or "user_not_participant" in str(exc).lower():
+                except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound) as exc:
+                    # For a regular bot, an inaccessible user is not proof of
+                    # absence. Never guess a unique student from partial results.
+                    if is_admin and isinstance(exc, TelegramBadRequest) and (
+                        "user not found" in str(exc).lower() or "user_not_participant" in str(exc).lower()
+                    ):
                         continue
-                    raise
+                    logger.info("Telegram automatic topic binding: membership lookup unavailable")
+                    return "membership_unavailable"
                 if self.member_present(member):
                     matches.append(actor)
                     if len(matches) > 1:
@@ -223,6 +239,8 @@ class TelegramAdapter:
         result = await self.bind_forum_student(chat, thread, gateway)
         if result == "bound" and spool:
             spool.forget_forum_topic(chat)
+        elif result != "bound":
+            logger.info("Telegram automatic topic binding deferred: %s", result)
 
     @staticmethod
     def inbound_route(update):

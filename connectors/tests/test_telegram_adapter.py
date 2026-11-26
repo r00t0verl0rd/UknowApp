@@ -2,6 +2,8 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 import pytest
+from aiogram.exceptions import TelegramForbiddenError
+from aiogram.methods import GetChatMember
 
 from connectors.telegram.adapter import TelegramAdapter
 from connectors.telegram.teacher_panel import TeacherPanel, render
@@ -214,6 +216,7 @@ def test_forum_join_without_known_topic_and_old_command_are_silent():
     asyncio.run(run())
 
 
+@pytest.mark.parametrize("bot_status", ["administrator", "member"])
 @pytest.mark.parametrize("thread,is_topic,inviter,added,expected", [
     (47, True, 50, 99, True),
     (None, False, 50, 99, False),
@@ -221,13 +224,17 @@ def test_forum_join_without_known_topic_and_old_command_are_silent():
     (47, True, 10, 99, False),
     (47, True, 50, 98, False),
 ])
-def test_only_admin_invitation_of_this_bot_in_specific_topic_binds(thread, is_topic, inviter, added, expected, tmp_path):
+def test_only_admin_invitation_of_this_bot_in_specific_topic_binds(thread, is_topic, inviter, added, expected, bot_status, tmp_path):
     async def run():
         adapter = object.__new__(TelegramAdapter)
         async def member(chat, actor):
-            return SimpleNamespace(status={99: "administrator", 50: "administrator", 10: "member", 11: "left"}[actor])
-        adapter.bot = SimpleNamespace(me=AsyncMock(return_value=SimpleNamespace(id=99)),
-                                      get_chat_member=AsyncMock(side_effect=member), send_message=AsyncMock())
+            return SimpleNamespace(status={99: bot_status, 50: "administrator", 10: "member", 11: "left"}[actor])
+        adapter.bot = SimpleNamespace(
+            me=AsyncMock(return_value=SimpleNamespace(id=99, can_read_all_group_messages=True)),
+            get_chat_member=AsyncMock(side_effect=member),
+            get_chat_administrators=AsyncMock(return_value=[SimpleNamespace(user=SimpleNamespace(id=50))]),
+            send_message=AsyncMock(),
+        )
         gateway = SimpleNamespace(rpc=AsyncMock(side_effect=[
             {"actors": ["10", "11"], "next": None}, {"bound": True},
         ]), inbound=AsyncMock())
@@ -235,7 +242,7 @@ def test_only_admin_invitation_of_this_bot_in_specific_topic_binds(thread, is_to
         try:
             chat = {"id": -1001, "type": "supergroup", "is_forum": True}
             await adapter.handle("join", {"my_chat_member": {"chat": chat,
-                "new_chat_member": {"status": "administrator"}}}, gateway, spool)
+                "new_chat_member": {"status": bot_status}}}, gateway, spool)
             for name in ("Бот", "English"):
                 await adapter.handle(name, {"message": {"from": {"id": 50}, "chat": chat,
                     "message_id": 7, "message_thread_id": 7, "forum_topic_created": {"name": name}}},
@@ -278,6 +285,40 @@ def test_pending_invited_topic_binds_when_student_joins(tmp_path):
             assert spool.forum_topic("-1001") is None
             adapter.bot.send_message.assert_not_awaited()
             gateway.inbound.assert_not_awaited()
+        finally:
+            spool.close()
+    asyncio.run(run())
+
+
+def test_regular_bot_unavailable_membership_does_not_block_student_message(tmp_path):
+    async def run():
+        adapter = object.__new__(TelegramAdapter)
+        denied = TelegramForbiddenError(method=GetChatMember(chat_id=-1001, user_id=10),
+                                        message="Forbidden")
+        adapter.bot = SimpleNamespace(
+            me=AsyncMock(return_value=SimpleNamespace(id=99, can_read_all_group_messages=True)),
+            get_chat_member=AsyncMock(side_effect=[SimpleNamespace(status="member"), denied]),
+            get_chat_administrators=AsyncMock(return_value=[SimpleNamespace(user=SimpleNamespace(id=50))]),
+            send_message=AsyncMock(),
+        )
+        gateway = SimpleNamespace(rpc=AsyncMock(side_effect=[
+            {"actors": ["10"], "next": None},
+            {"account": {"role": "student"}, "conversations": [{"id": 1}]},
+        ]), inbound=AsyncMock())
+        spool = EventSpool(tmp_path / "forum.db", "bot")
+        try:
+            chat = {"id": -1001, "type": "supergroup", "is_forum": True}
+            await adapter.handle("invite", {"message": {"from": {"id": 50}, "chat": chat,
+                "message_id": 8, "message_thread_id": 47, "is_topic_message": True,
+                "new_chat_members": [{"id": 99, "is_bot": True}]}}, gateway, spool)
+            assert spool.forum_topic("-1001") == "47"
+            await adapter.handle("student", {"message": {"from": {"id": 10}, "chat": chat,
+                "message_id": 9, "message_thread_id": 47, "is_topic_message": True,
+                "text": "Homework"}}, gateway, spool)
+            assert gateway.rpc.await_count == 2
+            assert gateway.inbound.await_args.args[0]["thread_id"] == "47"
+            assert gateway.inbound.await_args.args[0]["actor"] == "10"
+            adapter.bot.send_message.assert_not_awaited()
         finally:
             spool.close()
     asyncio.run(run())
