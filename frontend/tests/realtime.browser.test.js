@@ -653,6 +653,8 @@ test("read receipts and push suppression follow the visible dialog", { timeout: 
     browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_PATH });
     const context = await browser.newContext();
     const page = await context.newPage();
+    page.setDefaultTimeout(6000);
+    page.on("pageerror", error => console.error("[read-receipts] page error:", error.message));
     const history = [];
     const unread = new Set();
     const receipts = [];
@@ -682,7 +684,9 @@ test("read receipts and push suppression follow the visible dialog", { timeout: 
     const checkPush = () => page.evaluate(async () => {
       const { port1, port2 } = new MessageChannel();
       return await new Promise(resolve => {
+        const timeout = setTimeout(() => { port1.close(); port2.close(); resolve("no response"); }, 3000);
         port1.onmessage = event => {
+          clearTimeout(timeout);
           port1.close();
           port2.close();
           resolve(event.data.active);
@@ -734,14 +738,19 @@ test("read receipts and push suppression follow the visible dialog", { timeout: 
 
     // Ссылка из уже отправленного push ведёт в нужный диалог даже с корневого URL.
     addMessage(1, "Первое уведомление");
+    console.log("[read-receipts] open push link");
     await page.goto(APP_URL + "/?openConversation=5&type=personal");
     await page.getByText("Первое уведомление", { exact: true }).waitFor();
-    await waitFor(() => receipts.includes(1));
+    console.log("[read-receipts] first message rendered");
+    await waitFor(() => receipts.includes(1), 6000, "first visible receipt");
+    console.log("[read-receipts] first receipt");
     assert.equal(new URL(page.url()).pathname, "/dialogs");
-    assert.equal(await checkPush(), true);
+    assert.equal(await checkPush(), true, "visible dialog suppresses push");
+    console.log("[read-receipts] push suppressed");
 
     await page.getByRole("button", { name: "Доски", exact: true }).click();
-    assert.equal(await checkPush(), false);
+    assert.equal(await checkPush(), false, "other section does not suppress push");
+    console.log("[read-receipts] other section");
     const requestsBeforeLeaving = syncRequests;
     addMessage(2, "Получено в другом разделе");
     await publish();
@@ -754,7 +763,8 @@ test("read receipts and push suppression follow the visible dialog", { timeout: 
 
     await page.getByRole("button", { name: "Диалоги", exact: true }).click();
     await page.getByText("Получено в другом разделе", { exact: true }).waitFor();
-    await waitFor(() => receipts.includes(2));
+    await waitFor(() => receipts.includes(2), 6000, "receipt after returning to dialogs");
+    console.log("[read-receipts] second receipt");
     assert.equal(unread.size, 0);
     await page.getByLabel("1 непрочитанных личных сообщений").waitFor({ state: "hidden" });
 
@@ -780,7 +790,7 @@ test("read receipts and push suppression follow the visible dialog", { timeout: 
       document.dispatchEvent(new Event("visibilitychange"));
     });
     await page.getByText("Получено в другой вкладке", { exact: true }).waitFor();
-    await waitFor(() => receipts.includes(3));
+    await waitFor(() => receipts.includes(3), 6000, "receipt after returning to foreground");
     assert.deepEqual(receipts, [1, 2, 3]);
     await page.getByLabel("1 непрочитанных личных сообщений").waitFor({ state: "hidden" });
   } finally {
