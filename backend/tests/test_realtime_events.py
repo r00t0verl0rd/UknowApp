@@ -204,12 +204,15 @@ def test_live_sse_stream_delivers_bot_and_web_messages_to_all_roles(api, monkeyp
                 if role != "admin":
                     assert "source_chat_id" not in payload["message"]["metadata"]
                     assert "messenger_deliveries" not in payload["message"]["metadata"]
+            first_message_id = payload["message_id"]
+            assert payload["previous_message_id"] is None
             sent = await asyncio.to_thread(clients["teacher"].post,
                 f"/api/panel/conversations/{chat_id}/messages", json={"text": "Web SSE"})
             assert sent.status_code == 201
             for role, iterator in streams.items():
                 payload = await read_message(iterator, "Web SSE")
                 assert payload["message"]["id"] == sent.json()["id"]
+                assert payload["previous_message_id"] == first_message_id
                 assert payload["message"]["can_delete"] == (role == "teacher")
         finally:
             for iterator in streams.values():
