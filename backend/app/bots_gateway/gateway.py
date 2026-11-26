@@ -27,7 +27,11 @@ from sqlalchemy import func, select
 
 from app.core.database import SessionLocal, begin_serialized_write
 from app.event_hub import subscribe_chat_updates, unsubscribe_chat_updates
-from app.infrastructure.storage.media import MAX_ATTACHMENT_BYTES, MEDIA_DIR, provider_attachment_limit
+from app.infrastructure.storage.media import (
+    MAX_ATTACHMENT_BYTES,
+    MEDIA_DIR,
+    provider_attachment_limit,
+)
 from app.migrations.runtime_split import initialize_runtime_storage
 from app.models import (
     ConnectorDeletion,

@@ -5,7 +5,9 @@ from sqlalchemy import MetaData, Table, inspect, select, text
 from sqlalchemy.orm import Session
 
 from app.core.database import engine
-from app.infrastructure.storage.conversation_counters import ensure_admin_observer_columns
+from app.infrastructure.storage.conversation_counters import (
+    ensure_admin_observer_columns,
+)
 from app.infrastructure.storage.message_metadata import encode_message_metadata
 from app.migrations.delivery_recovery import upgrade_delivery_recovery
 from app.models import ExternalEndpoint, Message, MessengerAccount

@@ -23,7 +23,11 @@ from app.infrastructure.storage.conversation_counters import (
     TEACHER_UNREAD,
     install_on_create,
 )
-from app.infrastructure.storage.personal_counters import install_personal_on_create
+from app.infrastructure.storage.personal_counters import (
+    PERSONAL_ADMIN_UNREAD,
+    PERSONAL_PARTICIPANT_UNREAD,
+    install_personal_on_create,
+)
 
 from .core.database import Base
 from .core.runtime_database import RuntimeBase
@@ -176,6 +180,8 @@ class PersonalMessage(Base):
     __table_args__ = (
         Index("ix_personal_messages_conversation_created_id", "conversation_id", "created_at", "id"),
         Index("ix_personal_messages_conversation_id_id", "conversation_id", "id"),
+        Index("ix_personal_admin_unread", "conversation_id", "id", sqlite_where=text(PERSONAL_ADMIN_UNREAD), postgresql_where=text(PERSONAL_ADMIN_UNREAD)),
+        Index("ix_personal_participant_unread", "conversation_id", "id", sqlite_where=text(PERSONAL_PARTICIPANT_UNREAD), postgresql_where=text(PERSONAL_PARTICIPANT_UNREAD)),
         Index(
             "uq_personal_messages_client_message_id",
             "conversation_id",
@@ -274,8 +280,8 @@ def _allocate_message_id(mapper, connection, message):
         """), {"table_name": source, "message_id": message.id})
         return
     # The source identifier is restricted to the two ORM tables above.
-    sql = (  # nosec B608
-        "INSERT INTO message_id_counters (table_name, last_id) "
+    sql = (
+        "INSERT INTO message_id_counters (table_name, last_id) "  # nosec B608
         "SELECT :table_name, max(1000000000, coalesce(max(id), 0) + 1) "
         f"FROM {source} WHERE true "
         "ON CONFLICT (table_name) DO UPDATE SET last_id = max(last_id + 1, excluded.last_id) "

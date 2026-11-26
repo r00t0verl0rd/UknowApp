@@ -18,6 +18,7 @@ from app.modules.conversations.service import (
     conversation_dicts,
 )
 from app.modules.dependencies import Db, PanelUser
+from app.modules.messaging.history import sync_page
 from app.modules.messaging.read_state import mark_conversation_read, mark_personal_read
 from app.modules.messaging.service import (
     panel_message_dict,
@@ -64,25 +65,12 @@ def sync_conversation_state(
     """Обновить изменения сообщений без полной загрузки истории."""
     after_id, known_ids = _sync_request_fields(payload)
     conversation = panel_visible_conversation(db, principal, conversation_id)
-    bounded = payload.get("paged") is True
     query = select(Message).options(joinedload(Message.sender)).where(
         Message.conversation_id == conversation.id, Message.id > after_id,
     )
-    if bounded:
-        if after_id:
-            query = query.order_by(Message.id).limit(101)
-        else:
-            query = query.order_by(Message.id.desc()).limit(100)
-    else:
-        query = query.order_by(Message.created_at, Message.id)
-    new_rows = db.scalars(query).all()
-    has_more = bounded and after_id > 0 and len(new_rows) > 100
-    if has_more:
-        new_rows = new_rows[:100]
-    if bounded and not after_id:
-        new_rows.reverse()
+    new_rows, has_more = sync_page(db, query, Message, after_id)
     if payload.get("mark_read") is not False and principal["role"] != "admin":
-        mark_conversation_read(db, conversation, principal, after_id, [row.id for row in new_rows] if bounded else None)
+        mark_conversation_read(db, conversation, principal, after_id, [row.id for row in new_rows])
     updated_rows = []
     for start in range(0, len(known_ids), 500):
         batch_ids = known_ids[start:start + 500]
@@ -132,25 +120,12 @@ def sync_personal_conversation_state(
     """Обновить личные сообщения и отметки прочтения."""
     after_id, known_ids = _sync_request_fields(payload)
     item = personal_conversation(db, principal, conversation_id)
-    bounded = payload.get("paged") is True
     query = select(PersonalMessage).options(joinedload(PersonalMessage.sender)).where(
         PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id,
     )
-    if bounded:
-        if after_id:
-            query = query.order_by(PersonalMessage.id).limit(101)
-        else:
-            query = query.order_by(PersonalMessage.id.desc()).limit(100)
-    else:
-        query = query.order_by(PersonalMessage.created_at, PersonalMessage.id)
-    new_rows = db.scalars(query).all()
-    has_more = bounded and after_id > 0 and len(new_rows) > 100
-    if has_more:
-        new_rows = new_rows[:100]
-    if bounded and not after_id:
-        new_rows.reverse()
+    new_rows, has_more = sync_page(db, query, PersonalMessage, after_id)
     if payload.get("mark_read") is not False:
-        mark_personal_read(db, item, principal, after_id, [row.id for row in new_rows] if bounded else None)
+        mark_personal_read(db, item, principal, after_id, [row.id for row in new_rows])
     updated_rows = []
     for start in range(0, len(known_ids), 500):
         batch_ids = known_ids[start:start + 500]

@@ -16,6 +16,7 @@ from app.infrastructure.storage.media import (
     delete_message_media,
 )
 from app.infrastructure.storage.message_metadata import encode_message_metadata
+from app.infrastructure.storage.personal_counters import personal_unread_condition
 from app.infrastructure.storage.uploads import store_panel_attachment
 from app.models import (
     PersonalConversation,
@@ -23,6 +24,7 @@ from app.models import (
     PersonalMessage,
     User,
 )
+from app.modules.messaging.history import history_page
 from app.modules.messaging.read_state import mark_personal_read
 from app.modules.notifications.content import PUSH_TITLE, push_body
 from app.modules.notifications.service import schedule_push
@@ -180,8 +182,7 @@ def personal_messages(conversation_id: int, principal: dict, db: Session, after_
     if first_unread and around_id is None:
         around_id = db.scalar(select(PersonalMessage.id).where(
             PersonalMessage.conversation_id == item.id,
-            PersonalMessage.sender_role != principal["role"],
-            (PersonalMessage.admin_read_at if principal["role"] == "admin" else PersonalMessage.participant_read_at).is_(None),
+            personal_unread_condition(principal["role"]),
         ).order_by(PersonalMessage.id).limit(1))
     if around_id is not None:
         # A single response carries the adjacent pages, including the anchor.
@@ -201,17 +202,9 @@ def personal_messages(conversation_id: int, principal: dict, db: Session, after_
                 "anchor_id": None, "has_older": len(rows) == size, "has_newer": False}
     if before_id is not None:
         query = query.where(PersonalMessage.id < before_id)
-    if limit is None:
-        if mark_read:
-            mark_personal_read(db, item, principal, after_id)
-        rows = db.scalars(query.order_by(PersonalMessage.created_at, PersonalMessage.id)).all()
-    else:
-        order = PersonalMessage.id.asc() if forward else PersonalMessage.id.desc()
-        rows = list(db.scalars(query.order_by(order).limit(limit)).all())
-        if not forward:
-            rows.reverse()
-        if mark_read:
-            mark_personal_read(db, item, principal, after_id, [row.id for row in rows])
+    rows = history_page(db, query, PersonalMessage, limit, after_id, forward)
+    if mark_read:
+        mark_personal_read(db, item, principal, after_id, [row.id for row in rows])
     return [personal_message_dict(row, principal) for row in rows]
 
 

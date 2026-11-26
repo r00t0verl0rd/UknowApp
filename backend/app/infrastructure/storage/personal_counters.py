@@ -1,5 +1,20 @@
 """Transactional personal-chat summaries, including bulk writes and rollback."""
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
+
+PERSONAL_ADMIN_UNREAD = "sender_role != 'admin' AND admin_read_at IS NULL"
+PERSONAL_PARTICIPANT_UNREAD = "sender_role = 'admin' AND participant_read_at IS NULL"
+
+
+def personal_unread_condition(role):
+    return text(PERSONAL_ADMIN_UNREAD if role == "admin" else PERSONAL_PARTICIPANT_UNREAD)
+
+
+def upgrade_personal_unread_indexes(connection):
+    # The predicates match the actual first-unread and receipt queries.
+    connection.exec_driver_sql("CREATE INDEX IF NOT EXISTS ix_personal_admin_unread "
+                               "ON personal_messages (conversation_id, id) WHERE " + PERSONAL_ADMIN_UNREAD)
+    connection.exec_driver_sql("CREATE INDEX IF NOT EXISTS ix_personal_participant_unread "
+                               "ON personal_messages (conversation_id, id) WHERE " + PERSONAL_PARTICIPANT_UNREAD)
 
 
 def install_personal_triggers(connection):
@@ -13,10 +28,11 @@ def install_personal_triggers(connection):
             f"CASE WHEN {ref}.sender_role = 'admin' AND {ref}.participant_read_at IS NULL THEN 1 ELSE 0 END",
         )
 
-    def update(ref, delta, refresh=True):
-        return ("UPDATE personal_conversations SET " + delta +
-                (", last_message_at = (" + latest.format(ref=ref) + ")" if refresh else "") +
-                f" WHERE id = {ref}.conversation_id")  # nosec B608
+    def update(ref, delta):
+        # ref and delta are constructed exclusively from the constants below.
+        return ("UPDATE personal_conversations SET " + delta +  # nosec B608
+                ", last_message_at = (" + latest.format(ref=ref) + ")" +
+                f" WHERE id = {ref}.conversation_id")
 
     new, old = unread("NEW"), unread("OLD")
     names = ("admin_unread_count", "participant_unread_count")

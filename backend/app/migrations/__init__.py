@@ -10,7 +10,10 @@ from app.infrastructure.storage.conversation_counters import (
     upgrade_conversation_counters,
     upgrade_physical_receipts,
 )
-from app.infrastructure.storage.personal_counters import upgrade_personal_counters
+from app.infrastructure.storage.personal_counters import (
+    upgrade_personal_counters,
+    upgrade_personal_unread_indexes,
+)
 
 from .delivery_recovery import upgrade_delivery_recovery
 from .delivery_routes import upgrade_delivery_routes
@@ -39,6 +42,7 @@ MIGRATIONS = (
     ("2026-11-26-physical-receipts", upgrade_physical_receipts),
     ("2026-11-26-admin-observer-receipts", upgrade_admin_observer_receipts),
     ("2026-11-26-personal-counters", upgrade_personal_counters),
+    ("2026-11-26-personal-unread-indexes", upgrade_personal_unread_indexes),
 )
 
 

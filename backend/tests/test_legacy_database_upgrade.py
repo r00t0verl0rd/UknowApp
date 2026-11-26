@@ -104,6 +104,8 @@ def assert_preserved(connection, name):
         if name != "pre_push":
             assert metadata["legacy_source_message_id"] == "777"
         assert db.get(PersonalMessage,71).text == "Личное сообщение"
+        personal_counts = connection.execute(text("SELECT admin_unread_count, participant_unread_count, last_message_at FROM personal_conversations WHERE id=61")).one()
+        assert personal_counts[:2] == (1, 0) and personal_counts[2] is not None
         assert {a.external_user_id for a in db.scalars(select(MessengerAccount))} == {"1001","1002"}
         group = db.get(ExternalEndpoint, ("telegram",22))
         assert (group.chat_id,group.thread_id) == ("-10099","17")

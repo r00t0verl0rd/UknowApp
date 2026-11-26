@@ -25,6 +25,11 @@ def test_large_history_pages_and_sync(api, personal):
         db.commit()
     client = make_client()
     login(client, "test-admin", "a-long-test-password-123")
+    default_page = client.get(base + "/messages?mark_read=false").json()
+    assert len(default_page) == 100
+    assert [int(row["text"]) for row in default_page] == list(range(9900, 10000))
+    default_sync = client.post(base + "/sync", json={"mark_read": False}).json()
+    assert len(default_sync["messages"]) == 100
     latest = client.get(base + "/messages?limit=50&mark_read=false").json()
     older = client.get(base + "/messages", params={"limit": 50, "before_id": latest[0]["id"], "mark_read": "false"}).json()
     assert [int(row["text"]) for row in older + latest] == list(range(9900, 10000))

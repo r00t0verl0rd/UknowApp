@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import select, update
 
+from app.infrastructure.storage.personal_counters import personal_unread_condition
 from app.models import Message, PersonalMessage
 from app.modules.conversations.service import (
     publish_conversation_update,
@@ -52,20 +53,17 @@ def mark_personal_read(db, item, principal, after_id: int, visible_ids=None) -> 
     if visible_ids is not None and not visible_ids:
         return
     read_column = PersonalMessage.admin_read_at if role == "admin" else PersonalMessage.participant_read_at
-    read_ids = db.scalars(
-        select(PersonalMessage.id).where(
-            PersonalMessage.conversation_id == item.id,
-            PersonalMessage.sender_role != role,
-            read_column.is_(None),
-            PersonalMessage.id > after_id,
-            *([PersonalMessage.id.in_(visible_ids)] if visible_ids is not None else []),
-        ),
-    ).all()
-    if not read_ids:
+    filters = (
+        PersonalMessage.conversation_id == item.id,
+        personal_unread_condition(role),
+        PersonalMessage.id > after_id,
+        *([PersonalMessage.id.in_(visible_ids)] if visible_ids is not None else []),
+    )
+    if db.scalar(select(PersonalMessage.id).where(*filters).limit(1)) is None:
         return
     read_at = datetime.now(UTC)
     read_ids = db.scalars(update(PersonalMessage)
-        .where(PersonalMessage.id.in_(read_ids), read_column.is_(None))
+        .where(*filters)
         .values({read_column.key: read_at})
         .returning(PersonalMessage.id), execution_options={"synchronize_session": "fetch"}).all()
     if not read_ids:

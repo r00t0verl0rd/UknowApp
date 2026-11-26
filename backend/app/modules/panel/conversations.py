@@ -33,6 +33,7 @@ from app.modules.conversations.service import (
     unread_condition,
 )
 from app.modules.dependencies import Db, PanelUser
+from app.modules.messaging.history import history_page
 from app.modules.messaging.read_state import mark_conversation_read
 from app.modules.messaging.service import (
     panel_message_dict,
@@ -119,17 +120,9 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
                 "anchor_id": None, "has_older": len(rows) == size, "has_newer": False}
     if before_id is not None:
         query = query.where(Message.id < before_id)
-    if limit is None:
-        if mark_read and principal["role"] != "admin":
-            mark_conversation_read(db, conversation, principal, after_id)
-        rows = db.scalars(query.order_by(Message.created_at, Message.id)).all()
-    else:
-        order = Message.id.asc() if forward else Message.id.desc()
-        rows = list(db.scalars(query.order_by(order).limit(limit)).all())
-        if not forward:
-            rows.reverse()
-        if mark_read and principal["role"] != "admin":
-            mark_conversation_read(db, conversation, principal, after_id, [row.id for row in rows])
+    rows = history_page(db, query, Message, limit, after_id, forward)
+    if mark_read and principal["role"] != "admin":
+        mark_conversation_read(db, conversation, principal, after_id, [row.id for row in rows])
     return [
         panel_message_dict(
             item,
