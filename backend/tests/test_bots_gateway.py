@@ -416,6 +416,7 @@ def test_telegram_forum_moves_between_groups_but_not_topics(api):
             payload = rpc(db, "telegram", "delivery.authorize", {"id": job.id})
             assert payload["chat_id"] == job.chat_id
             assert payload["thread_id"] == (job.thread_id or None)
+            record_result(db, job, "delivered", "previous-copy")
         with pytest.raises(HTTPException) as exc:
             receive_message(db, "telegram", {**first, "id": "occupied", "external_message_id": "49",
                             "thread_id": "99"}, ("telegram",), gateway.media_path)
@@ -571,6 +572,9 @@ def test_telegram_explicit_invitation_takes_priority_before_student_message(api)
             "actor": "123", "chat_id": "-1001", "thread_id": "47",
         }) == {"bound": True}
         assert not db.query(Message).count()
+        assert rpc(db, "telegram", "endpoint.bind", {
+            "actor": "123", "chat_id": "-1001", "thread_id": "99",
+        }) == {"bound": False, "reason": "topic_locked"}
         event = {"id": "wrong-first", "external_message_id": "50", "actor": "123",
                  "chat_id": "-1001", "thread_id": "99", "channel": "group",
                  "kind": "text", "text": "Other topic"}

@@ -236,13 +236,15 @@ def rpc(db, platform, operation, payload):
         thread = identifier(payload["thread_id"]) if payload.get("thread_id") else ""
         if user.role != "student" or not available(db, user, limit=1):
             raise HTTPException(403, "endpoint unavailable")
-        if payload.get("initial_only") is True:
+        initial_only = payload.get("initial_only") is True
+        if initial_only or platform == "telegram":
             if not thread:
                 raise HTTPException(403, "endpoint unavailable")
             existing = db.get(ExternalEndpoint, (platform, user.id))
-            if existing is not None:
-                # A service event must never move a previously authorized route.
-                return {"bound": existing.chat_id == chat and existing.thread_id == thread}
+            if initial_only and existing is not None:
+                return {"bound": (existing.chat_id, existing.thread_id) == (chat, thread)}
+            if platform == "telegram" and not telegram_route_allowed(existing, chat, thread):
+                return {"bound": False, "reason": "topic_locked"}
         bind_endpoint(db, platform, user, chat, thread)
         db.commit()
         return {"bound": True}

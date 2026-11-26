@@ -234,11 +234,11 @@ class TelegramAdapter:
             if exc.code in {403, 409}:
                 return "unavailable"
             raise
-        return "bound" if result.get("bound") else "unavailable"
+        return "bound" if result.get("bound") else result.get("reason", "unavailable")
 
     async def bind_invited_topic(self, chat, thread, gateway, spool):
         result = await self.bind_forum_student(chat, thread, gateway)
-        if result == "bound" and spool:
+        if result in {"bound", "topic_locked"} and spool:
             spool.forget_forum_topic(chat)
         elif result != "bound":
             logger.info("Telegram automatic topic binding deferred: %s", result)

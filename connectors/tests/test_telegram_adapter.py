@@ -392,3 +392,17 @@ def test_unrelated_forum_topic_ignored_before_attachment_download(pending, tmp_p
         finally:
             spool.close()
     asyncio.run(run())
+
+
+def test_locked_topic_discards_pending_invitation(tmp_path):
+    async def run():
+        adapter = object.__new__(TelegramAdapter)
+        adapter.bind_forum_student = AsyncMock(return_value="topic_locked")
+        spool = EventSpool(tmp_path / "forum.db", "bot")
+        try:
+            spool.remember_forum_topic("-1001", "99")
+            await adapter.bind_invited_topic("-1001", "99", None, spool)
+            assert spool.forum_topic("-1001") is None
+        finally:
+            spool.close()
+    asyncio.run(run())
