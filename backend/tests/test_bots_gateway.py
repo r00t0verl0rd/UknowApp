@@ -273,3 +273,71 @@ def test_additive_recovery_migration(tmp_path):
         for table in ("connector_deliveries", "connector_deletions"):
             assert {"claim_id","started_at","published_at","broker_seq"} <= {col["name"] for col in inspect(c).get_columns(table)}
             assert c.scalar(text("SELECT id FROM " + table)) == "old"  # nosec B608 - fixed test table names
+
+
+def test_outbox_publishes_private_and_topic_independently():
+    import asyncio
+    from types import SimpleNamespace
+    from app.bots_gateway.contracts import decode
+
+    async def run():
+        core = gateway.BotsGateway()
+        private_started = asyncio.Event()
+        topic_started = asyncio.Event()
+        calls = []
+
+        async def publish(subject, data, headers):
+            job = decode(data)
+            calls.append(job["id"])
+            if job["id"] == "private-1":
+                private_started.set()
+                await topic_started.wait()
+                raise OSError("simulated temporary publication failure")
+            if job["id"] == "topic-1":
+                topic_started.set()
+                await private_started.wait()
+            return SimpleNamespace(seq=len(calls))
+
+        core.js = SimpleNamespace(publish=publish)
+        entries = [
+            ("private-1", "telegram", "200", "", "queued", False, None),
+            ("private-2", "telegram", "200", "", "queued", False, None),
+            ("topic-1", "telegram", "-1001", "7", "queued", False, None),
+            ("topic-2", "telegram", "-1001", "7", "queued", False, None),
+        ]
+        try:
+            acks = await asyncio.wait_for(core.publish_route_batch(entries), 2)
+            assert {job_id for job_id, _ in acks} == {"topic-1", "topic-2"}
+            assert "private-2" not in calls
+            assert calls.index("topic-1") < calls.index("topic-2")
+        finally:
+            await core.close()
+
+    asyncio.run(run())
+
+
+def test_topic_and_private_keep_independent_order_for_ten_messages(api):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        rpc(db, "beta", "endpoint.bind", {"actor":"student","chat_id":"group","thread_id":"topic"})
+        messages = [reply(db, chat) for _ in range(10)]
+        private, group = [], []
+        for message in messages:
+            jobs = db.query(ConnectorDelivery).filter_by(message_id=message.id).all()
+            assert len(jobs) == 2
+            private.append(next(j for j in jobs if not j.thread_id))
+            group.append(next(j for j in jobs if j.thread_id))
+        # A stalled private route must not block any message in the group.
+        rpc(db, "beta", "delivery.authorize", {"id":private[0].id})
+        for i, job in enumerate(group):
+            assert rpc(db, "beta", "delivery.authorize", {"id":job.id})["thread_id"] == "topic"
+            record_result(db, job, "delivered", str(i+1))
+        record_result(db, private[0], "delivered", "1")
+        for i, job in enumerate(private[1:], 2):
+            assert rpc(db, "beta", "delivery.authorize", {"id":job.id})["thread_id"] is None
+            record_result(db, job, "delivered", str(i))
+        for message in messages:
+            ledger = json.loads(message.metadata_json)["messenger_deliveries"]["beta"]
+            assert ledger["status"] == "delivered"
+            assert {item["endpoint_type"] for item in ledger["delivered"]} == {"private", "group"}
