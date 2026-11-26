@@ -21,6 +21,7 @@ export function createConversationSync(options) {
       let lastEventId = 0;
       let syncing = false;
       let syncQueued = false;
+      let reconcileKnown = false;
       let inFlight = null;
       const eventRevision = new Map();
       let inboxRequestRevision = 0;
@@ -97,17 +98,20 @@ export function createConversationSync(options) {
         options.setChats((items) => mergeInboxSnapshot(conversations, items, changedConversations));
         options.setPersonalChats((items) => mergeInboxSnapshot(personal, items, changedPersonal));
       };
-      const syncSelected = async (force = false) => {
+      const syncSelected = async ({ full = true, force = false } = {}) => {
         const selected = options.selectedDialog;
         if (!selected) return;
         const requestedKey = conversationKey(selected.id, selected.type);
         if (syncing) {
           // A concurrent trigger for the same revision is covered by this request.
-          if (force || inFlight?.key !== requestedKey || inFlight.revision !== (eventRevision.get(requestedKey) || 0)) {
+          if (force || (full && !inFlight?.full) || inFlight?.key !== requestedKey ||
+              inFlight.revision !== (eventRevision.get(requestedKey) || 0)) {
             syncQueued = true;
+            reconcileKnown ||= full;
           }
           return;
         }
+        reconcileKnown ||= full;
         syncing = true;
         try {
           do {
@@ -115,12 +119,14 @@ export function createConversationSync(options) {
             const chat = options.selectedDialog;
             if (!chat) break;
             const chatKey = conversationKey(chat.id, chat.type);
+            const checkKnown = reconcileKnown;
+            reconcileKnown = false;
             const knownIds = [];
             let afterId = lastMessageCursor.chatKey === chatKey ? lastMessageCursor.id : 0;
             for (const message of options.messages) {
               const id = Number(message.id);
               if (Number.isSafeInteger(id) && id > 0) {
-                knownIds.push(id);
+                if (checkKnown) knownIds.push(id);
                 afterId = Math.max(afterId, id);
               }
             }
@@ -129,18 +135,20 @@ export function createConversationSync(options) {
               id: afterId,
             };
             const revisionAtStart = eventRevision.get(chatKey) || 0;
-            inFlight = { key: chatKey, revision: revisionAtStart };
+            inFlight = { key: chatKey, revision: revisionAtStart, full: checkKnown };
             const summaryRevision = options.inboxRowRevision.get(chatKey) || 0;
             const result = await syncChatState(options.request, chat, afterId, knownIds);
             if (!active) break;
             if (!isSameChat(options.selectedDialog, chat.id, chat.type)) {
               syncQueued = true;
+              reconcileKnown = true;
               continue;
             }
 
             // Новое событие уже пришло: старый ответ запроса игнорируем.
             if (revisionAtStart !== (eventRevision.get(chatKey) || 0)) {
               syncQueued = true;
+              reconcileKnown ||= checkKnown;
               continue;
             }
             if (result.deleted_message_ids?.length) {
@@ -165,7 +173,7 @@ export function createConversationSync(options) {
           syncing = false;
           inFlight = null;
           if (syncQueued && active && options.selectedDialog) {
-            void syncSelected().catch(() => { recoveryPending = true; });
+            void syncSelected({ full: reconcileKnown }).catch(() => { recoveryPending = true; });
           }
         }
       };
@@ -179,7 +187,7 @@ export function createConversationSync(options) {
             while (active && recoveryPending) {
               recoveryPending = false;
               await refreshInbox();
-              if (active) await syncSelected(true);
+              if (active) await syncSelected({ force: true });
             }
           } catch (error) {
             recoveryPending = true;
@@ -253,7 +261,9 @@ export function createConversationSync(options) {
         // Start fetching in the SSE callback itself. Background-tab timer
         // throttling must never delay an incoming message. syncSelected already
         // serializes requests and coalesces events arriving during a fetch.
-        void syncSelected().catch(requestRecovery);
+        // Ordinary upserts only need messages after the cursor. Reconcile
+        // existing statuses on recovery or a specific status invalidation.
+        void syncSelected({ full: payload.action !== "upsert" }).catch(requestRecovery);
       };
       const reconcileSelected = () => {
         void syncSelected().catch(() => { recoveryPending = true; });
