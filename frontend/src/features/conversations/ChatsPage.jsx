@@ -43,7 +43,12 @@ export default function ChatsPage(options) {
     const limit = options.profile?.max_attachment_bytes;
     const accepted = [];
     const rejected = [];
+    const empty = [];
     for (const file of files) {
+      if (!file.size) {
+        empty.push(file.name);
+        continue;
+      }
       if (limit && file.size > limit) {
         rejected.push(file.name);
         continue;
@@ -53,8 +58,11 @@ export default function ChatsPage(options) {
       accepted.push({ file, id });
     }
     if (accepted.length) options.setAttachments(current => [...current, ...accepted]);
-    if (rejected.length) options.setError("Слишком большие файлы: " + rejected.join(", ") +
+    const errors = [];
+    if (rejected.length) errors.push("Слишком большие файлы: " + rejected.join(", ") +
       ". Максимальный размер каждого вложения — " + limit / 1024 ** 2 + " МиБ");
+    if (empty.length) errors.push("Пустые файлы: " + empty.join(", "));
+    if (errors.length) options.setError(errors.join(". "));
   };
   createEffect(
     () => [options.selectedChat?.id, options.selectedChat?.type],

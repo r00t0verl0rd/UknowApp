@@ -263,6 +263,44 @@ def test_personal_attachments_are_private_downloadable_and_idempotent(api):
 
 
 
+def test_participant_attachment_batch_retry_persists_each_file_once(api, monkeypatch, tmp_path):
+    from app.infrastructure.storage import uploads
+
+    root = tmp_path / "attachments"
+    monkeypatch.setattr(uploads, "MEDIA_DIR", root)
+    make_client, users, _ = api
+    admin = make_client()
+    login(admin, "test-admin", "a-long-test-password-123")
+    created = admin.post("/api/admin/assignments", json={
+        "teacher_id": users["teacher-one"], "student_id": users["student-one"],
+    })
+    assert created.status_code == 201
+    chat_id = created.json()["id"]
+    teacher = make_client()
+    login(teacher, "teacher-one", "teacher-password-1")
+    student = make_client()
+    login(student, "student-one", "student-password-1")
+    base = f"/api/panel/conversations/{chat_id}"
+    sent_ids = []
+    for index, content in enumerate((b"first", b"second", b"third")):
+        fields = {"client_message_id": f"attachment-batch-{index}", "text": "Материалы" if index == 0 else ""}
+        files = {"file": (f"file-{index}.txt", content, "text/plain")}
+        sent = teacher.post(base + "/attachments", data=fields, files=files)
+        assert sent.status_code == 201, sent.text
+        retried = teacher.post(base + "/attachments", data=fields, files=files)
+        assert retried.status_code == 201, retried.text
+        assert retried.json()["id"] == sent.json()["id"]
+        sent_ids.append(sent.json()["id"])
+
+    assert len(set(sent_ids)) == 3
+    assert len(list(root.rglob("*.txt"))) == 3
+    received = student.get(base + "/messages", params={"mark_read": "false"})
+    assert received.status_code == 200
+    assert [row["id"] for row in received.json()] == sent_ids
+    assert [row["text"] for row in received.json()] == ["Материалы", "", ""]
+    assert student.get("/api/panel/conversations").json()[0]["unread_count"] == 3
+
+
 def test_messenger_pair_requires_both_participants_on_same_platform(api):
     _, users, sessions = api
     with sessions() as db:

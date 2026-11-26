@@ -596,6 +596,7 @@ export function createChatsController(options) {
             chat.id, entry.file, caption, entry.id, chat.type === "personal",
           );
           sent++;
+          if (!options.auth || viewAccountKey(options.profile) !== senderAccount) break;
           if (activeChatKey() === chatKey) {
             options.chatState.setMessages(current => mergeConversationMessages(current, [message], chatKey));
             // Do not touch a new draft after navigating away and reopening.
@@ -623,6 +624,10 @@ export function createChatsController(options) {
     const entries = options.chatState.attachments;
     if (!chat || (!text && !entries.length) || sendingMessage || options.chatState.sendingAttachments) return;
     if (entries.length) {
+      if ([...text].length > 3900) {
+        options.setError("Текст к вложению слишком длинный (максимум 3900 символов)");
+        return;
+      }
       const limit = options.profile?.max_attachment_bytes;
       const oversized = limit && entries.find(entry => entry.file.size > limit);
       if (oversized) {
