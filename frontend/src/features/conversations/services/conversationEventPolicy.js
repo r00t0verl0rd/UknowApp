@@ -23,3 +23,30 @@ export function applyDeliveryStatus(rows, status, merge) {
   if (!status || !rows.some(row => Number(row.id) === Number(status.id))) return rows;
   return merge(rows, [status]);
 }
+
+// Apply server-confirmed receipts locally, including the reader's other tabs.
+export function applyReadReceipt(rows, payload, conversationType) {
+  const role = payload.actor_role;
+  const readAt = payload.read_at;
+  if (!readAt || !["teacher", "student", "admin"].includes(role)) return rows;
+  const ids = new Set((payload.message_ids || []).map(Number));
+  let changed = false;
+  const next = rows.map(row => {
+    if (!ids.has(Number(row.id)) || row.sender_role === role) return row;
+    if (conversationType === "personal") {
+      if (row.panel_read_at) return row;
+      changed = true;
+      return { ...row, panel_read_at: readAt };
+    }
+    if (role === "admin") return row;
+    const field = role + "_read_at";
+    if (row.metadata?.[field]) return row;
+    const metadata = { ...row.metadata, [field]: readAt };
+    const panel_read_at = row.sender_role === "admin"
+      ? metadata.teacher_read_at && metadata.student_read_at || null
+      : readAt;
+    changed = true;
+    return { ...row, metadata, panel_read_at };
+  });
+  return changed ? next : rows;
+}
