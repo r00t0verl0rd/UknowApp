@@ -77,6 +77,21 @@ def seed(connection, name):
         insert("external_endpoints", platform="telegram", user_id=22, chat_id="-10099", thread_id="17")
     elif "student_telegram_groups" in tables:
         insert("student_telegram_groups", student_id=22, chat_id=-10099, thread_id=17)
+    # Distinct groups may reuse the same topic ID; every existing binding must survive.
+    for ident in range(100, 132):
+        external = 10000 + ident
+        values = dict(id=ident, full_name=f"Student {ident}", role="student",
+                      web_username=f"student-{ident}")
+        if "telegram_id" in tables["users"].c:
+            values["telegram_id"] = external
+        insert("users", **values)
+        insert("messenger_accounts", id=ident + 1000, platform="telegram", user_id=ident,
+               external_user_id=str(external), external_chat_id=str(external))
+        if "student_telegram_groups" in tables:
+            insert("student_telegram_groups", student_id=ident, chat_id=-1000000-ident, thread_id=17)
+        else:
+            insert("external_endpoints", platform="telegram", user_id=ident,
+                   chat_id=str(-1000000-ident), thread_id="17")
     if "bot_delivery_jobs" in tables:
         insert("bot_delivery_jobs", message_id=52, status="queued")
     if "connector_deliveries" in tables:
@@ -106,9 +121,13 @@ def assert_preserved(connection, name):
         assert db.get(PersonalMessage,71).text == "Личное сообщение"
         personal_counts = connection.execute(text("SELECT admin_unread_count, participant_unread_count, last_message_at FROM personal_conversations WHERE id=61")).one()
         assert personal_counts[:2] == (1, 0) and personal_counts[2] is not None
-        assert {a.external_user_id for a in db.scalars(select(MessengerAccount))} == {"1001","1002"}
-        group = db.get(ExternalEndpoint, ("telegram",22))
-        assert (group.chat_id,group.thread_id) == ("-10099","17")
+        assert {a.external_user_id for a in db.scalars(select(MessengerAccount))} == (
+            {"1001", "1002"} | {str(10000+i) for i in range(100, 132)})
+        assert {row.user_id: (row.chat_id, row.thread_id) for row in db.scalars(
+            select(ExternalEndpoint).where(ExternalEndpoint.platform == "telegram"))} == {
+                22: ("-10099", "17"),
+                **{i: (str(-1000000-i), "17") for i in range(100, 132)},
+            }
         assert {s.id for s in db.scalars(select(PushSubscription))} == {81,82}
         assert all(s.synced_at is None for s in db.scalars(select(PushSubscription)))
         if name in ("websocket","single_route"):

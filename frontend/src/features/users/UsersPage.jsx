@@ -130,6 +130,13 @@ export default function UsersPage(options) {
                         <span>Telegram ID</span>
                         <b class={telegramId(user) ? "" : "is-unconnected"}>{telegramId(user) || "Не подключён"}</b>
                       </div>
+                      {user.role === "student" && telegramId(user) && (
+                        <div class="user-info-login">
+                          <Button variant="ghost" onClick={() => options.disconnectTelegram(user, true)}>
+                            Сбросить тему Telegram
+                          </Button>
+                        </div>
+                      )}
                       {["teacher", "student"].includes(user.role) && (
                         <div class="user-info-login">
                           <span>Логин</span>

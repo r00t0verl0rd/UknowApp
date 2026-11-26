@@ -306,16 +306,18 @@ export default function UserDialogs(options) {
       {options.disconnectCandidate && (
         <ConfirmDialog
           eyebrow="Telegram"
-          title="Отключить Telegram?"
+          title={options.disconnectCandidate.topicOnly ? "Сбросить тему Telegram?" : "Отключить Telegram?"}
           titleId="disconnect-telegram-title"
           busy={options.disconnectingTelegram}
-          confirmLabel="Отключить Telegram"
-          busyLabel="Отключаем…"
+          confirmLabel={options.disconnectCandidate.topicOnly ? "Сбросить тему" : "Отключить Telegram"}
+          busyLabel="Выполняем…"
           onClose={() => options.setDisconnectCandidate(null)}
           onConfirm={options.confirmDisconnectTelegram}
         >
           Профиль и переписка «<b>{options.disconnectCandidate.full_name}</b>» сохранятся в UknowApp.
-          Сообщения через Telegram будут доступны после повторного подключения.
+          {options.disconnectCandidate.topicOnly
+            ? " Личный Telegram останется подключён. Для новой темы добавьте бота заново или дождитесь первого сообщения ученика из нужной темы."
+            : " Сообщения через Telegram будут доступны после повторного подключения."}
         </ConfirmDialog>
       )}
 

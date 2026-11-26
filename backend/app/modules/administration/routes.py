@@ -5,7 +5,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
@@ -15,6 +15,7 @@ from app.models import (
     Assignment,
     ConnectionCode,
     Conversation,
+    ExternalEndpoint,
     Message,
     PanelSession,
     PersonalConversation,
@@ -244,6 +245,17 @@ def disconnect_messenger(user_id: int, platform: str, _: UserManagement, db: Db)
     db.commit()
     db.refresh(user)
     return {"ok": True, "user": user_dict(user), "disconnected_external_user_id": external_id}
+
+
+@router.post("/admin/users/{user_id}/messengers/telegram/reset-topic")
+def reset_telegram_topic(user_id: int, _: UserManagement, db: Db):
+    user = db.get(User, user_id)
+    if not user or user.role != "student":
+        raise HTTPException(status_code=404, detail="Ученик не найден")
+    db.execute(delete(ExternalEndpoint).where(
+        ExternalEndpoint.platform == "telegram", ExternalEndpoint.user_id == user_id))
+    db.commit()
+    return {"ok": True}
 
 
 @router.delete("/admin/users/{user_id}")

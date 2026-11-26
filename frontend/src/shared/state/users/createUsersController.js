@@ -8,6 +8,7 @@ import {
   createUserConnectionCode,
   deleteUser,
   disconnectUserTelegram,
+  resetUserTelegramTopic,
   telegramId,
   issuePanelAccessCode,
   updateUser,
@@ -199,16 +200,17 @@ export function createUsersController(options) {
       actions.setUnassigningStudent(false);
     }
   };
-  const disconnectTelegram = (user) => actions.setDisconnectCandidate(user);
+  const disconnectTelegram = (user, topicOnly = false) => actions.setDisconnectCandidate({ ...user, topicOnly });
   const confirmDisconnectTelegram = async () => {
     const user = actions.disconnectCandidate;
     if (!user || actions.disconnectingTelegram) return;
     actions.setDisconnectingTelegram(true);
     try {
-      await disconnectUserTelegram(options.request, user.id);
+      await (user.topicOnly ? resetUserTelegramTopic : disconnectUserTelegram)(options.request, user.id);
       actions.setDisconnectCandidate(null);
       await options.refresh();
-      options.notify("Telegram отключён. Переписка сохранена в UknowApp");
+      options.notify(user.topicOnly ? "Тема Telegram сброшена. Личный чат сохранён" :
+        "Telegram отключён. Переписка сохранена в UknowApp");
     } catch (error) {
       options.setError(error.message);
     } finally {

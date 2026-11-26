@@ -626,3 +626,43 @@ def test_multipart_receipts_keep_all_known_copies_for_deletion(api):
         enqueue_message_deletions(db, row)
         assert {(job.chat_id, job.external_message_id) for job in db.query(ConnectorDeletion)} == {
             ("-1001", "11"), ("-1001", "12"), ("123", "21")}
+
+
+def test_admin_can_reset_only_selected_student_topic(api):
+    make_client, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        student = chat.student_id
+        other = users["student-two"]
+        sync_messenger_account(db, student, "telegram", "123", "123")
+        sync_messenger_account(db, other, "telegram", "789", "789")
+        db.add_all([
+            ExternalEndpoint(platform="telegram", user_id=student, chat_id="-1001", thread_id="7"),
+            ExternalEndpoint(platform="telegram", user_id=other, chat_id="-1002", thread_id="7"),
+        ])
+        db.commit()
+        first = reply(db, chat)
+        jobs = db.query(ConnectorDelivery).filter_by(message_id=first.id, platform="telegram").all()
+        group_id = next(job.id for job in jobs if job.thread_id)
+        private_id = next(job.id for job in jobs if not job.thread_id)
+    path = f"/api/admin/users/{student}/messengers/telegram/reset-topic"
+    student_client = make_client()
+    assert student_client.post("/api/auth/login", json={"username": "student-one",
+        "password": "student-password-1"}).status_code == 200  # pragma: allowlist secret
+    assert student_client.post(path).status_code == 403
+    client = make_client()
+    assert client.post("/api/auth/login", json={"username": "test-admin",
+        "password": "a-long-test-password-123"}).status_code == 200  # pragma: allowlist secret
+    assert client.post(path).json() == {"ok": True}
+    assert client.post(path).json() == {"ok": True}
+    with sessions() as db:
+        assert db.get(ExternalEndpoint, ("telegram", student)) is None
+        assert db.get(ExternalEndpoint, ("telegram", other)).thread_id == "7"
+        with pytest.raises(HTTPException) as exc:
+            authorize(db, "telegram", {"id": group_id})
+        assert exc.value.status_code == 403
+        assert authorize(db, "telegram", {"id": private_id})["chat_id"] == "123"
+        assert rpc(db, "telegram", "endpoint.bind", {
+            "actor": "123", "chat_id": "-1001", "thread_id": "9",
+        }) == {"bound": True}
+        assert db.get(ExternalEndpoint, ("telegram", student)).thread_id == "9"

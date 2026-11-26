@@ -10,6 +10,8 @@ export function createAssignment(request, teacherId, studentId) { return request
 
 export function disconnectUserTelegram(request, userId) { return request("/api/admin/users/" + userId + "/messengers/telegram/disconnect", { method: "POST" }); }
 
+export function resetUserTelegramTopic(request, userId) { return request("/api/admin/users/" + userId + "/messengers/telegram/reset-topic", { method: "POST" }); }
+
 export function telegramId(user) { return user.messenger_accounts?.find(account => account.platform === "telegram")?.external_user_id ?? user.telegram_id ?? null; }
 
 export function createUserConnectionCode(request, userId) { return request("/api/admin/users/" + userId + "/connection-code", { method: "POST" }); }
