@@ -79,6 +79,11 @@ def visible(db, user, conversation_id):
     return row
 
 
+def telegram_route_allowed(endpoint, chat, thread):
+    # A new group may replace the route; another topic in the same group may not.
+    return endpoint is None or endpoint.chat_id != chat or endpoint.thread_id == thread
+
+
 def bind_endpoint(db, platform, user, chat, thread):
     # Both callers have already validated the student and active assignment.
     occupied = db.scalar(select(ExternalEndpoint).where(
@@ -219,9 +224,7 @@ def rpc(db, platform, operation, payload):
                 chat = identifier(payload["chat_id"])
                 thread = identifier(payload["thread_id"])
                 endpoint = db.get(ExternalEndpoint, (platform, user.id)) if items else None
-                result["route_allowed"] = bool(items) and (
-                    endpoint is None or (endpoint.chat_id == chat and endpoint.thread_id == thread)
-                )
+                result["route_allowed"] = bool(items) and telegram_route_allowed(endpoint, chat, thread)
                 if not result["route_allowed"]:
                     result["route_reason"] = "stored topic mismatch" if items else "student or assignment unavailable"
             return result
@@ -302,9 +305,10 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
         endpoint = db.get(ExternalEndpoint, (platform, user.id))
         same_route = endpoint is not None and endpoint.chat_id == chat and endpoint.thread_id == thread
         if not same_route:
-            # Ordinary messages must never move an established route.
-            # Only an explicit endpoint.bind can change it.
-            if endpoint is not None:
+            if platform == "telegram":
+                if not telegram_route_allowed(endpoint, chat, thread):
+                    raise HTTPException(403, "group not linked")
+            elif endpoint is not None:
                 raise HTTPException(403, "group not linked")
             if platform != "telegram" or not blocked:
                 bind_endpoint(db, platform, user, chat, thread)

@@ -378,7 +378,7 @@ def test_telegram_candidate_discovery_is_platform_and_role_scoped(api):
         assert exc.value.status_code == 403
 
 
-def test_telegram_forum_keeps_initial_route_and_dual_delivery(api):
+def test_telegram_forum_moves_between_groups_but_not_topics(api):
     _, users, sessions = api
     with sessions() as db:
         chat = prepare(db, users)
@@ -423,27 +423,60 @@ def test_telegram_forum_keeps_initial_route_and_dual_delivery(api):
         db.rollback()
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
 
-        # Neither an unoccupied topic nor another group may move the binding.
-        for group, thread in (("-1001", "69"), ("-1002", "69")):
-            lookup = rpc(db, "telegram", "account.resolve", {"actor": "123", "group": True,
-                         "chat_id": group, "thread_id": thread})
-            assert lookup["route_allowed"] is False
-            with pytest.raises(HTTPException) as exc:
-                receive_message(db, "telegram", {**first, "id": "other-" + group,
-                                "external_message_id": "70", "chat_id": group, "thread_id": thread},
-                                ("telegram",), gateway.media_path)
-            assert exc.value.status_code == 403
+        # A different topic in the current group is denied, even if unoccupied.
+        def allowed(group, thread):
+            return rpc(db, "telegram", "account.resolve", {"actor": "123", "group": True,
+                       "chat_id": group, "thread_id": thread})["route_allowed"]
+
+        assert not allowed("-1001", "69")
+        with pytest.raises(HTTPException) as exc:
+            receive_message(db, "telegram", {**first, "id": "other-topic",
+                            "external_message_id": "70", "thread_id": "69"},
+                            ("telegram",), gateway.media_path)
+        assert exc.value.status_code == 403
+        # A new group must not take a topic already assigned to another student.
+        other = db.get(ExternalEndpoint, ("telegram", users["student-two"]))
+        other.chat_id = "-1002"
+        db.commit()
+        with pytest.raises(HTTPException) as exc:
+            receive_message(db, "telegram", {**first, "id": "other-owner",
+                            "external_message_id": "71", "chat_id": "-1002", "thread_id": "99"},
+                            ("telegram",), gateway.media_path)
+        assert exc.value.status_code == 409
+        db.rollback()
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
+        # A blocked message cannot change the route.
+        receive_message(db, "telegram", {**first, "id": "blocked-move",
+                        "external_message_id": "72", "chat_id": "-1002", "thread_id": "69",
+                        "kind": "contact", "text": ""}, ("telegram",), gateway.media_path)
+        assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
+        # The first valid message in a new group replaces the stale address.
+        queued = teacher_reply()
+        assert allowed("-1002", "69")
+        receive_message(db, "telegram", {**first, "id": "new-group",
+                        "external_message_id": "73", "chat_id": "-1002", "thread_id": "69"},
+                        ("telegram",), gateway.media_path)
+        assert (endpoint.chat_id, endpoint.thread_id) == ("-1002", "69")
+        assert not allowed("-1002", "47")
+        with pytest.raises(HTTPException) as exc:
+            receive_message(db, "telegram", {**first, "id": "new-group-other-topic",
+                            "external_message_id": "74", "chat_id": "-1002", "thread_id": "47"},
+                            ("telegram",), gateway.media_path)
+        assert exc.value.status_code == 403
         receive_message(db, "telegram", {**first, "id": "forum-replay"}, ("telegram",), gateway.media_path)
-        assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
+        assert (endpoint.chat_id, endpoint.thread_id) == ("-1002", "69")
+        old_job = next(job for job in queued if job.thread_id)
+        with pytest.raises(HTTPException) as exc:
+            rpc(db, "telegram", "delivery.authorize", {"id": old_job.id})
+        assert exc.value.status_code == 403 and old_job.status == "cancelled"
         receive_message(db, "telegram", {**first, "id": "private", "external_message_id": "71",
                         "chat_id": "123", "thread_id": None, "channel": "private"},
                         ("telegram",), gateway.media_path)
-        assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
-        assert db.query(Message).filter_by(sender_id=chat.student_id).count() == 2
-        assert {(job.chat_id, job.thread_id) for job in teacher_reply()} == {("123", ""), ("-1001", "47")}
-        assert rpc(db, "telegram", "account.resolve", {"actor": "123", "group": True,
-                   "chat_id": "-1001", "thread_id": "47"})["route_allowed"] is True
+        assert (endpoint.chat_id, endpoint.thread_id) == ("-1002", "69")
+        assert db.query(Message).filter_by(sender_id=chat.student_id).count() == 4
+        assert {(job.chat_id, job.thread_id) for job in teacher_reply()} == {("123", ""), ("-1002", "69")}
+        assert allowed("-1002", "69")
+        assert (other.chat_id, other.thread_id) == ("-1002", "99")
         for actor in ("456", "999"):
             with pytest.raises(HTTPException) as exc:
                 receive_message(db, "telegram", {**first, "id": "invalid-" + actor,
