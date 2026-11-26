@@ -39,4 +39,6 @@ test("connection status and feedback use shared theme colors and semantic icons"
   assert.match(toast, /<Check size=\{20\}/);
   assert.match(feedback, /native-feedback-info \.native-feedback-copy h2\s*\{\s*color:var\(--muted\)/);
   assert.match(feedback, /native-feedback-success \.native-feedback-copy h2\s*\{\s*color:var\(--success\)/);
+  assert.match(feedback, /native-feedback-error \.native-feedback-copy h2\s*\{\s*color:var\(--feedback-error\)/);
+  assert.match(feedback, /native-feedback-error\[open\]\s*\{\s*border-color:var\(--feedback-error-border\)/);
 });

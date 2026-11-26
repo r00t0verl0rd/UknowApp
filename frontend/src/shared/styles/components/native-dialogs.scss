@@ -218,7 +218,6 @@
   }
   .native-feedback-content > svg {
     flex:none;
-    color:var(--button-danger-text);
   }
   .native-feedback-copy {
     flex:1 1 auto;
@@ -324,6 +323,10 @@
 :root dialog.native-dialog.native-feedback-dialog .toast-close {
   flex:0 0 44px;
 }
-:root dialog.native-dialog.native-feedback-error {
-  border-color:var(--red-border);
+:root dialog.native-dialog.modal.native-feedback-error[open] {
+  border-color:var(--feedback-error-border);
+}
+:root dialog.native-dialog.native-feedback-error .native-feedback-content > svg,
+:root dialog.native-dialog.native-feedback-error .native-feedback-copy h2 {
+  color:var(--feedback-error);
 }
