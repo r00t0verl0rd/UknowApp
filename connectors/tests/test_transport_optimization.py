@@ -133,3 +133,51 @@ def test_rate_limit_defers_only_affected_route_and_preserves_claim(tmp_path, mon
             spool.close()
 
     asyncio.run(run())
+
+
+def test_confirmed_topic_ack_clears_only_matching_pending_invitation(tmp_path):
+    spool = EventSpool(tmp_path / "spool.db", "telegram")
+    try:
+        event = {"id": "first", "chat_id": "-1001", "thread_id": "7", "pending_topic": True}
+        spool.remember_forum_topic("-1001", "7")
+        spool.remember_inbound(event)
+        spool.accept_inbound("first")
+        assert spool.forum_topic("-1001") == "7"
+        spool.remember_inbound(event)
+        spool.remember_forum_topic("-1001", "8")
+        spool.accept_inbound("first", route_confirmed=True)
+        assert spool.forum_topic("-1001") == "8"
+        spool.remember_forum_topic("-1001", "7")
+        spool.remember_inbound(event)
+        spool.accept_inbound("first", route_confirmed=True)
+        assert spool.forum_topic("-1001") is None
+        assert spool.inbound_count() == 0
+    finally:
+        spool.close()
+
+
+def test_permanent_rejection_does_not_block_next_event(tmp_path):
+    from connectors.common.client import DeliveryRejected
+
+    async def run():
+        spool = EventSpool(tmp_path / "spool.db", "bot")
+        processed = []
+        async def handle(ident, update, gateway, store):
+            processed.append(ident)
+            if ident == "bad":
+                raise DeliveryRejected("forbidden")
+        adapter = SimpleNamespace(inbound_route=lambda x: ("same", False), handle=handle)
+        spool.append([("bad", {}), ("good", {})], 3)
+        task = asyncio.create_task(forward(adapter, None, spool))
+        try:
+            for _ in range(100):
+                if not spool.count():
+                    break
+                await asyncio.sleep(.01)
+            assert processed == ["bad", "good"]
+            assert spool.count() == 0
+        finally:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+            spool.close()
+    asyncio.run(run())

@@ -37,6 +37,7 @@ from app.models import (
     ConnectorDeletion,
     ConnectorDelivery,
     Conversation,
+    ExternalEndpoint,
     MessengerAccount,
 )
 from app.modules.communication.outbox import (
@@ -167,6 +168,14 @@ class BotsGateway:
             begin_serialized_write(db)
             if direction == "inbound":
                 receive_message(db, platform, payload, self.platforms, media_path)
+                if platform == "telegram" and payload.get("pending_topic") is True and payload.get("channel") == "group":
+                    # Confirm only the current, committed route; a replay cannot clear a newer invitation.
+                    endpoint = db.execute(select(ExternalEndpoint.chat_id, ExternalEndpoint.thread_id)
+                        .join(MessengerAccount, (MessengerAccount.platform == ExternalEndpoint.platform)
+                              & (MessengerAccount.user_id == ExternalEndpoint.user_id))
+                        .where(ExternalEndpoint.platform == platform, MessengerAccount.status == "linked",
+                               MessengerAccount.external_user_id == payload.get("actor"))).one_or_none()
+                    return {"route_confirmed": endpoint == (payload.get("chat_id"), payload.get("thread_id"))}
             else:
                 job = get_job(db, identifier(payload.get("id")), for_update=True)
                 status = payload.get("status")
@@ -250,12 +259,14 @@ class BotsGateway:
                 payload = {}
                 try:
                     payload = decode(msg.data)
-                    if not await self.run_db(self._consume_event, platform, direction, payload):
+                    result = await self.run_db(self._consume_event, platform, direction, payload)
+                    if not result:
                         await msg.term()
                         continue
                     self.outbox_wakeup.set()
                     if direction == "inbound":
-                        await self.nc.publish(f"{PREFIX}.accepted.{platform}", encode({"id": payload["id"], "ok": True}))
+                        await self.nc.publish(f"{PREFIX}.accepted.{platform}", encode({
+                            "id": payload["id"], "ok": True, **(result if isinstance(result, dict) else {})}))
                     await msg.ack_sync()
                 except (HTTPException, ValueError, TypeError, KeyError) as exc:
                     logger.warning("Rejected connector event platform=%s type=%s", platform, type(exc).__name__)

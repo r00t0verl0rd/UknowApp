@@ -2,7 +2,7 @@
 import asyncio
 import logging
 
-from .client import RpcError
+from .client import DeliveryRejected, RetryLater, RpcError
 
 logger = logging.getLogger(__name__)
 
@@ -16,15 +16,19 @@ async def forward(adapter, gateway, spool):
             await adapter.handle(ident, update, gateway, spool)
         except RpcError as exc:
             if exc.code >= 500 or exc.code == 425:
-                return False
+                return 5
             logger.warning("Core rejected provider event: %s", exc.code)
+        except RetryLater as exc:
+            return max(1, exc.seconds)
+        except DeliveryRejected:
+            logger.warning("Provider permanently rejected inbound event")
         except asyncio.CancelledError:
             raise
         except Exception as exc:
             logger.warning("Provider event will retry: %s", type(exc).__name__)
-            return False
+            return 5
         spool.ack(ident)
-        return True
+        return None
 
     try:
         while True:
@@ -33,10 +37,11 @@ async def forward(adapter, gateway, spool):
             for task, (ident, _, _) in list(active.items()):
                 if task.done():
                     active.pop(task)
-                    if task.result():
+                    delay = task.result()
+                    if delay is None:
                         retries.pop(ident, None)
                     else:
-                        retries[ident] = now + 5
+                        retries[ident] = now + delay
             busy = {actor for _, actor, _ in active.values()}
             heavy_count = sum(heavy for _, _, heavy in active.values())
             for ident, update in spool.batch():

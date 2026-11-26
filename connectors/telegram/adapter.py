@@ -185,19 +185,31 @@ class TelegramAdapter:
     async def forum_admin(self, chat, actor):
         # Checking the inviter must not require administrator rights on the bot.
         try:
-            admins = await self.bot.get_chat_administrators(int(chat))
+            admins = await self.membership_lookup(self.bot.get_chat_administrators, int(chat))
         except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound):
             return False
-        return any(member.user.id == int(actor) for member in admins)
+        return any(member.user.id == int(actor) for member in admins or ())
+
+    async def membership_lookup(self, method, *args):
+        # Respect Telegram's delay at the current lookup, not by restarting a scan.
+        for attempt in range(3):
+            try:
+                return await method(*args)
+            except TelegramRetryAfter as exc:
+                if attempt == 2 or exc.retry_after > 60:
+                    return None
+                await asyncio.sleep(max(1, exc.retry_after))
 
     async def bind_forum_student(self, chat, thread, gateway):
         # Bot API cannot enumerate group members. Check known linked IDs against
         # Telegram membership, including students who did not send any message.
         info = await self.bot.me()
         try:
-            own_member = await self.bot.get_chat_member(int(chat), info.id)
+            own_member = await self.membership_lookup(self.bot.get_chat_member, int(chat), info.id)
         except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound):
             return "membership_unavailable"
+        if own_member is None:
+            return "rate_limited"
         is_admin = str(own_member.status) in {"administrator", "creator"}
         if not self.member_present(own_member.status, getattr(own_member, "is_member", False)) or (
             not is_admin and not getattr(info, "can_read_all_group_messages", False)
@@ -209,7 +221,7 @@ class TelegramAdapter:
             page = await gateway.rpc("endpoint.student_candidates", after=after)
             for actor in page["actors"]:
                 try:
-                    member = await self.bot.get_chat_member(int(chat), int(actor))
+                    member = await self.membership_lookup(self.bot.get_chat_member, int(chat), int(actor))
                 except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound) as exc:
                     # For a regular bot, an inaccessible user is not proof of
                     # absence. Never guess a unique student from partial results.
@@ -218,6 +230,8 @@ class TelegramAdapter:
                     ):
                         continue
                     return "membership_unavailable"
+                if member is None:
+                    return "rate_limited"
                 if self.member_present(member.status, getattr(member, "is_member", False)):
                     if match is not None:
                         return "ambiguous"
@@ -263,14 +277,16 @@ class TelegramAdapter:
 
     @staticmethod
     def forum_thread(message):
-        # Never infer a topic from another chat or a pinned message.
+        # A reply chain in General is not a forum topic.
+        if not message.get("is_topic_message"):
+            return None
         thread = message.get("message_thread_id")
-        if not thread and message.get("is_topic_message"):
+        if not thread:
             reply = message.get("reply_to_message") or {}
             if ((reply.get("chat") or {}).get("id") == message["chat"]["id"]
                     and (reply.get("is_topic_message") or reply.get("forum_topic_created"))):
                 thread = reply.get("message_thread_id")
-        return str(thread) if thread else None
+        return str(thread) if thread and str(thread) != "1" else None
 
     @staticmethod
     def inbound_route(update):
@@ -284,6 +300,14 @@ class TelegramAdapter:
         return actor, heavy
 
     async def handle(self, event_id, update, gateway, spool):
+        try:
+            await self._handle(event_id, update, gateway, spool)
+        except TelegramRetryAfter as exc:
+            raise RetryLater(exc.retry_after) from exc
+        except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound) as exc:
+            raise DeliveryRejected("provider refused inbound action") from exc
+
+    async def _handle(self, event_id, update, gateway, spool):
         own = update.get("my_chat_member")
         membership = own or update.get("chat_member")
         if membership:
@@ -373,6 +397,7 @@ class TelegramAdapter:
                 return
         if command == "/bind_group":
             return  # Never forward a legacy setup command as homework.
+        invited = None
         if group:
             if (not forum or message.get("sender_chat") or command in {"/start", "/menu"}
                     or not (text or any(message.get(kind) for kind in MESSAGE_KINDS))):
@@ -416,6 +441,8 @@ class TelegramAdapter:
         event = {"id": event_id, "external_message_id": str(message["message_id"]), "actor": actor, "chat_id": chat, "thread_id": thread,
                  "channel": "group" if group else "private", "conversation_id": selection,
                  "text": text, "kind": "text"}
+        if invited == thread and invited:
+            event["pending_topic"] = True
         for kind in MEDIA_KINDS:
             value = message.get(kind)
             if not value:
@@ -426,7 +453,11 @@ class TelegramAdapter:
             if (value.get("file_size") or 0) > self.max_attachment_bytes:
                 event["media_unavailable"] = True
                 break
-            remote = await self.bot.get_file(value["file_id"])
+            try:
+                remote = await self.bot.get_file(value["file_id"])
+            except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound):
+                event["media_unavailable"] = True
+                break
             if remote.file_size is None or remote.file_size > self.max_attachment_bytes or not remote.file_path:
                 event["media_unavailable"] = True
                 break

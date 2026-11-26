@@ -105,7 +105,7 @@ class GatewayClient:
             ident = receipt["id"]
             if not isinstance(ident, str) or not isinstance(receipt.get("ok"), bool):
                 return
-            self.spool.accept_inbound(ident)
+            self.spool.accept_inbound(ident, route_confirmed=receipt["ok"] and receipt.get("route_confirmed") is True)
             if not receipt["ok"]:
                 logger.warning("Core rejected normalized inbound event")
         except (ValueError, KeyError, TypeError):

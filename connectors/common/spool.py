@@ -50,11 +50,6 @@ class EventSpool:
                 ON CONFLICT(namespace) DO UPDATE SET cursor=excluded.cursor""", (self.namespace, cursor))
         self.changed.set()
 
-    async def wait_for_event(self):
-        self.changed.clear()
-        if self.first() is None:
-            await self.changed.wait()
-
     def batch(self, limit=64):
         rows = self.db.execute("SELECT event_id,payload FROM events WHERE namespace=? ORDER BY seq LIMIT ?",
                                (self.namespace, limit)).fetchall()
@@ -79,8 +74,16 @@ class EventSpool:
     def inbound_count(self):
         return self.db.execute("SELECT count(*) FROM inbound_pending WHERE namespace=?", (self.namespace,)).fetchone()[0]
 
-    def accept_inbound(self, ident):
+    def accept_inbound(self, ident, route_confirmed=False):
         with self.db:
+            if route_confirmed:
+                row = self.db.execute("SELECT payload FROM inbound_pending WHERE namespace=? AND id=?",
+                                      (self.namespace, ident)).fetchone()
+                if row:
+                    event = json.loads(row[0])
+                    if event.get("pending_topic"):
+                        self.db.execute("DELETE FROM forum_invitations WHERE namespace=? AND chat=? AND thread=?",
+                                        (self.namespace, event["chat_id"], event["thread_id"]))
             self.db.execute("DELETE FROM inbound_pending WHERE namespace=? AND id=?", (self.namespace, ident))
 
     def first(self):

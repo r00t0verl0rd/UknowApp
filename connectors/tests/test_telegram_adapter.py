@@ -178,7 +178,7 @@ def test_forum_message_uses_actual_sender_and_topic(role):
             inbound=AsyncMock(),
         )
         message = {"from": {"id": 10}, "chat": {"id": -1001, "type": "supergroup", "is_forum": True},
-                   "message_thread_id": 47, "message_id": 48, "text": "Домашнее задание"}
+                   "message_thread_id": 47, "is_topic_message": True, "message_id": 48, "text": "Домашнее задание"}
         await adapter.handle("message", {"message": message}, gateway, None)
         gateway.rpc.assert_awaited_once_with("account.resolve", actor="10", group=True, chat_id="-1001", thread_id="47")
         adapter.bot.get_chat_member.assert_not_awaited()
@@ -341,7 +341,8 @@ def test_regular_bot_unavailable_membership_does_not_block_student_message(tmp_p
 
 
 @pytest.mark.parametrize("context,expected", [
-    ({"message_thread_id": 47}, "47"),
+    ({"message_thread_id": 47}, None),
+    ({"message_thread_id": 1, "is_topic_message": True}, None),
     ({"is_topic_message": True, "message_thread_id": 47}, "47"),
     ({"is_topic_message": True, "reply_to_message": {
         "chat": {"id": -1001}, "is_topic_message": True, "message_thread_id": 47,
@@ -393,7 +394,7 @@ def test_unrelated_forum_topic_ignored_before_attachment_download(pending, tmp_p
                 spool.remember_forum_topic("-1001", "47")
             message = {"from": {"id": 10},
                        "chat": {"id": -1001, "type": "supergroup", "is_forum": True},
-                       "message_id": 50, "message_thread_id": 99,
+                       "message_id": 50, "message_thread_id": 99, "is_topic_message": True,
                        "document": {"file_id": "file", "file_size": 5}}
             await adapter.handle("other", {"message": message}, gateway, spool)
             if pending:
