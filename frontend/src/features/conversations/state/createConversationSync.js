@@ -19,13 +19,9 @@ export function createConversationSync(options) {
       let active = true;
       let lastMessageCursor = { chatKey: "", id: 0 };
       let lastEventId = 0;
-      const pending = new Set();
-      let processing = false;
-      let flushTimer = 0;
       let syncing = false;
       let syncQueued = false;
       let inFlight = null;
-      const reconciledRevision = new Map();
       const eventRevision = new Map();
       let inboxRequestRevision = 0;
       let recoveryPending = false;
@@ -102,9 +98,9 @@ export function createConversationSync(options) {
         options.setPersonalChats((items) => mergeInboxSnapshot(personal, items, changedPersonal));
       };
       const syncSelected = async (force = false) => {
-        const foreground = options.selectedDialog;
-        if (!foreground) return;
-        const requestedKey = conversationKey(foreground.id, foreground.type);
+        const selected = options.selectedDialog;
+        if (!selected) return;
+        const requestedKey = conversationKey(selected.id, selected.type);
         if (syncing) {
           // A concurrent trigger for the same revision is covered by this request.
           if (force || inFlight?.key !== requestedKey || inFlight.revision !== (eventRevision.get(requestedKey) || 0)) {
@@ -161,7 +157,6 @@ export function createConversationSync(options) {
               options.setMessages((previous) => mergeConversationMessages(previous, updated, chatKey));
             }
             if (result.has_more) syncQueued = true;
-            else reconciledRevision.set(chatKey, revisionAtStart);
             if (summaryRevision === (options.inboxRowRevision.get(chatKey) || 0)) {
               applySummary(chat.type, chat.id, result.summary);
             }
@@ -196,34 +191,6 @@ export function createConversationSync(options) {
         return recovery;
       };
       const requestRecovery = () => { void recover().catch(() => {}); };
-      const flush = async () => {
-        if (processing || !active) return;
-        processing = true;
-        try {
-          while (pending.size && active) {
-            const chat = options.selectedDialog;
-            const key = chat ? conversationKey(chat.id, chat.type) : "";
-            const refresh = pending.has(key);
-            pending.clear();
-            if (refresh && reconciledRevision.get(key) !== (eventRevision.get(key) || 0)) {
-              await syncSelected();
-            }
-          }
-        } catch {
-          // Курсор сдвинулся: запрашиваем сверку с сервером.
-          requestRecovery();
-        } finally {
-          processing = false;
-          if (pending.size && active) void flush();
-        }
-      };
-      const scheduleFlush = () => {
-        if (flushTimer || !active) return;
-        flushTimer = setTimeout(() => {
-          flushTimer = 0;
-          void flush();
-        }, 35);
-      };
       const handleEvent = (event) => {
         let payload;
         try {
@@ -283,11 +250,10 @@ export function createConversationSync(options) {
             (previous, updates) => mergeConversationMessages(previous, updates, key)));
         }
         if (!isSameChat(selected, id, type) || !requiresMessageSync(payload.action, viewerRole, type, payload.message_status)) return;
-        pending.add(key);
-        if (syncing && isSameChat(options.selectedChat, id, type)) {
-          syncQueued = true;
-        }
-        scheduleFlush();
+        // Start fetching in the SSE callback itself. Background-tab timer
+        // throttling must never delay an incoming message. syncSelected already
+        // serializes requests and coalesces events arriving during a fetch.
+        void syncSelected().catch(requestRecovery);
       };
       const reconcileSelected = () => {
         void syncSelected().catch(() => { recoveryPending = true; });
@@ -315,9 +281,7 @@ export function createConversationSync(options) {
       window.addEventListener("focus", onForeground);
       return () => {
         active = false;
-        clearTimeout(flushTimer);
         clearInterval(fallback);
-        pending.clear();
         unsubscribe?.();
         document.removeEventListener("visibilitychange", onForeground);
         window.removeEventListener("focus", onForeground);
