@@ -111,7 +111,9 @@ async def panel_events(request: Request, principal: PanelUser):
                 except TimeoutError:
                     if not await asyncio.to_thread(authorized_payload):
                         return
-                    yield ": keep-alive\n\n"
+                    # A named heartbeat is observable by the client watchdog.
+                    # It has no ID and cannot advance the replay cursor.
+                    yield "event: heartbeat\ndata: {}\n\n"
                     continue
                 try:
                     event_id = json.loads(payload).get("event_id")
