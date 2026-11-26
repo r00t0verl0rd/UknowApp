@@ -7,6 +7,7 @@ let closeGeneration = 0;
 let retryTimer = null;
 let watchdog = null;
 let lastActivity = 0;
+const STALL_TIMEOUT = 40000;
 
 function notify(name, event) {
   for (const subscriber of [...subscribers]) {
@@ -44,19 +45,27 @@ function openStream() {
     // (e.g. proxy error or invalid response), explicitly create a new stream.
     if (connection.readyState === 2) restart(connection);
   };
-  if (watchdog === null) {
-    watchdog = setInterval(() => {
-      if (!source || Date.now() - lastActivity < 40000) return;
-      // An apparently open connection can be stalled by an intermediary.
-      // Reconnect and let the normal recovery path reconcile missed events.
-      notify("onError");
-      restart(source);
-    }, 5000);
+  watchdog = setTimeout(checkWatchdog, STALL_TIMEOUT);
+}
+
+function checkWatchdog() {
+  watchdog = null;
+  const connection = source;
+  if (!connection) return;
+  const remaining = STALL_TIMEOUT - (Date.now() - lastActivity);
+  if (remaining > 0) {
+    watchdog = setTimeout(checkWatchdog, Math.min(remaining, STALL_TIMEOUT));
+    return;
   }
+  // An apparently open connection can be stalled by an intermediary.
+  notify("onError");
+  restart(connection);
 }
 
 function restart(connection) {
   if (source !== connection) return;
+  clearTimeout(watchdog);
+  watchdog = null;
   connection.close();
   source = null;
   if (subscribers.size && retryTimer === null) {
@@ -84,7 +93,7 @@ export function subscribePanelEvents(onUpdate, onOpen, onError) {
       queueMicrotask(() => {
         if (generation !== closeGeneration || subscribers.size) return;
         clearTimeout(retryTimer);
-        clearInterval(watchdog);
+        clearTimeout(watchdog);
         retryTimer = null;
         watchdog = null;
         source?.close();

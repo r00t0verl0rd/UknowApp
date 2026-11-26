@@ -4,6 +4,7 @@ import {
   readUserSortPreference,
   saveUserSortPreference,
 } from "../src/shared/services/userSortPreference.js";
+import { readViewState, saveViewPreference, saveViewPreferences } from "../src/shared/services/viewSession.js";
 
 function memoryStorage() {
   const map = new Map();
@@ -37,4 +38,28 @@ test("invalid sort keys and disabled storage do not break sorting", () => {
   };
   assert.equal(readUserSortPreference(7,"students",blocked),"students");
   assert.doesNotThrow(() => saveUserSortPreference(7,"teachers",blocked));
+});
+
+test("view preferences persist together and skip identical writes", t => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, "sessionStorage");
+  const store = memoryStorage();
+  let writes = 0;
+  Object.defineProperty(globalThis, "sessionStorage", {
+    configurable: true, value: {
+      getItem: store.getItem,
+      setItem(key, value) { writes++; store.setItem(key, value); },
+    },
+  });
+  t.after(() => {
+    if (original) Object.defineProperty(globalThis, "sessionStorage", original);
+    else delete globalThis.sessionStorage;
+  });
+  saveViewPreference(7, "chats.active", "personal:5");
+  const patch = { "chats.search": "name", "chats.filter": "unread", "users.sort": "teachers" };
+  saveViewPreferences(7, patch);
+  assert.equal(writes, 2);
+  saveViewPreferences(7, patch);
+  assert.equal(writes, 2);
+  assert.deepEqual(readViewState(7).preferences, { "chats.active": "personal:5", ...patch });
+  assert.deepEqual(readViewState(8), {});
 });

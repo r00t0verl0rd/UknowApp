@@ -77,3 +77,46 @@ test("reopens a terminal EventSource failure rather than waiting for a page relo
     globalThis.EventSource = original;
   }
 });
+
+test("watchdog wakes at the silence deadline and reconnects only a stalled stream", async t => {
+  const original = globalThis.EventSource;
+  const instances = [];
+  class FakeEventSource {
+    constructor() {
+      this.listeners = {};
+      this.readyState = 1;
+      instances.push(this);
+    }
+    addEventListener(name, callback) { this.listeners[name] = callback; }
+    close() { this.readyState = 2; }
+  }
+  globalThis.EventSource = FakeEventSource;
+  t.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  let unsubscribe;
+  try {
+    const { subscribePanelEvents } = await import("./panelEventStream.js?test=watchdog");
+    let errors = 0;
+    unsubscribe = subscribePanelEvents(() => {}, null, () => errors++);
+    t.mock.timers.tick(15000);
+    instances[0].listeners.heartbeat();
+    t.mock.timers.tick(25000);
+    assert.equal(errors, 0);
+    t.mock.timers.tick(14999);
+    assert.equal(errors, 0);
+    t.mock.timers.tick(1);
+    assert.equal(errors, 1);
+    assert.equal(instances[0].readyState, 2);
+    t.mock.timers.tick(1500);
+    assert.equal(instances.length, 2);
+    unsubscribe();
+    await Promise.resolve();
+    t.mock.timers.tick(80000);
+    assert.equal(errors, 1);
+    assert.equal(instances.length, 2);
+  } finally {
+    unsubscribe?.();
+    await Promise.resolve();
+    t.mock.timers.reset();
+    globalThis.EventSource = original;
+  }
+});

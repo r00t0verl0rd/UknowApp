@@ -23,7 +23,8 @@ export function saveUserSortPreference(userId, value, storage) {
   const key = preferenceKey(userId);
   if (!key || !SORT_OPTIONS.has(value)) return;
   try {
-    (storage ?? window.localStorage).setItem(key, value);
+    const store = storage ?? window.localStorage;
+    if (store.getItem(key) !== value) store.setItem(key, value);
   } catch {
     // A blocked/private browser store only affects persistence, not sorting.
   }

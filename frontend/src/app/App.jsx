@@ -11,7 +11,7 @@ import { createPersonalChatState } from "../features/conversations/state/createP
 import { createConversationSync } from "../features/conversations/state/createConversationSync.js";
 import AppToast from "../shared/components/AppToast.jsx";
 import { installViewportEnvironment } from "../shared/services/viewportEnvironment.js";
-import { viewAccountKey, viewPreference, saveViewPreference } from "../shared/services/viewSession.js";
+import { viewAccountKey, readViewState, saveViewPreferences } from "../shared/services/viewSession.js";
 import { readUserSortPreference, saveUserSortPreference } from "../shared/services/userSortPreference.js";
 import IconButton from "../shared/components/IconButton.jsx";
 import LoginPage from "./authentication/LoginPage.jsx";
@@ -104,8 +104,9 @@ function Application(options) {
     ([id]) => {
       preferencesReadyFor = null;
       if (id == null) return;
+      const preferences = readViewState(id).preferences || {};
       for (const [name, , setter] of viewPreferences) {
-        const sessionValue = viewPreference(id, name, undefined);
+        const sessionValue = preferences[name];
         const saved = name === "users.sort" && authState.profile?.role === "admin"
           ? readUserSortPreference(id, sessionValue ?? "students")
           : sessionValue;
@@ -118,13 +119,9 @@ function Application(options) {
     () => [viewAccountKey(authState.profile), ...viewPreferences.map(([, read]) => read())],
     ([id, ...values]) => {
       if (id == null || preferencesReadyFor !== id) return;
-      for (let i = 0; i < viewPreferences.length; i++) {
-        const name = viewPreferences[i][0];
-        saveViewPreference(id, name, values[i]);
-        if (name === "users.sort" && authState.profile?.role === "admin") {
-          saveUserSortPreference(id, values[i]);
-        }
-      }
+      const patch = Object.fromEntries(viewPreferences.map(([name], i) => [name, values[i]]));
+      saveViewPreferences(id, patch);
+      if (authState.profile?.role === "admin") saveUserSortPreference(id, patch["users.sort"]);
     },
   );
   const workspace = createMemo(() => workspaceFor(authState.profile));

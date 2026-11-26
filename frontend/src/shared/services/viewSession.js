@@ -44,8 +44,9 @@ export function readViewState(userId) {
 export function updateViewState(userId, updater) {
   if (!key(userId)) return;
   try {
-    const next = updater(readViewState(userId));
-    if (!next || typeof next !== "object") return;
+    const state = readViewState(userId);
+    const next = updater(state);
+    if (!next || next === state || typeof next !== "object") return;
     sessionStorage.setItem(key(userId), JSON.stringify(next));
   } catch {
     // Private browsing / storage quota must never break the application.
@@ -57,11 +58,16 @@ export function viewPreference(userId, name, fallback) {
   return value === undefined ? fallback : value;
 }
 
+export function saveViewPreferences(userId, patch) {
+  updateViewState(userId, state => {
+    const preferences = state.preferences || {};
+    if (Object.entries(patch).every(([name, value]) => Object.is(preferences[name], value))) return state;
+    return { ...state, preferences: { ...preferences, ...patch } };
+  });
+}
+
 export function saveViewPreference(userId, name, value) {
-  updateViewState(userId, state => ({
-    ...state,
-    preferences: { ...(state.preferences || {}), [name]: value },
-  }));
+  saveViewPreferences(userId, { [name]: value });
 }
 
 export function readScrollPositions(userId, page) {
