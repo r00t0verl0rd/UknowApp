@@ -375,3 +375,44 @@ def test_telegram_candidate_discovery_is_platform_and_role_scoped(api):
         with pytest.raises(HTTPException) as exc:
             rpc(db, "alpha", "endpoint.student_candidates", {"after": 0})
         assert exc.value.status_code == 403
+
+
+def test_telegram_forum_is_bound_by_real_student_message_and_replies_use_actual_topic(api):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        sync_messenger_account(db, chat.student_id, "telegram", "123", "123")
+        sync_messenger_account(db, chat.teacher_id, "telegram", "456", "456")
+        db.commit()
+        first = {"id": "forum-first", "external_message_id": "48", "actor": "123",
+                 "chat_id": "-1001", "thread_id": "47", "channel": "group",
+                 "kind": "text", "text": "Homework"}
+        assert db.get(ExternalEndpoint, ("telegram", chat.student_id)) is None
+        receive_message(db, "telegram", first, ("telegram",), gateway.media_path)
+        endpoint = db.get(ExternalEndpoint, ("telegram", chat.student_id))
+        assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
+        row = Message(conversation_id=chat.id, sender_id=chat.teacher_id, sender_role="teacher",
+                      text="Reply", metadata_json="{}", delivery_status="delivered")
+        db.add(row)
+        db.flush()
+        enqueue_web_delivery(db, row, ("telegram",))
+        db.commit()
+        jobs = db.query(ConnectorDelivery).filter_by(message_id=row.id).all()
+        assert {(job.chat_id, job.thread_id) for job in jobs} == {("123", ""), ("-1001", "47")}
+        receive_message(db, "telegram", {**first, "id": "forum-next", "external_message_id": "70",
+                        "chat_id": "-1002", "thread_id": "69"}, ("telegram",), gateway.media_path)
+        assert (endpoint.chat_id, endpoint.thread_id) == ("-1002", "69")
+        # A redelivery of an older message must not move the authorized route.
+        receive_message(db, "telegram", {**first, "id": "forum-replay"}, ("telegram",), gateway.media_path)
+        assert (endpoint.chat_id, endpoint.thread_id) == ("-1002", "69")
+        assert db.query(Message).filter_by(sender_id=chat.student_id).count() == 2
+        old_group = next(job for job in jobs if job.thread_id)
+        with pytest.raises(HTTPException):
+            rpc(db, "telegram", "delivery.authorize", {"id": old_group.id})
+        private = next(job for job in jobs if not job.thread_id)
+        assert rpc(db, "telegram", "delivery.authorize", {"id": private.id})["chat_id"] == "123"
+        for actor in ("456", "999"):
+            with pytest.raises(HTTPException) as exc:
+                receive_message(db, "telegram", {**first, "id": "invalid-" + actor,
+                                "actor": actor, "conversation_id": chat.id}, ("telegram",), gateway.media_path)
+            assert exc.value.status_code == 403

@@ -24,9 +24,6 @@ class EventSpool:
         self.db.execute("CREATE TABLE IF NOT EXISTS inbound_pending (namespace TEXT NOT NULL, id TEXT NOT NULL, payload TEXT NOT NULL, published REAL, PRIMARY KEY(namespace,id))")
         self.db.execute("CREATE TABLE IF NOT EXISTS delivery_claims (namespace TEXT NOT NULL, id TEXT NOT NULL, claim TEXT NOT NULL, PRIMARY KEY(namespace,id))")
         self.db.execute("CREATE TABLE IF NOT EXISTS panels (namespace TEXT NOT NULL, actor TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(namespace,actor))")
-        self.db.execute("""CREATE TABLE IF NOT EXISTS forum_setup (
-            namespace TEXT NOT NULL, chat TEXT NOT NULL, thread TEXT NOT NULL,
-            PRIMARY KEY(namespace,chat))""")
         self.db.commit()
         self.namespace = namespace
         self.changed = asyncio.Event()
@@ -156,18 +153,3 @@ class EventSpool:
             self.db.execute("""INSERT INTO panels(namespace,actor,payload) VALUES (?,?,?)
                 ON CONFLICT(namespace,actor) DO UPDATE SET payload=excluded.payload""",
                 (self.namespace, actor, json.dumps(panel)))
-
-    def forum_topic(self, chat):
-        row = self.db.execute("SELECT thread FROM forum_setup WHERE namespace=? AND chat=?",
-                              (self.namespace, chat)).fetchone()
-        return row[0] if row else None
-
-    def remember_forum_topic(self, chat, thread):
-        with self.db:
-            self.db.execute("INSERT OR IGNORE INTO forum_setup(namespace,chat,thread) VALUES (?,?,?)",
-                            (self.namespace, chat, thread))
-
-    def forget_forum_topic(self, chat):
-        with self.db:
-            self.db.execute("DELETE FROM forum_setup WHERE namespace=? AND chat=?",
-                            (self.namespace, chat))

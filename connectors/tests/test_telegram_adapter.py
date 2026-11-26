@@ -164,118 +164,53 @@ def test_inbound_oversize_marked_unavailable(mode, mib, declared_size, monkeypat
     asyncio.run(run())
 
 
-@pytest.mark.parametrize("name,bound", [("🤖 Бот", True), ("Бот", True), ("Домашнее задание", False)])
-def test_dedicated_topic_is_bound_before_first_inbound_message(name, bound):
+@pytest.mark.parametrize("role", ["student", "teacher", None])
+def test_forum_message_uses_actual_sender_and_topic(role):
     async def run():
         adapter = object.__new__(TelegramAdapter)
-
-        async def member(chat, actor):
-            return SimpleNamespace(status={99: "administrator", 10: "member", 11: "left"}[actor])
-
-        adapter.bot = SimpleNamespace(
-            me=AsyncMock(return_value=SimpleNamespace(id=99)),
-            get_chat_member=AsyncMock(side_effect=member),
-            send_message=AsyncMock(),
-        )
+        adapter.bot = SimpleNamespace(send_message=AsyncMock(), get_chat_member=AsyncMock(), me=AsyncMock())
         gateway = SimpleNamespace(
-            rpc=AsyncMock(side_effect=[
-                {"actors": ["10", "11"], "next": None},
-                {"bound": True},
-            ]),
+            rpc=AsyncMock(return_value={"account": {"role": role} if role else None,
+                                        "conversations": [{"id": 1}]}),
             inbound=AsyncMock(),
         )
-        # The creator is an unrelated group administrator, not the student.
-        update = {"message": {"from": {"id": 50},
-                              "chat": {"id": -1001, "type": "supergroup", "is_forum": True},
-                              "message_id": 7, "message_thread_id": 7,
-                              "forum_topic_created": {"name": name}}}
-        await adapter.handle("topic-created", update, gateway, None)
-        gateway.inbound.assert_not_awaited()
-        if bound:
-            gateway.rpc.assert_any_await("endpoint.bind", actor="10", chat_id="-1001",
-                                         thread_id="7", initial_only=True)
-            adapter.bot.send_message.assert_awaited_once()
+        message = {"from": {"id": 10}, "chat": {"id": -1001, "type": "supergroup", "is_forum": True},
+                   "message_thread_id": 47, "message_id": 48, "text": "Домашнее задание"}
+        await adapter.handle("message", {"message": message}, gateway, None)
+        gateway.rpc.assert_awaited_once_with("account.resolve", actor="10")
+        adapter.bot.get_chat_member.assert_not_awaited()
+        adapter.bot.me.assert_not_awaited()
+        adapter.bot.send_message.assert_not_awaited()
+        if role == "student":
+            event = gateway.inbound.await_args.args[0]
+            assert (event["actor"], event["chat_id"], event["thread_id"], event["channel"]) == (
+                "10", "-1001", "47", "group")
+            assert event["text"] == "Домашнее задание"
         else:
-            gateway.rpc.assert_not_awaited()
-            adapter.bot.send_message.assert_not_awaited()
+            gateway.inbound.assert_not_awaited()
     asyncio.run(run())
 
 
-def test_group_join_prompts_for_binding_without_guessing_topic():
+def test_forum_membership_topic_events_and_old_command_are_silent():
     async def run():
         adapter = object.__new__(TelegramAdapter)
         adapter.bot = SimpleNamespace(send_message=AsyncMock())
         gateway = SimpleNamespace(rpc=AsyncMock(), inbound=AsyncMock())
-        update = {"my_chat_member": {"from": {"id": 50},
-            "chat": {"id": -1001, "type": "supergroup", "is_forum": True},
-            "old_chat_member": {"status": "left"},
-            "new_chat_member": {"status": "administrator"}}}
-        assert adapter.inbound_route(update) == ("group:-1001", False)
-        await adapter.handle("joined", update, gateway, None)
-        assert "/bind_group" in adapter.bot.send_message.await_args.args[1]
+        chat = {"id": -1001, "type": "supergroup", "is_forum": True}
+        message = {"from": {"id": 50}, "chat": chat, "message_thread_id": 7, "message_id": 8}
+        updates = [
+            {"my_chat_member": {"chat": chat, "new_chat_member": {"status": "administrator"}}},
+            {"chat_member": {"chat": chat, "new_chat_member": {"status": "member"}}},
+            {"message": {**message, "forum_topic_created": {"name": "🤖 Бот"}}},
+            {"message": {**message, "forum_topic_edited": {"name": "Домашнее задание"}}},
+            {"message": {**message, "new_chat_members": [{"id": 10}]}},
+            {"message": {**message, "text": "/bind_group"}},
+            {"message": {**message, "text": "anonymous", "sender_chat": chat}},
+            {"message": {**message, "text": "no topic", "message_thread_id": None}},
+        ]
+        for index, update in enumerate(updates):
+            await adapter.handle(str(index), update, gateway, None)
         gateway.rpc.assert_not_awaited()
         gateway.inbound.assert_not_awaited()
-    asyncio.run(run())
-
-
-@pytest.mark.parametrize("students,status", [([], "no_student"), ([10, 11], "ambiguous"), ([10], "bound")])
-def test_group_binding_requires_exactly_one_linked_student(students, status):
-    async def run():
-        adapter = object.__new__(TelegramAdapter)
-
-        async def member(chat, actor):
-            return SimpleNamespace(status="administrator" if actor == 99 else "member" if actor in students else "left")
-
-        adapter.bot = SimpleNamespace(me=AsyncMock(return_value=SimpleNamespace(id=99)),
-                                      get_chat_member=AsyncMock(side_effect=member))
-        gateway = SimpleNamespace(rpc=AsyncMock(side_effect=[
-            {"actors": ["10"], "next": 1},
-            {"actors": ["11"], "next": None},
-            {"bound": True},
-        ]))
-        assert await adapter.bind_forum_student("-1001", "7", gateway) == status
-        assert gateway.rpc.await_count == (3 if status == "bound" else 2)
-    asyncio.run(run())
-
-
-def test_existing_topic_can_be_bound_by_group_admin_not_student():
-    async def run():
-        adapter = object.__new__(TelegramAdapter)
-
-        async def member(chat, actor):
-            return SimpleNamespace(status="administrator" if actor in (50, 99) else "member")
-
-        adapter.bot = SimpleNamespace(me=AsyncMock(return_value=SimpleNamespace(id=99)),
-                                      get_chat_member=AsyncMock(side_effect=member), send_message=AsyncMock())
-        gateway = SimpleNamespace(rpc=AsyncMock(side_effect=[
-            {"actors": ["10"], "next": None}, {"bound": True},
-        ]), inbound=AsyncMock())
-        message = {"from": {"id": 50}, "chat": {"id": -1001, "type": "supergroup", "is_forum": True},
-                   "message_thread_id": 7, "text": "/bind_group", "message_id": 8}
-        await adapter.handle("admin-command", {"message": message}, gateway, None)
-        gateway.rpc.assert_any_await("endpoint.bind", actor="10", chat_id="-1001", thread_id="7", initial_only=True)
-        gateway.inbound.assert_not_awaited()
-    asyncio.run(run())
-
-
-def test_student_added_after_topic_creation_is_detected(tmp_path):
-    async def run():
-        spool = EventSpool(tmp_path / "forum.db", "bot")
-        try:
-            adapter = object.__new__(TelegramAdapter)
-            adapter.bot = SimpleNamespace(me=AsyncMock(return_value=SimpleNamespace(id=99)),
-                get_chat_member=AsyncMock(side_effect=[
-                    SimpleNamespace(status="administrator"), SimpleNamespace(status="member"),
-                ]), send_message=AsyncMock())
-            gateway = SimpleNamespace(rpc=AsyncMock(side_effect=[
-                {"actors": ["10"], "next": None}, {"bound": True},
-            ]), inbound=AsyncMock())
-            spool.remember_forum_topic("-1001", "7")
-            update = {"chat_member": {"from": {"id": 50}, "chat": {"id": -1001, "type": "supergroup", "is_forum": True},
-                "old_chat_member": {"status": "left"}, "new_chat_member": {"status": "member", "user": {"id": 10}}}}
-            await adapter.handle("member-added", update, gateway, spool)
-            gateway.rpc.assert_any_await("endpoint.bind", actor="10", chat_id="-1001", thread_id="7", initial_only=True)
-            gateway.inbound.assert_not_awaited()
-        finally:
-            spool.close()
+        adapter.bot.send_message.assert_not_awaited()
     asyncio.run(run())

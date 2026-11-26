@@ -25,7 +25,7 @@ async def poll(adapter, spool, bot_id, health):
             continue
         try:
             updates = await adapter.bot.get_updates(offset=spool.cursor(), timeout=30,
-                limit=min(100, remaining), allowed_updates=["message", "callback_query", "my_chat_member", "chat_member"],
+                limit=min(100, remaining), allowed_updates=["message", "callback_query"],
                 request_timeout=45)
             if updates:
                 spool.append([(f"{bot_id}:{u.update_id}", u.model_dump(mode="json", by_alias=True, exclude_none=True)) for u in updates],

@@ -254,19 +254,11 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
         conversation = visible(db, user, payload.get("conversation_id"))
     chat = identifier(payload.get("chat_id"))
     thread = identifier(payload["thread_id"]) if payload.get("thread_id") else ""
-    endpoint = db.get(ExternalEndpoint, (platform, user.id))
-    if payload.get("channel") == "group":
-        if user.role != "student":
+    group = payload.get("channel") == "group"
+    if group:
+        if user.role != "student" or (platform == "telegram" and not thread):
             raise HTTPException(403, "group sender unavailable")
-        if endpoint is None:
-            # Adapter has already checked provider-specific group visibility.
-            endpoint = bind_endpoint(db, platform, user, chat, thread)
-        if endpoint.chat_id != chat or endpoint.thread_id != thread:
-            raise HTTPException(403, "group not linked")
-    elif payload.get("channel") == "private":
-        # Private activity must never disable a bound group.
-        pass
-    else:
+    elif payload.get("channel") != "private":
         raise ValueError("unknown channel type")
     external_message_id = identifier(payload.get("external_message_id", event_id))
     source_event = f"{platform}:{chat}:{external_message_id}"
@@ -286,6 +278,16 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
     if kind == "text" and not text.strip():
         raise ValueError("empty text")
     blocked = kind == "contact" or text_contains_contact_data(text)
+    if group:
+        endpoint = db.get(ExternalEndpoint, (platform, user.id))
+        same_route = endpoint is not None and endpoint.chat_id == chat and endpoint.thread_id == thread
+        if not same_route:
+            if endpoint is not None and platform != "telegram":
+                raise HTTPException(403, "group not linked")
+            # Bind only on a real, non-replayed inbound message from the linked
+            # student. A blocked message cannot change a Telegram delivery route.
+            if platform != "telegram" or not blocked:
+                bind_endpoint(db, platform, user, chat, thread)
     metadata = {"source_mode": "group_topic" if payload.get("channel") == "group" else "private",
                 "source_chat_id": chat, "source_thread_id": thread or None, "source_platform": platform}
     media = payload.get("media")
