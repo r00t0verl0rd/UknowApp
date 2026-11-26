@@ -40,8 +40,11 @@ def project_pending(main, platforms, cursors):
     main.rollback()
     if records:
         with runtime_database.RuntimeSessionLocal() as runtime:
-            runtime.execute(insert(TransportJob).values(records).on_conflict_do_nothing(index_elements=["id"]))
-            runtime.commit()
+            existing = set(runtime.scalars(select(TransportJob.id).where(TransportJob.id.in_([r["id"] for r in records]))).all())
+            new = [r for r in records if r["id"] not in existing]
+            if new:
+                runtime.execute(insert(TransportJob).values(new).on_conflict_do_nothing(index_elements=["id"]))
+                runtime.commit()
     return next_cursors, more
 
 
