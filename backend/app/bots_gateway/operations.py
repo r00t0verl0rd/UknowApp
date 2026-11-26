@@ -86,7 +86,7 @@ def bind_endpoint(db, platform, user, chat, thread):
     if endpoint is None:
         endpoint = ExternalEndpoint(platform=platform, user_id=user.id)
         db.add(endpoint)
-    endpoint.chat_id, endpoint.thread_id, endpoint.preferred = chat, thread, True
+    endpoint.chat_id, endpoint.thread_id = chat, thread
     return endpoint
 
 
