@@ -10,6 +10,7 @@ from fastapi import (
     Request,
 )
 from fastapi.responses import StreamingResponse
+from sqlalchemy import select
 
 from app.core.database import SessionLocal
 from app.event_hub import (
@@ -62,6 +63,14 @@ def visible_payload(db, principal, payload):
                         personal_message_dict(row, principal) if model is PersonalMessage else
                         panel_message_dict(row, expose_internal_metadata=principal["role"] == "admin",
                                            principal=principal)
+                    )
+                    # Global message IDs need not be consecutive within a chat.
+                    # This indexed predecessor detects missing updates without
+                    # requiring a full history request for each new message.
+                    event["previous_message_id"] = db.scalar(
+                        select(model.id).where(model.conversation_id == row.conversation_id,
+                                               model.id < row.id)
+                        .order_by(model.id.desc()).limit(1)
                     )
                     return json.dumps(event, ensure_ascii=False, separators=(",", ":"))
             return payload
