@@ -101,13 +101,13 @@ export function createConversationSync(options) {
         options.setChats((items) => mergeInboxSnapshot(conversations, items, changedConversations));
         options.setPersonalChats((items) => mergeInboxSnapshot(personal, items, changedPersonal));
       };
-      const syncSelected = async () => {
+      const syncSelected = async (force = false) => {
         const foreground = options.selectedDialog;
         if (!foreground) return;
         const requestedKey = conversationKey(foreground.id, foreground.type);
         if (syncing) {
           // A concurrent trigger for the same revision is covered by this request.
-          if (inFlight?.key !== requestedKey || inFlight.revision !== (eventRevision.get(requestedKey) || 0)) {
+          if (force || inFlight?.key !== requestedKey || inFlight.revision !== (eventRevision.get(requestedKey) || 0)) {
             syncQueued = true;
           }
           return;
@@ -170,7 +170,7 @@ export function createConversationSync(options) {
           syncing = false;
           inFlight = null;
           if (syncQueued && active && options.selectedDialog) {
-            void syncSelected().catch(() => {});
+            void syncSelected().catch(() => { recoveryPending = true; });
           }
         }
       };
@@ -181,9 +181,11 @@ export function createConversationSync(options) {
         if (recovery) return recovery;
         recovery = (async () => {
           try {
-            recoveryPending = false;
-            await refreshInbox();
-            if (active) await syncSelected();
+            while (active && recoveryPending) {
+              recoveryPending = false;
+              await refreshInbox();
+              if (active) await syncSelected(true);
+            }
           } catch (error) {
             recoveryPending = true;
             throw error;
