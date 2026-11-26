@@ -12,6 +12,12 @@ from sqlalchemy.sql.expression import ColumnElement
 COUNTERS = ("teacher_unread_count", "student_unread_count", "admin_unread_count")
 TEACHER_UNREAD = "sender_role IN ('student','admin') AND teacher_read_at IS NULL"
 STUDENT_UNREAD = "sender_role IN ('teacher','admin') AND student_read_at IS NULL"
+ADMIN_OBSERVER_UNREAD = "sender_role IN ('teacher','student') AND admin_read_at IS NULL"
+
+
+def observer_counter_installed(connection):
+    return any(col["name"] == "admin_read_at" for col in inspect(connection).get_columns("messages")) and any(
+        col["name"] == "admin_observer_unread_count" for col in inspect(connection).get_columns("conversations"))
 
 
 class ReadField(ColumnElement):
@@ -53,12 +59,15 @@ def install_read_function_on_create(_table, connection, **_kwargs):
     install_read_function(connection)
 
 
-def unread_expressions(prefix, dialect):
+def unread_expressions(prefix, dialect, observer=False):
     role = prefix + "sender_role"
     teacher = f"({role} IN ('student','admin') AND {prefix}teacher_read_at IS NULL)"
     student = f"({role} IN ('teacher','admin') AND {prefix}student_read_at IS NULL)"
     admin = f"({role} IN ('teacher','student') AND ({teacher} OR {student}))"
-    return [f"CASE WHEN {condition} THEN 1 ELSE 0 END" for condition in (teacher, student, admin)]
+    conditions = [teacher, student, admin]
+    if observer:
+        conditions.append(f"({role} IN ('teacher','student') AND {prefix}admin_read_at IS NULL)")
+    return [f"CASE WHEN {condition} THEN 1 ELSE 0 END" for condition in conditions]
 
 
 def cursor_assignments(conversation):
@@ -90,11 +99,15 @@ def install_triggers(connection):
     generated = any(col.get("computed") for col in inspect(connection).get_columns("messages")
                     if col["name"] in {"teacher_read_at", "student_read_at"})
     receipt_fields = "metadata_json" if generated else "teacher_read_at, student_read_at"
-    new = unread_expressions("NEW.", dialect)
-    old = unread_expressions("OLD.", dialect)
-    add = ", ".join(f"{name} = {name} + ({expr})" for name, expr in zip(COUNTERS, new))
-    subtract = ", ".join(f"{name} = {name} - ({expr})" for name, expr in zip(COUNTERS, old))
-    delta = ", ".join(f"{name} = {name} + ({n}) - ({o})" for name, n, o in zip(COUNTERS, new, old))
+    observer = observer_counter_installed(connection)
+    counters = (*COUNTERS, "admin_observer_unread_count") if observer else COUNTERS
+    if observer:
+        receipt_fields += ", admin_read_at"
+    new = unread_expressions("NEW.", dialect, observer)
+    old = unread_expressions("OLD.", dialect, observer)
+    add = ", ".join(f"{name} = {name} + ({expr})" for name, expr in zip(counters, new))
+    subtract = ", ".join(f"{name} = {name} - ({expr})" for name, expr in zip(counters, old))
+    delta = ", ".join(f"{name} = {name} + ({n}) - ({o})" for name, n, o in zip(counters, new, old))
     changed = " OR ".join(f"({n}) <> ({o})" for n, o in zip(new, old))
     moved = "OLD.conversation_id <> NEW.conversation_id"
     reordered = "OLD.created_at <> NEW.created_at OR OLD.id <> NEW.id"
@@ -175,9 +188,13 @@ def upgrade_conversation_counters(connection):
 
 
 def rebuild_counters(connection):
-    expressions = unread_expressions("", connection.dialect.name)
-    aggregates = ", ".join(f"SUM({expr}) AS {name}" for name, expr in zip(COUNTERS, expressions))
-    assignments = ", ".join(f"{name} = stats.{name}" for name in ("message_count", *COUNTERS))
+    observer = observer_counter_installed(connection)
+    counters = (*COUNTERS, "admin_observer_unread_count") if observer else COUNTERS
+    expressions = unread_expressions("", connection.dialect.name, observer)
+    aggregates = ", ".join(f"SUM({expr}) AS {name}" for name, expr in zip(counters, expressions))
+    assignments = ", ".join(f"{name} = stats.{name}" for name in ("message_count", *counters))
+    if observer:
+        connection.exec_driver_sql("UPDATE conversations SET admin_observer_unread_count=0")
     connection.exec_driver_sql("UPDATE conversations SET message_count=0, teacher_unread_count=0, "
                                "student_unread_count=0, admin_unread_count=0, last_message_id=NULL, teacher_last_read_id=0, student_last_read_id=0")
     # All aggregate/assignment expressions above use fixed schema columns.
@@ -255,3 +272,19 @@ def upgrade_physical_receipts(connection):
         execute(f"CREATE INDEX IF NOT EXISTS ix_messages_{role}_unread ON messages (conversation_id, id) WHERE {predicate}")
     rebuild_counters(connection)
     install_triggers(connection)
+
+def upgrade_admin_observer_receipts(connection):
+    """Start independent admin receipts without treating old history as new."""
+    message_columns = {col["name"] for col in inspect(connection).get_columns("messages")}
+    conversation_columns = {col["name"] for col in inspect(connection).get_columns("conversations")}
+    if "admin_read_at" not in message_columns:
+        connection.exec_driver_sql("ALTER TABLE messages ADD COLUMN admin_read_at TEXT")
+    if "admin_observer_unread_count" not in conversation_columns:
+        connection.exec_driver_sql("ALTER TABLE conversations ADD COLUMN admin_observer_unread_count BIGINT NOT NULL DEFAULT 0")
+    # There is no historical admin receipt data. Existing history is the baseline.
+    connection.exec_driver_sql("UPDATE messages SET admin_read_at = '2026-11-26T00:00:00+00:00' "
+                               "WHERE sender_role IN ('teacher','student') AND admin_read_at IS NULL")
+    connection.exec_driver_sql("CREATE INDEX IF NOT EXISTS ix_messages_admin_observer_unread "
+                               "ON messages (conversation_id, id) WHERE " + ADMIN_OBSERVER_UNREAD)
+    install_triggers(connection)
+    rebuild_counters(connection)

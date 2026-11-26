@@ -14,15 +14,18 @@ from app.modules.personal_chat.service import publish_personal_update
 
 
 def mark_conversation_read(db, conversation, principal, after_id: int, visible_ids=None) -> None:
-    """Учитель и ученик помечают прочитанными новые сообщения собеседников; администратор ничего не помечает."""
+    """Store independent visible-message receipts for each role."""
     role = principal["role"]
-    if role not in {"teacher", "student"} or (visible_ids is not None and not visible_ids):
+    if role not in {"teacher", "student", "admin"} or (visible_ids is not None and not visible_ids):
         return
-    read_column = Message.teacher_read_at if role == "teacher" else Message.student_read_at
+    if role == "admin" and visible_ids is None:
+        return
+    read_column = {"teacher": Message.teacher_read_at, "student": Message.student_read_at,
+                   "admin": Message.admin_read_at}[role]
     filters = (
         Message.conversation_id == conversation.id,
         unread_condition(db, role),
-        Message.id > read_cursor(conversation.id, role),
+        *([Message.id > read_cursor(conversation.id, role)] if role != "admin" else []),
         Message.id > after_id,
         *([Message.id.in_(visible_ids)] if visible_ids is not None else []),
     )

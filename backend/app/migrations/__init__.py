@@ -6,6 +6,7 @@ from sqlalchemy import inspect, text
 
 from app.core.database import Base, engine
 from app.infrastructure.storage.conversation_counters import (
+    upgrade_admin_observer_receipts,
     upgrade_conversation_counters,
     upgrade_physical_receipts,
 )
@@ -35,6 +36,7 @@ MIGRATIONS = (
     ("2026-11-26-performance-indexes", upgrade_performance_indexes),
     ("2026-11-26-volatile-events", retire_realtime_events),
     ("2026-11-26-physical-receipts", upgrade_physical_receipts),
+    ("2026-11-26-admin-observer-receipts", upgrade_admin_observer_receipts),
 )
 
 

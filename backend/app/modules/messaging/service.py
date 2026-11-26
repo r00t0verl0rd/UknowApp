@@ -85,6 +85,7 @@ def panel_message_dict(
         "id": item.id,
         "sender": item.sender.full_name if item.sender else "Администратор",
         "sender_role": item.sender_role,
+        **({"admin_read_at": item.admin_read_at} if principal and principal.get("role") == "admin" else {}),
         "can_delete": bool(
             principal
             and item.sender_role == principal["role"]
@@ -140,6 +141,7 @@ def panel_message_status_dict(item: Message, principal: dict) -> dict:
             if key in media
         }
     if principal.get("role") == "admin":
+        result["admin_read_at"] = item.admin_read_at
         changed_metadata.update({
             key: metadata[key]
             for key in (

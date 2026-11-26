@@ -2,7 +2,7 @@
 
 import json
 
-from sqlalchemy import and_, literal_column, or_, select
+from sqlalchemy import and_, literal_column, select
 from sqlalchemy.orm import Session
 
 from app.event_hub import publish_chat_update
@@ -24,7 +24,7 @@ def conversation_dicts(
 
     result = []
     for conversation in conversations:
-        _, message_count, teacher_unread, student_unread, admin_unread, last_message = summaries[conversation.id]
+        _, message_count, teacher_unread, student_unread, admin_unread, observer_unread, last_message = summaries[conversation.id]
         unread_count = {"teacher": teacher_unread, "student": student_unread, "admin": admin_unread}.get(viewer_role, teacher_unread)
         result.append({
             "id": conversation.id,
@@ -36,6 +36,7 @@ def conversation_dicts(
             "last_message_at": last_message.created_at.isoformat() if last_message else None,
             "message_count": message_count,
             "unread_count": unread_count,
+            **({"admin_unread_count": observer_unread} if viewer_role == "admin" else {}),
         })
     return result
 
@@ -77,7 +78,7 @@ def unread_condition(db, role: str):
         Message.student_read_at.is_(None),
     )
     if role == "admin":
-        return and_(Message.sender_role.in_(("teacher", "student")), or_(teacher_unread, student_unread))
+        return and_(Message.sender_role.in_((literal_column("'teacher'"), literal_column("'student'"))), Message.admin_read_at.is_(None))
     return student_unread if role == "student" else teacher_unread
 
 
@@ -91,7 +92,8 @@ def _summary_rows(db, conversation_ids):
     # a Conversation already in the session identity map.
     rows = db.execute(
         select(Conversation.id, Conversation.message_count, Conversation.teacher_unread_count,
-               Conversation.student_unread_count, Conversation.admin_unread_count, Message)
+               Conversation.student_unread_count, Conversation.admin_unread_count,
+               Conversation.admin_observer_unread_count, Message)
         .outerjoin(Message, Message.id == Conversation.last_message_id)
         .where(Conversation.id.in_(conversation_ids))
     ).all()
@@ -100,7 +102,7 @@ def _summary_rows(db, conversation_ids):
 
 def conversation_event_summaries(db: Session, conversation: Conversation) -> dict[str, dict]:
     """Constant-size indexed summary for all roles."""
-    _, total, teacher_unread, student_unread, admin_unread, last_message = _summary_rows(db, [conversation.id])[conversation.id]
+    _, total, teacher_unread, student_unread, admin_unread, observer_unread, last_message = _summary_rows(db, [conversation.id])[conversation.id]
     last_message_preview = message_preview(last_message)
     if len(last_message_preview) > 240:
         last_message_preview = last_message_preview[:237] + "…"
@@ -117,7 +119,7 @@ def conversation_event_summaries(db: Session, conversation: Conversation) -> dic
     return {
         "teacher": {**common, "unread_count": int(teacher_unread)},
         "student": {**common, "unread_count": int(student_unread)},
-        "admin": {**common, "unread_count": int(admin_unread)},
+        "admin": {**common, "unread_count": int(admin_unread), "admin_unread_count": int(observer_unread)},
     }
 
 
@@ -144,7 +146,7 @@ def publish_conversation_update(
         read_at=read_at,
         # Only admins can see external delivery details. No participant SSE
         # authorization queries or sync requests are needed for these events.
-        audience=None if action == "delivery" else {
+        audience=None if action == "delivery" or (action == "read" and actor_role == "admin") else {
             "teacher_id": conversation.teacher_id,
             "student_id": conversation.student_id,
         },

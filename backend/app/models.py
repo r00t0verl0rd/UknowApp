@@ -117,6 +117,7 @@ class Conversation(Base):
     teacher_unread_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default=text("0"))
     student_unread_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default=text("0"))
     admin_unread_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default=text("0"))
+    admin_observer_unread_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default=text("0"))
     last_message_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     teacher_last_read_id: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
     student_last_read_id: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
@@ -226,6 +227,7 @@ class Message(Base):
     # Authoritative receipt timestamps. JSON contains only other metadata.
     teacher_read_at: Mapped[str | None] = mapped_column(Text, nullable=True)
     student_read_at: Mapped[str | None] = mapped_column(Text, nullable=True)
+    admin_read_at: Mapped[str | None] = mapped_column(Text, nullable=True)
     client_message_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     delivery_status: Mapped[str] = mapped_column(String(30), default="received", nullable=False)
     source_platform: Mapped[str | None] = mapped_column(String(32), nullable=True)

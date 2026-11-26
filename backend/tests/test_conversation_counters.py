@@ -137,3 +137,44 @@ def test_sql_trigger_references_reject_arbitrary_expressions():
             assert reference in generator(reference)
         with pytest.raises(ValueError, match="Unknown SQL conversation reference"):
             generator("untrusted_expression")
+
+
+def test_admin_observer_receipts_are_independent_and_private(api):
+    from app.event_hub import current_event_id, replay_chat_updates
+    from app.modules.messaging.service import panel_message_dict
+
+    _, users, sessions = api
+    with sessions() as db:
+        chat = create_conversation(db, users["teacher-one"], users["student-one"])
+        db.execute(insert(Message), [
+            dict(conversation_id=chat.id, sender_id=chat.student_id, sender_role="student", text="student"),
+            dict(conversation_id=chat.id, sender_id=chat.teacher_id, sender_role="teacher", text="teacher"),
+            dict(conversation_id=chat.id, sender_id=chat.teacher_id, sender_role="admin", text="admin"),
+        ])
+        db.commit()
+        ids = db.scalars(select(Message.id).where(Message.conversation_id == chat.id).order_by(Message.id)).all()
+        def summary(role):
+            return conversation_dicts(db, [chat], viewer_role=role)[0]
+        assert summary("admin")["admin_unread_count"] == 2
+        assert summary("admin")["message_count"] == 3
+        assert "admin_unread_count" not in summary("teacher")
+        assert "admin_unread_count" not in summary("student")
+        mark_conversation_read(db, chat, {"role": "teacher"}, 0, [ids[0]])
+        assert summary("admin")["admin_unread_count"] == 2
+        before = (summary("teacher")["unread_count"], summary("student")["unread_count"])
+        cursor = current_event_id()
+        mark_conversation_read(db, chat, {"role": "admin"}, 0, [ids[1], ids[2]])
+        assert summary("admin")["admin_unread_count"] == 1
+        assert (summary("teacher")["unread_count"], summary("student")["unread_count"]) == before
+        assert not replay_chat_updates(db, {"role": "teacher", "user_id": chat.teacher_id}, cursor)
+        assert not replay_chat_updates(db, {"role": "student", "user_id": chat.student_id}, cursor)
+        assert replay_chat_updates(db, {"role": "admin"}, cursor)
+        row = db.get(Message, ids[1])
+        assert panel_message_dict(row, principal={"role": "admin"})["admin_read_at"]
+        assert "admin_read_at" not in panel_message_dict(row, principal={"role": "student", "user_id": chat.student_id})
+        mark_conversation_read(db, chat, {"role": "admin"}, 0, [ids[1]])
+        assert summary("admin")["admin_unread_count"] == 1
+        db.execute(delete(Message).where(Message.id == ids[0]))
+        db.commit()
+        assert summary("admin")["admin_unread_count"] == 0
+        assert summary("admin")["message_count"] == 2

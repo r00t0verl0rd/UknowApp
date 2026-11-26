@@ -81,14 +81,14 @@ def sync_conversation_state(
         new_rows = new_rows[:100]
     if bounded and not after_id:
         new_rows.reverse()
-    if payload.get("mark_read") is not False:
+    if payload.get("mark_read") is not False and principal["role"] != "admin":
         mark_conversation_read(db, conversation, principal, after_id, [row.id for row in new_rows] if bounded else None)
     updated_rows = []
     for start in range(0, len(known_ids), 500):
         batch_ids = known_ids[start:start + 500]
         updated_rows.extend(db.scalars(
             select(Message)
-            .options(load_only(Message.id, Message.sender_role, Message.delivery_status, Message.metadata_json, Message.teacher_read_at, Message.student_read_at))
+            .options(load_only(Message.id, Message.sender_role, Message.delivery_status, Message.metadata_json, Message.teacher_read_at, Message.student_read_at, Message.admin_read_at))
             .where(
                 Message.conversation_id == conversation.id,
                 Message.id.in_(batch_ids),

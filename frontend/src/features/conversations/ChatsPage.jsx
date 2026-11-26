@@ -43,7 +43,7 @@ export default function ChatsPage(options) {
       const chat = options.selectedChat;
       const viewport = options.messagesViewportRef.current;
       const role = options.profile?.role;
-      if (!options.positionReady || !chat || !viewport || !role || (role === "admin" && chat.type !== "personal")) return;
+      if (!options.positionReady || !chat || !viewport || !role) return;
       const unread = new Set(options.visibleMessages
         .filter(message => isUnreadIncoming(message, chat, role))
         .map(message => Number(message.id))
@@ -218,6 +218,7 @@ export default function ChatsPage(options) {
               const showMessageCount = () =>
                 options.profile?.role === "admin" && options.chatSection === "participants" && !personal();
               const unreadCount = () => Number(row().unread_count) || 0;
+              const adminUnreadCount = () => Number(row().admin_unread_count) || 0;
               const displayedCount = () =>
                 showMessageCount() ? Number(row().message_count) || 0 : unreadCount();
               const isSelected = () =>
@@ -279,6 +280,15 @@ export default function ChatsPage(options) {
                       unread={!showMessageCount() && unreadCount() > 0}
                       title={showMessageCount() ? "Всего сообщений" : "Непрочитанные сообщения"}
                       label={showMessageCount() ? "сообщений всего" : "непрочитанных сообщений"}
+                    />
+                  )}
+                  {showMessageCount() && adminUnreadCount() > 0 && (
+                    <CountBadge
+                      value={adminUnreadCount()}
+                      unread
+                      title="Непрочитанные администратором сообщения"
+                      label="непрочитанных администратором сообщений"
+                      hideWhenZero
                     />
                   )}
                 </button>

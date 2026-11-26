@@ -344,8 +344,8 @@ export function createChatsController(options) {
     }
     const role = options.profile?.role;
     const position = savedPosition(chatKey, restoring ? options.chatState.messageFilter : "all");
-    const unreadCount = !position &&
-      (role !== "admin" || chat.type === "personal") ? Number(chat.unread_count) || 0 : 0;
+    const unreadCount = !position ? Number(role === "admin" && chat.type !== "personal"
+      ? chat.admin_unread_count : chat.unread_count) || 0 : 0;
     const candidate = unreadCount ? null : cache.getHistory(chatKey);
     const cached = candidate && (!position?.anchor || position.bottom === true ||
       candidate.messages.some(item => "message:" + item.id === position.anchor.id)) ? candidate : null;

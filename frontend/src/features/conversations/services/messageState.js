@@ -53,6 +53,7 @@ function preserveMonotonicState(previous, incoming) {
   if (Number.isFinite(previousRead) && (!Number.isFinite(incomingRead) || previousRead > incomingRead)) {
     result.panel_read_at = previous.panel_read_at;
   }
+  if (previous.admin_read_at && !incoming.admin_read_at) result.admin_read_at = previous.admin_read_at;
   const previousStatus = previous.delivery_status;
   if (previousStatus && previousStatus !== "pending" && incoming.delivery_status !== previousStatus) {
     result.delivery_status = previousStatus;
@@ -102,7 +103,10 @@ export function mergeConversationMessages(previous, incoming, conversationKey = 
 }
 
 export function isUnreadIncoming(message, chat, role) {
-  if (!role || message.sender_role === role || (role === "admin" && chat.type !== "personal")) return false;
+  if (!role || message.sender_role === role) return false;
+  if (role === "admin" && chat.type !== "personal") {
+    return ["teacher", "student"].includes(message.sender_role) && !message.admin_read_at;
+  }
   return chat.type === "personal" || message.sender_role !== "admin"
     ? !message.panel_read_at
     : !message.metadata?.[role + "_read_at"];

@@ -38,7 +38,11 @@ export function applyReadReceipt(rows, payload, conversationType) {
       changed = true;
       return { ...row, panel_read_at: readAt };
     }
-    if (role === "admin") return row;
+    if (role === "admin") {
+      if (row.admin_read_at) return row;
+      changed = true;
+      return { ...row, admin_read_at: readAt };
+    }
     const field = role + "_read_at";
     if (row.metadata?.[field]) return row;
     const metadata = { ...row.metadata, [field]: readAt };

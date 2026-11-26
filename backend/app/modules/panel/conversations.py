@@ -95,10 +95,10 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
     query = select(Message).options(joinedload(Message.sender)).where(
         Message.conversation_id == conversation.id, Message.id > after_id,
     )
-    if first_unread and around_id is None and principal["role"] != "admin":
+    if first_unread and around_id is None:
         around_id = db.scalar(select(Message.id).where(
             Message.conversation_id == conversation.id,
-            Message.id > read_cursor(conversation.id, principal["role"]),
+            *([Message.id > read_cursor(conversation.id, principal["role"])] if principal["role"] != "admin" else []),
             unread_condition(db, principal["role"]),
         ).order_by(Message.id).limit(1))
     if around_id is not None:
@@ -120,7 +120,7 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
     if before_id is not None:
         query = query.where(Message.id < before_id)
     if limit is None:
-        if mark_read:
+        if mark_read and principal["role"] != "admin":
             mark_conversation_read(db, conversation, principal, after_id)
         rows = db.scalars(query.order_by(Message.created_at, Message.id)).all()
     else:
@@ -128,7 +128,7 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
         rows = list(db.scalars(query.order_by(order).limit(limit)).all())
         if not forward:
             rows.reverse()
-        if mark_read:
+        if mark_read and principal["role"] != "admin":
             mark_conversation_read(db, conversation, principal, after_id, [row.id for row in rows])
     return [
         panel_message_dict(
