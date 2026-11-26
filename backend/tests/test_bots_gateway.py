@@ -641,7 +641,11 @@ def test_admin_can_reset_only_selected_student_topic(api):
             ExternalEndpoint(platform="telegram", user_id=other, chat_id="-1002", thread_id="7"),
         ])
         db.commit()
-        first = reply(db, chat)
+        first = Message(conversation_id=chat.id, sender_id=chat.teacher_id, sender_role="teacher", text="reply")
+        db.add(first)
+        db.flush()
+        enqueue_web_delivery(db, first, ("telegram",))
+        db.commit()
         jobs = db.query(ConnectorDelivery).filter_by(message_id=first.id, platform="telegram").all()
         group_id = next(job.id for job in jobs if job.thread_id)
         private_id = next(job.id for job in jobs if not job.thread_id)
@@ -666,3 +670,27 @@ def test_admin_can_reset_only_selected_student_topic(api):
             "actor": "123", "chat_id": "-1001", "thread_id": "9",
         }) == {"bound": True}
         assert db.get(ExternalEndpoint, ("telegram", student)).thread_id == "9"
+
+
+def test_core_ack_confirms_only_current_committed_forum_route(api, monkeypatch):
+    _, users, sessions = api
+    monkeypatch.setattr(gateway, "SessionLocal", sessions)
+    with sessions() as db:
+        chat = prepare(db, users)
+        sync_messenger_account(db, chat.student_id, "telegram", "123", "123")
+        db.commit()
+    core = gateway.BotsGateway()
+    try:
+        core.platforms = ("telegram",)
+        event = {"id": "first", "external_message_id": "10", "actor": "123",
+                 "channel": "group", "chat_id": "-1001", "thread_id": "7",
+                 "pending_topic": True, "kind": "text", "text": "Hi"}
+        blocked = {**event, "id": "blocked", "external_message_id": "9", "kind": "contact", "text": ""}
+        assert core._consume_event("telegram", "inbound", blocked) == {"route_confirmed": False}
+        assert core._consume_event("telegram", "inbound", event) == {"route_confirmed": True}
+        assert core._consume_event("telegram", "inbound", event) == {"route_confirmed": True}
+        moved = {**event, "id": "moved", "external_message_id": "11", "chat_id": "-1002"}
+        assert core._consume_event("telegram", "inbound", moved) == {"route_confirmed": True}
+        assert core._consume_event("telegram", "inbound", event) == {"route_confirmed": False}
+    finally:
+        core._db_executor.shutdown()

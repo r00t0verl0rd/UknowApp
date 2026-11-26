@@ -476,3 +476,28 @@ def test_long_caption_and_unicode_text_preserve_every_part(tmp_path):
         finally:
             spool.close()
     asyncio.run(run())
+
+
+def test_membership_rate_limit_resumes_at_same_student(monkeypatch):
+    from aiogram.exceptions import TelegramRetryAfter
+
+    async def run():
+        adapter = object.__new__(TelegramAdapter)
+        limited = TelegramRetryAfter(method=GetChatMember(chat_id=-1001, user_id=11),
+                                     message="rate limit", retry_after=2)
+        adapter.bot = SimpleNamespace(
+            me=AsyncMock(return_value=SimpleNamespace(id=99)),
+            get_chat_member=AsyncMock(side_effect=[
+                SimpleNamespace(status="administrator"), SimpleNamespace(status="left"),
+                limited, SimpleNamespace(status="member"),
+            ]))
+        gateway = SimpleNamespace(rpc=AsyncMock(side_effect=[
+            {"actors": ["10", "11"], "next": None}, {"bound": True},
+        ]))
+        sleep = AsyncMock()
+        monkeypatch.setattr("connectors.telegram.adapter.asyncio.sleep", sleep)
+        assert await adapter.bind_forum_student("-1001", "7", gateway) == "bound"
+        assert [call.args[1] for call in adapter.bot.get_chat_member.await_args_list] == [99, 10, 11, 11]
+        sleep.assert_awaited_once_with(2)
+        assert gateway.rpc.await_count == 2
+    asyncio.run(run())

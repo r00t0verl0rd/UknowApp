@@ -79,9 +79,12 @@ def visible(db, user, conversation_id):
     return row
 
 
-def telegram_route_allowed(endpoint, chat, thread):
-    # A new group may replace the route; another topic in the same group may not.
-    return endpoint is None or endpoint.chat_id != chat or endpoint.thread_id == thread
+def group_route_allowed(platform, endpoint, chat, thread):
+    # Core owns the policy; connectors cannot weaken it by supplying a flag.
+    same_route = endpoint is None or (endpoint.chat_id, endpoint.thread_id) == (chat, thread)
+    if platform == "telegram":
+        return bool(thread and thread != "1") and (same_route or endpoint.chat_id != chat)
+    return same_route
 
 
 def bind_endpoint(db, platform, user, chat, thread):
@@ -222,7 +225,7 @@ def rpc(db, platform, operation, payload):
                 chat = identifier(payload["chat_id"])
                 thread = identifier(payload["thread_id"])
                 endpoint = db.get(ExternalEndpoint, (platform, user.id)) if items else None
-                result["route_allowed"] = bool(items) and telegram_route_allowed(endpoint, chat, thread)
+                result["route_allowed"] = bool(items) and group_route_allowed(platform, endpoint, chat, thread)
                 if not result["route_allowed"]:
                     result["route_reason"] = "stored topic mismatch" if items else "student or assignment unavailable"
             return result
@@ -238,7 +241,7 @@ def rpc(db, platform, operation, payload):
             if not thread or thread == "1":
                 raise HTTPException(403, "endpoint unavailable")
             existing = db.get(ExternalEndpoint, (platform, user.id))
-            if not telegram_route_allowed(existing, chat, thread):
+            if not group_route_allowed(platform, existing, chat, thread):
                 return {"bound": False, "reason": "topic_locked"}
         bind_endpoint(db, platform, user, chat, thread)
         db.commit()
@@ -302,10 +305,7 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
         endpoint = db.get(ExternalEndpoint, (platform, user.id))
         same_route = endpoint is not None and endpoint.chat_id == chat and endpoint.thread_id == thread
         if not same_route:
-            if platform == "telegram":
-                if not telegram_route_allowed(endpoint, chat, thread):
-                    raise HTTPException(403, "group not linked")
-            elif endpoint is not None:
+            if not group_route_allowed(platform, endpoint, chat, thread):
                 raise HTTPException(403, "group not linked")
             if platform != "telegram" or not blocked:
                 bind_endpoint(db, platform, user, chat, thread)

@@ -52,8 +52,6 @@ def test_physical_split_and_legacy_copy(tmp_path):
 def test_projection_recovery_and_no_main_sql_for_empty_queue(api):
     from app.modules.communication.accounts import sync_messenger_account
     from app.bots_gateway.operations import rpc
-    from fastapi import HTTPException
-    import pytest
     _, users, sessions = api
     with sessions() as db:
         chat = create_conversation(db, users["teacher-one"],users["student-one"])
@@ -83,13 +81,15 @@ def test_projection_recovery_and_no_main_sql_for_empty_queue(api):
         finally:
             event.remove(db.get_bind(),"before_cursor_execute",count)
         assert db.get(ConnectorDelivery,job_id).status == "queued"
-        rpc(db,"telegram","delivery.authorize",{"id":job_id,"claim":"a"*32})
+        assert rpc(db, "telegram", "delivery.authorize_batch", {
+            "jobs": [{"id": job_id, "claim": "a"*32}],
+        })[job_id]["ok"]
         transport.forget(job_id)
         transport.project_pending(db,("telegram",),{})
         assert transport.candidates(db,("telegram",))[0][0] == job_id
-        with pytest.raises(HTTPException) as err:
-            rpc(db,"telegram","delivery.authorize",{"id":job_id,"claim":"b"*32})
-        assert err.value.status_code == 425
+        assert rpc(db, "telegram", "delivery.authorize_batch", {
+            "jobs": [{"id": job_id, "claim": "b"*32}],
+        })[job_id] == {"ok": False, "code": 425}
         record_result(db,db.get(ConnectorDelivery,job_id),"delivered","external")
         assert not transport.candidates(db,("telegram",))
         transport.project_pending(db,("telegram",),{})

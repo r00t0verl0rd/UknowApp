@@ -390,10 +390,10 @@ class TelegramAdapter:
                     info = await self.bot.me()
                     if any(member.get("id") == info.id for member in members):
                         logger.info("Telegram bot invitation: has_thread=%s general=%s topic=%s anonymous=%s",
-                                    bool(thread), thread == "1", bool(message.get("is_topic_message")),
+                                    bool(message.get("message_thread_id") or thread),
+                                    str(message.get("message_thread_id")) == "1", bool(message.get("is_topic_message")),
                                     bool(message.get("sender_chat")))
-                        if (thread and thread != "1" and message.get("is_topic_message")
-                                and not message.get("sender_chat")
+                        if (thread and not message.get("sender_chat")
                                 and await self.forum_admin(chat, actor)):
                             if spool:
                                 spool.remember_forum_topic(chat, thread)
