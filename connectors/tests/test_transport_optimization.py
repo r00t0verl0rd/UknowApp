@@ -181,3 +181,26 @@ def test_permanent_rejection_does_not_block_next_event(tmp_path):
             await asyncio.gather(task, return_exceptions=True)
             spool.close()
     asyncio.run(run())
+
+
+def test_partial_send_keeps_known_copy_and_never_retries_whole_message(tmp_path, monkeypatch):
+    from connectors.common.client import RetryLater
+    monkeypatch.setenv("BOTS_MEDIA_URL", "http://backend")
+    monkeypatch.setenv("BOTS_MEDIA_SECRET", "test")
+
+    async def run():
+        spool = EventSpool(tmp_path / "parts.db", "telegram")
+        try:
+            client = GatewayClient("telegram", None, spool)
+            async def send(job, gateway):
+                gateway.spool.record_delivery_part("job", "101")
+                raise RetryLater(120)
+            adapter = SimpleNamespace(send=AsyncMock(side_effect=send))
+            receipt = await client.execute_delivery(adapter, "job", {})
+            assert receipt == {"id": "job", "status": "failed",
+                               "external_message_id": "101", "external_message_ids": ["101"]}
+            assert spool.delivery("job") == receipt
+            adapter.send.assert_awaited_once()
+        finally:
+            spool.close()
+    asyncio.run(run())

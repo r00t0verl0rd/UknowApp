@@ -126,6 +126,17 @@ class EventSpool:
             self.db.execute("INSERT INTO deliveries(namespace,id,result) VALUES (?,?,NULL)",
                             (self.namespace, job_id))
 
+    def record_delivery_part(self, job_id, external_id):
+        # A crash between parts must retain all confirmed copies, not resend them.
+        receipt = self.delivery(job_id)
+        ids = list((receipt or {}).get("external_message_ids", []))
+        if external_id not in ids:
+            ids.append(external_id)
+        with self.db:
+            self.db.execute("UPDATE deliveries SET result=? WHERE namespace=? AND id=?",
+                            (json.dumps({"id": job_id, "status": "unknown", "external_message_ids": ids}),
+                             self.namespace, job_id))
+
     def retry_rejected_delivery(self, job_id):
         """A definite provider rejection did not create an external message."""
         with self.db:

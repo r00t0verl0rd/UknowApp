@@ -183,8 +183,14 @@ class BotsGateway:
                     return False
                 if status not in {"delivered", "failed", "unknown", "cancelled"}:
                     raise ValueError("invalid result")
-                external_id = identifier(payload.get("external_message_id")) if status == "delivered" else None
-                record_result(db, job, status, external_id)
+                ids = payload.get("external_message_ids")
+                if ids is not None:
+                    if not isinstance(ids, list) or not 0 < len(ids) <= 32 or isinstance(job, ConnectorDeletion):
+                        raise ValueError("invalid delivery parts")
+                    ids = list(dict.fromkeys(identifier(ident) for ident in ids))
+                external_id = ids[0] if ids else (
+                    identifier(payload.get("external_message_id")) if status == "delivered" else None)
+                record_result(db, job, status, external_id, external_ids=ids)
         if direction == "delivery":
             transport.forget(payload["id"])
         return True

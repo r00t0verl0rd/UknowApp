@@ -447,3 +447,32 @@ def test_join_batch_never_guesses_between_students(tmp_path, second_role):
         finally:
             spool.close()
     asyncio.run(run())
+
+
+def test_long_caption_and_unicode_text_preserve_every_part(tmp_path):
+    async def run():
+        adapter = object.__new__(TelegramAdapter)
+        adapter.bot = SimpleNamespace(
+            send_photo=AsyncMock(return_value=SimpleNamespace(message_id=11)),
+            send_message=AsyncMock(side_effect=[SimpleNamespace(message_id=12), SimpleNamespace(message_id=13)]),
+            send_video=AsyncMock(), send_voice=AsyncMock(), send_audio=AsyncMock(),
+            send_animation=AsyncMock(), send_document=AsyncMock())
+        spool = EventSpool(tmp_path / "parts.db", "telegram")
+        try:
+            gateway = SimpleNamespace(spool=spool, media_url=lambda job_id: "http://backend/media/" + job_id,
+                                      headers={})
+            spool.begin_delivery("job")
+            original = "A" * 1000 + "😀" * 2300
+            ids = await adapter.send({"id": "job", "chat_id": "-1001", "thread_id": "7",
+                "kind": "photo", "text": original, "media": {"file_name": "one.jpg"}}, gateway)
+            caption = adapter.bot.send_photo.await_args.kwargs["caption"]
+            texts = [call.kwargs["text"] for call in adapter.bot.send_message.await_args_list]
+            assert caption + "".join(texts) == original
+            assert len(caption.encode("utf-16-le")) // 2 <= 1024
+            assert all(len(part.encode("utf-16-le")) // 2 <= 4096 for part in texts)
+            assert all(call.kwargs["message_thread_id"] == 7 for call in adapter.bot.send_message.await_args_list)
+            assert ids == ["11", "12", "13"]
+            assert spool.delivery("job")["external_message_ids"] == ids
+        finally:
+            spool.close()
+    asyncio.run(run())

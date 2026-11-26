@@ -181,9 +181,9 @@ def enqueue_message_deletions(db, row):
     inflight = 0
     unknown = 0
     for job in jobs:
-        if job.status == "delivered" and job.external_message_id:
+        if job.external_message_id:
             copies.add((job.platform, job.chat_id, job.external_message_id))
-        elif job.status == "sending":
+        if job.status == "sending":
             inflight += 1
         elif job.status == "unknown":
             unknown += 1
@@ -196,20 +196,21 @@ def enqueue_message_deletions(db, row):
     return len(copies) + inflight, unknown
 
 
-def record_result(db, job, status, external_id=None):
+def record_result(db, job, status, external_id=None, *, external_ids=None):
     if job.status in TERMINAL:
         return
     job.status = status
     if isinstance(job, ConnectorDeletion):
         db.commit()
         return
-    job.external_message_id = external_id
+    ids = external_ids or ([external_id] if external_id else [])
+    job.external_message_id = ids[0] if ids else None
     db.flush()
     row = db.get(Message, job.message_id) if job.message_id is not None else None
     if row is None:
         # The original message may have been deleted while the provider request was in flight.
-        if status == "delivered" and external_id:
-            enqueue_deletion(db, job.platform, job.chat_id, external_id)
+        for ident in ids:
+            enqueue_deletion(db, job.platform, job.chat_id, ident)
         db.commit()
         return
     jobs = db.scalars(select(ConnectorDelivery).where(
@@ -218,15 +219,24 @@ def record_result(db, job, status, external_id=None):
         return {"user_id": j.recipient_id, "external_chat_id": j.chat_id,
                 "external_thread_id": j.thread_id or None,
                 "endpoint_type": "group" if j.thread_id else "private"}
-    delivered = [{**address(j), "external_message_id": j.external_message_id}
-                 for j in jobs if j.status == "delivered"]
+    metadata = json.loads(row.metadata_json or "{}")
+    # Keep every confirmed part in the existing delivery ledger. The first ID
+    # remains in the job row for compatibility with old single-copy receipts.
+    previous = metadata.get("messenger_deliveries", {}).get(job.platform, {}).get("delivered", [])
+    delivered = {}
+    for copy in previous + [
+        {**address(j), "external_message_id": j.external_message_id}
+        for j in jobs if j.external_message_id
+    ] + [{**address(job), "external_message_id": ident} for ident in ids]:
+        if copy.get("external_chat_id") and copy.get("external_message_id"):
+            delivered[(str(copy["external_chat_id"]), str(copy["external_message_id"]))] = copy
+    delivered = list(delivered.values())
     errors = [{**address(j), "reason": j.status}
               for j in jobs if j.status in {"failed", "unknown", "cancelled"}]
     states = {j.status for j in jobs}
     status = ("queued" if states & PENDING else
               "partial" if delivered and errors else "delivered" if delivered else
               "unknown" if "unknown" in states else "failed")
-    metadata = json.loads(row.metadata_json or "{}")
     record_messenger_delivery(metadata, job.platform, delivered, errors, status)
     db.execute(update(Message).where(Message.id == row.id).values(
         metadata_json=metadata_with_field(db, Message.metadata_json, "messenger_deliveries", metadata["messenger_deliveries"])

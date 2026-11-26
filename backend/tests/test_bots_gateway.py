@@ -592,3 +592,31 @@ def test_telegram_explicit_invitation_takes_priority_before_student_message(api)
         assert {(job.chat_id, job.thread_id) for job in db.query(ConnectorDelivery).all()} == {
             ("123", ""), ("-1001", "47"),
         }
+
+
+def test_multipart_receipts_keep_all_known_copies_for_deletion(api):
+    from app.modules.communication.outbox import enqueue_message_deletions
+    _, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        sync_messenger_account(db, chat.student_id, "telegram", "123", "123")
+        db.add(ExternalEndpoint(platform="telegram", user_id=chat.student_id,
+                                chat_id="-1001", thread_id="7"))
+        db.commit()
+        row = Message(conversation_id=chat.id, sender_id=chat.teacher_id, sender_role="teacher",
+                      text="Long text", metadata_json="{}", delivery_status="delivered")
+        db.add(row)
+        db.flush()
+        enqueue_web_delivery(db, row, ("telegram",))
+        db.commit()
+        jobs = db.query(ConnectorDelivery).filter_by(message_id=row.id).all()
+        group = next(job for job in jobs if job.thread_id)
+        private = next(job for job in jobs if not job.thread_id)
+        record_result(db, group, "failed", "11", external_ids=["11", "12"])
+        record_result(db, private, "delivered", "21")
+        ledger = json.loads(row.metadata_json)["messenger_deliveries"]["telegram"]
+        assert ledger["status"] == "partial"
+        assert {copy["external_message_id"] for copy in ledger["delivered"]} == {"11", "12", "21"}
+        enqueue_message_deletions(db, row)
+        assert {(job.chat_id, job.external_message_id) for job in db.query(ConnectorDeletion)} == {
+            ("-1001", "11"), ("-1001", "12"), ("123", "21")}

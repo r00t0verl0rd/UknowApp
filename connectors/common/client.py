@@ -173,14 +173,21 @@ class GatewayClient:
                     external_id = await self.provider_call(adapter, job)
             else:
                 external_id = await self.provider_call(adapter, job)
-            receipt = {"id": job_id, "status": "delivered", "external_message_id": str(external_id)}
+            receipt = {"id": job_id, "status": "delivered"}
+            if isinstance(external_id, list):
+                receipt["external_message_ids"] = external_id
+                receipt["external_message_id"] = external_id[0]
+            else:
+                receipt["external_message_id"] = str(external_id)
         except asyncio.CancelledError:
             raise
         except RetryLater:
-            # A rate-limit response is an explicit refusal, not an unknown send.
-            # Persist the existing claim but clear the attempt before redelivery.
-            self.spool.retry_rejected_delivery(job_id)
-            raise
+            # Retry a definite refusal only if no earlier part has been delivered.
+            # Otherwise report partial delivery; never duplicate confirmed copies.
+            if not self.spool.delivery(job_id).get("external_message_ids"):
+                self.spool.retry_rejected_delivery(job_id)
+                raise
+            receipt = {"id": job_id, "status": "failed"}
         except DeliveryRejected:
             logger.warning("External delivery refused platform=%s endpoint=%s",
                            self.platform, "group" if job.get("thread_id") else "private")
@@ -188,6 +195,11 @@ class GatewayClient:
         except Exception as exc:
             logger.warning("External delivery outcome uncertain: %s", type(exc).__name__)
             receipt = {"id": job_id, "status": "unknown"}
+        if receipt["status"] != "delivered":
+            known = self.spool.delivery(job_id).get("external_message_ids")
+            if known:
+                receipt["external_message_ids"] = known
+                receipt["external_message_id"] = known[0]
         self.spool.finish_delivery(job_id, receipt)
         return receipt
 

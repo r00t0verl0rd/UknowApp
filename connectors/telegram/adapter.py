@@ -23,6 +23,18 @@ MEDIA_KINDS = ("photo", "document", "audio", "video", "voice", "video_note", "st
 MESSAGE_KINDS = (*MEDIA_KINDS, "contact", "location", "poll")
 
 
+def split_text(text, limit):
+    """Keep every code point; count supplementary characters as two UTF-16 units."""
+    parts, start, used = [], 0, 0
+    for index, char in enumerate(text):
+        width = 2 if ord(char) > 0xFFFF else 1
+        if used + width > limit:
+            parts.append(text[start:index])
+            start, used, limit = index, 0, 4096
+        used += width
+    return parts + [text[start:]]
+
+
 class TelegramAdapter:
     def __init__(self, http, token):
         self.http = http
@@ -77,7 +89,22 @@ class TelegramAdapter:
 
     async def send(self, job, gateway):
         try:
-            return await self._send(job, gateway)
+            text = job["text"]
+            if not job.get("media") and job.get("kind") != "text":
+                text += "\n[" + job["kind"] + "]"
+            parts = split_text(text, 1024 if job.get("media") else 4096)
+            if len(parts) == 1:
+                return await self._send({**job, "text": text}, gateway)
+            ids = []
+            for index, part in enumerate(parts):
+                payload = {**job, "text": part}
+                if index:
+                    payload.update(media=None, kind="text")
+                ident = await self._send(payload, gateway)
+                ids.append(str(ident))
+                # Save each known copy before attempting the next one.
+                gateway.spool.record_delivery_part(job["id"], str(ident))
+            return ids
         except TelegramRetryAfter as exc:
             raise RetryLater(exc.retry_after) from exc
         except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound) as exc:
@@ -102,9 +129,7 @@ class TelegramAdapter:
             kwargs["message_thread_id"] = int(job["thread_id"])
         text = job["text"]
         if not job.get("media"):
-            if job.get("kind") != "text":
-                text += "\n[" + job["kind"] + "]"
-            sent = await self.bot.send_message(text=text[:4096], **kwargs)
+            sent = await self.bot.send_message(text=text, **kwargs)
             return sent.message_id
         media = job["media"]
         size = media.get("file_size")
@@ -119,7 +144,7 @@ class TelegramAdapter:
                             kind, (self.bot.send_document, "document"))
 
         async def send_file(file):
-            return await method(**kwargs, **{field: file}, caption=text[:1024], request_timeout=300)
+            return await method(**kwargs, **{field: file}, caption=text, request_timeout=300)
 
         def upload():
             return URLInputFile(gateway.media_url(job["id"]), headers=gateway.headers,
