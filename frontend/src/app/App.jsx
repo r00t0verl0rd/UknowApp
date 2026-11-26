@@ -148,19 +148,18 @@ function Application(options) {
   const workspacePage = () =>
     workspace()?.pages.includes(navigation.page) ? navigation.page : workspace()?.pages[0];
   const inDialogs = () => authState.auth && workspacePage() === "chats";
-  const foregroundChat = () =>
-    inDialogs() && document.visibilityState === "visible" && document.hasFocus()
-      ? chatState.selectedChat
-      : null;
+  // Receiving chat data is independent from whether the user has read it.
+  const selectedDialog = () => inDialogs() ? chatState.selectedChat : null;
   const activeChat = () =>
-    chatState.messagesViewportRef.current?.isConnected ? foregroundChat() : null;
+    document.visibilityState === "visible" && document.hasFocus() &&
+    chatState.messagesViewportRef.current?.isConnected ? selectedDialog() : null;
   const acknowledgeVisible = createConversationSync({
     cache: chatState.cache,
     get auth() {
       return workspace() && authState.auth;
     },
     get inDialogs() { return inDialogs(); },
-    get foregroundChat() { return foregroundChat(); },
+    get selectedDialog() { return selectedDialog(); },
     get activeChat() { return activeChat(); },
     get role() {
       return authState.profile?.role;
