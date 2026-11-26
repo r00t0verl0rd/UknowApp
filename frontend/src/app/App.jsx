@@ -149,10 +149,10 @@ function Application(options) {
     workspace()?.pages.includes(navigation.page) ? navigation.page : workspace()?.pages[0];
   const inDialogs = () => authState.auth && workspacePage() === "chats";
   const foregroundChat = () =>
-    inDialogs() && document.visibilityState === "visible" && document.hasFocus()
-      ? chatState.selectedChat
-      : null;
+    inDialogs() ? chatState.selectedChat : null;
+  // Fetching data is independent from whether the user actually sees it.
   const activeChat = () =>
+    document.visibilityState === "visible" && document.hasFocus() &&
     chatState.messagesViewportRef.current?.isConnected ? foregroundChat() : null;
   const acknowledgeVisible = createConversationSync({
     cache: chatState.cache,
