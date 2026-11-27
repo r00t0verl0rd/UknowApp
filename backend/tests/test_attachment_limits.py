@@ -44,8 +44,8 @@ def test_streaming_boundary_and_cleanup(personal, monkeypatch, tmp_path):
 def test_web_only_retains_archive_limit(monkeypatch):
     monkeypatch.setenv("BOTS_PLATFORMS", "")
     monkeypatch.setenv("TELEGRAM_API_MODE", "cloud")
-    assert media.panel_attachment_limit() == 1024 ** 3
-    assert media.provider_attachment_limit("other") == 1024 ** 3
+    assert media.panel_attachment_limit() == 888 * 1024 ** 2
+    assert media.provider_attachment_limit("other") == 888 * 1024 ** 2
 
 
 @pytest.mark.parametrize("mode,mib", [("cloud", 20), ("local", 888)])
@@ -75,6 +75,8 @@ def test_connector_upload_applies_mode_limit(mode, mib, monkeypatch, tmp_path):
 
 
 @pytest.mark.parametrize("platforms,mode,mib", [
+    ("", "cloud", 888),
+    ("", "local", 888),
     ("max", "cloud", 888),
     ("max", "local", 888),
     ("telegram,max", "cloud", 20),

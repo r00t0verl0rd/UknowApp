@@ -15,11 +15,11 @@ from app.core.config import ROOT_DIR
 logger = logging.getLogger(__name__)
 MEDIA_DIR = ROOT_DIR / "data" / "media"
 
-MAX_ATTACHMENT_BYTES = 1024 ** 3
-ATTACHMENT_SIZE_ERROR = "Максимальный размер вложения — 1024 МиБ"
+MAX_ATTACHMENT_BYTES = 888 * 1024 ** 2
+ATTACHMENT_SIZE_ERROR = "Максимальный размер вложения — 888 МиБ"
 
 TELEGRAM_ATTACHMENT_LIMITS = {"cloud": 20 * 1024 ** 2, "local": 888 * 1024 ** 2}
-MAX_MESSENGER_ATTACHMENT_BYTES = 888 * 1024 ** 2
+MAX_MESSENGER_ATTACHMENT_BYTES = MAX_ATTACHMENT_BYTES
 
 
 def provider_attachment_limit(platform: str) -> int:
