@@ -160,7 +160,7 @@ function MessageBubble(options) {
     ? messageMediaUrl(options.message.id, options.personalChat) : "";
   const sourceKind = () => media()?.kind || options.message.content_type;
   const mimeType = () => (media()?.mime_type || "").toLowerCase();
-  // Документы Telegram могут содержать воспроизводимое медиа.
+  // Вложения мессенджеров могут содержать воспроизводимое медиа.
   const kind = () =>
     sourceKind() === "video_note"
       ? "video_note"
@@ -314,7 +314,7 @@ function MessageBubble(options) {
               <X size={16} aria-hidden="true" />
             </button>
           </div>
-          <p class="message-delivery-subtitle">Доставка через мессенджеры</p>
+          <p class="message-delivery-subtitle">Доставка через Telegram и MAX</p>
           <ul>
             {deliveryDetails().map((detail) => (
               <li class={detail.delivered ? "is-delivered" : ""}>
