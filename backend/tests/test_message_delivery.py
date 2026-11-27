@@ -18,7 +18,8 @@ def login(client, username, password):
     return response.json()
 
 
-def test_chat_delivery_ticks_follow_uknowapp_persistence_and_read_state(api):
+@pytest.mark.parametrize("body", ["Ответ доступен в UknowApp", "student@example.test", "@sample_user", "https://t.me/sample_user", "+1 202 555 0100"])
+def test_chat_delivery_ticks_follow_uknowapp_persistence_and_read_state(api, body):
     make_client, users, _ = api
     admin = make_client()
     login(admin, "test-admin", "a-long-test-password-123")
@@ -39,7 +40,7 @@ def test_chat_delivery_ticks_follow_uknowapp_persistence_and_read_state(api):
 
     sent = teacher.post(
         f"/api/panel/conversations/{conversation_id}/messages",
-        json={"text": "Ответ доступен в UknowApp"},
+        json={"text": body},
     )
     assert sent.status_code == 201
     assert sent.json()["delivery_status"] == "delivered"
@@ -55,7 +56,7 @@ def test_chat_delivery_ticks_follow_uknowapp_persistence_and_read_state(api):
         f"/api/panel/conversations/{conversation_id}/messages",
     )
     assert received.status_code == 200
-    assert received.json()[0]["text"] == "Ответ доступен в UknowApp"
+    assert received.json()[0]["text"] == body
     student_inbox_after_read = student.get("/api/panel/conversations")
     assert student_inbox_after_read.status_code == 200
     assert student_inbox_after_read.json()[0]["unread_count"] == 0
@@ -81,7 +82,7 @@ def test_chat_delivery_ticks_follow_uknowapp_persistence_and_read_state(api):
     # Обратное направление использует те же счётчики.
     student_reply = student.post(
         f"/api/panel/conversations/{conversation_id}/messages",
-        json={"text": "Ответ ученика"},
+        json={"text": body},
     )
     assert student_reply.status_code == 201
     teacher_inbox_before_read = teacher.get("/api/panel/conversations")

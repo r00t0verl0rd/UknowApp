@@ -99,7 +99,7 @@ def panel_message_dict(
         "metadata": metadata,
         # Сообщение считается доставленным после сохранения в UknowApp.
         "delivery_status": (
-            "blocked_contact" if item.delivery_status == "blocked_contact" else "delivered"
+            "delivered" if item.delivery_status in {"received", "pending", "delivered"} else "failed"
         ),
         "panel_read_at": (
             metadata.get("student_read_at") if item.sender_role == "teacher"
@@ -128,7 +128,7 @@ def panel_message_status_dict(item: Message, principal: dict) -> dict:
     result = {
         "id": item.id,
         "delivery_status": (
-            "blocked_contact" if item.delivery_status == "blocked_contact" else "delivered"
+            "delivered" if item.delivery_status in {"received", "pending", "delivered"} else "failed"
         ),
         "panel_read_at": read_at,
     }

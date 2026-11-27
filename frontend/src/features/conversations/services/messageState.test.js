@@ -74,7 +74,7 @@ test("terminal delivery and metadata read markers never move backwards", () => {
   const result = mergeConversationMessages(
     [{
       id: 21,
-      delivery_status: "blocked_contact",
+      delivery_status: "failed",
       metadata: { teacher_read_at: "2026-11-21T10:05:00Z" },
     }],
     [{
@@ -84,7 +84,7 @@ test("terminal delivery and metadata read markers never move backwards", () => {
     }],
     "conversation:21",
   );
-  assert.equal(result[0].delivery_status, "blocked_contact");
+  assert.equal(result[0].delivery_status, "failed");
   assert.equal(result[0].metadata.teacher_read_at, "2026-11-21T10:05:00Z");
 });
 

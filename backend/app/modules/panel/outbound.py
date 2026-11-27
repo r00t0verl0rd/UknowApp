@@ -31,7 +31,6 @@ from app.modules.conversations.service import (
     publish_conversation_update,
 )
 from app.modules.dependencies import Db, PanelUser
-from app.modules.messaging.moderation import text_contains_contact_data
 from app.modules.messaging.service import (
     panel_message_dict,
     panel_visible_conversation,
@@ -128,8 +127,6 @@ def send_panel_message(
     # Сначала сохраняем сообщение в БД, затем отправляем его адресатам через Gateway.
     conversation = panel_visible_conversation(db, principal, conversation_id)
     body = payload["text"].strip()
-    if text_contains_contact_data(body):
-        raise HTTPException(status_code=400, detail="Контактные данные нельзя отправлять через чат UknowApp")
     if not body:
         raise HTTPException(status_code=400, detail="Введите текст сообщения")
 
@@ -193,8 +190,6 @@ def send_panel_attachment(
         if existing:
             return _message_response(existing, principal)
 
-    if text_contains_contact_data((text or "").strip()):
-        raise HTTPException(status_code=400, detail="Контактные данные нельзя отправлять через чат UknowApp")
     size, original_name, relative, mime_type, kind = store_panel_attachment(
         file, conversation.id,
     )

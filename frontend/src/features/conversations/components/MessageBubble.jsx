@@ -212,18 +212,18 @@ function MessageBubble(options) {
                 const status = options.message.delivery_status || "unknown";
                 const read = Boolean(options.message.panel_read_at);
                 const pending = status === "pending";
-                const blocked = status === "blocked_contact";
+                const failed = status === "failed";
                 const title = read
                   ? "Прочитано в UknowApp"
-                  : blocked
-                    ? "Сообщение заблокировано системой"
+                  : failed
+                    ? "Сообщение не доставлено"
                     : pending
                       ? "Отправлено из UknowApp"
                       : "Доставлено в UknowApp";
-                const statusClass = read ? " is-read" : blocked ? " is-failed" : "";
+                const statusClass = read ? " is-read" : failed ? " is-failed" : "";
                 return (
                   <span class={"message-read-status" + statusClass} title={title} aria-label={title}>
-                    {blocked ? <CircleX size={15} /> : pending ? <Check size={14} /> : <CheckCheck size={15} />}
+                    {failed ? <CircleX size={15} /> : pending ? <Check size={14} /> : <CheckCheck size={15} />}
                   </span>
                 );
               })()}

@@ -38,7 +38,6 @@ from app.modules.conversations.service import (
     publish_conversation_update,
     unread_condition,
 )
-from app.modules.messaging.moderation import text_contains_contact_data
 from app.modules.messaging.read_state import mark_conversation_read
 from app.modules.notifications.content import PUSH_TITLE, push_body
 from app.modules.notifications.service import schedule_push
@@ -109,7 +108,7 @@ def summaries(db, user):
         ranked = select(Message.id.label("id"), Message.conversation_id,
             func.row_number().over(partition_by=Message.conversation_id, order_by=Message.id.desc()).label("rank")
         ).where(Message.conversation_id.in_([i["id"] for i in items]),
-                Message.delivery_status != "blocked_contact", unread_condition(db, user.role)).subquery()
+                unread_condition(db, user.role)).subquery()
         rows = db.scalars(select(Message).join(ranked, Message.id == ranked.c.id)
                           .where(ranked.c.rank <= 3).order_by(Message.id)).all()
         for row in rows:
@@ -306,7 +305,6 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
         raise ValueError("invalid message text")
     if kind == "text" and not text.strip():
         raise ValueError("empty text")
-    blocked = kind == "contact" or text_contains_contact_data(text)
     route_changed = False
     if group:
         endpoint = db.get(ExternalEndpoint, (platform, user.id))
@@ -316,13 +314,12 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
                 raise HTTPException(403, "group not linked")
             if not group_route_allowed(platform, endpoint, chat, thread):
                 raise HTTPException(403, "group not linked")
-            if platform != "telegram" or not blocked:
-                bind_endpoint(db, platform, user, chat, thread)
-                route_changed = True
+            bind_endpoint(db, platform, user, chat, thread)
+            route_changed = True
     metadata = {"source_mode": "group_topic" if payload.get("channel") == "group" else "private",
                 "source_chat_id": chat, "source_thread_id": thread or None, "source_platform": platform}
     media = payload.get("media")
-    if media and not blocked:
+    if media:
         path, storage_key = media_path(platform, event_id)
         if not path.is_file():
             raise ValueError("media not uploaded")
@@ -330,25 +327,21 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
         metadata["media"] = {"kind": kind, "file_name": filename[:180],
             "mime_type": safe_media_type(media.get("mime_type")), "file_size": path.stat().st_size,
             "local_path": storage_key, "archive_status": "stored"}
-    if payload.get("media_unavailable") and not blocked:
+    if payload.get("media_unavailable"):
         metadata["media"] = {"kind": kind, "archive_status": "download_failed"}
-    if blocked and media:
-        path, _ = media_path(platform, event_id)
-        path.unlink(missing_ok=True)
     if kind == "location" and isinstance(payload.get("location"), dict):
         metadata["location"] = payload["location"]
     if kind == "poll" and isinstance(payload.get("poll"), dict):
         metadata["poll"] = payload["poll"]
     row = Message(conversation_id=conversation.id, sender_id=user.id, sender_role=user.role,
-        content_type=kind, text="[Контактные данные скрыты системой]" if blocked else text,
-        metadata_json=encode_message_metadata(metadata), delivery_status="blocked_contact" if blocked else "delivered",
+        content_type=kind, text=text,
+        metadata_json=encode_message_metadata(metadata), delivery_status="delivered",
         source_platform=platform, source_event_id=source_event)
     db.add(row)
     db.add(BotEventReceipt(platform=platform, event_id=event_id))
     try:
         db.flush()
-        if not blocked:
-            enqueue_web_delivery(db, row, enabled_platforms)
+        enqueue_web_delivery(db, row, enabled_platforms)
         db.commit()
     except IntegrityError:
         db.rollback()

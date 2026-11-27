@@ -56,13 +56,14 @@ def test_media_is_platform_scoped_and_idempotent(tmp_path, monkeypatch):
         assert gateway.media_path("alpha", "event-1")[0].read_bytes() == b"test"
 
 
-def test_inbound_receipt_and_cross_provider_outbox(api):
+@pytest.mark.parametrize("body", ["hello", "student@example.test", "@sample_user", "https://t.me/sample_user", "+1 202 555 0100"])
+def test_inbound_receipt_and_cross_provider_outbox(api, body):
     _, users, sessions = api
     with sessions() as db:
         chat = prepare(db, users)
         chat_id = chat.id
         event = {"id":"event-1", "external_message_id":"42", "actor":"student", "chat_id":"200",
-                 "channel":"private", "kind":"text", "text":"hello"}
+                 "channel":"private", "kind":"text", "text":body}
         receive_message(db, "beta", event, ("alpha", "beta"), gateway.media_path)
         receive_message(db, "beta", event, ("alpha", "beta"), gateway.media_path)
         # Повтор события сохраняет исходный ID сообщения.
@@ -72,11 +73,11 @@ def test_inbound_receipt_and_cross_provider_outbox(api):
         job = db.query(ConnectorDelivery).one()
         assert job.platform == "alpha" and job.chat_id == "100"
         assert job.status == "queued"
-        assert authorize(db, "alpha", {"id":job.id})["text"].endswith("hello")
+        assert authorize(db, "alpha", {"id":job.id})["text"].endswith(body)
         with pytest.raises(HTTPException):
             authorize(db, "beta", {"id":job.id})
         view = rpc(db, "alpha", "conversation.open", {"actor":"teacher", "conversation_id":chat_id})
-        assert view["messages"][0]["text"] == "hello"
+        assert view["messages"][0]["text"] == body
         record_result(db, job, "delivered", "message-123")
         record_result(db, job, "unknown")
         row = db.query(Message).one()
@@ -515,11 +516,6 @@ def test_telegram_forum_moves_between_groups_but_not_topics(api):
         assert exc.value.status_code == 409
         db.rollback()
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
-        # Отклонённое сообщение не меняет адрес.
-        receive_message(db, "telegram", {**first, "id": "blocked-move",
-                        "external_message_id": "72", "chat_id": "-1002", "thread_id": "69",
-                        "kind": "contact", "text": ""}, ("telegram",), gateway.media_path)
-        assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
         # Первое сообщение новой группы заменяет старый адрес.
         queued = teacher_reply()
         assert allowed("-1002", "69")
@@ -543,7 +539,7 @@ def test_telegram_forum_moves_between_groups_but_not_topics(api):
                         "chat_id": "123", "thread_id": None, "channel": "private"},
                         ("telegram",), gateway.media_path)
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1002", "69")
-        assert db.query(Message).filter_by(sender_id=chat.student_id).count() == 4
+        assert db.query(Message).filter_by(sender_id=chat.student_id).count() == 3
         assert {(job.chat_id, job.thread_id) for job in teacher_reply()} == {("123", ""), ("-1002", "69")}
         assert allowed("-1002", "69")
         assert (other.chat_id, other.thread_id) == ("-1002", "99")
@@ -748,8 +744,8 @@ def test_core_ack_confirms_only_current_committed_forum_route(api, monkeypatch):
         event = {"id": "first", "external_message_id": "10", "actor": "123",
                  "channel": "group", "chat_id": "-1001", "thread_id": "7",
                  "pending_topic": True, "kind": "text", "text": "Hi"}
-        blocked = {**event, "id": "blocked", "external_message_id": "9", "kind": "contact", "text": ""}
-        assert core._consume_event("telegram", "inbound", blocked) == {"route_confirmed": False}
+        contact = {**event, "id": "contact", "external_message_id": "9", "kind": "contact", "text": ""}
+        assert core._consume_event("telegram", "inbound", contact) == {"route_confirmed": True}
         assert core._consume_event("telegram", "inbound", event) == {"route_confirmed": True}
         assert core._consume_event("telegram", "inbound", event) == {"route_confirmed": True}
         moved = {**event, "id": "moved", "external_message_id": "11", "chat_id": "-1002"}
