@@ -6,6 +6,7 @@ export function createUserEditorState() {
   const [panelLogin, setPanelLogin] = createSignal("");
   const [role, setRole] = createSignal("teacher");
   const [additionalInfo, setAdditionalInfo] = createSignal("");
+  const [maxId, setMaxId] = createSignal("");
   const [telegramId, setTelegramId] = createSignal("");
   const [teacherId, setTeacherId] = createSignal("");
   const [studentId, setStudentId] = createSignal("");
@@ -39,6 +40,8 @@ export function createUserEditorState() {
       return telegramId();
     },
     setTelegramId,
+    get maxId() { return maxId(); },
+    setMaxId,
     get teacherId() {
       return teacherId();
     },

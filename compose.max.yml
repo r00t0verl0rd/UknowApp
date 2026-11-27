@@ -1,0 +1,43 @@
+services:
+  backend:
+    environment:
+      BOTS_MEDIA_SECRET_MAX: ${BOTS_MEDIA_SECRET_MAX:?}
+  nats:
+    environment:
+      MAX_PASSWORD: ${BOTS_NATS_MAX_PASSWORD:?}
+    volumes:
+      - ./infrastructure/nats/nats-max.conf:/etc/nats/nats.conf:ro
+  maxbot:
+    profiles: [max]
+    build:
+      context: .
+      dockerfile: connectors/max/Dockerfile
+    environment:
+      MAX_BOT_TOKEN: ${MAX_BOT_TOKEN:?}
+      MAX_WEBHOOK_SECRET: ${MAX_WEBHOOK_SECRET:?}
+      MAX_WEBHOOK_URL: https://${DOMAIN:?}/hooks/max
+      BOTS_NATS_URL: nats://nats:4222
+      BOTS_NATS_USER: max
+      BOTS_NATS_PASSWORD: ${BOTS_NATS_MAX_PASSWORD:-}
+      BOTS_MEDIA_URL: http://backend:8000
+      BOTS_MEDIA_SECRET: ${BOTS_MEDIA_SECRET_MAX:-}
+    volumes:
+      - maxbot_state:/app/state
+      - ${MAX_CA_FILE:?}:/app/certs/max-ca.pem:ro
+    networks: [app_net]
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import pathlib,time; p=pathlib.Path('/app/state/healthy'); assert p.is_file() and time.time()-p.stat().st_mtime < 75"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  maxbot_state:

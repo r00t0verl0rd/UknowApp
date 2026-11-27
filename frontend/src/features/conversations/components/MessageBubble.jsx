@@ -258,7 +258,7 @@ function MessageBubble(options) {
             <small class="chat-media-status">
               {media().archive_status === "too_large_for_telegram_download"
                 ? "Файл больше 20 МБ: Telegram не позволяет сохранить копию для веб-панели. Оригинал остаётся в исходном чате Telegram."
-                : "Не удалось сохранить копию вложения. Проверьте оригинал в Telegram."}
+                : "Не удалось сохранить копию вложения. Проверьте оригинал в исходном чате."}
             </small>
           )}
         {!media() && !options.message.text && <p>Вложение: {options.message.content_type}</p>}

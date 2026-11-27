@@ -53,19 +53,19 @@ export default function UserDialogs(options) {
       {options.modal?.mode === "telegram" && (
         <Modal onClose={() => options.setModal(null)}>
           <div class="modal-head">
-            <div><div class="eyebrow">{options.modal.user.full_name}</div><h2>Подключить Telegram</h2></div>
+            <div><div class="eyebrow">{options.modal.user.full_name}</div><h2>Подключить {options.modal.platform === "max" ? "MAX" : "Telegram"}</h2></div>
             <IconButton aria-label="Закрыть" onClick={() => options.setModal(null)}><X /></IconButton>
           </div>
           <div class="stack">
             <section>
               <h3>Через бота</h3>
-              <p>Участник открывает Telegram-бота школы, нажимает «Старт» и отправляет свой действующий код входа в UknowApp.</p>
-              <Button onClick={async () => options.notify(await copyText("Откройте Telegram-бота школы, нажмите «Старт» и отправьте ему ваш код входа в UknowApp.") ? "Инструкция скопирована" : "Не удалось скопировать инструкцию")}>Скопировать инструкцию</Button>
+              <p>Участник открывает бота школы в {options.modal.platform === "max" ? "MAX" : "Telegram"}, нажимает «Старт» и отправляет свой действующий код входа в UknowApp.</p>
+              <Button onClick={async () => options.notify(await copyText("Откройте бота школы в " + (options.modal.platform === "max" ? "MAX" : "Telegram") + ", нажмите «Старт» и отправьте ему ваш код входа в UknowApp.") ? "Инструкция скопирована" : "Не удалось скопировать инструкцию")}>Скопировать инструкцию</Button>
             </section>
             <section>
-              <h3>Вручную по Telegram ID</h3>
+              <h3>Вручную по ID участника</h3>
               <p>Если вы знаете числовой ID участника, впишите его в профиль и нажмите «Сохранить».</p>
-              <Button onClick={() => options.openEdit(options.modal.user, true)}>Ввести Telegram ID</Button>
+              <Button onClick={() => options.openEdit(options.modal.user, options.modal.platform === "max" ? "max" : true)}>Ввести ID</Button>
             </section>
             <Button variant="ghost" onClick={() => options.makeCode(options.modal.user)}>Код потерян? Перевыпустить</Button>
           </div>
@@ -172,11 +172,21 @@ export default function UserDialogs(options) {
               <FormField label="Telegram ID">
                 <input
                   type="text"
-                  autoFocus={Boolean(options.modal.focusTelegram)}
+                  autoFocus={options.modal.focusTelegram === true}
                   inputMode="numeric"
                   pattern="[0-9]*"
                   value={options.telegramId}
                   onInput={(event) => options.setTelegramId(event.target.value)}
+                />
+              </FormField>
+              <FormField label="MAX ID">
+                <input
+                  type="text"
+                  autoFocus={options.modal.focusTelegram === "max"}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={options.maxId}
+                  onInput={(event) => options.setMaxId(event.target.value)}
                 />
               </FormField>
               {["teacher", "student"].includes(options.role) && (
@@ -265,7 +275,7 @@ export default function UserDialogs(options) {
             await options.regeneratePanelAccessCode();
           }}
         >
-          Этот код нужен для входа в веб-панель и подключения Telegram. Старый код сразу перестанет работать, а участнику потребуется войти заново. Передайте ему новый код.
+          Этот код нужен для входа в веб-панель и подключения Telegram или MAX. Старый код сразу перестанет работать, а участнику потребуется войти заново. Передайте ему новый код.
         </ConfirmDialog>
       )}
 
@@ -305,11 +315,11 @@ export default function UserDialogs(options) {
 
       {options.disconnectCandidate && (
         <ConfirmDialog
-          eyebrow="Telegram"
-          title={options.disconnectCandidate.topicOnly ? "Сбросить тему Telegram?" : "Отключить Telegram?"}
+          eyebrow={options.disconnectCandidate.platform === "max" ? "MAX" : "Telegram"}
+          title={options.disconnectCandidate.topicOnly ? "Сбросить тему Telegram?" : (options.disconnectCandidate.platform === "max" ? "Отключить MAX?" : "Отключить Telegram?")}
           titleId="disconnect-telegram-title"
           busy={options.disconnectingTelegram}
-          confirmLabel={options.disconnectCandidate.topicOnly ? "Сбросить тему" : "Отключить Telegram"}
+          confirmLabel={options.disconnectCandidate.topicOnly ? "Сбросить тему" : "Отключить"}
           busyLabel="Выполняем…"
           onClose={() => options.setDisconnectCandidate(null)}
           onConfirm={options.confirmDisconnectTelegram}
@@ -317,7 +327,7 @@ export default function UserDialogs(options) {
           Профиль и переписка «<b>{options.disconnectCandidate.full_name}</b>» сохранятся в UknowApp.
           {options.disconnectCandidate.topicOnly
             ? " Личный Telegram останется подключён. Для новой темы добавьте бота заново или дождитесь первого сообщения ученика из нужной темы."
-            : " Сообщения через Telegram будут доступны после повторного подключения."}
+            : " Сообщения через этот мессенджер будут доступны после повторного подключения."}
         </ConfirmDialog>
       )}
 
@@ -399,7 +409,7 @@ export default function UserDialogs(options) {
         <Modal onClose={() => options.setCode(null)}>
           <div class="modal-head">
             <div>
-              <div class="eyebrow">Подключение Telegram</div>
+              <div class="eyebrow">Подключение Telegram или MAX</div>
               <h2>{options.code.full_name}</h2>
             </div>
             <IconButton onClick={() => options.setCode(null)}>
@@ -410,8 +420,8 @@ export default function UserDialogs(options) {
           <div class="invite-code">{options.code.code}</div>
           <p class="hint">
             {options.code.shared_access
-              ? "Передайте этот код участнику. Для входа в веб-панель он вводит логин и этот код. Для подключения Telegram он отправляет тот же код боту. Код действует до перевыпуска."
-              : "Передайте код ученику для подключения Telegram. Использовать его можно только один раз."}
+              ? "Передайте этот код участнику. Для входа в веб-панель он вводит логин и этот код. Для подключения Telegram или MAX он отправляет тот же код боту. Код действует до перевыпуска."
+              : "Передайте код ученику для подключения Telegram или MAX. Использовать его можно только один раз."}
           </p>
           <div class="modal-actions">
             <Button variant="ghost" onClick={() => options.setCode(null)}>

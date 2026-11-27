@@ -31,7 +31,7 @@ export default function UsersModule(options) {
           setUserSort={state.setUserSort}
           openCreate={state.openCreate}
           disconnectTelegram={state.disconnectTelegram}
-          openTelegram={user => options.setModal({ mode: "telegram", id: user.id, user })}
+          openTelegram={(user, platform = "telegram") => options.setModal({ mode: "telegram", platform, id: user.id, user })}
           userInfo={state.userInfo}
           setUserInfo={state.setUserInfo}
           openEdit={state.openEdit}
@@ -74,6 +74,8 @@ export default function UsersModule(options) {
         setRole={state.setRole}
         additionalInfo={state.additionalInfo}
         setAdditionalInfo={state.setAdditionalInfo}
+        maxId={state.maxId}
+        setMaxId={state.setMaxId}
         telegramId={state.telegramId}
         setTelegramId={state.setTelegramId}
         users={state.users}

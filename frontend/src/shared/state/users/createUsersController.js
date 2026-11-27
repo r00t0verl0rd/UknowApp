@@ -9,7 +9,7 @@ import {
   deleteUser,
   disconnectUserTelegram,
   resetUserTelegramTopic,
-  telegramId,
+  telegramId, maxId,
   issuePanelAccessCode,
   updateUser,
 } from "../../../features/users/services/usersApi.js";
@@ -36,7 +36,7 @@ export function createUsersController(options) {
   const visibleUsers = createMemo(() =>
     options.directory.users
       .filter((user) =>
-        (user.full_name + " " + (telegramId(user) || ""))
+        (user.full_name + " " + [telegramId(user), maxId(user)].join(" "))
           .toLowerCase()
           .includes(options.directory.search.toLowerCase()),
       )
@@ -80,17 +80,20 @@ export function createUsersController(options) {
     editor.setRole(defaultRole);
     editor.setAdditionalInfo("");
     editor.setTelegramId("");
+    editor.setMaxId("");
   };
   const openEdit = (user, focusTelegram = false) => {
     options.setModal({
       mode: "edit",
       focusTelegram,
+      original: user,
       id: user.id,
     });
     editor.setName(user.full_name);
     editor.setPanelLogin(user.web_username || user.full_name);
     editor.setRole(user.role);
     editor.setAdditionalInfo(user.additional_info || "");
+    editor.setMaxId(String(maxId(user) || ""));
     editor.setTelegramId(telegramId(user) ? String(telegramId(user)) : "");
   };
   const saveUser = async (event) => {
@@ -101,7 +104,10 @@ export function createUsersController(options) {
     const body = {
       full_name: editor.name.trim(),
       role: editor.role,
-      messenger_account: { platform: "telegram", external_user_id: editor.telegramId.trim() || null },
+      messenger_accounts: [
+        ["telegram", editor.telegramId, telegramId], ["max", editor.maxId, maxId],
+      ].filter(([, value, existing]) => value.trim() !== String(existing(modal.original || {}) || ""))
+        .map(([platform, value]) => ({ platform, external_user_id: value.trim() || null })),
     };
     if (editor.role === "student") body.additional_info = editor.additionalInfo.trim();
     if (editor.role === "teacher" || editor.role === "student")
@@ -200,17 +206,17 @@ export function createUsersController(options) {
       actions.setUnassigningStudent(false);
     }
   };
-  const disconnectTelegram = (user, topicOnly = false) => actions.setDisconnectCandidate({ ...user, topicOnly });
+  const disconnectTelegram = (user, topicOnly = false, platform = "telegram") => actions.setDisconnectCandidate({ ...user, topicOnly, platform });
   const confirmDisconnectTelegram = async () => {
     const user = actions.disconnectCandidate;
     if (!user || actions.disconnectingTelegram) return;
     actions.setDisconnectingTelegram(true);
     try {
-      await (user.topicOnly ? resetUserTelegramTopic : disconnectUserTelegram)(options.request, user.id);
+      await (user.topicOnly ? resetUserTelegramTopic : disconnectUserTelegram)(options.request, user.id, user.platform);
       actions.setDisconnectCandidate(null);
       await options.refresh();
       options.notify(user.topicOnly ? "Тема Telegram сброшена. Личный чат сохранён" :
-        "Telegram отключён. Переписка сохранена в UknowApp");
+        (user.platform === "max" ? "MAX" : "Telegram") + " отключён. Переписка сохранена в UknowApp");
     } catch (error) {
       options.setError(error.message);
     } finally {
@@ -220,7 +226,7 @@ export function createUsersController(options) {
   const makeCode = async (user) => {
     const confirmed = window.confirm(
       `Выдать новый единый код для «${user.full_name}»?\n\n` +
-      "Код используется для входа в веб-панель и подключения Telegram. " +
+      "Код используется для входа в веб-панель и подключения Telegram и MAX. " +
       "Старый код сразу перестанет работать, а участнику потребуется войти заново. " +
       "Передайте ему новый код после выдачи.",
     );

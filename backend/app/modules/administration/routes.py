@@ -107,8 +107,7 @@ def create_user(payload: dict, _: UserManagement, db: Db):
     db.add(user)
     try:
         db.flush()
-        if payload.get("messenger_account"):
-            account = payload["messenger_account"]
+        for account in payload.get("messenger_accounts", [payload["messenger_account"]] if payload.get("messenger_account") else []):
             sync_messenger_account(db, user.id, account["platform"], account["external_user_id"])
         if issued_access_code:
             now = datetime.now(UTC)
@@ -136,7 +135,8 @@ def update_user(user_id: int, payload: dict, _: UserManagement, db: Db):
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     changes = payload
-    account = changes.pop("messenger_account", None)
+    single = changes.pop("messenger_account", None)
+    accounts = changes.pop("messenger_accounts", [single] if single else [])
     requested_web_username = changes.pop("web_username", None)
     # Создаём коды на сервере, в БД храним хеши.
     target_role = changes.get("role", user.role)
@@ -192,7 +192,7 @@ def update_user(user_id: int, payload: dict, _: UserManagement, db: Db):
     elif not has_web_panel:
         db.query(ConnectionCode).filter(ConnectionCode.user_id == user.id).delete(synchronize_session=False)
     try:
-        if account is not None:
+        for account in accounts:
             sync_messenger_account(db, user.id, account["platform"], account["external_user_id"])
         db.commit()
         db.refresh(user)

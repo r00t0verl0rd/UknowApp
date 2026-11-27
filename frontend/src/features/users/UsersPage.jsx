@@ -1,4 +1,4 @@
-import { telegramId } from "./services/usersApi.js";
+import { telegramId, maxId } from "./services/usersApi.js";
 import { For } from "solid-js";
 import {
   IconCheck as Check,
@@ -96,6 +96,23 @@ export default function UsersPage(options) {
                     <Link2 />
                   </IconButton>
                 )}
+                {maxId(user) ? (
+                  <IconButton
+                    onClick={() => options.disconnectTelegram(user, false, "max")}
+                    title="Отключить MAX"
+                    aria-label="Отключить MAX"
+                  >
+                    <span>MAX</span>
+                  </IconButton>
+                ) : (
+                  <IconButton
+                    onClick={() => options.openTelegram(user, "max")}
+                    title="Выбрать способ подключения MAX"
+                    aria-label="Подключить MAX"
+                  >
+                    <span>MAX</span>
+                  </IconButton>
+                )}
                 <div class="user-info-wrap">
                   <IconButton
                     class={
@@ -129,6 +146,10 @@ export default function UsersPage(options) {
                       <div class="user-info-login">
                         <span>Telegram ID</span>
                         <b class={telegramId(user) ? "" : "is-unconnected"}>{telegramId(user) || "Не подключён"}</b>
+                      </div>
+                      <div class="user-info-login">
+                        <span>MAX ID</span>
+                        <b class={maxId(user) ? "" : "is-unconnected"}>{maxId(user) || "Не подключён"}</b>
                       </div>
                       {user.role === "student" && telegramId(user) && (
                         <div class="user-info-login">

@@ -186,7 +186,7 @@ export default function AdditionalPage(options) {
               <summary>Что важно знать перед восстановлением <ChevronDown size={15} aria-hidden="true" /></summary>
               <p class="data-note-copy">
                 В Docker сервер перезапустится автоматически, при локальном запуске нужен ручной перезапуск backend.
-                Настройки .env и Telegram сохраняйте отдельно. Для полной копии все вложения должны быть доступны.
+                Настройки .env и настройки Telegram и MAX сохраняйте отдельно. Для полной копии все вложения должны быть доступны.
               </p>
             </details>
           </article>

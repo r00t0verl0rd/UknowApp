@@ -75,6 +75,10 @@ uknowschool.ru, www.uknowschool.ru {
         }
     }
 
+    handle /hooks/max {
+        reverse_proxy maxbot:8080
+    }
+
     handle @backend {
         reverse_proxy backend:8000
     }

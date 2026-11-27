@@ -1,5 +1,5 @@
 /** Friendly, user-facing summaries of optional messenger delivery. */
-const names = { telegram: "Telegram", max: "Max", whatsapp: "WhatsApp" };
+const names = { telegram: "Telegram", max: "MAX", whatsapp: "WhatsApp" };
 export function messengerName(platform) {
   return names[platform] || (platform ? platform[0].toUpperCase() + platform.slice(1).toLowerCase() : "Мессенджер");
 }

@@ -54,6 +54,18 @@ def login_payload(payload: Any) -> dict:
 
 
 def _messenger_account(data):
+    if "messenger_accounts" in data:
+        accounts = data["messenger_accounts"]
+        if "messenger_account" in data or not isinstance(accounts, list) or len(accounts) > 2:
+            _invalid("messenger_accounts", "Invalid accounts")
+        normalized = []
+        for item in accounts:
+            entry = {"messenger_account": item}
+            _messenger_account(entry)
+            normalized.append(entry["messenger_account"])
+        if len({item["platform"] for item in normalized}) != len(normalized):
+            _invalid("messenger_accounts", "Duplicate platform")
+        data["messenger_accounts"] = normalized
     if "messenger_account" not in data:
         return
     account = _object(data["messenger_account"])
@@ -74,7 +86,7 @@ def user_create_payload(payload: Any) -> dict:
         _invalid("role", "Input should be 'teacher' or 'student'")
     _string(data, "web_username", minimum=2, maximum=160)
     _messenger_account(data)
-    fields = ("full_name", "additional_info", "role", "web_username", "messenger_account")
+    fields = ("full_name", "additional_info", "role", "web_username", "messenger_account", "messenger_accounts")
     return {key: data[key] for key in fields if key in data}
 
 
@@ -86,7 +98,7 @@ def user_update_payload(payload: Any) -> dict:
         _invalid("role", "Input should be 'teacher' or 'student'")
     _string(data, "web_username", minimum=2, maximum=160)
     _messenger_account(data)
-    fields = ("full_name", "additional_info", "role", "web_username", "messenger_account")
+    fields = ("full_name", "additional_info", "role", "web_username", "messenger_account", "messenger_accounts")
     return {key: data[key] for key in fields if key in data}
 
 

@@ -8,7 +8,7 @@ export function issuePanelAccessCode(request, userId) { return request("/api/adm
 
 export function createAssignment(request, teacherId, studentId) { return request("/api/admin/assignments", { method: "POST", body: JSON.stringify({ teacher_id: Number(teacherId), student_id: Number(studentId) }) }); }
 
-export function disconnectUserTelegram(request, userId) { return request("/api/admin/users/" + userId + "/messengers/telegram/disconnect", { method: "POST" }); }
+export function disconnectUserTelegram(request, userId, platform = "telegram") { return request("/api/admin/users/" + userId + "/messengers/" + platform + "/disconnect", { method: "POST" }); }
 
 export function resetUserTelegramTopic(request, userId) { return request("/api/admin/users/" + userId + "/messengers/telegram/reset-topic", { method: "POST" }); }
 
@@ -17,3 +17,5 @@ export function telegramId(user) { return user.messenger_accounts?.find(account 
 export function createUserConnectionCode(request, userId) { return request("/api/admin/users/" + userId + "/connection-code", { method: "POST" }); }
 
 export function unassignStudent(request, studentId) { return request("/api/admin/assignments/" + studentId, { method: "DELETE" }); }
+
+export function maxId(user) { return user.messenger_accounts?.find(account => account.platform === "max")?.external_user_id ?? null; }
