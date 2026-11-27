@@ -9,6 +9,10 @@ from connectors.common.commands import CODE, Commands
 
 API = "https://platform-api2.max.ru"
 KINDS = {"image": "photo", "video": "video", "audio": "audio", "file": "document"}
+BACK = "К списку учеников"
+REFRESH = "↻ Обновить"
+PREVIOUS = "← Предыдущая"
+NEXT = "Следующая →"
 
 
 class MaxAdapter:
@@ -84,20 +88,20 @@ class MaxAdapter:
         chat = result.get("chat")
         previous = spool.panel(actor) or {}
         page = previous.get("page", 0) if page is None else page
-        buttons = []
+        visible, page, total = commands.page(result["conversations"], page)
+        buttons = [[item["name"].strip() for item in visible[i:i + 2]]
+                   for i in range(0, len(visible), 2)]
+        navigation = ([PREVIOUS] if page else []) + ([NEXT] if page + 1 < total else [])
+        if navigation:
+            buttons.append(navigation)
+        buttons.append([BACK, REFRESH])
         if chat:
-            buttons.append(["/menu"])
             lines = [chat["name"], *(m["name"] + ": " + (m["text"] or m["preview"]) for m in chat["messages"])]
         else:
-            items, page, total = commands.page(result["conversations"], page)
-            lines = [f"Ваши чаты · {page + 1}/{total}"]
-            for chat_item in items:
-                action = f"/open {chat_item['id']}"
-                lines.append(f"{action} — {chat_item['name']} ({chat_item['unread']})")
-                buttons.append([action])
-            navigation = [f"/menu {i + 1}" for i in (page - 1, page + 1) if 0 <= i < total]
-            if navigation:
-                buttons.append(navigation)
+            lines = [f"Ваша группа · страница {page + 1}/{total}"]
+            for item in visible:
+                lines.append(item["name"] + (f" · {item['unread']} новых" if item["unread"] else ""))
+                lines.append(item["last_message"] or "")
         text = "\n".join(lines)
         text = text if len(text) <= 4000 else text[:160] + "\n…\n" + text[-3830:]
         keyboard = [{"type": "inline_keyboard", "payload": {"buttons": [
@@ -121,12 +125,16 @@ class MaxAdapter:
         message = update.get("message") or {}
         if not actor or message.get("sender", {}).get("is_bot"):
             return
+        commands = Commands(gateway, spool)
         if update["update_type"] == "bot_started":
-            await self.message(actor, "Отправьте код входа в школу или /menu для выбора чата.")
+            account = await commands.menu(actor)
+            if account.get("account"):
+                await self.show_account(actor, account, gateway, spool)
+            else:
+                await self.message(actor, "Отправьте код входа в школу — панель откроется автоматически.")
             return
         body = message["body"]
         text = body.get("text") or ""
-        commands = Commands(gateway, spool)
         recipient = message.get("recipient") or {}
         if recipient.get("chat_type") == "chat" and recipient.get("chat_id") is not None:
             chat = str(recipient["chat_id"])
@@ -149,16 +157,27 @@ class MaxAdapter:
             if not bound or not bound.get("account"):
                 await self.message(actor, "Для подключения отправьте действующий код входа в школу.")
                 return
-            await self.message(actor, "MAX подключён. Откройте список чатов командой /menu.")
+            await self.show_account(actor, bound, gateway, spool)
             return
         if CODE.fullmatch(text.replace("-", "").replace(" ", "").upper()):
-            await self.message(actor, "Ваш MAX уже подключён. Для выбора чата отправьте /menu.")
+            await self.show_account(actor, account, gateway, spool)
             return
-        page_arg = text.removeprefix("/menu ")
-        numbered_menu = text.startswith("/menu ") and page_arg.isascii() and page_arg.isdecimal() and len(page_arg) <= 5
-        if text in {"/menu", "/start", "/back"} or numbered_menu:
+        folded = text.casefold()
+        page_arg = text[6:].strip() if folded.startswith("/menu ") else ""
+        numbered_menu = bool(page_arg and page_arg.isascii() and page_arg.isdecimal() and len(page_arg) <= 5)
+        page = (int(page_arg) - 1) if numbered_menu else None
+        if folded in {"/menu", "menu", "меню", "/start", "/back", BACK.casefold()} or numbered_menu:
             commands.clear(actor)
-            await self.refresh_panel(actor, gateway, spool, page=int(page_arg) - 1 if numbered_menu else 0)
+            await self.refresh_panel(actor, gateway, spool, page=page or 0)
+            return
+        if folded == REFRESH.casefold():
+            await self.refresh_panel(actor, gateway, spool)
+            return
+        if folded in {PREVIOUS.casefold(), NEXT.casefold()}:
+            current = (spool.panel(actor) or {}).get("page", 0)
+            commands.clear(actor)
+            await self.refresh_panel(actor, gateway, spool,
+                                     page=current + (1 if folded == NEXT.casefold() else -1))
             return
         if text.startswith("/open "):
             ident = text[6:].strip()
@@ -166,11 +185,31 @@ class MaxAdapter:
                 await commands.open(actor, int(ident))
             await self.refresh_panel(actor, gateway, spool)
             return
+        matches = [c for c in account["conversations"] if c["name"].strip() == text]
+        if len(matches) == 1:
+            await commands.open(actor, matches[0]["id"])
+            index = next(i for i, c in enumerate(account["conversations"]) if c["id"] == matches[0]["id"])
+            await self.refresh_panel(actor, gateway, spool, page=index // 6)
+            return
+        if len(matches) > 1:
+            await self.message(actor, "У нескольких учеников одинаковое имя. Попросите администратора различить их.")
+            return
         selection = commands.selection(actor)
         if account["account"]["role"] == "teacher" and selection not in [c["id"] for c in account["conversations"]]:
             await self.refresh_panel(actor, gateway, spool)
             return
         await self.forward_parts(event_id, actor, actor, "private", selection, body, gateway)
+
+    async def show_account(self, actor, account, gateway, spool):
+        role = account["account"]["role"]
+        if role == "teacher":
+            await self.refresh_panel(actor, gateway, spool)
+        elif role == "student":
+            items = account["conversations"]
+            text = "Ваш преподаватель: " + items[0]["name"] if items else "Пока нет назначенного преподавателя."
+            await self.message(actor, text)
+        else:
+            await self.message(actor, "Управление доступно в веб-панели.")
 
     async def forward_parts(self, event_id, actor, chat, channel, selection, body, gateway):
         text = body.get("text") or ""

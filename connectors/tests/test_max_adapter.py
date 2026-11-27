@@ -1,6 +1,8 @@
+import tempfile
 import unittest
 from unittest.mock import AsyncMock, Mock
 
+from connectors.common.spool import EventSpool
 from connectors.max.adapter import MaxAdapter
 
 
@@ -23,3 +25,57 @@ class MaxMessaging(unittest.IsolatedAsyncioTestCase):
             "body": {"text": "ABCD2345"}}}, gateway, Mock())
         gateway.rpc.assert_not_awaited()
         gateway.inbound.assert_not_awaited()
+
+    async def test_teacher_panel_opens_after_binding_and_uses_student_buttons(self):
+        adapter = MaxAdapter(None, "test")
+        adapter.message = AsyncMock(return_value="panel-1")
+        adapter.api = AsyncMock(return_value={})
+        linked = False
+        selected = None
+        conversations = [{"id": 17, "name": "Алина", "unread": 1, "last_message": "Привет"}]
+        teacher = {"role": "teacher"}
+
+        async def rpc(operation, **payload):
+            nonlocal linked, selected
+            if operation == "conversation.list":
+                return {"account": teacher if linked else None, "conversations": conversations if linked else []}
+            if operation == "account.bind":
+                linked = True
+                return {"account": teacher, "conversations": conversations}
+            if operation == "conversation.open":
+                selected = payload["conversation_id"]
+                return {"id": selected, "name": "Алина", "messages": [], "total": 0}
+            if operation == "panel.sync":
+                return {"account": teacher, "conversations": conversations,
+                        "chat": {"id": selected, "name": "Алина", "messages": [], "total": 0}
+                        if selected else None}
+            raise AssertionError(operation)
+
+        gateway = Mock(rpc=AsyncMock(side_effect=rpc))
+        with tempfile.TemporaryDirectory() as tmp:
+            spool = EventSpool(f"{tmp}/max-spool.db", "max")
+            try:
+                update = {"update_type": "message_created", "message": {
+                    "sender": {"user_id": 42}, "recipient": {"chat_type": "dialog"},
+                    "body": {"text": "ABCD2345", "mid": "msg-1"}}}
+                await adapter.handle("event-1", update, gateway, spool)
+
+                adapter.message.assert_awaited_once()
+                text, keyboard = adapter.message.await_args.args[1:]
+                self.assertIn("Алина", text)
+                self.assertEqual(keyboard[0]["payload"]["buttons"][0][0]["text"], "Алина")
+
+                update["message"]["body"]["text"] = "ABCD2345"
+                await adapter.handle("event-2", update, gateway, spool)
+                self.assertEqual(adapter.api.await_args_list[-1].args[:2], ("PUT", "/messages"))
+
+                update["message"]["body"]["text"] = "Алина"
+                await adapter.handle("event-3", update, gateway, spool)
+                self.assertEqual(spool.selected_conversation("42"), 17)
+
+                update["message"]["body"]["text"] = "Menu"
+                await adapter.handle("event-4", update, gateway, spool)
+                self.assertIsNone(spool.selected_conversation("42"))
+                self.assertEqual(adapter.api.await_args_list[-1].args[:2], ("PUT", "/messages"))
+            finally:
+                spool.close()
