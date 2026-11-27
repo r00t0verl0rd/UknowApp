@@ -27,7 +27,7 @@ def application(spool, secret):
         if not hmac.compare_digest(request.headers.get("X-Max-Bot-Api-Secret", "").encode(), secret.encode()):
             raise web.HTTPForbidden()
         update = await request.json()
-        if update.get("update_type") in {"message_created", "bot_started"}:
+        if update.get("update_type") in {"message_created", "message_callback", "bot_started"}:
             if spool.count() + spool.inbound_count() >= MAX_EVENTS:
                 raise web.HTTPServiceUnavailable()
             key = json.dumps(update, sort_keys=True, separators=(",", ":")).encode()
@@ -68,7 +68,7 @@ async def main():
                 await web.TCPSite(runner, "0.0.0.0", 8080).start()
                 await adapter.api("POST", "/subscriptions", body={
                     "url": os.environ["MAX_WEBHOOK_URL"], "secret": secret,
-                    "update_types": ["message_created", "bot_started"]})
+                    "update_types": ["message_created", "message_callback", "bot_started"]})
                 tasks = [asyncio.create_task(coro) for coro in (
                     forward(adapter, gateway, spool), gateway.deliveries(adapter),
                     gateway.publish_inbound(), gateway.report_health(), heartbeat(STATE / "healthy"))]

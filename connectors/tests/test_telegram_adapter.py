@@ -1,9 +1,11 @@
 import asyncio
+import json
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 import pytest
 from aiogram.exceptions import TelegramForbiddenError
 from aiogram.methods import GetChatMember
+from aiogram.types import ReplyKeyboardRemove
 
 from connectors.telegram.adapter import TelegramAdapter
 from connectors.telegram.teacher_panel import TeacherPanel, render
@@ -54,6 +56,29 @@ def test_private_and_topic_calls_and_delete():
         assert adapter.bot.send_message.await_args_list[0].kwargs == {"chat_id":200,"text":"hello"}
         assert adapter.bot.send_message.await_args_list[1].kwargs["message_thread_id"] == 7
         assert adapter.bot.delete_message.await_count == 2
+    asyncio.run(run())
+
+
+def test_old_teacher_reply_buttons_are_removed_and_not_forwarded(tmp_path):
+    async def run():
+        adapter = object.__new__(TelegramAdapter)
+        adapter.bot = SimpleNamespace(send_message=AsyncMock(return_value=SimpleNamespace(message_id=8)))
+        adapter.teacher_panel = TeacherPanel(adapter.bot)
+        spool = EventSpool(tmp_path / "tg-spool.db", "bot")
+        spool.save_panel("42", {"message_id": 7, "role": "teacher", "text": "🔸 Старый ученик",
+                                 "signature": json.dumps([[['Старый ученик']], "placeholder"], ensure_ascii=False)})
+        view = {"account": {"role": "student"}, "conversations": [{"id": 2, "name": "Учитель"}]}
+        gateway = SimpleNamespace(rpc=AsyncMock(return_value=view), inbound=AsyncMock())
+        try:
+            await adapter._handle_message("evt", {"from": {"id": 42}, "chat": {"id": 42, "type": "private"},
+                "message_id": 9, "text": "Старый ученик"}, {"id": 42, "username": "student"},
+                gateway, spool)
+            gateway.inbound.assert_not_awaited()
+            reply_markup = adapter.bot.send_message.await_args.kwargs["reply_markup"]
+            assert isinstance(reply_markup, ReplyKeyboardRemove)
+            assert spool.panel("42")["stale_buttons"] == ["Старый ученик"]
+        finally:
+            spool.close()
     asyncio.run(run())
 
 

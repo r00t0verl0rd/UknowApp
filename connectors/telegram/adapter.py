@@ -247,13 +247,7 @@ class TelegramAdapter:
                 "Аккаунт ещё не подключён. Попросите администратора UknowSchool подключить Вас",
             )
         elif account["role"] == "student":
-            items = view["conversations"]
-            await self.bot.send_message(
-                chat,
-                "Ваш преподаватель: " + items[0]["name"]
-                if items
-                else "Пока нет назначенного преподавателя.",
-            )
+            await self.teacher_panel.remove_for_non_teacher(str(chat), view, spool)
         elif account["role"] == "teacher":
             await self.teacher_panel.refresh(
                 str(chat), gateway, spool, page=page, force=force, view=view
@@ -535,6 +529,10 @@ class TelegramAdapter:
             return
         account = view.get("account")
         if group and (account or {}).get("role") != "student":
+            return
+        if not group and account and account.get("role") != "teacher" and \
+                self.teacher_panel.is_stale_action(actor, text, spool):
+            await self.teacher_panel.refresh(actor, gateway, spool, background=True, view=view)
             return
         if not group and CODE.fullmatch(text.replace("-", "").replace(" ", "").upper()):
             bound = await commands.bind(actor, chat, text, message["from"].get("username"))

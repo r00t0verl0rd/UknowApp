@@ -1,5 +1,7 @@
 """Local MAX Bot API adapter for private school conversations."""
 import asyncio
+import json
+import time
 from urllib.parse import urlsplit
 
 import aiohttp
@@ -19,6 +21,8 @@ class MaxAdapter:
     def __init__(self, http, token):
         self.http = http
         self.headers = {"Authorization": token}
+        self.panel_locks = {}
+        self.panel_updated = {}
 
     async def api(self, method, path, *, params=None, body=None):
         async with self.http.request(method, API + path, params=params, json=body,
@@ -78,23 +82,83 @@ class MaxAdapter:
         await self.api("DELETE", "/messages", params={"message_id": job["external_message_id"]})
 
     def inbound_route(self, update):
+        if update.get("update_type") == "message_callback":
+            callback = update.get("callback") or {}
+            return str((callback.get("user") or {}).get("user_id", "")), False
         message = update.get("message") or {}
         sender = message.get("sender") or update.get("user") or {}
         return str(sender.get("user_id", "")), bool(message.get("body", {}).get("attachments"))
 
-    async def refresh_panel(self, actor, gateway, spool, background=False, page=None):
+    async def _panel_update_delay(self, actor):
+        delay = 0.55 - (time.monotonic() - self.panel_updated.get(actor, 0))
+        if delay > 0:
+            await asyncio.sleep(delay)
+        self.panel_updated[actor] = time.monotonic()
+
+    async def refresh_panel(self, actor, gateway, spool, background=False, page=None,
+                            callback_id=None, callback_mid=None):
+        actor = str(actor)
+        lock = self.panel_locks.setdefault(actor, asyncio.Lock())
+        async with lock:
+            await self._refresh_panel(actor, gateway, spool, background, page, callback_id, callback_mid)
+
+    async def _refresh_panel(self, actor, gateway, spool, background, page, callback_id, callback_mid):
         commands = Commands(gateway, spool)
         result = await commands.panel(actor)
-        chat = result.get("chat")
         previous = spool.panel(actor) or {}
+        if not previous.get("mid") and callback_mid:
+            previous["mid"] = callback_mid
         page = previous.get("page", 0) if page is None else page
+        role = (result.get("account") or {}).get("role")
+        if role != "teacher":
+            commands.clear(actor)
+            stale = set(previous.get("stale_buttons", []))
+            if previous.get("role") in {None, "teacher"} and previous.get("mid"):
+                stale.update(previous.get("buttons", []))
+                if not previous.get("buttons"):
+                    stale.update(await self._legacy_panel_buttons(previous))
+            if role == "student":
+                items = result.get("conversations") or []
+                text = "Ваш преподаватель: " + items[0]["name"] if items else "Пока нет назначенного преподавателя."
+            else:
+                text = "Управление доступно в веб-панели."
+            if callback_id:
+                await self._panel_update_delay(actor)
+                await self.api("POST", "/answers", params={"callback_id": callback_id},
+                               body={"message": {"text": text, "attachments": []}})
+                mid = previous.get("mid")
+            elif previous.get("mid"):
+                await self._panel_update_delay(actor)
+                try:
+                    await self.api("DELETE", "/messages", params={"message_id": previous["mid"]})
+                    mid = await self.message(actor, text)
+                except DeliveryRejected:
+                    try:
+                        await self.api("PUT", "/messages", params={"message_id": previous["mid"]},
+                                       body={"text": text, "attachments": []})
+                        mid = previous["mid"]
+                    except DeliveryRejected:
+                        return
+            else:
+                if background:
+                    return
+                mid = await self.message(actor, text)
+            spool.save_panel(actor, {"mid": mid, "text": text, "page": 0, "role": role,
+                                     "buttons": [], "stale_buttons": sorted(stale)})
+            return
+
+        chat = result.get("chat")
         visible, page, total = commands.page(result["conversations"], page)
-        buttons = [[item["name"].strip() for item in visible[i:i + 2]]
+        buttons = [[{"type": "callback", "text": item["name"].strip(),
+                     "payload": f"open:{item['id']}"} for item in visible[i:i + 2]]
                    for i in range(0, len(visible), 2)]
-        navigation = ([PREVIOUS] if page else []) + ([NEXT] if page + 1 < total else [])
+        navigation = ([{"type": "callback", "text": PREVIOUS, "payload": "previous"}] if page else [])
+        if page + 1 < total:
+            navigation.append({"type": "callback", "text": NEXT, "payload": "next"})
         if navigation:
             buttons.append(navigation)
-        buttons.append([BACK, REFRESH])
+        buttons.append([{"type": "callback", "text": BACK, "payload": "back"},
+                        {"type": "callback", "text": REFRESH, "payload": "refresh"}])
         if chat:
             lines = [chat["name"], *(m["name"] + ": " + (m["text"] or m["preview"]) for m in chat["messages"])]
         else:
@@ -104,23 +168,84 @@ class MaxAdapter:
                 lines.append(item["last_message"] or "")
         text = "\n".join(lines)
         text = text if len(text) <= 4000 else text[:160] + "\n…\n" + text[-3830:]
-        keyboard = [{"type": "inline_keyboard", "payload": {"buttons": [
-            [{"type": "message", "text": label} for label in row] for row in buttons
-        ]}}] if buttons else []
-        if previous.get("mid"):
-            if background and previous.get("text") == text:
+        keyboard = [{"type": "inline_keyboard", "payload": {"buttons": buttons}}]
+        signature = json.dumps(buttons, ensure_ascii=False, separators=(",", ":"))
+        labels = [button["text"] for row in buttons for button in row]
+        if callback_id:
+            await self._panel_update_delay(actor)
+            await self.api("POST", "/answers", params={"callback_id": callback_id},
+                           body={"message": {"text": text, "attachments": keyboard}})
+            if previous.get("mid"):
+                spool.save_panel(actor, {"mid": previous["mid"], "text": text, "page": page,
+                                         "role": role, "buttons": labels, "signature": signature})
                 return
+        elif previous.get("mid") and background:
+            if previous.get("text") == text and previous.get("signature") == signature:
+                return
+            await self._panel_update_delay(actor)
+            try:
+                await self.api("DELETE", "/messages", params={"message_id": previous["mid"]})
+            except DeliveryRejected:
+                return
+        elif previous.get("mid"):
+            if background and previous.get("text") == text and previous.get("signature") == signature:
+                return
+            await self._panel_update_delay(actor)
             try:
                 await self.api("PUT", "/messages", params={"message_id": previous["mid"]}, body={"text": text, "attachments": keyboard})
-                spool.save_panel(actor, {"mid": previous["mid"], "text": text, "page": page})
+                spool.save_panel(actor, {"mid": previous["mid"], "text": text, "page": page,
+                                         "role": role, "buttons": labels, "signature": signature})
                 return
             except DeliveryRejected:
-                pass
+                try:
+                    await self.api("DELETE", "/messages", params={"message_id": previous["mid"]})
+                except DeliveryRejected:
+                    return
         if not background or previous:
             mid = await self.message(actor, text, keyboard)
-            spool.save_panel(actor, {"mid": mid, "text": text, "page": page})
+            spool.save_panel(actor, {"mid": mid, "text": text, "page": page,
+                                     "role": role, "buttons": labels, "signature": signature})
+
+    @staticmethod
+    def _legacy_buttons(text):
+        lines = text.splitlines()
+        if not lines or not lines[0].startswith("Ваша группа ·"):
+            return []
+        return [lines[i].split(" · ", 1)[0] for i in range(1, len(lines), 2) if lines[i].strip()]
+
+    async def _legacy_panel_buttons(self, panel):
+        labels = self._legacy_buttons(panel.get("text", ""))
+        if panel.get("mid") and panel.get("role") is None:
+            try:
+                message = await self.api("GET", "/messages/" + str(panel["mid"]))
+                body = (message.get("message") or message).get("body") or {}
+                labels.extend(
+                    button.get("text", "")
+                    for attachment in body.get("attachments", [])
+                    if attachment.get("type") == "inline_keyboard"
+                    for row in (attachment.get("payload") or {}).get("buttons", [])
+                    for button in row
+                )
+            except DeliveryRejected:
+                pass
+        return [label for label in labels if label]
+
+    @classmethod
+    def _stale_action(cls, actor, text, spool):
+        panel = spool.panel(actor)
+        stale = set(panel.get("stale_buttons", []))
+        if panel.get("role") == "teacher":
+            stale.update(panel.get("buttons", []))
+            if not panel.get("buttons"):
+                stale.update(cls._legacy_buttons(panel.get("text", "")))
+        return bool(text.strip()) and (
+            text.strip() in stale or text.strip() in {BACK, REFRESH, PREVIOUS, NEXT}
+        )
 
     async def handle(self, event_id, update, gateway, spool):
+        if update.get("update_type") == "message_callback":
+            await self.handle_callback(update, gateway, spool)
+            return
         actor, _ = self.inbound_route(update)
         message = update.get("message") or {}
         if not actor or message.get("sender", {}).get("is_bot"):
@@ -168,6 +293,12 @@ class MaxAdapter:
                 return
             await self.show_account(actor, bound, gateway, spool)
             return
+        if account["account"].get("role") != "teacher":
+            panel = spool.panel(actor)
+            if panel.get("role") != account["account"]["role"]:
+                await self.refresh_panel(actor, gateway, spool)
+            if self._stale_action(actor, text, spool):
+                return
         if CODE.fullmatch(text.replace("-", "").replace(" ", "").upper()):
             await self.show_account(actor, account, gateway, spool)
             return
@@ -214,11 +345,42 @@ class MaxAdapter:
         if role == "teacher":
             await self.refresh_panel(actor, gateway, spool)
         elif role == "student":
-            items = account["conversations"]
-            text = "Ваш преподаватель: " + items[0]["name"] if items else "Пока нет назначенного преподавателя."
-            await self.message(actor, text)
+            await self.refresh_panel(actor, gateway, spool)
         else:
             await self.message(actor, "Управление доступно в веб-панели.")
+
+    async def handle_callback(self, update, gateway, spool):
+        callback = update.get("callback") or {}
+        actor = str((callback.get("user") or {}).get("user_id", ""))
+        if not actor:
+            return
+        commands = Commands(gateway, spool)
+        result = await commands.menu(actor)
+        account = result.get("account") or {}
+        payload = str(callback.get("payload") or "")
+        page = (spool.panel(actor) or {}).get("page", 0)
+        if account.get("role") == "teacher":
+            if payload.startswith("open:"):
+                ident = payload[5:]
+                choice = next((item for item in result["conversations"]
+                               if str(item["id"]) == ident), None)
+                if choice:
+                    await commands.open(actor, choice["id"])
+                    page = result["conversations"].index(choice) // 6
+            elif payload == "back":
+                commands.clear(actor)
+            elif payload == "previous":
+                commands.clear(actor)
+                page -= 1
+            elif payload == "next":
+                commands.clear(actor)
+                page += 1
+        else:
+            commands.clear(actor)
+        original = callback.get("message") or {}
+        mid = (original.get("body") or {}).get("mid")
+        await self.refresh_panel(actor, gateway, spool, page=page,
+                                 callback_id=callback.get("callback_id"), callback_mid=mid)
 
     async def forward_parts(self, event_id, actor, chat, channel, selection, body, gateway):
         text = body.get("text") or ""
