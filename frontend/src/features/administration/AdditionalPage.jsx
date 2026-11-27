@@ -120,7 +120,7 @@ export default function AdditionalPage(options) {
         </div>
         <section class="data-tools-grid" aria-labelledby="data-backups-title">
           <h3 id="data-backups-title">Резервные копии</h3>
-          <article class="data-tool-card">
+          <article class="data-tool-card data-tool-primary">
             <span class="data-tool-icon" aria-hidden="true"><ArchiveIcon /></span>
             <div class="data-tool-copy">
               <h4>Полная копия <small>ZIP</small></h4>
@@ -149,6 +149,27 @@ export default function AdditionalPage(options) {
                 />
               </label>
             </div>
+            {isPostgres() && (
+              <p role="status" class="data-important-note">
+                PostgreSQL: используйте pg_dump для базы, вложения скачайте отдельно.
+              </p>
+            )}
+            {options.restore && (
+              <p role="status" class={"data-operation-status" + (options.restore.status === "completed" ? " is-complete" : "")}>
+                {options.restore.status === "completed"
+                  ? "Данные успешно восстановлены."
+                  : options.restore.status === "failed"
+                    ? "Восстановление не завершилось. Исходные данные сохранены."
+                    : "Архив принят. Проверяем результат восстановления."}
+                {options.restore.finished_at &&
+                  " " + new Date(options.restore.finished_at).toLocaleString("ru-RU")}
+              </p>
+            )}
+            <details class="data-info-details data-backup-details">
+              <summary>Перед восстановлением <ChevronDown size={15} aria-hidden="true" /></summary>
+              <p>Восстановление заменяет текущие данные. В Docker сервер перезапустится автоматически, при локальном запуске — вручную. Может потребоваться повторный вход.</p>
+              <p>Полная копия включает данные каталога data, в том числе ключ Web Push. Все вложения должны быть доступны. Настройки .env, Telegram и MAX сохраняйте отдельно.</p>
+            </details>
           </article>
           <article class="data-tool-card">
             <span class="data-tool-icon" aria-hidden="true"><DatabaseIcon /></span>
@@ -197,27 +218,6 @@ export default function AdditionalPage(options) {
               </Button>
             </div>
           </article>
-          {isPostgres() && (
-            <p role="status" class="data-important-note">
-              PostgreSQL: используйте pg_dump для базы, вложения скачайте отдельно.
-            </p>
-          )}
-          {options.restore && (
-            <p role="status" class={"data-operation-status" + (options.restore.status === "completed" ? " is-complete" : "")}>
-              {options.restore.status === "completed"
-                ? "Данные успешно восстановлены."
-                : options.restore.status === "failed"
-                  ? "Восстановление не завершилось. Исходные данные сохранены."
-                  : "Архив принят. Проверяем результат восстановления."}
-              {options.restore.finished_at &&
-                " " + new Date(options.restore.finished_at).toLocaleString("ru-RU")}
-            </p>
-          )}
-          <details class="data-info-details data-backup-details">
-            <summary>Перед восстановлением <ChevronDown size={15} aria-hidden="true" /></summary>
-            <p>Восстановление заменяет текущие данные. В Docker сервер перезапустится автоматически, при локальном запуске — вручную. Может потребоваться повторный вход.</p>
-            <p>Полная копия включает данные каталога data, в том числе ключ Web Push. Все вложения должны быть доступны. Настройки .env, Telegram и MAX сохраняйте отдельно.</p>
-          </details>
         </section>
         <article class="data-cleanup-card">
           <div class="data-cleanup-copy">

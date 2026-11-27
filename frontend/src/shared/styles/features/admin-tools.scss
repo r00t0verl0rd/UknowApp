@@ -62,7 +62,7 @@
   gap:12px;
 }
 .data-stat-card,
-.data-tools-grid,
+.data-tool-card,
 .data-cleanup-card {
   box-sizing:border-box;
   min-width:0;
@@ -179,23 +179,26 @@
 }
 .data-tools-grid {
   display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
   min-width:0;
-  gap:0;
+  gap:12px;
 }
 .data-tools-grid > h3 {
-  margin:0 0 6px;
+  grid-column:1 / -1;
+  margin:2px 0 0;
   font-size:16px;
   font-weight:650;
   line-height:1.4;
 }
 .data-tool-card {
-  display:grid;
-  grid-template-columns:38px minmax(0, 1fr) minmax(0, 456px);
-  align-items:center;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
   gap:12px;
-  min-width:0;
-  padding:12px 0;
-  border-bottom:1px solid var(--ui-border);
+}
+.data-tool-primary {
+  grid-column:1;
+  grid-row:2 / span 2;
 }
 .data-tool-icon {
   display:inline-grid;
@@ -243,9 +246,15 @@
 }
 .data-tool-actions {
   display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  grid-template-columns:repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap:8px;
+  width:100%;
   min-width:0;
+  margin-top:auto;
+}
+.data-tool-primary .data-tool-actions {
+  grid-template-columns:minmax(0, 1fr);
+  margin-top:4px;
 }
 .additional-panel .btn.data-action-btn {
   display:inline-flex;
@@ -315,7 +324,10 @@
   color:var(--success);
 }
 .data-backup-details {
+  box-sizing:border-box;
   margin-top:4px;
+  padding-top:4px;
+  border-top:1px solid var(--ui-border);
 }
 .data-backup-details p {
   margin:0 0 8px;
@@ -421,14 +433,13 @@
   background:var(--button-danger-bg);
   color:var(--button-danger-text);
 }
-@media (max-width: 1100px) {
-  .data-tool-card {
-    grid-template-columns:38px minmax(0, 1fr);
-    gap:8px 12px;
+@media (max-width: 1200px) {
+  .data-tool-primary {
+    grid-column:1 / -1;
+    grid-row:auto;
   }
-  .data-tool-actions {
-    grid-column:2;
-    width:100%;
+  .data-tool-primary .data-tool-actions {
+    grid-template-columns:repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   }
 }
 @media (max-width: 900px) {
@@ -444,12 +455,16 @@
     gap:10px;
   }
   .data-stat-card,
-  .data-tools-grid,
+  .data-tool-card,
   .data-cleanup-card {
     padding:13px;
   }
-  .data-tool-actions {
-    grid-column:1 / -1;
+  .data-tools-grid {
+    grid-template-columns:minmax(0, 1fr);
+  }
+  .data-tool-actions,
+  .data-tool-primary .data-tool-actions {
+    grid-template-columns:minmax(0, 1fr);
   }
   .data-cleanup-actions {
     display:grid;
@@ -467,9 +482,6 @@
 }
 @media (max-width: 540px) {
   .data-stats-grid {
-    grid-template-columns:minmax(0, 1fr);
-  }
-  .data-tool-actions {
     grid-template-columns:minmax(0, 1fr);
   }
 }

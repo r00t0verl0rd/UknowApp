@@ -146,6 +146,22 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
       assert.ok(await panel.getByRole("heading", { name: "Полная копия ZIP" }).isVisible());
       const backupSection = panel.getByRole("region", { name: "Резервные копии" });
       assert.equal(await backupSection.locator(".data-tool-card").count(), 3);
+      const cards = await backupSection.locator(".data-tool-card").evaluateAll(items => items.map(card => {
+        const rect = card.getBoundingClientRect();
+        return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom,
+          border: getComputedStyle(card).borderTopWidth };
+      }));
+      assert.ok(cards.every(card => parseFloat(card.border) > 0),
+        `${width}px: each backup has a separate card`);
+      if (width > 1200) {
+        assert.ok(cards[0].right < cards[1].left && Math.abs(cards[0].top - cards[1].top) < 1 &&
+          Math.abs(cards[0].bottom - cards[2].bottom) < 1,
+          "desktop: full backup beside the two smaller cards");
+      }
+      if (width <= 760) {
+        assert.ok(cards[0].bottom < cards[1].top && cards[1].bottom < cards[2].top,
+          `${width}px: cards stack on mobile`);
+      }
       for (const name of ["Скачать полную копию", "Скачать базу", "Скачать вложения"]) {
         const action = backupSection.getByRole("button", { name, exact: true });
         assert.ok(await action.isVisible(), `${width}px: ${name} is visible`);
