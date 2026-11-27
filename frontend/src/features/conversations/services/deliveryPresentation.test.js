@@ -11,7 +11,7 @@ test("plain Russian description for unlinked Telegram recipient", () => {
   });
   assert.deepEqual(details, [{
     title: "Telegram · Профессор",
-    description: "Получатель не подключил телеграм-бота.",
+    description: "Получатель не подключил бота в Telegram.",
     delivered: false,
   }]);
 });
@@ -22,13 +22,13 @@ test("partial delivery leads with successful copies, never raw error codes", () 
     },
   }), [
     { title: "Telegram", description: "Копия отправлена.", delivered: true },
-    { title: "Telegram · Ученик", description: "Копию в Telegram пока не удалось отправить.", delivered: false },
+    { title: "Telegram · Ученик", description: "Копию в Telegram не получилось отправить.", delivered: false },
   ]);
 });
 test("legacy Telegram logs still work and duplicate modern results are not shown", () => {
   assert.equal(getDeliveryDetails({
     telegram_delivery_errors: [{ name: "Анна", reason: "Аккаунт получателя не подключён к TELEGRAM" }],
-  })[0].description, "Получатель не подключил телеграм-бота.");
+  })[0].description, "Получатель не подключил бота в Telegram.");
   assert.equal(getDeliveryDetails({
     messenger_deliveries: { telegram: { delivered: [{ user_id: 1 }] } },
     telegram_deliveries: [{ user_id: 1 }],
@@ -46,7 +46,7 @@ test("successful messenger copy identifies teacher or student by name", () => {
     { title: "Telegram · Профессор", namedRecipient: "Профессор", role: "teacher", channel: "Telegram",
       description: "Копия отправлена.", delivered: true },
     { title: "Telegram · Падаван", namedRecipient: "Падаван", role: "student", channel: "Telegram",
-      description: "Получатель не подключил телеграм-бота.", delivered: false },
+      description: "Получатель не подключил бота в Telegram.", delivered: false },
   ]);
 });
 
@@ -91,7 +91,7 @@ test("MAX deliveries are shown by name with their own status", () => {
       namedRecipient: "Падаван",
       role: "student",
       channel: "MAX",
-      description: "Получатель пока не подключил MAX.",
+      description: "Получатель не подключил бота в MAX.",
       delivered: false,
     },
   ]);

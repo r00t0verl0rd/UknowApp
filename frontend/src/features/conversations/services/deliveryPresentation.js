@@ -46,22 +46,18 @@ function deliveredEntries(channel, delivered, includeRecipient, participants) {
 }
 function friendlyReason(error, channel) {
   const destination = deliveryDestination(error);
-  const address = destination ? `${destination} (${channel})` : `в ${channel}`;
+  const address = destination || `в ${channel}`;
   const reason = typeof error === "string" ? error : String(error?.reason || "");
   if (/не подключ|not.connected|not linked|not_connected/i.test(reason)) {
-    if (destination) return `Копия ${address} не отправлена: получатель не подключён.`;
-    return channel === "Telegram"
-      ? "Получатель не подключил телеграм-бота."
-      : `Получатель пока не подключил ${channel}.`;
+    return `Получатель не подключил бота в ${channel}.` +
+      (destination ? ` Копия ${destination} не отправлена.` : "");
   }
   if (/не удалось определить адресата|chat not found|чат не найден/i.test(reason)) {
-    if (destination) return `Копия ${address} не отправлена: чат получателя не найден.`;
-    return `Чат получателя в ${channel} пока не найден.`;
+    return destination ? `Чат не найден. Копия ${destination} не отправлена.` : `Чат в ${channel} не найден.`;
   }
-  if (reason === "unknown") return `Не удалось подтвердить отправку копии ${address}.`;
+  if (reason === "unknown") return `Не получилось подтвердить отправку копии ${address}.`;
   if (reason === "cancelled") return `Отправка копии ${address} отменена.`;
-  if (destination === "в личный чат с ботом") return "Копию в личный чат с ботом не получилось отправить.";
-  return `Копию ${address} пока не удалось отправить.`;
+  return `Копию ${address} не получилось отправить.`;
 }
 export function getDeliveryDetails(metadata, includeRecipient = false, participants = []) {
   if (!metadata || typeof metadata !== "object") return [];
@@ -90,7 +86,7 @@ export function getDeliveryDetails(metadata, includeRecipient = false, participa
     if (!delivered.length && !errors.length && result.status === "not_connected") {
       details.push({
         title: channel,
-        description: channel === "Telegram" ? "Получатель не подключил телеграм-бота." : "Получатель пока не подключён.",
+        description: friendlyReason("not_connected", channel),
         delivered: false,
       });
     }
