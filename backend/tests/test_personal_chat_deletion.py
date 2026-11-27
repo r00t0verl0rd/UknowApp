@@ -101,7 +101,7 @@ def test_admin_removes_personal_chat_messages_media_and_orphans(api, monkeypatch
     assert admin.get(base + "/summary").status_code == 404
     assert admin.delete(base).status_code == 404
 
-    # A new conversation with the same participant starts without old history.
+    # Новый диалог не содержит историю удалённого.
     fresh = admin.post("/api/panel/personal-conversations", json={"user_id": users["teacher-one"]})
     assert fresh.status_code == 201
     fresh_id = fresh.json()["id"]

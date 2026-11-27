@@ -5,9 +5,7 @@ const ChatsView = lazy(() => import("./ChatsView.jsx"));
 import CountBadge from "../shared/components/CountBadge.jsx";
 import { IconGraduationCap as GraduationCap, IconSmile as Smile } from "../shared/components/Icons.jsx";
 
-// The teacher graph is part of the content flow, without its own scrolling.
-// For small classes keep the orbit; bigger groups spread across more vertical
-// space rather than shrinking names or overflowing horizontally.
+// Граф учеников занимает пространство кабинета и не прокручивается отдельно.
 const STUDENT_WIDTH = 170;
 const STUDENT_HEIGHT = 76;
 const STUDENT_COLUMNS_SPACING = 184;
@@ -34,7 +32,7 @@ function buildTeacherOrbit(count, availableWidth = 900) {
     const radiusX = Math.max(178, Math.min(330, (width - STUDENT_WIDTH) / 2 - 25));
     let radiusY = 240;
     let offsets = [];
-    // A taller oval keeps islands from colliding on narrower desktop widths.
+    // Высокий овал не даёт группам пересекаться.
     for (let attempt = 0; attempt < 25; attempt++) {
       offsets = Array.from({length:count}, (_,index) => {
         const angle = -Math.PI / 2 + index * 2 * Math.PI / count;
@@ -62,9 +60,7 @@ function buildTeacherOrbit(count, availableWidth = 900) {
     };
   }
 
-  // Dense groups are a connected constellation on a wider/taller content
-  // canvas. Rows expand symmetrically around the teacher, so every full-size
-  // island remains visible, even with dozens of students.
+  // При большой группе расширяем схему вокруг преподавателя.
   const columns = Math.max(2, Math.min(4, Math.floor((width-30)/190)));
   const columnOffsets = Array.from({length:columns}, (_,i) =>
     (i-(columns-1)/2)*STUDENT_COLUMNS_SPACING);
@@ -72,7 +68,7 @@ function buildTeacherOrbit(count, availableWidth = 900) {
   for (let row = 0; positions.length < count; row++) {
     const ys = row === 0 ? [0] : [-row*STUDENT_ROWS_SPACING, row*STUDENT_ROWS_SPACING];
     for (const y of ys) {
-      // Preserve left/right symmetry as far as possible for partial rows.
+      // Сохраняем симметрию неполного ряда.
       const sorted = [...columnOffsets].sort((a,b) => Math.abs(b)-Math.abs(a) || a-b);
       for (const x of sorted) {
         if (Math.abs(x) < (214+STUDENT_WIDTH)/2 + 8
@@ -113,7 +109,7 @@ function buildTeacherOrbit(count, availableWidth = 900) {
 }
 
 function TeacherStructurePage(options) {
-  // Teacher-only active assignments, never the administrator's editable graph.
+  // Показываем только назначения преподавателя.
   const students = () => options.context.chatState.chats.filter(
     (chat) => chat.student && chat.type !== "personal",
   );
@@ -122,8 +118,7 @@ function TeacherStructurePage(options) {
   const teacherName = () => options.context.profile?.full_name || "Преподаватель";
   let stage;
 
-  // Measure the actual content column, not the browser viewport. The canvas
-  // stretches vertically as the number of students grows.
+  // Высоту схемы рассчитываем по ширине колонки и числу учеников.
   createEffect(() => [], () => {
     if (!stage) return;
     const measure = () => setAvailableWidth(Math.max(320, Math.round(stage.clientWidth || 900)));

@@ -1,6 +1,6 @@
 name: Release validation
 
-# This workflow validates the exact ref without deploying or modifying servers.
+# Проверяем выбранную ревизию без изменений на серверах.
 on:
   workflow_dispatch:
   push:

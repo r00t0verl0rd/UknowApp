@@ -107,8 +107,7 @@ def save_push_subscription(payload: dict, request: Request, principal: PanelUser
     role = principal["role"]
     user_id = principal.get("user_id") if role in {"teacher", "student"} else None
     session_hash = _token_digest(_request_token(request))
-    # Recheck the actual session before writing; a concurrent logout must not
-    # silently attach a device to a different user's session.
+    # Повторно проверяем сессию перед записью устройства.
     session = db.scalar(select(PanelSession).where(PanelSession.token_hash == session_hash))
     if not session or session.role != role or session.user_id != user_id:
         raise HTTPException(401, "Сессия истекла или недействительна. Войдите снова.")
@@ -117,8 +116,7 @@ def save_push_subscription(payload: dict, request: Request, principal: PanelUser
             for attempt in range(2):
                 subscription = runtime.scalar(select(PushSubscription).where(PushSubscription.endpoint == endpoint))
                 if subscription and subscription.delivery_state == "expired" and subscription.p256dh == p256dh and subscription.auth == auth:
-                    # A 404/410 from the provider requires a new browser subscription,
-                    # not just another INSERT of the same dead endpoint.
+                    # При 404/410 браузер должен создать новую подписку.
                     raise HTTPException(410, "Подписка устарела. Необходимо обновить её.")
                 if subscription is None:
                     subscription = PushSubscription(endpoint=endpoint, p256dh=p256dh, auth=auth, user_id=user_id, role=role)

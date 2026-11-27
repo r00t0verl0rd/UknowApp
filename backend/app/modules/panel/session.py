@@ -40,7 +40,7 @@ def panel_me(principal: PanelUser):
     if principal["role"] == "admin":
         return {"permissions": permissions, "role": "admin", "full_name": "Администратор",
                 "max_attachment_bytes": max_attachment_bytes}
-    # Authentication already checked the current role, password fingerprint and name.
+    # Роль, пароль и имя уже проверены при входе.
     return {"permissions": permissions, "role": principal["role"],
             "id": principal["user_id"], "full_name": principal["full_name"],
             "max_attachment_bytes": max_attachment_bytes}
@@ -54,8 +54,7 @@ def visible_payload(db, principal, payload):
     if lookup:
         try:
             lookup(db, principal, event["conversation_id"])
-            # Hydrate only after checking this subscriber's current access.
-            # RAM keeps small hints, not another copy of chat history.
+            # Проверяем доступ перед отправкой снимка; в RAM хранятся только подсказки.
             if event.get("action") == "upsert" and event.get("message_id"):
                 model = PersonalMessage if event["conversation_type"] == "personal" else Message
                 chat_id, message_id = event["conversation_id"], event["message_id"]
@@ -89,8 +88,7 @@ async def panel_events(request: Request, principal: PanelUser):
         cursor = int(request.headers.get("last-event-id", "0") or 0)
     except ValueError:
         cursor = 0
-    # Subscribe before taking the RAM checkpoint; any overlap is harmless and
-    # clients ignore duplicate event IDs.
+    # Сначала подписываемся, затем читаем снимок; дубликаты отфильтрует клиент.
     checkpoint = current_event_id()
     replay = replay_ram_updates(principal, cursor)
 
@@ -121,8 +119,7 @@ async def panel_events(request: Request, principal: PanelUser):
                 except TimeoutError:
                     if not await asyncio.to_thread(authorized_payload):
                         return
-                    # A named heartbeat is observable by the client watchdog.
-                    # It has no ID and cannot advance the replay cursor.
+                    # Heartbeat не меняет курсор событий.
                     yield "event: heartbeat\ndata: {}\n\n"
                     continue
                 try:
@@ -132,7 +129,7 @@ async def panel_events(request: Request, principal: PanelUser):
                 payload = await asyncio.to_thread(authorized_payload, payload)
                 if payload is None:
                     return
-                # Send each complete SSE frame in a single transport write.
+                # Отправляем каждый SSE-кадр одним блоком.
                 prefix = f"id: {event_id}\n" if event_id is not None else ""
                 yield prefix + "event: update\ndata: " + payload + "\n\n"
         finally:

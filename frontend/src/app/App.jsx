@@ -75,7 +75,7 @@ function Application(options) {
   const settings = createSettingsState();
   const chatState = createChatState();
   const personalState = createPersonalChatState();
-  // The cache belongs to the authenticated application, not a mounted workspace page.
+  // Кеш живёт на уровне приложения после входа.
   createEffect(
     () => [authState.auth, authState.profile, chatState.chats, personalState.personalChats],
     ([auth, profile, chats, personalChats]) => {
@@ -88,8 +88,7 @@ function Application(options) {
   );
   const navigation = createUiState();
   const directory = createDirectoryState();
-  // Restore view-only preferences after the authenticated user has been identified.
-  // Do not persist credentials, private messages, files or destructive dialogs.
+  // После входа восстанавливаем только настройки вида.
   const viewPreferences = [
     ["users.search", () => directory.search, directory.setSearch],
     ["users.sort", () => directory.userSort, directory.setUserSort],
@@ -145,7 +144,7 @@ function Application(options) {
   const workspacePage = () =>
     workspace()?.pages.includes(navigation.page) ? navigation.page : workspace()?.pages[0];
   const inDialogs = () => authState.auth && workspacePage() === "chats";
-  // Receiving chat data is independent from whether the user has read it.
+  // Получение сообщений не меняет их статус прочтения.
   const selectedDialog = () => inDialogs() ? chatState.selectedChat : null;
   const activeChat = () =>
     document.visibilityState === "visible" && document.hasFocus() &&

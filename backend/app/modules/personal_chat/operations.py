@@ -45,8 +45,7 @@ def personal_conversations(principal: dict, db: Session):
     ).order_by(PersonalConversation.created_at.desc(), PersonalConversation.id.desc())
     if principal["role"] != "admin":
         statement = statement.where(PersonalConversation.participant_id == principal["user_id"])
-    # The list query already loads the counter columns and participant.
-    # No second query is needed in this read-only request.
+    # Список уже содержит счётчики и участника.
     items = db.scalars(statement.execution_options(populate_existing=True)).all()
     role = principal["role"]
     return [
@@ -99,8 +98,7 @@ def delete_personal_conversation(conversation_id: int, principal: dict, db: Sess
     item = personal_conversation(db, principal, conversation_id)
     participant_id = item.participant_id
 
-    # Сначала убираем все дочерние записи в одной транзакции (внешний ключ
-    # personal_messages.conversation_id не настроен на ON DELETE CASCADE).
+    # Сначала удаляем дочерние записи: внешний ключ не использует CASCADE.
     db.add(PersonalMediaCleanup(conversation_id=conversation_id))
     result = db.execute(delete(PersonalMessage).where(PersonalMessage.conversation_id == conversation_id))
     db.delete(item)
@@ -124,7 +122,7 @@ def clean_personal_media(db: Session, conversation_id: int) -> bool:
         else:
             shutil.rmtree(directory)
     except FileNotFoundError:
-        # Another worker may also be cleaning this directory.
+        # Другой процесс мог уже удалить каталог.
         if directory.exists() or directory.is_symlink():
             return False
     except OSError:
@@ -193,7 +191,7 @@ def personal_messages(conversation_id: int, principal: dict, db: Session, after_
             personal_unread_condition(principal["role"]),
         ).order_by(PersonalMessage.id).limit(1))
     if around_id is not None:
-        # A single response carries the adjacent pages, including the anchor.
+    # Ответ сразу содержит соседние страницы и якорное сообщение.
         size = limit or 50
         before = list(db.scalars(query.where(PersonalMessage.id < around_id)
                                  .order_by(PersonalMessage.id.desc()).limit(size)).all())

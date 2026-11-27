@@ -5,8 +5,7 @@ function getPushSupport() {
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const standalone = window.matchMedia("(display-mode: standalone)").matches ||
     navigator.standalone === true;
-  // iOS Safari tabs do not expose the PWA's Web Push capabilities.
-  // Explain the installation requirement before checking absent APIs.
+  // Для push на iOS Safari приложение нужно установить.
   if (isIOS && !standalone) {
     return {
       supported: false,
@@ -29,7 +28,7 @@ function decodeApplicationServerKey(value) {
   return Uint8Array.from(raw, character => character.charCodeAt(0));
 }
 
-// Device-local opt-out is independent of the account and all other devices.
+// Отключение push действует только на этом устройстве.
 const OPT_OUT = "uknowapp-push-disabled";
 let synchronizedEndpoint = null;
 let operation = Promise.resolve();
@@ -168,7 +167,7 @@ async function removeCurrentSubscription() {
   const registration = await navigator.serviceWorker.getRegistration("/");
   const subscription = await registration?.pushManager.getSubscription();
   if (!subscription) return;
-  // Even if the network request fails, detach this browser's subscription.
+  // Отключаем подписку браузера даже при ошибке сети.
   try {
     await removeServerSubscription(subscription.endpoint);
   } finally {
@@ -183,7 +182,7 @@ export function disablePushNotifications() {
 
 export function detachPushSubscription() {
   detached = true;
-  // Logging out is not a permanent notification opt-out.
+  // Выход из аккаунта не отключает push навсегда.
   return exclusive(removeCurrentSubscription).catch(error => {
     console.warn("UknowApp push detach failed:", error);
   });

@@ -37,8 +37,7 @@ def migrate_provider_channels(connection=None):
             for user_id, chat, thread in connection.execute(text("SELECT student_id, chat_id, thread_id FROM student_telegram_groups")):
                 if db.get(ExternalEndpoint, ("telegram", user_id)) is not None:
                     continue
-                # Historical unlinked groups were not valid destinations. Preserve
-                # only bound accounts; do not revive a revoked account.
+                # Переносим только действующие привязки.
                 if db.scalar(select(MessengerAccount).where(
                     MessengerAccount.platform == "telegram", MessengerAccount.user_id == user_id)) is not None:
                     db.add(ExternalEndpoint(platform="telegram", user_id=user_id, chat_id=str(chat), thread_id=str(thread), preferred=True))
@@ -61,7 +60,7 @@ def migrate_provider_channels(connection=None):
 def retire_legacy_schema(connection):
     inspector = inspect(connection)
     tables = set(inspector.get_table_names())
-    # Legacy delivery identifiers are retained in generic history metadata.
+    # Старые ID доставки остаются в общей истории.
     columns = {c["name"] for c in inspector.get_columns("messages")}
     legacy_cols = [name for name in ("source_message_id", "destination_message_id") if name in columns]
     old = Table("messages", MetaData(), autoload_with=connection)
@@ -72,8 +71,7 @@ def retire_legacy_schema(connection):
             metadata = None
         changed = False
         if not isinstance(metadata, dict):
-            # Preserve opaque legacy metadata if a historical identifier needs
-            # to be migrated; do not silently discard identifiers on DROP.
+            # Сохраняем старые ID в метаданных.
             if not any(row[key] is not None for key in legacy_cols):
                 continue
             metadata = {"legacy_metadata_raw": row["metadata_json"]}

@@ -90,7 +90,7 @@ def forbid_sync_sql_in_event_loop():
             return
         raise AssertionError("Synchronous SQLAlchemy executed on an active event loop")
 
-    # Catch checkout, execution and transaction boundaries, including raw SQL.
+    # Перехватываем запросы ORM, транзакций и сырого SQL.
     listeners = [(Engine, "before_cursor_execute"), (Engine, "commit"), (Engine, "rollback")]
     for target, name in listeners:
         event.listen(target, name, check)

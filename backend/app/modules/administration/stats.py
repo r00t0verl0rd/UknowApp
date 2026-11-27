@@ -42,8 +42,7 @@ def data_stats(_: Admin):
         media_counts = {"images": 0, "audio": 0, "videos": 0, "other": 0}
         for row in db.query(Message.metadata_json).all():
             try:
-                # Older backups can contain legacy JSON metadata: null, arrays,
-                # strings and malformed media objects are not fatal to stats.
+                # Ошибочные старые метаданные не должны ломать статистику.
                 metadata = json.loads(row[0] or "{}")
                 if not isinstance(metadata, dict):
                     continue

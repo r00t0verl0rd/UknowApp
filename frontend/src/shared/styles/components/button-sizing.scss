@@ -1,4 +1,4 @@
-// Consistent minimum hit areas without enlarging decorative icons or toolbar tabs.
+// Единая минимальная область нажатия для кнопок.
 :root .btn:not(.ui-toolbar-control) {
   min-height:44px;
   font-size:14px;
@@ -28,8 +28,7 @@
   text-align:center;
 
 }
-// Dialogs with three actions need compact, equal-size controls at 320px.
-// Keep 44px tap targets rather than wrapping a short label onto two lines.
+// В узком окне кнопки остаются равными и не переносят подписи.
 :root dialog.native-dialog .modal-actions:has(> .ui-icon-button) > .btn {
   flex:1 1 0;
   min-width:0;

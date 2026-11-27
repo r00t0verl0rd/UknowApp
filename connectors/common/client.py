@@ -57,7 +57,7 @@ def select_heads(pending, active):
         _, _, route, heavy = item
         if route in busy:
             continue
-        # Do not let later messages jump a waiting heavy message on the same route.
+        # Не пропускаем ожидающее тяжёлое сообщение на том же адресе.
         busy.add(route)
         if heavy and heavy_count >= 2:
             continue
@@ -127,8 +127,7 @@ class GatewayClient:
             logger.warning("Invalid inbound acknowledgement")
 
     async def inbound(self, event):
-        # Commit normalized payload before raw provider update can be acknowledged.
-        # Core confirms after its DB commit; a PubAck alone is not sufficient.
+        # Сохраняем событие до подтверждения провайдеру; PubAck недостаточно.
         self.spool.remember_inbound(event)
 
     async def publish_inbound(self):
@@ -195,7 +194,7 @@ class GatewayClient:
             await msg.in_progress()
 
     async def execute_delivery(self, adapter, job_id, job):
-        # Only an explicit provider rate-limit rejection is safe to retry.
+        # Повторяем только при явном ограничении скорости.
         self.spool.begin_delivery(job_id)
         try:
             if job.get("media"):
@@ -212,8 +211,7 @@ class GatewayClient:
         except asyncio.CancelledError:
             raise
         except RetryLater:
-            # Retry a definite refusal only if no earlier part has been delivered.
-            # Otherwise report partial delivery; never duplicate confirmed copies.
+            # Повторяем отказ, только если ни одна часть ещё не доставлена.
             if not self.spool.delivery(job_id).get("external_message_ids"):
                 self.spool.retry_rejected_delivery(job_id)
                 raise
@@ -253,7 +251,7 @@ class GatewayClient:
                         await msg.ack_sync()
                         return
                     if code == 409:
-                        # Core already released this job, but no durable local receipt remains.
+                        # Core освободил задание, но локальной квитанции уже нет.
                         receipt = {"id": job_id, "status": "unknown"}
                         self.spool.forget_claim(job_id)
                     else:
@@ -284,7 +282,7 @@ class GatewayClient:
             logger.warning("Delivery NAK unavailable; broker will redeliver")
 
     async def deliveries(self, adapter: ProviderAdapter):
-        # UI invalidations are best effort, coalesced per actor, and separate from sends.
+        # События интерфейса объединяются и не влияют на доставку.
         async def refresh(msg):
             try:
                 actor = json.loads(msg.data)["actor"]
@@ -350,9 +348,7 @@ class GatewayClient:
                 capacity = 16 - len(pending) - len(active)
                 if capacity > 0:
                     try:
-                        # A short fetch while workers are running allows new light tasks
-                        # to enter without waiting for an earlier media upload.
-                        # Do not wait for a full batch on the first message after idle.
+                        # Короткое чтение добавляет лёгкие задания, не ожидая загрузки файла.
                         busy = bool(active or pending)
                         msgs = await sub.fetch(
                             min(capacity, 4) if busy else 1, timeout=0.15 if busy else 2

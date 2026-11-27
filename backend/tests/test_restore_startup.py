@@ -47,7 +47,7 @@ def exercise_transfer():
         db = client.get("/api/admin/data/database")
         db.raise_for_status()
         (data.DATA_DIR / "after-export").touch()
-        # A restore on a new host must supply the actual attachment bytes.
+        # На новом сервере восстановление должно содержать файлы вложений.
         shutil.rmtree(data.MEDIA_DIR)
         refused = client.post("/api/admin/data/database", files={"file": ("old.db", db.content)})
         assert refused.status_code == 409
@@ -68,7 +68,7 @@ def exercise_transfer():
         login(client)
         assert client.get("/api/admin/data/restore-status").json()["restore"]["status"] == "completed"
         assert (data.DATA_DIR / "keep-during-db-restore").exists()
-        # SQLite integrity succeeds, but application migrations cannot use this database.
+        # Целостность SQLite не гарантирует совместимость схемы приложения.
         broken = Path("incompatible.db")
         with sqlite3.connect(broken) as connection:
             connection.executescript("CREATE TABLE users(id INTEGER); CREATE TABLE messages(id INTEGER); CREATE TABLE conversations(id INTEGER);")

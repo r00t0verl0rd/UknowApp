@@ -15,7 +15,7 @@ from app.main import app
 
 
 def test_async_functions_do_not_call_sync_sql_directly():
-    # A cheap static guard complements the runtime SQLAlchemy fixture.
+    # Статическая проверка дополняет проверку SQLAlchemy.
     class Scan(ast.NodeVisitor):
         def __init__(self, path):
             self.path = path
@@ -60,8 +60,7 @@ def test_async_functions_do_not_call_sync_sql_directly():
 
 
 def test_slow_gateway_sql_does_not_block_http(api, tmp_path, monkeypatch):
-    # Separate connection ensures this test measures event-loop isolation, not
-    # legitimate SQLite contention for the same database write lock.
+    # Отдельное подключение проверяет цикл событий без конкуренции за SQLite-блокировку.
     engine = create_engine("sqlite:///" + str(tmp_path / "slow.sqlite3"))
     slow_sessions = sessionmaker(bind=engine)
     entered, release = threading.Event(), threading.Event()

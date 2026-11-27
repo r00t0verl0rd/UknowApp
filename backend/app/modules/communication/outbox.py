@@ -41,7 +41,7 @@ def claim_is_recent(job, now=None):
 def earlier_send_pending(db, job):
     if not isinstance(job, ConnectorDelivery) or job.status == "sending":
         return False
-    # Preserve ordering at each external address even after a delayed NAK or reconnect.
+    # Сохраняем порядок отправки при повторе и переподключении.
     return db.scalar(select(ConnectorDelivery.id).where(
         ConnectorDelivery.platform == job.platform,
         ConnectorDelivery.chat_id == job.chat_id,
@@ -87,7 +87,7 @@ def enqueue_web_delivery(db, row, platforms):
         for job in db.new if isinstance(job, ConnectorDelivery) and job.message_id == row.id
     )
     for platform, user_id, external_id, private_chat, group_chat, thread in accounts:
-        # The private account and its bound group are independent addresses.
+        # Личный чат и привязанная группа — разные адреса.
         routes = {(private_chat or external_id, "")}
         if group_chat:
             routes.add((group_chat, thread or ""))
@@ -156,7 +156,7 @@ def get_job(db, job_id, *, for_update=False):
 
 
 def enqueue_deletion(db, platform, chat_id, external_id):
-    # IDs are stable across legacy metadata, SQL delivery rows and late receipts.
+    # ID едины для истории, заданий и поздних квитанций.
     chat_id, external_id = str(chat_id), str(external_id)
     ident = hashlib.sha256(json.dumps([platform, chat_id, external_id]).encode()).hexdigest()
     if db.get(ConnectorDeletion, ident) is None:
@@ -208,7 +208,7 @@ def record_result(db, job, status, external_id=None, *, external_ids=None):
     db.flush()
     row = db.get(Message, job.message_id) if job.message_id is not None else None
     if row is None:
-        # The original message may have been deleted while the provider request was in flight.
+        # Исходное сообщение могло быть удалено во время отправки.
         for ident in ids:
             enqueue_deletion(db, job.platform, job.chat_id, ident)
         db.commit()
@@ -221,8 +221,7 @@ def record_result(db, job, status, external_id=None, *, external_ids=None):
                 "external_thread_id": j.thread_id or None,
                 "endpoint_type": "group" if group else "private"}
     metadata = json.loads(row.metadata_json or "{}")
-    # Keep every confirmed part in the existing delivery ledger. The first ID
-    # remains in the job row for compatibility with old single-copy receipts.
+    # Храним все подтверждённые части; первый ID оставляем для совместимости.
     previous = metadata.get("messenger_deliveries", {}).get(job.platform, {}).get("delivered", [])
     delivered = {}
     for copy in previous + [

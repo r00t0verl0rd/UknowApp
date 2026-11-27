@@ -2,7 +2,7 @@
 
 
 def history_page(db, query, model, limit, after_id, forward):
-    # Older clients may omit a limit; never return an unbounded history.
+    # Без лимита историю не выгружаем целиком.
     forward = forward or (limit is None and after_id > 0)
     order = model.id.asc() if forward else model.id.desc()
     rows = list(db.scalars(query.order_by(order).limit(limit or 100)).all())

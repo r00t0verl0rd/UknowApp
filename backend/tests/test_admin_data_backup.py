@@ -142,7 +142,7 @@ def test_backup_tolerates_legacy_text_metadata_but_rejects_broken_media(api, mon
             )
         assert client.get("/api/admin/data/full").status_code == 200
 
-    # A missing/invalid metadata object *is* an error for a real attachment.
+    # У реального вложения метаданные обязательны.
     with sqlite3.connect(database) as connection:
         connection.execute("UPDATE messages SET metadata_json = 'null', content_type = 'voice'")
     response = client.get("/api/admin/data/full")
@@ -271,7 +271,7 @@ def test_personal_media_checked_on_export_and_import(api, monkeypatch, tmp_path)
     assert backup.status_code == 200
     media.write_bytes(b"truncated")
     assert admin.get("/api/admin/data/full").status_code == 409
-    # ZIP and manifest agree, but the referenced attachment itself is missing.
+    # Архив и манифест верны, но вложение отсутствует.
     out = io.BytesIO()
     with zipfile.ZipFile(io.BytesIO(backup.content)) as src, zipfile.ZipFile(out, "w") as dst:
         manifest = json.loads(src.read("manifest.json"))
@@ -292,7 +292,7 @@ def test_interrupted_full_restore_returns_original_directory(api, monkeypatch, t
     create_database(root / "uknowapp.db")
     admin = api[0]()
     login_admin(admin)
-    # Exactly the maximum number of data entries plus the manifest.
+    # Максимальное число файлов вместе с манифестом.
     monkeypatch.setattr(admin_data, "MAX_ARCHIVE_ENTRIES", 1)
     backup = admin.get("/api/admin/data/full")
     assert backup.status_code == 200
@@ -300,7 +300,7 @@ def test_interrupted_full_restore_returns_original_directory(api, monkeypatch, t
     assert admin.post("/api/admin/data/full", files={"file": ("full.zip", backup.content)}).status_code == 202
     assert restore.apply_pending_data_restore()
     assert not (root / "original-only").exists()
-    # Simulate a new process before startup confirmed the replacement.
+    # Проверяем запуск нового процесса до подтверждения замены.
     assert not restore.apply_pending_data_restore()
     assert (root / "original-only").read_text() == "before"
     assert admin.get("/api/admin/data/restore-status").json()["restore"]["status"] == "failed"

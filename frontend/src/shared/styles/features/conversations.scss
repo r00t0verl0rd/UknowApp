@@ -70,7 +70,7 @@
     font-size:11px;
   }
 }
-/* Names remain on one line. The inner text fits the real available width. */
+/* Имена остаются в одной строке. */
 .chat-head-person > .participant-dialog-title {
   display:block;
   width:100%;
@@ -128,7 +128,7 @@
   background:var(--surface);
 }
 .messages {
-  /* The controller preserves a message anchor on all browsers, including Safari. */
+  /* Сохраняем якорь сообщения при прокрутке. */
   overflow-anchor:none;
   display:flex;
   flex:1 0 auto;
@@ -139,8 +139,7 @@
   background:transparent;
 }
 .message {
-  /* A message must have its real height before scroll restoration. Keep
-     images lazy and audio deferred instead of estimating whole row heights. */
+  /* Высоту сообщения определяет загруженное содержимое. */
   width:fit-content;
   max-width:min(92%, 760px);
   min-width:0;
@@ -313,9 +312,7 @@
   background:rgba(255, 255, 255, 0.09);
   opacity:1;
 }
-/* An incomplete Telegram delivery or a missing recipient gets a quiet
-   blue info icon. Completed deliveries retain the ordinary neutral gray.
-   This state is independent of screen width and the user's theme. */
+/* Неполная доставка через мессенджер отмечается синей иконкой. */
 :root .message .ui-icon-button.message-detail-btn[data-delivery-complete="false"] {
   color:color-mix(in srgb, var(--info) 68%, var(--muted));
   opacity:0.9;
@@ -578,7 +575,7 @@
 .chat-composer:focus-within {
   @include primitives.field-focus;
 }
-/* One comfortable 84px input height across desktop, tablet and mobile. */
+/* Единая высота поля ввода на всех экранах. */
 .chat-composer textarea {
   display:block;
   width:100%;
@@ -1104,8 +1101,7 @@
   }
 }
 
-/* 84px input on all devices; the send control is compact on mobile.
-   Consistent touch targets for admin, teacher and student. */
+/* Единая высота поля и удобная область нажатия на всех экранах. */
 @media (max-width: 1024px) {
   .workspace-shell .chat-detail .chat-composer {
     gap:6px;
@@ -1132,8 +1128,7 @@
   }
 }
 
-/* The filter's native select remains an invisible accessible control.
-   Size, colors, focus and icons live in the shared icon-actions.scss rule. */
+/* Нативный список остаётся доступным; внешний вид задан общими стилями. */
 .chat-head-tools .chat-message-filter-control {
   position:relative;
 }
@@ -1149,7 +1144,7 @@
   opacity:0;
   cursor:pointer;
 }
-/* The name occupies one row while keeping a comfortable font size. */
+/* Имя остаётся в одной строке. */
 .chat-head-person > b:not(.participant-dialog-title) {
   display:block;
   width:100%;
@@ -1162,7 +1157,7 @@
   line-height:1.35;
 }
 @media (max-width:760px) {
-  /* Fixed back and filter targets leave the remaining row for fitted names. */
+  /* Для имени остаётся место между кнопками. */
   .chat-detail > .chat-head {
     grid-template-columns:52px minmax(0,1fr) 40px;
     grid-template-rows:auto;
@@ -1200,7 +1195,7 @@
   }
 }
 
-/* Dialog list keeps each complete name on exactly one readable line. */
+/* Имя участника в списке не переносится. */
 .workspace-shell .chat-items > .chat-item.student-card {
   height:auto;
   min-height:62px;
@@ -1234,7 +1229,7 @@
   font-size:12px;
   line-height:1.4;
 }
-/* Shared fitting logic for dialog cards, message senders and the header. */
+/* Подгонка имени общая для списка, сообщения и заголовка. */
 .chat-name-fit {
   display:block;
   box-sizing:border-box;

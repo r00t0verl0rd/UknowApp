@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 _subscribers: dict[asyncio.Queue[str], tuple[asyncio.AbstractEventLoop, dict | None]] = {}
 _subscribers_lock = Lock()
 _event_lock = Lock()
-# Microseconds fit a JS safe integer. A new process gets a new cursor range.
+# Микросекунды помещаются в безопасный целочисленный диапазон JavaScript.
 _latest_id = time_ns() // 1000
 _latest_payload: dict | None = None
 _MAX_REPLAY_PAYLOAD_BYTES = 4096
@@ -75,7 +75,7 @@ def _enqueue(queue: asyncio.Queue[str], payload: str, event_id: int | None) -> N
                 queue.get_nowait()
             except asyncio.QueueEmpty:
                 break
-        # A fresh snapshot restores state after queue overflow.
+        # Новый снимок восстанавливает состояние после переполнения очереди.
         resync_payload = {"resync": True}
         if event_id is not None:
             resync_payload["event_id"] = event_id
@@ -147,8 +147,7 @@ def publish_chat_update(
         "admin_message_status": admin_message_status,
     }
     global _latest_id, _latest_payload
-    # One bounded recovery hint, not a second message history. Serialize dispatch
-    # across HTTP and gateway threads so live cursors arrive in order.
+    # Ограниченная подсказка для восстановления; курсоры выдаются по порядку.
     with _event_lock:
         _latest_id += 1
         recovery = {"audience": audience, "resync": True}

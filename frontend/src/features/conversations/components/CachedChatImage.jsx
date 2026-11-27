@@ -1,7 +1,6 @@
 import { createEffect } from "solid-js";
 
-// Reserve the final geometry before loading. Unknown legacy dimensions use a
-// stable frame too; object-fit preserves the original photo without cropping.
+// Резервируем место до загрузки; фото сохраняет пропорции.
 function frameSize(width, height) {
   const w = Number(width);
   const h = Number(height);
@@ -24,8 +23,7 @@ export default function CachedChatImage(options) {
       image.loading = "eager";
       frame.appendChild(image);
       let observer;
-      // Reattached images already have their src and decoded content. The cold
-      // path prepares nearby attachments without eagerly downloading the history.
+      // Повторно используем загруженное изображение и не скачиваем всю историю заранее.
       if (!image.getAttribute("src")) {
         const load = () => { observer?.disconnect(); image.src = src; };
         if (typeof IntersectionObserver === "function") {

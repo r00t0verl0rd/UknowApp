@@ -1,7 +1,6 @@
-// Keyboard-aware positioning is shared by login, workspace and portalled modals.
-// visualViewport values come from one observer in App, also in standalone (PWA) mode.
+// Единое положение интерфейса при открытой клавиатуре.
 @media (max-width: 1024px) {
-  // Keep one scroll container throughout keyboard animation.
+  // Во время анимации клавиатуры оставляем один контейнер прокрутки.
   :root[data-theme]:has(.login-screen),
   :root[data-theme] body:has(.login-screen),
   :root[data-theme] #root:has(.login-screen) {
@@ -35,8 +34,7 @@
     margin-block:auto;
   }
 
-  // cqh uses the visible screen after safe-area padding. Spend the spare
-  // height on the brand while leaving the fields and submit button full size.
+  // Свободную высоту отдаём логотипу, не уменьшая поля и кнопку.
   @supports (height:1cqh) {
     :root[data-theme] .login-card {
       padding-block:clamp(8px, calc(10cqh - 24px), 20px);
@@ -55,8 +53,7 @@
     }
   }
 
-  // Native dialogs live in a Portal, not inside WorkspaceLayout.
-  // They must follow the same visual viewport even when the keyboard shifts it.
+  // Диалоги следуют за видимой областью при открытой клавиатуре.
   :root[data-theme] dialog.native-dialog.modal[open]:has(input, textarea, [contenteditable="true"]) {
     position:fixed;
     top:var(--app-viewport-top, 0px);

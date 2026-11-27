@@ -28,7 +28,7 @@ from .volatile_events import retire_realtime_events
 
 logger = logging.getLogger(__name__)
 
-# Keep old identifiers permanently. New releases append explicit, tested steps.
+# Не меняйте старые ID миграций; новые добавляйте в конец.
 MIGRATIONS = (
     ("2026-11-22-login-lookup", migrate_login_keys),
     ("2026-11-22-remove-interactive-boards", remove_board_tables),
@@ -65,7 +65,7 @@ def upgrade_schema(connection):
     from app import models  # noqa: F401
 
     existing = set(inspect(connection).get_table_names())
-    # Do not create a blank school over a partially copied business schema.
+    # Не создаём пустую школу поверх неполной рабочей схемы.
     required = {"users", "messages", "conversations", "assignments"}
     if existing & required and not required <= existing:
         raise RuntimeError("Incomplete UknowApp database: missing core tables")
@@ -87,9 +87,8 @@ def upgrade_schema(connection):
 
 
 def initialize_database():
-    # SQLite's legacy driver does not start a transaction for DDL. BEGIN
-    # IMMEDIATE ensures schema changes and markers roll back together.
-    # PostgreSQL advisory lock serializes concurrent Core startups.
+    # Одна транзакция объединяет DDL и отметки миграций.
+    # Advisory lock не допускает одновременный запуск Core в PostgreSQL.
     with engine.begin() as connection:
         if connection.dialect.name == "sqlite":
             connection.exec_driver_sql("BEGIN IMMEDIATE")

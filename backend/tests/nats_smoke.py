@@ -70,7 +70,7 @@ async def main():
             with SessionLocal() as db:
                 return db.get(ConnectorDelivery,job_id).status
 
-        # Publish while connector is offline, then simulate total broker stream loss.
+        # Публикуем без коннектора и проверяем восстановление после потери потока.
         worker = asyncio.create_task(gateway.publish_outbox())
         workers.append(worker)
         def published():

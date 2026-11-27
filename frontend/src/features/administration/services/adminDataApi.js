@@ -1,8 +1,6 @@
 import { apiUrl, fetchApi, request } from "../../../shared/services/api.js";
 
-// Unlike a generic request, statistics must distinguish an expired session,
-// an unavailable backend and a malformed response. The admin page can then
-// explain what happened and offer an explicit retry instead of a generic modal.
+// Статистика различает истёкшую сессию, недоступный сервер и неверный ответ.
 export async function getAdminDataStats() {
   let response;
   try {

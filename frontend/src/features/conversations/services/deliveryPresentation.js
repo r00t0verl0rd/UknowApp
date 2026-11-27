@@ -1,4 +1,4 @@
-/** Friendly, user-facing summaries of optional messenger delivery. */
+/** Короткие подписи к необязательной доставке через мессенджеры. */
 const names = { telegram: "Telegram", max: "MAX", whatsapp: "WhatsApp" };
 export function messengerName(platform) {
   return names[platform] || (platform ? platform[0].toUpperCase() + platform.slice(1).toLowerCase() : "Мессенджер");

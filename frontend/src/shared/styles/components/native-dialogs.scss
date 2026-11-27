@@ -75,8 +75,7 @@
 :root dialog.native-dialog::backdrop {
   background:rgb(16 20 32 / 60%);
 }
-/* Unified, unobtrusive close buttons in every dialog. Keyboard focus
-   remains apparent through a soft background, without a double outline. */
+/* Единая кнопка закрытия диалогов. */
 :root dialog.native-dialog .modal-head > .ui-icon-button {
   border:0;
   outline:none;
@@ -239,7 +238,7 @@
     --icon-action-size: 44px;
   }
 }
-/* Shared placement for information, success and errors. */
+/* Единое размещение уведомлений и ошибок. */
 :root dialog.native-dialog.modal.native-feedback-dialog[open] {
   position:fixed;
   inset:auto max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) auto;

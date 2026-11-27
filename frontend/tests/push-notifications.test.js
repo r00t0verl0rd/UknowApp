@@ -148,8 +148,7 @@ test("iPhone Safari explains Home Screen installation before missing push APIs",
   });
   assert.equal(installed.supported, true);
 });
-// Real subscription controller, fake browser and Core. Each import has its own
-// device-local state, like separate installed PWAs.
+// Проверяем контроллер подписки с отдельным состоянием каждого устройства.
 let deviceModule = 0;
 async function mockDevice(t, {existing = true, expired = false, oldKey = false, permission = "granted"} = {}) {
   const names = ["window", "navigator", "Notification", "localStorage", "fetch"];

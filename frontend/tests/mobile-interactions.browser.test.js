@@ -174,7 +174,7 @@ test("workspace header has clear spacing and mobile dialogs stay below it", { ti
           await page.getByRole("button", { name: "Структура", exact: true }).click();
           await page.locator(".teacher-zen-student").first().waitFor();
           await page.evaluate(() => {
-            // A stored offset from the old document-scrolling dialogs layout.
+            // Смещение от старой прокрутки диалогов по странице.
             sessionStorage.setItem("uknowapp-view-v1:7", JSON.stringify({
               pages: { chats: { scroll: { document: { top: 45, left: 0 }, content: { top: 30, left: 0 } } } },
             }));

@@ -30,7 +30,7 @@ def mark_conversation_read(db, conversation, principal, after_id: int, visible_i
         Message.id > after_id,
         *([Message.id.in_(visible_ids)] if visible_ids is not None else []),
     )
-    # Do not take SQLite's writer lock just to open an already-read chat.
+    # Не блокируем запись в SQLite при открытии уже прочитанного диалога.
     if db.scalar(select(Message.id).where(*filters).limit(1)) is None:
         return
     read_at = datetime.now(UTC).isoformat()

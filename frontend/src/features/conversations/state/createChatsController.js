@@ -59,9 +59,7 @@ export function createChatsController(options) {
       void openChat(chat);
     },
   );
-  // Обновляем кэш уже показанной переписки при ответе сервера и SSE.
-  // Это важно на телефоне: кнопка «Назад» очищает открытый чат, но
-  // возвращение к нему не должно ждать повторной загрузки истории.
+  // Обновляем кеш диалога из ответа сервера и событий SSE.
   createEffect(
     () => [activeChatKey(), options.chatState.messages, options.chatState.messagesLoading, olderCursor()],
     ([key, messages, loading, cursor]) => {
@@ -150,8 +148,7 @@ export function createChatsController(options) {
     const cachedMessages = cached?.messages || null;
     const controller = new AbortController();
     openingChatRequest = { key: chatKey, controller, hasCache: Boolean(cachedMessages) };
-    // Блокируем запись старой истории под ключом нового чата на время
-    // синхронного переключения сигналов.
+    // Не записываем старую историю после переключения диалога.
     options.chatState.setMessagesLoading(true);
     setOlderCursor(cached?.olderCursor || 0);
     options.chatState.setSelectedChat(chat);
@@ -163,8 +160,7 @@ export function createChatsController(options) {
     if (!restoring) options.chatState.setMessageFilter("all");
     try {
       if (cached) {
-        // A warm chat is rendered from its complete cached window. Reconcile
-        // known IDs and append new messages without replacing its scroll geometry.
+        // Обновляем кешированный диалог без сброса прокрутки.
         let afterId = cachedMessages.reduce((max, row) => Math.max(max, Number(row.id) || 0), 0);
         let knownIds = cachedMessages.map(row => Number(row.id)).filter(id => Number.isSafeInteger(id) && id > 0);
         for (;;) {
@@ -204,14 +200,13 @@ export function createChatsController(options) {
       }
       if (controller.signal.aborted || activeChatKey() !== chatKey) return;
       setOlderCursor(hasOlder ? loadedMessages[0].id : 0);
-      // Сервер — источник истины: удалённые в другом окне сообщения не
-      // остаются в кэше. Одновременно сохраняем изменения SSE за время запроса.
+      // Обновляем кеш с учётом удаления и событий SSE во время запроса.
       options.chatState.setMessages((previous) => {
         return mergeConversationMessages(loadedMessages, previous, chatKey);
       });
       openingChatRequest.windowReady = true;
       viewport.schedule();
-      // The first screen is ready; append newer history without delaying it.
+      // Показываем первую страницу сразу, затем догружаем новые сообщения.
       while (newerPage?.length === HISTORY_PAGE_SIZE) {
         const after = Number(newerPage[newerPage.length - 1].id);
         newerPage = await getChatMessages(options.request, chat, controller.signal, null, after);
@@ -238,7 +233,7 @@ export function createChatsController(options) {
       if (openingChatRequest?.controller === controller) openingChatRequest = null;
     }
   };
-  // Reopen the same conversation once its list has been loaded.
+  // Открываем выбранный диалог после загрузки списка.
   createEffect(
     () => [
       viewAccountKey(options.profile),
@@ -259,8 +254,7 @@ export function createChatsController(options) {
       const [type, idText] = key.split(":");
       const chat = (type === "personal" ? personals : conversations)
         .find(item => String(item.id) === idText);
-      // Participant and personal inboxes arrive independently. Open as soon as
-      // the selected conversation is available, even if the other list is slow.
+      // Открываем диалог сразу после загрузки нужного списка.
       if (!chat && loading) return;
       attemptedRestoreForUser = userId;
       if (!chat) {
@@ -397,7 +391,7 @@ export function createChatsController(options) {
           if (!options.auth || viewAccountKey(options.profile) !== senderAccount) break;
           if (activeChatKey() === chatKey) {
             options.chatState.setMessages(current => mergeConversationMessages(current, [message], chatKey));
-            // Do not touch a new draft after navigating away and reopening.
+            // Не меняем черновик нового диалога.
             if (options.chatState.attachments.some(item => item.id === entry.id)) {
               options.chatState.setAttachments(current => current.filter(item => item.id !== entry.id));
               if (caption) options.chatState.setDraft(current => current.trim() === caption ? "" : current);
@@ -487,7 +481,7 @@ export function createChatsController(options) {
       viewport.scrollToLatest();
     } catch (error) {
       if (clientMessageId && activeChatKey() === chatKey) {
-        // A live update may confirm the send before its HTTP response is lost.
+        // Событие может подтвердить отправку раньше ответа HTTP.
         if (optimistic && options.chatState.messages.some(item =>
           Number(item.id) > 0 && item.sender_role === senderRole &&
           item.metadata?.client_message_id === clientMessageId

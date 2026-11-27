@@ -1,5 +1,4 @@
-// Unified mobile visual viewport handling for login, every workspace and native dialogs.
-// The layout viewport on iOS Safari can remain unchanged while the keyboard is visible.
+// Единое позиционирование при открытой клавиатуре на мобильных устройствах.
 export function installViewportEnvironment(win = window, doc = document) {
   const root = doc.documentElement;
   const viewport = win.visualViewport;
@@ -27,29 +26,25 @@ export function installViewportEnvironment(win = window, doc = document) {
     const focused = isEditorFocused();
     const mobile = mobileQuery.matches;
     const inBrowser = mobile && browserQuery.matches;
-    // Keep the original height until Safari has finished dismissing the keyboard.
-    // Focus can leave an input while the visual viewport is still shrinking.
+    // Сохраняем высоту, пока Safari закрывает клавиатуру.
     if ((!focused && !keyboardOpen) || !mobile) baselineHeight = Math.max(win.innerHeight, height);
     else baselineHeight = Math.max(baselineHeight, height);
     const heightLoss = baselineHeight - height;
-    // Hysteresis keeps the viewport stable as Safari animates the keyboard closed.
+    // Защита от скачков высоты при закрытии клавиатуры.
     const open = mobile && (!viewport || viewport.scale <= 1.1) &&
       (keyboardOpen ? heightLoss >= 80 : focused && heightLoss >= 120);
-    // On touch Safari, prepare the chat layout on focus, before the keyboard
-    // starts resizing visualViewport. Standalone iOS keeps its existing flow.
+    // Готовим чат до изменения viewport клавиатурой Safari.
     const prepareChat = inBrowser && focused &&
       touchQuery.matches &&
       Boolean(doc.activeElement?.closest?.(".chat-composer"));
-    // Only an editor in the workspace needs its navigation collapsed. Portal
-    // dialogs manage their own viewport and must leave the page behind them still.
+    // При редактировании сворачиваем меню; диалоги управляют своим viewport.
     const field = doc.activeElement;
     const form = field?.closest?.(".login-screen, dialog.native-dialog");
     const workspaceEditor = focused && !form && Boolean(field.closest(".workspace-shell"));
     const workspaceOpen = prepareChat || (open && !form &&
       (workspaceEditor || (!focused && workspaceKeyboardOpen)));
 
-    // The password accessory bar can change height during a field switch.
-    // Keep the smaller login layout until the keyboard is actually dismissed.
+    // Не меняем форму входа, пока клавиатура полностью не закрыта.
     const loginKeyboard = open && (form?.matches(".login-screen") ||
       (loginHeight !== null && field === doc.body && doc.querySelector(".login-screen")));
     const nextLoginHeight = loginKeyboard ? Math.min(loginHeight ?? height, height) : null;
@@ -101,8 +96,7 @@ export function installViewportEnvironment(win = window, doc = document) {
     schedule();
   };
   const onViewportScroll = () => {
-    // Safari's address bar sends frequent visualViewport scroll notifications.
-    // When nothing is focused, resize is enough to update the document layout.
+    // При снятом фокусе обновляем layout только при изменении размера.
     if (mobileQuery.matches && browserQuery.matches &&
         !keyboardOpen && !isEditorFocused()) return;
     schedule();

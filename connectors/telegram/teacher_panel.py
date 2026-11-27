@@ -100,7 +100,7 @@ class TeacherPanel:
         page = spool.panel(actor).get("page", 0)
         visible, page, total = commands.page(view["conversations"], page)
         if body.startswith("Написать · "):
-            # A stale reply keyboard must not send its label as homework.
+            # Старая клавиатура не должна отправить свою подпись как ДЗ.
             await self.refresh(actor, gateway, spool, page=page, force=True)
             return True
         if body in {BACK, REFRESH, PREVIOUS, NEXT}:

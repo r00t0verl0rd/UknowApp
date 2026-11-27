@@ -31,7 +31,7 @@ def provider_attachment_limit(platform: str) -> int:
 
 
 def panel_attachment_limit() -> int:
-    # Web-only installations retain the existing storage limit.
+    # Без ботов действует общий лимит веб-приложения.
     enabled = {item.strip() for item in os.getenv("BOTS_PLATFORMS", "").split(",")}
     return min((provider_attachment_limit(p) for p in enabled), default=MAX_ATTACHMENT_BYTES)
 
@@ -91,7 +91,7 @@ def delete_message_media(metadata_json: str | None) -> None:
         with contextlib.suppress(OSError):
             target.parent.rmdir()
     except (OSError, ValueError, RuntimeError):
-        # Path.resolve() raises RuntimeError for symlink loops on Python 3.11.
+    # RuntimeError также возникает при цикле символических ссылок.
         logger.exception("Could not delete archived message media")
 
 def attachment_response(request: Request, path: Path, media: dict) -> Response:

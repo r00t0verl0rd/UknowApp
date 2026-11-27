@@ -19,8 +19,7 @@ export function createAuthController(options) {
     try {
       await signInRequest(options.authState.login.trim(), options.authState.password);
       localStorage.setItem("uknowapp-session-change", String(Date.now()));
-      // Authentication is complete: show the workspace before the optional
-      // push permission/subscription flow, which can take several seconds.
+      // Показываем кабинет до запроса разрешения на push.
       options.setPushBusy(true);
       localStorage.setItem("uknowapp-auth", "1");
       sessionStorage.removeItem("uknowapp-auth");

@@ -68,8 +68,7 @@ test("remembers current page, list filters and scroll after asynchronous reload"
             : document.scrollingElement;
           const y = pos.kind === "content" ? container?.scrollTop : window.scrollY;
           if (Math.abs(y - pos.y) <= 8) return true;
-          // On mobile a sticky header may move in the layout. Restoring the
-          // same visible row is the invariant, not an arbitrary pixel offset.
+          // На телефоне сохраняем видимую строку, а не пиксельное смещение.
           const snapshot = JSON.parse(sessionStorage.getItem("uknowapp-view-v1:admin") || "{}");
           const anchor = snapshot.pages?.users?.scroll?.[pos.kind]?.anchor;
           const row = [...(container?.querySelectorAll("[data-view-anchor]") || [])]
@@ -83,7 +82,7 @@ test("remembers current page, list filters and scroll after asynchronous reload"
         { timeout: 12000 },
       );
 
-      // Moving between sections must keep each section's independent position.
+      // У каждого раздела своя позиция прокрутки.
       await page.getByRole("button", { name: "Диалоги", exact: true }).click();
       await page.getByRole("button", { name: "Пользователи", exact: true }).click();
       await page.getByText("Ученик 090", { exact: true }).waitFor();
@@ -94,8 +93,7 @@ test("remembers current page, list filters and scroll after asynchronous reload"
             : document.scrollingElement;
           const y = pos.kind === "content" ? container?.scrollTop : window.scrollY;
           if (Math.abs(y - pos.y) <= 8) return true;
-          // On mobile a sticky header may move in the layout. Restoring the
-          // same visible row is the invariant, not an arbitrary pixel offset.
+          // На телефоне сохраняем видимую строку, а не пиксельное смещение.
           const snapshot = JSON.parse(sessionStorage.getItem("uknowapp-view-v1:admin") || "{}");
           const anchor = snapshot.pages?.users?.scroll?.[pos.kind]?.anchor;
           const row = [...(container?.querySelectorAll("[data-view-anchor]") || [])]
@@ -245,20 +243,20 @@ test("restores the selected conversation and the same message after loading olde
     delayNewerPages = false;
     resumeNewer();
     await page.getByText("Chat message 120").waitFor({ state: "attached" });
-    // Appending the rest of the history must also preserve the observed row.
+    // Догрузка истории сохраняет видимую строку.
     await page.waitForFunction(expected => {
       const history = document.querySelector(".messages");
       const row = history?.querySelector(`[data-view-anchor="${expected.id}"]`);
       return row && Math.abs(row.getBoundingClientRect().top - history.getBoundingClientRect().top - expected.offset) < 3;
     }, anchor);
     assert.equal(await page.locator(".chat-item.selected").count(), 1);
-    // Closing a tab removes its session state. A manual reopen still finds the same row.
+    // После закрытия вкладки ручное открытие находит ту же строку.
     await page.goto("about:blank");
     await page.addInitScript(() => sessionStorage.clear());
     await page.goto("http://127.0.0.1:22240/dialogs");
     await page.locator(".chat-item").first().click();
     await checkFirstFrame();
-    // On a touch-sized viewport, going back to the list must preserve the anchor.
+    // На узком экране возврат к списку сохраняет якорь.
     await page.setViewportSize({ width: 390, height: 760 });
     await page.locator(".messages").evaluate(history => { history.scrollTop = 420; });
     await page.waitForTimeout(200);
@@ -277,7 +275,7 @@ test("restores the selected conversation and the same message after loading olde
     await page.getByRole("button", { name: "Назад к списку диалогов" }).click();
     await page.locator(".chat-item").first().click();
     await expectMobileAnchor();
-    // Simulate an attachment above the visible row gaining height after loading.
+    // Проверяем изменение высоты вложения над видимой строкой.
     await page.locator(".messages").evaluate((history, expected) => {
       const row = history.querySelector(`[data-view-anchor="${expected.id}"]`);
       const previous = row.previousElementSibling;
@@ -298,7 +296,7 @@ test("restores the selected conversation and the same message after loading olde
         history.querySelector('[data-view-anchor="message:120"]') &&
         history.scrollHeight - history.scrollTop - history.clientHeight <= 2;
     });
-    // A different account opens at its first unread message.
+    // Другой аккаунт открывает чат с первого непрочитанного сообщения.
     await page.setViewportSize({ width: 1280, height: 720 });
     role = "student";
     chat.unread_count = 61;

@@ -68,7 +68,7 @@ def seed(connection, name):
     for ident in (81,82):
         insert("push_subscriptions", id=ident, role="admin", endpoint=f"https://web.push.apple.com/legacy-{ident}",
                p256dh="p" * 32, auth="a" * 16)
-    # Existing universal account must survive, even if legacy columns are present.
+    # Сохраняем универсальную привязку со старыми столбцами.
     insert("messenger_accounts", id=91, platform="telegram", user_id=11,
            external_user_id="1001", external_chat_id="1001")
     if name == "pre_push":
@@ -77,7 +77,7 @@ def seed(connection, name):
         insert("external_endpoints", platform="telegram", user_id=22, chat_id="-10099", thread_id="17")
     elif "student_telegram_groups" in tables:
         insert("student_telegram_groups", student_id=22, chat_id=-10099, thread_id=17)
-    # Distinct groups may reuse the same topic ID; every existing binding must survive.
+    # Одинаковый ID темы в разных группах не нарушает привязки.
     for ident in range(100, 132):
         external = 10000 + ident
         values = dict(id=ident, full_name=f"Student {ident}", role="student",
@@ -157,7 +157,7 @@ def assert_preserved(connection, name):
     assert "telegram_id" not in {c["name"] for c in inspector.get_columns("users")}
     assert "source_message_id" not in {c["name"] for c in inspector.get_columns("messages")}
     assert set(connection.scalars(text("SELECT version FROM schema_migrations"))) >= {v for v,_ in migrations.MIGRATIONS}
-    # Exercise the physical split after the historical upgrade, for both dialects.
+    # Проверяем разделение баз после старых миграций для обеих СУБД.
     runtime = create_engine("sqlite://")
     try:
         runtime_database.RuntimeBase.metadata.create_all(runtime)
@@ -206,7 +206,7 @@ def test_postgres_previous_release(name):
             migrations.upgrade_schema(c)
             migrations.upgrade_schema(c)
             assert_preserved(c, name)
-            # Everything is scoped to this disposable schema.
+            # Проверяем только временную схему.
             c.exec_driver_sql(f'DROP SCHEMA "{schema}" CASCADE')
     finally:
         engine.dispose()

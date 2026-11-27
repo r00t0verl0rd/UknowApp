@@ -1,4 +1,4 @@
-// Session-only LRU. Never persist private chat history or attachment bytes.
+// LRU-кеш текущей сессии; историю и файлы не сохраняем.
 export function createConversationCache({
   createImage = () => document.createElement("img"),
   now = () => Date.now(),
@@ -11,8 +11,7 @@ export function createConversationCache({
   let account = null;
   let allowed = new Set();
   const histories = new Map();
-  // Keep the actual image node, not a second download or a second decoded bitmap.
-  // Only the visible dialog owns mounted nodes; idle nodes are bounded by count and pixels.
+  // Повторно используем изображение; размер кеша ограничен.
   const images = new Map();
   const imageKey = (chatKey, messageId) => chatKey + ":" + messageId;
   function dropImage(key, entry, revoke = false) {
@@ -100,7 +99,7 @@ export function createConversationCache({
       image, chatKey, src, key, active: true,
       estimatedBytes: width > 0 && height > 0 ? width * height * 4 : 4 * 1024 * 1024,
     };
-    // Duplicate mounted instances must not steal an image from another owner.
+    // Не передаём изображение другому владельцу.
     if (account != null && allowed.has(chatKey) && !existing?.active) {
       if (existing) dropImage(key, existing);
       images.set(key, entry);

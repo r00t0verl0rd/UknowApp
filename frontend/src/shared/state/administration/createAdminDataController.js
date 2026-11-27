@@ -48,7 +48,7 @@ export function createAdminDataController(options) {
     }
   };
   const loginForStats = () => {
-    // Navigation is initiated only by the user's explicit click.
+    // Переходим только после явного действия пользователя.
     localStorage.removeItem("uknowapp-auth");
     sessionStorage.removeItem("uknowapp-auth");
     window.location.assign("/");
@@ -60,8 +60,7 @@ export function createAdminDataController(options) {
         void loadDataStats();
     },
   );
-  // The restore tracker lives above the page, survives role changes and requires
-  // an explicit user action before sending them to the login screen.
+  // Статус восстановления сохраняется при смене страницы и роли.
   createEffect(
     () => [options.restoreFlow.phase, options.auth, options.page],
     () => {
@@ -120,8 +119,8 @@ export function createAdminDataController(options) {
     }
   };
 
-  // Browser-native <dialog> показывает единое подтверждение для опасных операций.
-  // File остаётся в памяти до согласия; отмена ничего не загружает.
+  // Нативный <dialog> подтверждает опасные действия.
+  // Файл загружается только после подтверждения.
   const uploadAdminFile = (kind, file) => {
     if (file)
       setPendingConfirmation({

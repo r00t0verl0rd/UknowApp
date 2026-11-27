@@ -55,7 +55,7 @@ def panel_message_dict(
     metadata = json.loads(item.metadata_json or "{}")
     if metadata.get("source_mode") == "web":
         metadata.setdefault("web_sender_role", item.sender_role)
-    # Keep the old API shape for clients, not a second database source of truth.
+    # Сохраняем формат ответа для старых клиентов.
     metadata["teacher_read_at"] = item.teacher_read_at
     metadata["student_read_at"] = item.student_read_at
     if item.client_message_id:

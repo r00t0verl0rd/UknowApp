@@ -116,9 +116,7 @@
 
 }
 
-/* Single source of truth for open-chat header icon actions.
-   The filter label and close-dialog IconButton share identical tap targets,
-   color, shape, sizing, hover and focus across all breakpoints and themes. */
+/* Единый стиль кнопок действий в заголовке чата. */
 :root .workspace-shell .chat-head-tools > .ui-chat-head-action {
   --icon-action-size:40px;
   -webkit-appearance:none;

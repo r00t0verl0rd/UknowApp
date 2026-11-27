@@ -60,7 +60,7 @@ def test_connector_upload_applies_mode_limit(mode, mib, monkeypatch, tmp_path):
     monkeypatch.setattr(gateway, "MEDIA_DIR", tmp_path)
     real_limit = media.provider_attachment_limit("telegram")
     assert real_limit == mib * 1024 ** 2
-    # Exercise the streaming boundary without allocating hundreds of MiB.
+    # Проверяем границу потока без большого выделения памяти.
     monkeypatch.setattr(gateway, "provider_attachment_limit", lambda platform: 4)
     app = FastAPI()
     app.state.bots_gateway = SimpleNamespace(platforms=("telegram",))

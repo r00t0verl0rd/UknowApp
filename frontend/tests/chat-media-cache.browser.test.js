@@ -43,7 +43,7 @@ test("warm chats restore the same photo without waiting for network or downloadi
       if (pathname === "/api/panel/conversations/8/messages") return route.fulfill({ json: [other] });
       if (pathname === "/api/panel/messages/71/media") {
         mediaRequests++;
-        // Playwright routing disables HTTP caching; node reuse must avoid the GET.
+        // Playwright отключает HTTP-кеш; повторно используем загруженный узел.
         return route.fulfill({
           contentType: "image/png", headers: { "Cache-Control": "no-store" },
           body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jf2sAAAAASUVORK5CYII=", "base64"),
@@ -75,7 +75,7 @@ test("warm chats restore the same photo without waiting for network or downloadi
     await chatB.click();
     await page.getByText("Текст Б", { exact: true }).waitFor({ state: "visible" });
     holdSync = true;
-    // Observe the first frame with visible history, not a later settled screenshot.
+    // Проверяем первый кадр с историей, а не поздний снимок.
     await page.evaluate(() => {
       window.warmPaint = new Promise(resolve => {
         const target = [...document.querySelectorAll(".chat-item")].find(el => el.textContent.includes("Ученик А"));
@@ -104,7 +104,7 @@ test("warm chats restore the same photo without waiting for network or downloadi
     assert.ok(Math.abs(paint.height - paint.expected) < 1, "photo layout must not jump");
     assert.equal(mediaRequests, 1);
     await page.waitForFunction(() => document.querySelector(".chat-media-image") === window.firstImage);
-    // A warm chat still checks server authorization and changes in the background.
+    // Кеш не отменяет проверку доступа и обновлений на сервере.
     for (let i = 0; i < 50 && !warmSyncRequests; i++) await new Promise(resolve => setTimeout(resolve, 20));
     assert.ok(warmSyncRequests > 0);
     console.log("[warm-chat-first-paint]", Math.round(paint.ms), "ms");

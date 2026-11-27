@@ -55,13 +55,12 @@ services:
         - python
         - -c
         - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=4).read()"
-      # Do not leave frontend waiting an entire 30-second probe interval.
-      # Keep approximately the previous failure tolerance (18 x 5s).
+      # Быстро обнаруживаем отказ, сохраняя прежний порог повторных ошибок.
       interval: 5s
       timeout: 5s
       retries: 18
       start_period: 20s
-    # One Core process owns SQL outbox and SSE coordination.
+    # Один Core управляет outbox и SSE.
 
   nats:
     container_name: uknow-nats
@@ -77,7 +76,7 @@ services:
     networks: [app_net]
     restart: unless-stopped
 
-  # Provider connectors are opt-in.
+  # Коннекторы запускаются по запросу.
   tg_bot:
     container_name: uknow-tgbot
     profiles: [bots]
@@ -168,7 +167,7 @@ networks:
   app_net:
     ipam:
       config:
-        # Keep dynamic allocations away from the fixed Caddy/Core addresses.
+        # Динамические IP не пересекаются с адресами Caddy и Core.
         - subnet: ${UKNOWAPP_DOCKER_SUBNET:-172.31.255.0/24}
           ip_range: ${UKNOWAPP_DOCKER_IP_RANGE:-172.31.255.128/25}
 

@@ -10,7 +10,7 @@ def personal_unread_condition(role):
 
 
 def upgrade_personal_unread_indexes(connection):
-    # The predicates match the actual first-unread and receipt queries.
+    # Условия совпадают с выборками непрочитанных и квитанций.
     connection.exec_driver_sql("CREATE INDEX IF NOT EXISTS ix_personal_admin_unread "
                                "ON personal_messages (conversation_id, id) WHERE " + PERSONAL_ADMIN_UNREAD)
     connection.exec_driver_sql("CREATE INDEX IF NOT EXISTS ix_personal_participant_unread "
@@ -18,7 +18,7 @@ def upgrade_personal_unread_indexes(connection):
 
 
 def install_personal_triggers(connection):
-    # All identifiers and SQL expressions are internal constants.
+    # Имена и SQL-выражения заданы внутри приложения.
     execute = connection.exec_driver_sql
     latest = "SELECT created_at FROM personal_messages WHERE conversation_id = {ref}.conversation_id ORDER BY created_at DESC, id DESC LIMIT 1"  # nosec B608
 
@@ -29,7 +29,7 @@ def install_personal_triggers(connection):
         )
 
     def update(ref, delta):
-        # ref and delta are constructed exclusively from the constants below.
+        # ref и delta строятся только из констант ниже.
         return ("UPDATE personal_conversations SET " + delta +  # nosec B608
                 ", last_message_at = (" + latest.format(ref=ref) + ")" +
                 f" WHERE id = {ref}.conversation_id")
@@ -93,7 +93,7 @@ def upgrade_personal_counters(connection):
         timestamp = "TIMESTAMP WITH TIME ZONE" if connection.dialect.name == "postgresql" else "DATETIME"
         execute(f"ALTER TABLE personal_conversations ADD COLUMN last_message_at {timestamp}")
     execute("CREATE INDEX IF NOT EXISTS ix_personal_messages_conversation_created_id ON personal_messages (conversation_id, created_at, id)")
-    # One grouped backfill at migration time, never in the request path.
+    # Групповое заполнение выполняется только при миграции.
     execute("UPDATE personal_conversations SET admin_unread_count=0, participant_unread_count=0, last_message_at=NULL")
     execute("""UPDATE personal_conversations SET admin_unread_count=stats.admin_count,
         participant_unread_count=stats.participant_count, last_message_at=stats.latest

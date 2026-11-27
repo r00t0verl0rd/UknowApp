@@ -194,7 +194,7 @@ def test_background_fetch_preserves_unread_until_explicit_receipt(api, personal)
     assert statuses[1]["panel_read_at"] is None
 
     if not personal:
-        # Observer receipts are independent from the participant's read state.
+        # Квитанции наблюдателя не меняют прочтение участника.
         observed = admin.get(collection).json()[0]
         assert observed["unread_count"] == 1
         assert observed["admin_unread_count"] == 2

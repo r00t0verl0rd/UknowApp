@@ -7,7 +7,7 @@ ROOT_DIR = Path(__file__).resolve().parents[3]
 load_dotenv(ROOT_DIR / ".env")
 
 VAPID_SUBJECT = os.getenv("VAPID_SUBJECT", "mailto:admin@example.com").strip()
-# Push only shows the participants by default; short content previews are opt-in.
+# По умолчанию push показывает только участников; предпросмотр отключён.
 PUSH_MESSAGE_PREVIEW_ENABLED = os.getenv("PUSH_MESSAGE_PREVIEW_ENABLED", "false").strip().lower() in {
     "1", "true", "yes", "on",
 }

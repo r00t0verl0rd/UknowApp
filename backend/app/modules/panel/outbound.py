@@ -83,7 +83,7 @@ def _commit_message(db, row, principal, conversation, sender, client_message_id,
         if existing:
             return existing
         raise
-    # expire_on_commit=False; flush/commit populate PK and Python defaults.
+    # flush/commit заполняют ID и значения по умолчанию.
     return None
 
 

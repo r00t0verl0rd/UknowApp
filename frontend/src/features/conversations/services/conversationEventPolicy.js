@@ -1,4 +1,4 @@
-// Keep messages and dialog rows stable when an SSE event carries no new data.
+// Событие SSE без данных не меняет сообщения и список диалогов.
 export function hasSummaryChanges(previous, summary) {
   return Object.entries(summary).some(([key, value]) => {
     const oldValue = previous[key];
@@ -9,22 +9,20 @@ export function hasSummaryChanges(previous, summary) {
   });
 }
 
-// Read receipts can be applied locally for participants. Admin's shared
-// conversation view still needs to retrieve both participants' read states.
+// Администратор загружает статусы прочтения обоих участников.
 export function requiresMessageSync(action, viewerRole, conversationType, messageStatus = null) {
-  // External delivery never changes the participant's web delivery state.
-  // Admin receives the changed metadata directly; old servers fall back to sync.
+  // Внешняя доставка не меняет статус сообщения в веб-чате.
   if (action === "delivery") return viewerRole === "admin" && !messageStatus;
   return action !== "read" || (viewerRole === "admin" && conversationType !== "personal");
 }
 
 export function applyDeliveryStatus(rows, status, merge) {
-  // A partial status must never create an unloaded or deleted bubble.
+  // Статус не создаёт отсутствующее или удалённое сообщение.
   if (!status || !rows.some(row => Number(row.id) === Number(status.id))) return rows;
   return merge(rows, [status]);
 }
 
-// Apply server-confirmed receipts locally, including the reader's other tabs.
+// Применяем подтверждённую квитанцию во всех вкладках участника.
 export function applyReadReceipt(rows, payload, conversationType) {
   const role = payload.actor_role;
   const readAt = payload.read_at;

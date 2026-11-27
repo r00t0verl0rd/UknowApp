@@ -80,7 +80,7 @@ def visible(db, user, conversation_id):
 
 
 def group_route_allowed(platform, endpoint, chat, thread):
-    # Core owns the policy; connectors cannot weaken it by supplying a flag.
+    # Политику доступа проверяет Core.
     same_route = endpoint is None or (endpoint.chat_id, endpoint.thread_id) == (chat, thread)
     if platform == "telegram":
         return bool(thread and thread != "1") and (same_route or endpoint.chat_id != chat)
@@ -88,7 +88,7 @@ def group_route_allowed(platform, endpoint, chat, thread):
 
 
 def bind_endpoint(db, platform, user, chat, thread):
-    # Both callers have already validated the student and active assignment.
+    # Оба вызывающих метода уже проверили ученика и назначение.
     occupied = db.scalar(select(ExternalEndpoint).where(
         ExternalEndpoint.platform == platform, ExternalEndpoint.chat_id == chat,
         ExternalEndpoint.thread_id == thread))
@@ -144,8 +144,7 @@ def authorize_delivery(db, platform, job_id, claim=None):
         raise HTTPException(404, "job unavailable")
     same_claim = bool(claim and job.claim_id == claim)
     if job.status == "sending" and not same_claim:
-        # No second external attempt if a receipt was lost with the connector volume.
-        # Recent claims may still be executing; let them finish.
+        # Не повторяем отправку, если журнал коннектора потерян.
         raise HTTPException(425 if claim_is_recent(job) else 409, "delivery already claimed")
     if earlier_send_pending(db, job):
         raise HTTPException(425, "earlier delivery pending")
@@ -157,7 +156,7 @@ def authorize_delivery(db, platform, job_id, claim=None):
     if isinstance(size, int) and size > provider_attachment_limit(platform):
         record_result(db, job, "failed")
         raise HTTPException(413, "attachment exceeds provider limit")
-    # The four-job batch must fit inside the wire frame even with legacy rows.
+    # Пакет из четырёх заданий должен помещаться в сообщение NATS.
     if len(encode(result)) > 60 * 1024:
         record_result(db, job, "failed")
         raise HTTPException(413, "delivery payload too large")
@@ -181,14 +180,13 @@ def rpc(db, platform, operation, payload):
             try:
                 result[job_id] = {"ok": True, "result": authorize_delivery(db, platform, job_id, item.get("claim"))}
             except HTTPException as exc:
-                # A failed item may still hold a writer reservation.
+                # Ошибка могла оставить занятой запись.
                 db.rollback()
                 result[job_id] = {"ok": False, "code": exc.status_code}
         return result
 
     if operation == "endpoint.student_candidates":
-        # Only the authenticated Telegram connector needs IDs for getChatMember.
-        # Include already bound and inactive students to detect ambiguous groups.
+        # Telegram нужны ID учеников для проверки участников группы.
         if platform != "telegram":
             raise HTTPException(403, "operation unavailable")
         after = payload.get("after", 0)
@@ -217,8 +215,7 @@ def rpc(db, platform, operation, payload):
     if operation in {"account.resolve", "account.bind", "conversation.list"}:
         account = identity(user) if user else None
         if operation == "account.resolve" and payload.get("group") is True:
-            # Forum ingress only needs identity and an active assignment.
-            # Do not build chat previews or calculate unread summaries.
+            # Для входящего сообщения проверяем участника и его назначение.
             items = available(db, user, limit=1) if user and user.role == "student" else []
             result = {"account": account, "conversations": [{"id": item.id} for item in items]}
             if platform == "telegram" and "chat_id" in payload and "thread_id" in payload:

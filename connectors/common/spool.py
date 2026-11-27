@@ -40,7 +40,7 @@ class EventSpool:
         return self.db.execute("SELECT count(*) FROM events WHERE namespace=?", (self.namespace,)).fetchone()[0]
 
     def append(self, updates, cursor):
-        # Commit events and provider offset together, before acknowledging the provider.
+        # Сохраняем событие и смещение до подтверждения провайдеру.
         with self.db:
             self.db.executemany("INSERT OR IGNORE INTO events (namespace,event_id,payload) VALUES (?,?,?)", [
                 (self.namespace, event_id, json.dumps(payload, ensure_ascii=False))
@@ -102,8 +102,7 @@ class EventSpool:
         return json.loads(row[0]) if row[0] else {"id": job_id, "status": "unknown"}
 
     def prepare_delivery(self, job_id):
-        # Persist the claim before RPC. A lost RPC reply can safely be requested again
-        # with this claim as long as no external attempt was started.
+        # Сохраняем claim до RPC; повтор безопасен, пока отправка не началась.
         with self.db:
             self.db.execute("INSERT OR IGNORE INTO delivery_claims(namespace,id,claim) VALUES (?,?,?)",
                             (self.namespace, job_id, uuid4().hex))
@@ -120,7 +119,7 @@ class EventSpool:
                             (self.namespace, job_id))
 
     def record_delivery_part(self, job_id, external_id):
-        # A crash between parts must retain all confirmed copies, not resend them.
+        # При сбое сохраняем доставленные части, не отправляя их повторно.
         receipt = self.delivery(job_id)
         ids = list((receipt or {}).get("external_message_ids", []))
         if external_id not in ids:

@@ -74,12 +74,10 @@ def unread_expressions(prefix, dialect, observer=False):
 def cursor_assignments(conversation, dialect):
     if conversation not in {"NEW.conversation_id", "OLD.conversation_id", "conversations.id"}:
         raise ValueError("Unknown SQL conversation reference")
-    # Greatest existing ID in the contiguous read prefix. Own messages do not
-    # count as unread; sparse receipts beyond the prefix remain intact.
+    # Последний прочитанный ID; редкие квитанции дальше сохраняются.
     parts = []
     for role, predicate in (("teacher", TEACHER_UNREAD), ("student", STUDENT_UNREAD)):
-        # SQLite can prefer the full history index when no unread rows exist.
-        # The partial index answers the same query without visiting read rows.
+        # Частичный индекс ускоряет выборку непрочитанных сообщений.
         index = f" INDEXED BY ix_messages_{role}_unread" if dialect == "sqlite" else ""
         first_unread = (f"SELECT id FROM messages{index} WHERE conversation_id = {conversation} "  # nosec B608
                         f"AND {predicate} ORDER BY id LIMIT 1")
@@ -116,7 +114,7 @@ def install_triggers(connection):
     reordered = "OLD.created_at <> NEW.created_at OR OLD.id <> NEW.id"
     new_cursor = cursor_assignments("NEW.conversation_id", dialect)
     old_cursor = cursor_assignments("OLD.conversation_id", dialect)
-    # Trigger DDL uses only fixed columns and generated internal expressions.
+    # Триггеры используют только заданные столбцы и выражения.
     insert_sql = (f"UPDATE conversations SET message_count = message_count + 1, {add}, "  # nosec B608
                   f"last_message_id = {latest_id('NEW.conversation_id')}, "
                   f"{new_cursor} WHERE id = NEW.conversation_id")
@@ -140,7 +138,7 @@ def install_triggers(connection):
         execute(f"""CREATE TRIGGER uknow_message_stats_move AFTER UPDATE OF conversation_id ON messages
             WHEN {moved} BEGIN {delete_sql}; {insert_sql}; END""")
     elif dialect == "postgresql":
-        # FOR NO KEY UPDATE avoids lock upgrade deadlocks with FK key-share locks.
+        # Блокировка предотвращает конфликт с внешними ключами.
         execute(f"""CREATE OR REPLACE FUNCTION uknow_message_stats() RETURNS trigger
             LANGUAGE plpgsql AS $$
             BEGIN
@@ -219,7 +217,7 @@ def rebuild_counters(connection):
     connection.exec_driver_sql("UPDATE conversations SET message_count=0, teacher_unread_count=0, "
                                "student_unread_count=0, admin_unread_count=0, last_message_id=NULL, teacher_last_read_id=0, student_last_read_id=0")
     cursor = cursor_assignments("conversations.id", connection.dialect.name)
-    # All aggregate/assignment expressions above use fixed schema columns.
+    # Выражения используют только столбцы схемы.
     connection.exec_driver_sql(f"""UPDATE conversations SET {assignments},
         last_message_id = {latest_id('conversations.id')}, {cursor}
         FROM (SELECT conversation_id, COUNT(*) AS message_count, {aggregates}
@@ -249,16 +247,16 @@ def upgrade_physical_receipts(connection):
         execute(f"DROP INDEX IF EXISTS ix_messages_{role}_unread")
         if columns.get(name, {}).get("computed"):
             if dialect == "postgresql":
-                # Stored generated values survive dropping the expression.
+                # Сохраняем вычисленные значения перед удалением выражения.
                 execute(f"ALTER TABLE messages ALTER COLUMN {name} DROP EXPRESSION")
             else:
-                # The original JSON is still authoritative until copied below.
+                # До переноса источником остаётся исходный JSON.
                 execute(f"ALTER TABLE messages DROP COLUMN {name}")
                 execute(f"ALTER TABLE messages ADD COLUMN {name} TEXT")
         elif name not in columns:
             execute(f"ALTER TABLE messages ADD COLUMN {name} TEXT")
 
-    # Bounded keyset scan once at upgrade, never on the request hot path.
+    # Ограниченное чтение выполняется только при обновлении схемы.
     cursor = None
     while True:
         if cursor is None:
@@ -308,7 +306,7 @@ def ensure_admin_observer_columns(connection):
 def upgrade_admin_observer_receipts(connection):
     """Start independent admin receipts without treating old history as new."""
     ensure_admin_observer_columns(connection)
-    # There is no historical admin receipt data. Existing history is the baseline.
+    # Для старых квитанций используем текущую историю как основу.
     connection.execute(text("UPDATE messages SET admin_read_at = :baseline "
                             "WHERE sender_role IN ('teacher','student') AND admin_read_at IS NULL"),
                        {"baseline": datetime.now(UTC).isoformat()})

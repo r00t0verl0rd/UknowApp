@@ -83,7 +83,7 @@ class BotsGateway:
             self._loop.call_soon_threadsafe(self.outbox_wakeup.set)
 
     async def run_db(self, work, *args, read_only=False):
-        # Observational reads use a separate slot. All mutations share one writer.
+        # Чтение и запись используют отдельные слоты.
         slot = self._read_slot if read_only else self._db_slot
         async with slot:
             future = asyncio.get_running_loop().run_in_executor(self._db_executor, partial(work, *args))
@@ -149,8 +149,7 @@ class BotsGateway:
             await self.nc.subscribe(f"{PREFIX}.rpc.{platform}.>", cb=self.handle_rpc)
             await self.nc.subscribe(f"{PREFIX}.health.{platform}", cb=self.handle_health)
         if recreated:
-            # A newly created stream has lost all old jobs. Recover immediately,
-            # including sending jobs whose local receipt is still available.
+            # После создания потока восстанавливаем задания из базы.
             await self.run_db(self._reset_broker_sequences)
         await self.nc.flush()
 
@@ -171,7 +170,7 @@ class BotsGateway:
             if direction == "inbound":
                 receive_message(db, platform, payload, self.platforms, media_path)
                 if platform == "telegram" and payload.get("pending_topic") is True and payload.get("channel") == "group":
-                    # Confirm only the current, committed route; a replay cannot clear a newer invitation.
+                    # Подтверждаем только актуальную привязку.
                     endpoint = db.execute(select(ExternalEndpoint.chat_id, ExternalEndpoint.thread_id)
                         .join(MessengerAccount, (MessengerAccount.platform == ExternalEndpoint.platform)
                               & (MessengerAccount.user_id == ExternalEndpoint.user_id))
@@ -232,7 +231,7 @@ class BotsGateway:
         try:
             platform = msg.subject.split(".")[-1]
             payload = decode(msg.data)
-            # Only numeric diagnostics, no message content or external identifiers.
+            # Диагностика не содержит сообщений и внешних ID.
             stats = {k: int(payload[k]) for k in ("raw_pending", "inbound_pending", "active", "buffered")
                      if isinstance(payload.get(k), int) and 0 <= payload[k] <= 1000000}
             self.connectors[platform] = {**stats, "seen": now_utc().isoformat()}
@@ -313,7 +312,7 @@ class BotsGateway:
                     except asyncio.CancelledError:
                         raise
                     except Exception as exc:  # noqa: BLE001 - isolate route failures, retry durable outbox
-                        # Keep this route's head pending. Other routes still publish.
+                        # Оставляем адрес в очереди; остальные продолжаем.
                         logger.warning("Outbox publication delayed platform=%s endpoint=%s error=%s",
                                        platform, "group" if thread else "private", type(exc).__name__)
                         break
@@ -338,7 +337,7 @@ class BotsGateway:
             if acknowledgements:
                 await self.run_db(self._mark_published_batch, acknowledgements)
             if entries and len(acknowledgements) < len(entries):
-                # Avoid spinning on broker backpressure; successful routes are already committed.
+                # При перегрузке брокера ждём, не повторяя готовые отправки.
                 try:
                     await asyncio.wait_for(self.outbox_wakeup.wait(), 1)
                 except TimeoutError:
@@ -362,7 +361,7 @@ class BotsGateway:
             await asyncio.sleep(60)
 
     async def refresh_panels(self):
-        # Best-effort UI invalidations only. Messages remain durable in JetStream.
+        # События интерфейса необязательны; задания хранятся в JetStream.
         queue = subscribe_chat_updates({"role": "admin"})
         try:
             while True:
@@ -435,7 +434,7 @@ async def upload_media(request: Request, platform: str, event_id: str):
                 await asyncio.to_thread(stream.write, chunk)
         if count == 0:
             raise HTTPException(400)
-        # No overwrite if an earlier attempt already committed this event file.
+        # Не заменяем файл, уже сохранённый предыдущей попыткой.
         try:
             os.link(staging, target)
         except FileExistsError:

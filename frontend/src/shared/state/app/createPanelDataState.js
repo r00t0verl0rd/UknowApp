@@ -11,8 +11,7 @@ export function createPanelDataState(options) {
   const [inboxLoading, setInboxLoading] = createSignal(false);
   const [adminDataLoading, setAdminDataLoading] = createSignal(false);
   function closeWorkspace() {
-    // The restored database may invalidate the old session. Keep the
-    // confirmation dialog visible instead of silently reloading to login.
+    // После восстановления БД сессия может завершиться; сохраняем диалог статуса.
     if (options.restoreFlow?.suppressUnexpectedLogout()) return;
     localStorage.removeItem("uknowapp-auth");
     sessionStorage.removeItem("uknowapp-auth");
@@ -118,8 +117,7 @@ export function createPanelDataState(options) {
         }
       }
 
-      // Background layers settle independently; one optional failure must not
-      // display a global warning over an otherwise usable workspace.
+      // Ошибка необязательной загрузки не блокирует кабинет.
       await Promise.allSettled([inboxTask, adminTask]);
     })();
     refreshTask = task;

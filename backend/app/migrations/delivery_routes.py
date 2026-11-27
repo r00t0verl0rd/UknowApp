@@ -13,7 +13,7 @@ def upgrade_delivery_routes(connection):
                 {"message_id", "platform", "recipient_id"}), None)
     if old is None:
         return
-    # SQLite's NULL values are distinct in unique indexes. Canonicalize private routes.
+    # SQLite считает NULL разными значениями; нормализуем личные адреса.
     connection.execute(text("UPDATE connector_deliveries SET thread_id = '' WHERE thread_id IS NULL"))
     ops = Operations(MigrationContext.configure(connection))
     naming = {"uq": "uq_%(table_name)s_%(column_0_name)s"}

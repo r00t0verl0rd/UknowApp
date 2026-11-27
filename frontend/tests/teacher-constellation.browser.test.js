@@ -41,8 +41,7 @@ test("teacher graph grows around the center without extra lists and highlights i
       assert.equal(await page.getByText("Вместе к новым знаниям").count(), 0);
       assert.equal(await page.getByText("ВАШ ЦЕНТР").count(), 0);
       assert.equal(await page.getByText(/Преподаватель · .* учен/).count(), 0);
-      // The constellation now lives directly in workspace content:
-      // no inner scrollbars, border, or separate framed panel.
+      // Схема встроена в кабинет без отдельной рамки и прокрутки.
       const graph = await page.locator(".teacher-zen-stage").evaluate(el => {
         const styles = getComputedStyle(el);
         return {

@@ -9,23 +9,22 @@ from app.models import Message, PushSubscription, TransportJob
 def migrate_push_subscriptions(main_connection, runtime_engine):
     if not inspect(main_connection).has_table("push_subscriptions"):
         return
-    # Historical startup migrations have already added all required columns.
+    # Нужные столбцы добавлены предыдущими миграциями.
     source = main_connection.execute(select(PushSubscription.__table__)).mappings()
     with runtime_engine.begin() as destination:
         for rows in source.partitions(200):
             for row in rows:
                 values = dict(row)
-                # Endpoint is the actual identity; allocate a fresh numeric id
-                # if a partially migrated destination already holds that id.
+                # ID привязки задаёт адрес; конфликтующий числовой ID заменяем.
                 values.pop("id", None)
                 destination.execute(insert(PushSubscription).values(**values)
                                     .on_conflict_do_nothing(index_elements=["endpoint"]))
-    # Only remove the old copy after the auxiliary transaction committed.
+    # Удаляем старые данные только после фиксации копии.
     main_connection.execute(text("DROP TABLE push_subscriptions"))
 
 
 def migrate_transport_state(main_connection, runtime_engine):
-    # Only old deployments have publication columns. New deployments never need them.
+    # Поля публикации встречаются только в старых базах.
     for name in ("connector_deliveries", "connector_deletions"):
         inspector = inspect(main_connection)
         columns = {c["name"] for c in inspector.get_columns(name)}
@@ -53,7 +52,7 @@ def migrate_transport_state(main_connection, runtime_engine):
 
 def initialize_runtime_storage():
     runtime_database.initialize_runtime()
-    # No main write lock on normal startup/retry when all old columns are gone.
+    # После переноса обычный запуск не блокирует запись в Main DB.
     with database.engine.connect() as connection:
         inspector = inspect(connection)
         needs_split = inspector.has_table("push_subscriptions") or any(

@@ -1,5 +1,4 @@
-/* Read-only teacher constellation. Dynamic rings are calculated from student
-   count; the graph never moves students into a separate overflow list. */
+/* Схема учеников преподавателя; все ученики остаются на одной странице. */
 .teacher-zen {
   display:flex;
   flex-direction:column;
@@ -32,7 +31,7 @@
   flex:0 0 8px;
   margin:0;
 }
-/* No separate panel, frame or scrollbars: this is part of workspace content. */
+/* Схема встроена в кабинет без отдельной прокрутки. */
 .teacher-zen-stage {
   position:relative;
   isolation:isolate;
@@ -96,7 +95,7 @@
     0 0 0 8px color-mix(in srgb, var(--role-teacher) 8%, transparent);
   text-align:center;
   transform:translate(-50%, -50%);
-  /* Fixed geometry prevents hover-triggered subpixel seams and pointer flicker. */
+  /* Не меняем размер карточки при наведении. */
   transition:border-color 200ms ease, background-color 200ms ease, box-shadow 200ms ease;
 }
 .teacher-zen-center:is(:hover, :focus-visible) {
@@ -164,7 +163,7 @@
   color:var(--ink);
   outline:none;
   transform:translate(-50%, -50%);
-  /* Shadows and color animate; card bounds and SVG lines stay unchanged. */
+  /* При наведении меняются только цвет и тень. */
   transition:
     border-color 200ms ease,
     box-shadow 200ms ease,
@@ -208,8 +207,7 @@
   text-align:center;
 }
 @media (max-width:640px) {
-  /* On small screens the same graph becomes a single connected panel with
-     the teacher on top and ALL students in a responsive, readable layout. */
+  /* На узком экране преподаватель и ученики отображаются одним списком. */
   .teacher-zen {
     gap:12px;
   }
@@ -253,7 +251,7 @@
   .teacher-zen-center strong {
     font-size:15px;
   }
-  /* No scaling on touch/hover: avoids aliasing and neighbor overlap. */
+  /* Не меняем масштаб карточек на сенсорных экранах. */
   .teacher-zen-satellites {
     display:grid;
     grid-template-columns:repeat(2, minmax(0, 1fr));
@@ -268,7 +266,7 @@
     min-height:78px;
     transform:none;
   }
-  /* A static hit area keeps the highlight steady as the pointer moves. */
+  /* Стабильная область наведения убирает мерцание подсветки. */
   .teacher-zen-student:last-child:nth-child(odd) {
     grid-column:1 / -1;
     justify-self:center;

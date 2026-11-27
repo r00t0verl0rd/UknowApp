@@ -235,7 +235,7 @@ textarea::placeholder {
 :root .ui-toolbar-select > select.ui-toolbar-select-native {
   display:block;
   margin:0;
-  /* Reserve room for the chevron so long labels never paint underneath it. */
+  /* Оставляем место для стрелки справа. */
   padding:0 calc(var(--workspace-control-padding) + 26px) 0 var(--workspace-control-padding);
   text-overflow:ellipsis;
   white-space:nowrap;
@@ -309,8 +309,7 @@ textarea::placeholder {
   background:var(--surface);
 
 }
-/* One consistent chevron for every toolbar select, regardless of Safari,
-   Chromium or native OS arrow rendering. The menu itself remains native. */
+/* Единая стрелка для всех списков; меню остаётся нативным. */
 :root .ui-toolbar-select > select.ui-toolbar-select-native {
   width:100%;
   max-width:100%;

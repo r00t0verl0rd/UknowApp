@@ -63,7 +63,7 @@ def test_inbound_receipt_and_cross_provider_outbox(api):
                  "channel":"private", "kind":"text", "text":"hello"}
         receive_message(db, "beta", event, ("alpha", "beta"), gateway.media_path)
         receive_message(db, "beta", event, ("alpha", "beta"), gateway.media_path)
-        # Provider retransmit with different delivery event ID, same source message.
+        # Повтор события сохраняет исходный ID сообщения.
         receive_message(db, "beta", {**event, "id":"event-2"}, ("alpha", "beta"), gateway.media_path)
         assert db.query(Message).count() == 1
         assert db.query(BotEventReceipt).count() == 2
@@ -336,7 +336,7 @@ def test_topic_and_private_keep_independent_order_for_ten_messages(api):
             assert len(jobs) == 2
             private.append(next(j for j in jobs if not j.thread_id))
             group.append(next(j for j in jobs if j.thread_id))
-        # A stalled private route must not block any message in the group.
+        # Задержка личного адреса не блокирует группу.
         authorize(db, "beta", {"id":private[0].id})
         for i, job in enumerate(group):
             assert authorize(db, "beta", {"id":job.id})["thread_id"] == "topic"
@@ -398,7 +398,7 @@ def test_telegram_forum_moves_between_groups_but_not_topics(api):
                  "chat_id": "-1001", "thread_id": "47", "channel": "group",
                  "kind": "text", "text": "1"}
         assert db.get(ExternalEndpoint, ("telegram", chat.student_id)) is None
-        # No invitation, command or topic name is necessary, as in main.
+        # Сообщение работает без приглашения и команды.
         receive_message(db, "telegram", first, ("telegram",), gateway.media_path)
         endpoint = db.get(ExternalEndpoint, ("telegram", chat.student_id))
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
@@ -430,7 +430,7 @@ def test_telegram_forum_moves_between_groups_but_not_topics(api):
         db.rollback()
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
 
-        # A different topic in the current group is denied, even if unoccupied.
+        # Нельзя привязать другую свободную тему этой группы.
         def allowed(group, thread):
             return rpc(db, "telegram", "account.resolve", {"actor": "123", "group": True,
                        "chat_id": group, "thread_id": thread})["route_allowed"]
@@ -441,7 +441,7 @@ def test_telegram_forum_moves_between_groups_but_not_topics(api):
                             "external_message_id": "70", "thread_id": "69"},
                             ("telegram",), gateway.media_path)
         assert exc.value.status_code == 403
-        # A new group must not take a topic already assigned to another student.
+        # Нельзя занять тему, уже назначенную другому ученику.
         other = db.get(ExternalEndpoint, ("telegram", users["student-two"]))
         other.chat_id = "-1002"
         db.commit()
@@ -452,12 +452,12 @@ def test_telegram_forum_moves_between_groups_but_not_topics(api):
         assert exc.value.status_code == 409
         db.rollback()
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
-        # A blocked message cannot change the route.
+        # Отклонённое сообщение не меняет адрес.
         receive_message(db, "telegram", {**first, "id": "blocked-move",
                         "external_message_id": "72", "chat_id": "-1002", "thread_id": "69",
                         "kind": "contact", "text": ""}, ("telegram",), gateway.media_path)
         assert (endpoint.chat_id, endpoint.thread_id) == ("-1001", "47")
-        # The first valid message in a new group replaces the stale address.
+        # Первое сообщение новой группы заменяет старый адрес.
         queued = teacher_reply()
         assert allowed("-1002", "69")
         receive_message(db, "telegram", {**first, "id": "new-group",
@@ -524,7 +524,7 @@ def test_group_identity_lookup_does_not_read_message_history(api):
                                "row_number(" in sql for sql in statements)
         finally:
             event.remove(engine, "before_cursor_execute", capture)
-        # Private teacher menus still receive complete summaries.
+        # Преподаватель получает полный список в личном чате.
         view = rpc(db, "telegram", "account.resolve", {"actor": "456"})
         assert view["conversations"][0]["id"] == chat_id
         assert "unread_previews" in view["conversations"][0]
@@ -554,7 +554,7 @@ def test_outbox_fanout_uses_two_selects_and_is_idempotent_before_flush(api):
             assert not statements
             enqueue_web_delivery(db, row, ("alpha", "beta"))
             assert len(statements) == 2, statements
-            # Repeated enqueue in the same transaction also sees pending ORM rows.
+            # Повторная постановка учитывает незаписанные ORM-строки.
             enqueue_web_delivery(db, row, ("alpha", "beta"))
         finally:
             event.remove(engine, "before_cursor_execute", capture)

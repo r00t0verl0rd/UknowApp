@@ -118,7 +118,7 @@ class Conversation(Base):
     status: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
-    # Exact business aggregates, maintained transactionally by message triggers.
+    # Счётчики сообщений обновляют триггеры в той же транзакции.
     message_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default=text("0"))
     teacher_unread_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default=text("0"))
     student_unread_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0, server_default=text("0"))
@@ -158,8 +158,7 @@ class PersonalChatCounter(Base):
 def _allocate_personal_id(_mapper, connection, chat):
     if connection.dialect.name != "sqlite" or chat.id is not None:
         return
-    # Existing SQLite tables lack AUTOINCREMENT. Keep a durable high-water mark
-    # and start the new range above legacy IDs, including recently deleted ones.
+    # Новые ID идут выше старых, в том числе удалённых.
     chat.id = connection.scalar(text("""
         INSERT INTO personal_chat_counter (id, last_id)
         SELECT 1, max(1000000000, coalesce(max(id), 0) + 1)
@@ -237,7 +236,7 @@ class Message(Base):
     content_type: Mapped[str] = mapped_column(String(40), default="text", nullable=False)
     text: Mapped[str] = mapped_column(Text, default="", nullable=False)
     metadata_json: Mapped[str] = mapped_column(Text, default="{}", nullable=False)
-    # Authoritative receipt timestamps. JSON contains only other metadata.
+    # Здесь хранятся точные времена прочтения.
     teacher_read_at: Mapped[str | None] = mapped_column(Text, nullable=True)
     student_read_at: Mapped[str | None] = mapped_column(Text, nullable=True)
     admin_read_at: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -264,8 +263,7 @@ def _allocate_message_id(mapper, connection, message):
     if connection.dialect.name != "sqlite":
         return
     table = mapper.local_table
-    # Fixed ORM table names only. The first allocation skips legacy IDs that
-    # might still be held by an older client, including recently deleted rows.
+    # Пропускаем ID, которые ещё могут быть у старых клиентов.
     if table.name == "messages":
         source = "messages"
     elif table.name == "personal_messages":
@@ -279,7 +277,7 @@ def _allocate_message_id(mapper, connection, message):
             ON CONFLICT (table_name) DO UPDATE SET last_id = max(last_id, excluded.last_id)
         """), {"table_name": source, "message_id": message.id})
         return
-    # The source identifier is restricted to the two ORM tables above.
+    # Источник выбирается только из двух таблиц ORM выше.
     sql = (
         "INSERT INTO message_id_counters (table_name, last_id) "  # nosec B608
         "SELECT :table_name, max(1000000000, coalesce(max(id), 0) + 1) "
@@ -418,7 +416,7 @@ class TransportJob(RuntimeBase):
     broker_seq: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
 
 
-# Also install on fresh/test schemas created directly via metadata.create_all.
+# Устанавливаем триггеры и для новых схем через metadata.create_all.
 event.listen(Message.__table__, "after_create", install_on_create)
 
 event.listen(PersonalMessage.__table__, "after_create", install_personal_on_create)

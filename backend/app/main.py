@@ -74,7 +74,7 @@ def _initialize_core(restoring):
     reload_vapid_keys()
     initialize_database()
     if restoring:
-        # Compile a real projection for each ORM table after all migrations.
+        # Пересобираем проекции таблиц после миграций.
         with engine.connect() as connection:
             for table in Base.metadata.sorted_tables:
                 connection.execute(table.select().limit(0)).close()

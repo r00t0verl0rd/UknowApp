@@ -164,7 +164,7 @@
   box-shadow:none;
 }
 
-// File attachment previews follow the active dark palette.
+// Превью вложений используют активную тёмную тему.
 :root[data-theme="dark-soft"] .workspace-shell .chat-composer .selected-file {
   background:var(--ui-control-bg);
   border-color:var(--ui-border);

@@ -1,5 +1,4 @@
-// Long-lived, per-account UI preference. Store only the sort key, never user
-// details or credentials. Unavailable browser storage must not block the UI.
+// Сохраняем только порядок сортировки для аккаунта.
 const KEY_PREFIX = "uknowapp-user-sort-v1:";
 const SORT_OPTIONS = new Set(["name-asc", "name-desc", "teachers", "students"]);
 
@@ -26,6 +25,6 @@ export function saveUserSortPreference(userId, value, storage) {
     const store = storage ?? window.localStorage;
     if (store.getItem(key) !== value) store.setItem(key, value);
   } catch {
-    // A blocked/private browser store only affects persistence, not sorting.
+    // Недоступное хранилище не мешает сортировке.
   }
 }

@@ -1,6 +1,6 @@
 import { Portal } from "@solidjs/web";
 import { createUniqueId, createEffect } from "solid-js";
-// HTMLDialogElement управляет фокусом, Escape, блокировкой фона и top layer.
+// Нативный диалог управляет фокусом, Escape и затемнением фона.
 // Все окна приложения используют один нативный браузерный диалог.
 export default function Modal(options) {
   let dialogRef = null;

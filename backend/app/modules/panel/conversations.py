@@ -103,7 +103,7 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
             unread_condition(db, principal["role"]),
         ).order_by(Message.id).limit(1))
     if around_id is not None:
-        # A single response carries the adjacent pages, including the anchor.
+        # Ответ сразу содержит соседние страницы и якорное сообщение.
         size = limit or 50
         before = list(db.scalars(query.where(Message.id < around_id)
                                  .order_by(Message.id.desc()).limit(size)).all())

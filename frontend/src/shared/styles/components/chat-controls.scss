@@ -85,7 +85,7 @@
   }
 }
 
-// The sender role selects the palette in every workspace and dialog.
+// Цвет имени зависит от роли отправителя.
 @each $role in teacher, student {
   :root[data-theme] [data-chat-name-role="#{$role}"] {
     color:var(--role-#{$role});

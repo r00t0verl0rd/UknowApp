@@ -15,7 +15,7 @@ class RuntimeBase(DeclarativeBase):
     pass
 
 
-# Creating the Engine does not open the file. Core can start if the directory is unavailable.
+# Создание Engine не открывает файл Runtime DB.
 engine = create_engine("sqlite:///" + str(RUNTIME_PATH),
                        connect_args={"check_same_thread": False, "timeout": .25})
 

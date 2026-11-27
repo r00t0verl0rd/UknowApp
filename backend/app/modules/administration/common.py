@@ -142,8 +142,7 @@ def count_missing_media_references(database: Path, data_root: Path) -> int:
                     metadata = json.loads(raw or "{}")
                 except (TypeError, ValueError):
                     metadata = None
-                # Old text messages can carry JSON null, arrays, strings or
-                # invalid metadata. They do not refer to missing media.
+                # Старые сообщения могут содержать некорректные метаданные без файла.
                 if not isinstance(metadata, dict):
                     if content_type in attachment_types:
                         missing += 1

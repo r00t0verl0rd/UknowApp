@@ -36,7 +36,7 @@ def project_pending(main, platforms, cursors):
             records.append({"id": job.id, "platform": job.platform, "chat_id": job.chat_id,
                 "thread_id": getattr(job, "thread_id", ""), "heavy": kinds.get(getattr(job,"message_id",None),"text") != "text",
                 "created_at": job.created_at, "state": "queued"})
-    # Release the Main read transaction before acquiring the runtime writer.
+    # Освобождаем чтение Main DB до записи в Runtime DB.
     main.rollback()
     if records:
         with runtime_database.RuntimeSessionLocal() as runtime:
@@ -71,7 +71,7 @@ def candidates(main, platforms, now=None, limit=50):
                 runtime.commit()
             if entries:
                 return entries
-            # A page of obsolete jobs must not hide a live route behind it.
+            # Старые задания не должны скрывать актуальные адреса.
 
 
 

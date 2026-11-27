@@ -1,7 +1,7 @@
 import { IconActivity as Activity, IconLayers as Layers, IconMessageCircle as MessageCircle, IconUsers as Users, IconInfo as Info, IconBell as Bell, IconBellOff as BellOff } from "../shared/components/Icons.jsx";
 import { lazy } from "solid-js";
 
-// Download only the workspace permitted by the authenticated role.
+// Загружаем кабинет только для роли пользователя.
 const AdminWorkspace = lazy(() => import("./AdminWorkspace.jsx"));
 const TeacherWorkspace = lazy(() => import("./TeacherWorkspace.jsx"));
 const StudentWorkspace = lazy(() => import("./StudentWorkspace.jsx"));

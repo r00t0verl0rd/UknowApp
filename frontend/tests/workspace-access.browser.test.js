@@ -46,7 +46,7 @@ test("workspace stays closed until the server confirms the role and redirects a 
     const studentCss = await stylesheetText();
     assert.match(studentCss, /\.boards-placeholder\b/);
     assert.doesNotMatch(studentCss, /\.data-stat-card\b|\.user-info-login\b|\.teacher-zen-stage\b|\.restore-flow-progress-bar\b/);
-    // An expired session (401) must return to login; a temporary 503 should not discard the view.
+    // Истёкшая сессия возвращает ко входу; временный сбой не сбрасывает экран.
     await page.route("**/api/panel/me", route => route.fulfill({ status: 401, json: {} }));
     await page.reload();
     await page.getByRole("button", { name: "Войти", exact: true }).waitFor();

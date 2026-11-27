@@ -33,7 +33,7 @@ export function createPushNotificationsState(options) {
         try {
           await syncPushNotifications();
         } catch {
-          // No false positive: the client state requires a successful Core registration.
+          // Подписка считается активной только после ответа Core.
         } finally {
           try {
             const state = await getPushNotificationState();

@@ -40,8 +40,8 @@ while True:
         code = exc.code
     except Exception:
         code = 0
-    # After cloud logout, Telegram can refuse cloud login for ten minutes.
-    # Never repeat a potentially successful logout with an uncertain response.
+    # После выхода Telegram может блокировать вход до 10 минут.
+    # Не повторяем выход, если результат запроса неизвестен.
     if method != "getMe" or code not in (0, 401, 429, 500, 502, 503, 504) or time.monotonic() >= deadline:
         sys.exit("Telegram " + method + " failed (code " + str(code) + "). No token printed.")
     time.sleep(5)
@@ -53,7 +53,7 @@ def compose(*args, envfile=ENV, capture=False):
     result = subprocess.run(cmd, cwd=ROOT, text=True, stdout=subprocess.PIPE if capture else None,
                             stderr=subprocess.PIPE if capture else None)
     if result.returncode:
-        # Captured output can contain resolved tokens and passwords.
+        # Не выводим конфигурацию с паролями и токенами.
         raise RuntimeError("Docker Compose command failed: " + args[0])
     return result.stdout if capture else ""
 
@@ -155,7 +155,7 @@ def switch(mode):
     old_local = running("telegram-bot-api")
     if old_local and old_mode != "local":
         raise RuntimeError("Local API is running although .env says cloud; reconcile before switching.")
-    # Prepare and validate target config before interrupting the current bot.
+    # Проверяем новые настройки до остановки бота.
     original = ENV.read_text()
     values = values_for(mode, current)
     candidate = protected_file(rewrite_env(original, values), ".env.telegram-candidate-")
@@ -171,10 +171,9 @@ def switch(mode):
         if old_mode != mode:
             print("Stopping polling before API migration...", flush=True)
             compose("--profile", "bots", "stop", "tg_bot")
-            # Explicit profile allows the helper even on a web-only cloud install.
+            # Явный профиль нужен и для веб-установки без ботов.
             api("logOut")
-        # Commit target mode immediately after successful logout. If startup fails,
-        # rerunning the same target is safe and does not log out again.
+        # Сохраняем режим после успешного выхода; повторный запуск безопасен.
         os.replace(candidate, ENV)
         if mode == "cloud":
             compose("--profile", "telegram", "stop", "telegram-bot-api")
@@ -218,7 +217,7 @@ if __name__ == "__main__":
     try:
         main()
     except (RuntimeError, OSError, subprocess.SubprocessError, ValueError) as exc:
-        # Avoid printing subprocess arguments or resolved config containing credentials.
+        # Не выводим аргументы и настройки с секретами.
         message = str(exc) if isinstance(exc, RuntimeError) else type(exc).__name__
         raise SystemExit("Switch stopped: " + message +
                          "\nInspect .env mode and docker compose ps; fix the issue before rerunning.") from None

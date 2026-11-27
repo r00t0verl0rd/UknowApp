@@ -29,7 +29,7 @@ function formatAudioTime(value) {
     .padStart(2, "0");
   return minutes + ":" + seconds;
 }
-// Mount expensive native players and waveform controls shortly before they enter view.
+// Создаём аудиоплеер незадолго до появления на экране.
 const pendingPlayers = new WeakMap();
 let playerObserver;
 function DeferredAudioPlayer(options) {

@@ -19,7 +19,7 @@ import CountBadge from "../../shared/components/CountBadge.jsx";
 import IconButton from "../../shared/components/IconButton.jsx";
 import ToolbarSelect from "../../shared/components/ToolbarSelect.jsx";
 import AutoFitText from "./components/AutoFitText.jsx";
-// Names and the arrow remain on one line; shrinking is limited to tight space.
+// Имена и стрелка остаются в одной строке.
 function ParticipantHeading(props) {
   const title = () => props.student + " ↔ " + props.teacher;
   return (

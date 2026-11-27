@@ -51,7 +51,7 @@ def test_admin_fanout_all_devices_in_parallel_and_logout(api, provider, monkeypa
     for index, client in enumerate(clients):
         login(client)
         register(client, index)
-    # Reopening/re-registering a device is idempotent, not another device.
+    # Повторная регистрация не создаёт новое устройство.
     register(clients[0], 0)
     diag = clients[0].get("/api/admin/push/diagnostics").json()
     assert diag["admin_devices"] == diag["admin_eligible"] == count
@@ -73,11 +73,10 @@ def test_admin_fanout_all_devices_in_parallel_and_logout(api, provider, monkeypa
     assert {body for _, body in sent} == {"admin"}
     diag = clients[0].get("/api/admin/push/diagnostics").json()
     assert all(d["state"] == "accepted" and d["last_success_at"] for d in diag["devices"])
-    # Another admin session cannot detach this device's registered endpoint.
+    # Другая сессия администратора не отключает чужое устройство.
     assert clients[1].request("DELETE", "/api/push/subscribe", json={"endpoint": subscription(0)["endpoint"]}).status_code == 200
     assert clients[1].get("/api/admin/push/diagnostics").json()["admin_eligible"] == count
-    # The API logout alone detaches the current device, even if the browser
-    # failed to send its separate unsubscribe request.
+    # Выход отключает устройство, даже если браузер не отменил подписку.
     assert clients[0].post("/api/auth/logout").status_code == 200
     assert clients[0].get("/api/admin/push/diagnostics").status_code == 401
     assert clients[1].get("/api/admin/push/diagnostics").json()["admin_eligible"] == count - 1
@@ -108,7 +107,7 @@ def test_one_expired_and_one_failed_device_do_not_block_others(api, provider, mo
     assert [d["state"] for d in diag["devices"]] == ["expired", "failed", "accepted", "accepted", "accepted"]
     assert diag["admin_eligible"] == 4
     assert clients[0].post("/api/push/subscribe", json=subscription(0)).status_code == 410
-    # A new login must not erase the information that the old endpoint is dead.
+    # Новый вход не должен скрывать отказ старой подписки.
     login(clients[0])
     assert clients[0].post("/api/push/subscribe", json=subscription(0)).status_code == 410
     register(clients[0], 99)

@@ -1,7 +1,6 @@
 import { createEffect } from "solid-js";
 
-// Batch reads and writes across all names. Opening a long conversation should
-// trigger one layout per measurement phase rather than one per sender.
+// Измеряем все имена одним циклом, чтобы не пересчитывать разметку для каждого.
 const pending = new Set();
 const mounted = new Map();
 let frame = 0;

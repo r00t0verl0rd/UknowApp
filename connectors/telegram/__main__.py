@@ -44,7 +44,7 @@ async def main():
     STATE.mkdir(parents=True, exist_ok=True)
     health = STATE / "healthy"
     health.unlink(missing_ok=True)
-    # Do not allow concurrent workers on the same local durable spool.
+    # Не запускаем два процесса с одним локальным журналом.
     lock = (STATE / "worker.lock").open("a")
     try:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)

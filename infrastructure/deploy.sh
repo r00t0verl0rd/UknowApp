@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Read-only preflight for the current NATS architecture. Run on the intended VPS.
+# Проверка конфигурации без изменений на целевом сервере.
 set -Eeuo pipefail
 if [[ ${1:-} == --help || ${1:-} == -h ]]; then
   echo 'Usage: bash infrastructure/deploy.sh --check'

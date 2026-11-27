@@ -1,8 +1,8 @@
 import { createEffect, createSignal } from "solid-js";
 import { getRestoreStatus } from "../../../features/administration/services/adminDataApi.js";
 
-// A restore replaces the backend database and often invalidates the current session.
-// Remember only the restore ID and UI phase in this tab, never credentials or file bytes.
+// После восстановления БД сессия может завершиться.
+// Сохраняем только ID операции и её этап.
 export const RESTORE_FLOW_KEY = "uknowapp-restore-flow-v1";
 const MAX_FLOW_AGE = 24 * 60 * 60 * 1000;
 const SLOW_RESTORE_AFTER = 3 * 60 * 1000;
@@ -58,14 +58,12 @@ export function createRestoreFlow(options) {
   const isInProgress = () => ["uploading", "waiting", "delayed", "reauth"].includes(flow()?.phase);
   const suppressUnexpectedLogout = () => Boolean(flow()?.id) && flow()?.phase !== "login";
 
-  // Monitor at app level, outside the lazily loaded admin page, so navigation
-  // and an expired server session cannot make restore progress disappear.
+  // Следим за восстановлением вне страницы администратора.
   createEffect(
     () => [flow()?.id, flow()?.phase, options.auth],
     () => {
       const current = flow();
-      // If auth was already cleared (for example after a page reload), do not
-      // cover the login form with a waiting dialog.
+      // Не показываем ожидание поверх формы входа.
       if (current?.id && !options.auth && ["waiting", "reauth"].includes(current.phase)) {
         persist({ ...current, phase: "login" });
         return undefined;
@@ -92,7 +90,7 @@ export function createRestoreFlow(options) {
             return;
           }
         } catch {
-          // A transient 502/503 during backend restart is expected; keep polling.
+          // Во время перезапуска сервера продолжаем проверку.
         }
         if (controller.signal.aborted || flow()?.id !== current.id) return;
         if (Date.now() - current.startedAt >= SLOW_RESTORE_AFTER) {
@@ -112,8 +110,7 @@ export function createRestoreFlow(options) {
   const confirmRelogin = () => {
     const current = flow();
     if (current?.phase !== "reauth") return;
-    // Clear browser auth before entering the login phase: the in-memory auth
-    // signal is still true until navigation, but must not restart polling.
+    // Сбрасываем сессию до перехода ко входу.
     localStorage.removeItem("uknowapp-auth");
     sessionStorage.removeItem("uknowapp-auth");
     persist({ ...current, phase: "login" });

@@ -139,14 +139,13 @@ class TelegramAdapter:
                     payload.update(media=None, kind="text")
                 ident = await self._send(payload, gateway)
                 ids.append(str(ident))
-                # Save each known copy before attempting the next one.
+                # Сохраняем подтверждённую копию до следующей отправки.
                 gateway.spool.record_delivery_part(job["id"], str(ident))
             return ids
         except TelegramRetryAfter as exc:
             raise RetryLater(exc.retry_after) from exc
         except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound) as exc:
-            # Do not log message text, recipient IDs, or credentials. Distinguish
-            # topic configuration failures from private-chat permission failures.
+            # Не записываем текст, ID и секреты в логи; различаем причины отказа.
             error = str(exc).lower()
             reason = next(
                 (
@@ -205,8 +204,7 @@ class TelegramAdapter:
         key = (media.get("key"), field)
         if not key[0]:
             return (await send_file(upload())).message_id
-        # Cache only provider IDs, never duplicate the permanent Core archive.
-        # One in-flight upload per immutable archive key and media type.
+        # Кешируем ID Telegram, а не архивные файлы; одна загрузка на файл и тип.
         entry = self.media_locks.setdefault(key, [asyncio.Lock(), 0])
         entry[1] += 1
         try:
@@ -273,7 +271,7 @@ class TelegramAdapter:
         )
 
     async def forum_admin(self, chat, actor):
-        # Checking the inviter must not require administrator rights on the bot.
+        # Проверка пригласившего не требует прав администратора.
         try:
             admins = await self.membership_lookup(self.bot.get_chat_administrators, int(chat))
         except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound):
@@ -281,7 +279,7 @@ class TelegramAdapter:
         return any(member.user.id == int(actor) for member in admins or ())
 
     async def membership_lookup(self, method, *args):
-        # Respect Telegram's delay at the current lookup, not by restarting a scan.
+        # Соблюдаем задержку Telegram на текущем поиске.
         for attempt in range(3):
             try:
                 return await method(*args)
@@ -291,8 +289,7 @@ class TelegramAdapter:
                 await asyncio.sleep(max(1, exc.retry_after))
 
     async def bind_forum_student(self, chat, thread, gateway):
-        # Bot API cannot enumerate group members. Check known linked IDs against
-        # Telegram membership, including students who did not send any message.
+        # API Telegram не перечисляет участников; проверяем привязанные ID.
         info = await self.bot.me()
         try:
             own_member = await self.membership_lookup(self.bot.get_chat_member, int(chat), info.id)
@@ -315,8 +312,7 @@ class TelegramAdapter:
                         self.bot.get_chat_member, int(chat), int(actor)
                     )
                 except (TelegramBadRequest, TelegramForbiddenError, TelegramNotFound) as exc:
-                    # For a regular bot, an inaccessible user is not proof of
-                    # absence. Never guess a unique student from partial results.
+                    # Недоступность пользователя не доказывает его отсутствие.
                     if (
                         is_admin
                         and isinstance(exc, TelegramBadRequest)
@@ -354,7 +350,7 @@ class TelegramAdapter:
         if members is None:
             result = await self.bind_forum_student(chat, thread, gateway)
         else:
-            # Core validates a single join directly; resolve only ambiguous batches.
+            # Core проверяет одного участника; неоднозначные группы уточняем.
             actors = list(
                 dict.fromkeys(str(m["id"]) for m in members if m.get("id") and not m.get("is_bot"))
             )
@@ -382,7 +378,7 @@ class TelegramAdapter:
 
     @staticmethod
     def forum_thread(message):
-        # A reply chain in General is not a forum topic.
+        # Ответ в General не является темой форума.
         if not message.get("is_topic_message"):
             return None
         thread = message.get("message_thread_id")
@@ -405,7 +401,7 @@ class TelegramAdapter:
         )
         actor = str((message.get("from") or {}).get("id") or "unknown")
         chat = message.get("chat") or {}
-        # Preserve the order of incoming messages in each forum.
+        # Сохраняем порядок сообщений в каждой группе.
         if chat.get("type") == "supergroup":
             actor = "group:" + str(chat["id"])
         heavy = any(message.get(k) for k in MEDIA_KINDS)
@@ -424,7 +420,7 @@ class TelegramAdapter:
         if membership := own or update.get("chat_member"):
             await self._handle_membership(membership, bool(own), gateway, spool)
         elif callback := update.get("callback_query"):
-            # Acknowledge old keyboards without interpreting stale conversation IDs.
+            # Подтверждаем старую клавиатуру, не используя устаревший ID диалога.
             await self.bot.answer_callback_query(
                 callback["id"], text="Меню обновилось. Нажмите /start."
             )
@@ -479,7 +475,7 @@ class TelegramAdapter:
         words = text.split(maxsplit=1)
         command = words[0].partition("@")[0] if words else ""
         if forum:
-            # Creating or editing a topic does not invite this bot.
+            # Создание темы не добавляет в неё бота.
             if any(
                 message.get(key)
                 for key in ("forum_topic_created", "forum_topic_edited", "pinned_message")

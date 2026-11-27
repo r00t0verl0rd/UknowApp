@@ -9,8 +9,7 @@ from app.models import User
 
 @pytest.fixture(scope="module", autouse=True)
 def require_prepared_test_database():
-    # Never migrate a database implicitly from tests. CI explicitly runs initialize_database
-    # on isolated databases; the general test suite has no prepared DB.
+    # Миграции запускаются CI только на отдельных тестовых базах.
     if not inspect(engine).has_table("schema_migrations"):
         pytest.skip("Dialect smoke tests require a manually migrated test DB")
 

@@ -88,8 +88,7 @@ def read_cursor(conversation_id, role):
 
 
 def _summary_rows(db, conversation_ids):
-    # Read scalar columns rather than ORM attributes: triggers may have changed
-    # a Conversation already in the session identity map.
+    # Читаем актуальные столбцы: триггер мог изменить объект в ORM-кеше.
     rows = db.execute(
         select(Conversation.id, Conversation.message_count, Conversation.teacher_unread_count,
                Conversation.student_unread_count, Conversation.admin_unread_count,
@@ -144,13 +143,12 @@ def publish_conversation_update(
         message_ids=message_ids,
         sender_role=sender_role,
         read_at=read_at,
-        # Only admins can see external delivery details. No participant SSE
-        # authorization queries or sync requests are needed for these events.
+        # Статусы внешней доставки видит только администратор.
         audience=None if action == "delivery" or (action == "read" and actor_role == "admin") else {
             "teacher_id": conversation.teacher_id,
             "student_id": conversation.student_id,
         },
-        # Delivery metadata does not change message counts, unread counts or preview.
+        # Статус доставки не меняет счётчики и превью диалога.
         summary_by_role=None if action == "delivery" else conversation_event_summaries(db, conversation),
         db=db,
         admin_message_status=admin_message_status,

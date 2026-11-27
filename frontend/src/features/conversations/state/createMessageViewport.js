@@ -72,8 +72,7 @@ export function createMessageViewport(options, activeChatKey, openingRequest) {
       };
       const capture = () => {
         if (initialized && current()) {
-          // Do not replace the stable anchor with a temporary geometry change.
-          // Scroll events update it when the user actually moves.
+          // Не меняем якорь из-за временного сдвига разметки.
           if (appliedTop === null || Math.abs(history.scrollTop - appliedTop) > 1) {
             followBottom = distanceToLatest() <= 24;
             position = readPosition() || position;
@@ -89,8 +88,7 @@ export function createMessageViewport(options, activeChatKey, openingRequest) {
           const pending = openingRequest();
           const request = pending?.key === key ? pending : null;
           const row = findRow(saved?.anchor?.id);
-          // A validated cache containing the saved anchor (or the latest page)
-          // may render immediately. Otherwise wait for the requested window.
+          // Показываем кеш только при наличии сохранённого якоря или последней страницы.
           const cachedPositionReady = request?.hasCache &&
             (!saved || saved.bottom === true || row);
           if (request && !request.windowReady && !cachedPositionReady) return;
@@ -103,7 +101,7 @@ export function createMessageViewport(options, activeChatKey, openingRequest) {
           } else if (saved) {
             history.scrollTop = row ? history.scrollTop + row.getBoundingClientRect().top -
               history.getBoundingClientRect().top - (saved.anchor.offset || 0) : saved.top;
-            // Older persisted positions did not have an explicit bottom flag.
+            // Старые позиции могли не содержать признак конца чата.
             followBottom = saved.bottom == null && distanceToLatest() <= 2;
           } else if (unreadRow) {
             history.scrollTop += unreadRow.getBoundingClientRect().top -
@@ -156,8 +154,7 @@ export function createMessageViewport(options, activeChatKey, openingRequest) {
           persist();
         }, 100);
       };
-      // Every message can resize after an image loads or content-visibility
-      // reveals it. Observe all rows, not just the last one.
+      // Отслеживаем высоту всех сообщений после загрузки медиа.
       const resizeObserver = typeof ResizeObserver === "function"
         ? new ResizeObserver(() => scheduleLatest())
         : null;

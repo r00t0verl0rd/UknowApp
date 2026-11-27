@@ -1,6 +1,6 @@
 import { apiUrl } from "./api.js";
 
-// A single connection per browser tab, shared by every workspace subscriber.
+// Одно SSE-соединение на вкладку для всех разделов кабинета.
 let source = null;
 const subscribers = new Set();
 let closeGeneration = 0;
@@ -14,7 +14,7 @@ function notify(name, event) {
     try {
       subscriber[name]?.(event);
     } catch (error) {
-      // A broken subscriber must not prevent the others from receiving events.
+      // Ошибка одного подписчика не блокирует остальных.
       console.error("Panel event subscriber failed", error);
     }
   }
@@ -41,8 +41,7 @@ function openStream() {
   connection.onerror = () => {
     if (source !== connection) return;
     notify("onError");
-    // EventSource retries network interruptions itself. For terminal failures
-    // (e.g. proxy error or invalid response), explicitly create a new stream.
+    // При окончательном сбое создаём новое SSE-соединение.
     if (connection.readyState === 2) restart(connection);
   };
   watchdog = setTimeout(checkWatchdog, STALL_TIMEOUT);
@@ -57,7 +56,7 @@ function checkWatchdog() {
     watchdog = setTimeout(checkWatchdog, Math.min(remaining, STALL_TIMEOUT));
     return;
   }
-  // An apparently open connection can be stalled by an intermediary.
+  // Проверяем, что открытое соединение не зависло.
   notify("onError");
   restart(connection);
 }

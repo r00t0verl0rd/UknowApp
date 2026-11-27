@@ -1,6 +1,6 @@
 name: Project checks
 
-# Only the newest run for a branch matters; never cancel a different PR or main.
+# Для ветки оставляем последний запуск; проверки других веток не отменяем.
 concurrency:
   group: project-checks-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -85,7 +85,7 @@ jobs:
         if: ${{ !cancelled() && steps.backend_dependencies.outcome == 'success' }}
         run: git ls-files -z -- ':!.secrets.baseline' | xargs -0 detect-secrets-hook --baseline .secrets.baseline
         working-directory: .
-      # Backup and database-specific suites have dedicated workflows; do not run them twice.
+      # Проверки базы и резервных копий выполняются в отдельных сценариях.
       - run: python -m pytest -q --durations=10 tests --ignore=tests/test_admin_data_backup.py --ignore=tests/test_restore_startup.py --ignore=tests/test_database_storage_info.py --ignore=tests/test_admin_stats.py --ignore=tests/test_database_dialects.py --ignore=tests/test_legacy_database_upgrade.py
         if: ${{ !cancelled() && steps.backend_dependencies.outcome == 'success' }}
       - run: python -m compileall -q app

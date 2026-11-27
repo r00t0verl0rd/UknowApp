@@ -1,9 +1,9 @@
-// Session-only, per-user view state. Never store access tokens, passwords or message bodies.
+// Храним состояние интерфейса на время сессии, без личных данных.
 const VERSION = "uknowapp-view-v1";
 const MAX_STORED_PAGES = 12;
 const MAX_SCROLL = 10_000_000;
 
-// The built-in administrator has no User row or numeric id in /panel/me.
+// У встроенного администратора нет записи User.
 export function viewAccountKey(profile) {
   return profile?.id ?? (profile?.role === "admin" ? "admin" : null);
 }
@@ -12,7 +12,7 @@ function key(userId) {
   return userId == null ? "" : `${VERSION}:${encodeURIComponent(String(userId))}`;
 }
 
-// Keep durable, non-content settings separate from tab-local searches and navigation.
+// Настройки аккаунта хранятся отдельно от поиска и навигации вкладки.
 export function persistentViewValue(userId, name, fallback) {
   if (userId == null) return fallback;
   try {
@@ -27,7 +27,7 @@ export function savePersistentViewValue(userId, name, value) {
   try {
     localStorage.setItem(key(userId) + ":" + name, JSON.stringify(value));
   } catch {
-    // The current view remains usable when browser storage is unavailable.
+    // Интерфейс работает и без браузерного хранилища.
   }
 }
 
@@ -49,7 +49,7 @@ export function updateViewState(userId, updater) {
     if (!next || next === state || typeof next !== "object") return;
     sessionStorage.setItem(key(userId), JSON.stringify(next));
   } catch {
-    // Private browsing / storage quota must never break the application.
+    // Ограничения хранилища не должны ломать приложение.
   }
 }
 
@@ -81,7 +81,7 @@ export function saveScrollPositions(userId, page, patch) {
       ...pages[page],
       scroll: { ...(pages[page]?.scroll || {}), ...patch },
     };
-    // Bound storage even if new sections are added later.
+    // Ограничиваем объём сохранённых данных.
     for (const old of Object.keys(pages).slice(0, Math.max(0, Object.keys(pages).length - MAX_STORED_PAGES))) {
       if (old !== page) delete pages[old];
     }
@@ -93,7 +93,7 @@ export function clearViewState(userId) {
   try {
     sessionStorage.removeItem(key(userId));
   } catch {
-    // Storage may be unavailable in private mode.
+    // Хранилище может быть недоступно в приватном режиме.
   }
 }
 
@@ -112,8 +112,7 @@ function readPosition(element, withAnchor = false) {
   const position = { top, left };
   if (!withAnchor) return position;
   const bounds = element.getBoundingClientRect();
-  // The first visible stable row/message is more robust than a raw offset if
-  // asynchronous images or responsive line breaks change element heights.
+  // Якорь строки надёжнее смещения при изменении высоты контента.
   for (const child of element.querySelectorAll("[data-view-anchor]")) {
     const row = child.getBoundingClientRect();
     if (row.bottom > bounds.top + 2 && row.top < bounds.bottom) {
@@ -150,12 +149,10 @@ export function installViewRestoration({ root, userId, page }) {
   let restoring = false;
   let userInteracted = new Set();
   let lastUserScrollIntent = 0;
-  // Programmatic scroll events are isTrusted in modern browsers too. Only
-  // real wheel/touch/keyboard input is allowed to cancel a pending restore.
+  // Отменяем восстановление только после жеста пользователя.
   const onScrollIntent = event => {
     if (!event.isTrusted) return;
-    // A tap/click to change a tab is not a scroll gesture. In particular it
-    // must not cancel the restored position of the destination page.
+    // Переключение вкладки не отменяет восстановление прокрутки.
     if (event.type === "keydown" &&
         !["ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End", " "].includes(event.key)) return;
     if (event.type === "pointermove" && !event.buttons) return;
@@ -184,7 +181,7 @@ export function installViewRestoration({ root, userId, page }) {
     if (disposed) return;
     flushScroll();
     const patch = collect();
-    // Empty placeholders must not overwrite a pending scroll restoration.
+    // Пустой экран не сбрасывает ожидающее восстановление прокрутки.
     for (const [name, saved] of Object.entries(pendingRestore)) {
       if (!userInteracted.has(name)) patch[name] = saved;
     }
@@ -223,8 +220,7 @@ export function installViewRestoration({ root, userId, page }) {
         el.scrollTop = current;
         el.scrollLeft = saved.left || 0;
       }
-      // Keep the target if rows are still loading; do not replace it with a
-      // temporary clamped offset or discard an anchor before it is rendered.
+      // Сохраняем якорь, пока нужные строки не загружены.
       if (available + 2 >= desired && (!saved.anchor || anchorFound)) {
         delete pendingRestore[name];
       }
@@ -292,15 +288,14 @@ export function installViewRestoration({ root, userId, page }) {
   const startRestore = () => {
     userInteracted = new Set();
     const saved = readScrollPositions(userId, activePage);
-    // The chat controller restores message history after its rows are available.
+    // Историю чата восстанавливает контроллер после загрузки строк.
     const relevant = Object.fromEntries(Object.entries(saved).filter(([name]) =>
       !name.startsWith("messages:"),
     ));
     pendingRestore = Object.keys(relevant).length
       ? relevant
       : { content: { top: 0, left: 0 }, document: { top: 0, left: 0 } };
-    // Mobile dialogs have a fixed header and independently scrolling chat items/messages.
-    // Ignore old document/content offsets from the previous browser layout.
+    // Для мобильного диалога не используем старые смещения страницы.
     if (activePage === "chats" && win.matchMedia("(max-width: 1024px)").matches) {
       pendingRestore.document = { top: 0, left: 0 };
       pendingRestore.content = { top: 0, left: 0 };
@@ -328,8 +323,7 @@ export function installViewRestoration({ root, userId, page }) {
     changePage(nextPage) {
       if (nextPage === activePage) return;
       flushScroll();
-      // Prior UI actions store scroll independently, including when navigation
-      // came from history rather than a sidebar click.
+      // Сохраняем прокрутку независимо от способа навигации.
       activePage = nextPage;
       startRestore();
     },

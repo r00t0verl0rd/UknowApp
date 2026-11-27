@@ -67,9 +67,7 @@ export function createConversationSync(options) {
           if (revision === (options.inboxRowRevision.get(key) || 0)) {
             applySummary(chat.type, chat.id, summary);
           } else {
-            // A concurrent SSE or HTTP snapshot may be newer OR may have
-            // been read before this receipt committed. Never silently drop
-            // the confirmation or overwrite an intervening incoming message.
+            // Сохраняем квитанцию и не затираем более новые сообщения.
             const current = options.selectedChat;
             if (isSameChat(current, chat.id, chat.type)) {
               if (hasSummaryChanges(current, summary)) {
@@ -129,7 +127,7 @@ export function createConversationSync(options) {
           force = true;
         }
         if (syncing) {
-          // A concurrent trigger for the same revision is covered by this request.
+          // Один запрос обрабатывает повторные события той же версии.
           if (force || (full && !inFlight?.full) || inFlight?.key !== requestedKey ||
               inFlight.revision !== (eventRevision.get(requestedKey) || 0)) {
             syncQueued = true;
@@ -175,9 +173,7 @@ export function createConversationSync(options) {
               continue;
             }
 
-            // Never replace newer receipt/summary data with a stale response.
-            // New immutable rows are still useful and tombstones suppress any
-            // message deleted by an intervening event.
+            // Не затираем новые статусы старым ответом; учитываем удаления.
             const changedDuringRequest = revisionAtStart !== (eventRevision.get(chatKey) || 0);
             if (changedDuringRequest) {
               const fresh = result.messages || [];
@@ -189,7 +185,7 @@ export function createConversationSync(options) {
               }
               syncQueued = true;
               reconcileKnown ||= checkKnown;
-              // Retry a rewind rather than jumping over a missing message.
+              // Повторно загружаем историю, если курсор сместился назад.
               rewind = { key: chatKey, id: rewind?.key === chatKey ? Math.min(rewind.id, afterId) : afterId };
               continue;
             }
@@ -216,7 +212,7 @@ export function createConversationSync(options) {
             }
           } while (syncQueued && active);
         } catch (error) {
-          // Failed HTTP reconciliation must not lose a pending gap.
+          // При ошибке синхронизации сохраняем незакрытый разрыв.
           if (inFlight) {
             const { key, afterId } = inFlight;
             rewind = { key, id: rewind?.key === key ? Math.min(rewind.id, afterId) : afterId };
@@ -263,8 +259,7 @@ export function createConversationSync(options) {
         }
         const eventId = Number(payload.event_id || event.lastEventId || 0);
         if (Number.isSafeInteger(eventId) && eventId > 0) {
-          // A restart/restore can replace the server cursor range (clock rollback).
-          // Explicit resync is always authoritative, even for a smaller cursor.
+          // После перезапуска Core курсор может уменьшиться; явная синхронизация главнее.
           if (!payload.resync && eventId <= lastEventId) return;
           lastEventId = eventId;
         }
@@ -285,7 +280,7 @@ export function createConversationSync(options) {
         const id = Number(payload.conversation_id);
         const type = payload.conversation_type || "conversation";
         const key = conversationKey(id, type);
-        // Non-admin delivery is invisible and must not invalidate an in-flight sync.
+        // Статус доставки невидим участнику и не сбрасывает синхронизацию.
         if (payload.action === "delivery" && options.role !== "admin") return;
         eventRevision.set(key, (eventRevision.get(key) || 0) + 1);
         if (payload.summary) applySummary(type, id, payload.summary);
@@ -311,8 +306,7 @@ export function createConversationSync(options) {
             (previous, updates) => mergeConversationMessages(previous, updates, key)));
         }
         if (!isSameChat(selected, id, type)) return;
-        // Rendering a complete, authorized message must never depend on the
-        // HTTP recovery path. Even a failed /sync cannot block live delivery.
+        // Сообщение показывается сразу, не ожидая HTTP-синхронизации.
         const message = payload.message;
         if (payload.action === "upsert" && message && Number(message.id) === Number(payload.message_id) &&
             isSameChat(options.selectedDialog, id, type)) {
@@ -330,11 +324,7 @@ export function createConversationSync(options) {
           return;
         }
         if (!requiresMessageSync(payload.action, viewerRole, type, payload.message_status)) return;
-        // Start fetching in the SSE callback itself. Background-tab timer
-        // throttling must never delay an incoming message. syncSelected already
-        // serializes requests and coalesces events arriving during a fetch.
-        // Ordinary upserts only need messages after the cursor. Reconcile
-        // existing statuses on recovery or a specific status invalidation.
+        // Загружаем события прямо из SSE; запросы синхронизируются и объединяются.
         void syncSelected({ full: payload.action !== "upsert" }).catch(requestRecovery);
       };
       const reconcileSelected = () => {
@@ -355,13 +345,11 @@ export function createConversationSync(options) {
         streamUnavailable = true;
         requestRecovery();
       }
-      // SSE remains the fast path. An infrequent reconciliation also covers
-      // suspended browsers, missed events and intermediaries buffering the stream.
+      // Периодическая сверка восстанавливает пропущенные события SSE.
       let lastReconciliation = Date.now();
       const fallback = setInterval(() => {
         if (!active) return;
-        // Recover quickly if streaming is unavailable, otherwise only perform
-        // an infrequent safety check. Reading remains independently gated.
+        // При сбое SSE сверяемся чаще; иначе выполняем редкую проверку.
         if (streamUnavailable || recoveryPending || Date.now() - lastReconciliation >= 60000) {
           lastReconciliation = Date.now();
           requestRecovery();

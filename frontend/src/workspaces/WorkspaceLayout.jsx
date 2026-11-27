@@ -36,8 +36,7 @@ export default function WorkspaceLayout(options) {
   let sidebarRef = null;
   let shellRef = null;
   let viewMemory = null;
-  // One owner for document, workspace and nested scrolling on every page.
-  // The saved position survives reloads, navigation and asynchronous rendering.
+// Единое управление прокруткой и её восстановлением во всех разделах.
   createEffect(
     () => [viewAccountKey(options.profile)],
     ([id]) => {
@@ -57,13 +56,12 @@ export default function WorkspaceLayout(options) {
   );
   const navigate = page => {
     viewMemory?.capture();
-    // Switch persistence scopes before the next click can read the old page.
-    // Reactive page updates may otherwise lag behind two rapid navigation taps.
+    // Меняем область сохранения до следующего действия навигации.
     viewMemory?.changePage(page);
     options.setPage(page);
   };
 
-  // ResizeObserver уже сообщает измеренную высоту: не читаем layout на каждом
+  // ResizeObserver уже сообщает высоту: не пересчитываем разметку на каждом
   // window.resize и не обновляем отступ, когда ширина меняется без переноса меню.
   createEffect(
     () => [],

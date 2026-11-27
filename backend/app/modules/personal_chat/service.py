@@ -37,7 +37,7 @@ def personal_conversation_dict(
 
 
 def personal_stats(db: Session, ids: list[int]) -> dict:
-    # Scalar columns bypass stale ORM identity-map values after SQL triggers.
+    # Читаем актуальные значения после работы SQL-триггеров.
     rows = db.execute(select(PersonalConversation.id, PersonalConversation.admin_unread_count,
                              PersonalConversation.participant_unread_count, PersonalConversation.last_message_at)
                       .where(PersonalConversation.id.in_(ids))).all()

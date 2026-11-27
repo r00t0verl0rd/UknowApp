@@ -1,4 +1,4 @@
- # Frozen historical model snapshot; test-only, source 15d2ea8fdad244526300d9900f7fee9160ce6205
+ # Неизменяемый снимок старой схемы для тестов; источник 15d2ea8fdad244526300d9900f7fee9160ce6205
 """Модели таблиц базы данных и связи между сущностями UknowApp."""
 
 from datetime import UTC, datetime
@@ -126,8 +126,7 @@ class PersonalChatCounter(Base):
 def _allocate_personal_id(_mapper, connection, chat):
     if connection.dialect.name != "sqlite" or chat.id is not None:
         return
-    # Existing SQLite tables lack AUTOINCREMENT. Keep a durable high-water mark
-    # and start the new range above legacy IDs, including recently deleted ones.
+    # Новые ID начинаются выше всех старых, включая удалённые.
     chat.id = connection.scalar(text("""
         INSERT INTO personal_chat_counter (id, last_id)
         SELECT 1, max(1000000000, coalesce(max(id), 0) + 1)

@@ -55,7 +55,7 @@ def test_counters_preserve_sparse_read_receipts_and_rollback(api):
 
 
 def test_upgrade_generated_receipts_preserves_metadata_and_counters(tmp_path):
-    # Reproduce the schema that already exists in test after 20261126_08.
+    # Воспроизводим схему ветки test после миграции 20261126_08.
     import json
     from sqlalchemy import create_engine, inspect, text
     from app.infrastructure.storage.conversation_counters import (

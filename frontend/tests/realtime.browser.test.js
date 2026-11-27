@@ -220,7 +220,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
     try {
       await teacherContext.addInitScript(() => {
         localStorage.setItem("uknowapp-auth", "1");
-        // Synthetic SSE events stay inside this teacher tab, not the shared server log.
+        // Тестовые SSE-события остаются в этой вкладке.
         const NativeEventSource = window.EventSource;
         window.EventSource = class extends NativeEventSource {
           constructor(...args) {
@@ -341,7 +341,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
         panel_read_at: null,
         created_at: "2026-11-23T10:03:00+00:00",
       }];
-      // Simulate an unfocused browser with heavily throttled background timers.
+      // Имитируем фоновую вкладку с редкими таймерами.
       await teacherPage.evaluate(() => {
         Object.defineProperty(document, "hasFocus", { configurable: true, value: () => false });
         window.__teacherOriginalTimeout = window.setTimeout;
@@ -402,7 +402,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
       throw error;
     }
 
-    // Opening a dialog must retain the editor state owned by the active route.
+    // Открытие диалога сохраняет данные текущего редактора.
     await page.getByRole("button", { name: "Структура", exact: true }).click();
     await page.getByRole("button", { name: "Добавить участника" }).click();
     const participant = page.getByRole("dialog", { name: "Добавить участника" });
@@ -640,7 +640,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
 });
 
 test("read receipts and push suppression follow the visible dialog", { timeout: 30000 }, async () => {
-  // Keep this test independent of the preceding preview process shutting down.
+  // Проверка не зависит от завершения предыдущего процесса.
   const port = 22308;
   const appUrl = `http://127.0.0.1:${port}`;
   const vite = spawn(process.execPath, [
@@ -730,9 +730,9 @@ test("read receipts and push suppression follow the visible dialog", { timeout: 
       } else if (pathname === openPath + "/read") {
         const { message_ids } = request.postDataJSON();
         if (message_ids.includes(3)) {
-          // A concurrent summary arrives before the receipt commits. It has
-          // unread_count=1 and invalidates the pending receipt's revision.
-          // The client must reconcile after confirmation even without read SSE.
+          // Сводка может прийти до квитанции. Она
+          // счётчик становится 1 и обновляет версию квитанции.
+          // Клиент сверяет данные после подтверждения, даже без SSE.
           await publish();
         }
         receipts.push(...message_ids);
@@ -778,7 +778,7 @@ test("read receipts and push suppression follow the visible dialog", { timeout: 
     assert.equal(unread.size, 0);
     await page.getByLabel("1 непрочитанных личных сообщений").waitFor({ state: "hidden" });
 
-    // Headless Chromium keeps the page focused under automation.
+    // В автоматизации Chromium оставляет страницу в фокусе.
     await page.evaluate(() => {
       Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
       window.__originalTimeout = window.setTimeout;

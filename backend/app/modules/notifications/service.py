@@ -19,7 +19,7 @@ from app.modules.notifications import vapid
 from app.modules.notifications.endpoints import is_safe_push_endpoint
 
 logger = logging.getLogger(__name__)
-# Shared bounded network pool; never use the web request/event-loop thread for I/O.
+# Сетевые запросы выполняются в общем ограниченном пуле.
 _PUSH_POOL = ThreadPoolExecutor(max_workers=10, thread_name_prefix="web-push")
 _RESULT_POOL = ThreadPoolExecutor(max_workers=2, thread_name_prefix="push-results")
 _DISPATCH_POOL = ThreadPoolExecutor(max_workers=2, thread_name_prefix="push-dispatch")
@@ -88,7 +88,7 @@ def _dispatch_batch(ids, title, body, url, include_admin, admin_body):
             } for item in subscriptions if item.session_hash]
         if not targets:
             return False
-        # Query only sessions for actual recipients, not the entire session table.
+        # Выбираем сессии только получателей уведомления.
         with database.SessionLocal() as main:
             hashes = {item["session_hash"] for item in targets}
             active = {row.token_hash: (row.role, row.user_id) for row in main.scalars(select(PanelSession).where(
@@ -117,8 +117,7 @@ def _dispatch_batch(ids, title, body, url, include_admin, admin_body):
         json.dumps({**data, "body": admin_body[:160]}, ensure_ascii=False)
         if admin_body is not None else None
     )
-    # Fan out immediately into one shared pool, rather than blocking a worker
-    # per notification while waiting for every device.
+    # Отправляем уведомления через общий пул, не блокируя отдельный поток.
     futures = _submit(targets, payload, admin_payload)
     _RESULT_POOL.submit(_finish_notification, futures)
     return True
@@ -144,7 +143,7 @@ def _send_one(target, payload, admin_payload):
         status = getattr(getattr(exc, "response", None), "status_code", None)
         state = "expired" if status in {404, 410} else "failed"
     except Exception as exc:  # noqa: BLE001 - isolate each provider attempt
-        # One malformed subscription or provider outage cannot cancel another.
+        # Ошибка одной подписки не отменяет остальные отправки.
         logger.warning("Web Push attempt failed id=%s type=%s", target["id"], type(exc).__name__)
     if state != "accepted":
         logger.warning("Web Push id=%s state=%s status=%s", target["id"], state, status)

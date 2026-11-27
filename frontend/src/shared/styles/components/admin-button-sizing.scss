@@ -1,4 +1,4 @@
-// Keep assignment secondary and compact instead of inheriting the 44px form-button size.
+// Кнопка назначения остаётся компактной.
 :root .workspace-shell .workspace-content:has(.admin-card) .teacher-branch > .add-student.btn {
   box-sizing:border-box;
   width:fit-content;
@@ -51,8 +51,7 @@
 }
 
 
-/* Compact, consistent participant forms. Kept separate from destructive
-   confirmation dialogs and from the credential handoff dialog. */
+/* Единый компактный размер форм участника. */
 :root dialog.native-dialog:is(.create-participant-modal, .participant-profile-modal)[open] {
   width:min(430px, calc(100vw - 24px));
   max-width:calc(100vw - 24px);

@@ -180,7 +180,7 @@ def revoke_panel_session(request: Request, db, *, detach_push: bool = True) -> N
                 runtime.query(PushSubscription).filter(PushSubscription.session_hash.in_(detach)).delete(synchronize_session=False)
                 runtime.commit()
         except SQLAlchemyError:
-            # Revoked main sessions are ineligible even if physical cleanup fails.
+            # Отозванная сессия недействительна, даже если очистка не удалась.
             pass
 
 

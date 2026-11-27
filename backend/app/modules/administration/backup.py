@@ -79,7 +79,7 @@ def _build_full_backup(archive_path: Path, staging_root: Path) -> dict:
         common.require_backup_space(target.parent, source.stat().st_size)
         shutil.copy2(source, target)
 
-    # Snapshot SQLite using its backup API; never copy a live WAL as ordinary files.
+    # Снимок SQLite создаём штатным API, не копируем активный WAL-файл.
     runtime_path = data_dir / "runtime" / "runtime.db"
     if runtime_path.is_file():
         destination = staged_data / "runtime" / "runtime.db"

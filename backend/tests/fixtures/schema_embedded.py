@@ -1,4 +1,4 @@
- # Frozen historical model snapshot; test-only, source 7a364ca00211951d2fbe6bc8a2cae9b06861e18c
+ # Неизменяемый снимок старой схемы для тестов; источник 7a364ca00211951d2fbe6bc8a2cae9b06861e18c
 """Модели таблиц базы данных и связи между сущностями UknowApp."""
 
 from datetime import UTC, datetime

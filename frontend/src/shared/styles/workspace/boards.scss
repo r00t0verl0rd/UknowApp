@@ -1,4 +1,4 @@
-// The same full-area boards notice in admin, teacher and student workspaces.
+// Единое уведомление о досках во всех кабинетах.
 .workspace-shell > .content > .workspace-content:has(> .boards-placeholder) {
   display:flex;
 
