@@ -185,7 +185,7 @@ export default function AdditionalPage(options) {
             <span class="data-tool-icon" aria-hidden="true"><ArchiveIcon /></span>
             <div class="data-tool-copy">
               <h4>Вложения <small>ZIP</small></h4>
-              <p>Фото, голосовые сообщения, аудио, видео и документы без базы и текстов переписки.</p>
+              <p>Фото, голосовые сообщения, аудио, видео и документы без базы и текстов переписки. Архив только для скачивания.</p>
             </div>
             <div class="data-tool-actions">
               <Button
@@ -196,7 +196,6 @@ export default function AdditionalPage(options) {
               >
                 <Download size={16} aria-hidden="true" /> Скачать вложения
               </Button>
-              <p class="data-restore-hint">Восстановление из полной копии</p>
             </div>
           </article>
           <div class="data-backup-notes">
