@@ -32,11 +32,11 @@ class MaxAdapter:
                 raise DeliveryRejected("MAX rejected operation")
             return result
 
-    async def message(self, actor, text, attachments=None):
+    async def message(self, actor, text, attachments=None, *, group=False):
         data = {"text": text}
         if attachments:
             data["attachments"] = attachments
-        result = await self.api("POST", "/messages", params={"user_id": actor}, body=data)
+        result = await self.api("POST", "/messages", params={"chat_id" if group else "user_id": actor}, body=data)
         return result["message"]["body"]["mid"]
 
     async def send(self, job, gateway):
@@ -63,7 +63,9 @@ class MaxAdapter:
         for i in range(0, max(1, len(text)), 4000):
             if i:
                 await asyncio.sleep(0.6)
-            mid = await self.message(job["recipient"], text[i:i + 4000], attachments if not i else None)
+            address = job.get("chat_id") or job["recipient"]
+            mid = await self.message(address, text[i:i + 4000], attachments if not i else None,
+                                     group=address != job["recipient"])
             gateway.spool.record_delivery_part(job["id"], mid)
             ids.append(mid)
         return ids
@@ -108,11 +110,23 @@ class MaxAdapter:
         if update["update_type"] == "bot_started":
             await self.message(actor, "Отправьте код входа в школу или /menu для выбора чата.")
             return
-        if message.get("recipient", {}).get("chat_type") != "dialog":
-            return
         body = message["body"]
         text = body.get("text") or ""
         commands = Commands(gateway, spool)
+        recipient = message.get("recipient") or {}
+        if recipient.get("chat_type") == "chat" and recipient.get("chat_id") is not None:
+            chat = str(recipient["chat_id"])
+            if text.strip() == "/bind_school_chat":
+                result = await gateway.rpc("endpoint.bind", actor=actor, chat_id=chat)
+                if result.get("bound"):
+                    await self.message(chat, "Группа подключена к переписке ученика.", group=True)
+                return
+            route = await gateway.rpc("account.resolve", actor=actor, group=True, chat_id=chat)
+            if route.get("route_allowed"):
+                await self.forward_parts(event_id, actor, chat, "group", None, body, gateway)
+            return
+        if recipient.get("chat_type") != "dialog":
+            return
         account = await commands.menu(actor)
         if not account["account"]:
             bound = await commands.bind(actor, actor, text)
@@ -135,10 +149,14 @@ class MaxAdapter:
         if account["account"]["role"] == "teacher" and selection not in [c["id"] for c in account["conversations"]]:
             await self.refresh_panel(actor, gateway, spool)
             return
+        await self.forward_parts(event_id, actor, actor, "private", selection, body, gateway)
+
+    async def forward_parts(self, event_id, actor, chat, channel, selection, body, gateway):
+        text = body.get("text") or ""
         parts = body.get("attachments") or [None]
         for index, part in enumerate(parts):
             ident = f"{event_id}.{index}"
-            event = {"id": ident, "actor": actor, "chat_id": actor, "channel": "private",
+            event = {"id": ident, "actor": actor, "chat_id": chat, "channel": channel,
                      "conversation_id": selection, "text": text if index == 0 else "",
                      "external_message_id": body["mid"] + (f".{index}" if index else ""), "kind": "text"}
             if part:
@@ -153,9 +171,15 @@ class MaxAdapter:
                     if urlsplit(url).scheme == "https" and trusted:
                         async with self.http.get(url, allow_redirects=False) as source:
                             if source.status == 200:
-                                await gateway.upload(ident, source.content.iter_chunked(65536))
-                                event["media"] = {"file_name": part.get("filename") or kind,
-                                                  "mime_type": source.content_type}
+                                try:
+                                    await gateway.upload(ident, source.content.iter_chunked(65536))
+                                except aiohttp.ClientResponseError as exc:
+                                    if exc.status not in {400, 413}:
+                                        raise
+                                    event["media_unavailable"] = True
+                                else:
+                                    event["media"] = {"file_name": part.get("filename") or kind,
+                                                      "mime_type": source.content_type}
                             else:
                                 event["media_unavailable"] = True
                     else:

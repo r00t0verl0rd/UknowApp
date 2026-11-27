@@ -228,6 +228,9 @@ def rpc(db, platform, operation, payload):
                 result["route_allowed"] = bool(items) and group_route_allowed(platform, endpoint, chat, thread)
                 if not result["route_allowed"]:
                     result["route_reason"] = "stored topic mismatch" if items else "student or assignment unavailable"
+            if platform == "max" and items and payload.get("chat_id"):
+                endpoint = db.get(ExternalEndpoint, (platform, user.id))
+                result["route_allowed"] = endpoint is not None and endpoint.chat_id == identifier(payload["chat_id"])
             return result
         return {"account": account, "conversations": summaries(db, user) if user else []}
     if user is None:
@@ -243,6 +246,10 @@ def rpc(db, platform, operation, payload):
             existing = db.get(ExternalEndpoint, (platform, user.id))
             if not group_route_allowed(platform, existing, chat, thread):
                 return {"bound": False, "reason": "topic_locked"}
+        if platform == "max":
+            existing = db.get(ExternalEndpoint, (platform, user.id))
+            if existing and existing.chat_id != chat:
+                return {"bound": False, "reason": "group_locked"}
         bind_endpoint(db, platform, user, chat, thread)
         db.commit()
         return {"bound": True}
@@ -305,6 +312,8 @@ def receive_message(db, platform, payload, enabled_platforms, media_path):
         endpoint = db.get(ExternalEndpoint, (platform, user.id))
         same_route = endpoint is not None and endpoint.chat_id == chat and endpoint.thread_id == thread
         if not same_route:
+            if platform == "max":
+                raise HTTPException(403, "group not linked")
             if not group_route_allowed(platform, endpoint, chat, thread):
                 raise HTTPException(403, "group not linked")
             if platform != "telegram" or not blocked:

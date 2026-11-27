@@ -17,8 +17,9 @@ class MaxMessaging(unittest.IsolatedAsyncioTestCase):
     async def test_group_does_not_consume_private_link_code(self):
         adapter = MaxAdapter(None, "test")
         gateway = AsyncMock()
+        gateway.rpc.return_value = {"route_allowed": False}
         await adapter.handle("evt", {"update_type": "message_created", "message": {
-            "sender": {"user_id": 13}, "recipient": {"chat_type": "chat"},
+            "sender": {"user_id": 13}, "recipient": {"chat_type": "chat", "chat_id": -42},
             "body": {"text": "ABCD2345"}}}, gateway, Mock())
-        gateway.rpc.assert_not_awaited()
+        gateway.rpc.assert_awaited_once_with("account.resolve", actor="13", group=True, chat_id="-42")
         gateway.inbound.assert_not_awaited()
