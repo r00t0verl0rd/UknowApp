@@ -98,7 +98,6 @@ def test_full_backup_contains_complete_data_directory_and_checksums(api, monkeyp
         assert "data/vapid_private.pem" in names
         assert "data/future/worker-state.json" in names
         assert manifest["file_count"] == len(manifest["files"])
-        assert manifest["missing_media_references"] == 0
 
         records = {item["path"]: item for item in manifest["files"]}
         for name, record in records.items():
@@ -130,8 +129,6 @@ def test_full_backup_and_restore_allow_missing_media_references(api, monkeypatch
 
     assert response.status_code == status.HTTP_200_OK
     with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
-        manifest = json.loads(archive.read("manifest.json"))
-        assert manifest["missing_media_references"] == 1
         assert archive.read("data/media/available.bin") == b"available"
         assert "data/media/missing-photo.jpg" not in archive.namelist()
 
@@ -139,19 +136,17 @@ def test_full_backup_and_restore_allow_missing_media_references(api, monkeypatch
     available.write_bytes(b"changed")
     uploaded = admin.post("/api/admin/data/full", files={"file": ("partial.zip", response.content)})
     assert uploaded.status_code == 202
-    assert uploaded.json()["warnings"] == ["Недоступных вложений: 1."]
     assert restore.apply_pending_data_restore()
     restore.finish_startup_restore(True)
     result = admin.get("/api/admin/data/restore-status").json()["restore"]
     assert result["status"] == "completed"
-    assert result["missing_media_references"] == 1
     assert available.read_bytes() == b"available"
     with sqlite3.connect(data_root / "uknowapp.db") as db:
         assert db.execute("SELECT COUNT(*) FROM messages").fetchone()[0] == 2
 
 
 
-def test_backup_counts_broken_media_without_rejecting_legacy_text(api, monkeypatch, tmp_path):
+def test_backup_accepts_legacy_metadata(api, monkeypatch, tmp_path):
     root = tmp_path / "data"
     setup_data_root(monkeypatch, root)
     database = root / "uknowapp.db"
@@ -169,13 +164,9 @@ def test_backup_counts_broken_media_without_rejecting_legacy_text(api, monkeypat
             )
         assert client.get("/api/admin/data/full").status_code == 200
 
-    # Вложение без метаданных учитывается как недоступное.
     with sqlite3.connect(database) as connection:
         connection.execute("UPDATE messages SET metadata_json = 'null', content_type = 'voice'")
-    response = client.get("/api/admin/data/full")
-    assert response.status_code == 200
-    with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
-        assert json.loads(archive.read("manifest.json"))["missing_media_references"] == 1
+    assert client.get("/api/admin/data/full").status_code == 200
 
 
 def test_full_restore_refuses_zip_path_traversal_without_touching_current_data(api, monkeypatch, tmp_path):
@@ -280,7 +271,7 @@ def test_full_restore_is_staged_then_applied_before_app_start(api, monkeypatch, 
     assert not (data_root / admin_data.PENDING_RESTORE_NAME).exists()
 
 
-def test_personal_media_checked_on_export_and_import(api, monkeypatch, tmp_path):
+def test_personal_media_optional_but_archive_integrity_required(api, monkeypatch, tmp_path):
     monkeypatch.delenv("UKNOWAPP_AUTO_RESTART_ON_RESTORE", raising=False)
     root = tmp_path / "data"
     setup_data_root(monkeypatch, root)
@@ -299,10 +290,7 @@ def test_personal_media_checked_on_export_and_import(api, monkeypatch, tmp_path)
     backup = admin.get("/api/admin/data/full")
     assert backup.status_code == 200
     media.write_bytes(b"truncated")
-    incomplete = admin.get("/api/admin/data/full")
-    assert incomplete.status_code == 200
-    with zipfile.ZipFile(io.BytesIO(incomplete.content)) as archive:
-        assert json.loads(archive.read("manifest.json"))["missing_media_references"] == 1
+    assert admin.get("/api/admin/data/full").status_code == 200
 
     # ZIP без заявленного в manifest файла по-прежнему недопустим.
     damaged = io.BytesIO()
@@ -324,10 +312,9 @@ def test_personal_media_checked_on_export_and_import(api, monkeypatch, tmp_path)
         dst.writestr("manifest.json", json.dumps(manifest))
     response = admin.post("/api/admin/data/full", files={"file": ("partial.zip", out.getvalue())})
     assert response.status_code == 202
-    assert response.json()["warnings"] == ["Недоступных вложений: 1."]
     assert restore.apply_pending_data_restore()
     restore.finish_startup_restore(True)
-    assert admin.get("/api/admin/data/restore-status").json()["restore"]["missing_media_references"] == 1
+    assert admin.get("/api/admin/data/restore-status").json()["restore"]["status"] == "completed"
     assert not media.exists()
     assert not (root / admin_data.PENDING_RESTORE_NAME).exists()
 

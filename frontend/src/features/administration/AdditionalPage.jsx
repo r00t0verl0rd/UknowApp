@@ -174,8 +174,6 @@ export default function AdditionalPage(options) {
                     : "Архив принят. Проверяем результат восстановления."}
                 {options.restore.finished_at &&
                   " " + new Date(options.restore.finished_at).toLocaleString("ru-RU")}
-                {options.restore.status === "completed" && options.restore.missing_media_references > 0 &&
-                  " Недоступных вложений: " + options.restore.missing_media_references + "."}
               </p>
             )}
             {isPostgres() && (

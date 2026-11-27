@@ -76,14 +76,8 @@ def _build_full_backup(archive_path: Path, staging_root: Path) -> dict:
     for source, relative in _iter_data_files(data_dir, database):
         target = staged_data / relative
         target.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            common.require_backup_space(target.parent, source.stat().st_size)
-            shutil.copy2(source, target)
-        except FileNotFoundError:
-            # Вложение могло быть удалено во время создания копии.
-            if relative.parts[0] != "media" or source.exists():
-                raise
-            target.unlink(missing_ok=True)
+        common.require_backup_space(target.parent, source.stat().st_size)
+        shutil.copy2(source, target)
 
     # Снимок SQLite создаём штатным API, не копируем активный WAL-файл.
     runtime_path = data_dir / "runtime" / "runtime.db"
@@ -113,7 +107,6 @@ def _build_full_backup(archive_path: Path, staging_root: Path) -> dict:
             "sha256": checksum,
         })
 
-    missing_media = common.count_missing_media_references(staged_database, staged_data)
     manifest = {
         "format": common.FULL_BACKUP_FORMAT,
         "format_version": 2,
@@ -123,7 +116,6 @@ def _build_full_backup(archive_path: Path, staging_root: Path) -> dict:
         "files": file_records,
         "file_count": len(file_records),
         "unpacked_bytes": total_unpacked,
-        "missing_media_references": missing_media,
     }
     manifest_json = json.dumps(manifest, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     if len(manifest_json) > 64 * 1024 * 1024:
