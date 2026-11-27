@@ -154,14 +154,14 @@ def _extract_v2_archive(
                 raise HTTPException(400, "База в архиве не является автономным снимком SQLite")
             sidecar.unlink()
     common.validate_database(staged_database)
-    common.require_complete_media(staged_database, staged_data)
+    missing_media = common.count_missing_media_references(staged_database, staged_data)
     if expected_database != database_relative:
         destination = staged_data / expected_database
         if destination.exists() or any(Path(str(destination) + suffix).exists() for suffix in ("-wal", "-shm", "-journal")):
             raise HTTPException(409, "Путь базы на новом сервере занят другим файлом из архива")
         destination.parent.mkdir(parents=True, exist_ok=True)
         staged_database.rename(destination)
-    return 0
+    return missing_media
 
 
 def _prepare_restore_archive(archive_path: Path, staged_data: Path) -> int:
@@ -198,6 +198,8 @@ def _finish_restore(data_dir: Path, marker: dict, status: str) -> None:
         "id": marker["stage"].removeprefix(common.RESTORE_STAGE_PREFIX),
         "status": status,
         "finished_at": datetime.now(UTC).isoformat(),
+        **({"missing_media_references": marker["missing_media_references"]}
+           if status == "completed" and marker.get("missing_media_references") else {}),
     })
     (data_dir / common.PENDING_RESTORE_NAME).unlink(missing_ok=True)
 
@@ -365,7 +367,7 @@ def apply_pending_data_restore() -> bool:
                 common.validate_database(uploaded)
                 common.require_complete_media(uploaded, data_dir)
             else:
-                _prepare_restore_archive(archive_path, staged_data)
+                marker["missing_media_references"] = _prepare_restore_archive(archive_path, staged_data)
         except Exception:
             logger.exception(
                 "Подготовленный архив не прошёл повторную проверку; текущие данные не изменены",
@@ -473,13 +475,14 @@ def _stage_upload(file: UploadFile, kind: str):
                 target.write(chunk)
 
         checksum = None
+        missing_media = 0
         if kind == "database":
             common.database_relative_path(data_dir)
             common.validate_database(archive_path)
             common.require_complete_media(archive_path, data_dir)
             checksum = common.hash_file(archive_path)[1]
         else:
-            _prepare_restore_archive(archive_path, stage_dir / "data")
+            missing_media = _prepare_restore_archive(archive_path, stage_dir / "data")
             shutil.rmtree(stage_dir / "data")
         backup_name = common.RESTORE_BACKUP_PREFIX + uuid.uuid4().hex
         _write_restore_record(marker_path, {
@@ -489,7 +492,7 @@ def _stage_upload(file: UploadFile, kind: str):
             "created_at": datetime.now(UTC).isoformat(),
             "stage": stage_dir.name,
             "backup": backup_name,
-            "missing_media_references": 0,
+            "missing_media_references": missing_media,
         })
         marker_created = True
 
@@ -509,7 +512,7 @@ def _stage_upload(file: UploadFile, kind: str):
                 "restore_id": stage_dir.name.removeprefix(common.RESTORE_STAGE_PREFIX),
                 "restart_required": True,
                 "automatic_restart": automatic_restart,
-                "warnings": [],
+                "warnings": ([f"Недоступных вложений: {missing_media}."] if missing_media else []),
                 "message": message,
             },
             background=BackgroundTask(_restart_backend_after_response) if automatic_restart else None,

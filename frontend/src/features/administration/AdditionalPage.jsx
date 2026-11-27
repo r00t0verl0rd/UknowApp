@@ -174,6 +174,8 @@ export default function AdditionalPage(options) {
                     : "Архив принят. Проверяем результат восстановления."}
                 {options.restore.finished_at &&
                   " " + new Date(options.restore.finished_at).toLocaleString("ru-RU")}
+                {options.restore.status === "completed" && options.restore.missing_media_references > 0 &&
+                  " Недоступных вложений: " + options.restore.missing_media_references + "."}
               </p>
             )}
             {isPostgres() && (
@@ -186,7 +188,7 @@ export default function AdditionalPage(options) {
               <summary>Что важно знать перед восстановлением <ChevronDown size={15} aria-hidden="true" /></summary>
               <p class="data-note-copy">
                 В Docker сервер перезапустится автоматически, при локальном запуске нужен ручной перезапуск backend.
-                Настройки .env и настройки Telegram и MAX сохраняйте отдельно. Для полной копии все вложения должны быть доступны.
+                Настройки .env и настройки Telegram и MAX сохраняйте отдельно. Отсутствующие вложения не попадут в архив.
               </p>
             </details>
           </article>
