@@ -168,6 +168,12 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
         await summary.click();
         assert.deepEqual(await geometry(), before);
       }
+      const mediaAction = await panel.getByRole("button", { name: "Скачать вложения", exact: true }).evaluate(button => {
+        const action = button.getBoundingClientRect();
+        const group = button.parentElement.getBoundingClientRect();
+        return Math.abs(action.left - group.left) <= 1 && Math.abs(action.right - group.right) <= 1;
+      });
+      assert.ok(mediaAction, `${width}px: the sole attachment action fills the action grid`);
       const buttons = await panel.locator(".data-tool-actions .data-action-btn").evaluateAll(items =>
         items.map(button => ({
           height: button.getBoundingClientRect().height,
