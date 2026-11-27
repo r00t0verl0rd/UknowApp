@@ -185,10 +185,8 @@ def claim_messenger_connection_code(
     if connection_code.used_at is not None:
         return None, "invalid"
 
-    existing_user = get_messenger_user(db, platform, external_user_id)
-    if existing_user and existing_user.id != user.id:
-        return None, "identity_already_linked"
-
+    external_id = str(external_user_id)
+    existing_user = get_messenger_user(db, platform, external_id)
     existing_account = db.scalar(
         select(MessengerAccount).where(
             MessengerAccount.user_id == user.id,
@@ -197,6 +195,28 @@ def claim_messenger_connection_code(
     )
     if existing_account and existing_account.external_user_id != str(external_user_id):
         return None, "account_already_linked"
+
+    if existing_user and existing_user.id != user.id:
+        # Код подтверждает доступ к новому профилю: перенести на него эту учётку.
+        account = db.scalar(select(MessengerAccount).where(
+            MessengerAccount.platform == str(platform),
+            MessengerAccount.external_user_id == external_id,
+        ))
+        db.execute(delete(ExternalEndpoint).where(
+            ExternalEndpoint.platform == str(platform), ExternalEndpoint.user_id == existing_user.id,
+        ))
+        account.user_id = user.id
+        account.external_chat_id = str(external_chat_id or external_id)
+        account.username = username
+        account.linked_at = now
+        account.status = "linked"
+        try:
+            db.commit()
+            db.refresh(user)
+        except IntegrityError:
+            db.rollback()
+            return None, "account_already_linked"
+        return user, "ok"
 
     try:
         sync_messenger_account(

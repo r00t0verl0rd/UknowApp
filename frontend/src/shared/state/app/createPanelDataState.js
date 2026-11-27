@@ -1,4 +1,4 @@
-import { createSignal, createEffect } from "solid-js";
+import { createSignal, createEffect, onCleanup } from "solid-js";
 import { workspaceFor } from "../../../workspaces/workspaceRegistry.js";
 import { request } from "../../services/api.js";
 import { getAdminBootstrap, getCurrentProfile } from "../../services/panelApi.js";
@@ -150,6 +150,30 @@ export function createPanelDataState(options) {
       void refresh();
     },
   );
+  createEffect(() => {
+    const canManageUsers = options.auth && options.page === "users" &&
+      options.profile?.permissions?.includes("users.manage");
+    if (!canManageUsers) return;
+    let active = true;
+    let task = null;
+    const updateUsers = () => {
+      if (!active || document.visibilityState !== "visible" || task) return;
+      task = request("/api/admin/users")
+        .then((users) => {
+          if (active && Array.isArray(users)) options.setUsers(users);
+        })
+        .catch(() => {})
+        .finally(() => { task = null; });
+    };
+    updateUsers();
+    const timer = window.setInterval(updateUsers, 8000);
+    document.addEventListener("visibilitychange", updateUsers);
+    onCleanup(() => {
+      active = false;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", updateUsers);
+    });
+  });
   return {
     request,
     refresh,

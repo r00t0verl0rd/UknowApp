@@ -205,13 +205,16 @@ def rpc(db, platform, operation, payload):
     if operation == "account.bind":
         if not _bind_limit.allow_and_record((platform, actor), 5, 900):
             raise HTTPException(429, "too many attempts")
-        if user is not None:
-            return {"account": identity(user), "conversations": summaries(db, user)}
-        user, result = claim_messenger_connection_code(
-            db, str(payload.get("code", ""))[:32], platform, actor,
-            identifier(payload.get("chat_id")), str(payload.get("username") or "")[:255] or None)
+        if payload.get("code"):
+            bound_user, result = claim_messenger_connection_code(
+                db, str(payload.get("code", ""))[:32], platform, actor,
+                identifier(payload.get("chat_id")), str(payload.get("username") or "")[:255] or None)
+            if bound_user is not None:
+                user = bound_user
+            elif user is None:
+                return {"account": None, "reason": result}
         if user is None:
-            return {"account": None, "reason": result}
+            return {"account": None, "conversations": []}
     if operation in {"account.resolve", "account.bind", "conversation.list"}:
         account = identity(user) if user else None
         if operation == "account.resolve" and payload.get("group") is True:

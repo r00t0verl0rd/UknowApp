@@ -1,16 +1,18 @@
 """Provider-neutral gateway invariants (no provider SDK required)."""
+import hashlib
 import json
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
 import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
-from sqlalchemy import event
+from sqlalchemy import event, select
 
 from app.bots_gateway import gateway
 from app.bots_gateway.operations import receive_message, rpc
 from app.modules.communication.outbox import enqueue_message_deletions, enqueue_web_delivery, record_result
-from app.models import Assignment, BotEventReceipt, ConnectorDeletion, ConnectorDelivery, Conversation, ExternalEndpoint, Message, User
+from app.models import Assignment, BotEventReceipt, ConnectionCode, ConnectorDeletion, ConnectorDelivery, Conversation, ExternalEndpoint, Message, MessengerAccount, User
 from app.modules.communication.accounts import sync_messenger_account
 
 SECRET = "test-media-" + "x" * 40  # pragma: allowlist secret
@@ -79,6 +81,67 @@ def test_inbound_receipt_and_cross_provider_outbox(api):
         record_result(db, job, "unknown")
         row = db.query(Message).one()
         assert json.loads(row.metadata_json)["messenger_deliveries"]["alpha"]["status"] == "delivered"
+
+
+def test_max_private_delivery_works_in_both_directions(api):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        teacher_max = "teacher-max"
+        student_max = "student-max"
+        sync_messenger_account(db, chat.teacher_id, "max", teacher_max, teacher_max)
+        sync_messenger_account(db, chat.student_id, "max", student_max, student_max)
+        db.commit()
+
+        receive_message(db, "max", {"id": "student-max-1", "external_message_id": "s1",
+            "actor": student_max, "chat_id": student_max, "channel": "private",
+            "kind": "text", "text": "Вопрос ученика"}, ("max",), gateway.media_path)
+        student_message = db.query(Message).filter_by(source_platform="max").one()
+        student_delivery = db.query(ConnectorDelivery).filter_by(message_id=student_message.id).one()
+        assert (student_delivery.platform, student_delivery.recipient_id, student_delivery.chat_id) == (
+            "max", chat.teacher_id, teacher_max)
+        assert authorize(db, "max", {"id": student_delivery.id})["text"].endswith("Вопрос ученика")
+        record_result(db, student_delivery, "delivered", "teacher-reply-id")
+
+        receive_message(db, "max", {"id": "teacher-max-1", "external_message_id": "t1",
+            "actor": teacher_max, "chat_id": teacher_max, "channel": "private",
+            "conversation_id": chat.id, "kind": "text", "text": "Ответ преподавателя"},
+            ("max",), gateway.media_path)
+        teacher_message = db.query(Message).filter_by(source_platform="max", sender_id=chat.teacher_id).one()
+        teacher_delivery = db.query(ConnectorDelivery).filter_by(message_id=teacher_message.id).one()
+        assert (teacher_delivery.platform, teacher_delivery.recipient_id, teacher_delivery.chat_id) == (
+            "max", chat.student_id, student_max)
+        assert authorize(db, "max", {"id": teacher_delivery.id})["text"].endswith("Ответ преподавателя")
+
+
+def test_max_connection_code_moves_account_between_school_profiles(api):
+    _, users, sessions = api
+    with sessions() as db:
+        chat = prepare(db, users)
+        actor = "max-reconnected-actor"
+        sync_messenger_account(db, chat.teacher_id, "max", actor, actor)
+        student_code = "STUDENT2"
+        teacher_code = "TEACHER2"
+        now = datetime.now(UTC)
+        for user_id, code in ((chat.student_id, student_code), (users["teacher-two"], teacher_code)):
+            db.add(ConnectionCode(user_id=user_id, code_hash=hashlib.sha256(code.encode()).hexdigest(),
+                                  created_at=now, expires_at=now + timedelta(days=36500)))
+        db.commit()
+
+        result = rpc(db, "max", "account.bind", {"actor": actor, "chat_id": actor, "code": student_code})
+        assert result["account"]["id"] == chat.student_id
+        assert db.scalar(select(MessengerAccount).where(
+            MessengerAccount.platform == "max", MessengerAccount.external_user_id == actor,
+        )).user_id == chat.student_id
+
+        result = rpc(db, "max", "account.bind", {"actor": actor, "chat_id": actor, "code": teacher_code})
+        assert result["account"]["id"] == users["teacher-two"]
+        assert db.scalar(select(MessengerAccount).where(
+            MessengerAccount.platform == "max", MessengerAccount.external_user_id == actor,
+        )).user_id == users["teacher-two"]
+        assert db.scalar(select(MessengerAccount).where(
+            MessengerAccount.platform == "max", MessengerAccount.user_id == chat.teacher_id,
+        )) is None
 
 
 def test_account_cannot_open_other_conversation(api):

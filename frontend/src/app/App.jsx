@@ -130,6 +130,7 @@ function Application(options) {
       return authState.auth;
     },
     get profile() { return authState.profile; },
+    get page() { return navigation.page; },
     setAuth: authState.setAuth,
     setProfile: authState.setProfile,
     setError: options.setError,

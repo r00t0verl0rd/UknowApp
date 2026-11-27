@@ -73,8 +73,16 @@ class MaxMessaging(unittest.IsolatedAsyncioTestCase):
                 await adapter.handle("event-3", update, gateway, spool)
                 self.assertEqual(spool.selected_conversation("42"), 17)
 
-                update["message"]["body"]["text"] = "Menu"
+                update["message"]["body"]["text"] = "ABCD2345"
                 await adapter.handle("event-4", update, gateway, spool)
+                self.assertIsNone(spool.selected_conversation("42"))
+                self.assertEqual(adapter.api.await_args_list[-1].args[:2], ("PUT", "/messages"))
+                self.assertEqual(
+                    sum(call.args[0] == "account.bind" for call in gateway.rpc.await_args_list), 3
+                )
+
+                update["message"]["body"]["text"] = "Menu"
+                await adapter.handle("event-5", update, gateway, spool)
                 self.assertIsNone(spool.selected_conversation("42"))
                 self.assertEqual(adapter.api.await_args_list[-1].args[:2], ("PUT", "/messages"))
             finally:

@@ -152,6 +152,15 @@ class MaxAdapter:
         if recipient.get("chat_type") != "dialog":
             return
         account = await commands.menu(actor)
+        if CODE.fullmatch(text.replace("-", "").replace(" ", "").upper()):
+            bound = await commands.bind(actor, actor, text)
+            if bound and bound.get("account"):
+                commands.clear(actor)
+                await self.show_account(actor, bound, gateway, spool)
+                return
+            if not account["account"]:
+                await self.message(actor, "Для подключения отправьте действующий код входа в школу.")
+                return
         if not account["account"]:
             bound = await commands.bind(actor, actor, text)
             if not bound or not bound.get("account"):

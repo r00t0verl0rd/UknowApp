@@ -19,7 +19,7 @@ from aiogram.exceptions import (
 from aiogram.types import URLInputFile
 
 from connectors.common.client import DeliveryRejected, RetryLater, RpcError
-from connectors.common.commands import Commands
+from connectors.common.commands import CODE, Commands
 
 from .teacher_panel import TeacherPanel
 
@@ -535,6 +535,14 @@ class TelegramAdapter:
             return
         account = view.get("account")
         if group and (account or {}).get("role") != "student":
+            return
+        if not group and CODE.fullmatch(text.replace("-", "").replace(" ", "").upper()):
+            bound = await commands.bind(actor, chat, text, message["from"].get("username"))
+            if bound and bound.get("account"):
+                commands.clear(actor)
+                await self.show_menu(int(chat), bound, gateway, spool, force=True)
+            else:
+                await self.show_menu(int(chat), view, gateway, spool)
             return
         if account is None:
             result = await commands.bind(actor, chat, text, message["from"].get("username"))
