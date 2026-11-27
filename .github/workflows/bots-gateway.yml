@@ -55,10 +55,10 @@ jobs:
           docker compose --profile gateway --profile bots config --quiet
       - name: Validate local MAX and Telegram services together
         env:
-          MAX_BOT_TOKEN: ci-placeholder
-          MAX_WEBHOOK_SECRET: ci-placeholder
-          BOTS_NATS_MAX_PASSWORD: ci-placeholder
-          BOTS_MEDIA_SECRET_MAX: ci-placeholder
+          MAX_BOT_TOKEN: ci-placeholder # pragma: allowlist secret
+          MAX_WEBHOOK_SECRET: ci-placeholder # pragma: allowlist secret
+          BOTS_NATS_MAX_PASSWORD: ci-placeholder # pragma: allowlist secret
+          BOTS_MEDIA_SECRET_MAX: ci-placeholder # pragma: allowlist secret
           MAX_CA_FILE: /etc/ssl/certs/ca-certificates.crt
           DOMAIN: school.example
         run: docker compose -f docker-compose.yml -f compose.max.yml --profile gateway --profile bots --profile max config --quiet

@@ -21,5 +21,5 @@ class MaxMessaging(unittest.IsolatedAsyncioTestCase):
         await adapter.handle("evt", {"update_type": "message_created", "message": {
             "sender": {"user_id": 13}, "recipient": {"chat_type": "chat", "chat_id": -42},
             "body": {"text": "ABCD2345"}}}, gateway, Mock())
-        gateway.rpc.assert_awaited_once_with("account.resolve", actor="13", group=True, chat_id="-42")
+        gateway.rpc.assert_not_awaited()
         gateway.inbound.assert_not_awaited()

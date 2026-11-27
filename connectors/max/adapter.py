@@ -5,7 +5,7 @@ from urllib.parse import urlsplit
 import aiohttp
 
 from connectors.common.client import DeliveryRejected, RetryLater
-from connectors.common.commands import Commands
+from connectors.common.commands import CODE, Commands
 
 API = "https://platform-api2.max.ru"
 KINDS = {"image": "photo", "video": "video", "audio": "audio", "file": "document"}
@@ -78,29 +78,43 @@ class MaxAdapter:
         sender = message.get("sender") or update.get("user") or {}
         return str(sender.get("user_id", "")), bool(message.get("body", {}).get("attachments"))
 
-    async def refresh_panel(self, actor, gateway, spool, background=False):
+    async def refresh_panel(self, actor, gateway, spool, background=False, page=None):
         commands = Commands(gateway, spool)
         result = await commands.panel(actor)
         chat = result.get("chat")
+        previous = spool.panel(actor) or {}
+        page = previous.get("page", 0) if page is None else page
+        buttons = []
         if chat:
+            buttons.append(["/menu"])
             lines = [chat["name"], *(m["name"] + ": " + (m["text"] or m["preview"]) for m in chat["messages"])]
         else:
-            lines = ["Ваши чаты", *(f"/open {c['id']} — {c['name']}" for c in result["conversations"])]
+            items, page, total = commands.page(result["conversations"], page)
+            lines = [f"Ваши чаты · {page + 1}/{total}"]
+            for chat_item in items:
+                action = f"/open {chat_item['id']}"
+                lines.append(f"{action} — {chat_item['name']} ({chat_item['unread']})")
+                buttons.append([action])
+            navigation = [f"/menu {i + 1}" for i in (page - 1, page + 1) if 0 <= i < total]
+            if navigation:
+                buttons.append(navigation)
         text = "\n".join(lines)
         text = text if len(text) <= 4000 else text[:160] + "\n…\n" + text[-3830:]
-        previous = spool.panel(actor) or {}
+        keyboard = [{"type": "inline_keyboard", "payload": {"buttons": [
+            [{"type": "message", "text": label} for label in row] for row in buttons
+        ]}}] if buttons else []
         if previous.get("mid"):
             if background and previous.get("text") == text:
                 return
             try:
-                await self.api("PUT", "/messages", params={"message_id": previous["mid"]}, body={"text": text})
-                spool.save_panel(actor, {"mid": previous["mid"], "text": text})
+                await self.api("PUT", "/messages", params={"message_id": previous["mid"]}, body={"text": text, "attachments": keyboard})
+                spool.save_panel(actor, {"mid": previous["mid"], "text": text, "page": page})
                 return
             except DeliveryRejected:
                 pass
         if not background or previous:
-            mid = await self.message(actor, text)
-            spool.save_panel(actor, {"mid": mid, "text": text})
+            mid = await self.message(actor, text, keyboard)
+            spool.save_panel(actor, {"mid": mid, "text": text, "page": page})
 
     async def handle(self, event_id, update, gateway, spool):
         actor, _ = self.inbound_route(update)
@@ -116,6 +130,8 @@ class MaxAdapter:
         recipient = message.get("recipient") or {}
         if recipient.get("chat_type") == "chat" and recipient.get("chat_id") is not None:
             chat = str(recipient["chat_id"])
+            if CODE.fullmatch(text.replace("-", "").replace(" ", "").upper()):
+                return
             if text.strip() == "/bind_school_chat":
                 result = await gateway.rpc("endpoint.bind", actor=actor, chat_id=chat)
                 if result.get("bound"):
@@ -135,9 +151,14 @@ class MaxAdapter:
                 return
             await self.message(actor, "MAX подключён. Откройте список чатов командой /menu.")
             return
-        if text in {"/menu", "/start", "/back"}:
+        if CODE.fullmatch(text.replace("-", "").replace(" ", "").upper()):
+            await self.message(actor, "Ваш MAX уже подключён. Для выбора чата отправьте /menu.")
+            return
+        page_arg = text.removeprefix("/menu ")
+        numbered_menu = text.startswith("/menu ") and page_arg.isascii() and page_arg.isdecimal() and len(page_arg) <= 5
+        if text in {"/menu", "/start", "/back"} or numbered_menu:
             commands.clear(actor)
-            await self.refresh_panel(actor, gateway, spool)
+            await self.refresh_panel(actor, gateway, spool, page=int(page_arg) - 1 if numbered_menu else 0)
             return
         if text.startswith("/open "):
             ident = text[6:].strip()
