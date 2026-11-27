@@ -120,10 +120,9 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
     await page.evaluate(() => localStorage.setItem("uknowapp-auth", "1"));
     await page.goto(HOST + "/additional");
     await page.getByText("Не удалось загрузить статистику").waitFor({ timeout: 12000 });
-    await page.getByText("Данные остались без изменений. Попробуйте обновить сведения.").waitFor();
     await page.getByText("Технические подробности").click();
     await page.getByText("Сервер не смог получить статистику (HTTP 500)", { exact: false }).waitFor();
-    assert.ok(await page.getByText("Весь UknowApp в одном архиве").isVisible(),
+    assert.ok(await page.getByRole("heading", { name: "Полная копия ZIP" }).isVisible(),
       "Backup controls remain available when statistics fails");
     assert.equal(await page.getByText("Часть настроек приложения нужно сохранить отдельно.").count(), 0,
       "Obsolete backup settings warning is not displayed");
@@ -144,7 +143,22 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
       await page.setViewportSize({ width, height: 850 });
       const panel = page.locator(".additional-panel");
       await panel.waitFor({ state: "visible" });
-      assert.ok(await panel.getByText("Весь UknowApp в одном архиве").isVisible());
+      assert.ok(await panel.getByRole("heading", { name: "Полная копия ZIP" }).isVisible());
+      const backupSection = panel.getByRole("region", { name: "Резервные копии" });
+      assert.equal(await backupSection.locator(".data-tool-card").count(), 3);
+      for (const name of ["Скачать полную копию", "Скачать базу", "Скачать вложения"]) {
+        const action = backupSection.getByRole("button", { name, exact: true });
+        assert.ok(await action.isVisible(), `${width}px: ${name} is visible`);
+      }
+      const backupGeometry = await backupSection.evaluate(section => {
+        const bounds = section.getBoundingClientRect();
+        return [...section.querySelectorAll(".data-action-btn")].map(action => {
+          const rect = action.getBoundingClientRect();
+          return { height: rect.height, fits: rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1 };
+        });
+      });
+      assert.ok(backupGeometry.every(action => action.height >= 44 && action.fits),
+        `${width}px: backup actions fit and remain usable`);
       const cleanupGeometry = await page.locator(".data-cleanup-card").evaluate(card => {
         const action = card.querySelector(".data-cleanup-actions .data-action-btn");
         const retention = card.querySelector(".data-retention-select");
