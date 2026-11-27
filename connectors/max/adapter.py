@@ -174,7 +174,7 @@ class MaxAdapter:
             await self.api("POST", "/answers", params={"callback_id": callback_id},
                            body={"message": {"text": text, "attachments": keyboard}})
             if previous.get("mid"):
-                spool.save_panel(actor, {**panel_state, "mid": previous["mid"], "text": text", "page": page,
+                spool.save_panel(actor, {**panel_state, "mid": previous["mid"], "text": text, "page": page,
                                          "role": role, "buttons": labels, "signature": signature})
                 return
         elif previous.get("mid") and previous.get("signature") == signature and (background or not force):

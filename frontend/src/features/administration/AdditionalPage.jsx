@@ -80,7 +80,7 @@ export default function AdditionalPage(options) {
               class="data-action-btn"
               onClick={options.loadDataStats}
               disabled={options.dataBusy || options.statsLoading}
-              aria-busy={options.statsLoading}
+              aria-busy={options.statsLoading ? "true" : "false"}
             >
               <RefreshCw size={16} aria-hidden="true" />
               Обновить
