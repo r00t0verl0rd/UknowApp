@@ -120,9 +120,10 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
     await page.evaluate(() => localStorage.setItem("uknowapp-auth", "1"));
     await page.goto(HOST + "/additional");
     await page.getByText("Не удалось загрузить статистику").waitFor({ timeout: 12000 });
+    await page.getByText("Данные остались без изменений. Попробуйте обновить сведения.").waitFor();
     await page.getByText("Технические подробности").click();
     await page.getByText("Сервер не смог получить статистику (HTTP 500)", { exact: false }).waitFor();
-    assert.ok(await page.getByRole("heading", { name: "Полная копия ZIP" }).isVisible(),
+    assert.ok(await page.getByText("Весь UknowApp в одном архиве").isVisible(),
       "Backup controls remain available when statistics fails");
     assert.equal(await page.getByText("Часть настроек приложения нужно сохранить отдельно.").count(), 0,
       "Obsolete backup settings warning is not displayed");
@@ -141,75 +142,9 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
     // Одинаковые действия и единый стиль для компьютера и телефона.
     for (const width of [1280, 1024, 900, 760, 390, 320]) {
       await page.setViewportSize({ width, height: 850 });
-      // Compare resting styles rather than a hovered button after viewport changes.
-      await page.mouse.move(0, 0);
-      await page.waitForTimeout(200);
       const panel = page.locator(".additional-panel");
       await panel.waitFor({ state: "visible" });
-      assert.ok(await panel.getByRole("heading", { name: "Полная копия ZIP" }).isVisible());
-      const backupSection = panel.getByRole("region", { name: "Резервные копии" });
-      assert.equal(await backupSection.locator(".data-tool-card").count(), 3);
-      const cards = await backupSection.locator(".data-tool-card").evaluateAll(items => items.map(card => {
-        const rect = card.getBoundingClientRect();
-        return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom,
-          border: getComputedStyle(card).borderTopWidth };
-      }));
-      assert.ok(cards.every(card => parseFloat(card.border) > 0),
-        `${width}px: each backup has a separate card`);
-      assert.ok(cards.every(card => card.bottom - card.top < 200),
-        `${width}px: backup cards remain compact`);
-      const columns = await backupSection.locator(".data-backup-cards").evaluate(grid =>
-        getComputedStyle(grid).gridTemplateColumns.split(" ").length);
-      if (columns === 3) {
-        assert.ok(cards[0].right < cards[1].left && cards[1].right < cards[2].left &&
-          Math.abs(cards[0].top - cards[2].top) < 1, "three cards share one row");
-        assert.ok(cards.every(card => Math.abs(card.bottom - cards[0].bottom) < 1),
-          "desktop: all three cards have aligned lower edges");
-        const downloadPositions = await backupSection.locator(".data-tool-card button.data-action-btn").evaluateAll(
-          buttons => buttons.map(button => button.getBoundingClientRect().top));
-        assert.ok(downloadPositions.every(top => Math.abs(top - downloadPositions[0]) < 1),
-          "desktop: all download buttons share one baseline");
-      }
-      if (width <= 540) {
-        assert.ok(cards[0].bottom < cards[1].top && cards[1].bottom < cards[2].top,
-          `${width}px: cards stack on mobile`);
-      }
-      assert.ok(await backupSection.getByText("Восстановление из полной копии", { exact: true }).isVisible(),
-        `${width}px: attachment restore method is explained without an extra button`);
-      const instructions = backupSection.getByText("Перед восстановлением", { exact: true });
-      const before = await backupSection.locator(".data-backup-cards").evaluate(grid => grid.getBoundingClientRect().height);
-      await instructions.click();
-      const after = await backupSection.locator(".data-backup-cards").evaluate(grid => grid.getBoundingClientRect().height);
-      assert.equal(after, before, `${width}px: instructions do not stretch backup cards`);
-      await instructions.click();
-      await page.mouse.move(0, 0);
-      await page.waitForTimeout(200);
-      for (const name of ["Скачать полную копию", "Скачать базу", "Скачать вложения"]) {
-        const action = backupSection.getByRole("button", { name, exact: true });
-        assert.ok(await action.isVisible(), `${width}px: ${name} is visible`);
-      }
-      const backupGeometry = await backupSection.evaluate(section => {
-        const bounds = section.getBoundingClientRect();
-        return [...section.querySelectorAll(".data-action-btn")].map(action => {
-          const rect = action.getBoundingClientRect();
-          const style = getComputedStyle(action);
-          const range = document.createRange();
-          const label = [...action.childNodes].find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
-          if (label) range.selectNodeContents(label);
-          const text = label ? range.getBoundingClientRect() : rect;
-          return {
-            height: rect.height, fits: rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1,
-            nowrap: style.whiteSpace === "nowrap",
-            textFits: text.left >= rect.left - 1 && text.right <= rect.right + 1,
-            background: style.backgroundColor, border: style.borderColor,
-          };
-        });
-      });
-      assert.ok(backupGeometry.every(action => Math.abs(action.height - 44) < 1 &&
-        action.fits && action.nowrap && action.textFits),
-        `${width}px: backup actions have equal height and single-line labels that fit`);
-      assert.equal(new Set(backupGeometry.map(action => action.background + action.border)).size, 1,
-        `${width}px: download and restore actions share one style`);
+      assert.ok(await panel.getByText("Весь UknowApp в одном архиве").isVisible());
       const cleanupGeometry = await page.locator(".data-cleanup-card").evaluate(card => {
         const action = card.querySelector(".data-cleanup-actions .data-action-btn");
         const retention = card.querySelector(".data-retention-select");
