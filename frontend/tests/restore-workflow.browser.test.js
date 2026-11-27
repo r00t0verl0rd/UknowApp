@@ -149,7 +149,8 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
       assert.equal(await cards.count(), 3);
       const geometry = () => cards.evaluateAll(items => items.map(card => {
         const { x, y, width, height } = card.getBoundingClientRect();
-        return { x, y, width, height };
+        const grid = card.parentElement.getBoundingClientRect();
+        return { x: x - grid.x, y: y - grid.y, width, height };
       }));
       const before = await geometry();
       if (width > 760) {
