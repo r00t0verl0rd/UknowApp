@@ -10,7 +10,6 @@ import {
   IconSearch as Search,
   IconSmile as Smile,
   IconTrash2 as Trash2,
-  IconUnlink as Unlink,
   IconUsers as Users,
   IconX as X,
 } from "../../shared/components/Icons.jsx";
@@ -19,6 +18,11 @@ import Button from "../../shared/components/Button.jsx";
 import CountBadge from "../../shared/components/CountBadge.jsx";
 import IconButton from "../../shared/components/IconButton.jsx";
 import ToolbarSelect from "../../shared/components/ToolbarSelect.jsx";
+const messengers = [
+  { platform: "telegram", label: "Telegram", accountId: telegramId },
+  { platform: "max", label: "MAX", accountId: maxId },
+];
+
 export default function UsersPage(options) {
   return (
     <section class="workspace-panel users-panel">
@@ -79,40 +83,30 @@ export default function UsersPage(options) {
                 >
                   <Pencil />
                 </IconButton>
-                {telegramId(user) ? (
-                  <IconButton
-                    onClick={() => options.disconnectTelegram(user)}
-                    title="Отключить Telegram"
-                    aria-label="Отключить Telegram"
-                  >
-                    <Unlink />
-                  </IconButton>
-                ) : (
-                  <IconButton
-                    onClick={() => options.openTelegram(user)}
-                    title="Выбрать способ подключения Telegram"
-                    aria-label="Подключить Telegram"
-                  >
-                    <Link2 />
-                  </IconButton>
-                )}
-                {maxId(user) ? (
-                  <IconButton
-                    onClick={() => options.disconnectTelegram(user, false, "max")}
-                    title="Отключить MAX"
-                    aria-label="Отключить MAX"
-                  >
-                    <span>MAX</span>
-                  </IconButton>
-                ) : (
-                  <IconButton
-                    onClick={() => options.openTelegram(user, "max")}
-                    title="Выбрать способ подключения MAX"
-                    aria-label="Подключить MAX"
-                  >
-                    <span>MAX</span>
-                  </IconButton>
-                )}
+                <div class="user-messenger-actions" role="group" aria-label="Мессенджеры">
+                  <For each={messengers}>
+                    {({ platform, label, accountId }) => {
+                      const connected = () => Boolean(accountId(user));
+                      const action = () => connected()
+                        ? `${label} подключён. Отключить ${label}`
+                        : `${label} не подключён. Подключить ${label}`;
+                      return (
+                        <IconButton
+                          class={"user-messenger-btn" + (connected() ? " is-connected" : "")}
+                          onClick={() => connected()
+                            ? options.disconnectTelegram(user, false, platform)
+                            : options.openTelegram(user, platform)}
+                          title={action()}
+                          aria-label={`${action()} · ${user.full_name}`}
+                          aria-haspopup="dialog"
+                        >
+                          {connected() ? <Check aria-hidden="true" /> : <Link2 aria-hidden="true" />}
+                          <span>{label}</span>
+                        </IconButton>
+                      );
+                    }}
+                  </For>
+                </div>
                 <div class="user-info-wrap">
                   <IconButton
                     class={

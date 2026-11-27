@@ -315,3 +315,47 @@
   background:var(--role-student-soft);
   color:var(--role-student);
 }
+
+.user-actions {
+  gap:var(--workspace-control-gap);
+}
+.user-messenger-actions {
+  display:flex;
+  gap:4px;
+}
+.user-actions .user-messenger-btn {
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  width:auto;
+  min-height:36px;
+  padding-inline:8px;
+  font-size:12px;
+  font-weight:600;
+  white-space:nowrap;
+}
+.user-messenger-btn > svg {
+  width:14px;
+  height:14px;
+}
+.user-actions .user-messenger-btn.is-connected {
+  color:var(--success);
+  border-color:color-mix(in srgb, var(--success) 45%, var(--ui-border));
+  background:color-mix(in srgb, var(--success) 10%, var(--ui-control-bg));
+}
+.user-actions .user-messenger-btn.is-connected:hover {
+  background:color-mix(in srgb, var(--success) 20%, var(--ui-control-bg));
+}
+@container (max-width: 35rem) {
+  .user-list > .user-row {
+    display:grid;
+    grid-template-columns:auto minmax(0, 1fr);
+  }
+  .user-list .user-actions {
+    grid-column:1 / -1;
+    justify-self:end;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+    gap:4px;
+  }
+}
