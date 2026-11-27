@@ -250,7 +250,7 @@ textarea::placeholder {
 
 }
 :root[data-theme="dark-soft"] {
-  & .btn:not(.primary):hover {
+  & .btn:not(.primary):not(.danger):hover {
     background:var(--ui-control-hover);
     border-color:var(--ui-border-strong);
   }

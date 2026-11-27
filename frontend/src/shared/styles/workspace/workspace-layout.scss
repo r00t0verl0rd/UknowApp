@@ -332,8 +332,8 @@
 
 }
 @media (hover: none), (pointer: coarse) {
-  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)),
-  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)).btn,
+  button:not(.danger):not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)),
+  button:not(.danger):not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)).btn,
   .person-actions button,
   .icon-btn,
   .modal-head button {
@@ -362,12 +362,12 @@
     border-color:var(--button-danger-border);
     color:var(--button-danger-text);
   }
-  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)):disabled {
+  button:not(.danger):not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)):disabled {
     opacity:0.5;
   }
   :root[data-theme="dark-soft"] {
-    & button:not(.primary):not(.danger-icon):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)),
-    & .btn:not(.primary):not(.danger-icon),
+    & button:not(.ui-icon-button):not(.primary):not(.danger):not(.danger-icon):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)),
+    & .btn:not(.primary):not(.danger):not(.danger-icon),
     & .icon-btn:not(.danger-icon):not(:where(.message-actions button)),
     & .modal-head button {
       background:var(--ui-control-bg);

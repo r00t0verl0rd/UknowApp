@@ -11,7 +11,7 @@
 .empty-students {
   border-color:var(--ui-border);
 }
-.user-action-btn:not(.danger-icon):not(.user-delete) {
+.user-action-btn:not(.danger-icon):not(.user-messenger-btn) {
   background:var(--button-bg);
   border-color:var(--button-border);
   color:var(--button-text);
@@ -42,35 +42,12 @@
     min-width:0;
     display:flex;
   }
-  > .user-action-btn,
-  > .user-info-wrap > .user-action-btn {
-    max-width:100%;
-    box-sizing:border-box;
-    flex:0 0 auto;
-    width:clamp(30px, 3.2vw, 36px);
-    height:clamp(30px, 3.2vw, 36px);
-    min-width:0;
+  .ui-icon-button.user-action-btn {
+    --icon-action-size:clamp(29px, 8.4vw, 36px);
+    width:var(--icon-action-size);
+    height:var(--icon-action-size);
+    flex:0 0 var(--icon-action-size);
     padding:0;
-  }
-}
-@media (min-width: 1025px) and (max-width: 1200px) {
-  .user-row {
-    grid-template-columns:44px minmax(0, 1fr);
-    grid-template-rows:auto auto;
-    column-gap:12px;
-    padding:13px clamp(10px, 1.5vw, 18px);
-  }
-  .user-row > .avatar {
-    width:44px;
-    height:44px;
-  }
-  .user-row > .user-actions {
-    justify-content:flex-start;
-  }
-}
-@media (max-width: 1024px) {
-  .user-row > .user-actions {
-    justify-content:flex-start;
   }
 }
 .user-row {
@@ -126,14 +103,7 @@
     width:34px;
     height:34px;
   }
-  .user-row > .user-actions {
-    gap:4px;
-  }
-  .user-row > .user-actions > .user-action-btn,
-  .user-row > .user-actions > .user-info-wrap > .user-action-btn {
-    width:32px;
-    height:32px;
-  }
+
 }
 @media (max-width: 380px) {
   .user-row {
@@ -145,18 +115,9 @@
     width:30px;
     height:30px;
   }
-  .user-row > .user-actions {
-    gap:3px;
-  }
-  .user-row > .user-actions > .user-action-btn,
-  .user-row > .user-actions > .user-info-wrap > .user-action-btn {
-    width:29px;
-    min-width:29px;
-    height:29px;
-    min-height:29px;
-  }
+
 }
-.user-action-btn:not(.danger-icon):not(.user-delete):hover:not(:disabled) {
+.user-action-btn:not(.danger-icon):not(.user-messenger-btn):hover:not(:disabled) {
   background:var(--button-bg-hover);
   border-color:var(--button-border-hover);
   color:var(--purple);

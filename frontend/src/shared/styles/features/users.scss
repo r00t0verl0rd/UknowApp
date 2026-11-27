@@ -161,7 +161,6 @@
   background:var(--button-bg);
 }
 .user-action-btn.user-delete {
-  margin-left:3px;
   color:#c66f7a;
   border-color:#efd4d8;
   background:#fff5f6;
@@ -286,19 +285,6 @@
   min-width:0;
   overflow-wrap:anywhere;
 }
-@media (max-width: 1024px) {
-  .user-list > .user-row {
-    display:grid;
-    grid-template-columns:auto minmax(0, 1fr) auto;
-  }
-  .user-list .user-actions {
-    display:flex;
-    gap:2px;
-    padding:0;
-    margin:0;
-    border:0;
-  }
-}
 
 :root:not([data-theme="dark-soft"]) {
   & .user-row {
@@ -316,41 +302,15 @@
   color:var(--role-student);
 }
 
-.user-actions {
-  gap:var(--workspace-control-gap);
-}
-.user-messenger-actions {
-  display:flex;
-  gap:4px;
-}
-.user-actions .user-messenger-btn {
-  position:relative;
-  padding:0;
-}
 .user-messenger-btn > svg {
   width:17px;
   height:17px;
 }
-.user-actions .user-messenger-btn.is-connected {
+:root .user-row > .user-actions > .user-messenger-btn.is-connected {
   color:var(--success);
   border-color:color-mix(in srgb, var(--success) 45%, var(--ui-border));
   background:color-mix(in srgb, var(--success) 10%, var(--ui-control-bg));
 }
-.user-actions .user-messenger-btn.is-connected:hover {
+:root .user-row > .user-actions > .user-messenger-btn.is-connected:hover {
   background:color-mix(in srgb, var(--success) 20%, var(--ui-control-bg));
-}
-@container (max-width: 24rem) {
-  .user-list > .user-row {
-    display:grid;
-    grid-template-columns:auto minmax(0, 1fr);
-  }
-  .user-list .user-actions {
-    grid-column:1 / -1;
-    justify-self:end;
-    flex-wrap:wrap;
-    min-width:0;
-    max-width:100%;
-    justify-content:flex-end;
-    gap:4px;
-  }
 }

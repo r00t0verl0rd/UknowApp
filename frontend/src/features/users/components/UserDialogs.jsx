@@ -286,7 +286,7 @@ export default function UserDialogs(options) {
           titleId="delete-user-title"
           busy={options.deletingUser}
           icon={<Trash2 />}
-          confirmLabel="Удалить участника"
+          confirmLabel="Удалить"
           busyLabel="Удаляем…"
           onClose={() => options.setDeleteCandidate(null)}
           onConfirm={options.confirmRemoveUser}

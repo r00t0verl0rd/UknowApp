@@ -52,8 +52,9 @@
   width:100%;
   min-width:0;
   min-height:52px;
-  font-size:16px;
-  padding:12px 10px;
+  font-size:clamp(12px, 3.5vw, 16px);
+  padding:12px 8px;
+  white-space:nowrap;
 
 }
 :root dialog.native-dialog .modal-actions > .btn svg {
