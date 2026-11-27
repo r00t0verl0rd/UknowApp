@@ -82,8 +82,10 @@ export default function AdditionalPage(options) {
               <span class="data-tool-icon" aria-hidden="true"><DatabaseIcon /></span>
               <span>База данных <small>{isPostgres() ? "PostgreSQL" : "SQLite"}</small></span>
             </div>
-            <b class="data-stat-value">{options.dataStats?.database_bytes != null ? formatBytes(options.dataStats.database_bytes) : "—"}</b>
-            <small>{options.dataStats?.users ?? "—"} пользователей</small>
+            <div class="data-stat-metric">
+              <b class="data-stat-value">{options.dataStats?.database_bytes != null ? formatBytes(options.dataStats.database_bytes) : "—"}</b>
+              <small>{options.dataStats?.users ?? "—"} пользователей</small>
+            </div>
             <details class="data-info-details">
               <summary>Подробнее <ChevronDown size={15} aria-hidden="true" /></summary>
               <div class="data-stat-details">
@@ -105,8 +107,10 @@ export default function AdditionalPage(options) {
               <span class="data-tool-icon" aria-hidden="true"><ArchiveIcon /></span>
               <span>Вложения из переписок</span>
             </div>
-            <b class="data-stat-value">{options.dataStats ? formatBytes(options.dataStats.media_bytes) : "—"}</b>
-            <small>{options.dataStats?.media_files ?? "—"} файлов</small>
+            <div class="data-stat-metric">
+              <b class="data-stat-value">{options.dataStats ? formatBytes(options.dataStats.media_bytes) : "—"}</b>
+              <small>{options.dataStats?.media_files ?? "—"} файлов</small>
+            </div>
             <details class="data-info-details">
               <summary>По типам файлов <ChevronDown size={15} aria-hidden="true" /></summary>
               <div class="data-stat-details">
@@ -120,35 +124,92 @@ export default function AdditionalPage(options) {
         </div>
         <section class="data-tools-grid" aria-labelledby="data-backups-title">
           <h3 id="data-backups-title">Резервные копии</h3>
-          <article class="data-tool-card data-tool-primary">
-            <span class="data-tool-icon" aria-hidden="true"><ArchiveIcon /></span>
-            <div class="data-tool-copy">
-              <h4>Полная копия <small>ZIP</small></h4>
-              <p>База, вложения и файлы приложения</p>
-            </div>
-            <div class="data-tool-actions">
-              <Button
-                variant="outline"
-                class="data-action-btn"
-                onClick={() => options.downloadAdminFile("full")}
-                disabled={options.dataBusy || !sqliteBackupsAvailable()}
-              >
-                <Download size={16} aria-hidden="true" /> Скачать полную копию
-              </Button>
-              <label class="btn outline data-action-btn data-upload-label">
-                <Upload size={16} aria-hidden="true" />
-                Восстановить из ZIP
-                <input
-                  type="file"
-                  accept=".zip,application/zip"
+          <div class="data-backup-cards">
+            <article class="data-tool-card">
+              <div class="data-tool-heading">
+                <span class="data-tool-icon" aria-hidden="true"><ArchiveIcon /></span>
+                <div class="data-tool-copy">
+                  <h4>Полная копия <small>ZIP</small></h4>
+                  <p>База, вложения и файлы приложения</p>
+                </div>
+              </div>
+              <div class="data-tool-actions">
+                <Button
+                  variant="outline"
+                  class="data-action-btn"
+                  onClick={() => options.downloadAdminFile("full")}
                   disabled={options.dataBusy || !sqliteBackupsAvailable()}
-                  onInput={(e) => {
-                    options.uploadAdminFile("full", e.target.files?.[0]);
-                    e.target.value = "";
-                  }}
-                />
-              </label>
-            </div>
+                >
+                  <Download size={16} aria-hidden="true" /> Скачать полную копию
+                </Button>
+                <label class="btn outline data-action-btn data-upload-label">
+                  <Upload size={16} aria-hidden="true" />
+                  Восстановить из ZIP
+                  <input
+                    type="file"
+                    accept=".zip,application/zip"
+                    disabled={options.dataBusy || !sqliteBackupsAvailable()}
+                    onInput={(e) => {
+                      options.uploadAdminFile("full", e.target.files?.[0]);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+            </article>
+            <article class="data-tool-card">
+              <div class="data-tool-heading">
+                <span class="data-tool-icon" aria-hidden="true"><DatabaseIcon /></span>
+                <div class="data-tool-copy">
+                  <h4>База данных <small>SQLite</small></h4>
+                  <p>Пользователи и переписки без вложений</p>
+                </div>
+              </div>
+              <div class="data-tool-actions">
+                <Button
+                  variant="outline"
+                  class="data-action-btn"
+                  onClick={() => options.downloadAdminFile("database")}
+                  disabled={options.dataBusy || !sqliteBackupsAvailable()}
+                >
+                  <Download size={16} aria-hidden="true" /> Скачать базу
+                </Button>
+                <label class="btn outline data-action-btn data-upload-label">
+                  <Upload size={16} aria-hidden="true" />
+                  Восстановить SQLite
+                  <input
+                    type="file"
+                    accept=".db,.sqlite,.sqlite3"
+                    disabled={options.dataBusy || !sqliteBackupsAvailable()}
+                    onInput={(e) => {
+                      options.uploadAdminFile("database", e.target.files?.[0]);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+            </article>
+            <article class="data-tool-card">
+              <div class="data-tool-heading">
+                <span class="data-tool-icon" aria-hidden="true"><ArchiveIcon /></span>
+                <div class="data-tool-copy">
+                  <h4>Вложения <small>ZIP</small></h4>
+                  <p>Фото, аудио, видео и документы</p>
+                </div>
+              </div>
+              <div class="data-tool-actions">
+                <Button
+                  variant="outline"
+                  class="data-action-btn"
+                  onClick={() => options.downloadAdminFile("media")}
+                  disabled={options.dataBusy}
+                >
+                  <Download size={16} aria-hidden="true" /> Скачать вложения
+                </Button>
+              </div>
+            </article>
+          </div>
+          <div class="data-backup-footer">
             {isPostgres() && (
               <p role="status" class="data-important-note">
                 PostgreSQL: используйте pg_dump для базы, вложения скачайте отдельно.
@@ -170,54 +231,7 @@ export default function AdditionalPage(options) {
               <p>Восстановление заменяет текущие данные. В Docker сервер перезапустится автоматически, при локальном запуске — вручную. Может потребоваться повторный вход.</p>
               <p>Полная копия включает данные каталога data, в том числе ключ Web Push. Все вложения должны быть доступны. Настройки .env, Telegram и MAX сохраняйте отдельно.</p>
             </details>
-          </article>
-          <article class="data-tool-card">
-            <span class="data-tool-icon" aria-hidden="true"><DatabaseIcon /></span>
-            <div class="data-tool-copy">
-              <h4>База данных <small>SQLite</small></h4>
-              <p>Пользователи и переписки без вложений</p>
-            </div>
-            <div class="data-tool-actions">
-              <Button
-                variant="outline"
-                class="data-action-btn"
-                onClick={() => options.downloadAdminFile("database")}
-                disabled={options.dataBusy || !sqliteBackupsAvailable()}
-              >
-                <Download size={16} aria-hidden="true" /> Скачать базу
-              </Button>
-              <label class="btn outline data-action-btn data-upload-label">
-                <Upload size={16} aria-hidden="true" />
-                Восстановить SQLite
-                <input
-                  type="file"
-                  accept=".db,.sqlite,.sqlite3"
-                  disabled={options.dataBusy || !sqliteBackupsAvailable()}
-                  onInput={(e) => {
-                    options.uploadAdminFile("database", e.target.files?.[0]);
-                    e.target.value = "";
-                  }}
-                />
-              </label>
-            </div>
-          </article>
-          <article class="data-tool-card">
-            <span class="data-tool-icon" aria-hidden="true"><ArchiveIcon /></span>
-            <div class="data-tool-copy">
-              <h4>Вложения <small>ZIP</small></h4>
-              <p>Фото, аудио, видео и документы</p>
-            </div>
-            <div class="data-tool-actions">
-              <Button
-                variant="outline"
-                class="data-action-btn"
-                onClick={() => options.downloadAdminFile("media")}
-                disabled={options.dataBusy}
-              >
-                <Download size={16} aria-hidden="true" /> Скачать вложения
-              </Button>
-            </div>
-          </article>
+          </div>
         </section>
         <article class="data-cleanup-card">
           <div class="data-cleanup-copy">

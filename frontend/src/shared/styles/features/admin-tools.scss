@@ -59,6 +59,7 @@
 .data-stats-grid {
   display:grid;
   grid-template-columns:repeat(2, minmax(0, 1fr));
+  align-items:start;
   gap:12px;
 }
 .data-stat-card,
@@ -66,7 +67,7 @@
 .data-cleanup-card {
   box-sizing:border-box;
   min-width:0;
-  padding:16px;
+  padding:12px 14px;
   border:1px solid var(--ui-border);
   border-radius:16px;
   background:var(--surface);
@@ -74,8 +75,16 @@
 }
 .data-stat-card {
   display:grid;
-  align-content:start;
-  gap:4px;
+  grid-template-columns:minmax(0, 1fr) auto;
+  align-items:center;
+  gap:4px 12px;
+}
+.data-stat-card > .data-info-details {
+  grid-column:1 / -1;
+  margin-top:0;
+}
+.data-stat-card > .data-info-details > summary {
+  min-height:32px;
 }
 .data-stat-heading {
   display:flex;
@@ -94,14 +103,20 @@
   font-size:11px;
   font-weight:400;
 }
-.data-stat-card > .data-stat-value {
-  margin-top:4px;
-  font-size:28px;
+.data-stat-metric {
+  display:grid;
+  justify-items:end;
+  gap:2px;
+  min-width:0;
+  white-space:nowrap;
+}
+.data-stat-metric > .data-stat-value {
+  font-size:25px;
   font-weight:650;
   line-height:1.16;
   font-variant-numeric:tabular-nums;
 }
-.data-stat-card > small {
+.data-stat-metric > small {
   color:var(--muted);
   font-size:12px;
   font-weight:400;
@@ -179,26 +194,31 @@
 }
 .data-tools-grid {
   display:grid;
-  grid-template-columns:repeat(2, minmax(0, 1fr));
   min-width:0;
+  gap:10px;
+}
+.data-backup-cards {
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(min(100%, 248px), 1fr));
+  align-items:start;
   gap:12px;
 }
 .data-tools-grid > h3 {
-  grid-column:1 / -1;
   margin:2px 0 0;
   font-size:16px;
   font-weight:650;
   line-height:1.4;
 }
 .data-tool-card {
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-  gap:12px;
+  display:grid;
+  align-content:start;
+  gap:10px;
 }
-.data-tool-primary {
-  grid-column:1;
-  grid-row:2 / span 2;
+.data-tool-heading {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
 }
 .data-tool-icon {
   display:inline-grid;
@@ -246,15 +266,10 @@
 }
 .data-tool-actions {
   display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  grid-template-columns:minmax(0, 1fr);
   gap:8px;
   width:100%;
   min-width:0;
-  margin-top:auto;
-}
-.data-tool-primary .data-tool-actions {
-  grid-template-columns:minmax(0, 1fr);
-  margin-top:4px;
 }
 .additional-panel .btn.data-action-btn {
   display:inline-flex;
@@ -315,7 +330,7 @@
 }
 .data-important-note,
 .data-operation-status {
-  margin:10px 0 0;
+  margin:0;
   color:var(--muted);
   font-size:12px;
   line-height:1.5;
@@ -323,11 +338,17 @@
 .data-operation-status.is-complete {
   color:var(--success);
 }
+.data-backup-footer {
+  display:grid;
+  gap:2px;
+  min-width:0;
+  padding:0 2px;
+}
 .data-backup-details {
-  box-sizing:border-box;
-  margin-top:4px;
-  padding-top:4px;
-  border-top:1px solid var(--ui-border);
+  margin-top:0;
+}
+.data-backup-details > summary {
+  min-height:32px;
 }
 .data-backup-details p {
   margin:0 0 8px;
@@ -433,15 +454,6 @@
   background:var(--button-danger-bg);
   color:var(--button-danger-text);
 }
-@media (max-width: 1200px) {
-  .data-tool-primary {
-    grid-column:1 / -1;
-    grid-row:auto;
-  }
-  .data-tool-primary .data-tool-actions {
-    grid-template-columns:repeat(auto-fit, minmax(min(100%, 220px), 1fr));
-  }
-}
 @media (max-width: 900px) {
   .data-cleanup-card {
     grid-template-columns:minmax(0, 1fr);
@@ -459,13 +471,6 @@
   .data-cleanup-card {
     padding:13px;
   }
-  .data-tools-grid {
-    grid-template-columns:minmax(0, 1fr);
-  }
-  .data-tool-actions,
-  .data-tool-primary .data-tool-actions {
-    grid-template-columns:minmax(0, 1fr);
-  }
   .data-cleanup-actions {
     display:grid;
     grid-template-columns:minmax(0, 1fr);
@@ -481,8 +486,15 @@
   }
 }
 @media (max-width: 540px) {
-  .data-stats-grid {
+  .data-stats-grid,
+  .data-backup-cards {
     grid-template-columns:minmax(0, 1fr);
+  }
+  .data-stat-card {
+    column-gap:8px;
+  }
+  .data-stat-metric > .data-stat-value {
+    font-size:23px;
   }
 }
 .workspace-content:has(.admin-card) {

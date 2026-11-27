@@ -141,6 +141,9 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
     // Одинаковые действия и единый стиль для компьютера и телефона.
     for (const width of [1280, 1024, 900, 760, 390, 320]) {
       await page.setViewportSize({ width, height: 850 });
+      // Compare resting styles rather than a hovered button after viewport changes.
+      await page.mouse.move(0, 0);
+      await page.waitForTimeout(200);
       const panel = page.locator(".additional-panel");
       await panel.waitFor({ state: "visible" });
       assert.ok(await panel.getByRole("heading", { name: "Полная копия ZIP" }).isVisible());
@@ -153,15 +156,26 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
       }));
       assert.ok(cards.every(card => parseFloat(card.border) > 0),
         `${width}px: each backup has a separate card`);
-      if (width > 1200) {
-        assert.ok(cards[0].right < cards[1].left && Math.abs(cards[0].top - cards[1].top) < 1 &&
-          Math.abs(cards[0].bottom - cards[2].bottom) < 1,
-          "desktop: full backup beside the two smaller cards");
+      assert.ok(cards.every(card => card.bottom - card.top < 200),
+        `${width}px: backup cards remain compact`);
+      const columns = await backupSection.locator(".data-backup-cards").evaluate(grid =>
+        getComputedStyle(grid).gridTemplateColumns.split(" ").length);
+      if (columns === 3) {
+        assert.ok(cards[0].right < cards[1].left && cards[1].right < cards[2].left &&
+          Math.abs(cards[0].top - cards[2].top) < 1, "three cards share one row");
       }
-      if (width <= 760) {
+      if (width <= 540) {
         assert.ok(cards[0].bottom < cards[1].top && cards[1].bottom < cards[2].top,
           `${width}px: cards stack on mobile`);
       }
+      const instructions = backupSection.getByText("Перед восстановлением", { exact: true });
+      const before = await backupSection.locator(".data-backup-cards").evaluate(grid => grid.getBoundingClientRect().height);
+      await instructions.click();
+      const after = await backupSection.locator(".data-backup-cards").evaluate(grid => grid.getBoundingClientRect().height);
+      assert.equal(after, before, `${width}px: instructions do not stretch backup cards`);
+      await instructions.click();
+      await page.mouse.move(0, 0);
+      await page.waitForTimeout(200);
       for (const name of ["Скачать полную копию", "Скачать базу", "Скачать вложения"]) {
         const action = backupSection.getByRole("button", { name, exact: true });
         assert.ok(await action.isVisible(), `${width}px: ${name} is visible`);
