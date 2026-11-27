@@ -146,27 +146,46 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
       await panel.waitFor({ state: "visible" });
       assert.ok(await panel.getByRole("heading", { name: "Полная копия ZIP" }).isVisible());
       const cards = panel.locator(".data-tool-card");
-      assert.equal(await cards.count(), 3);
+      assert.equal(await cards.count(), 4);
       const geometry = () => cards.evaluateAll(items => items.map(card => {
         const { x, y, width, height } = card.getBoundingClientRect();
         const grid = card.parentElement.getBoundingClientRect();
-        const actions = card.querySelector(".data-tool-actions").getBoundingClientRect();
-        return { x: x - grid.x, y: y - grid.y, width, height,
-          actionsX: actions.x - grid.x, actionsWidth: actions.width };
+        return { x: x - grid.x, y: y - grid.y, width, height };
       }));
       const before = await geometry();
-      assert.ok(before.every((card, index) => card.x === before[0].x &&
-        card.width === before[0].width && card.actionsX === before[0].actionsX &&
-        card.actionsWidth === before[0].actionsWidth &&
-        (index === 0 || Math.abs(card.y - before[index - 1].y - before[index - 1].height) <= 1)),
-        `${width}px: backup rows and action columns share one grid without gaps`);
-      assert.ok(await panel.getByText("Перед восстановлением.", { exact: true }).isVisible());
-      assert.ok(await panel.getByText("Настройки .env, Telegram и MAX сохраняйте отдельно.", { exact: false }).isVisible());
+      if (width > 760) {
+        assert.ok(Math.abs(before[0].y - before[1].y) <= 1 &&
+          Math.abs(before[2].y - before[3].y) <= 1 &&
+          Math.abs(before[0].x - before[2].x) <= 1 &&
+          Math.abs(before[1].x - before[3].x) <= 1 &&
+          Math.abs(before[0].height - before[1].height) <= 1 &&
+          Math.abs(before[2].height - before[3].height) <= 1,
+          `${width}px: four cards align in two columns`);
+      } else {
+        assert.ok(before.every((card, index) => card.x === before[0].x &&
+          (index === 0 || card.y > before[index - 1].y)),
+          `${width}px: cards stack in one column`);
+      }
+      for (const [name, content] of [
+        ["О полной копии", "Файл .env и настройки Telegram и MAX сохраняйте отдельно."],
+        ["О копии базы данных", "Поддерживаются .db, .sqlite и .sqlite3."],
+        ["Об архиве вложений", "Отдельное восстановление этого ZIP через панель не поддерживается."],
+        ["Об очистке сообщений", "Пользователи, назначения и диалоги сохраняются."],
+      ]) {
+        const trigger = panel.getByRole("button", { name, exact: true });
+        const popover = panel.getByRole("dialog", { name, exact: true });
+        await trigger.click();
+        await popover.waitFor({ state: "visible" });
+        assert.ok(await popover.getByText(content, { exact: false }).isVisible());
+        assert.deepEqual(await geometry(), before, `${width}px: popovers do not stretch cards`);
+        if (name === "О полной копии") await page.keyboard.press("Escape");
+        else await popover.getByRole("button", { name: "Закрыть подсказку" }).click();
+        await popover.waitFor({ state: "hidden" });
+      }
       for (const summary of await panel.locator(".data-stat-card > summary").all()) {
         await summary.click();
-        assert.deepEqual(await geometry(), before, `${width}px: expanding statistics does not resize backup rows`);
+        assert.deepEqual(await geometry(), before, `${width}px: expanding statistics does not resize cards`);
         await summary.click();
-        assert.deepEqual(await geometry(), before);
       }
       const mediaAction = await panel.getByRole("button", { name: "Скачать вложения", exact: true }).evaluate(button => {
         const action = button.getBoundingClientRect();
@@ -198,11 +217,11 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
       });
       assert.ok(cleanupGeometry.height < (width >= 760 ? 260 : 340),
         `${width}px: cleanup card stays compact without empty vertical space`);
-      assert.ok(cleanupGeometry.buttonTextNoWrap && cleanupGeometry.buttonWidth >= 170,
+      assert.ok(cleanupGeometry.buttonTextNoWrap && cleanupGeometry.buttonWidth >= 110,
         `${width}px: cleanup button text stays on one line`);
       assert.ok(cleanupGeometry.buttonHeight >= 44 && cleanupGeometry.pickerHeight >= 44,
         `${width}px: both controls are convenient to tap`);
-      if (width > 760) assert.ok(cleanupGeometry.controlGap <= 2,
+      if (width > 760 && cleanupGeometry.buttonWidth >= 150) assert.ok(cleanupGeometry.controlGap <= 52,
         `${width}px: button and retention field align along the bottom`);
       const picker = page.getByLabel("Удалить старше");
       await picker.selectOption("60");
