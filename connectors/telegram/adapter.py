@@ -414,10 +414,7 @@ class TelegramAdapter:
         if membership := own or update.get("chat_member"):
             await self._handle_membership(membership, bool(own), gateway, spool)
         elif callback := update.get("callback_query"):
-            # Подтверждаем старую клавиатуру, не используя устаревший ID диалога.
-            await self.bot.answer_callback_query(
-                callback["id"], text="Меню обновилось. Нажмите /start."
-            )
+            await self.teacher_panel.callback(callback, gateway, spool)
         elif message := update.get("message"):
             sender = message.get("from")
             if sender and not sender.get("is_bot"):
