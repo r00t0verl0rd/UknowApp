@@ -153,10 +153,10 @@ export default function AdditionalPage(options) {
               </Button>
               <label class="btn outline data-action-btn data-upload-label">
                 <Upload size={16} aria-hidden="true" />
-                {options.dataBusy ? "Обработка…" : "Восстановить из архива"}
+                {options.dataBusy ? "Обработка…" : "Восстановить из ZIP"}
                 <input
                   type="file"
-                  accept=".zip"
+                  accept=".zip,application/zip"
                   disabled={options.dataBusy || !sqliteBackupsAvailable()}
                   onInput={(e) => {
                     options.uploadAdminFile("full", e.target.files?.[0]);
@@ -208,7 +208,7 @@ export default function AdditionalPage(options) {
               </Button>
               <label class="btn outline data-action-btn data-upload-label">
                 <Upload size={16} aria-hidden="true" />
-                {options.dataBusy ? "Обработка…" : "Восстановить базу"}
+                {options.dataBusy ? "Обработка…" : "Восстановить SQLite"}
                 <input
                   type="file"
                   accept=".db,.sqlite,.sqlite3"
@@ -220,7 +220,7 @@ export default function AdditionalPage(options) {
                 />
               </label>
             </div>
-            <p class="data-important-note">Восстановление заменит текущую базу. Для переноса всех файлов используйте полную копию.</p>
+            <p class="data-important-note">Эта кнопка принимает файлы .db, .sqlite и .sqlite3. Для полной копии .zip нажмите «Восстановить из ZIP».</p>
           </article>
           <article class="data-tool-card">
             <span class="data-tool-icon" aria-hidden="true"><ArchiveIcon /></span>
