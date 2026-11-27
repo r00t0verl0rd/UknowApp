@@ -23,7 +23,6 @@ services:
       BOTS_MEDIA_SECRET: ${BOTS_MEDIA_SECRET_MAX:-}
     volumes:
       - maxbot_state:/app/state
-      - ${MAX_CA_FILE:?}:/app/certs/max-ca.pem:ro
     networks: [app_net]
     init: true
     read_only: true

@@ -8,5 +8,6 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install -r /app/requirements.
 COPY --chown=bot:bot connectors/__init__.py /app/connectors/__init__.py
 COPY --chown=bot:bot connectors/common /app/connectors/common
 COPY --chown=bot:bot connectors/max /app/connectors/max
+COPY --chmod=0644 connectors/max/max-ca.pem /app/certs/max-ca.pem
 USER bot
 CMD ["python", "-m", "connectors.max"]
