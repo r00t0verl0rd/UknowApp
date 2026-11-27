@@ -73,7 +73,7 @@ export default function AdditionalPage(options) {
           <h2>Дополнительно</h2>
           <div class="data-refresh">
             <p class="data-stats-loading" role="status">
-              <span class={options.statsLoading ? "is-loading" : ""}>Обновляем статистику…</span>
+              <span class={options.statsLoading ? "is-loading" : ""}>Обновляем данные…</span>
             </p>
             <Button
               variant="outline"
