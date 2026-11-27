@@ -138,9 +138,9 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
     await page.getByText("6 пользователей", { exact: false }).waitFor();
     assert.equal(statsRequests, 3);
     const databaseCard = page.locator(".data-stat-card").first();
-    assert.match(await databaseCard.locator(".data-stat-value").innerText(), /^4\s*КБ$/);
-    assert.match(await databaseCard.getByText("Размер базы", { exact: false }).innerText(), /8\s*КБ/);
-    assert.match(await databaseCard.getByText("Свободно внутри базы", { exact: false }).innerText(), /4\s*КБ/);
+    assert.match(await databaseCard.locator(".data-stat-value").innerText(), /^8\s*КБ$/);
+    assert.equal(await databaseCard.getByText("Свободно внутри базы", { exact: false }).count(), 0);
+    assert.equal(await databaseCard.getByText("Занято страницами базы", { exact: false }).count(), 0);
     // Одинаковые действия и единый стиль для компьютера и телефона.
     for (const width of [1280, 1024, 900, 760, 390, 320]) {
       await page.setViewportSize({ width, height: 850 });
