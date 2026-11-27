@@ -24,7 +24,7 @@ cd ~/UknowApp
 git fetch origin
 git switch test
 git pull --ff-only origin test
-docker compose stop backend
+docker compose stop core
 docker compose --profile bots stop tgbot
 cp -p .env .env.before-nats
 openssl rand -hex 32
@@ -57,8 +57,8 @@ chmod 600 .env
 bash infrastructure/deploy.sh --check
 docker compose up -d --build
 docker compose ps
-docker compose logs --tail=80 backend nats tgbot
-docker compose exec -T backend python -c 'import urllib.request; print(urllib.request.urlopen("http://127.0.0.1:8000/api/ready", timeout=5).read().decode())'
+docker compose logs --tail=80 core nats tgbot
+docker compose exec -T core python -c 'import urllib.request; print(urllib.request.urlopen("http://127.0.0.1:8000/api/ready", timeout=5).read().decode())'
 ```
 
 `/api/health` проверяет жизнеспособность Core и намеренно допускает деградацию NATS. `/api/ready` возвращает HTTP 503, если включённый Gateway или Runtime не готовы. Перед серверным тестом проверьте readiness и heartbeat коннектора в админ-диагностике; зелёный Docker healthcheck сам по себе недостаточен. Не запускайте старые NFS-скрипты.
@@ -83,7 +83,7 @@ docker compose config --quiet
 docker compose down
 docker compose up -d --build
 docker compose ps
-docker compose logs --tail=80 backend nats tgbot
+docker compose logs --tail=80 core nats tgbot
 ```
 
 ## Разные VPS

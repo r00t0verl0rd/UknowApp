@@ -51,7 +51,7 @@ TELEGRAM_BOT_TOKEN=
 
 ```bash
 docker compose up -d --build
-docker compose logs --tail=80 backend nats tgbot
+docker compose logs --tail=80 core nats tgbot
 ```
 
 ## Локальный API на одном VPS
@@ -102,7 +102,7 @@ Local → cloud: корректно завершите работу локаль
 
 ```bash
 docker compose ps
-docker compose logs --tail=80 backend nats tgbot
+docker compose logs --tail=80 core nats tgbot
 ```
 
 В local-режиме дополнительно проверьте логи `telegram-bot-api`. Проверьте реальные сообщения и вложения в обе стороны. Диагностика коннектора доступна администратору через `/api/admin/bots/diagnostics`.

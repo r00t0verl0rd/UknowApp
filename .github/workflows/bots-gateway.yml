@@ -105,5 +105,5 @@ jobs:
         run: |
           cp .env.example .env
           docker compose --profile gateway --profile bots config --quiet
-          docker compose --profile gateway --profile bots build backend frontend tgbot
+          docker compose --profile gateway --profile bots build core web-panel tgbot
           docker build -f connectors/max/Dockerfile .

@@ -65,7 +65,7 @@ SSE (Server-Sent Events) передаёт краткие обновления в
 
 ## Развёртывание и хранение
 
-`docker-compose.yml` запускает backend и frontend (Caddy). Дополнительные сервисы включаются профилями: `gateway` для NATS, `bots` для Telegram-коннектора, `telegram` для локального Bot API, `postgres` для PostgreSQL.
+`docker-compose.yml` запускает `core` и `web-panel` (Caddy). Дополнительные сервисы включаются профилями: `gateway` для NATS, `bots` для Telegram-коннектора, `telegram` для локального Bot API, `postgres` для PostgreSQL.
 
 | Том Docker | Что хранится |
 | --- | --- |
@@ -86,3 +86,5 @@ Core автоматически обновляет схему при запус�
 - Секреты не хранятся в Git, тома Docker не удаляются при обновлении.
 
 [Bots Gateway](bots-gateway.md) · [Main DB и Runtime DB](runtime-storage.md) · [Сообщения и права доступа](communication-architecture.md) · [База данных](database-migrations.md) · [Запуск приложения](../README.md)
+
+При первом обновлении со старых имён сервисов остановите и удалите старые контейнеры `uknowapp-frontend-1` и `uknowapp-backend-1` командой `docker rm -f uknowapp-frontend-1 uknowapp-backend-1`, затем запустите Compose с текущими файлами и профилями. Старые контейнеры занимают те же адреса и порты. Именованные тома с данными сохраняются.

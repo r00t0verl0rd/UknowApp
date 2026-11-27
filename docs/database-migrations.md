@@ -29,7 +29,7 @@ DATABASE_URL=postgresql+psycopg://uknowapp:YOUR_PASSWORD@postgres:5432/uknowapp 
 
 ```bash
 docker compose --profile postgres up -d postgres
-docker compose build backend
+docker compose build core
 docker compose up -d --build
 ```
 

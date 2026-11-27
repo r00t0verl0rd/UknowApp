@@ -161,7 +161,7 @@ def switch(mode):
     candidate = protected_file(rewrite_env(original, values), ".env.telegram-candidate-")
     try:
         compose("config", "--quiet", envfile=candidate)
-        compose("build", "backend", "frontend", "tgbot", envfile=candidate)
+        compose("build", "core", "web-panel", "tgbot", envfile=candidate)
         if mode == "local":
             compose("pull", "telegram-bot-api", envfile=candidate)
         backup = protected_file(original, ".env.telegram-backup-")
@@ -182,12 +182,12 @@ def switch(mode):
             compose("up", "-d", "--no-deps", "telegram-bot-api")
         if "postgres" in values["COMPOSE_PROFILES"].split(","):
             compose("up", "-d", "--wait", "--wait-timeout", "180", "postgres")
-        compose("up", "-d", "nats", "backend", "frontend")
+        compose("up", "-d", "nats", "core", "web-panel")
         if old_mode != mode or not bot:
             print("Checking target Telegram API (cloud may have a 10-minute cooldown)...", flush=True)
             api("getMe")
         compose("up", "-d", "--no-deps", "--wait", "--wait-timeout", "180", "tgbot")
-        compose("exec", "-T", "backend", "python", "-c",
+        compose("exec", "-T", "core", "python", "-c",
                 'import urllib.request; print(urllib.request.urlopen("http://127.0.0.1:8000/api/ready", timeout=10).status)')
         compose("ps")
         print("Telegram mode: " + mode + " | attachment limit: " + ("20" if mode == "cloud" else "888") + " MiB")

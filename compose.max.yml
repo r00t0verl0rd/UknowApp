@@ -1,5 +1,5 @@
 services:
-  backend:
+  core:
     environment:
       BOTS_MEDIA_SECRET_MAX: ${BOTS_MEDIA_SECRET_MAX:?}
   nats:
@@ -19,7 +19,7 @@ services:
       BOTS_NATS_URL: nats://nats:4222
       BOTS_NATS_USER: max
       BOTS_NATS_PASSWORD: ${BOTS_NATS_MAX_PASSWORD:-}
-      BOTS_MEDIA_URL: http://backend:8000
+      BOTS_MEDIA_URL: http://core:8000
       BOTS_MEDIA_SECRET: ${BOTS_MEDIA_SECRET_MAX:-}
     volumes:
       - maxbot_state:/app/state

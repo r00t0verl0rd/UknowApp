@@ -6,7 +6,7 @@ services:
     profiles: [telegram]
     networks: [app_net]
 
-  backend:
+  core:
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -34,6 +34,7 @@ services:
       FORWARDED_ALLOW_IPS: ${UKNOWAPP_CADDY_IP:-172.31.255.2}
     networks:
       app_net:
+        aliases: [backend]
         ipv4_address: ${UKNOWAPP_BACKEND_IP:-172.31.255.3}
     volumes:
       - app_data:/app/data
@@ -88,7 +89,7 @@ services:
       BOTS_NATS_URL: nats://nats:4222
       BOTS_NATS_USER: telegram
       BOTS_NATS_PASSWORD: ${BOTS_NATS_TELEGRAM_PASSWORD:-}
-      BOTS_MEDIA_URL: http://backend:8000
+      BOTS_MEDIA_URL: http://core:8000
       BOTS_MEDIA_SECRET: ${BOTS_MEDIA_SECRET_TELEGRAM:-}
     volumes:
       - tgbot_state:/app/state
@@ -126,7 +127,7 @@ services:
       timeout: 5s
       retries: 10
 
-  frontend:
+  web-panel:
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -140,7 +141,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      backend:
+      core:
         condition: service_healthy
     networks:
       app_net:

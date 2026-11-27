@@ -70,7 +70,7 @@ uknowschool.ru, www.uknowschool.ru {
 
     # SSE frames must not wait for compression or response buffering.
     handle /api/panel/events {
-        reverse_proxy backend:8000 {
+        reverse_proxy core:8000 {
             flush_interval -1
         }
     }
@@ -80,7 +80,7 @@ uknowschool.ru, www.uknowschool.ru {
     }
 
     handle @backend {
-        reverse_proxy backend:8000
+        reverse_proxy core:8000
     }
 
     handle @appIcons {
