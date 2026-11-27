@@ -71,20 +71,22 @@ export default function AdditionalPage(options) {
       <Panel class="additional-panel">
         <div class="additional-heading">
           <h2>Дополнительно</h2>
-          <Button
-            variant="outline"
-            class="data-action-btn"
-            onClick={options.loadDataStats}
-            disabled={options.dataBusy || options.statsLoading}
-            aria-busy={options.statsLoading}
-          >
-            <RefreshCw size={16} aria-hidden="true" />
-            {options.statsLoading ? "Обновляем…" : "Обновить"}
-          </Button>
+          <div class="data-refresh">
+            <p class="data-stats-loading" role="status">
+              <span class={options.statsLoading ? "is-loading" : ""}>Собираем сведения о данных…</span>
+            </p>
+            <Button
+              variant="outline"
+              class="data-action-btn"
+              onClick={options.loadDataStats}
+              disabled={options.dataBusy || options.statsLoading}
+              aria-busy={options.statsLoading}
+            >
+              <RefreshCw size={16} aria-hidden="true" />
+              Обновить
+            </Button>
+          </div>
         </div>
-        {options.statsLoading && (
-          <p class="data-stats-loading" role="status">Собираем сведения о данных…</p>
-        )}
         {options.statsError && (
           <div class="data-stats-feedback" role="alert">
             <div class="data-stats-feedback-copy">

@@ -92,7 +92,8 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
   try {
     const page = await browser.newPage();
     let statsRequests = 0;
-    await page.route("**/api/**", route => {
+    let statsGate;
+    await page.route("**/api/**", async route => {
       const path = new URL(route.request().url()).pathname;
       if (path === "/api/panel/me") {
         return route.fulfill({ json: {
@@ -102,6 +103,7 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
       }
       if (path === "/api/admin/data/stats") {
         statsRequests += 1;
+        if (statsGate) await statsGate;
         return statsRequests === 1
           ? route.fulfill({ status: 500, json: { detail: "Internal Server Error" } })
           : route.fulfill({ json: {
@@ -132,9 +134,43 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
     await page.getByText("7 пользователей").waitFor({ timeout: 12000 });
     assert.ok(statsRequests >= 2);
     assert.equal(await page.getByText("Не удалось загрузить статистику").count(), 0);
-    await page.getByRole("button", { name: "Обновить", exact: true }).click();
+    const refresh = page.getByRole("button", { name: "Обновить", exact: true });
+    const status = page.locator(".data-stats-loading > span");
+    const headerGeometry = () => page.locator(".additional-panel").evaluate(panel => {
+      const top = panel.getBoundingClientRect().top;
+      const button = panel.querySelector(".data-refresh > button").getBoundingClientRect();
+      return {
+        statsTop: panel.querySelector(".data-stats-grid").getBoundingClientRect().top - top,
+        buttonTop: button.top - top,
+        buttonWidth: button.width,
+        buttonLeft: button.left,
+      };
+    });
+    for (const width of [1280, 390, 320]) {
+      await page.setViewportSize({ width, height: 850 });
+      const before = await headerGeometry();
+      let release;
+      statsGate = new Promise(resolve => { release = resolve; });
+      try {
+        await refresh.click();
+        await status.waitFor({ state: "visible" });
+        assert.equal(await refresh.getAttribute("aria-busy"), "true");
+        assert.ok(await refresh.isDisabled());
+        assert.equal(await refresh.locator("svg").evaluate(svg => getComputedStyle(svg).animationName), "data-refresh-spin");
+        const loading = await status.boundingBox();
+        const button = await refresh.boundingBox();
+        assert.ok(loading.x + loading.width <= button.x + 1, `${width}px: loading status is left of refresh`);
+        assert.deepEqual(await headerGeometry(), before, `${width}px: refresh does not shift layout`);
+      } finally {
+        release();
+        statsGate = null;
+      }
+      await status.waitFor({ state: "hidden" });
+      assert.deepEqual(await headerGeometry(), before);
+      assert.equal(await refresh.locator("svg").evaluate(svg => getComputedStyle(svg).animationName), "none");
+    }
     await page.getByText("6 пользователей", { exact: false }).waitFor();
-    assert.equal(statsRequests, 3);
+    assert.equal(statsRequests, 5);
     const databaseCard = page.locator(".data-stat-card").first();
     assert.match(await databaseCard.locator(".data-stat-value").innerText(), /^8\s*КБ$/);
     assert.equal(await databaseCard.getByText("Свободно внутри базы", { exact: false }).count(), 0);
