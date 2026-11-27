@@ -10,7 +10,8 @@ from fastapi import (
     Request,
 )
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
+from sqlalchemy.orm import joinedload
 
 from app.core.database import SessionLocal
 from app.event_hub import (
@@ -57,20 +58,20 @@ def visible_payload(db, principal, payload):
             # RAM keeps small hints, not another copy of chat history.
             if event.get("action") == "upsert" and event.get("message_id"):
                 model = PersonalMessage if event["conversation_type"] == "personal" else Message
-                row = db.get(model, event["message_id"])
-                if row is not None and row.conversation_id == event["conversation_id"]:
+                chat_id, message_id = event["conversation_id"], event["message_id"]
+                previous = select(func.max(model.id)).where(
+                    model.conversation_id == chat_id, model.id < message_id,
+                ).correlate(None).scalar_subquery()
+                result = db.execute(
+                    select(model, previous).options(joinedload(model.sender))
+                    .where(model.conversation_id == chat_id, model.id == message_id)
+                ).one_or_none()
+                if result:
+                    row, event["previous_message_id"] = result
                     event["message"] = (
                         personal_message_dict(row, principal) if model is PersonalMessage else
                         panel_message_dict(row, expose_internal_metadata=principal["role"] == "admin",
                                            principal=principal)
-                    )
-                    # Global message IDs need not be consecutive within a chat.
-                    # This indexed predecessor detects missing updates without
-                    # requiring a full history request for each new message.
-                    event["previous_message_id"] = db.scalar(
-                        select(model.id).where(model.conversation_id == row.conversation_id,
-                                               model.id < row.id)
-                        .order_by(model.id.desc()).limit(1)
                     )
                     return json.dumps(event, ensure_ascii=False, separators=(",", ":"))
             return payload

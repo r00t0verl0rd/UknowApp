@@ -71,8 +71,9 @@ class BotsGateway:
         self.outbox_wakeup = asyncio.Event()
         self.diagnostics = {}
         self.connectors = {}
-        self._db_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="bots-db")
+        self._db_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="bots-db")
         self._db_slot = asyncio.Semaphore(1)
+        self._read_slot = asyncio.Semaphore(1)
         self._loop = None
         self._projection_cursors = {}
         self._projection_more = False
@@ -81,9 +82,10 @@ class BotsGateway:
         if self._loop and not self._loop.is_closed():
             self._loop.call_soon_threadsafe(self.outbox_wakeup.set)
 
-    async def run_db(self, work, *args):
-        # Dedicated, bounded worker; no ORM objects cross the thread boundary.
-        async with self._db_slot:
+    async def run_db(self, work, *args, read_only=False):
+        # Observational reads use a separate slot. All mutations share one writer.
+        slot = self._read_slot if read_only else self._db_slot
+        async with slot:
             future = asyncio.get_running_loop().run_in_executor(self._db_executor, partial(work, *args))
             try:
                 return await asyncio.shield(future)
@@ -351,7 +353,7 @@ class BotsGateway:
 
     async def collect_diagnostics(self):
         while True:
-            stats = await self.run_db(self._queue_stats)
+            stats = await self.run_db(self._queue_stats, read_only=True)
             self.diagnostics = stats
             for platform in self.platforms:
                 pending = sum(v["count"] for d in stats.get(platform, {}).values() for k, v in d.items() if k in PENDING)
@@ -367,7 +369,7 @@ class BotsGateway:
                 event = json.loads(await queue.get())
                 if event.get("conversation_type") != "conversation" or event.get("action") not in {"upsert", "delete", "read"}:
                     continue
-                targets = await self.run_db(self._panel_targets, event["conversation_id"])
+                targets = await self.run_db(self._panel_targets, event["conversation_id"], read_only=True)
                 for platform, actor in targets:
                     await self.nc.publish(f"{PREFIX}.ui.{platform}", encode({"actor": actor}))
         finally:

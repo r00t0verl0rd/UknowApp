@@ -101,6 +101,27 @@ def test_slow_gateway_sql_does_not_block_http(api, tmp_path, monkeypatch):
         engine.dispose()
 
 
+def test_gateway_read_can_finish_while_writer_is_busy():
+    async def run():
+        instance = gateway.BotsGateway()
+        entered, release = threading.Event(), threading.Event()
+
+        def write():
+            entered.set()
+            assert release.wait(5)
+
+        writer = asyncio.create_task(instance.run_db(write))
+        try:
+            assert await asyncio.to_thread(entered.wait, 2)
+            assert await asyncio.wait_for(instance.run_db(lambda: 42, read_only=True), 2) == 42
+        finally:
+            release.set()
+            await writer
+            await instance.close()
+
+    asyncio.run(run())
+
+
 def test_gateway_db_worker_is_bounded():
     async def run():
         instance = gateway.BotsGateway()

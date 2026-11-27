@@ -103,10 +103,14 @@ def _dispatch(payload: dict, event_id: int | None) -> None:
     with _subscribers_lock:
         subscribers = tuple(_subscribers.items())
 
+    encoded_by_role = {}
     for queue, (loop, principal) in subscribers:
         if not _can_receive(principal, payload.get("audience")):
             continue
-        encoded = _payload_for_subscriber(payload, principal)
+        role = principal["role"]
+        if role not in encoded_by_role:
+            encoded_by_role[role] = _payload_for_subscriber(payload, principal)
+        encoded = encoded_by_role[role]
         try:
             loop.call_soon_threadsafe(_enqueue, queue, encoded, event_id)
         except RuntimeError:
