@@ -1,22 +1,43 @@
-# Telegram API (test)
+# Telegram Bot API
 
-Telegram работает через отдельный коннектор `tg_bot`. Core не запускает polling и не хранит токен Bot API. Настройка NATS и коннектора — в [Bots Gateway](bots-gateway.md).
+Telegram работает в отдельном контейнере `uknow-tgbot`. Core хранит школьные данные и проверяет доступы; токен Telegram находится только в `.env` и передаётся коннектору.
 
-## Какой режим выбрать
+## Выберите режим
 
-| | Облачный (cloud) | Локальный (local) |
+| Режим | Настройки | Ограничение UknowApp |
 | --- | --- | --- |
-| API | Официальный сервер Telegram | Собственный сервер Bot API |
-| Лимит вложения UknowApp (при включённом Telegram) | 20 МиБ | 888 МиБ |
-| Что нужно | Токен BotFather | Токен, API ID, API Hash, сервер Bot API |
+| `cloud` | Токен от BotFather | Файлы до 20 МиБ |
+| `local` | Токен, API ID и API Hash | Файлы до 888 МиБ |
 
-Один и тот же бот может использовать оба режима, но не одновременно.
+По умолчанию используйте `cloud`. Не запускайте одновременно два polling-процесса с одним токеном.
 
-## Быстрое переключение на одном VPS
+## Настройка
 
-Только администратор VPS через SSH (root или sudo), из корня проекта.
-В веб-панели и Telegram команды переключения нет: Core не получает доступ к Docker.
+Для `cloud` задайте в `.env`:
 
+```env
+TELEGRAM_BOT_TOKEN=...
+TELEGRAM_API_MODE=cloud
+BOTS_PLATFORMS=telegram
+COMPOSE_PROFILES=gateway,bots
+```
+
+Для `local` сначала получите API ID и API Hash на [my.telegram.org/apps](https://my.telegram.org/apps), затем укажите их:
+
+```env
+TELEGRAM_API_MODE=local
+TELEGRAM_API_ID=...
+TELEGRAM_API_HASH=...
+COMPOSE_PROFILES=gateway,bots,telegram
+```
+
+Создайте секреты NATS и передачи файлов по [руководству по ботам](bots-gateway.md). Для локального режима запустите Telegram Bot API:
+
+```bash
+docker compose up -d --build
+```
+
+Для переключения стандартной установки на одном VPS используйте скрипт от `root` из папки проекта:
 
 ```bash
 python3 infrastructure/telegram-mode.py cloud
@@ -24,87 +45,6 @@ python3 infrastructure/telegram-mode.py local
 python3 infrastructure/telegram-mode.py status
 ```
 
-Выберите одну команду. Для cloud достаточно токена в .env; для local один раз
-заполните API ID и Hash. Скрипт сохраняет .env в защищённую резервную копию,
-добавляет недостающие секреты Gateway, меняет только нужные профили и платформы,
-сохраняет PostgreSQL и тома, останавливает polling перед сменой API, вызывает
-logOut на прежнем API, проверяет доступность нового API и запускает tg_bot.
-При возврате в cloud Telegram может блокировать вход до 10 минут; скрипт ждёт.
-При ошибке после смены режима исправьте причину и повторите ту же команду.
-Не запускайте другие polling-процессы с этим токеном. Команда предназначена
-только для стандартной Compose-установки на одном VPS; удалённые варианты
-переключаются по ручной инструкции ниже. Если ещё не применено обновление IPAM,
-сначала пересоздайте сеть по инструкции Gateway (без удаления томов).
+Запускайте одну команду за раз. Скрипт сохраняет `.env` и сам останавливает прежний polling перед переключением. Для коннектора на отдельном сервере или установки с MAX overlay этот скрипт не используйте: он не управляет удалённым коннектором и Compose-файлом MAX.
 
-## Облачный API (ручная настройка)
-
-Сначала настройте NATS и три секрета по [инструкции Gateway](bots-gateway.md). В `.env`:
-
-```dotenv
-COMPOSE_PROFILES=gateway,bots
-BOTS_PLATFORMS=telegram
-TELEGRAM_API_MODE=cloud
-TELEGRAM_BOT_TOKEN=
-```
-
-Заполните токен. API ID и Hash не нужны; `TELEGRAM_API_URL` не используется. Файлы больше 20 МиБ не архивируются, но входящее сообщение сохраняется с отметкой об отсутствии файла. В веб-панели вложения сверх лимита отклоняются.
-
-```bash
-docker compose up -d --build
-docker compose logs --tail=80 core nats tg_bot
-```
-
-## Локальный API на одном VPS
-
-Получите API ID и Hash на [my.telegram.org](https://my.telegram.org/apps), сохраните секреты Gateway и токен. Добавьте профиль `telegram`:
-
-```dotenv
-COMPOSE_PROFILES=gateway,bots,telegram
-BOTS_PLATFORMS=telegram
-TELEGRAM_API_MODE=local
-TELEGRAM_API_ID=
-TELEGRAM_API_HASH=
-TELEGRAM_API_URL=http://telegram-bot-api:8081
-TELEGRAM_CACHE_HOST_DIR=/srv/uknow-telegram
-```
-
-Для новой установки заполните ID и Hash и выполните `docker compose up -d --build`. Если нужен PostgreSQL, сохраняйте профиль `postgres`.
-
-## Отдельный VPS
-
-Для удалённого Bot API не добавляйте профиль `telegram` на Core. Укажите приватный адрес API и доступный каталог кеша в настройках коннектора. Кеш монтирует только `tg_bot`, не Core. Порт 8081 не публикуйте в интернет. Размещение удалённого коннектора описано в [Bots Gateway](bots-gateway.md).
-
-## Переключение работающего бота (ручное)
-
-> [!IMPORTANT]
-> Один токен — один polling-процесс. Для переноса polling без смены Bot API не вызывайте `logOut`.
-
-Cloud → local:
-
-1. Остановите `tg_bot` и убедитесь, что других процессов polling нет.
-2. Один раз вызовите облачный метод `logOut`, до запуска локального API.
-3. Настройте local-режим, профили и ID/Hash.
-4. Выполните `docker compose up -d --build`.
-5. Проверьте логи, `/start`, сообщения и вложения.
-
-Local → cloud: корректно завершите работу локального API по [официальной инструкции Telegram](https://github.com/tdlib/telegram-bot-api#moving-a-bot-to-a-local-server). После облачного `logOut` возврат в облако может быть недоступен до 10 минут.
-
-## Лимиты вложений
-
-`TELEGRAM_API_MODE` задаёт лимит на Core и tg_bot: 20 × 1024² байт в cloud,
-888 × 1024² байт в local. Это ограничения UknowApp, а не гарантии Telegram
-для всех типов медиа. При выключенном Telegram веб-панель сохраняет лимит 1 ГиБ.
-Оба вида веб-чатов используют один лимит; ранее архивированные файлы остаются доступны.
-На одном VPS скрипт пересоздаёт Core и коннектор автоматически; обновите страницу веб-панели.
-На удалённом коннекторе режим должен совпадать с режимом Core.
-
-## Проверка
-
-```bash
-docker compose ps
-docker compose logs --tail=80 core nats tg_bot
-```
-
-В local-режиме дополнительно проверьте логи `telegram-bot-api`. Проверьте реальные сообщения и вложения в обе стороны. Диагностика коннектора доступна администратору через `/api/admin/bots/diagnostics`.
-
-[Настройки](../.env.example) · [Bots Gateway](bots-gateway.md)
+Подробнее о подключении MAX и общих профилях — в [руководстве по ботам](bots-gateway.md). Кеш Telegram Bot API хранится отдельно от Core; не удаляйте его том или каталог при обновлении.
