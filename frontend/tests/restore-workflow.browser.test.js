@@ -163,11 +163,19 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
       if (columns === 3) {
         assert.ok(cards[0].right < cards[1].left && cards[1].right < cards[2].left &&
           Math.abs(cards[0].top - cards[2].top) < 1, "three cards share one row");
+        assert.ok(cards.every(card => Math.abs(card.bottom - cards[0].bottom) < 1),
+          "desktop: all three cards have aligned lower edges");
+        const downloadPositions = await backupSection.locator(".data-tool-card button.data-action-btn").evaluateAll(
+          buttons => buttons.map(button => button.getBoundingClientRect().top));
+        assert.ok(downloadPositions.every(top => Math.abs(top - downloadPositions[0]) < 1),
+          "desktop: all download buttons share one baseline");
       }
       if (width <= 540) {
         assert.ok(cards[0].bottom < cards[1].top && cards[1].bottom < cards[2].top,
           `${width}px: cards stack on mobile`);
       }
+      assert.ok(await backupSection.getByText("Восстановление из полной копии", { exact: true }).isVisible(),
+        `${width}px: attachment restore method is explained without an extra button`);
       const instructions = backupSection.getByText("Перед восстановлением", { exact: true });
       const before = await backupSection.locator(".data-backup-cards").evaluate(grid => grid.getBoundingClientRect().height);
       await instructions.click();

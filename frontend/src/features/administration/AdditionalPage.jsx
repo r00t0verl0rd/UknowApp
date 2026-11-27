@@ -1,5 +1,7 @@
 import {
   IconArchive as ArchiveIcon,
+  IconCheck as Check,
+  IconPaperclip as Paperclip,
   IconChevronDown as ChevronDown,
   IconClock3 as Clock3,
   IconDatabase as DatabaseIcon,
@@ -104,15 +106,15 @@ export default function AdditionalPage(options) {
           </article>
           <article class="data-stat-card">
             <div class="data-stat-heading">
-              <span class="data-tool-icon" aria-hidden="true"><ArchiveIcon /></span>
-              <span>Вложения из переписок</span>
+              <span class="data-tool-icon" aria-hidden="true"><Paperclip /></span>
+              <span>Вложения <small>Из переписок</small></span>
             </div>
             <div class="data-stat-metric">
               <b class="data-stat-value">{options.dataStats ? formatBytes(options.dataStats.media_bytes) : "—"}</b>
               <small>{options.dataStats?.media_files ?? "—"} файлов</small>
             </div>
             <details class="data-info-details">
-              <summary>По типам файлов <ChevronDown size={15} aria-hidden="true" /></summary>
+              <summary>Подробнее <ChevronDown size={15} aria-hidden="true" /></summary>
               <div class="data-stat-details">
                 <span>Изображения <b>{options.dataStats?.media_images ?? "—"}</b></span>
                 <span>Аудио <b>{options.dataStats?.media_audio ?? "—"}</b></span>
@@ -191,7 +193,7 @@ export default function AdditionalPage(options) {
             </article>
             <article class="data-tool-card">
               <div class="data-tool-heading">
-                <span class="data-tool-icon" aria-hidden="true"><ArchiveIcon /></span>
+                <span class="data-tool-icon" aria-hidden="true"><Paperclip /></span>
                 <div class="data-tool-copy">
                   <h4>Вложения <small>ZIP</small></h4>
                   <p>Фото, аудио, видео и документы</p>
@@ -206,6 +208,7 @@ export default function AdditionalPage(options) {
                 >
                   <Download size={16} aria-hidden="true" /> Скачать вложения
                 </Button>
+                <p class="data-restore-hint">Восстановление из полной копии</p>
               </div>
             </article>
           </div>
@@ -217,13 +220,14 @@ export default function AdditionalPage(options) {
             )}
             {options.restore && (
               <p role="status" class={"data-operation-status" + (options.restore.status === "completed" ? " is-complete" : "")}>
-                {options.restore.status === "completed"
-                  ? "Данные успешно восстановлены."
+                {options.restore.status === "completed" && <Check size={15} aria-hidden="true" />}
+                <span>{options.restore.status === "completed"
+                  ? "Данные успешно восстановлены"
                   : options.restore.status === "failed"
                     ? "Восстановление не завершилось. Исходные данные сохранены."
-                    : "Архив принят. Проверяем результат восстановления."}
+                    : "Архив принят. Проверяем результат восстановления."}</span>
                 {options.restore.finished_at &&
-                  " " + new Date(options.restore.finished_at).toLocaleString("ru-RU")}
+                  <time dateTime={options.restore.finished_at}>{new Date(options.restore.finished_at).toLocaleString("ru-RU")}</time>}
               </p>
             )}
             <details class="data-info-details data-backup-details">
