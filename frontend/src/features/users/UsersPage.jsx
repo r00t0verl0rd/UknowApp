@@ -107,7 +107,6 @@ export default function UsersPage(options) {
                               <path fill-rule="evenodd" d="M12 2.5a9.5 9.5 0 0 0-9.5 9.5v8.8l4.4-1.2A9.5 9.5 0 1 0 12 2.5Zm0 3a6.5 6.5 0 0 0-6.5 6.5v4.9l2-.6A6.5 6.5 0 1 0 12 5.5Z" />
                             )}
                           </svg>
-                          {connected() && <span class="user-messenger-status"><Check aria-hidden="true" /></span>}
                         </IconButton>
                       );
                     }}

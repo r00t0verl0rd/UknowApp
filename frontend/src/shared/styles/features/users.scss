@@ -331,22 +331,6 @@
   width:17px;
   height:17px;
 }
-.user-messenger-status {
-  position:absolute;
-  bottom:2px;
-  right:2px;
-  display:grid;
-  place-items:center;
-  width:11px;
-  height:11px;
-  border-radius:50%;
-  color:var(--success);
-  background:var(--ui-control-bg);
-}
-.user-messenger-status > svg {
-  width:10px;
-  height:10px;
-}
 .user-actions .user-messenger-btn.is-connected {
   color:var(--success);
   border-color:color-mix(in srgb, var(--success) 45%, var(--ui-border));
