@@ -527,3 +527,24 @@ def test_membership_rate_limit_resumes_at_same_student(monkeypatch):
         sleep.assert_awaited_once_with(2)
         assert gateway.rpc.await_count == 2
     asyncio.run(run())
+
+
+def test_stale_teacher_callback_never_changes_selection(tmp_path):
+    async def run():
+        spool = EventSpool(tmp_path / "stale.db", "telegram")
+        bot = SimpleNamespace(answer_callback_query=AsyncMock())
+        panel = TeacherPanel(bot)
+        gateway = SimpleNamespace(rpc=AsyncMock())
+        try:
+            spool.select_conversation("42", 1)
+            spool.save_panel("42", {"message_id": 9, "revision": "new", "actions": ["open:2"]})
+            for message_id, data in [(8, "panel:new:open:2"), (9, "panel:old:open:2")]:
+                await panel.callback({"id": "cb", "from": {"id": 42}, "data": data,
+                                      "message": {"chat": {"type": "private"}, "message_id": message_id}},
+                                     gateway, spool)
+            gateway.rpc.assert_not_awaited()
+            assert spool.selected_conversation("42") == 1
+            assert bot.answer_callback_query.await_count == 2
+        finally:
+            spool.close()
+    asyncio.run(run())

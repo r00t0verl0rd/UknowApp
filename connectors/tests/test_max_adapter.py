@@ -7,7 +7,7 @@ from connectors.max.adapter import MaxAdapter
 
 
 class MaxMessaging(unittest.IsolatedAsyncioTestCase):
-    async def test_background_updates_keep_one_panel_at_the_bottom(self):
+    async def test_background_updates_edit_unchanged_navigation(self):
         adapter = MaxAdapter(None, "test")
         adapter.api = AsyncMock(return_value={})
         adapter.message = AsyncMock(return_value="panel-new")
@@ -19,11 +19,11 @@ class MaxMessaging(unittest.IsolatedAsyncioTestCase):
         }))
         with tempfile.TemporaryDirectory() as tmp:
             spool = EventSpool(f"{tmp}/max-spool.db", "max")
-            spool.save_panel("42", {"mid": "panel-old", "role": "teacher", "text": "Старая сводка",
-                                    "buttons": ["Ученица"]})
             try:
+                await adapter.refresh_panel("42", gateway, spool)
+                gateway.rpc.return_value["conversations"][0]["unread"] = 2
                 await adapter.refresh_panel("42", gateway, spool, background=True)
-                self.assertEqual(adapter.api.await_args.args[:2], ("DELETE", "/messages"))
+                self.assertEqual(adapter.api.await_args.args[:2], ("PUT", "/messages"))
                 adapter.message.assert_awaited_once()
                 self.assertEqual(spool.panel("42")["mid"], "panel-new")
             finally:
@@ -110,21 +110,19 @@ class MaxMessaging(unittest.IsolatedAsyncioTestCase):
                 text, keyboard = adapter.message.await_args.args[1:]
                 self.assertIn("Алина", text)
                 button = keyboard[0]["payload"]["buttons"][0][0]
-                self.assertEqual(button, {"type": "callback", "text": "Алина", "payload": "open:17"})
+                self.assertEqual(button, {"type": "callback", "text": "Алина", "payload": spool.panel("42")["revision"] + ":open:17"})
 
                 update["message"]["body"]["text"] = "ABCD2345"
                 await adapter.handle("event-2", update, gateway, spool)
-                self.assertEqual(adapter.api.await_args_list[-1].args[:2], ("PUT", "/messages"))
-
                 await adapter.handle("event-3", {"update_type": "message_callback", "callback": {
-                    "callback_id": "callback-1", "payload": "open:17",
+                    "callback_id": "callback-1", "payload": spool.panel("42")["revision"] + ":open:17",
                     "user": {"user_id": 42}, "message": {"body": {"mid": "panel-1"}},
                 }}, gateway, spool)
                 self.assertEqual(spool.selected_conversation("42"), 17)
                 self.assertEqual(adapter.api.await_args_list[-1].args[:2], ("POST", "/answers"))
 
                 await adapter.handle("event-4", {"update_type": "message_callback", "callback": {
-                    "callback_id": "callback-2", "payload": "back",
+                    "callback_id": "callback-2", "payload": spool.panel("42")["revision"] + ":back",
                     "user": {"user_id": 42}, "message": {"body": {"mid": "panel-1"}},
                 }}, gateway, spool)
                 self.assertIsNone(spool.selected_conversation("42"))
@@ -133,9 +131,25 @@ class MaxMessaging(unittest.IsolatedAsyncioTestCase):
                 update["message"]["body"]["text"] = "Menu"
                 await adapter.handle("event-5", update, gateway, spool)
                 self.assertIsNone(spool.selected_conversation("42"))
-                self.assertEqual(adapter.api.await_args_list[-1].args[:2], ("PUT", "/messages"))
                 self.assertEqual(
                     sum(call.args[0] == "account.bind" for call in gateway.rpc.await_args_list), 2
                 )
+            finally:
+                spool.close()
+
+    async def test_stale_callback_never_changes_selection(self):
+        adapter = MaxAdapter(None, "test")
+        adapter.api = AsyncMock(return_value={})
+        gateway = Mock(rpc=AsyncMock(), inbound=AsyncMock())
+        with tempfile.TemporaryDirectory() as tmp:
+            spool = EventSpool(f"{tmp}/spool.db", "max")
+            try:
+                spool.select_conversation("42", 17)
+                spool.save_panel("42", {"mid": "new", "revision": "new-rev", "actions": ["open:18"]})
+                for mid, payload in [("old", "new-rev:open:18"), ("new", "old-rev:open:18")]:
+                    await adapter.handle_callback({"callback": {"callback_id": "cb", "user": {"user_id": 42},
+                        "payload": payload, "message": {"body": {"mid": mid}}}}, gateway, spool)
+                gateway.rpc.assert_not_awaited()
+                self.assertEqual(spool.selected_conversation("42"), 17)
             finally:
                 spool.close()

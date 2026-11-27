@@ -6,20 +6,22 @@ import logging
 from aiogram.exceptions import TelegramAPIError, TelegramBadRequest
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
 
-from connectors.common.commands import Commands
+from connectors.common.commands import (
+    Commands, BACK, REFRESH, PREVIOUS, NEXT, STALE_PANEL,
+    panel_revision, callback_action, navigation,
+)
 from connectors.common.panel_text import teacher_panel_text
 
 logger = logging.getLogger(__name__)
-BACK = "К списку учеников"
-REFRESH = "↻ Обновить"
-PREVIOUS = "← Предыдущая"
-NEXT = "Следующая →"
 
 
-def render(view, page):
+def render(view, page, previous=None):
     visible, page, total = Commands.page(view["conversations"], page)
+    actions = [f"open:{item['id']}" for item in visible]
+    actions += (["previous"] if page else []) + (["next"] if page + 1 < total else []) + ["back", "refresh"]
+    revision, state = panel_revision(previous or {}, page, view.get("chat"), actions)
     def button(text, action):
-        return InlineKeyboardButton(text=text, callback_data="panel:" + action)
+        return InlineKeyboardButton(text=text, callback_data="panel:" + revision + ":" + action)
 
     students = [button(item["name"].strip(), f"open:{item['id']}") for item in visible]
     keyboard = [students[i:i + 2] for i in range(0, len(students), 2)]
@@ -31,7 +33,7 @@ def render(view, page):
     keyboard.append([button(BACK, "back"), button(REFRESH, "refresh")])
     markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
     signature = json.dumps([[[(b.text, b.callback_data) for b in row] for row in keyboard]], ensure_ascii=False)
-    return teacher_panel_text(view.get("chat"), visible, page, total)[:3900], markup, page, signature
+    return teacher_panel_text(view.get("chat"), visible, page, total), markup, page, signature
 
 
 class TeacherPanel:
@@ -53,7 +55,14 @@ class TeacherPanel:
                 return
             if commands.selection(actor) is not None and not view.get("chat"):
                 commands.clear(actor)
-            text, markup, page, signature = render(view, previous.get("page", 0) if page is None else page)
+            requested = previous.get("page", 0) if page is None else page
+            visible, page, total = Commands.page(view["conversations"], requested)
+            actions = [f"open:{item['id']}" for item in visible]
+            actions += (["previous"] if page else []) + (["next"] if page + 1 < total else []) + ["back", "refresh"]
+            revision, state = panel_revision(previous, page, view.get("chat"), actions)
+            panel_state = {"revision": revision, "navigation_state": state, "actions": actions,
+                           "recipient": (view.get("chat") or {}).get("id")}
+            text, markup, page, signature = render(view, page, panel_state)
             buttons = [button.text for row in markup.inline_keyboard for button in row]
             old_id = previous.get("message_id")
             if old_id and signature == previous.get("signature") and (background or not force):
@@ -67,7 +76,7 @@ class TeacherPanel:
                             return
                         old_id = None
                 if old_id:
-                    spool.save_panel(actor, {**previous, "role": "teacher", "buttons": buttons,
+                    spool.save_panel(actor, {**previous, **panel_state, "role": "teacher", "buttons": buttons,
                                              "text": text})
                     return
             if background and not previous.get("message_id"):
@@ -75,7 +84,7 @@ class TeacherPanel:
             if previous.get("message_id") and previous.get("role") in {None, "teacher"} and not previous.get("inline"):
                 await self.bot.send_message(int(actor), "Панель учителя обновлена.", reply_markup=ReplyKeyboardRemove())
             sent = await self.bot.send_message(int(actor), text, reply_markup=markup)
-            spool.save_panel(actor, {"message_id": sent.message_id, "page": page, "signature": signature,
+            spool.save_panel(actor, {**panel_state, "message_id": sent.message_id, "page": page, "signature": signature,
                                      "text": text, "role": "teacher", "buttons": buttons,
                                      "stale_buttons": previous.get("stale_buttons", []), "inline": True})
             if previous.get("message_id") and previous["message_id"] != sent.message_id:
@@ -138,17 +147,20 @@ class TeacherPanel:
         message = callback.get("message") or {}
         panel = spool.panel(actor)
         data = callback.get("data") or ""
+        action = callback_action(data.removeprefix("panel:"), panel) if data.startswith("panel:") else None
         if (message.get("chat", {}).get("type") != "private"
-                or message.get("message_id") != panel.get("message_id")
-                or not data.startswith("panel:")):
-            await self.bot.answer_callback_query(callback["id"], text="Панель обновилась. Нажмите /start.")
+                or not panel.get("message_id") or message.get("message_id") != panel.get("message_id")
+                or not action):
+            await self.bot.answer_callback_query(callback["id"], text=STALE_PANEL)
             return
-        await self.bot.answer_callback_query(callback["id"])
         commands = Commands(gateway, spool)
         view = await commands.menu(actor)
+        if spool.panel(actor).get("revision") != panel.get("revision"):
+            await self.bot.answer_callback_query(callback["id"], text=STALE_PANEL)
+            return
+        await self.bot.answer_callback_query(callback["id"])
         page = panel.get("page", 0)
         if (view.get("account") or {}).get("role") == "teacher":
-            action = data.removeprefix("panel:")
             if action.startswith("open:"):
                 for index, item in enumerate(view["conversations"]):
                     if str(item["id"]) == action[5:]:
@@ -164,23 +176,18 @@ class TeacherPanel:
         commands = Commands(gateway, spool)
         body = text.strip()
         page = spool.panel(actor).get("page", 0)
-        visible, page, total = commands.page(view["conversations"], page)
         if body.startswith("Написать · "):
-            # Старая клавиатура не должна отправить свою подпись как ДЗ.
             await self.refresh(actor, gateway, spool, page=page, force=True)
             return True
-        if body in {BACK, REFRESH, PREVIOUS, NEXT}:
-            if body != REFRESH:
-                commands.clear(actor)
-            page += 1 if body == NEXT else -1 if body == PREVIOUS else 0
-        else:
-            matches = [i for i in visible if i["name"].strip() == body]
-            if not matches and not any(i["name"].strip() == body for i in view["conversations"]):
+        action = await navigation(commands, actor, body, view, page)
+        if action is None:
+            if not self.is_stale_action(actor, body, spool):
                 return False
-            if len(matches) == 1:
-                await commands.open(actor, matches[0]["id"])
-            elif len(matches) > 1:
-                await self.bot.send_message(int(actor), "У нескольких учеников одинаковое ФИО. Попросите администратора различить их.")
+            await self.bot.send_message(int(actor), STALE_PANEL)
+        else:
+            page, notice = action
+            if notice:
+                await self.bot.send_message(int(actor), notice)
         try:
             await self.bot.delete_message(int(actor), message_id)
         except TelegramAPIError:

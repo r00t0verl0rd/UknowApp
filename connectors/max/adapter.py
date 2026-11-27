@@ -7,15 +7,15 @@ from urllib.parse import urlsplit
 import aiohttp
 
 from connectors.common.client import DeliveryRejected, RetryLater
-from connectors.common.commands import CODE, Commands
+from connectors.common.commands import (
+    CODE, Commands, BACK, REFRESH, PREVIOUS, NEXT, STALE_PANEL, SELECT_RECIPIENT,
+    panel_revision, callback_action, recipient_ready, navigation, menu_page,
+)
+from connectors.common.media_formats import max_inbound_kind, max_upload_kind, delivery_text
 from connectors.common.panel_text import teacher_panel_text
 
 API = "https://platform-api2.max.ru"
-KINDS = {"image": "photo", "video": "video", "audio": "audio", "file": "document"}
-BACK = "К списку учеников"
-REFRESH = "↻ Обновить"
-PREVIOUS = "← Предыдущая"
-NEXT = "Следующая →"
+KINDS = {"image", "video", "audio", "file", "sticker"}
 
 
 class MaxAdapter:
@@ -52,9 +52,7 @@ class MaxAdapter:
         attachments = []
         media = job.get("media")
         if media:
-            kind = {"photo": "image", "voice": "audio", "animation": "video"}.get(job["kind"], job["kind"])
-            if kind not in KINDS:
-                kind = "file"
+            kind = max_upload_kind(job["kind"], media)
             ticket = await self.api("POST", "/uploads", params={"type": kind})
             async with self.http.get(gateway.media_url(job["id"]), headers=gateway.headers,
                                      allow_redirects=False) as source:
@@ -67,7 +65,7 @@ class MaxAdapter:
                     payload = ({"token": ticket["token"]} if ticket.get("token")
                                else await upload.json(content_type=None))
             attachments.append({"type": kind, "payload": payload})
-        text = job.get("text") or ""
+        text = delivery_text(job)
         ids = []
         for i in range(0, max(1, len(text)), 4000):
             if i:
@@ -97,18 +95,16 @@ class MaxAdapter:
         self.panel_updated[actor] = time.monotonic()
 
     async def refresh_panel(self, actor, gateway, spool, background=False, page=None,
-                            callback_id=None, callback_mid=None):
+                            callback_id=None, callback_mid=None, force=False):
         actor = str(actor)
         lock = self.panel_locks.setdefault(actor, asyncio.Lock())
         async with lock:
-            await self._refresh_panel(actor, gateway, spool, background, page, callback_id, callback_mid)
+            await self._refresh_panel(actor, gateway, spool, background, page, callback_id, callback_mid, force)
 
-    async def _refresh_panel(self, actor, gateway, spool, background, page, callback_id, callback_mid):
+    async def _refresh_panel(self, actor, gateway, spool, background, page, callback_id, callback_mid, force):
         commands = Commands(gateway, spool)
         result = await commands.panel(actor)
         previous = spool.panel(actor) or {}
-        if not previous.get("mid") and callback_mid:
-            previous["mid"] = callback_mid
         page = previous.get("page", 0) if page is None else page
         role = (result.get("account") or {}).get("role")
         if role != "teacher":
@@ -149,19 +145,27 @@ class MaxAdapter:
             return
 
         chat = result.get("chat")
+        if commands.selection(actor) is not None and not chat:
+            commands.clear(actor)
         visible, page, total = commands.page(result["conversations"], page)
         buttons = [[{"type": "callback", "text": item["name"].strip(),
                      "payload": f"open:{item['id']}"} for item in visible[i:i + 2]]
                    for i in range(0, len(visible), 2)]
-        navigation = ([{"type": "callback", "text": PREVIOUS, "payload": "previous"}] if page else [])
+        nav = ([{"type": "callback", "text": PREVIOUS, "payload": "previous"}] if page else [])
         if page + 1 < total:
-            navigation.append({"type": "callback", "text": NEXT, "payload": "next"})
-        if navigation:
-            buttons.append(navigation)
+            nav.append({"type": "callback", "text": NEXT, "payload": "next"})
+        if nav:
+            buttons.append(nav)
         buttons.append([{"type": "callback", "text": BACK, "payload": "back"},
                         {"type": "callback", "text": REFRESH, "payload": "refresh"}])
+        actions = [button["payload"] for row in buttons for button in row]
+        revision, state = panel_revision(previous, page, chat, actions)
+        for row in buttons:
+            for button in row:
+                button["payload"] = revision + ":" + button["payload"]
+        panel_state = {"revision": revision, "navigation_state": state, "actions": actions,
+                       "recipient": (chat or {}).get("id")}
         text = teacher_panel_text(chat, visible, page, total)
-        text = text if len(text) <= 4000 else text[:160] + "\n…\n" + text[-3830:]
         keyboard = [{"type": "inline_keyboard", "payload": {"buttons": buttons}}]
         signature = json.dumps(buttons, ensure_ascii=False, separators=(",", ":"))
         labels = [button["text"] for row in buttons for button in row]
@@ -170,35 +174,32 @@ class MaxAdapter:
             await self.api("POST", "/answers", params={"callback_id": callback_id},
                            body={"message": {"text": text, "attachments": keyboard}})
             if previous.get("mid"):
-                spool.save_panel(actor, {"mid": previous["mid"], "text": text, "page": page,
+                spool.save_panel(actor, {**panel_state, "mid": previous["mid"], "text": text", "page": page,
                                          "role": role, "buttons": labels, "signature": signature})
                 return
-        elif previous.get("mid") and background:
-            if previous.get("text") == text and previous.get("signature") == signature:
+        elif previous.get("mid") and previous.get("signature") == signature and (background or not force):
+            if previous.get("text") == text:
                 return
             await self._panel_update_delay(actor)
             try:
-                await self.api("DELETE", "/messages", params={"message_id": previous["mid"]})
-            except DeliveryRejected:
-                return
-        elif previous.get("mid"):
-            if background and previous.get("text") == text and previous.get("signature") == signature:
-                return
-            await self._panel_update_delay(actor)
-            try:
-                await self.api("PUT", "/messages", params={"message_id": previous["mid"]}, body={"text": text, "attachments": keyboard})
-                spool.save_panel(actor, {"mid": previous["mid"], "text": text, "page": page,
+                await self.api("PUT", "/messages", params={"message_id": previous["mid"]},
+                               body={"text": text, "attachments": keyboard})
+                spool.save_panel(actor, {**panel_state, "mid": previous["mid"], "text": text, "page": page,
                                          "role": role, "buttons": labels, "signature": signature})
                 return
             except DeliveryRejected:
+                if background:
+                    return
+        if not background or previous.get("mid"):
+            await self._panel_update_delay(actor)
+            mid = await self.message(actor, text, keyboard)
+            spool.save_panel(actor, {**panel_state, "mid": mid, "text": text, "page": page,
+                                     "role": role, "buttons": labels, "signature": signature})
+            if previous.get("mid") and previous["mid"] != mid:
                 try:
                     await self.api("DELETE", "/messages", params={"message_id": previous["mid"]})
                 except DeliveryRejected:
-                    return
-        if not background or previous:
-            mid = await self.message(actor, text, keyboard)
-            spool.save_panel(actor, {"mid": mid, "text": text, "page": page,
-                                     "role": role, "buttons": labels, "signature": signature})
+                    pass
 
     @staticmethod
     def _legacy_buttons(text):
@@ -271,7 +272,7 @@ class MaxAdapter:
         if recipient.get("chat_type") != "dialog":
             return
         account = await commands.menu(actor)
-        if CODE.fullmatch(text.replace("-", "").replace(" ", "").upper()):
+        if not body.get("attachments") and CODE.fullmatch(text.replace("-", "").replace(" ", "").upper()):
             bound = await commands.bind(actor, actor, text)
             if bound and bound.get("account"):
                 commands.clear(actor)
@@ -293,45 +294,38 @@ class MaxAdapter:
                 await self.refresh_panel(actor, gateway, spool)
             if self._stale_action(actor, text, spool):
                 return
-        if CODE.fullmatch(text.replace("-", "").replace(" ", "").upper()):
+        if not body.get("attachments") and CODE.fullmatch(text.replace("-", "").replace(" ", "").upper()):
             await self.show_account(actor, account, gateway, spool)
             return
-        folded = text.casefold()
-        page_arg = text[6:].strip() if folded.startswith("/menu ") else ""
-        numbered_menu = bool(page_arg and page_arg.isascii() and page_arg.isdecimal() and len(page_arg) <= 5)
-        page = (int(page_arg) - 1) if numbered_menu else None
-        if folded in {"/menu", "menu", "меню", "/start", "/back", BACK.casefold()} or numbered_menu:
+        role = account["account"]["role"]
+        reset_page = menu_page(text) if not body.get("attachments") else None
+        if reset_page is not None:
             commands.clear(actor)
-            await self.refresh_panel(actor, gateway, spool, page=page or 0)
+            await self.refresh_panel(actor, gateway, spool, page=reset_page, force=True)
             return
-        if folded == REFRESH.casefold():
-            await self.refresh_panel(actor, gateway, spool)
-            return
-        if folded in {PREVIOUS.casefold(), NEXT.casefold()}:
+        if role == "teacher" and not body.get("attachments"):
             current = (spool.panel(actor) or {}).get("page", 0)
-            commands.clear(actor)
-            await self.refresh_panel(actor, gateway, spool,
-                                     page=current + (1 if folded == NEXT.casefold() else -1))
-            return
-        if text.startswith("/open "):
-            ident = text[6:].strip()
-            if ident.isdecimal() and any(str(c["id"]) == ident for c in account["conversations"]):
-                await commands.open(actor, int(ident))
+            action = await navigation(commands, actor, text, account, current)
+            if action is not None:
+                page, notice = action
+                if notice:
+                    await self.message(actor, notice)
+                await self.refresh_panel(actor, gateway, spool, page=page)
+                return
+            if self._stale_action(actor, text, spool):
+                await self.message(actor, STALE_PANEL)
+                await self.refresh_panel(actor, gateway, spool)
+                return
+        if role == "teacher" and not recipient_ready(spool, actor, account["conversations"]):
+            await self.message(actor, SELECT_RECIPIENT)
             await self.refresh_panel(actor, gateway, spool)
             return
-        matches = [c for c in account["conversations"] if c["name"].strip() == text]
-        if len(matches) == 1:
-            await commands.open(actor, matches[0]["id"])
-            index = next(i for i, c in enumerate(account["conversations"]) if c["id"] == matches[0]["id"])
-            await self.refresh_panel(actor, gateway, spool, page=index // 6)
+        if role == "student" and not account["conversations"]:
+            await self.message(actor, "Пока нет назначенного преподавателя.")
             return
-        if len(matches) > 1:
-            await self.message(actor, "У нескольких учеников одинаковое имя. Попросите администратора различить их.")
+        if role not in {"teacher", "student"}:
             return
-        selection = commands.selection(actor)
-        if account["account"]["role"] == "teacher" and selection not in [c["id"] for c in account["conversations"]]:
-            await self.refresh_panel(actor, gateway, spool)
-            return
+        selection = commands.selection(actor) if role == "teacher" else None
         await self.forward_parts(event_id, actor, actor, "private", selection, body, gateway)
 
     async def show_account(self, actor, account, gateway, spool):
@@ -348,11 +342,24 @@ class MaxAdapter:
         actor = str((callback.get("user") or {}).get("user_id", ""))
         if not actor:
             return
+        panel = spool.panel(actor) or {}
+        original = callback.get("message") or {}
+        mid = (original.get("body") or {}).get("mid")
+        payload = callback_action(str(callback.get("payload") or ""), panel)
+        if not mid or mid != panel.get("mid") or not payload:
+            if callback.get("callback_id"):
+                await self.api("POST", "/answers", params={"callback_id": callback["callback_id"]},
+                               body={"notification": STALE_PANEL})
+            return
         commands = Commands(gateway, spool)
         result = await commands.menu(actor)
+        if (spool.panel(actor) or {}).get("revision") != panel.get("revision"):
+            if callback.get("callback_id"):
+                await self.api("POST", "/answers", params={"callback_id": callback["callback_id"]},
+                               body={"notification": STALE_PANEL})
+            return
         account = result.get("account") or {}
-        payload = str(callback.get("payload") or "")
-        page = (spool.panel(actor) or {}).get("page", 0)
+        page = panel.get("page", 0)
         if account.get("role") == "teacher":
             if payload.startswith("open:"):
                 ident = payload[5:]
@@ -387,12 +394,14 @@ class MaxAdapter:
             if part:
                 kind = part["type"]
                 if kind in KINDS:
-                    event["kind"] = KINDS[kind]
                     payload = part.get("payload") or {}
+                    filename = payload.get("filename") or part.get("filename") or ""
+                    event["kind"] = max_inbound_kind(kind, "", filename)
+                    event["media_unavailable"] = True
                     url = payload.get("url") or ""
                     host = urlsplit(url).hostname or ""
                     trusted = any(host == domain or host.endswith("." + domain)
-                                  for domain in ("max.ru", "okcdn.ru", "mycdn.me", "usercontent.max.ru", "vkuser.net"))
+                                  for domain in ("max.ru", "okcdn.ru", "mycdn.me", "usercontent.max.ru", "vkuser.net")) or host == "i.oneme.ru"
                     if urlsplit(url).scheme == "https" and trusted:
                         async with self.http.get(url, allow_redirects=False) as source:
                             if source.status == 200:
@@ -403,8 +412,13 @@ class MaxAdapter:
                                         raise
                                     event["media_unavailable"] = True
                                 else:
-                                    event["media"] = {"file_name": part.get("filename") or kind,
-                                                      "mime_type": source.content_type}
+                                    mime = source.content_type
+                                    event["kind"] = max_inbound_kind(kind, mime, filename)
+                                    event.pop("media_unavailable", None)
+                                    suffix = {"image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif",
+                                              "image/webp": ".webp", "audio/ogg": ".ogg", "audio/mpeg": ".mp3",
+                                              "audio/mp4": ".m4a", "video/mp4": ".mp4"}.get(mime, "")
+                                    event["media"] = {"file_name": filename or kind + suffix, "mime_type": mime}
                             else:
                                 event["media_unavailable"] = True
                     else:
@@ -413,8 +427,8 @@ class MaxAdapter:
                     event["kind"] = "contact"
                 elif kind == "location":
                     event.update(kind="location", location={k: part[k] for k in ("latitude", "longitude") if k in part})
-                elif not event["text"]:
-                    await self.message(actor, "Этот тип вложения пока не поддерживается. Отправьте его файлом.")
-                    continue
+                else:
+                    event["kind"] = "unsupported"
+                    event["media_unavailable"] = True
             if event["kind"] != "text" or event["text"].strip():
                 await gateway.inbound(event)

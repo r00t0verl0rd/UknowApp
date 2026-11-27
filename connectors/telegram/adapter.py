@@ -19,7 +19,8 @@ from aiogram.exceptions import (
 from aiogram.types import URLInputFile
 
 from connectors.common.client import DeliveryRejected, RetryLater, RpcError
-from connectors.common.commands import CODE, Commands
+from connectors.common.commands import CODE, Commands, SELECT_RECIPIENT, menu_page, recipient_ready
+from connectors.common.media_formats import telegram_upload_kind, delivery_text
 
 from .teacher_panel import TeacherPanel
 
@@ -126,9 +127,7 @@ class TelegramAdapter:
 
     async def send(self, job, gateway):
         try:
-            text = job["text"]
-            if not job.get("media") and job.get("kind") != "text":
-                text += "\n[" + job["kind"] + "]"
+            text = delivery_text(job)
             parts = split_text(text, 1024 if job.get("media") else 4096)
             if len(parts) == 1:
                 return await self._send({**job, "text": text}, gateway)
@@ -181,7 +180,7 @@ class TelegramAdapter:
         size = media.get("file_size")
         if isinstance(size, int) and size > self.max_attachment_bytes:
             raise DeliveryRejected("attachment exceeds Telegram mode limit")
-        kind = job.get("kind")
+        kind = telegram_upload_kind(job.get("kind"), media)
         method, field = {
             "photo": (self.bot.send_photo, "photo"),
             "video": (self.bot.send_video, "video"),
@@ -499,9 +498,12 @@ class TelegramAdapter:
             thread = str(raw_thread) if raw_thread else None
 
         commands = Commands(gateway, spool)
-        if not group and command in {"/start", "/menu"}:
+        reset_page = menu_page(text) if message.get("text") else None
+        if not group and reset_page is not None:
             commands.clear(actor)
-            await self.show_menu(int(chat), await commands.menu(actor), gateway, spool, force=True)
+            await self.show_menu(
+                int(chat), await commands.menu(actor), gateway, spool, page=reset_page, force=True
+            )
             return
         event = {
             "id": event_id,
@@ -535,7 +537,11 @@ class TelegramAdapter:
         ):
             await self.teacher_panel.refresh(actor, gateway, spool, background=True, view=view)
             return
-        if not group and CODE.fullmatch(text.replace("-", "").replace(" ", "").upper()):
+        if (
+            not group
+            and message.get("text")
+            and CODE.fullmatch(text.replace("-", "").replace(" ", "").upper())
+        ):
             bound = await commands.bind(actor, chat, text, message["from"].get("username"))
             if bound and bound.get("account"):
                 commands.clear(actor)
@@ -560,9 +566,9 @@ class TelegramAdapter:
         ):
             return
         selection = commands.selection(actor) if role == "teacher" else None
-        if role == "teacher" and selection not in {c["id"] for c in view["conversations"]}:
-            commands.clear(actor)
-            await self.show_menu(int(chat), view, gateway, spool)
+        if role == "teacher" and not recipient_ready(spool, actor, view["conversations"]):
+            await self.bot.send_message(int(chat), SELECT_RECIPIENT)
+            await self.teacher_panel.refresh(actor, gateway, spool, view=view)
             return
         if role == "student" and not view["conversations"]:
             await self.bot.send_message(int(chat), "Пока нет назначенного преподавателя.")
@@ -610,7 +616,14 @@ class TelegramAdapter:
             event["media_unavailable"] = True
             return
         await gateway.upload(event["id"], self.chunks(remote.file_path))
+        filename = MEDIA_NAMES.get(kind, "attachment")
+        mime = MEDIA_TYPES.get(kind)
+        if kind == "sticker":
+            if value.get("is_animated"):
+                filename, mime = "sticker.tgs", "application/x-tgsticker"
+            elif value.get("is_video"):
+                filename, mime = "sticker.webm", "video/webm"
         event["media"] = {
-            "file_name": value.get("file_name") or MEDIA_NAMES.get(kind, "attachment"),
-            "mime_type": value.get("mime_type") or MEDIA_TYPES.get(kind),
+            "file_name": value.get("file_name") or filename,
+            "mime_type": value.get("mime_type") or mime,
         }

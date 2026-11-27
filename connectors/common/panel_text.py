@@ -1,13 +1,13 @@
 def teacher_panel_text(chat, visible, page, total):
     if chat:
-        lines = ["🔸 " + chat["name"]]
+        lines = ["🔸 Получатель: " + chat["name"], "Следующее сообщение будет отправлено этому ученику.", ""]
         if chat["total"] > len(chat["messages"]):
             lines.append(f'Показаны последние {len(chat["messages"])} из {chat["total"]} сообщений.')
         lines.extend(m["name"] + ": " + m["preview"] for m in chat["messages"])
         if not chat["messages"]:
             lines.append("История пока пуста.")
     else:
-        lines = ["▫️ Ваша группа:", ""]
+        lines = ["▫️ Ваша группа:", "Выберите ученика, чтобы отправить сообщение.", ""]
         for item in visible:
             lines.append("🔸 " + item["name"] + (f' · {item["unread"]} новых' if item["unread"] else ""))
             previews = item.get("unread_previews") or []
@@ -19,4 +19,9 @@ def teacher_panel_text(chat, visible, page, total):
             lines.append("Пока нет назначенных учеников.")
         if total > 1:
             lines.append(f"Страница {page+1} из {total}.")
-    return "\n".join(lines).rstrip()
+    result = "\n".join(lines).rstrip()
+    # Telegram counts UTF-16 units; use the same safe limit in both bots.
+    raw = result.encode("utf-16-le")
+    if len(raw) > 7800:
+        result = raw[:320].decode("utf-16-le", errors="ignore") + "\n…\n" + raw[-7460:].decode("utf-16-le", errors="ignore")
+    return result
