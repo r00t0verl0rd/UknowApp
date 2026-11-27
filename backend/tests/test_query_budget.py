@@ -1,6 +1,9 @@
 """Hard SQL-count budgets are more repeatable than CI wall-clock thresholds."""
+import json
+
 from sqlalchemy import event, insert
 from app.models import Message, PersonalConversation, PersonalMessage
+from app.modules.panel.session import visible_payload
 from helpers import create_conversation
 
 
@@ -36,6 +39,14 @@ def test_authenticated_profile_and_history_query_budget(api):
             assert result.status_code == 200 and len(result.json()) == limit
             assert len(statements) <= 4, statements
             assert not any("messenger_accounts" in s for s in statements)
+            message_id = result.json()[-1]["id"]
+            hint = json.dumps({"action": "upsert", "conversation_type": "conversation",
+                               "conversation_id": chat_id, "message_id": message_id})
+            statements.clear()
+            with sessions() as subscriber:
+                payload = visible_payload(subscriber, {"role": "teacher", "user_id": users["teacher-one"]}, hint)
+            assert json.loads(payload)["message"]["id"] == message_id
+            assert len(statements) <= 3, statements  # conversation, assignment, hydrated message
             statements.clear()
             result = client.get(f"/api/panel/personal-conversations/{personal_id}/messages",
                                 params={"limit":limit,"mark_read":"false"})
