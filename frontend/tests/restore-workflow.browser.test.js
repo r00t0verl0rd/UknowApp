@@ -145,6 +145,26 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
       const panel = page.locator(".additional-panel");
       await panel.waitFor({ state: "visible" });
       assert.ok(await panel.getByText("Весь UknowApp в одном архиве").isVisible());
+      const archiveDetails = panel.locator(".data-includes");
+      const summary = archiveDetails.locator("summary");
+      await summary.click();
+      assert.equal(await archiveDetails.locator("li").count(), 3);
+      assert.ok(await archiveDetails.getByText("Ключ Web Push и другие файлы из каталога data").isVisible());
+      const styles = await archiveDetails.evaluate(details => {
+        const summary = details.querySelector("summary");
+        const other = details.closest(".data-tool-card").querySelector(".data-info-details:not(.data-includes) > summary");
+        const ownStyle = getComputedStyle(summary);
+        const otherStyle = getComputedStyle(other);
+        return {
+          same: ownStyle.fontSize === otherStyle.fontSize && ownStyle.minHeight === otherStyle.minHeight,
+          padding: getComputedStyle(details).paddingLeft,
+          gap: getComputedStyle(details.querySelector("ul")).rowGap,
+          fits: details.scrollWidth <= details.clientWidth + 1,
+        };
+      });
+      assert.ok(styles.same && styles.padding === "0px" && styles.gap === "3px" && styles.fits,
+        `${width}px: archive details use the common disclosure style and fit`);
+      await summary.click();
       const cleanupGeometry = await page.locator(".data-cleanup-card").evaluate(card => {
         const action = card.querySelector(".data-cleanup-actions .data-action-btn");
         const retention = card.querySelector(".data-retention-select");

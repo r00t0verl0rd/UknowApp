@@ -1,6 +1,5 @@
 import {
   IconArchive as ArchiveIcon,
-  IconCheck as Check,
   IconChevronDown as ChevronDown,
   IconClock3 as Clock3,
   IconDatabase as DatabaseIcon,
@@ -135,7 +134,7 @@ export default function AdditionalPage(options) {
               <h3>Весь UknowApp в одном архиве</h3>
               <p>Сохраните данные и файлы вместе, чтобы при необходимости восстановить приложение.</p>
               <details class="data-info-details data-includes">
-                <summary><Check size={15} aria-hidden="true" /> Что входит в архив <ChevronDown size={15} aria-hidden="true" /></summary>
+                <summary>Что входит в архив <ChevronDown size={15} aria-hidden="true" /></summary>
                 <ul>
                   <li>Пользователи, назначения и переписки</li>
                   <li>Фотографии, аудио, видео и документы</li>
