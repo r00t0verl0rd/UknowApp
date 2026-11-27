@@ -213,6 +213,7 @@
 .data-tool-primary {
   grid-column:1;
   grid-row:1 / span 2;
+  align-self:start;
 }
 .data-tool-icon {
   display:inline-grid;
@@ -282,6 +283,7 @@
 .data-tool-primary .data-tool-actions {
   display:grid;
   grid-template-columns:1fr;
+  margin-top:0;
 }
 .additional-panel .data-action-btn {
   display:inline-flex;

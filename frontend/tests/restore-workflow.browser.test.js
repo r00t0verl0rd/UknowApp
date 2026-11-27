@@ -147,7 +147,12 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
       assert.ok(await panel.getByText("Весь UknowApp в одном архиве").isVisible());
       const archiveDetails = panel.locator(".data-includes");
       const summary = archiveDetails.locator("summary");
+      const actionGap = () => archiveDetails.evaluate(details =>
+        details.closest(".data-tool-card").querySelector(".data-tool-actions").getBoundingClientRect().top -
+        details.getBoundingClientRect().bottom);
+      assert.ok(await actionGap() <= 20, `${width}px: no empty space below collapsed archive details`);
       await summary.click();
+      assert.ok(await actionGap() <= 20, `${width}px: no empty space below expanded archive details`);
       assert.equal(await archiveDetails.locator("li").count(), 3);
       assert.ok(await archiveDetails.getByText("Ключ Web Push и другие файлы из каталога data").isVisible());
       const styles = await archiveDetails.evaluate(details => {
@@ -165,6 +170,7 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
       assert.ok(styles.same && styles.padding === "0px" && styles.gap === "3px" && styles.fits,
         `${width}px: archive details use the common disclosure style and fit`);
       await summary.click();
+      assert.ok(await actionGap() <= 20, `${width}px: closing details does not leave a gap`);
       const cleanupGeometry = await page.locator(".data-cleanup-card").evaluate(card => {
         const action = card.querySelector(".data-cleanup-actions .data-action-btn");
         const retention = card.querySelector(".data-retention-select");
