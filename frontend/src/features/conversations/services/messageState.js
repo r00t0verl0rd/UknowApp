@@ -81,14 +81,18 @@ export function mergeConversationMessages(previous, incoming, conversationKey = 
 
   const incomingById = new Map();
   for (const item of visibleIncoming) incomingById.set(messageId(item), item);
-  const clientIds = new Set(
-    [...incomingById.values()].map(item => item.metadata?.client_message_id).filter(Boolean),
-  );
+  const confirmed = new Set();
+  for (const item of incomingById.values()) {
+    if (Number(item.id) > 0 && item.metadata?.client_message_id) {
+      confirmed.add(item.sender_role + ":" + item.metadata.client_message_id);
+    }
+  }
   const mergedById = new Map();
 
   for (const item of visiblePrevious) {
     const update = incomingById.get(messageId(item));
-    if (!update && clientIds.has(item.metadata?.client_message_id)) continue;
+    if (!update && messageId(item).startsWith("local-") && item.metadata?.client_message_id &&
+        confirmed.has(item.sender_role + ":" + item.metadata.client_message_id)) continue;
     mergedById.set(messageId(item), update ? preserveMonotonicState(item, update) : item);
   }
   for (const item of incomingById.values()) {

@@ -157,7 +157,7 @@ def test_inbound_oversize_marked_unavailable(mode, mib, declared_size, monkeypat
             if declared_size:
                 document["file_size"] = limit + 1
             update = {"message": {"from": {"id": 10}, "chat": {"id": 10, "type": "private"},
-                                  "message_id": 1, "document": document}}
+                                  "message_id": 1, "document": document, "caption": " \t "}}
             await adapter.handle("event", update, gateway, None)
             gateway.upload.assert_not_awaited()
             assert gateway.inbound.await_args.args[0]["media_unavailable"] is True
@@ -206,6 +206,7 @@ def test_forum_join_without_known_topic_and_old_command_are_silent():
             {"chat_member": {"chat": chat, "new_chat_member": {"status": "member"}}},
             {"message": {**message, "new_chat_members": [{"id": 10}]}},
             {"message": {**message, "text": "/bind_group"}},
+            {"message": {**message, "text": " \t ", "is_topic_message": True}},
             {"message": {**message, "text": "anonymous", "sender_chat": chat}},
             {"message": {**message, "text": "no topic", "message_thread_id": None}},
         ]

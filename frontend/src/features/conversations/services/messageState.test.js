@@ -60,12 +60,14 @@ test("duplicate updates are collapsed and messages remain chronological", () => 
 
 test("server echo replaces optimistic client message without duplication", () => {
   const result = mergeConversationMessages(
-    [{ id: "local-1", metadata: { client_message_id: "client-1" }, text: "hello" }],
-    [{ id: 15, metadata: { client_message_id: "client-1" }, text: "hello" }],
+    [
+      { id: 14, sender_role: "student", metadata: { client_message_id: "client-1" } },
+      { id: "local-1", sender_role: "teacher", metadata: { client_message_id: "client-1" }, text: "hello" },
+    ],
+    [{ id: 15, sender_role: "teacher", metadata: { client_message_id: "client-1" }, text: "hello" }],
     "conversation:15",
   );
-  assert.equal(result.length, 1);
-  assert.equal(result[0].id, 15);
+  assert.deepEqual(result.map(item => item.id), [14, 15]);
 });
 
 test("terminal delivery and metadata read markers never move backwards", () => {

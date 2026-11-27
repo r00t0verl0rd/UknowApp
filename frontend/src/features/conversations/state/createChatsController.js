@@ -437,6 +437,7 @@ export function createChatsController(options) {
     }
     sendingMessage = true;
     const optimistic = chat.type !== "personal" && Boolean(text);
+    const senderRole = options.profile?.role;
     const signature = [
       chat.type,
       chat.id,
@@ -459,7 +460,7 @@ export function createChatsController(options) {
         {
           id: optimisticId,
           sender: options.profile?.full_name || "",
-          sender_role: options.profile?.role || "",
+          sender_role: senderRole || "",
           can_delete: false,
           content_type: "text",
           text,
@@ -486,11 +487,15 @@ export function createChatsController(options) {
       viewport.scrollToLatest();
     } catch (error) {
       if (clientMessageId && activeChatKey() === chatKey) {
-        options.chatState.setMessages((current) =>
-          current.filter(
-            (item) => item.id !== optimisticId && item.metadata?.client_message_id !== clientMessageId,
-          ),
-        );
+        // A live update may confirm the send before its HTTP response is lost.
+        if (optimistic && options.chatState.messages.some(item =>
+          Number(item.id) > 0 && item.sender_role === senderRole &&
+          item.metadata?.client_message_id === clientMessageId
+        )) {
+          pendingClientMessage = null;
+          return;
+        }
+        options.chatState.setMessages(current => current.filter(item => item.id !== optimisticId));
         options.chatState.setDraft((current) => current || text);
       }
       options.setError(error.message);

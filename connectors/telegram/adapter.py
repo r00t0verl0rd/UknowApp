@@ -476,7 +476,8 @@ class TelegramAdapter:
             source.get("is_forum") or message.get("is_topic_message")
         )
         text = message.get("text") or message.get("caption") or ""
-        command = text.split(maxsplit=1)[0].split("@")[0] if text else ""
+        words = text.split(maxsplit=1)
+        command = words[0].partition("@")[0] if words else ""
         if forum:
             # Creating or editing a topic does not invite this bot.
             if any(
@@ -489,6 +490,8 @@ class TelegramAdapter:
                     chat, self.forum_thread(message), actor, message, members, gateway, spool
                 )
                 return
+        if text and not words and not any(message.get(kind) for kind in MESSAGE_KINDS):
+            return
         if command == "/bind_group":
             return  # Never forward a legacy setup command as homework.
 
