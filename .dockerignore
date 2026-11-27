@@ -17,3 +17,5 @@ frontend/.vite
 .DS_Store
 .idea
 .vscode
+backend/tests/
+connectors/tests/

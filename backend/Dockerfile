@@ -15,7 +15,7 @@ RUN groupadd --system app \
     && mkdir -p /app/data \
     && chown app:app /app /app/data
 
-COPY --chown=app:app backend /app/backend
+COPY --chown=app:app backend/app /app/backend/app
 
 USER app
 
