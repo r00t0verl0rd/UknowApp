@@ -154,11 +154,24 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
         const bounds = section.getBoundingClientRect();
         return [...section.querySelectorAll(".data-action-btn")].map(action => {
           const rect = action.getBoundingClientRect();
-          return { height: rect.height, fits: rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1 };
+          const style = getComputedStyle(action);
+          const range = document.createRange();
+          const label = [...action.childNodes].find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+          if (label) range.selectNodeContents(label);
+          const text = label ? range.getBoundingClientRect() : rect;
+          return {
+            height: rect.height, fits: rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1,
+            nowrap: style.whiteSpace === "nowrap",
+            textFits: text.left >= rect.left - 1 && text.right <= rect.right + 1,
+            background: style.backgroundColor, border: style.borderColor,
+          };
         });
       });
-      assert.ok(backupGeometry.every(action => action.height >= 44 && action.fits),
-        `${width}px: backup actions fit and remain usable`);
+      assert.ok(backupGeometry.every(action => Math.abs(action.height - 44) < 1 &&
+        action.fits && action.nowrap && action.textFits),
+        `${width}px: backup actions have equal height and single-line labels that fit`);
+      assert.equal(new Set(backupGeometry.map(action => action.background + action.border)).size, 1,
+        `${width}px: download and restore actions share one style`);
       const cleanupGeometry = await page.locator(".data-cleanup-card").evaluate(card => {
         const action = card.querySelector(".data-cleanup-actions .data-action-btn");
         const retention = card.querySelector(".data-retention-select");

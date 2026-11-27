@@ -69,7 +69,7 @@ export default function AdditionalPage(options) {
                 Повторить загрузку
               </Button>
               {options.statsError.needsLogin && (
-                <Button variant="primary" class="data-action-btn" onClick={options.loginForStats}>
+                <Button variant="outline" class="data-action-btn" onClick={options.loginForStats}>
                   Войти повторно
                 </Button>
               )}
@@ -128,7 +128,7 @@ export default function AdditionalPage(options) {
             </div>
             <div class="data-tool-actions">
               <Button
-                variant="primary"
+                variant="outline"
                 class="data-action-btn"
                 onClick={() => options.downloadAdminFile("full")}
                 disabled={options.dataBusy || !sqliteBackupsAvailable()}
