@@ -60,6 +60,7 @@ function friendlyReason(error, channel) {
   }
   if (reason === "unknown") return `Не удалось подтвердить отправку копии ${address}.`;
   if (reason === "cancelled") return `Отправка копии ${address} отменена.`;
+  if (destination === "в личный чат с ботом") return "Копию в личный чат с ботом не получилось отправить.";
   return `Копию ${address} пока не удалось отправить.`;
 }
 export function getDeliveryDetails(metadata, includeRecipient = false, participants = []) {
