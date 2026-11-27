@@ -1,10 +1,8 @@
-@use "../core/primitives";
-
 // Один язык интерфейса для всех карточек и действий раздела «Дополнительно».
 .additional-panel {
   display:grid;
   align-content:start;
-  gap:16px;
+  gap:12px;
   min-width:0;
   font-family:var(--font-family-ui);
 }
@@ -17,25 +15,10 @@
   padding-bottom:2px;
 }
 .additional-heading h2 {
-  margin:4px 0 0;
+  margin:0;
   font-size:23px;
   font-weight:650;
   letter-spacing:-0.02em;
-}
-.additional-heading p {
-  max-width:580px;
-  margin:7px 0 0;
-  color:var(--muted);
-  font-size:13px;
-  font-weight:400;
-  line-height:1.65;
-}
-.additional-heading .eyebrow {
-  color:var(--muted);
-  font-size:11px;
-  font-weight:550;
-  letter-spacing:0.015em;
-  text-transform:none;
 }
 .data-stats-loading,
 .data-stats-feedback {
@@ -88,7 +71,7 @@
 .data-cleanup-card {
   box-sizing:border-box;
   min-width:0;
-  padding:19px;
+  padding:14px;
   border:1px solid var(--ui-border);
   border-radius:16px;
   background:var(--surface);
@@ -127,12 +110,6 @@
   color:var(--muted);
   font-size:12px;
   font-weight:400;
-}
-.data-stat-hint {
-  margin:1px 0 0;
-  color:var(--muted);
-  font-size:12px;
-  line-height:1.6;
 }
 .data-stat-details {
   display:grid;
@@ -205,15 +182,24 @@
   font-size:12px;
   line-height:1.6;
 }
-.data-tool-card {
-  @include primitives.stack;
-  align-items:flex-start;
-  gap:12px;
+.data-tools-grid > h3 {
+  grid-column:1 / -1;
+  margin:0;
+  font-size:16px;
+  font-weight:650;
 }
-.data-tool-primary {
-  grid-column:1;
-  grid-row:1 / span 2;
-  align-self:start;
+.data-tool-card {
+  display:grid;
+  grid-template-columns:38px minmax(0, 1fr);
+  grid-template-rows:1fr auto;
+  align-items:start;
+  gap:10px;
+}
+.data-tool-media {
+  grid-column:1 / -1;
+  grid-template-columns:38px minmax(0, 1fr) 200px;
+  grid-template-rows:auto;
+  align-items:center;
 }
 .data-tool-icon {
   display:inline-grid;
@@ -234,23 +220,22 @@
 }
 .data-tool-copy {
   display:grid;
-  align-content:start;
-  gap:7px;
-  width:100%;
+  align-content:center;
+  gap:3px;
+  min-width:0;
 }
-.data-tool-kicker {
-  color:var(--muted);
-  font-size:11px;
-  font-weight:500;
-  letter-spacing:0.01em;
-  text-transform:none;
-}
-.data-tool-card h3,
+.data-tool-card h4,
 .data-cleanup-card h3 {
   margin:0;
   font-size:16px;
   font-weight:650;
   line-height:1.4;
+}
+.data-tool-card h4 small {
+  margin-left:4px;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:500;
 }
 .data-tool-card p,
 .data-cleanup-card p {
@@ -273,17 +258,14 @@
   line-height:1.45;
 }
 .data-tool-actions {
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  width:100%;
-  margin-top:auto;
-  padding-top:4px;
-}
-.data-tool-primary .data-tool-actions {
+  grid-column:1 / -1;
   display:grid;
-  grid-template-columns:1fr;
-  margin-top:0;
+  grid-template-columns:repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap:8px;
+  min-width:0;
+}
+.data-tool-media .data-tool-actions {
+  grid-column:3;
 }
 .additional-panel .data-action-btn {
   display:inline-flex;
@@ -291,15 +273,17 @@
   justify-content:center;
   gap:9px;
   min-width:0;
+  box-sizing:border-box;
   min-height:44px;
-  padding:10px 13px;
+  height:44px;
+  padding:0 12px;
   border-radius:10px;
   font-family:var(--font-family-ui);
   font-size:13px;
   font-weight:550;
   line-height:1.3;
   text-align:center;
-  white-space:normal;
+  white-space:nowrap;
   box-shadow:none;
   touch-action:manipulation;
 }
@@ -309,9 +293,6 @@
   width:16px;
   height:16px;
   stroke-width:1.8;
-}
-.data-tool-primary .data-action-btn {
-  width:100%;
 }
 .additional-panel .data-action-btn:focus-visible,
 .data-retention-select:focus-within {
@@ -343,11 +324,18 @@
   outline:2px solid var(--ui-selected-border);
   outline-offset:2px;
 }
+.data-backup-notes {
+  grid-column:1 / -1;
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  align-items:start;
+  gap:0 12px;
+  padding:0 2px;
+}
 .data-important-note,
 .data-operation-status {
-  width:100%;
-  padding-top:10px;
-  border-top:1px solid var(--ui-border);
+  grid-column:1 / -1;
+  margin:0;
   color:var(--muted);
   font-size:12px;
   line-height:1.6;
@@ -355,38 +343,13 @@
 .data-operation-status.is-complete {
   color:var(--success);
 }
-.data-tool-card .data-note-copy {
-  margin:5px 0 8px;
+.data-backup-notes .data-info-details {
+  margin:0;
+}
+.data-note-copy {
+  margin:0 0 4px;
   font-size:12px;
   line-height:1.65;
-}
-.data-backup-hint {
-  display:flex;
-  align-items:flex-start;
-  gap:12px;
-  padding:14px 16px;
-  border:1px solid var(--ui-border);
-  border-radius:13px;
-  background:var(--surface-soft);
-  color:var(--ink);
-}
-.data-backup-hint > svg {
-  flex:0 0 18px;
-  color:var(--purple);
-}
-.data-backup-hint > div {
-  display:grid;
-  gap:4px;
-}
-.data-backup-hint b {
-  font-size:12px;
-  font-weight:600;
-  line-height:1.5;
-}
-.data-backup-hint span {
-  color:var(--muted);
-  font-size:12px;
-  line-height:1.6;
 }
 .data-cleanup-card {
   display:grid;
@@ -407,7 +370,7 @@
 }
 .data-cleanup-actions {
   display:grid;
-  grid-template-columns:170px minmax(178px, max-content);
+  grid-template-columns:170px 200px;
   align-items:end;
   gap:10px;
   min-width:0;
@@ -497,18 +460,6 @@
   background:var(--button-danger-bg);
   color:var(--button-danger-text);
 }
-@media (max-width: 1200px) {
-  .data-tool-primary {
-    grid-column:1 / -1;
-    grid-row:auto;
-  }
-  .data-tool-primary .data-tool-actions {
-    display:flex;
-  }
-  .data-tool-primary .data-action-btn {
-    width:auto;
-  }
-}
 @media (max-width: 900px) {
   .data-cleanup-card {
     grid-template-columns:minmax(0, 1fr);
@@ -533,18 +484,19 @@
   .data-cleanup-card {
     padding:15px;
   }
-  .data-tool-primary {
-    grid-column:auto;
+  .data-backup-notes {
+    grid-template-columns:minmax(0, 1fr);
   }
-  .data-tool-actions,
-  .data-tool-primary .data-tool-actions,
+  .data-tool-media {
+    grid-template-columns:38px minmax(0, 1fr);
+  }
+  .data-tool-media .data-tool-actions {
+    grid-column:1 / -1;
+  }
   .data-cleanup-actions {
-    display:grid;
     grid-template-columns:minmax(0, 1fr);
     width:100%;
   }
-  .data-tool-actions .data-action-btn,
-  .data-tool-primary .data-action-btn,
   .data-cleanup-actions .data-action-btn {
     width:100%;
   }

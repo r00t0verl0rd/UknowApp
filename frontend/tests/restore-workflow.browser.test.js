@@ -123,7 +123,7 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
     await page.getByText("Данные остались без изменений. Попробуйте обновить сведения.").waitFor();
     await page.getByText("Технические подробности").click();
     await page.getByText("Сервер не смог получить статистику (HTTP 500)", { exact: false }).waitFor();
-    assert.ok(await page.getByText("Весь UknowApp в одном архиве").isVisible(),
+    assert.ok(await page.getByRole("heading", { name: "Полная копия ZIP" }).isVisible(),
       "Backup controls remain available when statistics fails");
     assert.equal(await page.getByText("Часть настроек приложения нужно сохранить отдельно.").count(), 0,
       "Obsolete backup settings warning is not displayed");
@@ -144,33 +144,36 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
       await page.setViewportSize({ width, height: 850 });
       const panel = page.locator(".additional-panel");
       await panel.waitFor({ state: "visible" });
-      assert.ok(await panel.getByText("Весь UknowApp в одном архиве").isVisible());
-      const archiveDetails = panel.locator(".data-includes");
-      const summary = archiveDetails.locator("summary");
-      const actionGap = () => archiveDetails.evaluate(details =>
-        details.closest(".data-tool-card").querySelector(".data-tool-actions").getBoundingClientRect().top -
-        details.getBoundingClientRect().bottom);
-      assert.ok(await actionGap() <= 20, `${width}px: no empty space below collapsed archive details`);
-      await summary.click();
-      assert.ok(await actionGap() <= 20, `${width}px: no empty space below expanded archive details`);
-      assert.equal(await archiveDetails.locator("li").count(), 3);
-      assert.ok(await archiveDetails.getByText("Ключ Web Push и другие файлы из каталога data").isVisible());
-      const styles = await archiveDetails.evaluate(details => {
-        const summary = details.querySelector("summary");
-        const other = details.closest(".data-tool-card").querySelector(".data-info-details:not(.data-includes) > summary");
-        const ownStyle = getComputedStyle(summary);
-        const otherStyle = getComputedStyle(other);
-        return {
-          same: ownStyle.fontSize === otherStyle.fontSize && ownStyle.minHeight === otherStyle.minHeight,
-          padding: getComputedStyle(details).paddingLeft,
-          gap: getComputedStyle(details.querySelector("ul")).rowGap,
-          fits: details.scrollWidth <= details.clientWidth + 1,
-        };
-      });
-      assert.ok(styles.same && styles.padding === "0px" && styles.gap === "3px" && styles.fits,
-        `${width}px: archive details use the common disclosure style and fit`);
-      await summary.click();
-      assert.ok(await actionGap() <= 20, `${width}px: closing details does not leave a gap`);
+      assert.ok(await panel.getByRole("heading", { name: "Полная копия ZIP" }).isVisible());
+      const cards = panel.locator(".data-tool-card");
+      assert.equal(await cards.count(), 3);
+      const geometry = () => cards.evaluateAll(items => items.map(card => {
+        const { x, y, width, height } = card.getBoundingClientRect();
+        return { x, y, width, height };
+      }));
+      const before = await geometry();
+      if (width > 760) {
+        assert.ok(Math.abs(before[0].y - before[1].y) <= 1 &&
+          Math.abs(before[0].height - before[1].height) <= 1,
+          `${width}px: both backup cards align vertically`);
+        assert.ok(Math.abs(before[2].x - before[0].x) <= 1 &&
+          Math.abs(before[2].x + before[2].width - before[1].x - before[1].width) <= 1,
+          `${width}px: attachment card spans the same grid`);
+      }
+      for (const summary of await panel.locator(".data-backup-notes summary").all()) {
+        await summary.click();
+        assert.deepEqual(await geometry(), before, `${width}px: opening details does not resize backup cards`);
+        await summary.click();
+        assert.deepEqual(await geometry(), before, `${width}px: closing details does not resize backup cards`);
+      }
+      const buttons = await panel.locator(".data-tool-actions .data-action-btn").evaluateAll(items =>
+        items.map(button => ({
+          height: button.getBoundingClientRect().height,
+          fits: button.scrollWidth <= button.clientWidth + 1,
+          nowrap: getComputedStyle(button).whiteSpace === "nowrap",
+        })));
+      assert.ok(buttons.every(button => Math.abs(button.height - 44) <= 1 && button.fits && button.nowrap),
+        `${width}px: backup actions have equal height and fit without wrapping`);
       const cleanupGeometry = await page.locator(".data-cleanup-card").evaluate(card => {
         const action = card.querySelector(".data-cleanup-actions .data-action-btn");
         const retention = card.querySelector(".data-retention-select");
