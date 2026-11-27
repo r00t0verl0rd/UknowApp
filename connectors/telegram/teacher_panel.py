@@ -7,6 +7,7 @@ from aiogram.exceptions import TelegramAPIError, TelegramBadRequest
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
 
 from connectors.common.commands import Commands
+from connectors.common.panel_text import teacher_panel_text
 
 logger = logging.getLogger(__name__)
 BACK = "К списку учеников"
@@ -17,7 +18,6 @@ NEXT = "Следующая →"
 
 def render(view, page):
     visible, page, total = Commands.page(view["conversations"], page)
-    chat = view.get("chat")
     def button(text, action):
         return InlineKeyboardButton(text=text, callback_data="panel:" + action)
 
@@ -30,28 +30,8 @@ def render(view, page):
         keyboard.append(nav)
     keyboard.append([button(BACK, "back"), button(REFRESH, "refresh")])
     markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
-    if chat:
-        lines = ["🔸 " + chat["name"]]
-        if chat["total"] > len(chat["messages"]):
-            lines.append(f'Показаны последние {len(chat["messages"])} из {chat["total"]} сообщений.')
-        lines.extend(m["name"] + ": " + m["preview"] for m in chat["messages"])
-        if not chat["messages"]:
-            lines.append("История пока пуста.")
-    else:
-        lines = ["▫️ Ваша группа:", ""]
-        for item in visible:
-            lines.append("🔸 " + item["name"] + (f' · {item["unread"]} новых' if item["unread"] else ""))
-            previews = item.get("unread_previews") or []
-            lines.extend("   " + p for p in previews or [item["last_message"]])
-            if item["unread"] > len(previews) and previews:
-                lines.append(f'   …ещё {item["unread"] - len(previews)} сообщений')
-            lines.append("")
-        if not visible:
-            lines.append("Пока нет назначенных учеников.")
-        if total > 1:
-            lines.append(f"Страница {page+1} из {total}.")
     signature = json.dumps([[[(b.text, b.callback_data) for b in row] for row in keyboard]], ensure_ascii=False)
-    return "\n".join(lines)[:3900], markup, page, signature
+    return teacher_panel_text(view.get("chat"), visible, page, total)[:3900], markup, page, signature
 
 
 class TeacherPanel:

@@ -8,6 +8,7 @@ import aiohttp
 
 from connectors.common.client import DeliveryRejected, RetryLater
 from connectors.common.commands import CODE, Commands
+from connectors.common.panel_text import teacher_panel_text
 
 API = "https://platform-api2.max.ru"
 KINDS = {"image": "photo", "video": "video", "audio": "audio", "file": "document"}
@@ -159,14 +160,7 @@ class MaxAdapter:
             buttons.append(navigation)
         buttons.append([{"type": "callback", "text": BACK, "payload": "back"},
                         {"type": "callback", "text": REFRESH, "payload": "refresh"}])
-        if chat:
-            lines = [chat["name"], *(m["name"] + ": " + (m["text"] or m["preview"]) for m in chat["messages"])]
-        else:
-            lines = [f"Ваша группа · страница {page + 1}/{total}"]
-            for item in visible:
-                lines.append(item["name"] + (f" · {item['unread']} новых" if item["unread"] else ""))
-                lines.append(item["last_message"] or "")
-        text = "\n".join(lines)
+        text = teacher_panel_text(chat, visible, page, total)
         text = text if len(text) <= 4000 else text[:160] + "\n…\n" + text[-3830:]
         keyboard = [{"type": "inline_keyboard", "payload": {"buttons": buttons}}]
         signature = json.dumps(buttons, ensure_ascii=False, separators=(",", ":"))
