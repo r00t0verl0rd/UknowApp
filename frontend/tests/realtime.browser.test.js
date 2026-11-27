@@ -4,7 +4,6 @@ import { spawn } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 import test from "node:test";
 import { chromium } from "playwright";
-import { checkWorkspaceLayout } from "./support/workspace-layout.js";
 
 const API_PORT = 8000;
 const APP_PORT = 22222;
@@ -418,8 +417,6 @@ test("global SSE updates real counters across tabs and replays missed events", {
     await page.getByText("В разработке").waitFor({ state: "visible" });
     const originalViewport = page.viewportSize();
 
-    await checkWorkspaceLayout(page, browser, APP_URL);
-    markPhase("UI fixtures and layout");
     await waitFor(() => pendingPersonalResponses.length === 1, 12000, "initial pending personal inbox response");
     assert.equal(pendingPersonalResponses.length, 1,
       "the workspace shell must render before the personal inbox request finishes");

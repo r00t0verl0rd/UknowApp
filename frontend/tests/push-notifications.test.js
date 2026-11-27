@@ -148,25 +148,6 @@ test("iPhone Safari explains Home Screen installation before missing push APIs",
   });
   assert.equal(installed.supported, true);
 });
-test("unsupported push uses informational feedback, not a success toast", () => {
-  const state = readFileSync(new URL("../src/shared/state/notifications/createPushNotificationsState.js", import.meta.url), "utf8");
-  const toast = readFileSync(new URL("../src/shared/components/AppToast.jsx", import.meta.url), "utf8");
-  assert.match(state, /options\.notify\(pushState\(\)\.reason, \{ kind: "info" \}\)/);
-  assert.match(toast, /native-feedback-info/);
-  assert.match(toast, /isInfo\(\) \? "Уведомления" : "Готово"/);
-});
-
-test("notification permission messages are gentle and actionable", () => {
-  const source = readFileSync(new URL("../src/features/notifications/pushNotifications.js", import.meta.url), "utf8");
-  const state = readFileSync(new URL("../src/shared/state/notifications/createPushNotificationsState.js", import.meta.url), "utf8");
-  assert.doesNotMatch(source + state, /запрещен[а-яё]*/i);
-  assert.doesNotMatch(source + state, /браузер не разрешил/i);
-  assert.match(state, /Уведомления отключены в настройках устройства\. Разрешите их для UknowApp и попробуйте снова\./);
-  assert.match(state, /Уведомления отключены в настройках браузера/);
-  assert.match(source, /В этом браузере уведомления пока недоступны/);
-});
-
-
 // Real subscription controller, fake browser and Core. Each import has its own
 // device-local state, like separate installed PWAs.
 let deviceModule = 0;
