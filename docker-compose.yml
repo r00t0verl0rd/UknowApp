@@ -76,7 +76,7 @@ services:
     restart: unless-stopped
 
   # Provider connectors are opt-in.
-  tgbot:
+  tg_bot:
     profiles: [bots]
     build:
       context: .
@@ -127,7 +127,7 @@ services:
       timeout: 5s
       retries: 10
 
-  web-panel:
+  web_panel:
     build:
       context: ./frontend
       dockerfile: Dockerfile

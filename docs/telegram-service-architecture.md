@@ -1,6 +1,6 @@
 # Telegram API (test)
 
-Telegram работает через отдельный коннектор `tgbot`. Core не запускает polling и не хранит токен Bot API. Настройка NATS и коннектора — в [Bots Gateway](bots-gateway.md).
+Telegram работает через отдельный коннектор `tg_bot`. Core не запускает polling и не хранит токен Bot API. Настройка NATS и коннектора — в [Bots Gateway](bots-gateway.md).
 
 ## Какой режим выбрать
 
@@ -28,7 +28,7 @@ python3 infrastructure/telegram-mode.py status
 заполните API ID и Hash. Скрипт сохраняет .env в защищённую резервную копию,
 добавляет недостающие секреты Gateway, меняет только нужные профили и платформы,
 сохраняет PostgreSQL и тома, останавливает polling перед сменой API, вызывает
-logOut на прежнем API, проверяет доступность нового API и запускает tgbot.
+logOut на прежнем API, проверяет доступность нового API и запускает tg_bot.
 При возврате в cloud Telegram может блокировать вход до 10 минут; скрипт ждёт.
 При ошибке после смены режима исправьте причину и повторите ту же команду.
 Не запускайте другие polling-процессы с этим токеном. Команда предназначена
@@ -51,7 +51,7 @@ TELEGRAM_BOT_TOKEN=
 
 ```bash
 docker compose up -d --build
-docker compose logs --tail=80 core nats tgbot
+docker compose logs --tail=80 core nats tg_bot
 ```
 
 ## Локальный API на одном VPS
@@ -72,7 +72,7 @@ TELEGRAM_CACHE_HOST_DIR=/srv/uknow-telegram
 
 ## Отдельный VPS
 
-Для удалённого Bot API не добавляйте профиль `telegram` на Core. Укажите приватный адрес API и доступный каталог кеша в настройках коннектора. Кеш монтирует только `tgbot`, не Core. Порт 8081 не публикуйте в интернет. Размещение удалённого коннектора описано в [Bots Gateway](bots-gateway.md).
+Для удалённого Bot API не добавляйте профиль `telegram` на Core. Укажите приватный адрес API и доступный каталог кеша в настройках коннектора. Кеш монтирует только `tg_bot`, не Core. Порт 8081 не публикуйте в интернет. Размещение удалённого коннектора описано в [Bots Gateway](bots-gateway.md).
 
 ## Переключение работающего бота (ручное)
 
@@ -81,7 +81,7 @@ TELEGRAM_CACHE_HOST_DIR=/srv/uknow-telegram
 
 Cloud → local:
 
-1. Остановите `tgbot` и убедитесь, что других процессов polling нет.
+1. Остановите `tg_bot` и убедитесь, что других процессов polling нет.
 2. Один раз вызовите облачный метод `logOut`, до запуска локального API.
 3. Настройте local-режим, профили и ID/Hash.
 4. Выполните `docker compose up -d --build`.
@@ -91,7 +91,7 @@ Local → cloud: корректно завершите работу локаль
 
 ## Лимиты вложений
 
-`TELEGRAM_API_MODE` задаёт лимит на Core и tgbot: 20 × 1024² байт в cloud,
+`TELEGRAM_API_MODE` задаёт лимит на Core и tg_bot: 20 × 1024² байт в cloud,
 888 × 1024² байт в local. Это ограничения UknowApp, а не гарантии Telegram
 для всех типов медиа. При выключенном Telegram веб-панель сохраняет лимит 1 ГиБ.
 Оба вида веб-чатов используют один лимит; ранее архивированные файлы остаются доступны.
@@ -102,7 +102,7 @@ Local → cloud: корректно завершите работу локаль
 
 ```bash
 docker compose ps
-docker compose logs --tail=80 core nats tgbot
+docker compose logs --tail=80 core nats tg_bot
 ```
 
 В local-режиме дополнительно проверьте логи `telegram-bot-api`. Проверьте реальные сообщения и вложения в обе стороны. Диагностика коннектора доступна администратору через `/api/admin/bots/diagnostics`.

@@ -6,7 +6,7 @@ set -eu
 APP_DIR="/home/deploy/UknowApp"
 cd "$APP_DIR"
 
-for service in core web-panel; do
+for service in core web_panel; do
     container_id="$(docker compose ps -q "$service" 2>/dev/null || true)"
     [ -n "$container_id" ] || continue
 

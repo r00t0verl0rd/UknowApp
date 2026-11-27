@@ -1,6 +1,6 @@
 # Run on the connector VPS, not on the Core VPS.
 services:
-  tgbot:
+  tg_bot:
     build:
       context: .
       dockerfile: connectors/telegram/Dockerfile

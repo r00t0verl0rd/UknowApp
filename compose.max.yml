@@ -7,7 +7,7 @@ services:
       MAX_PASSWORD: ${BOTS_NATS_MAX_PASSWORD:?}
     volumes:
       - ./infrastructure/nats/nats-max.conf:/etc/nats/nats.conf:ro
-  maxbot:
+  max_bot:
     profiles: [max]
     build:
       context: .
@@ -23,7 +23,9 @@ services:
       BOTS_MEDIA_SECRET: ${BOTS_MEDIA_SECRET_MAX:-}
     volumes:
       - maxbot_state:/app/state
-    networks: [app_net]
+    networks:
+      app_net:
+        aliases: [maxbot]
     init: true
     read_only: true
     tmpfs:

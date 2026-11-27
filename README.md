@@ -88,7 +88,7 @@ docker compose up -d --build
 ```bash
 docker compose ps
 docker compose logs --tail=100 core
-docker compose logs --tail=100 web-panel
+docker compose logs --tail=100 web_panel
 docker compose restart
 docker compose stop
 ```

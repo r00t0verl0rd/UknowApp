@@ -122,7 +122,7 @@ def inspect_env(container):
 
 
 def api(method):
-    compose("--profile", "bots", "run", "--rm", "--no-deps", "-T", "--entrypoint", "python", "tgbot", "-c", API_HELPER, method)
+    compose("--profile", "bots", "run", "--rm", "--no-deps", "-T", "--entrypoint", "python", "tg_bot", "-c", API_HELPER, method)
 
 
 def switch(mode):
@@ -147,11 +147,11 @@ def switch(mode):
     if mode == "local" and (not current.get("TELEGRAM_API_ID", "").isdigit() or
                               not current.get("TELEGRAM_API_HASH")):
         raise RuntimeError("Set TELEGRAM_API_ID and TELEGRAM_API_HASH in .env first (my.telegram.org/apps).")
-    bot = running("tgbot")
+    bot = running("tg_bot")
     if bot:
         actual = inspect_env(bot)
         if actual.get("TELEGRAM_API_MODE", "cloud") != old_mode or actual.get("TELEGRAM_BOT_TOKEN") != current["TELEGRAM_BOT_TOKEN"]:
-            raise RuntimeError("Running tgbot differs from .env; reconcile its mode/token before switching.")
+            raise RuntimeError("Running tg_bot differs from .env; reconcile its mode/token before switching.")
     old_local = running("telegram-bot-api")
     if old_local and old_mode != "local":
         raise RuntimeError("Local API is running although .env says cloud; reconcile before switching.")
@@ -161,7 +161,7 @@ def switch(mode):
     candidate = protected_file(rewrite_env(original, values), ".env.telegram-candidate-")
     try:
         compose("config", "--quiet", envfile=candidate)
-        compose("build", "core", "web-panel", "tgbot", envfile=candidate)
+        compose("build", "core", "web_panel", "tg_bot", envfile=candidate)
         if mode == "local":
             compose("pull", "telegram-bot-api", envfile=candidate)
         backup = protected_file(original, ".env.telegram-backup-")
@@ -170,7 +170,7 @@ def switch(mode):
             raise RuntimeError("Old local API is not running; start it before migrating to cloud.")
         if old_mode != mode:
             print("Stopping polling before API migration...", flush=True)
-            compose("--profile", "bots", "stop", "tgbot")
+            compose("--profile", "bots", "stop", "tg_bot")
             # Explicit profile allows the helper even on a web-only cloud install.
             api("logOut")
         # Commit target mode immediately after successful logout. If startup fails,
@@ -182,11 +182,11 @@ def switch(mode):
             compose("up", "-d", "--no-deps", "telegram-bot-api")
         if "postgres" in values["COMPOSE_PROFILES"].split(","):
             compose("up", "-d", "--wait", "--wait-timeout", "180", "postgres")
-        compose("up", "-d", "nats", "core", "web-panel")
+        compose("up", "-d", "nats", "core", "web_panel")
         if old_mode != mode or not bot:
             print("Checking target Telegram API (cloud may have a 10-minute cooldown)...", flush=True)
             api("getMe")
-        compose("up", "-d", "--no-deps", "--wait", "--wait-timeout", "180", "tgbot")
+        compose("up", "-d", "--no-deps", "--wait", "--wait-timeout", "180", "tg_bot")
         compose("exec", "-T", "core", "python", "-c",
                 'import urllib.request; print(urllib.request.urlopen("http://127.0.0.1:8000/api/ready", timeout=10).status)')
         compose("ps")

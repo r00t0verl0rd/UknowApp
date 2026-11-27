@@ -46,7 +46,7 @@ def test_switch_order(old, new, monkeypatch, tmp_path):
     current = {"TELEGRAM_API_MODE": old, "TELEGRAM_BOT_TOKEN": "example", "TELEGRAM_API_ID": "123",
                "TELEGRAM_API_HASH": "example", "COMPOSE_PROFILES": "postgres,gateway,bots"}
     monkeypatch.setattr(switcher, "resolved_env", lambda: current)
-    monkeypatch.setattr(switcher, "running", lambda service: "id" if service == "tgbot" or old == "local" else "")
+    monkeypatch.setattr(switcher, "running", lambda service: "id" if service == "tg_bot" or old == "local" else "")
     monkeypatch.setattr(switcher, "inspect_env", lambda container: current)
     calls = []
     monkeypatch.setattr(switcher, "compose", lambda *args, **kwargs: calls.append(args))
@@ -54,9 +54,9 @@ def test_switch_order(old, new, monkeypatch, tmp_path):
     switcher.switch(new)
     assert "TELEGRAM_API_MODE=" + new in env.read_text()
     assert "postgres" in env.read_text()
-    start = next(i for i, c in enumerate(calls) if c[0] == "up" and c[-1] == "tgbot")
+    start = next(i for i, c in enumerate(calls) if c[0] == "up" and c[-1] == "tg_bot")
     if old != new:
-        stop = calls.index(("--profile", "bots", "stop", "tgbot"))
+        stop = calls.index(("--profile", "bots", "stop", "tg_bot"))
         logout = calls.index(("api", "logOut", "TELEGRAM_API_MODE=" + old))
         login = calls.index(("api", "getMe", "TELEGRAM_API_MODE=" + new))
         assert stop < logout < login < start
