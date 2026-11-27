@@ -8,6 +8,7 @@ services:
     volumes:
       - ./infrastructure/nats/nats-max.conf:/etc/nats/nats.conf:ro
   max_bot:
+    container_name: uknow-maxbot
     profiles: [max]
     build:
       context: .

@@ -7,6 +7,7 @@ services:
     networks: [app_net]
 
   core:
+    container_name: uknow-core
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -63,6 +64,7 @@ services:
     # One Core process owns SQL outbox and SSE coordination.
 
   nats:
+    container_name: uknow-nats
     image: nats:2.11-alpine
     profiles: [gateway]
     command: ["-c", "/etc/nats/nats.conf"]
@@ -77,6 +79,7 @@ services:
 
   # Provider connectors are opt-in.
   tg_bot:
+    container_name: uknow-tgbot
     profiles: [bots]
     build:
       context: .
@@ -128,6 +131,7 @@ services:
       retries: 10
 
   web_panel:
+    container_name: uknow-webpanel
     build:
       context: ./frontend
       dockerfile: Dockerfile
