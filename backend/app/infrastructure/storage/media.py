@@ -19,9 +19,12 @@ MAX_ATTACHMENT_BYTES = 1024 ** 3
 ATTACHMENT_SIZE_ERROR = "Максимальный размер вложения — 1024 МиБ"
 
 TELEGRAM_ATTACHMENT_LIMITS = {"cloud": 20 * 1024 ** 2, "local": 888 * 1024 ** 2}
+MAX_MESSENGER_ATTACHMENT_BYTES = 888 * 1024 ** 2
 
 
 def provider_attachment_limit(platform: str) -> int:
+    if platform == "max":
+        return MAX_MESSENGER_ATTACHMENT_BYTES
     if platform != "telegram":
         return MAX_ATTACHMENT_BYTES
     mode = os.getenv("TELEGRAM_API_MODE", "cloud")

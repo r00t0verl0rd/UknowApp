@@ -72,3 +72,25 @@ def test_connector_upload_applies_mode_limit(mode, mib, monkeypatch, tmp_path):
         assert client.put(path + "big", content=b"12345", headers=headers).status_code == 413
         assert not gateway.media_path("telegram", "big")[0].exists()
         assert not list(tmp_path.rglob("*.part"))
+
+
+@pytest.mark.parametrize("platforms,mode,mib", [
+    ("max", "cloud", 888),
+    ("max", "local", 888),
+    ("telegram,max", "cloud", 20),
+    ("telegram,max", "local", 888),
+])
+def test_max_and_combined_attachment_limits(platforms, mode, mib, monkeypatch, tmp_path):
+    monkeypatch.setenv("BOTS_PLATFORMS", platforms)
+    monkeypatch.setenv("TELEGRAM_API_MODE", mode)
+    monkeypatch.setattr(uploads, "MEDIA_DIR", tmp_path)
+    assert media.provider_attachment_limit("max") == 888 * 1024 ** 2
+    limit = mib * 1024 ** 2
+    assert media.panel_attachment_limit() == limit
+    assert panel_me({"role": "admin"})["max_attachment_bytes"] == limit
+    file = SimpleNamespace(size=limit + 1, file=io.BytesIO(), filename="big.bin",
+                           content_type="application/octet-stream")
+    with pytest.raises(HTTPException) as error:
+        uploads.store_panel_attachment(file, 1)
+    assert error.value.status_code == 413
+    assert str(mib) in error.value.detail
