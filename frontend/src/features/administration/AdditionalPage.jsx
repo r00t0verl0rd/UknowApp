@@ -78,46 +78,46 @@ export default function AdditionalPage(options) {
           </div>
         )}
         <div class="data-stats-grid">
-          <article class="data-stat-card">
-            <div class="data-stat-heading">
+          <details class="data-stat-card">
+            <summary class="data-stat-heading">
               <span class="data-tool-icon" aria-hidden="true"><DatabaseIcon /></span>
               <span>База данных <small>{isPostgres() ? "PostgreSQL" : "SQLite"}</small></span>
+              <span class="data-stat-metric">
+                <b class="data-stat-value">{options.dataStats?.database_bytes != null ? formatBytes(options.dataStats.database_bytes) : "—"}</b>
+                <small>{options.dataStats?.users ?? "—"} пользователей</small>
+              </span>
+              <ChevronDown size={16} aria-hidden="true" />
+            </summary>
+            <div class="data-stat-details">
+              <span>Учителя <b>{options.dataStats?.teachers ?? "—"}</b></span>
+              <span>Ученики <b>{options.dataStats?.students ?? "—"}</b></span>
+              <span>Назначения <b>{options.dataStats?.assignments ?? "—"}</b></span>
+              <span>Учебные диалоги <b>{options.dataStats?.conversations ?? "—"}</b></span>
+              <span>Личные диалоги <b>{options.dataStats?.personal_conversations ?? "—"}</b></span>
+              <span>Всего сообщений <b>{options.dataStats?.total_messages ?? "—"}</b></span>
+              <span>В учебных диалогах <b>{options.dataStats?.messages ?? "—"}</b></span>
+              <span>В личных диалогах <b>{options.dataStats?.personal_messages ?? "—"}</b></span>
+              <span>Внешние каналы <b>{options.dataStats?.external_endpoints ?? "—"}</b></span>
+              <span>Коды подключения <b>{options.dataStats?.connection_codes ?? "—"}</b></span>
             </div>
-            <b class="data-stat-value">{options.dataStats?.database_bytes != null ? formatBytes(options.dataStats.database_bytes) : "—"}</b>
-            <small>{options.dataStats?.users ?? "—"} пользователей</small>
-            <details class="data-info-details">
-              <summary>Что хранится в базе <ChevronDown size={15} aria-hidden="true" /></summary>
-              <div class="data-stat-details">
-                <span>Учителя <b>{options.dataStats?.teachers ?? "—"}</b></span>
-                <span>Ученики <b>{options.dataStats?.students ?? "—"}</b></span>
-                <span>Назначения <b>{options.dataStats?.assignments ?? "—"}</b></span>
-                <span>Учебные диалоги <b>{options.dataStats?.conversations ?? "—"}</b></span>
-                <span>Личные диалоги <b>{options.dataStats?.personal_conversations ?? "—"}</b></span>
-                <span>Всего сообщений <b>{options.dataStats?.total_messages ?? "—"}</b></span>
-                <span>В учебных диалогах <b>{options.dataStats?.messages ?? "—"}</b></span>
-                <span>В личных диалогах <b>{options.dataStats?.personal_messages ?? "—"}</b></span>
-                <span>Внешние каналы <b>{options.dataStats?.external_endpoints ?? "—"}</b></span>
-                <span>Коды подключения <b>{options.dataStats?.connection_codes ?? "—"}</b></span>
-              </div>
-            </details>
-          </article>
-          <article class="data-stat-card">
-            <div class="data-stat-heading">
+          </details>
+          <details class="data-stat-card">
+            <summary class="data-stat-heading">
               <span class="data-tool-icon" aria-hidden="true"><ArchiveIcon /></span>
               <span>Вложения из переписок</span>
+              <span class="data-stat-metric">
+                <b class="data-stat-value">{options.dataStats ? formatBytes(options.dataStats.media_bytes) : "—"}</b>
+                <small>{options.dataStats?.media_files ?? "—"} файлов</small>
+              </span>
+              <ChevronDown size={16} aria-hidden="true" />
+            </summary>
+            <div class="data-stat-details">
+              <span>Изображения <b>{options.dataStats?.media_images ?? "—"}</b></span>
+              <span>Аудио <b>{options.dataStats?.media_audio ?? "—"}</b></span>
+              <span>Видео <b>{options.dataStats?.media_videos ?? "—"}</b></span>
+              <span>Другие файлы <b>{options.dataStats?.media_other ?? "—"}</b></span>
             </div>
-            <b class="data-stat-value">{options.dataStats ? formatBytes(options.dataStats.media_bytes) : "—"}</b>
-            <small>{options.dataStats?.media_files ?? "—"} файлов</small>
-            <details class="data-info-details">
-              <summary>Посмотреть по типам <ChevronDown size={15} aria-hidden="true" /></summary>
-              <div class="data-stat-details">
-                <span>Изображения <b>{options.dataStats?.media_images ?? "—"}</b></span>
-                <span>Аудио <b>{options.dataStats?.media_audio ?? "—"}</b></span>
-                <span>Видео <b>{options.dataStats?.media_videos ?? "—"}</b></span>
-                <span>Другие файлы <b>{options.dataStats?.media_other ?? "—"}</b></span>
-              </div>
-            </details>
-          </article>
+          </details>
         </div>
         <section class="data-tools-grid" aria-labelledby="data-backups-title">
           <h3 id="data-backups-title">Резервные копии</h3>
@@ -125,7 +125,7 @@ export default function AdditionalPage(options) {
             <span class="data-tool-icon" aria-hidden="true"><ArchiveIcon /></span>
             <div class="data-tool-copy">
               <h4>Полная копия <small>ZIP</small></h4>
-              <p>База, вложения и файлы приложения</p>
+              <p>Пользователи, назначения, переписки, доступные вложения, ключ Web Push и другие файлы каталога data.</p>
             </div>
             <div class="data-tool-actions">
               <Button
@@ -155,7 +155,7 @@ export default function AdditionalPage(options) {
             <span class="data-tool-icon" aria-hidden="true"><DatabaseIcon /></span>
             <div class="data-tool-copy">
               <h4>База данных <small>SQLite</small></h4>
-              <p>Пользователи и переписки без вложений</p>
+              <p>Пользователи, назначения и переписки без файлов. Восстановление из .db, .sqlite или .sqlite3.</p>
             </div>
             <div class="data-tool-actions">
               <Button
@@ -181,11 +181,11 @@ export default function AdditionalPage(options) {
               </label>
             </div>
           </article>
-          <article class="data-tool-card data-tool-media">
+          <article class="data-tool-card">
             <span class="data-tool-icon" aria-hidden="true"><ArchiveIcon /></span>
             <div class="data-tool-copy">
               <h4>Вложения <small>ZIP</small></h4>
-              <p>Фото, аудио, видео и документы</p>
+              <p>Фото, голосовые сообщения, аудио, видео и документы без базы и текстов переписки.</p>
             </div>
             <div class="data-tool-actions">
               <Button
@@ -196,6 +196,7 @@ export default function AdditionalPage(options) {
               >
                 <Download size={16} aria-hidden="true" /> Скачать вложения
               </Button>
+              <p class="data-restore-hint">Восстановление из полной копии</p>
             </div>
           </article>
           <div class="data-backup-notes">
@@ -215,21 +216,8 @@ export default function AdditionalPage(options) {
                 Для PostgreSQL сохраните базу через pg_dump, а файлы скачайте отдельно.
               </p>
             )}
-            <details class="data-info-details">
-              <summary>Перед восстановлением <ChevronDown size={15} aria-hidden="true" /></summary>
-              <p class="data-note-copy">
-                Восстановление заменяет текущие данные. В Docker backend перезапустится автоматически, при локальном запуске — вручную.
-                Настройки .env и настройки Telegram и MAX сохраняйте отдельно. Отсутствующие вложения не попадут в архив.
-              </p>
-            </details>
-            <details class="data-info-details data-includes">
-              <summary>Что входит в архив <ChevronDown size={15} aria-hidden="true" /></summary>
-              <ul>
-                <li>Пользователи, назначения и переписки</li>
-                <li>Фотографии, аудио, видео и документы</li>
-                <li>Ключ Web Push и другие файлы из каталога data</li>
-              </ul>
-            </details>
+            <p class="data-note-copy"><strong>Перед восстановлением.</strong> Текущие данные будут заменены. В Docker backend перезапустится автоматически, при локальном запуске — вручную. Может потребоваться повторный вход.</p>
+            <p class="data-note-copy">Настройки .env, Telegram и MAX сохраняйте отдельно. Отсутствующие вложения не попадут в архив.</p>
           </div>
         </section>
         <article class="data-cleanup-card">

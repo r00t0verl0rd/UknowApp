@@ -150,22 +150,23 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
       const geometry = () => cards.evaluateAll(items => items.map(card => {
         const { x, y, width, height } = card.getBoundingClientRect();
         const grid = card.parentElement.getBoundingClientRect();
-        return { x: x - grid.x, y: y - grid.y, width, height };
+        const actions = card.querySelector(".data-tool-actions").getBoundingClientRect();
+        return { x: x - grid.x, y: y - grid.y, width, height,
+          actionsX: actions.x - grid.x, actionsWidth: actions.width };
       }));
       const before = await geometry();
-      if (width > 760) {
-        assert.ok(Math.abs(before[0].y - before[1].y) <= 1 &&
-          Math.abs(before[0].height - before[1].height) <= 1,
-          `${width}px: both backup cards align vertically`);
-        assert.ok(Math.abs(before[2].x - before[0].x) <= 1 &&
-          Math.abs(before[2].x + before[2].width - before[1].x - before[1].width) <= 1,
-          `${width}px: attachment card spans the same grid`);
-      }
-      for (const summary of await panel.locator(".data-backup-notes summary").all()) {
+      assert.ok(before.every((card, index) => card.x === before[0].x &&
+        card.width === before[0].width && card.actionsX === before[0].actionsX &&
+        card.actionsWidth === before[0].actionsWidth &&
+        (index === 0 || Math.abs(card.y - before[index - 1].y - before[index - 1].height) <= 1)),
+        `${width}px: backup rows and action columns share one grid without gaps`);
+      assert.ok(await panel.getByText("Перед восстановлением.", { exact: true }).isVisible());
+      assert.ok(await panel.getByText("Настройки .env, Telegram и MAX сохраняйте отдельно.", { exact: false }).isVisible());
+      for (const summary of await panel.locator(".data-stat-card > summary").all()) {
         await summary.click();
-        assert.deepEqual(await geometry(), before, `${width}px: opening details does not resize backup cards`);
+        assert.deepEqual(await geometry(), before, `${width}px: expanding statistics does not resize backup rows`);
         await summary.click();
-        assert.deepEqual(await geometry(), before, `${width}px: closing details does not resize backup cards`);
+        assert.deepEqual(await geometry(), before);
       }
       const buttons = await panel.locator(".data-tool-actions .data-action-btn").evaluateAll(items =>
         items.map(button => ({
