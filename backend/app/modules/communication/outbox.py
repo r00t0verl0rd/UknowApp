@@ -216,9 +216,10 @@ def record_result(db, job, status, external_id=None, *, external_ids=None):
     jobs = db.scalars(select(ConnectorDelivery).where(
         ConnectorDelivery.message_id == row.id, ConnectorDelivery.platform == job.platform)).all()
     def address(j):
+        group = j.thread_id or (j.platform == "max" and j.chat_id != j.external_user_id)
         return {"user_id": j.recipient_id, "external_chat_id": j.chat_id,
                 "external_thread_id": j.thread_id or None,
-                "endpoint_type": "group" if j.thread_id else "private"}
+                "endpoint_type": "group" if group else "private"}
     metadata = json.loads(row.metadata_json or "{}")
     # Keep every confirmed part in the existing delivery ledger. The first ID
     # remains in the job row for compatibility with old single-copy receipts.

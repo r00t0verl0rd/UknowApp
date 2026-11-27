@@ -18,14 +18,26 @@ function deliveredEntries(channel, delivered, includeRecipient, participants) {
     description: delivered.length === 1 ? "Копия отправлена." : `Отправлено копий: ${delivered.length}.`,
     delivered: true,
   }];
-  return delivered.map(entry => {
+  const destinations = delivered.filter((entry, index) => {
+    if (entry?.external_chat_id == null) return true;
+    return delivered.findIndex(copy => copy?.external_chat_id === entry.external_chat_id &&
+      copy.external_thread_id === entry.external_thread_id && copy.user_id === entry.user_id) === index;
+  });
+  return destinations.map((entry, index) => {
     const name = recipient(entry, participants);
     const person = participants.find(p => p.id != null && Number(p.id) === Number(entry?.user_id));
     const role = entry?.role || person?.role;
+    const destination = entry?.external_thread_id ? "в тему группы"
+      : entry?.endpoint_type === "group" ? "в группу"
+      : entry?.endpoint_type === "private" ? "в личный чат с ботом"
+      : "";
+    const copy = destinations.length > 1 ? `Копия ${index + 1}` : "Копия";
+    const description = destination ? `${copy} отправлена ${destination}.`
+      : `${copy} отправлена.` + (destinations.length > 1 ? " Место доставки не записано." : "");
     return {
       title: `${channel} · ${name}`,
       ...(name !== "Получатель" ? { namedRecipient: name, role, channel } : {}),
-      description: "Копия отправлена.",
+      description,
       delivered: true,
     };
   });
