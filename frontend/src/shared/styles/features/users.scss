@@ -324,19 +324,28 @@
   gap:4px;
 }
 .user-actions .user-messenger-btn {
-  display:inline-flex;
-  align-items:center;
-  gap:5px;
-  width:auto;
-  min-height:36px;
-  padding-inline:8px;
-  font-size:12px;
-  font-weight:600;
-  white-space:nowrap;
+  position:relative;
+  padding:0;
 }
 .user-messenger-btn > svg {
-  width:14px;
-  height:14px;
+  width:17px;
+  height:17px;
+}
+.user-messenger-status {
+  position:absolute;
+  bottom:2px;
+  right:2px;
+  display:grid;
+  place-items:center;
+  width:11px;
+  height:11px;
+  border-radius:50%;
+  color:var(--success);
+  background:var(--ui-control-bg);
+}
+.user-messenger-status > svg {
+  width:10px;
+  height:10px;
 }
 .user-actions .user-messenger-btn.is-connected {
   color:var(--success);
@@ -346,7 +355,7 @@
 .user-actions .user-messenger-btn.is-connected:hover {
   background:color-mix(in srgb, var(--success) 20%, var(--ui-control-bg));
 }
-@container (max-width: 35rem) {
+@container (max-width: 24rem) {
   .user-list > .user-row {
     display:grid;
     grid-template-columns:auto minmax(0, 1fr);
@@ -355,6 +364,8 @@
     grid-column:1 / -1;
     justify-self:end;
     flex-wrap:wrap;
+    min-width:0;
+    max-width:100%;
     justify-content:flex-end;
     gap:4px;
   }

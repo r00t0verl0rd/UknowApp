@@ -100,8 +100,14 @@ export default function UsersPage(options) {
                           aria-label={`${action()} · ${user.full_name}`}
                           aria-haspopup="dialog"
                         >
-                          {connected() ? <Check aria-hidden="true" /> : <Link2 aria-hidden="true" />}
-                          <span>{label}</span>
+                          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            {platform === "telegram" ? (
+                              <path d="M21.4 3.8 2.8 11c-.8.3-.8 1.1 0 1.4l4.8 1.5L18 7.4l-8.4 8.1-.3 4 2.4-2.3 4.8 3.5c.6.4 1.2.2 1.4-.6l4-15.5c.2-.7-.1-1.1-.5-.8Z" />
+                            ) : (
+                              <path fill-rule="evenodd" d="M12 2.5a9.5 9.5 0 0 0-9.5 9.5v8.8l4.4-1.2A9.5 9.5 0 1 0 12 2.5Zm0 3a6.5 6.5 0 0 0-6.5 6.5v4.9l2-.6A6.5 6.5 0 1 0 12 5.5Z" />
+                            )}
+                          </svg>
+                          {connected() && <span class="user-messenger-status"><Check aria-hidden="true" /></span>}
                         </IconButton>
                       );
                     }}
