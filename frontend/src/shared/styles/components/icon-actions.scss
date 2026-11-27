@@ -92,21 +92,6 @@
   }
 
 }
-@media (hover: none), (pointer: coarse) {
-  :root .ui-icon-button {
-    border:1px solid var(--ui-border);
-    background:var(--ui-control-bg);
-    color:var(--ui-control-text);
-  
-}
-  :root .ui-icon-button.ui-icon-button--danger {
-    border-color:var(--button-danger-border);
-    background:var(--button-danger-bg);
-    color:var(--button-danger-text);
-  
-}
-
-}
 :root .ui-icon-button.ui-icon-button--student {
   background:#f4eadb;
   border-color:#e0cda9;

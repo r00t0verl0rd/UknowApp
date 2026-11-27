@@ -67,7 +67,6 @@
   }
   .user-list {
     width:100%;
-    border-radius:15px;
   }
   .workspace-content:has(.admin-card) .legend,
   .user-row {
@@ -112,25 +111,19 @@
   .user-row > .icon-btn {
     flex:0 0 38px;
   }
-  .add-student {
-    background:var(--surface-soft);
-  }
   .workspace-content:has(.admin-card) .legend {
     display:inline-flex;
     align-items:center;
     gap:7px;
     max-width:100%;
     padding:8px 10px;
-    border-radius:11px;
     line-height:1.3;
   }
   .teacher-branch {
     min-width:0;
-    border-radius:13px;
   }
   .teacher-card {
     min-height:58px;
-    border-radius:10px;
   }
   .workspace-content:has(.admin-card) {
     & .person-main,
@@ -315,30 +308,6 @@
       height:7px;
     }
   }
-  .add-student {
-    -webkit-appearance:none;
-    appearance:none;
-    background-color:var(--ui-control-bg);
-    border:1px solid var(--ui-border);
-    color:var(--ui-control-text);
-    box-shadow:none;
-  }
-  .add-student,
-  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)).add-student:not(.primary):not(
-      .danger-icon
-    ) {
-    background-color:var(--ui-selected-bg);
-    border-color:var(--ui-selected-border);
-    color:var(--ui-selected-text);
-  }
-  :root[data-theme="dark-soft"] {
-    & .add-student {
-      background:var(--ui-control-bg);
-      border-color:var(--ui-border);
-      color:var(--ui-control-text);
-      box-shadow:none;
-    }
-}
   .student-card > .graph-person-action {
     flex-basis:25px;
     width:25px;
@@ -355,33 +324,4 @@
       min-height:32px;
     }
   }
-}
-@media (hover: none), (pointer: coarse) {
-  .add-student {
-    -webkit-appearance:none;
-    appearance:none;
-    background:var(--ui-control-bg);
-    border:1px solid var(--ui-border);
-    color:var(--ui-control-text);
-    box-shadow:var(--ui-shadow-soft);
-  }
-  .add-student {
-    background:var(--ui-selected-bg);
-    border-color:var(--ui-selected-border);
-    color:var(--ui-selected-text);
-  }
-  :root[data-theme="dark-soft"] {
-    & .add-student {
-      background:var(--ui-control-bg);
-      border-color:var(--ui-border);
-      color:var(--ui-control-text);
-      box-shadow:none;
-    }
-    & .user-row:hover,
-    & .teacher-card:hover {
-      background:#293343;
-      border-color:#59657b;
-      box-shadow:none;
-    }
-}
 }

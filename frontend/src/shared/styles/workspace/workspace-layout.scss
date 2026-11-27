@@ -65,7 +65,6 @@
     padding:calc(10px + env(safe-area-inset-top, 0px)) 12px 9px;
     border-right:0;
     border-bottom:1px solid var(--line);
-    box-shadow:0 5px 18px rgba(47, 31, 84, 0.07);
     position:sticky;
   }
   .brand {
@@ -89,7 +88,6 @@
       min-height:32px;
       padding:6px;
       margin:0;
-      border-radius:9px;
       display:grid;
       place-items:center;
     }
@@ -151,23 +149,7 @@
     -webkit-appearance:none;
     appearance:none;
   }
-  .btn:not(.primary) {
-    background:var(--ui-control-bg);
-  }
-  .btn.ghost {
-    background:var(--ui-control-bg);
-    border-color:var(--ui-border);
-  }
-  .btn.outline {
-    background:var(--ui-control-bg);
-    border-color:var(--ui-selected-border);
-  }
   .person-actions button,
-  .icon-btn {
-    background:var(--ui-control-bg);
-    border:1px solid #e4deea;
-    color:#716981;
-  }
   .topbar-actions {
     gap:5px;
   }
@@ -178,7 +160,6 @@
   }
   .student-card {
     min-height:58px;
-    border-radius:10px;
   }
   .student-card:hover {
     transform:none;
@@ -207,9 +188,6 @@
   }
   .login-screen {
     padding:14px;
-  }
-  .login-card {
-    border-radius:20px;
   }
   .login-card h1 {
     font-size:clamp(27px, 8vw, 32px);
@@ -280,112 +258,4 @@
   .topbar > .topbar-actions {
     display:none;
   }
-  button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)):not(.primary):not(.danger-icon),
-  .btn:not(.primary),
-  .person-actions button:not(.danger-icon),
-  .icon-btn:not(.danger-icon),
-  .modal-head button {
-    -webkit-appearance:none;
-    appearance:none;
-    background-color:var(--ui-control-bg);
-    border:1px solid var(--ui-border);
-    color:var(--ui-control-text);
-    box-shadow:none;
-  }
-  .btn.ghost {
-    background-color:var(--ui-control-bg);
-  }
-  .btn.outline {
-    background-color:var(--ui-selected-bg);
-    border-color:var(--ui-selected-border);
-    color:var(--ui-selected-text);
-  }
-  .btn.primary {
-    background:var(--button-primary);
-  }
-  .btn.ghost:not(.primary):not(.danger-icon) {
-    background-color:var(--ui-control-bg);
-  }
-  .btn.outline:not(.primary):not(.danger-icon) {
-    background-color:var(--ui-selected-bg);
-    border-color:var(--ui-selected-border);
-    color:var(--ui-selected-text);
-  }
-  :root[data-theme="dark-soft"] {
-    & button:not(.primary):not(.danger-icon):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)),
-    & .btn:not(.primary):not(.danger-icon),
-    & .person-actions button:not(.danger-icon),
-    & .icon-btn:not(.danger-icon):not(:where(.message-actions button)),
-    & .modal-head button {
-      background:var(--ui-control-bg);
-      border-color:var(--ui-border);
-      color:var(--ui-control-text);
-      box-shadow:none;
-    }
-    & .btn.primary {
-      background:var(--button-primary);
-      border-color:transparent;
-      color:var(--app-foreground);
-    }
-  
-}
-
-}
-@media (hover: none), (pointer: coarse) {
-  button:not(.danger):not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)),
-  button:not(.danger):not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)).btn,
-  .person-actions button,
-  .icon-btn,
-  .modal-head button {
-    -webkit-appearance:none;
-    appearance:none;
-    background:var(--ui-control-bg);
-    border:1px solid var(--ui-border);
-    color:var(--ui-control-text);
-    box-shadow:var(--ui-shadow-soft);
-  }
-  .btn.primary {
-    background:var(--button-primary);
-  }
-  .btn.ghost {
-    background:var(--ui-control-bg);
-    border-color:var(--ui-border);
-  }
-  .btn.outline {
-    background:var(--ui-selected-bg);
-    border-color:var(--ui-selected-border);
-    color:var(--ui-selected-text);
-  }
-  .person-actions button.danger-icon,
-  .icon-btn.danger-icon {
-    background:var(--button-danger-bg);
-    border-color:var(--button-danger-border);
-    color:var(--button-danger-text);
-  }
-  button:not(.danger):not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)):disabled {
-    opacity:0.5;
-  }
-  :root[data-theme="dark-soft"] {
-    & button:not(.ui-icon-button):not(.primary):not(.danger):not(.danger-icon):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)),
-    & .btn:not(.primary):not(.danger):not(.danger-icon),
-    & .icon-btn:not(.danger-icon):not(:where(.message-actions button)),
-    & .modal-head button {
-      background:var(--ui-control-bg);
-      border-color:var(--ui-border);
-      color:var(--ui-control-text);
-      box-shadow:none;
-    }
-    & .btn.primary {
-      background:var(--button-primary);
-      border-color:transparent;
-      color:var(--app-foreground);
-    }
-    & .student-card:hover {
-      background:#293343;
-      border-color:#59657b;
-      box-shadow:none;
-    }
-  
-}
-
 }
