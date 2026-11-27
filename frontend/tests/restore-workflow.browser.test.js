@@ -106,7 +106,9 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
           ? route.fulfill({ status: 500, json: { detail: "Internal Server Error" } })
           : route.fulfill({ json: {
               restore: null, database_bytes: 8192, media_bytes: 0,
-              users: 7, teachers: 3, students: 4, assignments: 0,
+              database_used_bytes: statsRequests === 2 ? 8192 : 4096,
+              database_free_bytes: statsRequests === 2 ? 0 : 4096,
+              users: statsRequests === 2 ? 7 : 6, teachers: 3, students: statsRequests === 2 ? 4 : 3, assignments: 0,
               conversations: 0, personal_conversations: 0, messages: 0,
               personal_messages: 0, total_messages: 0, telegram_groups: 0,
               connection_codes: 0, media_files: 0, media_images: 0,
@@ -132,6 +134,13 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
     await page.getByText("7 пользователей").waitFor({ timeout: 12000 });
     assert.ok(statsRequests >= 2);
     assert.equal(await page.getByText("Не удалось загрузить статистику").count(), 0);
+    await page.getByRole("button", { name: "Обновить", exact: true }).click();
+    await page.getByText("6 пользователей", { exact: false }).waitFor();
+    assert.equal(statsRequests, 3);
+    const databaseCard = page.locator(".data-stat-card").first();
+    assert.match(await databaseCard.locator(".data-stat-value").innerText(), /^4\s*КБ$/);
+    assert.match(await databaseCard.getByText("Размер базы", { exact: false }).innerText(), /8\s*КБ/);
+    assert.match(await databaseCard.getByText("Свободно внутри базы", { exact: false }).innerText(), /4\s*КБ/);
     // Одинаковые действия и единый стиль для компьютера и телефона.
     for (const width of [1280, 1024, 900, 760, 390, 320]) {
       await page.setViewportSize({ width, height: 850 });

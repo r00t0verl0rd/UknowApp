@@ -55,6 +55,7 @@ def test_stats_tolerates_legacy_message_metadata(api, monkeypatch, tmp_path):
     response = client.get("/api/admin/data/stats")
     assert response.status_code == 200, response.text
     stats = response.json()
+    assert stats["database_used_bytes"] + stats["database_free_bytes"] == stats["database_bytes"]
     assert stats["users"] == 4
     assert stats["teachers"] == 2
     assert stats["students"] == 2

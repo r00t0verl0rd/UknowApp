@@ -51,12 +51,13 @@ export default function AdditionalPage(options) {
             class="data-action-btn"
             onClick={options.loadDataStats}
             disabled={options.dataBusy || options.statsLoading}
+            aria-busy={options.statsLoading}
           >
             <RefreshCw size={16} aria-hidden="true" />
-            Обновить
+            {options.statsLoading ? "Обновляем…" : "Обновить"}
           </Button>
         </div>
-        {options.statsLoading && !options.dataStats && (
+        {options.statsLoading && (
           <p class="data-stats-loading" role="status">Собираем сведения о данных…</p>
         )}
         {options.statsError && (
@@ -88,9 +89,19 @@ export default function AdditionalPage(options) {
               <span class="data-tool-icon" aria-hidden="true"><DatabaseIcon /></span>
               <span>База данных <small>{isPostgres() ? "PostgreSQL" : "SQLite"}</small></span>
             </div>
-            <b class="data-stat-value">{options.dataStats?.database_bytes != null ? formatBytes(options.dataStats.database_bytes) : "—"}</b>
-            <small>{options.dataStats?.users ?? "—"} пользователей</small>
-            <p class="data-stat-hint">В размере учтены таблицы и служебные данные.</p>
+            <b class="data-stat-value">{(options.dataStats?.database_used_bytes ?? options.dataStats?.database_bytes) != null ? formatBytes(options.dataStats.database_used_bytes ?? options.dataStats.database_bytes) : "—"}</b>
+            <small>{options.dataStats?.database_used_bytes != null ? "Занято страницами базы · " : ""}{options.dataStats?.users ?? "—"} пользователей</small>
+            {options.dataStats?.database_free_bytes != null ? (
+              <>
+                <div class="data-stat-details">
+                  <span>Размер базы <b>{formatBytes(options.dataStats.database_bytes)}</b></span>
+                  <span>Свободно внутри базы <b>{formatBytes(options.dataStats.database_free_bytes)}</b></span>
+                </div>
+                <p class="data-stat-hint">SQLite повторно использует свободные страницы. После удаления записей размер базы может не уменьшиться.</p>
+              </>
+            ) : (
+              <p class="data-stat-hint">В размере учтены таблицы и служебные данные.</p>
+            )}
             <details class="data-info-details">
               <summary>Что хранится в базе <ChevronDown size={15} aria-hidden="true" /></summary>
               <div class="data-stat-details">
