@@ -71,15 +71,17 @@ def unread_expressions(prefix, dialect, observer=False):
     return [f"CASE WHEN {condition} THEN 1 ELSE 0 END" for condition in conditions]
 
 
-def cursor_assignments(conversation):
+def cursor_assignments(conversation, dialect):
     if conversation not in {"NEW.conversation_id", "OLD.conversation_id", "conversations.id"}:
         raise ValueError("Unknown SQL conversation reference")
     # Greatest existing ID in the contiguous read prefix. Own messages do not
     # count as unread; sparse receipts beyond the prefix remain intact.
     parts = []
     for role, predicate in (("teacher", TEACHER_UNREAD), ("student", STUDENT_UNREAD)):
-        # Fixed SQL identifiers and predicates, never request data.
-        first_unread = (f"SELECT id FROM messages WHERE conversation_id = {conversation} "  # nosec B608
+        # SQLite can prefer the full history index when no unread rows exist.
+        # The partial index answers the same query without visiting read rows.
+        index = f" INDEXED BY ix_messages_{role}_unread" if dialect == "sqlite" else ""
+        first_unread = (f"SELECT id FROM messages{index} WHERE conversation_id = {conversation} "  # nosec B608
                         f"AND {predicate} ORDER BY id LIMIT 1")
         prefix = (f"SELECT id FROM messages WHERE conversation_id = {conversation} "  # nosec B608
                   f"AND id < COALESCE(({first_unread}), 9223372036854775807) "
@@ -112,15 +114,19 @@ def install_triggers(connection):
     changed = " OR ".join(f"({n}) <> ({o})" for n, o in zip(new, old))
     moved = "OLD.conversation_id <> NEW.conversation_id"
     reordered = "OLD.created_at <> NEW.created_at OR OLD.id <> NEW.id"
+    new_cursor = cursor_assignments("NEW.conversation_id", dialect)
+    old_cursor = cursor_assignments("OLD.conversation_id", dialect)
     # Trigger DDL uses only fixed columns and generated internal expressions.
     insert_sql = (f"UPDATE conversations SET message_count = message_count + 1, {add}, "  # nosec B608
-                  f"last_message_id = {latest_id('NEW.conversation_id')}, {cursor_assignments('NEW.conversation_id')} WHERE id = NEW.conversation_id")
+                  f"last_message_id = {latest_id('NEW.conversation_id')}, "
+                  f"{new_cursor} WHERE id = NEW.conversation_id")
     delete_sql = (f"UPDATE conversations SET message_count = message_count - 1, {subtract}, "  # nosec B608
                   f"last_message_id = CASE WHEN last_message_id = OLD.id THEN "
-                  f"{latest_id('OLD.conversation_id')} ELSE last_message_id END, {cursor_assignments('OLD.conversation_id')} WHERE id = OLD.conversation_id")
+                  f"{latest_id('OLD.conversation_id')} ELSE last_message_id END, "
+                  f"{old_cursor} WHERE id = OLD.conversation_id")
     update_sql = (f"UPDATE conversations SET {delta}, last_message_id = CASE WHEN {reordered} "  # nosec B608
                   f"THEN {latest_id('NEW.conversation_id')} ELSE last_message_id END, "
-                  f"{cursor_assignments('NEW.conversation_id')} WHERE id = NEW.conversation_id")
+                  f"{new_cursor} WHERE id = NEW.conversation_id")
     execute = connection.exec_driver_sql
     if dialect == "sqlite":
         for name in ("insert", "delete", "update", "move"):
@@ -166,6 +172,21 @@ def install_on_create(_table, connection, **_kwargs):
     install_triggers(connection)
 
 
+def ensure_unread_indexes(connection):
+    for role, predicate in (("teacher", TEACHER_UNREAD), ("student", STUDENT_UNREAD)):
+        connection.exec_driver_sql(
+            f"CREATE INDEX IF NOT EXISTS ix_messages_{role}_unread "
+            f"ON messages (conversation_id, id) WHERE {predicate}"
+        )
+
+
+def upgrade_sqlite_read_cursor_indexes(connection):
+    """Update existing SQLite triggers without rewriting any receipts."""
+    if connection.dialect.name == "sqlite":
+        ensure_unread_indexes(connection)
+        install_triggers(connection)
+
+
 def upgrade_conversation_counters(connection):
     """Backfill once, in the caller's migration transaction."""
     columns = {c["name"] for c in inspect(connection).get_columns("conversations")}
@@ -182,8 +203,7 @@ def upgrade_conversation_counters(connection):
         if name not in message_columns:
             storage = "VIRTUAL" if dialect == "sqlite" else "STORED"
             connection.exec_driver_sql(f"ALTER TABLE messages ADD COLUMN {name} TEXT GENERATED ALWAYS AS ({field_sql(name, dialect)}) {storage}")
-    for role, predicate in (("teacher", TEACHER_UNREAD), ("student", STUDENT_UNREAD)):
-        connection.exec_driver_sql(f"CREATE INDEX IF NOT EXISTS ix_messages_{role}_unread ON messages (conversation_id, id) WHERE {predicate}")
+    ensure_unread_indexes(connection)
     install_triggers(connection)
     rebuild_counters(connection)
 
@@ -198,9 +218,10 @@ def rebuild_counters(connection):
         connection.exec_driver_sql("UPDATE conversations SET admin_observer_unread_count=0")
     connection.exec_driver_sql("UPDATE conversations SET message_count=0, teacher_unread_count=0, "
                                "student_unread_count=0, admin_unread_count=0, last_message_id=NULL, teacher_last_read_id=0, student_last_read_id=0")
+    cursor = cursor_assignments("conversations.id", connection.dialect.name)
     # All aggregate/assignment expressions above use fixed schema columns.
     connection.exec_driver_sql(f"""UPDATE conversations SET {assignments},
-        last_message_id = {latest_id('conversations.id')}, {cursor_assignments('conversations.id')}
+        last_message_id = {latest_id('conversations.id')}, {cursor}
         FROM (SELECT conversation_id, COUNT(*) AS message_count, {aggregates}
               FROM messages GROUP BY conversation_id) AS stats
         WHERE conversations.id = stats.conversation_id""")  # nosec B608
@@ -269,8 +290,7 @@ def upgrade_physical_receipts(connection):
                 "student_read_at=:student_read_at, metadata_json=:metadata_json WHERE id=:id"), updates)
         cursor = rows[-1]["id"]
 
-    for role, predicate in (("teacher", TEACHER_UNREAD), ("student", STUDENT_UNREAD)):
-        execute(f"CREATE INDEX IF NOT EXISTS ix_messages_{role}_unread ON messages (conversation_id, id) WHERE {predicate}")
+    ensure_unread_indexes(connection)
     rebuild_counters(connection)
     install_triggers(connection)
 

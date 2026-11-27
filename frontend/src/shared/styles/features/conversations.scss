@@ -764,9 +764,7 @@
   .content > .workspace-content > .chat-detail {
     align-self:stretch;
   }
-  .content > .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) > .chat-detail {
-    display:none;
-  }
+  .content > .workspace-content:has(> .chat-list):not(:has(.mobile-chat-back)) > .chat-detail,
   .content > .workspace-content:has(> .chat-list):has(.mobile-chat-back) > .chat-list {
     display:none;
   }

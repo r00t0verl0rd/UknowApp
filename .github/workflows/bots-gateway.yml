@@ -19,6 +19,7 @@ on:
       - "docker-compose.yml"
       - "compose*.yml"
       - ".github/workflows/bots-gateway.yml"
+      - "ruff.toml"
 permissions:
   contents: read
 concurrency:
@@ -40,7 +41,9 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: backend/requirements.txt
-      - run: uv pip install --system -r backend/requirements.txt pytest httpx httpx2
+      - run: uv pip install --system -r backend/requirements.txt pytest httpx httpx2 ruff
+      - name: Check formatting for the refactored connector modules
+        run: ruff format --check connectors/common/client.py connectors/telegram/adapter.py
       - run: python -m compileall -q backend/app connectors infrastructure/telegram-mode.py
       - name: Verify Core does not require aiogram
         run: python -c "import importlib.util; assert importlib.util.find_spec('aiogram') is None; from app.main import app"

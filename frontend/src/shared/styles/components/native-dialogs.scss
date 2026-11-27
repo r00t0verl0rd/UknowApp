@@ -275,9 +275,7 @@
 :root dialog.native-dialog.native-feedback-info .native-feedback-copy h2 {
   color:var(--muted);
 }
-:root dialog.native-dialog.native-feedback-success .native-feedback-content > svg {
-  color:var(--success);
-}
+:root dialog.native-dialog.native-feedback-success .native-feedback-content > svg,
 :root dialog.native-dialog.native-feedback-success .native-feedback-copy h2 {
   color:var(--success);
 }

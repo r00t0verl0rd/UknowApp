@@ -1,14 +1,17 @@
 """Shared connector client: NATS RPC, JetStream, delivery receipts and HTTP media."""
+
 import asyncio
 import json
 import logging
 import os
+import sqlite3
 import time
-from typing import Protocol
 from collections import deque
+from typing import Protocol
 from urllib.parse import quote
 
 import nats
+from nats.errors import Error as NatsError
 from nats.errors import TimeoutError as NatsTimeout
 
 from .contracts import PREFIX, STREAM, encode
@@ -26,6 +29,7 @@ class ProviderAdapter(Protocol):
 
 class RetryLater(Exception):
     """Provider explicitly rejected a request due to a temporary rate limit."""
+
     def __init__(self, seconds):
         super().__init__("provider rate limit")
         self.seconds = seconds
@@ -81,11 +85,16 @@ class GatewayClient:
     async def connect(self):
         self.nc = await nats.connect(
             servers=[os.environ["BOTS_NATS_URL"]],
-            user=os.environ["BOTS_NATS_USER"], password=os.environ["BOTS_NATS_PASSWORD"],
+            user=os.environ["BOTS_NATS_USER"],
+            password=os.environ["BOTS_NATS_PASSWORD"],
             inbox_prefix=("_INBOX." + self.platform).encode(),
-            max_reconnect_attempts=-1, connect_timeout=3)
+            max_reconnect_attempts=-1,
+            connect_timeout=3,
+        )
         self.js = self.nc.jetstream(timeout=10)
-        self.inbound_subscription = await self.nc.subscribe(f"{PREFIX}.accepted.{self.platform}", cb=self.accepted)
+        self.inbound_subscription = await self.nc.subscribe(
+            f"{PREFIX}.accepted.{self.platform}", cb=self.accepted
+        )
         await self.nc.flush()
 
     async def close(self):
@@ -93,8 +102,12 @@ class GatewayClient:
             await self.nc.close()
 
     async def rpc(self, operation, **payload):
-        msg = await self.nc.request(f"{PREFIX}.rpc.{self.platform}.{operation}", encode(payload), timeout=10)
+        msg = await self.nc.request(
+            f"{PREFIX}.rpc.{self.platform}.{operation}", encode(payload), timeout=10
+        )
         response = json.loads(msg.data)
+        if not isinstance(response, dict):
+            raise TypeError("Invalid Core RPC response")
         if not response.get("ok"):
             raise RpcError(response.get("code", 503), response.get("error", "Core unavailable"))
         return response["result"]
@@ -105,7 +118,9 @@ class GatewayClient:
             ident = receipt["id"]
             if not isinstance(ident, str) or not isinstance(receipt.get("ok"), bool):
                 return
-            self.spool.accept_inbound(ident, route_confirmed=receipt["ok"] and receipt.get("route_confirmed") is True)
+            self.spool.accept_inbound(
+                ident, route_confirmed=receipt["ok"] and receipt.get("route_confirmed") is True
+            )
             if not receipt["ok"]:
                 logger.warning("Core rejected normalized inbound event")
         except (ValueError, KeyError, TypeError):
@@ -125,12 +140,15 @@ class GatewayClient:
                 if previous is not None:
                     dedup += ":recover:" + str(int(time.time()) // 60)
                 try:
-                    await self.js.publish(f"{PREFIX}.inbound.{self.platform}", encode(event),
-                                          headers={"Nats-Msg-Id": dedup})
+                    await self.js.publish(
+                        f"{PREFIX}.inbound.{self.platform}",
+                        encode(event),
+                        headers={"Nats-Msg-Id": dedup},
+                    )
                     self.spool.mark_published(ident)
                 except asyncio.CancelledError:
                     raise
-                except Exception as exc:
+                except (NatsError, OSError, sqlite3.Error) as exc:
                     logger.warning("Inbound publication delayed: %s", type(exc).__name__)
                     await asyncio.sleep(5)
                     break
@@ -143,16 +161,28 @@ class GatewayClient:
     async def report_health(self):
         while True:
             try:
-                await self.nc.publish(f"{PREFIX}.health.{self.platform}", encode({
-                    "raw_pending": self.spool.count(), "inbound_pending": self.spool.inbound_count(),
-                    "active": self.active_count, "buffered": self.buffered_count}))
-            except Exception as exc:
+                await self.nc.publish(
+                    f"{PREFIX}.health.{self.platform}",
+                    encode(
+                        {
+                            "raw_pending": self.spool.count(),
+                            "inbound_pending": self.spool.inbound_count(),
+                            "active": self.active_count,
+                            "buffered": self.buffered_count,
+                        }
+                    ),
+                )
+            except (NatsError, OSError, sqlite3.Error) as exc:
                 logger.debug("Connector diagnostics unavailable: %s", type(exc).__name__)
             await asyncio.sleep(15)
 
     async def upload(self, event_id, chunks):
-        async with self.http.put(f"{self.base}/internal/bots/media/{self.platform}/inbound/{quote(event_id, safe='')}",
-                                 headers=self.headers, data=chunks, allow_redirects=False) as response:
+        async with self.http.put(
+            f"{self.base}/internal/bots/media/{self.platform}/inbound/{quote(event_id, safe='')}",
+            headers=self.headers,
+            data=chunks,
+            allow_redirects=False,
+        ) as response:
             response.raise_for_status()
 
     def media_url(self, job):
@@ -189,10 +219,13 @@ class GatewayClient:
                 raise
             receipt = {"id": job_id, "status": "failed"}
         except DeliveryRejected:
-            logger.warning("External delivery refused platform=%s endpoint=%s",
-                           self.platform, "group" if job.get("thread_id") else "private")
+            logger.warning(
+                "External delivery refused platform=%s endpoint=%s",
+                self.platform,
+                "group" if job.get("thread_id") else "private",
+            )
             receipt = {"id": job_id, "status": "failed"}
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - do not resend on an unknown provider outcome
             logger.warning("External delivery outcome uncertain: %s", type(exc).__name__)
             receipt = {"id": job_id, "status": "unknown"}
         if receipt["status"] != "delivered":
@@ -228,23 +261,27 @@ class GatewayClient:
                         return
                 else:
                     receipt = await self.execute_delivery(adapter, job_id, authorized["result"])
-            await self.js.publish(f"{PREFIX}.delivery.{self.platform}", encode(receipt),
-                                  headers={"Nats-Msg-Id": "result:" + job_id})
+            await self.js.publish(
+                f"{PREFIX}.delivery.{self.platform}",
+                encode(receipt),
+                headers={"Nats-Msg-Id": "result:" + job_id},
+            )
             await msg.ack_sync()
         except asyncio.CancelledError:
             raise
         except RetryLater as exc:
             logger.info("Provider rate limited platform=%s; retrying route", self.platform)
-            try:
-                await msg.nak(delay=max(1, exc.seconds))
-            except Exception:
-                logger.warning("Rate-limit NAK unavailable; broker will redeliver")
-        except Exception as exc:
+            await self._retry_delivery(msg, max(1, exc.seconds))
+        except Exception as exc:  # noqa: BLE001 - keep independent delivery routes running
             logger.warning("Delivery will retry transport: %s", type(exc).__name__)
-            try:
-                await msg.nak(delay=5)
-            except Exception:
-                logger.warning("Delivery NAK unavailable; broker will redeliver")
+            await self._retry_delivery(msg, 5)
+
+    @staticmethod
+    async def _retry_delivery(msg, delay):
+        try:
+            await msg.nak(delay=delay)
+        except Exception:  # noqa: BLE001 - leave the message unacked for broker redelivery
+            logger.warning("Delivery NAK unavailable; broker will redeliver")
 
     async def deliveries(self, adapter: ProviderAdapter):
         # UI invalidations are best effort, coalesced per actor, and separate from sends.
@@ -260,13 +297,13 @@ class GatewayClient:
             while True:
                 await ui_wakeup.wait()
                 ui_wakeup.clear()
-                await asyncio.sleep(.1)
+                await asyncio.sleep(0.1)
                 actors = list(self.ui_pending)
                 self.ui_pending.clear()
                 for actor in actors:
                     try:
                         await adapter.refresh_panel(actor, self, self.spool, background=True)
-                    except Exception as exc:
+                    except Exception as exc:  # noqa: BLE001 - isolate the provider UI refresh
                         logger.debug("Panel refresh unavailable: %s", type(exc).__name__)
 
         ui_wakeup = asyncio.Event()
@@ -277,8 +314,10 @@ class GatewayClient:
         heartbeats = {}
         try:
             sub = await self.js.pull_subscribe_bind(
-                consumer="outbound-" + self.platform, stream=STREAM,
-                inbox_prefix=("_INBOX." + self.platform + ".").encode())
+                consumer="outbound-" + self.platform,
+                stream=STREAM,
+                inbox_prefix=("_INBOX." + self.platform + ".").encode(),
+            )
             while True:
                 for task, (route, msg, heavy) in list(active.items()):
                     if task.done():
@@ -289,15 +328,22 @@ class GatewayClient:
                         task.result()
                 heads = select_heads(pending, active.values())
                 if heads:
-                    jobs = [{"id": job_id, "claim": self.spool.prepare_delivery(job_id)}
-                            for _, job_id, _, _ in heads if self.spool.delivery(job_id) is None]
+                    jobs = [
+                        {"id": job_id, "claim": self.spool.prepare_delivery(job_id)}
+                        for _, job_id, _, _ in heads
+                        if self.spool.delivery(job_id) is None
+                    ]
                     try:
-                        results = await self.rpc("delivery.authorize_batch", jobs=jobs) if jobs else {}
-                    except Exception as exc:
+                        results = (
+                            await self.rpc("delivery.authorize_batch", jobs=jobs) if jobs else {}
+                        )
+                    except (NatsError, OSError, RpcError, ValueError, KeyError, TypeError) as exc:
                         logger.warning("Batch authorization unavailable: %s", type(exc).__name__)
                         results = {}
                     for msg, job_id, route, heavy in heads:
-                        task = asyncio.create_task(self.complete(adapter, msg, job_id, results.get(job_id, {})))
+                        task = asyncio.create_task(
+                            self.complete(adapter, msg, job_id, results.get(job_id, {}))
+                        )
                         active[task] = (route, msg, heavy)
                 self.active_count = len(active)
                 self.buffered_count = len(pending)
@@ -308,8 +354,9 @@ class GatewayClient:
                         # to enter without waiting for an earlier media upload.
                         # Do not wait for a full batch on the first message after idle.
                         busy = bool(active or pending)
-                        msgs = await sub.fetch(min(capacity, 4) if busy else 1,
-                                               timeout=.15 if busy else 2)
+                        msgs = await sub.fetch(
+                            min(capacity, 4) if busy else 1, timeout=0.15 if busy else 2
+                        )
                     except NatsTimeout:
                         msgs = []
                     for msg in msgs:
@@ -317,7 +364,11 @@ class GatewayClient:
                             envelope = json.loads(msg.data)
                             job_id = envelope["id"]
                             route = tuple(envelope.get("route") or ["legacy", job_id])
-                            if not isinstance(job_id, str) or len(route) != 2 or not all(isinstance(x, str) for x in route):
+                            if (
+                                not isinstance(job_id, str)
+                                or len(route) != 2
+                                or not all(isinstance(x, str) for x in route)
+                            ):
                                 raise ValueError("invalid job envelope")
                         except (ValueError, KeyError, TypeError):
                             await msg.term()
@@ -327,7 +378,7 @@ class GatewayClient:
                 elif active:
                     await asyncio.wait(active, return_when=asyncio.FIRST_COMPLETED)
                 else:
-                    await asyncio.sleep(.1)
+                    await asyncio.sleep(0.1)
         finally:
             tasks = list(active) + list(heartbeats.values()) + [ui_task]
             for task in tasks:

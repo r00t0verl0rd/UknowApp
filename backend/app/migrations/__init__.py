@@ -9,6 +9,7 @@ from app.infrastructure.storage.conversation_counters import (
     upgrade_admin_observer_receipts,
     upgrade_conversation_counters,
     upgrade_physical_receipts,
+    upgrade_sqlite_read_cursor_indexes,
 )
 from app.infrastructure.storage.personal_counters import (
     upgrade_personal_counters,
@@ -43,6 +44,7 @@ MIGRATIONS = (
     ("2026-11-26-admin-observer-receipts", upgrade_admin_observer_receipts),
     ("2026-11-26-personal-counters", upgrade_personal_counters),
     ("2026-11-26-personal-unread-indexes", upgrade_personal_unread_indexes),
+    ("2026-11-27-sqlite-read-cursor-indexes", upgrade_sqlite_read_cursor_indexes),
 )
 
 

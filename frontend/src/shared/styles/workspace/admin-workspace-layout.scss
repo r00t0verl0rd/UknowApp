@@ -272,9 +272,7 @@
     gap:clamp(5px, 1.2vw, 8px);
   }
   .workspace-content:has(.admin-card) {
-    & .unassigned-student-card {
-      gap:clamp(9px, 2vw, 12px);
-    }
+    & .unassigned-student-card,
     & .unassigned-student-card > .person-main {
       gap:clamp(9px, 2vw, 12px);
     }
@@ -325,11 +323,7 @@
     color:var(--ui-control-text);
     box-shadow:none;
   }
-  .add-student {
-    background-color:var(--ui-selected-bg);
-    border-color:var(--ui-selected-border);
-    color:var(--ui-selected-text);
-  }
+  .add-student,
   button:not(.chat-item):not(.ui-toolbar-tab):not(.ui-menu-control):not(.ui-icon-button):not(:where(.toast-close, .message-delete-btn, .message-detail-btn)).add-student:not(.primary):not(
       .danger-icon
     ) {

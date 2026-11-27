@@ -44,11 +44,15 @@ def schedule_push(
     if not _NOTIFICATION_SLOTS.acquire(blocking=False):
         logger.warning("Push backlog full; notification skipped")
         return
+    scheduled = False
     try:
         _DISPATCH_POOL.submit(_dispatch, ids, title, body, url, include_admin, admin_body)
-    except Exception:
-        _NOTIFICATION_SLOTS.release()
+        scheduled = True
+    except RuntimeError:
         logger.exception("Unable to schedule Push")
+    finally:
+        if not scheduled:
+            _NOTIFICATION_SLOTS.release()
 
 
 def _dispatch(ids, title, body, url, include_admin, admin_body):

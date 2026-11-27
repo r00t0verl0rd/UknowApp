@@ -58,7 +58,11 @@ def test_upgrade_generated_receipts_preserves_metadata_and_counters(tmp_path):
     # Reproduce the schema that already exists in test after 20261126_08.
     import json
     from sqlalchemy import create_engine, inspect, text
-    from app.infrastructure.storage.conversation_counters import upgrade_conversation_counters, upgrade_physical_receipts
+    from app.infrastructure.storage.conversation_counters import (
+        upgrade_conversation_counters,
+        upgrade_physical_receipts,
+        upgrade_sqlite_read_cursor_indexes,
+    )
     engine = create_engine("sqlite:///" + str(tmp_path / "old.db"))
     with engine.begin() as connection:
         connection.exec_driver_sql("BEGIN IMMEDIATE")
@@ -78,6 +82,10 @@ def test_upgrade_generated_receipts_preserves_metadata_and_counters(tmp_path):
         row=connection.execute(text("SELECT teacher_read_at,metadata_json FROM messages WHERE id=1")).one()
         assert row[0]=="2026-02-01" and json.loads(row[1])=={"media":{"file":"keep"}}
         assert connection.execute(text("SELECT message_count,teacher_unread_count,teacher_last_read_id,last_message_id FROM conversations")).one()==(2,1,1,2)
+        upgrade_sqlite_read_cursor_indexes(connection)
+        trigger = connection.scalar(text("SELECT sql FROM sqlite_master WHERE name='uknow_message_stats_update'"))
+        assert "INDEXED BY ix_messages_teacher_unread" in trigger
+        assert "INDEXED BY ix_messages_student_unread" in trigger
         connection.exec_driver_sql("UPDATE messages SET teacher_read_at='2026-03-01' WHERE id=2")
         assert connection.execute(text("SELECT teacher_unread_count,teacher_last_read_id FROM conversations")).one()==(0,2)
         assert json.loads(connection.scalar(text("SELECT metadata_json FROM messages WHERE id=2")))["messenger_deliveries"]["telegram"]["status"]=="delivered"
@@ -129,10 +137,13 @@ def test_summary_no_history_scan(api):
 
 
 def test_sql_trigger_references_reject_arbitrary_expressions():
+    from functools import partial
+
     import pytest
+
     from app.infrastructure.storage.conversation_counters import cursor_assignments, latest_id
 
-    for generator in (cursor_assignments, latest_id):
+    for generator in (partial(cursor_assignments, dialect="sqlite"), latest_id):
         for reference in ("NEW.conversation_id", "OLD.conversation_id", "conversations.id"):
             assert reference in generator(reference)
         with pytest.raises(ValueError, match="Unknown SQL conversation reference"):

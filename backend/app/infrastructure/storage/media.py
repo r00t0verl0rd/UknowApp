@@ -78,8 +78,9 @@ def media_content_disposition(kind: str | None, value: str | None) -> str:
 def delete_message_media(metadata_json: str | None) -> None:
     try:
         metadata = json.loads(metadata_json or "{}")
-        relative = metadata.get("media", {}).get("local_path")
-        if not relative:
+        media = metadata.get("media") if isinstance(metadata, dict) else None
+        relative = media.get("local_path") if isinstance(media, dict) else None
+        if not isinstance(relative, str) or not relative:
             return
         root = MEDIA_DIR.resolve()
         target = (root / relative).resolve()
@@ -89,7 +90,8 @@ def delete_message_media(metadata_json: str | None) -> None:
         target.unlink(missing_ok=True)
         with contextlib.suppress(OSError):
             target.parent.rmdir()
-    except Exception:
+    except (OSError, ValueError, RuntimeError):
+        # Path.resolve() raises RuntimeError for symlink loops on Python 3.11.
         logger.exception("Could not delete archived message media")
 
 def attachment_response(request: Request, path: Path, media: dict) -> Response:
