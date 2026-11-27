@@ -60,7 +60,7 @@ jobs:
           BOTS_NATS_MAX_PASSWORD: ci-placeholder # pragma: allowlist secret
           BOTS_MEDIA_SECRET_MAX: ci-placeholder # pragma: allowlist secret
           DOMAIN: school.example
-        run: docker compose -f docker-compose.yml -f compose.max.yml --profile gateway --profile bots --profile max config --quiet
+        run: docker compose -f docker-compose.yml --profile gateway --profile bots --profile max config --quiet
       - name: Exercise authenticated NATS RPC and JetStream
         env:
           BOTS_NATS_CORE_PASSWORD: ci-core-password-12345678901234567890 # pragma: allowlist secret
