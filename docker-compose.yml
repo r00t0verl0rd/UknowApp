@@ -27,6 +27,7 @@ services:
       BOTS_NATS_USER: core
       BOTS_NATS_PASSWORD: ${BOTS_NATS_CORE_PASSWORD:-}
       BOTS_MEDIA_SECRET_TELEGRAM: ${BOTS_MEDIA_SECRET_TELEGRAM:-}
+      BOTS_MEDIA_SECRET_MAX: ${BOTS_MEDIA_SECRET_MAX:-}
       DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/uknowapp.db}
       PYTHONPATH: /app/backend
       TMPDIR: /app/data
@@ -66,12 +67,15 @@ services:
     container_name: uknow-nats
     image: nats:2.11-alpine
     profiles: [gateway]
-    command: ["-c", "/etc/nats/nats.conf"]
+    entrypoint: ["/bin/sh", "/usr/local/bin/nats-start.sh"]
     environment:
       CORE_PASSWORD: ${BOTS_NATS_CORE_PASSWORD:-}
       TELEGRAM_PASSWORD: ${BOTS_NATS_TELEGRAM_PASSWORD:-}
+      MAX_PASSWORD: ${BOTS_NATS_MAX_PASSWORD:-}
     volumes:
       - ./infrastructure/nats/nats.conf:/etc/nats/nats.conf:ro
+      - ./infrastructure/nats/nats-max.conf:/etc/nats/nats-max.conf:ro
+      - ./infrastructure/nats/nats-start.sh:/usr/local/bin/nats-start.sh:ro
       - nats_data:/data
     networks: [app_net]
     restart: unless-stopped
@@ -97,6 +101,40 @@ services:
       - tgbot_state:/app/state
       - ${TELEGRAM_CACHE_HOST_DIR:-/srv/uknow-telegram}:/var/lib/telegram-bot-api:ro
     networks: [app_net]
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import pathlib,time; p=pathlib.Path('/app/state/healthy'); assert p.is_file() and time.time()-p.stat().st_mtime < 75"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+
+  max_bot:
+    container_name: uknow-maxbot
+    profiles: [max]
+    build:
+      context: .
+      dockerfile: connectors/max/Dockerfile
+    environment:
+      MAX_BOT_TOKEN: ${MAX_BOT_TOKEN:-}
+      MAX_WEBHOOK_SECRET: ${MAX_WEBHOOK_SECRET:-}
+      MAX_WEBHOOK_URL: https://${DOMAIN:-localhost}/hooks/max
+      BOTS_NATS_URL: nats://nats:4222
+      BOTS_NATS_USER: max
+      BOTS_NATS_PASSWORD: ${BOTS_NATS_MAX_PASSWORD:-}
+      BOTS_MEDIA_URL: http://core:8000
+      BOTS_MEDIA_SECRET: ${BOTS_MEDIA_SECRET_MAX:-}
+    volumes:
+      - maxbot_state:/app/state
+    networks:
+      app_net:
+        aliases: [maxbot]
     init: true
     read_only: true
     tmpfs:
@@ -177,4 +215,5 @@ volumes:
   caddy_config:
   postgres_data:
   tgbot_state:
+  maxbot_state:
   nats_data:

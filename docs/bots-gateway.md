@@ -33,26 +33,24 @@ BOTS_PLATFORMS=telegram,max
 COMPOSE_PROFILES=gateway,bots,max
 ```
 
-Для каждого нового секрета запустите `openssl rand -hex 32` и используйте отдельный результат. Сохраните уже работающие секреты Telegram. Публичный сертификат MAX уже включён в образ; отдельный файл или параметр сертификата не нужен. Домен должен вести на сервер и открываться по HTTPS.
+Для каждого нового секрета используйте отдельное случайное значение. Сохраните уже работающие секреты Telegram. Публичный сертификат MAX включён в образ. Домен должен вести на сервер и открываться по HTTPS.
 
 Если нужен только MAX, используйте `BOTS_PLATFORMS=max` и `COMPOSE_PROFILES=gateway,max`.
 
 ## Запустите и проверьте
 
-Для Telegram и MAX на одном сервере:
+Для Telegram и MAX на одном сервере один раз укажите в рабочем `.env` `COMPOSE_PROFILES=gateway,bots,max`. Для обновления:
 
 ```bash
 cd ~/UknowApp
-docker compose -f docker-compose.yml -f compose.max.yml config --quiet
-docker compose -f docker-compose.yml -f compose.max.yml up -d --build
-docker compose -f docker-compose.yml -f compose.max.yml ps
-docker compose -f docker-compose.yml -f compose.max.yml logs --tail=80 core nats tg_bot max_bot
+git pull origin test
+docker compose up -d --build
 ```
 
 Убедитесь, что `uknow-core`, `uknow-nats`, `uknow-tgbot`, `uknow-maxbot` и `uknow-webpanel` запущены. Проверьте диагностику ботов в админ-панели и отправьте тестовые сообщения в обе стороны.
 
 ## Обновите сервер
 
-`git pull` не меняет рабочий `.env`. После обновления кода пересоберите сервисы той же Compose-командой с `-f compose.max.yml`, если MAX подключён. Не запускайте второй экземпляр бота с тем же Telegram-токеном и не удаляйте Docker-тома.
+MAX входит в основной `docker-compose.yml`. NATS сам выбирает конфигурацию MAX по наличию `BOTS_NATS_MAX_PASSWORD`. `git pull` не меняет рабочий `.env`; не запускайте второй экземпляр бота с тем же токеном и не удаляйте Docker-тома.
 
 Для режима `local` Telegram API и для Telegram-коннектора на отдельном сервере смотрите [инструкцию Telegram](telegram-service-architecture.md). MAX-коннектор остаётся на сервере Core.
