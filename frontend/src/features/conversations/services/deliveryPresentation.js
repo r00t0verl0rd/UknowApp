@@ -23,17 +23,16 @@ function deliveredEntries(channel, delivered, includeRecipient, participants) {
     return delivered.findIndex(copy => copy?.external_chat_id === entry.external_chat_id &&
       copy.external_thread_id === entry.external_thread_id && copy.user_id === entry.user_id) === index;
   });
-  return destinations.map((entry, index) => {
+  return destinations.map((entry) => {
     const name = recipient(entry, participants);
     const person = participants.find(p => p.id != null && Number(p.id) === Number(entry?.user_id));
     const role = entry?.role || person?.role;
-    const destination = entry?.external_thread_id ? "в тему группы"
+    const destination = entry?.external_thread_id ? "во вкладку в группе"
       : entry?.endpoint_type === "group" ? "в группу"
       : entry?.endpoint_type === "private" ? "в личный чат с ботом"
       : "";
-    const copy = destinations.length > 1 ? `Копия ${index + 1}` : "Копия";
-    const description = destination ? `${copy} отправлена ${destination}.`
-      : `${copy} отправлена.` + (destinations.length > 1 ? " Место доставки не записано." : "");
+    const description = destination ? `Копия отправлена ${destination}.`
+      : destinations.length > 1 ? "Копия отправлена. Место доставки не записано." : "Копия отправлена.";
     return {
       title: `${channel} · ${name}`,
       ...(name !== "Получатель" ? { namedRecipient: name, role, channel } : {}),
@@ -52,7 +51,9 @@ function friendlyReason(error, channel) {
   if (/не удалось определить адресата|chat not found|чат не найден/i.test(reason)) {
     return `Чат получателя в ${channel} пока не найден.`;
   }
-  return channel === "Telegram" ? "Telegram пока не подключен." : `Копию в ${channel} пока не удалось отправить.`;
+  if (reason === "unknown") return `Не удалось подтвердить отправку копии в ${channel}.`;
+  if (reason === "cancelled") return `Отправка копии в ${channel} отменена.`;
+  return `Копию в ${channel} пока не удалось отправить.`;
 }
 export function getDeliveryDetails(metadata, includeRecipient = false, participants = []) {
   if (!metadata || typeof metadata !== "object") return [];
