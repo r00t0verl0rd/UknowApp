@@ -55,7 +55,7 @@ test("backup restore explains the restart, asks before re-login and shows verifi
     await page.goto(HOST);
     await page.evaluate(() => localStorage.setItem("uknowapp-auth", "1"));
     await page.goto(HOST + "/additional");
-    await page.locator('input[type="file"][accept=".zip"]').setInputFiles({
+    await page.locator('input[type="file"][accept=".zip,application/zip"]').setInputFiles({
       name: "example-backup.zip", mimeType: "application/zip",
       buffer: Buffer.from("test fixture, server upload is mocked"),
     });
@@ -106,8 +106,6 @@ test("administration explains statistics HTTP 500 and retries without hiding bac
           ? route.fulfill({ status: 500, json: { detail: "Internal Server Error" } })
           : route.fulfill({ json: {
               restore: null, database_bytes: 8192, media_bytes: 0,
-              database_used_bytes: statsRequests === 2 ? 8192 : 4096,
-              database_free_bytes: statsRequests === 2 ? 0 : 4096,
               users: statsRequests === 2 ? 7 : 6, teachers: 3, students: statsRequests === 2 ? 4 : 3, assignments: 0,
               conversations: 0, personal_conversations: 0, messages: 0,
               personal_messages: 0, total_messages: 0, telegram_groups: 0,

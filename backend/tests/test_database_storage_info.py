@@ -42,10 +42,9 @@ def test_postgres_size_query_avoids_sqlite_pragmas(monkeypatch):
 
     monkeypatch.setattr(database_info, "engine", Engine())
     assert database_info.database_storage_info() == ("postgresql", 123456)
-    assert database_info.database_storage_details() == ("postgresql", 123456, None)
 
 
-def test_sqlite_reports_reusable_space_after_delete(tmp_path, monkeypatch):
+def test_sqlite_allocated_size_does_not_shrink_after_delete(tmp_path, monkeypatch):
     engine = create_engine(f"sqlite:///{tmp_path / 'freelist.db'}")
     try:
         monkeypatch.setattr(database_info, "engine", engine)
@@ -53,14 +52,11 @@ def test_sqlite_reports_reusable_space_after_delete(tmp_path, monkeypatch):
             db.execute(text("PRAGMA auto_vacuum=NONE"))
             db.execute(text("CREATE TABLE example (id INTEGER PRIMARY KEY, value BLOB)"))
             db.execute(text("INSERT INTO example (value) VALUES (zeroblob(524288))"))
-        driver, before, free_before = database_info.database_storage_details()
+        driver, before = database_info.database_storage_info()
         with engine.begin() as db:
             db.execute(text("DELETE FROM example"))
-        _, after, free_after = database_info.database_storage_details()
+        _, after = database_info.database_storage_info()
         assert driver == "sqlite"
         assert after == before
-        assert free_after > free_before
-        assert after - free_after < before - free_before
-        assert database_info.database_storage_info() == ("sqlite", after)
     finally:
         engine.dispose()

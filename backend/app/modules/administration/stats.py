@@ -10,7 +10,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.event_hub import publish_chat_update
-from app.infrastructure.storage.database_info import database_storage_details
+from app.infrastructure.storage.database_info import database_storage_info
 from app.infrastructure.storage.media import delete_message_media
 from app.models import (
     Assignment,
@@ -34,7 +34,7 @@ router = APIRouter()
 
 @router.get("/stats")
 def data_stats(_: Admin):
-    database_engine, database_size, database_free = database_storage_details()
+    database_engine, database_size = database_storage_info()
 
     with common.SessionLocal() as db:
         users = db.query(User).all()
@@ -78,11 +78,6 @@ def data_stats(_: Admin):
         return {
             "restore": restore_state(common.DATA_DIR),
             "database_bytes": database_size,
-            "database_free_bytes": database_free,
-            "database_used_bytes": (
-                database_size - database_free
-                if database_size is not None and database_free is not None else None
-            ),
             "database_engine": database_engine,
             "database_backups_supported": database_engine == "sqlite",
             "media_bytes": common.folder_size(common.MEDIA_DIR),

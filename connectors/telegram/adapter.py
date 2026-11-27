@@ -527,8 +527,12 @@ class TelegramAdapter:
         account = view.get("account")
         if group and (account or {}).get("role") != "student":
             return
-        if not group and account and account.get("role") != "teacher" and \
-                self.teacher_panel.is_stale_action(actor, text, spool):
+        if (
+            not group
+            and account
+            and account.get("role") != "teacher"
+            and self.teacher_panel.is_stale_action(actor, text, spool)
+        ):
             await self.teacher_panel.refresh(actor, gateway, spool, background=True, view=view)
             return
         if not group and CODE.fullmatch(text.replace("-", "").replace(" ", "").upper()):

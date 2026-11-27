@@ -495,7 +495,7 @@ test("global SSE updates real counters across tabs and replays missed events", {
       assert.ok(positions.remove.top >= positions.info.bottom - 1, "icon actions do not overlap");
       await infoButton.click();
       await page.getByRole("dialog", { name: "Подробности внешней доставки" })
-        .getByText("Получатель не подключил телеграм-бота.").waitFor({ state: "visible" });
+        .getByText("Получатель не подключил бота в Telegram.").waitFor({ state: "visible" });
       await page.getByRole("button", { name: "Закрыть подробности доставки" }).click();
       await deleteButton.click();
       await page.getByRole("alertdialog", { name: "Удалить у всех?" }).waitFor({ state: "visible" });
