@@ -12,6 +12,12 @@ function recipient(error, participants = []) {
   }
   return "Получатель";
 }
+function deliveryDestination(entry) {
+  return entry?.external_thread_id ? "во вкладку в группе"
+    : entry?.endpoint_type === "group" ? "в группу"
+    : entry?.endpoint_type === "private" ? "в личный чат с ботом"
+    : "";
+}
 function deliveredEntries(channel, delivered, includeRecipient, participants) {
   if (!includeRecipient) return [{
     title: channel,
@@ -27,10 +33,7 @@ function deliveredEntries(channel, delivered, includeRecipient, participants) {
     const name = recipient(entry, participants);
     const person = participants.find(p => p.id != null && Number(p.id) === Number(entry?.user_id));
     const role = entry?.role || person?.role;
-    const destination = entry?.external_thread_id ? "во вкладку в группе"
-      : entry?.endpoint_type === "group" ? "в группу"
-      : entry?.endpoint_type === "private" ? "в личный чат с ботом"
-      : "";
+    const destination = deliveryDestination(entry);
     const description = destination ? `Копия отправлена ${destination}.`
       : destinations.length > 1 ? "Копия отправлена. Место доставки не записано." : "Копия отправлена.";
     return {
@@ -42,18 +45,22 @@ function deliveredEntries(channel, delivered, includeRecipient, participants) {
   });
 }
 function friendlyReason(error, channel) {
+  const destination = deliveryDestination(error);
+  const address = destination ? `${destination} (${channel})` : `в ${channel}`;
   const reason = typeof error === "string" ? error : String(error?.reason || "");
   if (/не подключ|not.connected|not linked|not_connected/i.test(reason)) {
+    if (destination) return `Копия ${address} не отправлена: получатель не подключён.`;
     return channel === "Telegram"
       ? "Получатель не подключил телеграм-бота."
       : `Получатель пока не подключил ${channel}.`;
   }
   if (/не удалось определить адресата|chat not found|чат не найден/i.test(reason)) {
+    if (destination) return `Копия ${address} не отправлена: чат получателя не найден.`;
     return `Чат получателя в ${channel} пока не найден.`;
   }
-  if (reason === "unknown") return `Не удалось подтвердить отправку копии в ${channel}.`;
-  if (reason === "cancelled") return `Отправка копии в ${channel} отменена.`;
-  return `Копию в ${channel} пока не удалось отправить.`;
+  if (reason === "unknown") return `Не удалось подтвердить отправку копии ${address}.`;
+  if (reason === "cancelled") return `Отправка копии ${address} отменена.`;
+  return `Копию ${address} пока не удалось отправить.`;
 }
 export function getDeliveryDetails(metadata, includeRecipient = false, participants = []) {
   if (!metadata || typeof metadata !== "object") return [];
