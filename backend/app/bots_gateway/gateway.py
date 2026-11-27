@@ -234,6 +234,17 @@ class BotsGateway:
             # Диагностика не содержит сообщений и внешних ID.
             stats = {k: int(payload[k]) for k in ("raw_pending", "inbound_pending", "active", "buffered")
                      if isinstance(payload.get(k), int) and 0 <= payload[k] <= 1000000}
+            if platform == "max":
+                status = payload.get("webhook_status")
+                if status in ("starting", "active", "recovering", "degraded"):
+                    stats["webhook_status"] = status
+                for field in ("webhook_last_check", "webhook_last_success", "webhook_last_event",
+                              "webhook_next_check", "webhook_recoveries", "webhook_failures"):
+                    value = payload.get(field)
+                    if type(value) is int and 0 <= value <= 10000000000:
+                        stats[field] = value
+                    elif value is None and field in payload:
+                        stats[field] = None
             self.connectors[platform] = {**stats, "seen": now_utc().isoformat()}
         except (ValueError, TypeError, KeyError):
             pass

@@ -157,7 +157,7 @@ class GatewayClient:
                 except TimeoutError:
                     pass
 
-    async def report_health(self):
+    async def report_health(self, extra=None):
         while True:
             try:
                 await self.nc.publish(
@@ -168,6 +168,7 @@ class GatewayClient:
                             "inbound_pending": self.spool.inbound_count(),
                             "active": self.active_count,
                             "buffered": self.buffered_count,
+                            **(extra() if extra is not None else {}),
                         }
                     ),
                 )

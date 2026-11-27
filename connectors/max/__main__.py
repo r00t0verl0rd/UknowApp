@@ -16,23 +16,31 @@ from connectors.common.client import GatewayClient
 from connectors.common.ingress import forward
 from connectors.common.spool import EventSpool, MAX_EVENTS
 from .adapter import MaxAdapter
+from .webhook import WebhookMonitor
 
 STATE = Path(os.getenv("CONNECTOR_STATE_DIR", "/app/state"))
 
 
-def application(spool, secret):
+def application(spool, secret, monitor=None):
     app = web.Application(client_max_size=1024 * 1024)
 
     async def receive(request):
         if not hmac.compare_digest(request.headers.get("X-Max-Bot-Api-Secret", "").encode(), secret.encode()):
             raise web.HTTPForbidden()
-        update = await request.json()
+        try:
+            update = await request.json()
+        except (ValueError, TypeError):
+            raise web.HTTPBadRequest() from None
+        if not isinstance(update, dict):
+            raise web.HTTPBadRequest()
         if update.get("update_type") in {"message_created", "message_callback", "bot_started"}:
             if spool.count() + spool.inbound_count() >= MAX_EVENTS:
                 raise web.HTTPServiceUnavailable()
             key = json.dumps(update, sort_keys=True, separators=(",", ":")).encode()
             ident = hashlib.sha256(key).hexdigest()
             spool.append([(ident, update)], 0)
+            if monitor is not None:
+                monitor.event_received()
         return web.Response()
 
     app.router.add_post("/hooks/max", receive)
@@ -60,18 +68,17 @@ async def main():
             info = await adapter.api("GET", "/me")
             spool = EventSpool(STATE / "inbox.sqlite3", str(info["user_id"]))
             gateway = GatewayClient("max", http, spool)
-            runner = web.AppRunner(application(spool, secret), access_log=None)
+            monitor = WebhookMonitor(adapter, os.environ["MAX_WEBHOOK_URL"], secret)
+            runner = web.AppRunner(application(spool, secret, monitor), access_log=None)
             tasks = []
             try:
                 await gateway.connect()
                 await runner.setup()
                 await web.TCPSite(runner, "0.0.0.0", 8080).start()
-                await adapter.api("POST", "/subscriptions", body={
-                    "url": os.environ["MAX_WEBHOOK_URL"], "secret": secret,
-                    "update_types": ["message_created", "message_callback", "bot_started"]})
                 tasks = [asyncio.create_task(coro) for coro in (
                     forward(adapter, gateway, spool), gateway.deliveries(adapter),
-                    gateway.publish_inbound(), gateway.report_health(), heartbeat(STATE / "healthy"))]
+                    gateway.publish_inbound(), gateway.report_health(extra=monitor.diagnostics),
+                    heartbeat(STATE / "healthy"), monitor.run())]
                 await asyncio.gather(*tasks)
             finally:
                 for task in tasks:
