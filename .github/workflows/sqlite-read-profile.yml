@@ -1,0 +1,28 @@
+name: SQLite read path diagnostics
+on:
+  push:
+    branches: [benchmark/sqlite-read-profile]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: backend:.
+      ADMIN_PASSWORD: isolated-ci-benchmark-only-123 # pragma: allowlist secret
+      BOTS_PLATFORMS: ""
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+      - run: uv pip install --system -r backend/requirements.txt httpx
+      - run: python backend/tests/benchmark_read_profile.py --messages 100000 --clients 100
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: sqlite-read-profile
+          path: sqlite-read-profile.json
