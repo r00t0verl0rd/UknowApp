@@ -95,7 +95,7 @@ def main(args, folder):
                                       headers={"Cookie": f"{SESSION_COOKIE}={token}"})
             warmup.raise_for_status()
             for n in args.clients:
-                for scenario in ("read", "mixed", "send_burst"):
+                for scenario in (("mixed",) if args.mixed_only else ("read", "mixed", "send_burst")):
                     if scenario == "send_burst" and n > 500:
                         continue
                     timings = {"read": [], "write": [], "inbox": []}
@@ -107,7 +107,7 @@ def main(args, folder):
                         token, chat = actors[i]
                         headers = {"Cookie": f"{SESSION_COOKIE}={token}"}
                         path = f"/api/panel/conversations/{chat}/messages"
-                        write = scenario == "send_burst" or (scenario == "mixed" and (i + round_no) % 10 == 0)
+                        write = scenario == "send_burst" or (scenario == "mixed" and ((i + round_no) % 10) < args.write_percent // 10)
                         kind = "write" if write else ("inbox" if i % 5 == 0 else "read")
                         t0 = perf_counter()
                         try:
@@ -131,12 +131,16 @@ def main(args, folder):
                         await asyncio.gather(*(request(i, r) for i in range(n)))
                     elapsed = perf_counter() - before
                     all_samples = [v for values in timings.values() for v in values]
-                    result = {"scenario": scenario, "concurrency": n, "requests": len(all_samples),
+                    result = {"scenario": scenario, "write_percent": args.write_percent if scenario == "mixed" else (100 if scenario == "send_burst" else 0),
+                              "concurrency": n, "requests": len(all_samples),
                               "ok": sum(successes.values()), "statuses": dict(statuses),
                               "rps": round(len(all_samples) / elapsed, 2),
                               "p50_ms": percentile(all_samples, 50), "p95_ms": percentile(all_samples, 95),
                               "p99_ms": percentile(all_samples, 99),
                               "read_p95_ms": percentile(timings["read"], 95),
+                              "all_read_p95_ms": percentile(timings["read"] + timings["inbox"], 95),
+                              "read_requests": len(timings["read"]) + len(timings["inbox"]),
+                              "write_requests": len(timings["write"]),
                               "write_p95_ms": percentile(timings["write"], 95),
                               "successful_writes": successes["write"],
                               "peak_rss_mib": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 1)}
@@ -164,6 +168,8 @@ if __name__ == "__main__":
     parser.add_argument("--clients", type=int, nargs="+", default=[100, 250, 500, 1000, 2000])
     parser.add_argument("--rounds", type=int, default=2)
     parser.add_argument("--output", default="sqlite-load-results.json")
+    parser.add_argument("--write-percent", type=int, choices=range(0, 101, 10), default=10)
+    parser.add_argument("--mixed-only", action="store_true")
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="uknow-load-") as folder:
         main(args, folder)
