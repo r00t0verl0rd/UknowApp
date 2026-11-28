@@ -12,6 +12,7 @@ from fastapi import (
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
+from app.core.chat_read_limits import ChatReadRoute
 from app.core.database import begin_serialized_write
 from app.infrastructure.storage.media import (
     MEDIA_DIR,
@@ -41,7 +42,7 @@ from app.modules.messaging.service import (
 )
 
 logger = logging.getLogger(__name__)
-router = APIRouter()
+router = APIRouter(route_class=ChatReadRoute)
 
 
 @router.get("/panel/conversations")
@@ -93,7 +94,7 @@ def panel_messages(conversation_id: int, principal: PanelUser, db: Db, after_id:
     conversation = panel_visible_conversation(db, principal, conversation_id)
     if permits(principal, "dialogs.observe"):
         logger.info("Admin read conversation id=%s", conversation.id)
-    query = select(Message).options(joinedload(Message.sender)).where(
+    query = select(Message).options(joinedload(Message.sender).load_only(User.id, User.full_name)).where(
         Message.conversation_id == conversation.id, Message.id > after_id,
     )
     if first_unread and around_id is None:

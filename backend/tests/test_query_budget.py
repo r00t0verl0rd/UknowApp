@@ -39,6 +39,9 @@ def test_authenticated_profile_and_history_query_budget(api):
             assert result.status_code == 200 and len(result.json()) == limit
             assert len(statements) <= 4, statements
             assert not any("messenger_accounts" in s for s in statements)
+            history_sql = next(s for s in statements if "FROM messages" in s)
+            assert "users_1.web_password_hash" not in history_sql
+            assert "users_1.additional_info" not in history_sql
             message_id = result.json()[-1]["id"]
             hint = json.dumps({"action": "upsert", "conversation_type": "conversation",
                                "conversation_id": chat_id, "message_id": message_id})

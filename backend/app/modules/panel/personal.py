@@ -3,11 +3,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, File, Form, Query, Request, UploadFile
 
+from app.core.chat_read_limits import ChatReadRoute
 from app.infrastructure.storage.media import attachment_response
 from app.modules.dependencies import Db, PanelUser
 from app.modules.personal_chat import operations
 
-router = APIRouter()
+router = APIRouter(route_class=ChatReadRoute)
 
 
 @router.get("/panel/personal-conversations")

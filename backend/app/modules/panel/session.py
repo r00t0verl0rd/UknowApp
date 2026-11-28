@@ -13,6 +13,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
 
+from app.core.chat_read_limits import run_chat_read
 from app.core.database import SessionLocal
 from app.event_hub import (
     current_event_id,
@@ -21,7 +22,7 @@ from app.event_hub import (
     unsubscribe_chat_updates,
 )
 from app.infrastructure.storage.media import panel_attachment_limit
-from app.models import Message, PersonalMessage
+from app.models import Message, PersonalMessage, User
 from app.modules.auth.permissions import ROLE_PERMISSIONS
 from app.modules.auth.service import load_panel_identity
 from app.modules.dependencies import PanelUser
@@ -62,7 +63,7 @@ def visible_payload(db, principal, payload):
                     model.conversation_id == chat_id, model.id < message_id,
                 ).correlate(None).scalar_subquery()
                 result = db.execute(
-                    select(model, previous).options(joinedload(model.sender))
+                    select(model, previous).options(joinedload(model.sender).load_only(User.id, User.full_name))
                     .where(model.conversation_id == chat_id, model.id == message_id)
                 ).one_or_none()
                 if result:
@@ -109,7 +110,7 @@ async def panel_events(request: Request, principal: PanelUser):
             if not cursor:
                 yield f"id: {checkpoint}\nevent: checkpoint\ndata: {{}}\n\n"
             for event_id, payload in replay:
-                payload = await asyncio.to_thread(authorized_payload, payload)
+                payload = await run_chat_read(authorized_payload, payload)
                 if payload is None:
                     return
                 yield f"id: {event_id}\nevent: update\ndata: {payload}\n\n"
@@ -117,7 +118,7 @@ async def panel_events(request: Request, principal: PanelUser):
                 try:
                     payload = await asyncio.wait_for(queue.get(), timeout=15)
                 except TimeoutError:
-                    if not await asyncio.to_thread(authorized_payload):
+                    if not await run_chat_read(authorized_payload):
                         return
                     # Heartbeat не меняет курсор событий.
                     yield "event: heartbeat\ndata: {}\n\n"
@@ -126,7 +127,7 @@ async def panel_events(request: Request, principal: PanelUser):
                     event_id = json.loads(payload).get("event_id")
                 except (TypeError, ValueError):
                     event_id = None
-                payload = await asyncio.to_thread(authorized_payload, payload)
+                payload = await run_chat_read(authorized_payload, payload)
                 if payload is None:
                     return
                 # Отправляем каждый SSE-кадр одним блоком.

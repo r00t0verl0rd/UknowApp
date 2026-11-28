@@ -182,7 +182,7 @@ def personal_messages(conversation_id: int, principal: dict, db: Session, after_
                    mark_read: bool = True, forward: bool = False,
                    around_id: int | None = None, first_unread: bool = False):
     item = personal_conversation(db, principal, conversation_id)
-    query = select(PersonalMessage).options(joinedload(PersonalMessage.sender)).where(
+    query = select(PersonalMessage).options(joinedload(PersonalMessage.sender).load_only(User.id, User.full_name)).where(
         PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id,
     )
     if first_unread and around_id is None:

@@ -1,0 +1,40 @@
+name: SQLite chat performance comparison
+on:
+  push:
+    branches: [test]
+    paths:
+      - "backend/app/core/chat_read_limits.py"
+      - "backend/app/core/database.py"
+      - "backend/tests/benchmark_mixed_chat.py"
+      - ".github/workflows/sqlite-chat-performance.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: backend:.
+      ADMIN_PASSWORD: isolated-ci-benchmark-only-123 # pragma: allowlist secret
+      BOTS_PLATFORMS: ""
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+      - run: uv pip install --system -r backend/requirements.txt httpx pytest
+      - name: Verify read admission and query budgets
+        run: python -m pytest -q backend/tests/test_chat_read_limits.py backend/tests/test_query_budget.py backend/tests/test_core_responsiveness.py backend/tests/test_history_pages.py backend/tests/test_access_control.py
+      - name: Compare unbounded and bounded chat requests
+        run: |
+          UKNOWAPP_SQLITE_CHAT_READ_CONCURRENCY=0 python backend/tests/benchmark_mixed_chat.py --messages 100000 --clients 100 250 500 --rounds 2 --output unbounded.json
+          UKNOWAPP_SQLITE_CHAT_READ_CONCURRENCY=4 python backend/tests/benchmark_mixed_chat.py --messages 100000 --clients 100 250 500 --rounds 2 --output bounded.json
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: sqlite-comparison
+          path: |
+            unbounded.json
+            bounded.json

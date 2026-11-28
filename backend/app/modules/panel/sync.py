@@ -10,9 +10,11 @@ from pydantic import BaseModel, Field, PositiveInt
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload, load_only
 
+from app.core.chat_read_limits import ChatReadRoute
 from app.models import (
     Message,
     PersonalMessage,
+    User,
 )
 from app.modules.conversations.service import (
     conversation_dicts,
@@ -35,7 +37,7 @@ from app.modules.personal_chat.service import (
 )
 
 logger = logging.getLogger(__name__)
-router = APIRouter()
+router = APIRouter(route_class=ChatReadRoute)
 
 
 def _sync_request_fields(payload: dict) -> tuple[int, list[int]]:
@@ -65,7 +67,7 @@ def sync_conversation_state(
     """Обновить изменения сообщений без полной загрузки истории."""
     after_id, known_ids = _sync_request_fields(payload)
     conversation = panel_visible_conversation(db, principal, conversation_id)
-    query = select(Message).options(joinedload(Message.sender)).where(
+    query = select(Message).options(joinedload(Message.sender).load_only(User.id, User.full_name)).where(
         Message.conversation_id == conversation.id, Message.id > after_id,
     )
     new_rows, has_more = sync_page(db, query, Message, after_id)
@@ -120,7 +122,7 @@ def sync_personal_conversation_state(
     """Обновить личные сообщения и отметки прочтения."""
     after_id, known_ids = _sync_request_fields(payload)
     item = personal_conversation(db, principal, conversation_id)
-    query = select(PersonalMessage).options(joinedload(PersonalMessage.sender)).where(
+    query = select(PersonalMessage).options(joinedload(PersonalMessage.sender).load_only(User.id, User.full_name)).where(
         PersonalMessage.conversation_id == item.id, PersonalMessage.id > after_id,
     )
     new_rows, has_more = sync_page(db, query, PersonalMessage, after_id)
