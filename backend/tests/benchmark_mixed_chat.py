@@ -41,10 +41,12 @@ def main(args, folder):
     pairs = (max(args.clients) + 1) // 2
     actors, chats = [], []
     now = datetime.now(UTC)
-    fingerprint = hashlib.sha256(b"synthetic-only").hexdigest()
+    # Synthetic credential fingerprint input, never a usable account password.
+    credential = hashlib.sha256(os.urandom(32)).hexdigest()
+    fingerprint = hashlib.sha256(credential.encode()).hexdigest()
     with SessionLocal() as db:
         for i in range(pairs):
-            users = [User(full_name=f"Load {role} {i}", role=role, web_password_hash="synthetic-only")
+            users = [User(full_name=f"Load {role} {i}", role=role, web_password_hash=credential)
                      for role in ("teacher", "student")]
             db.add_all(users)
             db.flush()

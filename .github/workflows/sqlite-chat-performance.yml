@@ -38,3 +38,31 @@ jobs:
           path: |
             unbounded.json
             bounded.json
+
+  extended:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: backend:.
+      ADMIN_PASSWORD: isolated-ci-benchmark-only-123 # pragma: allowlist secret
+      BOTS_PLATFORMS: ""
+      UKNOWAPP_SQLITE_CHAT_READ_CONCURRENCY: "4"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+      - run: uv pip install --system -r backend/requirements.txt httpx
+      - name: Record environment
+        run: |
+          nproc
+          free -m
+          df -h .
+      - name: Million-message workload with optimized read admission
+        run: python backend/tests/benchmark_mixed_chat.py --messages 1000000 --clients 100 250 500 1000 2000 --rounds 2 --output optimized-million.json
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: optimized-million
+          path: optimized-million.json
